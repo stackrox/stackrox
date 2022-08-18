@@ -24,8 +24,7 @@ updates:
   - package-ecosystem: 'gradle'
     directory: 'qa-tests-backend/'
     schedule:
-      interval: 'weekly'
-      day: 'wednesday'
+      interval: 'daily'
     open-pull-requests-limit: 1
     labels:
       - "ci-aks-tests"
@@ -42,8 +41,7 @@ updates:
   - package-ecosystem: 'gomod'
     directory: '/'
     schedule:
-      interval: 'weekly'
-      day: 'wednesday'
+      interval: 'daily'
     open-pull-requests-limit: 3
     reviewers:
       - "stackrox/backend-dep-updaters"

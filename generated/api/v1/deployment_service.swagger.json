@@ -720,12 +720,6 @@
         "riskScore": {
           "type": "number",
           "format": "float"
-        },
-        "processTags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "title": "Next available tag: 35"

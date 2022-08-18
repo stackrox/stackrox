@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"sort"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -26,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -226,65 +224,6 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	}
 
 	return errorList.ToError()
-}
-
-func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, tags []string) ([]string, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "AddAlertTags")
-
-	ds.keyedMutex.Lock(resourceID)
-	defer ds.keyedMutex.Unlock(resourceID)
-
-	alert, exists, err := ds.storage.Get(ctx, resourceID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error fetching alert %q from the DB", resourceID)
-	}
-	if !exists {
-		return nil, fmt.Errorf("cannot add tags to alert %q that no longer exists", resourceID)
-	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
-		return nil, sac.ErrResourceAccessDenied
-	}
-
-	allTags := sliceutils.StringUnion(alert.GetTags(), tags)
-	sort.Strings(allTags)
-	alert.Tags = allTags
-	if err := ds.updateAlertNoLock(ctx, alert); err != nil {
-		return nil, errors.Wrapf(err, "error upserting alert %q", alert.GetId())
-	}
-
-	return alert.GetTags(), nil
-}
-
-func (ds *datastoreImpl) RemoveAlertTags(ctx context.Context, resourceID string, tags []string) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "DeleteAlertTags")
-
-	ds.keyedMutex.Lock(resourceID)
-	defer ds.keyedMutex.Unlock(resourceID)
-
-	alert, exists, err := ds.storage.Get(ctx, resourceID)
-	if err != nil {
-		return errors.Wrapf(err, "error fetching alert %q from the DB", resourceID)
-	}
-	if !exists {
-		return fmt.Errorf("cannot add tags to alert %q that no longer exists", resourceID)
-	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	remainingTags := sliceutils.StringDifference(alert.GetTags(), tags)
-	sort.Strings(remainingTags)
-
-	if len(remainingTags) == 0 {
-		alert.Tags = nil
-	} else {
-		alert.Tags = remainingTags
-	}
-	if err := ds.updateAlertNoLock(ctx, alert); err != nil {
-		return fmt.Errorf("error upserting alert %q", alert.GetId())
-	}
-
-	return nil
 }
 
 func sacKeyForAlert(alert *storage.Alert) []sac.ScopeKey {

@@ -12,7 +12,10 @@
             },
             "loginUrl": "irrelevant",
             "validated": false,
-            "active": false
+            "active": false,
+            "traits": {
+                "mutabilityMode": "ALLOW_MUTATE"
+            }
         }
     ]
 }

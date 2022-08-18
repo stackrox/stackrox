@@ -101,3 +101,27 @@ func (suite *AuthProviderStoreTestSuite) TestAuthProviders() {
 	suite.NoError(err)
 	suite.Empty(allProviders)
 }
+
+func (suite *AuthProviderStoreTestSuite) TestGet() {
+	authProvider := &storage.AuthProvider{
+		Id:   "abc",
+		Name: "authProvider1",
+		Type: "Auth Provider 1",
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	err := suite.store.Upsert(ctx, authProvider)
+	suite.NoError(err)
+
+	// 1. Get existing auth provider id.
+	result, exists, err := suite.store.Get(ctx, authProvider.GetId())
+	suite.NoError(err)
+	suite.True(exists)
+	suite.Equal(authProvider, result)
+
+	// 2. Get non-existing auth provider id.
+	_, exists, err = suite.store.Get(ctx, "nonexisting")
+	suite.NoError(err)
+	suite.False(exists)
+}

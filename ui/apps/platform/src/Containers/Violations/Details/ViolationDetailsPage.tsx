@@ -84,7 +84,6 @@ function ViolationDetailsPage(): ReactElement {
                     <Tab eventKey={0} title={<TabTitleText>Violation</TabTitleText>}>
                         <PageSection variant="default">
                             <ViolationDetails
-                                violationId={alert.id}
                                 violations={alert.violations}
                                 processViolation={alert.processViolation}
                                 lifecycleStage={alert.lifecycleStage}

@@ -94,7 +94,7 @@ func WithEnabled(enabled bool) ProviderOption {
 	}
 }
 
-// WithValidateCallback adds a callback to validate the auth provider
+// WithValidateCallback adds a callback to validate the auth provider.
 func WithValidateCallback(store Store) ProviderOption {
 	return func(pr *providerImpl) error {
 		pr.validateCallback = func() error {
@@ -129,6 +129,18 @@ func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
 			return nil
 		}
 		pr.attributeVerifier = user.NewRequiredAttributesVerifier(stored.GetRequiredAttributes())
+		return nil
+	}
+}
+
+// WithVisibility sets the visibility for the auth provider.
+func WithVisibility(visibility storage.Traits_Visibility) ProviderOption {
+	return func(pr *providerImpl) error {
+		if pr.storedInfo.GetTraits() != nil {
+			pr.storedInfo.Traits.Visibility = visibility
+		} else {
+			pr.storedInfo.Traits = &storage.Traits{Visibility: visibility}
+		}
 		return nil
 	}
 }

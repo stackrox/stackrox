@@ -64,6 +64,22 @@ func (mr *MockStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), ctx, id)
 }
 
+// Get mocks base method.
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.AuthProvider, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", ctx, id)
+	ret0, _ := ret[0].(*storage.AuthProvider)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
+}
+
 // GetAll mocks base method.
 func (m *MockStore) GetAll(ctx context.Context) ([]*storage.AuthProvider, error) {
 	m.ctrl.T.Helper()

@@ -49,6 +49,13 @@ func init() {
 			"topImageVulnerability(query: String): ImageVulnerability",
 			"unusedVarSink(query: String): Int",
 			"watchStatus: ImageWatchStatus!",
+
+			// Image scan-related fields
+			"dataSource: DataSource",
+			"scanNotes: [ImageScan_Note!]!",
+			"operatingSystem: String!",
+			"scanTime: Time",
+			"scannerVersion: String!",
 		}),
 		// deprecated fields
 		schema.AddExtraResolvers("Image", []string{
@@ -80,7 +87,6 @@ func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]*i
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -406,7 +412,24 @@ func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, 
 
 func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
 	resolver.ensureData(ctx)
-	res, err := resolver.root.wrapImageScan(resolver.data.GetScan(), true, nil)
+	scan := resolver.data.GetScan()
+	if features.PostgresDatastore.Enabled() {
+		// If scan is pulled, it is most likely to fetch all components and vulns contained in image.
+		// Therefore, load the image again with full scan.
+		imageLoader, err := loaders.GetImageLoader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// If Postgres is not enabled, image loader always pull full image.
+		image, err := imageLoader.FullImageWithID(ctx, resolver.data.GetId())
+		if err != nil {
+			return nil, err
+		}
+		scan = image.GetScan()
+	}
+
+	res, err := resolver.root.wrapImageScan(scan, true, nil)
 	if err != nil || res == nil {
 		return nil, err
 	}
@@ -431,4 +454,31 @@ func (resolver *imageResolver) WatchStatus(ctx context.Context) (string, error) 
 
 func (resolver *imageResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
 	return nil
+}
+
+//// Image scan-related fields pulled as direct sub-resolvers of image.
+
+func (resolver *imageResolver) DataSource(ctx context.Context) (*dataSourceResolver, error) {
+	value := resolver.data.GetScan().GetDataSource()
+	return resolver.root.wrapDataSource(value, true, nil)
+}
+
+func (resolver *imageResolver) ScanNotes(ctx context.Context) []string {
+	value := resolver.data.GetScan().GetNotes()
+	return stringSlice(value)
+}
+
+func (resolver *imageResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetScan().GetOperatingSystem()
+	return value
+}
+
+func (resolver *imageResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetScan().GetScanTime()
+	return timestamp(value)
+}
+
+func (resolver *imageResolver) ScannerVersion(ctx context.Context) string {
+	value := resolver.data.GetScan().GetScannerVersion()
+	return value
 }

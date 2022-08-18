@@ -15,24 +15,13 @@ import (
 // streamlining mutation operations through gRPC (ex. automated audit logging).
 // Think before adding new values to this list.
 var knownMutations = set.NewFrozenStringSet(
-	"addAlertComment",
-	"addAlertTags",
-	"addProcessComment",
-	"addProcessTags",
 	"approveVulnerabilityRequest",
-	"bulkAddAlertTags",
 	"complianceTriggerRuns",
 	"deferVulnerability",
 	"deleteVulnerabilityRequest",
 	"denyVulnerabilityRequest",
 	"markVulnerabilityFalsePositive",
-	"removeAlertComment",
-	"removeAlertTags",
-	"removeProcessComment",
-	"removeProcessTags",
 	"undoVulnerabilityRequest",
-	"updateAlertComment",
-	"updateProcessComment",
 	"updateVulnerabilityRequest",
 )
 

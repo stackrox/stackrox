@@ -4,10 +4,11 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "gogoproto/gogo.proto";
+import "storage/traits.proto";
 
 package storage;
 
-// Next Tag: 9
+// Next Tag: 13
 message AuthProvider {
     string id                   = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string name                 = 2 [(gogoproto.moretags) = 'sql:"unique"'];
@@ -33,6 +34,7 @@ message AuthProvider {
         string attribute_key   = 1;
         string attribute_value = 2;
     }
-    // EXPERIMENTAL.
     repeated RequiredAttribute required_attributes = 11;
+
+    Traits traits = 12;
 }

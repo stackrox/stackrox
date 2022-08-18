@@ -50,7 +50,6 @@ var (
                    Enforcement_Action integer,
                    Time timestamp,
                    State integer,
-                   Tags text[],
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
@@ -114,6 +113,5 @@ type Alerts struct {
 	EnforcementAction        storage.EnforcementAction           `gorm:"column:enforcement_action;type:integer"`
 	Time                     *time.Time                          `gorm:"column:time;type:timestamp"`
 	State                    storage.ViolationState              `gorm:"column:state;type:integer;index:alerts_state,type:btree"`
-	Tags                     *pq.StringArray                     `gorm:"column:tags;type:text[]"`
 	Serialized               []byte                              `gorm:"column:serialized;type:bytea"`
 }

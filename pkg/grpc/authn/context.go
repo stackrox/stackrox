@@ -31,6 +31,6 @@ func IdentityFromContextOrNil(ctx context.Context) Identity {
 
 // ContextWithIdentity adds the given identity to the context. It is to be used only for testing --
 // to help remind users of this, it takes in a testing.T.
-func ContextWithIdentity(ctx context.Context, identity Identity, _ *testing.T) context.Context {
+func ContextWithIdentity(ctx context.Context, identity Identity, _ testing.TB) context.Context {
 	return context.WithValue(ctx, identityContextKey{}, identity)
 }

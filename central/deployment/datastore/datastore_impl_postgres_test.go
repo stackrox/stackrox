@@ -80,7 +80,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
 
 	s.deploymentDatastore, err = newDataStore(
 		deploymentPostgres.NewFullTestStore(s.T(), deploymentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)),
-		nil, s.db, nil, nil, nil, s.imageDatastore, nil, nil, s.riskDataStore,
+		nil, s.db, nil, nil, s.imageDatastore, nil, nil, s.riskDataStore,
 		nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
 	s.Require().NoError(err)
 
@@ -106,9 +106,9 @@ func (s *DeploymentPostgresDataStoreTestSuite) TearDownSuite() {
 
 func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	ctx := sac.WithAllAccess(context.Background())
-	img1 := fixtures.GetImageWithUniqueComponents()
+	img1 := fixtures.GetImageWithUniqueComponents(5)
 	img1.Id = uuid.NewV4().String()
-	img2 := fixtures.GetImageWithUniqueComponents()
+	img2 := fixtures.GetImageWithUniqueComponents(5)
 	img2.Id = uuid.NewV4().String()
 	img2.Scan.OperatingSystem = "pluto"
 	for _, component := range img2.GetScan().GetComponents() {
@@ -117,7 +117,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			vuln.Cve = img2.Id + vuln.Cve
 		}
 	}
-	img3 := fixtures.GetImageWithUniqueComponents()
+	img3 := fixtures.GetImageWithUniqueComponents(5)
 	img3.Id = uuid.NewV4().String()
 
 	dep1 := fixtures.GetDeploymentWithImage("c1", "n1", img1)

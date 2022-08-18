@@ -10,6 +10,7 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	GetAll(ctx context.Context) ([]*storage.AuthProvider, error)
+	Get(ctx context.Context, id string) (*storage.AuthProvider, bool, error)
 
 	Exists(ctx context.Context, id string) (bool, error)
 	Upsert(ctx context.Context, obj *storage.AuthProvider) error

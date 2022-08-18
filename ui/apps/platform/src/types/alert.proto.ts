@@ -56,7 +56,6 @@ export type BaseAlert = {
     resolvedAt: string | null; // ISO 8601 date string only if ViolationState is RESOLVED
     state: ViolationState;
     snoozeTill: string | null; // ISO 8601 date string
-    tags: string[];
 };
 
 export type Violation = GenericViolation | K8sEventViolation | NetworkFlowViolation;

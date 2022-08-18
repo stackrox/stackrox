@@ -80,10 +80,12 @@ const WorkflowListPageLayout = ({ location }) => {
     const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
     const useCaseOptions = useCaseEntityMap[useCase].filter((option) => {
         if (showVmUpdates) {
-            if (option === entityTypes.CVE) {
+            if (option === entityTypes.CVE || option === entityTypes.COMPONENT) {
                 return false;
             }
         } else if (
+            option === entityTypes.IMAGE_COMPONENT ||
+            option === entityTypes.NODE_COMPONENT ||
             option === entityTypes.IMAGE_CVE ||
             option === entityTypes.NODE_CVE ||
             option === entityTypes.CLUSTER_CVE

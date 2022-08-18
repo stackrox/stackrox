@@ -66,7 +66,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// GetAuthProvider retrieves the authProvider based on the id passed
+// GetAuthProvider retrieves the authProvider based on the id passed.
 func (s *serviceImpl) GetAuthProvider(_ context.Context, request *v1.GetAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
@@ -78,13 +78,13 @@ func (s *serviceImpl) GetAuthProvider(_ context.Context, request *v1.GetAuthProv
 	return authProvider.StorageView(), nil
 }
 
-// GetLoginAuthProviders retrieves all authProviders that matches the request filters
+// GetLoginAuthProviders retrieves all authProviders that matches the request filters.
 func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1.GetLoginAuthProvidersResponse, error) {
 	authProviders := s.registry.GetProviders(nil, nil)
 	result := make([]*v1.GetLoginAuthProvidersResponse_LoginAuthProvider, 0, len(authProviders))
 	for _, provider := range authProviders {
-		// Providers without a backend factory are useless for login purposes.
-		if view := provider.StorageView(); view.GetEnabled() && provider.BackendFactory() != nil {
+		if isLoginAuthProvider(provider) {
+			view := provider.StorageView()
 			result = append(result, &v1.GetLoginAuthProvidersResponse_LoginAuthProvider{
 				Id:       view.GetId(),
 				Name:     view.GetName(),
@@ -103,6 +103,25 @@ func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1
 		return result[i].GetName() < result[j].GetName()
 	})
 	return &v1.GetLoginAuthProvidersResponse{AuthProviders: result}, nil
+}
+
+// isLoginAuthProvider is a helper that determines whether an authproviders.Provider can be used for
+// login purposes.
+func isLoginAuthProvider(provider authproviders.Provider) bool {
+	view := provider.StorageView()
+	// Only enabled auth providers can be used for login purposes.
+	if !view.GetEnabled() {
+		return false
+	}
+	// Providers without a backend factory are useless for login purposes.
+	if provider.BackendFactory() == nil {
+		return false
+	}
+	// Only auth providers that are visible should be used for login purposes.
+	if view.GetTraits().GetVisibility() != storage.Traits_VISIBLE {
+		return false
+	}
+	return true
 }
 
 // ListAvailableProviderTypes returns auth provider types which can be created.
@@ -132,7 +151,7 @@ func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty)
 	}, nil
 }
 
-// GetAuthProviders retrieves all authProviders that matches the request filters
+// GetAuthProviders retrieves all authProviders that matches the request filters.
 func (s *serviceImpl) GetAuthProviders(_ context.Context, request *v1.GetAuthProvidersRequest) (*v1.GetAuthProvidersResponse, error) {
 	var name, typ *string
 	if request.GetName() != "" {
@@ -159,7 +178,7 @@ func (s *serviceImpl) GetAuthProviders(_ context.Context, request *v1.GetAuthPro
 	return &v1.GetAuthProvidersResponse{AuthProviders: result}, nil
 }
 
-// PostAuthProvider inserts a new auth provider into the system
+// PostAuthProvider inserts a new auth provider into the system.
 func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuthProviderRequest) (*storage.AuthProvider, error) {
 	providerReq := request.GetProvider()
 	if providerReq.GetName() == "" {
@@ -171,6 +190,10 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	if providerReq.GetLoginUrl() != "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider loginUrl field is not empty")
 	}
+	if providerReq.GetType() == basic.TypeName {
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be created",
+			basic.TypeName)
+	}
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq),
 		authproviders.WithValidateCallback(datastore.Singleton()), authproviders.WithAttributeVerifier(providerReq))
@@ -180,9 +203,14 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	return provider.StorageView(), nil
 }
 
+// PutAuthProvider upserts an auth provider into the system.
 func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.AuthProvider) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
+	}
+	if request.GetType() == basic.TypeName {
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be modified",
+			basic.TypeName)
 	}
 
 	provider := s.registry.GetProvider(request.GetId())
@@ -197,8 +225,8 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
 	}
 
-	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it
-	if err := s.registry.DeleteProvider(ctx, request.GetId(), false); err != nil {
+	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it.
+	if err := s.registry.DeleteProvider(ctx, request.GetId(), false, false); err != nil {
 		return nil, err
 	}
 
@@ -211,9 +239,22 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 	return provider.StorageView(), nil
 }
 
+// UpdateAuthProvider updates an auth provider within the system.
 func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.UpdateAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
+	}
+
+	// Get auth provider.
+	authProvider := s.registry.GetProvider(request.GetId())
+	if authProvider == nil {
+		return nil, errox.NotFound.CausedByf("auth provider %q not found", request.GetId())
+	}
+
+	// Do not attempt to update auth provider of type "basic" and instead return an invalid args error.
+	if authProvider.StorageView().GetType() == basic.TypeName {
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be modified",
+			basic.TypeName)
 	}
 
 	var options []authproviders.ProviderOption
@@ -231,27 +272,34 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 }
 
 // DeleteAuthProvider deletes an auth provider from the system
-func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
+func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.DeleteByIDWithForce) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
-
 	// Get auth provider.
 	authProvider := s.registry.GetProvider(request.GetId())
 	if authProvider == nil {
 		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
 	}
+
+	// Do not attempt to delete auth provider of type "basic" and instead return an invalid args error.
+	if authProvider.StorageView().GetType() == basic.TypeName {
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be deleted",
+			basic.TypeName)
+	}
+
 	// Delete auth provider.
-	if err := s.registry.DeleteProvider(ctx, request.GetId(), true); err != nil {
+	if err := s.registry.DeleteProvider(ctx, request.GetId(), request.GetForce(), true); err != nil {
 		return nil, err
 	}
 	// Delete groups for auth provider.
-	if err := s.groupStore.RemoveAllWithAuthProviderID(ctx, request.GetId()); err != nil {
+	if err := s.groupStore.RemoveAllWithAuthProviderID(ctx, request.GetId(), request.GetForce()); err != nil {
 		return nil, errors.Wrapf(err, "failed to delete groups associated with auth provider %q", request.GetId())
 	}
 	return &v1.Empty{}, nil
 }
 
+// ExchangeToken exchanges a token from an auth provider from the system.
 func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTokenRequest) (*v1.ExchangeTokenResponse, error) {
 	provider, err := s.registry.ResolveProvider(request.GetType(), request.GetState())
 	if err != nil {

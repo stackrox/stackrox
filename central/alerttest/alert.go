@@ -52,7 +52,6 @@ func NewFakeAlertWithTwoTags() *storage.Alert {
 	return &storage.Alert{
 		Id:             FakeAlertID,
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Tags:           NewFakeTwoTags(),
 	}
 }
 
@@ -61,7 +60,6 @@ func NewFakeAlertWithThreeTags() *storage.Alert {
 	return &storage.Alert{
 		Id:             FakeAlertID,
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Tags:           NewFakeThreeTags(),
 	}
 }
 
@@ -70,7 +68,6 @@ func NewFakeAlertWithOneTag() *storage.Alert {
 	return &storage.Alert{
 		Id:             FakeAlertID,
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Tags:           []string{FakeTag3},
 	}
 }
 

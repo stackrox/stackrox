@@ -21,7 +21,6 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 			Description: alert.GetPolicy().GetDescription(),
 			Categories:  alert.GetPolicy().GetCategories(),
 		},
-		Tags:              alert.GetTags(),
 		EnforcementAction: alert.GetEnforcement().GetAction(),
 	}
 	if alert.GetState() == storage.ViolationState_ACTIVE {

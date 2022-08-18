@@ -11,6 +11,7 @@ authentication is still required for an email notifier, but the user can now cho
 ### Removed Features
 - ROX-11784: The `RenamePolicyCategory` and `DeletePolicyCategory` methods in the
   `v1/policycategories` endpoint have been removed.
+- Support for violation tags and process tags has been removed.
 ### Deprecated Features
 ### Technical Changes
 - ROX-11181: Any clusters that have been unhealthy (defined as central being unable to reach sensor running on those clusters) for a period of time will be automatically removed. By default, it will remove if it's been unhealthy for 90 days, however that can be configured in the System Configuration page or using the cluster API.
@@ -60,6 +61,7 @@ authentication is still required for an email notifier, but the user can now cho
   - This means the configuration for the init container has been updated to include "POSTGRES_PASSWORD_FILE" and some volume mounts which are now required.
 - Debian 9 has reached EOL, so Scanner now marks Debian 9 images as stale.
   - The Debian Security Tracker has also stopped tracking Debian 9 vulnerabilities, so there will be no more new Debian 9 vulnerabilities.
+- Support for violation comments and process comments has been removed.
 
 ## [70.0]
 
