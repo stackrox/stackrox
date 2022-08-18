@@ -4,6 +4,7 @@ import static com.jayway.restassured.RestAssured.given
 
 import com.jayway.restassured.config.RestAssuredConfig
 import groovy.util.logging.Slf4j
+
 import util.Keys
 
 import javax.net.ssl.SSLContext
@@ -59,7 +60,7 @@ class AuthProviderService extends BaseService {
     }
 
     static deleteAuthProvider(String id) {
-        getAuthProviderService().deleteAuthProvider(Common.ResourceByID.newBuilder().setId(id).build())
+        getAuthProviderService().deleteAuthProvider(Common.DeleteByIDWithForce.newBuilder().setId(id).build())
     }
 
     static getAuthProviderLoginToken(String id) {

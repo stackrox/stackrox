@@ -69,6 +69,7 @@ function populateDefaultValues(authProvider: AuthProvider): AuthProvider {
         roleName: '',
         props: { authProviderId: '', key: '', value: '', id: '' },
     });
+    newInitialValues.traits = { mutabilityMode: 'ALLOW_MUTATE' };
 
     return newInitialValues;
 }

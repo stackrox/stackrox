@@ -4,6 +4,7 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "gogoproto/gogo.proto";
+import "storage/traits.proto";
 
 package storage;
 
@@ -33,6 +34,7 @@ message AuthProvider {
         string attribute_key   = 1;
         string attribute_value = 2;
     }
-    // EXPERIMENTAL.
     repeated RequiredAttribute required_attributes = 11;
+
+    Traits traits = 12;
 }

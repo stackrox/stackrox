@@ -34,9 +34,9 @@ func UpdateStore(ctx context.Context, store Store) ProviderOption {
 }
 
 // DeleteFromStore removes the providers stored data from the input store.
-func DeleteFromStore(ctx context.Context, store Store) ProviderOption {
+func DeleteFromStore(ctx context.Context, store Store, providerID string, force bool) ProviderOption {
 	return func(pr *providerImpl) error {
-		err := store.RemoveAuthProvider(ctx, pr.storedInfo.Id)
+		err := store.RemoveAuthProvider(ctx, providerID, force)
 		if err != nil {
 			// If it's a type we don't want to store, then we're okay with it not existing.
 			// We do this in case it was stored in the DB in a previous version.

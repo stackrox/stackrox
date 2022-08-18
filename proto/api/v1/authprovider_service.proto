@@ -118,7 +118,7 @@ service AuthProviderService {
         };
     }
 
-    rpc DeleteAuthProvider (ResourceByID) returns (Empty) {
+    rpc DeleteAuthProvider (DeleteByIDWithForce) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/authProviders/{id}"
         };
