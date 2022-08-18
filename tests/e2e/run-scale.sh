@@ -70,7 +70,7 @@ run_scale_test() {
 }
 
 get_prometheus_metrics_parser() {
-      go install github.com/stackrox/prometheus-metric-parser@latest
+      go install github.com/stackrox/prometheus-metric-parser@d47b15a
       prometheus-metric-parser help
 }
 
@@ -95,8 +95,8 @@ compare_with_stored_metrics() {
     info "Comparing with ${this_run_metrics}"
 
     pushd /tmp
-    "${compare_cmd}" "${baseline_metrics}" "${this_run_metrics}" | tee comparison.txt || true
-    store_as_spyglass_artifact comparison.txt
+    "${compare_cmd}" "${baseline_metrics}" "${this_run_metrics}" comparison.html || true
+    store_as_spyglass_artifact comparison.html
     popd
 }
 
