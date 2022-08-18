@@ -1351,7 +1351,7 @@ func (s *violationsTestSuite) TestViolationsHandlerError() {
 
 	// context.Background() did not go through our context validation and will not include any global access scope.
 	// We use this to make datastore generate an error which will make the request fail.
-	s.PanicsWithError("global access scope was not found in context", func() {
+	s.Panics(func() {
 		s.prepare().setContext(context.Background()).setAlerts(&s.deployAlert).runRequest(w)
 	})
 }

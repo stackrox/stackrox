@@ -153,9 +153,6 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 				expected := tc.results[i]
 				got := scc.TryAllowed()
 				assert.Equalf(t, expected, got, "expected %d, got %d for scope %s, level [%d]", expected, got, scopeKey, i)
-				err := scc.PerformChecks(context.Background())
-				wantErr := expected == sac.Unknown
-				assert.Truef(t, (err != nil) == wantErr, "got %+v", err)
 			}
 			// The amount of "allowed" traces should equal the amount of
 			// expected Allow responses.
@@ -195,7 +192,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 		{
 			name:      "error when wrong sub scope",
 			scopeKeys: sac.ClusterScopeKeys(firstCluster.ID),
-			results:   []sac.TryAllowedResult{sac.Deny},
+			results:   []sac.TryAllowedResult{},
 		},
 		{
 			name: "error when wrong sub scope",
@@ -203,7 +200,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKey("unknown resource"),
 			},
-			results: []sac.TryAllowedResult{sac.Deny, sac.Deny},
+			results: []sac.TryAllowedResult{sac.Deny},
 		},
 		{
 			name: "error when wrong sub scope",
@@ -211,7 +208,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 				sac.ClusterScopeKey(firstCluster.ID),
 			},
-			results: []sac.TryAllowedResult{sac.Deny, sac.Deny},
+			results: []sac.TryAllowedResult{sac.Deny},
 		},
 		{
 			name: "error when wrong sub scope",
@@ -220,7 +217,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 				sac.ResourceScopeKey(resources.Cluster.Resource),
 				sac.NamespaceScopeKey(firstNamespaceName),
 			},
-			results: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
+			results: []sac.TryAllowedResult{sac.Deny, sac.Deny},
 		},
 		{
 			name: "error when wrong sub scope",
@@ -230,7 +227,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 				sac.ClusterScopeKey(firstCluster.ID),
 				sac.ClusterScopeKey(secondCluster.ID),
 			},
-			results: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow, sac.Deny},
+			results: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
 		},
 		{
 			name:      "deny when unknown namespace",
@@ -256,14 +253,14 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			scc := subScopeChecker
-			assert.Len(t, tc.results, len(tc.scopeKeys), "results and scope keys must have same length")
 			for i, scopeKey := range tc.scopeKeys {
 				scc = scc.SubScopeChecker(scopeKey)
-				expected := tc.results[i]
-				assert.Equalf(t, expected, scc.TryAllowed(), "scope %s, level [%d]", scopeKey, i)
-				err := scc.PerformChecks(context.Background())
-				wantErr := expected == sac.Unknown
-				assert.Truef(t, (err != nil) == wantErr, "got %+v", err)
+				if i >= len(tc.results) {
+					assert.Panics(t, func() { scc.TryAllowed() })
+				} else {
+					expected := tc.results[i]
+					assert.Equalf(t, expected, scc.TryAllowed(), "scope %s, level [%d]", scopeKey, i)
+				}
 			}
 		})
 	}
