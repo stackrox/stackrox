@@ -1354,8 +1354,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Traits", []string{
 		"mutabilityMode: Traits_MutabilityMode!",
+		"visibility: Traits_Visibility!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_MutabilityMode(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_Visibility(0)))
 	utils.Must(builder.AddType("UpgradeProgress", []string{
 		"since: Time",
 		"upgradeState: UpgradeProgress_UpgradeState!",
@@ -11540,6 +11542,11 @@ func (resolver *traitsResolver) MutabilityMode(ctx context.Context) string {
 	return value.String()
 }
 
+func (resolver *traitsResolver) Visibility(ctx context.Context) string {
+	value := resolver.data.GetVisibility()
+	return value.String()
+}
+
 func toTraits_MutabilityMode(value *string) storage.Traits_MutabilityMode {
 	if value != nil {
 		return storage.Traits_MutabilityMode(storage.Traits_MutabilityMode_value[*value])
@@ -11554,6 +11561,24 @@ func toTraits_MutabilityModes(values *[]string) []storage.Traits_MutabilityMode 
 	output := make([]storage.Traits_MutabilityMode, len(*values))
 	for i, v := range *values {
 		output[i] = toTraits_MutabilityMode(&v)
+	}
+	return output
+}
+
+func toTraits_Visibility(value *string) storage.Traits_Visibility {
+	if value != nil {
+		return storage.Traits_Visibility(storage.Traits_Visibility_value[*value])
+	}
+	return storage.Traits_Visibility(0)
+}
+
+func toTraits_Visibilities(values *[]string) []storage.Traits_Visibility {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Traits_Visibility, len(*values))
+	for i, v := range *values {
+		output[i] = toTraits_Visibility(&v)
 	}
 	return output
 }

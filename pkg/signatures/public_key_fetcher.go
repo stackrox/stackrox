@@ -53,6 +53,12 @@ func init() {
 // NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
 func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
 	registry registryTypes.Registry) ([]*storage.Signature, error) {
+	// Short-circuit for images that do not have V2 metadata associated with them. These would be older images manifest
+	// schemes that are not supported by cosign, like the docker v1 manifest.
+	if image.GetMetadata().GetV2() == nil {
+		return nil, nil
+	}
+
 	// Since cosign makes heavy use of google/go-containerregistry, we need to parse the image's full name as a
 	// name.Reference.
 	imgFullName := image.GetName().GetFullName()
@@ -76,7 +82,7 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 	// error types are exposed need to check for string comparison.
 	// Cosign ref:
 	//  https://github.com/sigstore/cosign/blob/44f3814667ba6a398aef62814cabc82aee4896e5/pkg/cosign/fetch.go#L84-L86
-	if err != nil && !isMissingSignatureError(err) {
+	if err != nil && !isMissingSignatureError(err) && !isUnknownMimeTypeError(err) {
 		// Specifically mark an error as errox.NotAuthorized so we skip using the same credentials for fetching.
 		// We can safely skip the potential marking of retryable errors as unauthorized errors are not transient.
 		if isUnauthorizedError(err) {
@@ -186,6 +192,17 @@ func isMissingSignatureError(err error) bool {
 	// Cosign ref:
 	// https://github.com/sigstore/cosign/blob/b1024041754c8171375bf1a8411d86436c654b95/pkg/oci/remote/signatures.go#L35-L40
 	return checkIfErrorContainsCode(err, http.StatusNotFound)
+}
+
+// isUnkownMimeTypeError is checking whether the error indicates that the image is an unkown mime type for cosign.
+// Cosign itself only supports OCI or DockerV2 manifest schemes and will error out on any other, older manifest schemes.
+// Cosign ref:
+// https://github.com/sigstore/cosign/blob/6bfac1a470492d8964778b1b8c41e0056bf5dbdd/pkg/oci/remote/remote.go#L65-L76
+func isUnknownMimeTypeError(err error) bool {
+	// Cosign doesn't provide error types we can easily use for checking, hence we need to do a string comparison.
+	// Cosign ref:
+	// https://github.com/sigstore/cosign/blob/6bfac1a470492d8964778b1b8c41e0056bf5dbdd/pkg/oci/remote/remote.go#L76
+	return strings.Contains(err.Error(), "unknown mime type")
 }
 
 // isUnauthorizedError is checking whether the returned error indicates that there was a http.StatusUnauthorized was
