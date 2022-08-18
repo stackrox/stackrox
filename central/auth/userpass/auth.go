@@ -8,8 +8,10 @@ import (
 	"github.com/stackrox/rox/central/role"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/mapper"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	basicAuthProvider "github.com/stackrox/rox/pkg/auth/authproviders/basic"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	basicAuthn "github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
@@ -27,7 +29,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	// The auth provider ID used for basic auth. This is arbitrary, but should not be changed.
+	// basicAuthProviderID is the auth provider ID used for basic auth. This is arbitrary, but should not be changed.
 	basicAuthProviderID = "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
 )
 
@@ -84,6 +86,13 @@ func RegisterAuthProviderOrPanic(ctx context.Context, mgr *basicAuthn.Manager, r
 		authproviders.WithRoleMapper(mapper.AlwaysAdminRoleMapper()),
 		authproviders.DoNotStore(),
 	}
+
+	// For managed services, we do not want to show the basic auth provider for login purposes. The default auth
+	// in that context will be the sso.redhat.com auth provider.
+	if env.ManagedCentral.BooleanSetting() {
+		options = append(options, authproviders.WithVisibility(storage.Traits_HIDDEN))
+	}
+
 	provider, err := registry.CreateProvider(basicAuthProvider.ContextWithBasicAuthManager(ctx, mgr), options...)
 	if err != nil {
 		log.Panicf("Could not set up basic auth provider: %v", err)

@@ -343,6 +343,15 @@
       "default": "ALLOW_MUTATE",
       "description": "EXPERIMENTAL.\n\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW_MUTATE and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW_MUTATE."
     },
+    "TraitsVisibility": {
+      "type": "string",
+      "enum": [
+        "VISIBLE",
+        "HIDDEN"
+      ],
+      "default": "VISIBLE",
+      "description": "EXPERIMENTAL.\nvisibility allows to specify whether the object should be visible for certain APIs."
+    },
     "UserInfoResourceToAccess": {
       "type": "object",
       "properties": {
@@ -451,7 +460,7 @@
           "$ref": "#/definitions/storageTraits"
         }
       },
-      "title": "Next Tag: 9"
+      "title": "Next Tag: 13"
     },
     "storageServiceIdentity": {
       "type": "object",
@@ -497,6 +506,9 @@
       "properties": {
         "mutabilityMode": {
           "$ref": "#/definitions/TraitsMutabilityMode"
+        },
+        "visibility": {
+          "$ref": "#/definitions/TraitsVisibility"
         }
       },
       "description": "EXPERIMENTAL."
