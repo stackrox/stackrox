@@ -124,6 +124,7 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 	cimg, err := imgUtils.GenerateImageFromString(imgRef)
 	require.NoError(t, err, "creating test image")
 	img := types.ToImage(cimg)
+	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
 
 	rawSig1, err := base64.StdEncoding.DecodeString(sig1)
 	require.NoError(t, err, "decoding signature")
@@ -182,6 +183,7 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 	// Fail with a non-retryable error when an image is given with a wrong reference.
 	cimg.Name.FullName = "fa@wrongreference"
 	img := types.ToImage(cimg)
+	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
 	res, err := f.FetchSignatures(context.Background(), img, nil)
 	assert.Nil(t, res)
 	require.Error(t, err)
@@ -391,6 +393,27 @@ func TestOptionsFromRegistry(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			assert.Len(t, optionsFromRegistry(c.registry), c.expectedNumOfOptions)
+		})
+	}
+}
+
+func TestIsUnknownMimeTypeError(t *testing.T) {
+	cases := map[string]struct {
+		err         error
+		expectedRes bool
+	}{
+		"should indicate unknown mime type error when error contains unknown mime type": {
+			err:         errors.New("unknown mime type: application/vnd.docker.distribution.manifest.v1+prettyjws"),
+			expectedRes: true,
+		},
+		"should not indicate unknown mime type error when error does not contain unknown mime type": {
+			err: errors.New("some other error"),
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.expectedRes, isUnknownMimeTypeError(c.err))
 		})
 	}
 }
