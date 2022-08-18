@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -103,8 +104,10 @@ func New(nodeStorage nodeDS.GlobalDataStore,
 // ReprocessDeploymentRisk will reprocess the passed deployment's risk and save the results
 func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Deployment")
-
-	log.Infof("reprocess risk for deployment %q: %+v", deployment.GetName(), deployment)
+	verboseLog := strings.Contains(deployment.GetName(), "sac-deploymentnginx-qa")
+	if verboseLog {
+		log.Infof("reprocess risk for deployment %q: %+v", deployment.GetName(), deployment)
+	}
 
 	oldRisk, exists, err := e.riskStorage.GetRiskForDeployment(allAccessCtx, deployment)
 	if err != nil {
@@ -121,10 +124,14 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 				continue
 			}
 			if !exists {
-				log.Infof("no risk found for image %q of deployment %q", container.GetImage().GetName().GetFullName(), deployment.GetName())
+				if verboseLog {
+					log.Infof("no risk found for image %q of deployment %q", container.GetImage().GetName().GetFullName(), deployment.GetName())
+				}
 				continue
 			}
-			log.Infof("risk found for image %q of deployment %q", container.GetImage().GetName().GetFullName(), deployment.GetName())
+			if verboseLog {
+				log.Infof("risk found for image %q of deployment %q", container.GetImage().GetName().GetFullName(), deployment.GetName())
+			}
 			imageRisks = append(imageRisks, risk)
 		}
 	}
@@ -149,6 +156,9 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	}
 
 	if oldScore == risk.GetScore() {
+		if verboseLog {
+			log.Infof("Old riks equals existing risk, meaning we do not upsert for deployment %q", deployment.GetName())
+		}
 		return
 	}
 

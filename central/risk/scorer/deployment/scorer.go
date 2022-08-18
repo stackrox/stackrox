@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"strings"
 
 	"github.com/stackrox/rox/central/processbaseline/evaluator"
 	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -58,6 +59,9 @@ type deploymentScorerImpl struct {
 
 // Score takes a deployment and evaluates its risk
 func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.Deployment, images []*storage.Risk) *storage.Risk {
+	if strings.Contains(deployment.GetName(), "sac-deploymentnginx-qa") {
+		log.Infof("Scoring risk for deployment %q: %+v", deployment.GetName(), deployment)
+	}
 	imageRiskResults := make(map[string][]*storage.Risk_Result)
 	for _, risk := range images {
 		for _, result := range risk.GetResults() {
