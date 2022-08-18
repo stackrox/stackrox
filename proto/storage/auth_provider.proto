@@ -37,12 +37,4 @@ message AuthProvider {
     repeated RequiredAttribute required_attributes = 11;
 
     Traits traits = 12;
-    // EXPERIMENTAL.
-    // visibility allows to specify whether the auth provider should show up when listing the auth providers
-    // during login.
-    enum Visibility {
-        VISIBLE = 0;
-        HIDDEN  = 1;
-    }
-    Visibility visibility = 13;
 }

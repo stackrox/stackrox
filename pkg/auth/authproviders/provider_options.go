@@ -134,9 +134,13 @@ func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
 }
 
 // WithVisibility sets the visibility for the auth provider.
-func WithVisibility(visibility storage.AuthProvider_Visibility) ProviderOption {
+func WithVisibility(visibility storage.Traits_Visibility) ProviderOption {
 	return func(pr *providerImpl) error {
-		pr.storedInfo.Visibility = visibility
+		if pr.storedInfo.GetTraits() != nil {
+			pr.storedInfo.Traits.Visibility = visibility
+		} else {
+			pr.storedInfo.Traits = &storage.Traits{Visibility: visibility}
+		}
 		return nil
 	}
 }

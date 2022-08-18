@@ -47,7 +47,6 @@
       },
       "description": "RequiredAttribute allows to specify a set of attributes which ALL are required to be returned\nby the auth provider.\nIf any attribute is missing within the external claims of the token issued by Central, the\nauthentication request to this IdP is considered failed."
     },
-<<<<<<< HEAD
     "TraitsMutabilityMode": {
       "type": "string",
       "enum": [
@@ -56,16 +55,15 @@
       ],
       "default": "ALLOW_MUTATE",
       "description": "EXPERIMENTAL.\n\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW_MUTATE and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW_MUTATE."
-=======
-    "AuthProviderVisibility": {
+    },
+    "TraitsVisibility": {
       "type": "string",
       "enum": [
         "VISIBLE",
         "HIDDEN"
       ],
       "default": "VISIBLE",
-      "description": "EXPERIMENTAL.\nvisibility allows to specify whether the auth provider should show up when listing the auth providers\nduring login."
->>>>>>> a02a6d618 (Add field visibility, set the basic auth provider to not visible in managed service context.)
+      "description": "EXPERIMENTAL.\nvisibility allows to specify whether the object should be visible for certain APIs."
     },
     "UserInfoResourceToAccess": {
       "type": "object",
@@ -169,18 +167,10 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/AuthProviderRequiredAttribute"
-<<<<<<< HEAD
           }
         },
         "traits": {
           "$ref": "#/definitions/storageTraits"
-=======
-          },
-          "description": "EXPERIMENTAL."
-        },
-        "visibility": {
-          "$ref": "#/definitions/AuthProviderVisibility"
->>>>>>> a02a6d618 (Add field visibility, set the basic auth provider to not visible in managed service context.)
         }
       },
       "title": "Next Tag: 13"
@@ -229,6 +219,9 @@
       "properties": {
         "mutabilityMode": {
           "$ref": "#/definitions/TraitsMutabilityMode"
+        },
+        "visibility": {
+          "$ref": "#/definitions/TraitsVisibility"
         }
       },
       "description": "EXPERIMENTAL."

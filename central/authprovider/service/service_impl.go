@@ -118,7 +118,7 @@ func isLoginAuthProvider(provider authproviders.Provider) bool {
 		return false
 	}
 	// Only auth providers that are visible should be used for login purposes.
-	if view.GetVisibility() != storage.AuthProvider_VISIBLE {
+	if view.GetTraits().GetVisibility() != storage.Traits_VISIBLE {
 		return false
 	}
 	return true
