@@ -88,12 +88,15 @@ compare_with_stored_metrics() {
     mkdir "${baseline_dir}"
     gsutil cp "${baseline_source}" "${baseline_dir}"
     baseline_metrics=$(find "${baseline_dir}" -maxdepth 1 | sort | tail -1)
+    BASELINE="$(basename baseline_metrics)"
+    export BASELINE
 
     this_run_metrics=$(echo "${debug_dump_dir}"/stackrox_debug*.zip)
     info "Comparing with ${this_run_metrics}"
 
     pushd /tmp
-    "${compare_cmd}" "${baseline_metrics}" "${this_run_metrics}" || true
+    "${compare_cmd}" "${baseline_metrics}" "${this_run_metrics}" | tee comparison.txt || true
+    store_as_spyglass_artifact comparison.txt
     popd
 }
 
@@ -109,6 +112,28 @@ store_metrics() {
     prometheus-metric-parser single --file="${debug_dump_dir}"/stackrox_debug/metrics-2 \
         --format=gcp-monitoring --labels='Test=ci-scale-test,ClusterFlavor=gke' \
         --project-id=stackrox-ci --timestamp="$(date -u +"%s")"
+}
+
+store_as_spyglass_artifact() {
+    local comparison_output="$1"
+
+    artifact_file="$ARTIFACT_DIR/scale-comparison-with-baseline.html"
+
+    cat > "$artifact_file" <<- HEAD
+<html>
+    <head>
+        <title><h4>Scale test comparison with baseline: ${BASELINE}</h4></title>
+    </head>
+    <body>
+    <pre>
+HEAD
+
+    cat "$comparison_output" >> "$artifact_file"
+
+    cat >> "$artifact_file" <<- FOOT
+    </pre>
+</html>
+FOOT
 }
 
 scale_test "$@"
