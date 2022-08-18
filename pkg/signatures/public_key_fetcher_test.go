@@ -394,3 +394,24 @@ func TestOptionsFromRegistry(t *testing.T) {
 		})
 	}
 }
+
+func TestIsUnknownMimeTypeError(t *testing.T) {
+	cases := map[string]struct {
+		err         error
+		expectedRes bool
+	}{
+		"should indicate unknown mime type error when error contains unknown mime type": {
+			err:         errors.New("unknown mime type: application/vnd.docker.distribution.manifest.v1+prettyjws"),
+			expectedRes: true,
+		},
+		"should not indicate unknown mime type error when error does not contain unknown mime type": {
+			err: errors.New("some other error"),
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.expectedRes, isUnknownMimeTypeError(c.err))
+		})
+	}
+}
