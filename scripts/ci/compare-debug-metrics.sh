@@ -25,8 +25,6 @@ main() {
         exit 1
     fi
 
-    set -x
-
     baseline="$1"
     to_compare="$2"
     comparison_out="$3"
@@ -35,10 +33,11 @@ main() {
     unzip -o "${to_compare}" -d to_compare
 
     prometheus-metric-parser compare --old-file baseline/metrics-2 --new-file to_compare/metrics-2 \
-        --metrics ${metrics_of_interest} --warn 15 --error 25
-    prometheus-metric-parser compare --old-file baseline/metrics-2 --new-file to_compare/metrics-2 \
         --metrics ${metrics_of_interest} --warn 15 --error 25 \
-        --format=html-table > "${comparison_out}"
+        --format=html-table > "${comparison_out}" || true
+
+    prometheus-metric-parser compare --old-file baseline/metrics-2 --new-file to_compare/metrics-2 \
+        --metrics ${metrics_of_interest} --warn 15 --error
 }
 
 main "$@"

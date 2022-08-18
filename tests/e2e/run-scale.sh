@@ -94,8 +94,7 @@ compare_with_stored_metrics() {
     this_run_metrics=$(echo "${debug_dump_dir}"/stackrox_debug*.zip)
     info "Comparing with ${this_run_metrics}"
 
-    set -x
-    local comparison_output="/tmp/comparison.html"
+    local comparison_output="comparison.html"
     pushd /tmp
     "${compare_cmd}" "${baseline_metrics}" "${this_run_metrics}" "${comparison_output}" || true
     store_as_spyglass_artifact "${comparison_output}"
