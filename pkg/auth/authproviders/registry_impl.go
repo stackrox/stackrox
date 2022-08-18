@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log          = logging.LoggerForModule()
+	_   Registry = (*registryImpl)(nil)
 )
 
 // NewStoreBackedRegistry creates a new auth provider registry that is backed by a store. It also can handle HTTP requests,
@@ -201,11 +202,11 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	return provider, nil
 }
 
-func (r *registryImpl) DeleteProvider(ctx context.Context, id string, ignoreActive bool) error {
+func (r *registryImpl) DeleteProvider(ctx context.Context, providerID string, force bool, ignoreActive bool) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	provider := r.providers[id]
+	provider := r.providers[providerID]
 	if provider == nil {
 		return nil
 	}
@@ -214,10 +215,10 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, id string, ignoreActi
 		return errors.New("cannot update an auth provider once it has been used. Please delete and then re-add to modify")
 	}
 
-	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store), UnregisterSource(r.issuerFactory)); err != nil {
+	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store, providerID, force), UnregisterSource(r.issuerFactory)); err != nil {
 		return err
 	}
-	delete(r.providers, id)
+	delete(r.providers, providerID)
 	r.deletedNoLock(provider)
 	return nil
 }

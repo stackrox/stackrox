@@ -70,7 +70,7 @@ func RegisterAuthProviderOrPanic(ctx context.Context, mgr *basicAuthn.Manager, r
 	typ := basicAuthProvider.TypeName
 	existingBasicAuthProviders := registry.GetProviders(nil, &typ)
 	for _, provider := range existingBasicAuthProviders {
-		if err := registry.DeleteProvider(ctx, provider.ID(), true); err != nil {
+		if err := registry.DeleteProvider(ctx, provider.ID(), true, true); err != nil {
 			log.Panicf("Could not delete existing basic auth provider %s: %v", provider.Name(), err)
 		}
 	}

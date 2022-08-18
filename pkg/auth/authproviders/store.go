@@ -12,5 +12,5 @@ type Store interface {
 
 	AddAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error
 	UpdateAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error
-	RemoveAuthProvider(ctx context.Context, id string) error
+	RemoveAuthProvider(ctx context.Context, id string, force bool) error
 }

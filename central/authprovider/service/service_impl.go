@@ -66,7 +66,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// GetAuthProvider retrieves the authProvider based on the id passed
+// GetAuthProvider retrieves the authProvider based on the id passed.
 func (s *serviceImpl) GetAuthProvider(_ context.Context, request *v1.GetAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
@@ -78,7 +78,7 @@ func (s *serviceImpl) GetAuthProvider(_ context.Context, request *v1.GetAuthProv
 	return authProvider.StorageView(), nil
 }
 
-// GetLoginAuthProviders retrieves all authProviders that matches the request filters
+// GetLoginAuthProviders retrieves all authProviders that matches the request filters.
 func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1.GetLoginAuthProvidersResponse, error) {
 	authProviders := s.registry.GetProviders(nil, nil)
 	result := make([]*v1.GetLoginAuthProvidersResponse_LoginAuthProvider, 0, len(authProviders))
@@ -132,7 +132,7 @@ func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty)
 	}, nil
 }
 
-// GetAuthProviders retrieves all authProviders that matches the request filters
+// GetAuthProviders retrieves all authProviders that matches the request filters.
 func (s *serviceImpl) GetAuthProviders(_ context.Context, request *v1.GetAuthProvidersRequest) (*v1.GetAuthProvidersResponse, error) {
 	var name, typ *string
 	if request.GetName() != "" {
@@ -159,7 +159,7 @@ func (s *serviceImpl) GetAuthProviders(_ context.Context, request *v1.GetAuthPro
 	return &v1.GetAuthProvidersResponse{AuthProviders: result}, nil
 }
 
-// PostAuthProvider inserts a new auth provider into the system
+// PostAuthProvider inserts a new auth provider into the system.
 func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuthProviderRequest) (*storage.AuthProvider, error) {
 	providerReq := request.GetProvider()
 	if providerReq.GetName() == "" {
@@ -180,6 +180,7 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	return provider.StorageView(), nil
 }
 
+// PutAuthProvider upserts an auth provider into the system.
 func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.AuthProvider) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
@@ -197,8 +198,8 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
 	}
 
-	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it
-	if err := s.registry.DeleteProvider(ctx, request.GetId(), false); err != nil {
+	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it.
+	if err := s.registry.DeleteProvider(ctx, request.GetId(), false, false); err != nil {
 		return nil, err
 	}
 
@@ -211,11 +212,11 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 	return provider.StorageView(), nil
 }
 
+// UpdateAuthProvider updates an auth provider within the system.
 func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.UpdateAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
-
 	var options []authproviders.ProviderOption
 	if nameOpt, ok := request.GetNameOpt().(*v1.UpdateAuthProviderRequest_Name); ok {
 		options = append(options, authproviders.WithName(nameOpt.Name))
@@ -231,7 +232,7 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 }
 
 // DeleteAuthProvider deletes an auth provider from the system
-func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
+func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.DeleteByIDWithForce) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
@@ -242,7 +243,7 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Resour
 		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
 	}
 	// Delete auth provider.
-	if err := s.registry.DeleteProvider(ctx, request.GetId(), true); err != nil {
+	if err := s.registry.DeleteProvider(ctx, request.GetId(), request.GetForce(), true); err != nil {
 		return nil, err
 	}
 	// Delete groups for auth provider.
@@ -252,6 +253,7 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Resour
 	return &v1.Empty{}, nil
 }
 
+// ExchangeToken exchanges a token from an auth provider from the system.
 func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTokenRequest) (*v1.ExchangeTokenResponse, error) {
 	provider, err := s.registry.ResolveProvider(request.GetType(), request.GetState())
 	if err != nil {

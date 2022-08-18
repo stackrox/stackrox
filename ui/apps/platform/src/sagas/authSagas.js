@@ -282,7 +282,10 @@ function* saveAuthProvider(action) {
             yield call(fetchUsersAttributes);
             yield put(actions.selectAuthProvider({ ...remaining, id: savedAuthProvider.data.id }));
         } else {
-            yield call(AuthService.saveAuthProvider, remaining);
+            const isImmutable = yield call(AuthService.getIsAuthProviderImmutable, remaining);
+            if (!remaining.active && !isImmutable) {
+                yield call(AuthService.saveAuthProvider, remaining);
+            }
             yield call(getAuthProviders);
             yield call(fetchUsersAttributes);
             yield put(groupActions.saveRuleGroup(filteredGroups, defaultRole, authProvider.id));

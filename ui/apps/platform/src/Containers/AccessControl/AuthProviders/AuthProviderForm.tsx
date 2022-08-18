@@ -28,7 +28,7 @@ import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 
-import { AuthProvider } from 'services/AuthService';
+import { AuthProvider, getIsAuthProviderImmutable } from 'services/AuthService';
 import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups, { RuleGroupErrors } from './RuleGroups';
 import {
@@ -314,7 +314,8 @@ function AuthProviderForm({
                                             isDisabled={action === 'edit'}
                                             isSmall
                                         >
-                                            {selectedAuthProvider.active
+                                            {selectedAuthProvider.active ||
+                                            getIsAuthProviderImmutable(selectedAuthProvider)
                                                 ? 'Edit minimum role and rules'
                                                 : 'Edit auth provider'}
                                         </Button>
@@ -357,6 +358,18 @@ function AuthProviderForm({
                     }
                 />
             )}
+            {getIsAuthProviderImmutable(selectedAuthProvider) && (
+                <Alert
+                    isInline
+                    variant="warning"
+                    title={
+                        <span>
+                            This auth provider is immutable. You can only edit the minimum role and
+                            rules.
+                        </span>
+                    }
+                />
+            )}
             <FormikProvider value={formik}>
                 <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
                     <Grid hasGutter>
@@ -375,7 +388,11 @@ function AuthProviderForm({
                                     id="name"
                                     value={values.name}
                                     onChange={onChange}
-                                    isDisabled={isViewing || values.active}
+                                    isDisabled={
+                                        isViewing ||
+                                        values.active ||
+                                        getIsAuthProviderImmutable(values)
+                                    }
                                     isRequired
                                     onBlur={handleBlur}
                                     validated={
@@ -411,7 +428,7 @@ function AuthProviderForm({
                             onBlur={handleBlur}
                             configErrors={errors.config}
                             configTouched={touched.config}
-                            disabled={values.active}
+                            disabled={values.active || getIsAuthProviderImmutable(values)}
                         />
                     </Grid>
                 </FormSection>

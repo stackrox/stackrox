@@ -73,7 +73,14 @@ export type AuthProvider = {
     groups?: Group[];
     defaultRole?: string;
     requiredAttributes: AuthProviderRequiredAttributes[];
+    traits?: Traits;
 };
+
+export type Traits = {
+    mutabilityMode: MutabilityMode;
+};
+
+export type MutabilityMode = 'ALLOW_MUTATE' | 'ALLOW_MUTATE_FORCED';
 
 export type AuthProviderInfo = {
     label: string;
@@ -147,7 +154,7 @@ export function updateAuthProvider(authProvider: AuthProvider): Promise<AuthProv
  * Saves auth provider either by creating a new one (in case ID is missed) or by updating existing one by ID.
  */
 export function saveAuthProvider(authProvider: AuthProvider): string | Promise<AuthProvider> {
-    if (authProvider.active) {
+    if (authProvider.active || getIsAuthProviderImmutable(authProvider)) {
         return authProvider.id;
     }
     return authProvider.id
@@ -397,4 +404,15 @@ export function addAuthInterceptors(authHttpErrorHandler): void {
     });
 
     interceptorsAdded = true;
+}
+
+/**
+ * Verifies whether the auth provider is immutable based on the traits property is set.
+ * An auth provider is immutable if traits is undefined or is set to anything other than 'ALLOW_MUTATE'.
+ *
+ * @param {AuthProvider} authProvider auth provider to check.
+ * @return {boolean} indicating whether the auth provider is immutable.
+ */
+export function getIsAuthProviderImmutable(authProvider: AuthProvider): boolean {
+    return 'traits' in authProvider && authProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE';
 }

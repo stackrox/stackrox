@@ -397,6 +397,8 @@ func generateAuthResponse(user string, userAttr map[string][]string) *AuthRespon
 	}
 }
 
+var _ Store = (*tstAuthProviderStore)(nil)
+
 // Authprovider store (needed for NewStoreBackedRegistry)
 type tstAuthProviderStore struct{}
 
@@ -412,7 +414,7 @@ func (*tstAuthProviderStore) UpdateAuthProvider(_ context.Context, _ *storage.Au
 	return nil
 }
 
-func (*tstAuthProviderStore) RemoveAuthProvider(_ context.Context, _ string) error {
+func (*tstAuthProviderStore) RemoveAuthProvider(_ context.Context, _ string, _ bool) error {
 	return nil
 }
 
