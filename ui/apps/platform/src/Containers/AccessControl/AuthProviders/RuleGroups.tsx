@@ -58,7 +58,13 @@ function RuleGroups({
     const augmentedRuleKeys = getAugmentedRuleKeys(ruleAttributes, groups);
 
     function isDisabled(group: Group) {
-        return disabled || group?.props?.traits?.mutabilityMode !== 'ALLOW_MUTATE';
+        return (
+            disabled ||
+            (group &&
+                'props' in group &&
+                'traits' in group.props &&
+                group?.props?.traits?.mutabilityMode !== 'ALLOW_MUTATE')
+        );
     }
 
     return (
