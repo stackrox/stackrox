@@ -54,7 +54,7 @@ run_scale_test() {
 
     mkdir -p "${pprof_dir}"
     # 45 min run so that we are confident that the run has completely finished.
-    "$ROOT/scale/profiler/pprof.sh" "${pprof_dir}" "${API_ENDPOINT}" 45
+    "$ROOT/scale/profiler/pprof.sh" "${pprof_dir}" "${API_ENDPOINT}" 10
     zip -r "${pprof_zip_output}" "${pprof_dir}"
 
     local debug_dump_dir="/tmp/scale-test-debug-dump"
