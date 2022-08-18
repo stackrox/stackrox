@@ -63,10 +63,7 @@ func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (
 		return nil, err
 	}
 	vuln, err := vulnLoader.FromID(ctx, string(*args.ID))
-	if err != nil {
-		return nil, err
-	}
-	vulnResolver, err := resolver.wrapNodeCVE(vuln, true, nil)
+	vulnResolver, err := resolver.wrapNodeCVE(vuln, true, err)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +311,7 @@ func (resolver *nodeCVEResolver) FixedByVersion(_ context.Context) (string, erro
 }
 
 // IsFixable returns whether node CVE is fixable by any component
-func (resolver *nodeCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
+func (resolver *nodeCVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "IsFixable")
 
 	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID))
@@ -332,11 +329,11 @@ func (resolver *nodeCVEResolver) IsFixable(ctx context.Context, args RawQuery) (
 	}
 
 	query = search.ConjunctionQuery(conjuncts...)
-	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
+	vulnLoader, err := loaders.GetNodeCVELoader(resolver.ctx)
 	if err != nil {
 		return false, err
 	}
-	count, err := vulnLoader.CountFromQuery(ctx, query)
+	count, err := vulnLoader.CountFromQuery(resolver.ctx, query)
 	if err != nil {
 		return false, err
 	}
