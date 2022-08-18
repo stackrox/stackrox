@@ -25,6 +25,8 @@ main() {
         exit 1
     fi
 
+    set -x
+
     baseline="$1"
     to_compare="$2"
     comparison_out="$3"
