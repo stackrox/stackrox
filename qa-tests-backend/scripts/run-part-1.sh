@@ -48,7 +48,6 @@ run_tests_part_1() {
 
     store_qa_test_results "part-1-tests"
     [[ ! -f FAIL ]] || die "SAC test failed"
-    store_qa_test_results "part-1-tests"
 }
 
 test_part_1
