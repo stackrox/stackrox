@@ -72,10 +72,11 @@ func migratePS(db *gorocksdb.DB) error {
 
 func deleteAuthPluginBucket(db *bbolt.DB) error {
 	return db.Update(func(tx *bbolt.Tx) error {
-		if err := tx.DeleteBucket(authPluginBucket); err != nil && !errors.Is(err, bbolt.ErrBucketNotFound) {
-			return err
+		if b := tx.Bucket(authPluginBucket); b == nil {
+			// nothing to be done if the bucket doesn't exist
+			return nil
 		}
-		return nil
+		return tx.DeleteBucket(authPluginBucket)
 	})
 }
 
