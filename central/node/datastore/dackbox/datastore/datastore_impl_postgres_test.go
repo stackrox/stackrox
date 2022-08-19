@@ -269,7 +269,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByVuln() {
 
 	// Search by CVE.
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
-		ID:    cve.ID("cve1", ""),
+		ID:    cve.ID("cve1", "ubuntu"),
 		Level: v1.SearchCategory_NODE_VULNERABILITIES,
 	})
 	results, err := suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -277,7 +277,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByVuln() {
 	suite.Len(results, 2)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    cve.ID("cve3", ""),
+		ID:    cve.ID("cve3", "ubuntu"),
 		Level: v1.SearchCategory_NODE_VULNERABILITIES,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -286,7 +286,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByVuln() {
 	suite.Equal("id2", results[0].ID)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    cve.ID("cve4", ""),
+		ID:    cve.ID("cve4", "ubuntu"),
 		Level: v1.SearchCategory_NODE_VULNERABILITIES,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -297,7 +297,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByVuln() {
 
 	// Ensure search does not find anything.
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    cve.ID("cve1", ""),
+		ID:    cve.ID("cve1", "ubuntu"),
 		Level: v1.SearchCategory_NODE_VULNERABILITIES,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -305,7 +305,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByVuln() {
 	suite.Empty(results)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    cve.ID("cve3", ""),
+		ID:    cve.ID("cve3", "ubuntu"),
 		Level: v1.SearchCategory_NODE_VULNERABILITIES,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -326,7 +326,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByComponent() {
 
 	// Search by Component.
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp1", "ver1", ""),
+		ID:    scancomponent.ComponentID("comp1", "ver1", "ubuntu"),
 		Level: v1.SearchCategory_NODE_COMPONENTS,
 	})
 	results, err := suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -334,7 +334,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByComponent() {
 	suite.Len(results, 2)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp3", "ver1", ""),
+		ID:    scancomponent.ComponentID("comp3", "ver1", "ubuntu"),
 		Level: v1.SearchCategory_NODE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -343,7 +343,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByComponent() {
 	suite.Equal("id2", results[0].ID)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp4", "ver1", ""),
+		ID:    scancomponent.ComponentID("comp4", "ver1", "ubuntu"),
 		Level: v1.SearchCategory_NODE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -354,7 +354,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByComponent() {
 
 	// Ensure search does not find anything.
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp1", "ver1", ""),
+		ID:    scancomponent.ComponentID("comp1", "ver1", "ubuntu"),
 		Level: v1.SearchCategory_NODE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -362,7 +362,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByComponent() {
 	suite.Empty(results)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp3", "ver1", ""),
+		ID:    scancomponent.ComponentID("comp3", "ver1", "ubuntu"),
 		Level: v1.SearchCategory_NODE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -618,7 +618,8 @@ func getTestNodeForPostgres(id, name string) *storage.Node {
 		Name:      name,
 		ClusterId: id,
 		Scan: &storage.NodeScan{
-			ScanTime: types.TimestampNow(),
+			ScanTime:        types.TimestampNow(),
+			OperatingSystem: "ubuntu",
 			Components: []*storage.EmbeddedNodeScanComponent{
 				{
 					Name:            "comp1",
