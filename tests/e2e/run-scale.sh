@@ -80,6 +80,7 @@ compare_with_stored_metrics() {
     local baseline_source
     local baseline_dir="/tmp/scale-test-baseline-metrics"
     local baseline_metrics
+    local baseline_metrics_basename
     local this_run_metrics
     local compare_cmd="${PWD}/scripts/ci/compare-debug-metrics.sh"
     local comparison_output="comparison.html"
@@ -90,8 +91,7 @@ compare_with_stored_metrics() {
     mkdir -p "${baseline_dir}"
     gsutil cp "${baseline_source}" "${baseline_dir}"
     baseline_metrics=$(find "${baseline_dir}" -maxdepth 1 | sort | tail -1)
-    BASELINE="$(basename "${baseline_metrics}")"
-    export BASELINE
+    baseline_metrics_basename="$(basename "${baseline_metrics}")"
 
     this_run_metrics=$(echo "${debug_dump_dir}"/stackrox_debug*.zip)
 
@@ -103,7 +103,7 @@ compare_with_stored_metrics() {
     # error threshold. At present that is not sufficient to fail the entire
     # scale-test so we ignore it with || true.
     "${compare_cmd}" "${baseline_metrics}" "${this_run_metrics}" "${comparison_output}" || true
-    store_as_spyglass_artifact "${comparison_output}"
+    store_as_spyglass_artifact "${comparison_output}" "${baseline_metrics_basename}"
     popd
 }
 
@@ -123,13 +123,14 @@ store_metrics() {
 
 store_as_spyglass_artifact() {
     local comparison_output="$1"
+    local metrics_name="$2"
 
     artifact_file="$ARTIFACT_DIR/scale-comparison-with-baseline-summary.html"
 
     cat > "$artifact_file" <<- HEAD
 <html>
     <head>
-        <title><h4>Scale test comparison with baseline: ${BASELINE}</h4></title>
+        <title><h4>Scale test comparison with baseline: ${metrics_name}</h4></title>
     </head>
     <body>
     <pre style="background: #fff;">
