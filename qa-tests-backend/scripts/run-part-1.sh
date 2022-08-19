@@ -44,12 +44,10 @@ run_tests_part_1() {
 
     info "Running SAC tests 100 times, exiting on the first failure found"
 
-    for i in {1..100}
-    do
-      info "SAC test count: ${i}"
-      make -C qa-tests-backend sac-test || touch FAIL
-      [[ ! f FAIL ]] || store_qa_test_results "part-1-tests" && die "SAC test failed"
-    done
+    make -C qa-tests-backend sac-test || touch FAIL
+
+    store_qa_test_results "part-1-tests"
+    [[ ! -f FAIL ]] || die "SAC test failed"
     store_qa_test_results "part-1-tests"
 }
 
