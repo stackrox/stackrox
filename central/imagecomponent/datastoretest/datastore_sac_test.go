@@ -273,8 +273,8 @@ var (
 		},
 	}
 
-	node1OS              = fixtures.GetScopedNode1("dummyNodeID", testconsts.Cluster1).GetOperatingSystem()
-	node2OS              = fixtures.GetScopedNode1("dummyNodeID", testconsts.Cluster2).GetOperatingSystem()
+	node1OS              = fixtures.GetScopedNode1("dummyNodeID", testconsts.Cluster1).GetScan().GetOperatingSystem()
+	node2OS              = fixtures.GetScopedNode1("dummyNodeID", testconsts.Cluster2).GetScan().GetOperatingSystem()
 	nodeComponent1x1     = fixtures.GetEmbeddedNodeComponent1x1()
 	nodeComponent1x2     = fixtures.GetEmbeddedNodeComponent1x2()
 	nodeComponent1s2x3   = fixtures.GetEmbeddedNodeComponent1s2x3()
