@@ -11,32 +11,7 @@ import {
     visitPolicies,
     visitPoliciesFromLeftNav,
 } from '../../helpers/policiesPatternFly';
-import { visit } from '../../helpers/visit';
 import navSelectors from '../../selectors/navigation';
-
-describe('Policy Management URL redirect', () => {
-    withAuth();
-
-    it('should redirect old policies URL to new policy management URL', () => {
-        cy.intercept('GET', `${api.policies.policies}?query=`).as('policies');
-        visit('/main/policies');
-        cy.wait('@policies');
-
-        cy.location('pathname').should('eq', url);
-    });
-
-    it('should redirect old policies URL to new policy management URL with params', () => {
-        visitPolicies();
-        cy.get(`${selectors.table.policyLink}:first`).click();
-        cy.location('pathname').then((pathname) => {
-            const policyId = pathname.split('/').pop();
-            cy.intercept('GET', api.policies.policy).as('policies/id');
-            visit(`/main/policies/${policyId}`);
-            cy.wait('@policies/id');
-            cy.location('pathname').should('eq', `${url}/${policyId}`);
-        });
-    });
-});
 
 describe('Policies table', () => {
     withAuth();
