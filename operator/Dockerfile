@@ -2,7 +2,7 @@
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 
 # Note: the following version needs to be in sync with the ../EXPECTED_GO_VERSION file.
-FROM golang:1.17.2 as builder
+FROM golang:1.17.12 as builder
 
 # Build the manager binary
 ARG roxpath
