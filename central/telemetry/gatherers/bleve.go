@@ -3,7 +3,7 @@ package gatherers
 import (
 	"errors"
 
-	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/v2"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 

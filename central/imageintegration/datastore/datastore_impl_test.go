@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	index2 "github.com/stackrox/rox/central/imageintegration/index"

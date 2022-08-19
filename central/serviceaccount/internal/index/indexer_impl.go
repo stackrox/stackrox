@@ -4,7 +4,7 @@ package index
 
 import (
 	"bytes"
-	bleve "github.com/blevesearch/bleve"
+	bleve "github.com/blevesearch/bleve/v2"
 	metrics "github.com/stackrox/rox/central/metrics"
 	mappings "github.com/stackrox/rox/central/serviceaccount/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"

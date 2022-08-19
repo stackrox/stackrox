@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/v2"
 	"github.com/stackrox/rox/central/globalindex"
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"

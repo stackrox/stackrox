@@ -3,7 +3,7 @@ package index
 import (
 	"testing"
 
-	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/v2"
 	"github.com/stackrox/rox/central/activecomponent/converter"
 	"github.com/stackrox/rox/central/activecomponent/dackbox"
 	"github.com/stackrox/rox/central/globalindex"

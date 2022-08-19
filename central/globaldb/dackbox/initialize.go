@@ -3,7 +3,7 @@ package dackbox
 import (
 	"bytes"
 
-	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/v2"
 	"github.com/pkg/errors"
 	activeComponentDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"

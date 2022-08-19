@@ -4,7 +4,7 @@ import (
 	"context"
 	"math"
 
-	bleveSearchLib "github.com/blevesearch/bleve/search"
+	bleveSearchLib "github.com/blevesearch/bleve/v2/search"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

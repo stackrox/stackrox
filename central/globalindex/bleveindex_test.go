@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	bleveMapping "github.com/blevesearch/bleve/mapping"
+	bleveMapping "github.com/blevesearch/bleve/v2/mapping"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"

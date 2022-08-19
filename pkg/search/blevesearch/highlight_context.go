@@ -1,8 +1,8 @@
 package blevesearch
 
 import (
-	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/search"
+	"github.com/blevesearch/bleve/v2"
+	"github.com/blevesearch/bleve/v2/search"
 )
 
 const (

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/v2"
 	"github.com/jackc/pgx/v4/pgxpool"
 	clusterIndex "github.com/stackrox/rox/central/cluster/index"
 	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"

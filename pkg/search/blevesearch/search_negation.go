@@ -4,11 +4,10 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/blevesearch/bleve/document"
-	"github.com/blevesearch/bleve/index"
-	"github.com/blevesearch/bleve/search"
-	"github.com/blevesearch/bleve/search/scorer"
-	"github.com/blevesearch/bleve/size"
+	"github.com/blevesearch/bleve/v2/search"
+	"github.com/blevesearch/bleve/v2/search/scorer"
+	"github.com/blevesearch/bleve/v2/size"
+	index "github.com/blevesearch/bleve_index_api"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
 )
@@ -138,7 +137,7 @@ func (s *NegationSearcher) SetQueryNorm(qnorm float64) {
 	s.typeSearcher.SetQueryNorm(qnorm)
 }
 
-func (s *NegationSearcher) getDocumentFromReader(id index.IndexInternalID) (*document.Document, error) {
+func (s *NegationSearcher) getDocumentFromReader(id index.IndexInternalID) (index.Document, error) {
 	eid, err := s.indexReader.ExternalID(id)
 	if err != nil {
 		return nil, err
@@ -148,7 +147,7 @@ func (s *NegationSearcher) getDocumentFromReader(id index.IndexInternalID) (*doc
 
 type fieldRef struct {
 	name               string
-	fields             []document.Field
+	fields             []index.Field
 	fieldTermLocations []search.FieldTermLocation
 }
 
@@ -198,13 +197,13 @@ func (s *NegationSearcher) shouldExclude(dm *search.DocumentMatch) ([]search.Fie
 		fieldRefMap[ftl.Field].fieldTermLocations = append(fieldRefMap[ftl.Field].fieldTermLocations, ftl)
 	}
 
-	for _, field := range internalDoc.Fields {
+	internalDoc.VisitFields(func(field index.Field) {
 		ref := fieldRefMap[field.Name()]
 		if ref == nil {
-			continue
+			return
 		}
 		ref.fields = append(ref.fields, field)
-	}
+	})
 
 	completeMatch := true
 	var fieldTermLocations []search.FieldTermLocation
@@ -217,7 +216,7 @@ func (s *NegationSearcher) shouldExclude(dm *search.DocumentMatch) ([]search.Fie
 	return fieldTermLocations, completeMatch, nil
 }
 
-func fieldToFieldTermLocation(field document.Field) search.FieldTermLocation {
+func fieldToFieldTermLocation(field index.Field) search.FieldTermLocation {
 	return search.FieldTermLocation{
 		Term:  defaultTerm,
 		Field: field.Name(),
@@ -232,11 +231,11 @@ func (s *NegationSearcher) convertFieldsToFieldToLocations(id index.IndexInterna
 	if err != nil {
 		return nil, err
 	}
-
-	newFieldTermLocations := make([]search.FieldTermLocation, 0, len(doc.Fields))
-	for _, field := range doc.Fields {
+	var newFieldTermLocations []search.FieldTermLocation
+	doc.VisitFields(func(field index.Field) {
 		newFieldTermLocations = append(newFieldTermLocations, fieldToFieldTermLocation(field))
-	}
+
+	})
 	return newFieldTermLocations, nil
 }
 

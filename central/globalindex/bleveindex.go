@@ -3,18 +3,16 @@ package globalindex
 import (
 	"bytes"
 	"encoding/json"
-	"math"
 	"os"
 	"path/filepath"
 	"reflect"
 
-	"github.com/blevesearch/bleve"
-	_ "github.com/blevesearch/bleve/analysis/analyzer/keyword"  // Import the keyword analyzer so that it can be referred to from proto files
-	_ "github.com/blevesearch/bleve/analysis/analyzer/standard" // Import the standard analyzer so that it can be referred to from proto files
-	"github.com/blevesearch/bleve/index/scorch"
-	"github.com/blevesearch/bleve/index/store/moss"
-	"github.com/blevesearch/bleve/index/upsidedown"
-	bleveMapping "github.com/blevesearch/bleve/mapping"
+	"github.com/blevesearch/bleve/v2"
+	_ "github.com/blevesearch/bleve/v2/analysis/analyzer/keyword"  // Import the keyword analyzer so that it can be referred to from proto files
+	_ "github.com/blevesearch/bleve/v2/analysis/analyzer/standard" // Import the standard analyzer so that it can be referred to from proto files
+	"github.com/blevesearch/bleve/v2/index/scorch"
+	"github.com/blevesearch/bleve/v2/index/upsidedown"
+	bleveMapping "github.com/blevesearch/bleve/v2/mapping"
 	complianceMapping "github.com/stackrox/rox/central/compliance/search"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -69,17 +67,9 @@ func TempInitializeIndices(scorchPath string) (bleve.Index, error) {
 	return initializeIndices(filepath.Join(tmpDir, scorchPath), EphemeralIndex, "")
 }
 
-func kvConfigForMoss() map[string]interface{} {
-	return map[string]interface{}{
-		"mossCollectionOptions": map[string]interface{}{
-			"MaxPreMergerBatches": math.MaxInt32,
-		},
-	}
-}
-
 // MemOnlyIndex returns a temporary mem-only index.
 func MemOnlyIndex() (bleve.Index, error) {
-	return bleve.NewUsing("", mapping.GetIndexMapping(), upsidedown.Name, moss.Name, kvConfigForMoss())
+	return bleve.NewUsing("", mapping.GetIndexMapping(), upsidedown.Name, upsidedown.Name, nil)
 }
 
 // InitializeIndices initializes the index in the specified path.

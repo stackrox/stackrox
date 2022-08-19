@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/v2"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/central/globalindex"

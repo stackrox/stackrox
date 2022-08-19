@@ -3,7 +3,7 @@
 package index
 
 import (
-	bleve "github.com/blevesearch/bleve"
+	bleve "github.com/blevesearch/bleve/v2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
