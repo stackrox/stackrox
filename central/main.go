@@ -777,9 +777,13 @@ type stoppableWithName struct {
 
 func waitForTerminationSignal() {
 	signalsC := make(chan os.Signal, 1)
-	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGUSR1)
 	sig := <-signalsC
 	log.Infof("Caught %s signal", sig)
+	if sig == syscall.SIGUSR1 {
+		log.Infof("Exiting immediately")
+		os.Exit(0)
+	}
 
 	stoppables := []stoppableWithName{
 		{reprocessor.Singleton(), "reprocessor loop"},

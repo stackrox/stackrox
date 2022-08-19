@@ -50,6 +50,9 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     rpm -i --nodeps /tmp/postgres-libs.rpm && \
     rpm -i --nodeps /tmp/postgres.rpm && \
     microdnf install lz4 bzip2 util-linux && \
+    rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm && \
+    microdnf upgrade && \
+    microdnf install gperftools-libs && \
     microdnf clean all && \
     rm /tmp/snappy.rpm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
