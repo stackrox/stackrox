@@ -1079,7 +1079,6 @@ func GetScopedNode1(nodeID string, clusterID string) *storage.Node {
 			Version: "20.10.10",
 		},
 		KernelVersion:    "",
-		OperatingSystem:  "Docker Desktop",
 		OsImage:          "",
 		KubeletVersion:   "",
 		KubeProxyVersion: "",
