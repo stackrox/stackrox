@@ -181,7 +181,8 @@ replace (
 	// (https://github.com/theupdateframework/go-tuf/security/advisories/GHSA-66x3-6cw3-v5gj).
 	// Once the upstream patches and release has landed, we can remove this replace directive.
 	github.com/sigstore/sigstore => github.com/sigstore/sigstore v1.2.1-0.20220528141235-6d98e7d59dee
-	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
+	github.com/tecbot/gorocksdb => github.com/connorgorman/gorocksdb v0.0.0-20220818232729-0d31db8336fd
+
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 	// Our fork has a change exposing a method to do generic POST requests
 	// against the OAuth server in order to realize the refresh token flow.
