@@ -134,3 +134,11 @@ func (suite *psMigrationTestSuite) TestMigration() {
 		return nil
 	}))
 }
+
+func (suite *psMigrationTestSuite) TestMigrationOnCleanDB() {
+	dbs := &types.Databases{
+		BoltDB:  suite.boltdb,
+		RocksDB: suite.db.DB,
+	}
+	suite.NoError(migration.Run(dbs))
+}
