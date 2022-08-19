@@ -11,9 +11,7 @@ import {
     clustersPathWithParam,
     clustersListPath,
     integrationsPath,
-    policiesPath,
     policyManagementBasePath,
-    deprecatedPoliciesPath,
     riskPath,
     searchPath,
     apidocsPath,
@@ -122,7 +120,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={compliancePath} component={AsyncCompliancePage} />
                     <Route path={integrationsPath} component={AsyncIntegrationsPage} />
                     <Route path={policyManagementBasePath} component={AsyncPolicyManagementPage} />
-                    <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
                     <Route path={riskPath} component={AsyncRiskPage} />
                     <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
                     {isSearchPageEnabled && <Route path={searchPath} component={AsyncSearchPage} />}
