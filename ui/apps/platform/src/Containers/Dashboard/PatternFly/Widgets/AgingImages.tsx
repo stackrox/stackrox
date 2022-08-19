@@ -32,7 +32,7 @@ import AgingImagesChart, {
 } from './AgingImagesChart';
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
-import OptionsDropdown from './OptionsDropdown';
+import WidgetOptionsMenu from './WidgetOptionsMenu';
 
 export const imageCountQuery = gql`
     query agingImagesQuery($query0: String, $query1: String, $query2: String, $query3: String) {
@@ -205,51 +205,54 @@ function AgingImages() {
                         </Title>
                     </FlexItem>
                     <FlexItem>
-                        <OptionsDropdown toggleId={`${fieldIdPrefix}-options-dropdown`}>
-                            <Form className="pf-u-px-md pf-u-py-sm">
-                                <FormGroup
-                                    fieldId={`${fieldIdPrefix}-time-range-0`}
-                                    label="Image age values"
-                                >
-                                    {timeRangeTupleIndices.map((index) => (
-                                        <div key={index}>
-                                            <Checkbox
-                                                aria-label="Toggle image time range"
-                                                id={`${fieldIdPrefix}-time-range-${index}`}
-                                                name={`${fieldIdPrefix}-time-range-${index}`}
-                                                className="pf-u-mb-sm pf-u-display-flex pf-u-align-items-center"
-                                                isChecked={timeRanges[index].enabled}
-                                                onChange={() => dispatch({ type: 'toggle', index })}
-                                                label={
-                                                    <TextInput
-                                                        aria-label="Image age in days"
-                                                        style={{ minWidth: '120px' }}
-                                                        onChange={async (val) => {
-                                                            const value = parseInt(val, 10);
-                                                            if (!(value >= maxTimeRange)) {
-                                                                await dispatch({
-                                                                    type: 'update',
-                                                                    index,
-                                                                    value,
-                                                                });
+                        <WidgetOptionsMenu
+                            bodyContent={
+                                <Form>
+                                    <FormGroup
+                                        fieldId={`${fieldIdPrefix}-time-range-0`}
+                                        label="Image age values"
+                                    >
+                                        {timeRangeTupleIndices.map((index) => (
+                                            <div key={index}>
+                                                <Checkbox
+                                                    aria-label="Toggle image time range"
+                                                    id={`${fieldIdPrefix}-time-range-${index}`}
+                                                    name={`${fieldIdPrefix}-time-range-${index}`}
+                                                    className="pf-u-mb-sm pf-u-display-flex pf-u-align-items-center"
+                                                    isChecked={timeRanges[index].enabled}
+                                                    onChange={() =>
+                                                        dispatch({ type: 'toggle', index })
+                                                    }
+                                                    label={
+                                                        <TextInput
+                                                            aria-label="Image age in days"
+                                                            onChange={async (val) => {
+                                                                const value = parseInt(val, 10);
+                                                                if (!(value >= maxTimeRange)) {
+                                                                    await dispatch({
+                                                                        type: 'update',
+                                                                        index,
+                                                                        value,
+                                                                    });
+                                                                }
+                                                            }}
+                                                            validated={
+                                                                isNumberInRange(timeRanges, index)
+                                                                    ? ValidatedOptions.default
+                                                                    : ValidatedOptions.error
                                                             }
-                                                        }}
-                                                        validated={
-                                                            isNumberInRange(timeRanges, index)
-                                                                ? ValidatedOptions.default
-                                                                : ValidatedOptions.error
-                                                        }
-                                                        max={maxTimeRange}
-                                                        type="number"
-                                                        value={timeRanges[index].value}
-                                                    />
-                                                }
-                                            />
-                                        </div>
-                                    ))}
-                                </FormGroup>
-                            </Form>
-                        </OptionsDropdown>
+                                                            max={maxTimeRange}
+                                                            type="number"
+                                                            value={timeRanges[index].value}
+                                                        />
+                                                    }
+                                                />
+                                            </div>
+                                        ))}
+                                    </FormGroup>
+                                </Form>
+                            }
+                        />
                         <Button
                             variant="secondary"
                             component={LinkShim}

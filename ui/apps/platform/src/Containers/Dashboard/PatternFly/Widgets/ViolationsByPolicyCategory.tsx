@@ -20,7 +20,7 @@ import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 import NoDataEmptyState from './NoDataEmptyState';
 import ViolationsByPolicyCategoryChart, { Config } from './ViolationsByPolicyCategoryChart';
-import OptionsDropdown from './OptionsDropdown';
+import WidgetOptionsMenu from './WidgetOptionsMenu';
 
 const fieldIdPrefix = 'policy-category-violations';
 
@@ -69,52 +69,60 @@ function ViolationsByPolicyCategory() {
                         <Title headingLevel="h2">Policy violations by category</Title>
                     </FlexItem>
                     <FlexItem>
-                        <OptionsDropdown toggleId={`${fieldIdPrefix}-options-toggle`}>
-                            <Form className="pf-u-px-md pf-u-py-sm">
-                                <FormGroup fieldId={`${fieldIdPrefix}-sort-by`} label="Sort by">
-                                    <ToggleGroup aria-label="Sort data by highest severity counts or highest total violations">
-                                        <ToggleGroupItem
-                                            className="pf-u-font-weight-normal"
-                                            text="Severity"
-                                            buttonId={`${fieldIdPrefix}-sort-by-severity`}
-                                            isSelected={sortType === 'Severity'}
-                                            onChange={() => updateConfig({ sortType: 'Severity' })}
-                                        />
-                                        <ToggleGroupItem
-                                            text="Total"
-                                            buttonId={`${fieldIdPrefix}-sort-by-total`}
-                                            isSelected={sortType === 'Total'}
-                                            onChange={() => updateConfig({ sortType: 'Total' })}
-                                        />
-                                    </ToggleGroup>
-                                </FormGroup>
-                                <FormGroup
-                                    fieldId={`${fieldIdPrefix}-lifecycle`}
-                                    label="Policy Lifecycle"
-                                >
-                                    <ToggleGroup aria-label="Filter by policy lifecycle">
-                                        <ToggleGroupItem
-                                            text="All"
-                                            buttonId={`${fieldIdPrefix}-lifecycle-all`}
-                                            isSelected={lifecycle === 'ALL'}
-                                            onChange={() => updateConfig({ lifecycle: 'ALL' })}
-                                        />
-                                        <ToggleGroupItem
-                                            text="Deploy"
-                                            buttonId={`${fieldIdPrefix}-lifecycle-deploy`}
-                                            isSelected={lifecycle === 'DEPLOY'}
-                                            onChange={() => updateConfig({ lifecycle: 'DEPLOY' })}
-                                        />
-                                        <ToggleGroupItem
-                                            text="Runtime"
-                                            buttonId={`${fieldIdPrefix}-lifecycle-runtime`}
-                                            isSelected={lifecycle === 'RUNTIME'}
-                                            onChange={() => updateConfig({ lifecycle: 'RUNTIME' })}
-                                        />
-                                    </ToggleGroup>
-                                </FormGroup>
-                            </Form>
-                        </OptionsDropdown>
+                        <WidgetOptionsMenu
+                            bodyContent={
+                                <Form>
+                                    <FormGroup fieldId={`${fieldIdPrefix}-sort-by`} label="Sort by">
+                                        <ToggleGroup aria-label="Sort data by highest severity counts or highest total violations">
+                                            <ToggleGroupItem
+                                                className="pf-u-font-weight-normal"
+                                                text="Severity"
+                                                buttonId={`${fieldIdPrefix}-sort-by-severity`}
+                                                isSelected={sortType === 'Severity'}
+                                                onChange={() =>
+                                                    updateConfig({ sortType: 'Severity' })
+                                                }
+                                            />
+                                            <ToggleGroupItem
+                                                text="Total"
+                                                buttonId={`${fieldIdPrefix}-sort-by-total`}
+                                                isSelected={sortType === 'Total'}
+                                                onChange={() => updateConfig({ sortType: 'Total' })}
+                                            />
+                                        </ToggleGroup>
+                                    </FormGroup>
+                                    <FormGroup
+                                        fieldId={`${fieldIdPrefix}-lifecycle`}
+                                        label="Policy Lifecycle"
+                                    >
+                                        <ToggleGroup aria-label="Filter by policy lifecycle">
+                                            <ToggleGroupItem
+                                                text="All"
+                                                buttonId={`${fieldIdPrefix}-lifecycle-all`}
+                                                isSelected={lifecycle === 'ALL'}
+                                                onChange={() => updateConfig({ lifecycle: 'ALL' })}
+                                            />
+                                            <ToggleGroupItem
+                                                text="Deploy"
+                                                buttonId={`${fieldIdPrefix}-lifecycle-deploy`}
+                                                isSelected={lifecycle === 'DEPLOY'}
+                                                onChange={() =>
+                                                    updateConfig({ lifecycle: 'DEPLOY' })
+                                                }
+                                            />
+                                            <ToggleGroupItem
+                                                text="Runtime"
+                                                buttonId={`${fieldIdPrefix}-lifecycle-runtime`}
+                                                isSelected={lifecycle === 'RUNTIME'}
+                                                onChange={() =>
+                                                    updateConfig({ lifecycle: 'RUNTIME' })
+                                                }
+                                            />
+                                        </ToggleGroup>
+                                    </FormGroup>
+                                </Form>
+                            }
+                        />
                     </FlexItem>
                 </Flex>
             }

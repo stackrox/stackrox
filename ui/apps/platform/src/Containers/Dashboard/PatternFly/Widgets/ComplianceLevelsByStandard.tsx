@@ -37,7 +37,7 @@ import { complianceBasePath, urlEntityListTypes } from 'routePaths';
 import { standardLabels } from 'messages/standards';
 import ComplianceLevelsByStandardChart, { ComplianceData } from './ComplianceLevelsByStandardChart';
 import WidgetCard from './WidgetCard';
-import OptionsDropdown from './OptionsDropdown';
+import WidgetOptionsMenu from './WidgetOptionsMenu';
 
 const fieldIdPrefix = 'compliance-levels-by-standard';
 
@@ -158,26 +158,30 @@ function ComplianceLevelsByStandard() {
                         <Title headingLevel="h2">Compliance by standard</Title>
                     </FlexItem>
                     <FlexItem>
-                        <OptionsDropdown toggleId={`${fieldIdPrefix}-options-toggle`}>
-                            <Form className="pf-u-px-md pf-u-py-sm">
-                                <FormGroup fieldId={`${fieldIdPrefix}-sort-by`} label="Sort by">
-                                    <ToggleGroup aria-label="Sort coverage by ascending or descending percentage">
-                                        <ToggleGroupItem
-                                            text="Ascending"
-                                            buttonId={`${fieldIdPrefix}-sort-by-asc`}
-                                            isSelected={sortDataBy === 'asc'}
-                                            onChange={() => updateConfig({ sortDataBy: 'asc' })}
-                                        />
-                                        <ToggleGroupItem
-                                            text="Descending"
-                                            buttonId={`${fieldIdPrefix}-sort-by-desc`}
-                                            isSelected={sortDataBy === 'desc'}
-                                            onChange={() => updateConfig({ sortDataBy: 'desc' })}
-                                        />
-                                    </ToggleGroup>
-                                </FormGroup>
-                            </Form>
-                        </OptionsDropdown>
+                        <WidgetOptionsMenu
+                            bodyContent={
+                                <Form>
+                                    <FormGroup fieldId={`${fieldIdPrefix}-sort-by`} label="Sort by">
+                                        <ToggleGroup aria-label="Sort coverage by ascending or descending percentage">
+                                            <ToggleGroupItem
+                                                text="Ascending"
+                                                buttonId={`${fieldIdPrefix}-sort-by-asc`}
+                                                isSelected={sortDataBy === 'asc'}
+                                                onChange={() => updateConfig({ sortDataBy: 'asc' })}
+                                            />
+                                            <ToggleGroupItem
+                                                text="Descending"
+                                                buttonId={`${fieldIdPrefix}-sort-by-desc`}
+                                                isSelected={sortDataBy === 'desc'}
+                                                onChange={() =>
+                                                    updateConfig({ sortDataBy: 'desc' })
+                                                }
+                                            />
+                                        </ToggleGroup>
+                                    </FormGroup>
+                                </Form>
+                            }
+                        />
                         <Button variant="secondary" component={LinkShim} href={complianceBasePath}>
                             View all
                         </Button>

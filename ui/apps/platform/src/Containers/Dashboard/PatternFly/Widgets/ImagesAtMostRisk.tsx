@@ -25,7 +25,7 @@ import WidgetCard from './WidgetCard';
 import ImagesAtMostRiskTable, { CveStatusOption, ImageData } from './ImagesAtMostRiskTable';
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
-import OptionsDropdown from './OptionsDropdown';
+import WidgetOptionsMenu from './WidgetOptionsMenu';
 
 function getTitle(searchFilter: SearchFilter, imageStatusOption: ImageStatusOption) {
     return imageStatusOption === 'Active' || isResourceScoped(searchFilter)
@@ -128,50 +128,62 @@ function ImagesAtMostRisk() {
                         <Title headingLevel="h2">{getTitle(searchFilter, imageStatus)}</Title>
                     </FlexItem>
                     <FlexItem>
-                        <OptionsDropdown toggleId={`${fieldIdPrefix}-options-toggle`}>
-                            <Form className="pf-u-px-md pf-u-py-sm" style={{ minWidth: '250px' }}>
-                                <FormGroup
-                                    fieldId={`${fieldIdPrefix}-fixable`}
-                                    label="Image vulnerabilities"
-                                >
-                                    <ToggleGroup aria-label="Show all CVEs or fixable CVEs only">
-                                        <ToggleGroupItem
-                                            className="pf-u-font-weight-normal"
-                                            text="Fixable CVEs"
-                                            buttonId={`${fieldIdPrefix}-fixable-only`}
-                                            isSelected={cveStatus === 'Fixable'}
-                                            onChange={() => updateConfig({ cveStatus: 'Fixable' })}
-                                        />
-                                        <ToggleGroupItem
-                                            text="All CVEs"
-                                            buttonId={`${fieldIdPrefix}-all-cves`}
-                                            isSelected={cveStatus === 'All'}
-                                            onChange={() => updateConfig({ cveStatus: 'All' })}
-                                        />
-                                    </ToggleGroup>
-                                </FormGroup>
-                                <FormGroup
-                                    fieldId={`${fieldIdPrefix}-lifecycle`}
-                                    label="Image status"
-                                >
-                                    <ToggleGroup aria-label="Show all images or active images only">
-                                        <ToggleGroupItem
-                                            text="Active images"
-                                            buttonId={`${fieldIdPrefix}-status-active`}
-                                            isSelected={imageStatus === 'Active' || isScopeApplied}
-                                            onChange={() => updateConfig({ imageStatus: 'Active' })}
-                                        />
-                                        <ToggleGroupItem
-                                            text="All images"
-                                            buttonId={`${fieldIdPrefix}-status-all`}
-                                            isSelected={imageStatus === 'All' && !isScopeApplied}
-                                            isDisabled={isScopeApplied}
-                                            onChange={() => updateConfig({ imageStatus: 'All' })}
-                                        />
-                                    </ToggleGroup>
-                                </FormGroup>
-                            </Form>
-                        </OptionsDropdown>
+                        <WidgetOptionsMenu
+                            bodyContent={
+                                <Form>
+                                    <FormGroup
+                                        fieldId={`${fieldIdPrefix}-fixable`}
+                                        label="Image vulnerabilities"
+                                    >
+                                        <ToggleGroup aria-label="Show all CVEs or fixable CVEs only">
+                                            <ToggleGroupItem
+                                                className="pf-u-font-weight-normal"
+                                                text="Fixable CVEs"
+                                                buttonId={`${fieldIdPrefix}-fixable-only`}
+                                                isSelected={cveStatus === 'Fixable'}
+                                                onChange={() =>
+                                                    updateConfig({ cveStatus: 'Fixable' })
+                                                }
+                                            />
+                                            <ToggleGroupItem
+                                                text="All CVEs"
+                                                buttonId={`${fieldIdPrefix}-all-cves`}
+                                                isSelected={cveStatus === 'All'}
+                                                onChange={() => updateConfig({ cveStatus: 'All' })}
+                                            />
+                                        </ToggleGroup>
+                                    </FormGroup>
+                                    <FormGroup
+                                        fieldId={`${fieldIdPrefix}-lifecycle`}
+                                        label="Image status"
+                                    >
+                                        <ToggleGroup aria-label="Show all images or active images only">
+                                            <ToggleGroupItem
+                                                text="Active images"
+                                                buttonId={`${fieldIdPrefix}-status-active`}
+                                                isSelected={
+                                                    imageStatus === 'Active' || isScopeApplied
+                                                }
+                                                onChange={() =>
+                                                    updateConfig({ imageStatus: 'Active' })
+                                                }
+                                            />
+                                            <ToggleGroupItem
+                                                text="All images"
+                                                buttonId={`${fieldIdPrefix}-status-all`}
+                                                isSelected={
+                                                    imageStatus === 'All' && !isScopeApplied
+                                                }
+                                                isDisabled={isScopeApplied}
+                                                onChange={() =>
+                                                    updateConfig({ imageStatus: 'All' })
+                                                }
+                                            />
+                                        </ToggleGroup>
+                                    </FormGroup>
+                                </Form>
+                            }
+                        />
                         <Button
                             variant="secondary"
                             component={LinkShim}
