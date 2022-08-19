@@ -70,30 +70,40 @@ run_scale_test() {
 }
 
 get_prometheus_metrics_parser() {
-      go install github.com/stackrox/prometheus-metric-parser@latest
-      prometheus-metric-parser help
+    go install github.com/stackrox/prometheus-metric-parser@latest
+    prometheus-metric-parser help
 }
 
 compare_with_stored_metrics() {
     local debug_dump_dir="$1"
     local gs_path="gs://stackrox-ci-metrics/${COMPARISON_METRICS}"
     local baseline_source
-    local baseline_dir="/tmp/baseline_metrics"
+    local baseline_dir="/tmp/scale-test-baseline-metrics"
     local baseline_metrics
+    local baseline_metrics_basename
     local this_run_metrics
     local compare_cmd="${PWD}/scripts/ci/compare-debug-metrics.sh"
+    local comparison_output="comparison.html"
+    local compare_wd="/tmp/scale-test-comparison"
 
     baseline_source=$(gsutil ls "${gs_path}"/stackrox_debug\* | sort | tail -1)
     info "Using ${baseline_source} as metrics for comparison"
-    mkdir "${baseline_dir}"
+    mkdir -p "${baseline_dir}"
     gsutil cp "${baseline_source}" "${baseline_dir}"
     baseline_metrics=$(find "${baseline_dir}" -maxdepth 1 | sort | tail -1)
+    baseline_metrics_basename="$(basename "${baseline_metrics}")"
 
     this_run_metrics=$(echo "${debug_dump_dir}"/stackrox_debug*.zip)
+
     info "Comparing with ${this_run_metrics}"
 
-    pushd /tmp
-    "${compare_cmd}" "${baseline_metrics}" "${this_run_metrics}" || true
+    mkdir -p "${compare_wd}"
+    pushd "${compare_wd}"
+    # The compare script will error if any of the metrics have drifted by an
+    # error threshold. At present that is not sufficient to fail the entire
+    # scale-test so we ignore it with || true.
+    "${compare_cmd}" "${baseline_metrics}" "${this_run_metrics}" "${comparison_output}" || true
+    store_as_spyglass_artifact "${comparison_output}" "${baseline_metrics_basename}"
     popd
 }
 
@@ -109,6 +119,29 @@ store_metrics() {
     prometheus-metric-parser single --file="${debug_dump_dir}"/stackrox_debug/metrics-2 \
         --format=gcp-monitoring --labels='Test=ci-scale-test,ClusterFlavor=gke' \
         --project-id=stackrox-ci --timestamp="$(date -u +"%s")"
+}
+
+store_as_spyglass_artifact() {
+    local comparison_output="$1"
+    local metrics_name="$2"
+
+    artifact_file="$ARTIFACT_DIR/scale-comparison-with-baseline-summary.html"
+
+    cat > "$artifact_file" <<- HEAD
+<html>
+    <head>
+        <title><h4>Scale test comparison with baseline: ${metrics_name}</h4></title>
+    </head>
+    <body>
+    <pre style="background: #fff;">
+HEAD
+
+    cat "$comparison_output" >> "$artifact_file"
+
+    cat >> "$artifact_file" <<- FOOT
+    </pre>
+</html>
+FOOT
 }
 
 scale_test "$@"
