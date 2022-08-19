@@ -38,6 +38,13 @@ var (
 		Name:      "rocksdb_jemalloc_size",
 		Help:      "RocksDB jemalloc size",
 	})
+
+	mmapAllocations = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "mmap_size",
+		Help:      "Memory map size",
+	}, []string{"Type"})
 )
 
 func init() {
@@ -45,6 +52,7 @@ func init() {
 		rocksDBPrefixSize,
 		rocksDBPrefixBytes,
 		jemallocAllocations,
+		mmapAllocations,
 	)
 }
 

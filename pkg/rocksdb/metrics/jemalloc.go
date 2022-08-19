@@ -22,11 +22,7 @@ import "C"
 
 import (
 	"time"
-
-	"github.com/stackrox/rox/pkg/logging"
 )
-
-var log = logging.LoggerForModule()
 
 func init() {
 	log.Info("loading jemalloc")
@@ -37,6 +33,8 @@ func init() {
 			C._refresh_jemalloc_stats()
 			log.Infof("JEMALLOC: %0.2f MB", float64(C._get_jemalloc_active())/1024/1024)
 			jemallocAllocations.Set(float64(C._get_jemalloc_active()))
+
+			collectMemory()
 		}
 	}()
 }
