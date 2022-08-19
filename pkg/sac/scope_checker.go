@@ -16,7 +16,6 @@ type ScopeChecker interface {
 	SubScopeChecker(keys ...ScopeKey) ScopeChecker
 	TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult
 	Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error)
-	TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult
 	AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error)
 	TryAllAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult
 	AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error)
@@ -79,22 +78,17 @@ func (c scopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bo
 	return tryResult == Allow, nil
 }
 
-// TryAnyAllowed checks (in a non-blocking way) whether access to any of the given subscopes is allowed.
-func (c scopeChecker) TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult {
+// AnyAllowed checks if access to any of the given subscopes is allowed.
+func (c scopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
 	result := Deny
 	for _, subScopeKeys := range subScopeKeyss {
 		if subScopeRes := c.TryAllowed(subScopeKeys...); subScopeRes == Allow {
-			return Allow
+			result = Allow
+			break
 		}
 	}
-	return result
-}
 
-// AnyAllowed checks if access to any of the given subscopes is allowed.
-func (c scopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
-	tryResult := c.TryAnyAllowed(subScopeKeyss)
-
-	return tryResult == Allow, nil
+	return result == Allow, nil
 }
 
 // TryAllAllowed checks (in a non-blocking way) whether access to all of the given subscopes is allowed.

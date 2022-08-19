@@ -251,17 +251,3 @@ func (mr *MockScopeCheckerMockRecorder) TryAllowed(subScopeKeys ...interface{}) 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryAllowed", reflect.TypeOf((*MockScopeChecker)(nil).TryAllowed), subScopeKeys...)
 }
-
-// TryAnyAllowed mocks base method.
-func (m *MockScopeChecker) TryAnyAllowed(subScopeKeyss [][]sac.ScopeKey) sac.TryAllowedResult {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TryAnyAllowed", subScopeKeyss)
-	ret0, _ := ret[0].(sac.TryAllowedResult)
-	return ret0
-}
-
-// TryAnyAllowed indicates an expected call of TryAnyAllowed.
-func (mr *MockScopeCheckerMockRecorder) TryAnyAllowed(subScopeKeyss interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryAnyAllowed", reflect.TypeOf((*MockScopeChecker)(nil).TryAnyAllowed), subScopeKeyss)
-}
