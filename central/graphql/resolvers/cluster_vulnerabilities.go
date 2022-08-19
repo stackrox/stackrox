@@ -72,10 +72,12 @@ func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
+	vulnResolver, err := resolver.wrapClusterCVE(ret, true, err)
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapClusterCVE(ret, true, err)
+	vulnResolver.ctx = ctx
+	return vulnResolver, nil
 }
 
 // ClusterVulnerabilities resolves a set of image vulnerabilities for the input query
@@ -384,9 +386,9 @@ func (resolver *clusterCVEResolver) EnvImpact(ctx context.Context) (float64, err
 	return float64(scopedCount) / float64(allCount), nil
 }
 
-func (resolver *clusterCVEResolver) FixedByVersion(ctx context.Context) (string, error) {
+func (resolver *clusterCVEResolver) FixedByVersion(_ context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "FixedByVersion")
-	scope, hasScope := scoped.GetScope(ctx)
+	scope, hasScope := scoped.GetScope(resolver.ctx)
 	if !hasScope {
 		return "", nil
 	}
@@ -395,14 +397,14 @@ func (resolver *clusterCVEResolver) FixedByVersion(ctx context.Context) (string,
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
-	edges, err := resolver.root.ClusterCVEEdgeDataStore.SearchRawEdges(ctx, query)
+	edges, err := resolver.root.ClusterCVEEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
 		return "", err
 	}
 	return edges[0].GetFixedBy(), nil
 }
 
-func (resolver *clusterCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
+func (resolver *clusterCVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "IsFixable")
 	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID))
 	if err != nil {
@@ -414,16 +416,16 @@ func (resolver *clusterCVEResolver) IsFixable(ctx context.Context, args RawQuery
 	conjuncts := []*v1.Query{query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
 
 	// check scoping, add as conjunction if needed
-	if scope, ok := scoped.GetScope(ctx); !ok || scope.Level != v1.SearchCategory_CLUSTER_VULNERABILITIES {
+	if scope, ok := scoped.GetScope(resolver.ctx); !ok || scope.Level != v1.SearchCategory_CLUSTER_VULNERABILITIES {
 		conjuncts = append(conjuncts, resolver.getClusterCVEQuery())
 	}
 
 	query = search.ConjunctionQuery(conjuncts...)
-	loader, err := loaders.GetClusterCVELoader(ctx)
+	loader, err := loaders.GetClusterCVELoader(resolver.ctx)
 	if err != nil {
 		return false, err
 	}
-	count, err := loader.CountFromQuery(ctx, query)
+	count, err := loader.CountFromQuery(resolver.ctx, query)
 	if err != nil {
 		return false, err
 	}
