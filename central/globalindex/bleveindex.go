@@ -12,6 +12,7 @@ import (
 	_ "github.com/blevesearch/bleve/v2/analysis/analyzer/standard" // Import the standard analyzer so that it can be referred to from proto files
 	"github.com/blevesearch/bleve/v2/index/scorch"
 	"github.com/blevesearch/bleve/v2/index/upsidedown"
+	"github.com/blevesearch/bleve/v2/index/upsidedown/store/gtreap"
 	bleveMapping "github.com/blevesearch/bleve/v2/mapping"
 	complianceMapping "github.com/stackrox/rox/central/compliance/search"
 	"github.com/stackrox/rox/central/globalindex/mapping"
@@ -69,7 +70,7 @@ func TempInitializeIndices(scorchPath string) (bleve.Index, error) {
 
 // MemOnlyIndex returns a temporary mem-only index.
 func MemOnlyIndex() (bleve.Index, error) {
-	return bleve.NewUsing("", mapping.GetIndexMapping(), upsidedown.Name, upsidedown.Name, nil)
+	return bleve.NewUsing("", mapping.GetIndexMapping(), upsidedown.Name, gtreap.Name, nil)
 }
 
 // InitializeIndices initializes the index in the specified path.

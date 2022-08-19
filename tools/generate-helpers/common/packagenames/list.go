@@ -4,7 +4,7 @@ package packagenames
 const (
 	GogoProto = "github.com/gogo/protobuf/proto"
 	BBolt     = "go.etcd.io/bbolt"
-	Bleve     = "github.com/blevesearch/bleve"
+	Bleve     = "github.com/blevesearch/bleve/v2"
 )
 
 // This block enumerates well-known Rox package names.
