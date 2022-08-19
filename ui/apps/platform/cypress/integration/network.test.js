@@ -19,14 +19,10 @@ import {
 
 function uploadYAMLFile(fileName, selector) {
     cy.intercept('POST', api.network.simulate).as('postNetworkPolicySimulate');
-    cy.fixture(fileName).then((fileContent) => {
-        cy.get(selector).attachFile({
-            fileContent,
-            fileName,
-            mimeType: 'text/yaml',
-            encoding: 'utf8',
-        });
-    });
+
+    // Needs force option because input element has display: none style.
+    cy.get(selector).selectFile(`${Cypress.config('fixturesFolder')}/${fileName}`, { force: true });
+
     cy.wait('@postNetworkPolicySimulate');
 }
 
