@@ -168,9 +168,9 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 
 // Monitoring defines settings for monitoring endpoint.
 type Monitoring struct {
-	// Expose Central's monitoring endpoint. A new service, "monitoring",
-	// with port 9090, will be created as well as a network policy allowing
-	// inbound connections to the port.
+	// Expose monitoring endpoint. A new service, "monitoring", with port 9090,
+	// will be created as well as a network policy allowing inbound connections
+	// to the port.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	ExposeEndpoint *ExposeEndpoint `json:"exposeEndpoint,omitempty"`
 }
@@ -320,6 +320,12 @@ type ScannerComponentSpec struct {
 	// Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="DB",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
 	DB *DeploymentSpec `json:"db,omitempty"`
+
+	// Configures monitoring endpoint for Scanner. The monitoring endpoint
+	// allows other services to collect metrics from Scanner, provided in
+	// Prometheus compatible format.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
 // GetAnalyzer returns the analyzer component even if receiver is nil

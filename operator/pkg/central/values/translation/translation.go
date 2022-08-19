@@ -169,6 +169,7 @@ func getCentralScannerComponentValues(s *platform.ScannerComponentSpec) *transla
 
 	translation.SetScannerAnalyzerValues(&sv, s.GetAnalyzer())
 	translation.SetScannerDBValues(&sv, s.DB)
+	sv.SetBoolValue("exposeMonitoring", s.Monitoring.IsEnabled())
 
 	return &sv
 }

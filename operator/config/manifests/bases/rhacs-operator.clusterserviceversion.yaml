@@ -255,6 +255,11 @@ spec:
           can configure a node selector here.
         displayName: Node Selector
         path: scanner.db.nodeSelector
+      - description: Expose monitoring endpoint. A new service, "monitoring",
+          with port 9090, will be created as well as a network policy allowing inbound
+          connections to the port.
+        displayName: Expose Endpoint
+        path: scanner.monitoring.exposeEndpoint
       - description: If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
         displayName: Tolerations
@@ -430,6 +435,11 @@ spec:
           Cluster Security Scanner.
         displayName: DB
         path: scanner.db
+      - description: Configures monitoring endpoint for Scanner. The monitoring endpoint
+          allows other services to collect metrics from Scanner, provided in Prometheus
+          compatible format.
+        displayName: Monitoring
+        path: scanner.monitoring
       - description: Settings for the Sensor component.
         displayName: Sensor Settings
         path: sensor
