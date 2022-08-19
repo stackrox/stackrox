@@ -105,18 +105,13 @@ func (ds *sacFilterImpl) filterClusters(ctx context.Context, clusters set.String
 	resourceScopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Compliance)
 
 	// Filter the compliance results by cluster.
-	allowed := ds.tryFilterClusters(resourceScopeChecker, clusters)
-	return allowed, nil
-}
-
-func (ds *sacFilterImpl) tryFilterClusters(resourceScopeChecker sac.ScopeChecker, clusters set.StringSet) set.StringSet {
 	allowed := set.NewStringSet()
 	for cluster := range clusters {
 		if res := resourceScopeChecker.TryAllowed(sac.ClusterScopeKey(cluster)); res == sac.Allow {
 			allowed.Add(cluster)
 		}
 	}
-	return allowed
+	return allowed, nil
 }
 
 func (ds *sacFilterImpl) filterDomain(ctx context.Context, domain *storage.ComplianceDomain) (*storage.ComplianceDomain, bool, error) {
