@@ -104,21 +104,6 @@ func (suite *orScopeCheckerTestSuite) TestAnyAllowed() {
 	suite.False(allowed)
 }
 
-func (suite *orScopeCheckerTestSuite) TestTryAllAllowed() {
-	// 1. Expect Allow when at least 1 ScopeChecker returns Allow.
-	suite.scopeChecker1.EXPECT().TryAllAllowed(gomock.Any()).Return(sac.Allow)
-
-	result := suite.orScopeChecker.TryAllAllowed(nil)
-	suite.Equal(sac.Allow, result)
-
-	// 2. Expect Deny when all ScopeChecker return Deny.
-	suite.scopeChecker1.EXPECT().TryAllAllowed(gomock.Any()).Return(sac.Deny)
-	suite.scopeChecker2.EXPECT().TryAllAllowed(gomock.Any()).Return(sac.Deny)
-
-	result = suite.orScopeChecker.TryAllAllowed(nil)
-	suite.Equal(sac.Deny, result)
-}
-
 func (suite *orScopeCheckerTestSuite) TestAllAllowed() {
 	// 1. Expect True when at least 1 ScopeChecker returns Allow.
 	suite.scopeChecker1.EXPECT().AllAllowed(gomock.Any(), gomock.Any()).Return(true, nil)
