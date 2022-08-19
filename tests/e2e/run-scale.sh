@@ -78,24 +78,30 @@ compare_with_stored_metrics() {
     local debug_dump_dir="$1"
     local gs_path="gs://stackrox-ci-metrics/${COMPARISON_METRICS}"
     local baseline_source
-    local baseline_dir="/tmp/baseline_metrics"
+    local baseline_dir="/tmp/scale-test-baseline-metrics"
     local baseline_metrics
     local this_run_metrics
     local compare_cmd="${PWD}/scripts/ci/compare-debug-metrics.sh"
+    local comparison_output="comparison.html"
+    local compare_wd="/tmp/scale-test-comparison"
 
     baseline_source=$(gsutil ls "${gs_path}"/stackrox_debug\* | sort | tail -1)
     info "Using ${baseline_source} as metrics for comparison"
-    mkdir "${baseline_dir}"
+    mkdir -p "${baseline_dir}"
     gsutil cp "${baseline_source}" "${baseline_dir}"
     baseline_metrics=$(find "${baseline_dir}" -maxdepth 1 | sort | tail -1)
-    BASELINE="$(basename baseline_metrics)"
+    BASELINE="$(basename "${baseline_metrics}")"
     export BASELINE
 
     this_run_metrics=$(echo "${debug_dump_dir}"/stackrox_debug*.zip)
+
     info "Comparing with ${this_run_metrics}"
 
-    local comparison_output="comparison.html"
-    pushd /tmp
+    mkdir -p "${compare_wd}"
+    pushd "${compare_wd}"
+    # The compare script will error if any of the metrics have drifted by an
+    # error threshold. At present that is not sufficient to fail the entire
+    # scale-test so we ignore it with || true.
     "${compare_cmd}" "${baseline_metrics}" "${this_run_metrics}" "${comparison_output}" || true
     store_as_spyglass_artifact "${comparison_output}"
     popd
@@ -126,7 +132,7 @@ store_as_spyglass_artifact() {
         <title><h4>Scale test comparison with baseline: ${BASELINE}</h4></title>
     </head>
     <body>
-    <pre>
+    <pre style="background: #fff;">
 HEAD
 
     cat "$comparison_output" >> "$artifact_file"
