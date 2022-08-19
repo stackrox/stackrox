@@ -6,4 +6,4 @@ if [[ -z "$1" ]]; then
 fi
 
 
-infractl create gke-default $1 --arg machine-type=e2-standard-32 --arg nodes=5
+infractl create gke-default $1 --arg machine-type=e2-standard-32 --arg nodes=3
