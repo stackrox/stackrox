@@ -314,7 +314,7 @@ test_upgrade_paths() {
     info "Testing various upgrade paths"
 
     if [[ "$#" -ne 1 ]]; then
-        die "missing args. usage: test_upgrade <log-output-dir>"
+        die "missing args. usage: test_upgrade_paths <log-output-dir>"
     fi
 
     local log_output_dir="$1"
