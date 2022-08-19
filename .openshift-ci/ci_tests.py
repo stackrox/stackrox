@@ -148,6 +148,25 @@ class UIE2eTest(BaseTest):
         )
 
 
+class APICompatibility(BaseTest):
+    TEST_TIMEOUT = 90 * 60
+    TEST_OUTPUT_DIR = "/tmp/api-comptatibility"
+
+    def run(self):
+        print("API compatibility tests")
+
+        def set_dirs_after_start():
+            # let post test know where logs are
+            self.test_outputs = [APICompatibility.TEST_OUTPUT_DIR]
+
+        self.run_with_graceful_kill(
+            ["SENSOR_IMAGE_TAG=3.70.0", "tests/e2e/run.sh", APICompatibility.TEST_OUTPUT_DIR],
+            APICompatibility.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
+
+
+
 class NonGroovyE2e(BaseTest):
     TEST_TIMEOUT = 90 * 60
     TEST_OUTPUT_DIR = "/tmp/e2e-test-logs"
