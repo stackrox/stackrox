@@ -36,17 +36,17 @@ func (suite *orScopeCheckerTestSuite) SetupTest() {
 
 func (suite *orScopeCheckerTestSuite) TestTryAllowed() {
 	// 1. Expect Allow when at least 1 ScopeChecker returns Allow.
-	suite.scopeChecker1.EXPECT().TryAllowed().Return(sac.Allow)
+	suite.scopeChecker1.EXPECT().TryAllowed().Return(true)
 
 	res := suite.orScopeChecker.TryAllowed()
-	suite.Equal(sac.Allow, res)
+	suite.Equal(true, res)
 
 	// 2. Expect Deny when all ScopeChecker return Deny.
-	suite.scopeChecker1.EXPECT().TryAllowed().Return(sac.Deny)
-	suite.scopeChecker2.EXPECT().TryAllowed().Return(sac.Deny)
+	suite.scopeChecker1.EXPECT().TryAllowed().Return(false)
+	suite.scopeChecker2.EXPECT().TryAllowed().Return(false)
 
 	res = suite.orScopeChecker.TryAllowed()
-	suite.Equal(sac.Deny, res)
+	suite.Equal(false, res)
 }
 
 func (suite *orScopeCheckerTestSuite) TestAllowed() {

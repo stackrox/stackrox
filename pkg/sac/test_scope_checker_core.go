@@ -98,51 +98,51 @@ func (c *testScopeCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerCore {
 	}
 }
 
-func (c *testScopeCheckerCore) TryAllowed() TryAllowedResult {
+func (c *testScopeCheckerCore) Allowed() bool {
 	// Global access is denied, need to drill down.
 	if len(c.path) == 0 {
-		return Deny
+		return false
 	}
 	// Drill down to access level.
 	access := c.path[0]
 	accessKey, accessOK := access.(AccessModeScopeKey)
 	if !accessOK {
-		return Deny
+		return false
 	}
 	accessMode := storage.Access(accessKey)
 	if _, accessAllowed := c.scope[accessMode]; !accessAllowed {
-		return Deny
+		return false
 	}
 	if len(c.path) == 1 {
-		return Deny
+		return false
 	}
 	// Drill down to resource level.
 	resource := c.path[1]
 	resourceKey, resourceOK := resource.(ResourceScopeKey)
 	if !resourceOK {
-		return Deny
+		return false
 	}
 	resourceScope := c.scope[accessMode][permissions.Resource(resourceKey.String())]
 	if resourceScope == nil {
-		return Deny
+		return false
 	}
 	if resourceScope.Included {
-		return Allow
+		return true
 	}
 	if len(c.path) == 2 {
-		return Deny
+		return false
 	}
 	// Drill down to cluster level.
 	clusterID := c.path[2].String()
 	clusterScope := resourceScope.Clusters[clusterID]
 	if clusterScope == nil {
-		return Deny
+		return false
 	}
 	if clusterScope.Included {
-		return Allow
+		return true
 	}
 	if len(c.path) == 3 {
-		return Deny
+		return false
 	}
 	// Drill down to namespace level.
 	namespace := c.path[3].String()
@@ -153,8 +153,5 @@ func (c *testScopeCheckerCore) TryAllowed() TryAllowedResult {
 			break
 		}
 	}
-	if namespaceAllowed {
-		return Allow
-	}
-	return Deny
+	return namespaceAllowed
 }

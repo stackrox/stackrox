@@ -44,7 +44,7 @@ type testScopeCheckerCoreTestCase struct {
 	name                string
 	scopeCheckerBuilder func(t *testing.T) sac.ScopeCheckerCore
 	scopeKeys           []sac.ScopeKey
-	tryResults          []sac.TryAllowedResult
+	allowed             []bool
 }
 
 func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryAllowed() {
@@ -58,7 +58,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.ClusterScopeKey(clusterClusterID),
 				sac.NamespaceScopeKey(nsNamespace2),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny, sac.Allow},
+			allowed: []bool{false, false, false, false, true},
 		},
 		{
 			name:                "Read multiple resources some with namespace scope denies read to namespace out of scope",
@@ -69,7 +69,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.ClusterScopeKey(clusterClusterID),
 				sac.NamespaceScopeKey(nsNamespace1),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+			allowed: []bool{false, false, false, false, false},
 		},
 		{
 			name:                "Read multiple resources some with namespace scope denies write to namespace from read scope",
@@ -80,7 +80,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.ClusterScopeKey(clusterClusterID),
 				sac.NamespaceScopeKey(nsNamespace2),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+			allowed: []bool{false, false, false, false, false},
 		},
 		{
 			name:                "Read multiple resources some with namespace scope allows read to namespace in any allowed-resource-wide scope",
@@ -91,7 +91,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.ClusterScopeKey(clusterCluster1),
 				sac.NamespaceScopeKey(nsNamespace2),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow, sac.Allow, sac.Allow},
+			allowed: []bool{false, false, true, true, true},
 		},
 		{
 			name:                "Read multiple resources some with namespace scope allows read to fully included resource",
@@ -100,7 +100,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKey(resourceNode),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
+			allowed: []bool{false, false, true},
 		},
 		{
 			name:                "Read from allowed namespace is allowed",
@@ -111,7 +111,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.ClusterScopeKey(clusterMyCluster),
 				sac.NamespaceScopeKey(nsFar),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny, sac.Allow},
+			allowed: []bool{false, false, false, false, true},
 		},
 		{
 			name:                "Read from excluded namespace is denied",
@@ -122,7 +122,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.ClusterScopeKey(clusterMyCluster),
 				sac.NamespaceScopeKey(nsBar),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+			allowed: []bool{false, false, false, false, false},
 		},
 		{
 			name:                "Read from excluded resource is denied",
@@ -131,7 +131,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKey(resourceNetworkGraph),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
+			allowed: []bool{false, false, false},
 		},
 		{
 			name:                "Read from included resource is allowed",
@@ -140,7 +140,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKey(resourceAlert),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
+			allowed: []bool{false, false, true},
 		},
 		{
 			name:                "Write to excluded resource is denied",
@@ -149,7 +149,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKey(resourceConfig),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
+			allowed: []bool{false, false, false},
 		},
 		{
 			name:                "Write to included resource is allowed",
@@ -158,7 +158,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKey(resourceDeployment),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
+			allowed: []bool{false, false, true},
 		},
 		{
 			name:                "Read from included internal resource is denied",
@@ -167,7 +167,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKey(resourceInstallation),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
+			allowed: []bool{false, false, true},
 		},
 		{
 			name:                "Write to NOT included internal resource is denied",
@@ -176,7 +176,7 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 				sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKey(resourceInstallation),
 			},
-			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
+			allowed: []bool{false, false, false},
 		},
 	}
 
@@ -184,13 +184,12 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 		tc := testcases[ix]
 		s.Run(tc.name, func() {
 			scc := tc.scopeCheckerBuilder(s.T())
-			globalResult := scc.TryAllowed()
-			s.Equal(len(tc.scopeKeys)+1, len(tc.tryResults))
-			s.Equal(tc.tryResults[0], globalResult)
+			globalResult := scc.Allowed()
+			s.Equal(len(tc.scopeKeys)+1, len(tc.allowed))
+			s.Equal(tc.allowed[0], globalResult)
 			for keyIx := range tc.scopeKeys {
 				scc = scc.SubScopeChecker(tc.scopeKeys[keyIx])
-				tryResult := scc.TryAllowed()
-				s.Equal(tc.tryResults[keyIx+1], tryResult)
+				s.Equal(tc.allowed[keyIx+1], scc.Allowed())
 			}
 		})
 	}

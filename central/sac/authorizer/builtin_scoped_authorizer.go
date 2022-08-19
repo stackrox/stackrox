@@ -77,8 +77,8 @@ type globalScopeChecker struct {
 	trace *observe.AuthzTrace
 }
 
-func (a *globalScopeChecker) TryAllowed() sac.TryAllowedResult {
-	return sac.Deny
+func (a *globalScopeChecker) Allowed() bool {
+	return false
 }
 
 func (a *globalScopeChecker) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
@@ -100,7 +100,7 @@ func (a *globalScopeChecker) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeChe
 }
 
 // accessModeLevelScopeCheckerCore embeds globalScopeChecker and additionally
-// maintains the access mode. It inherits TryAllowed() behavior.
+// maintains the access mode. It inherits Allowed() behavior.
 //
 // SubScopeChecker() extracts the resource from the scope key and returns a
 // resourceLevelScopeCheckerCore with the list of resolved roles filtered down
@@ -162,23 +162,23 @@ type resourceLevelScopeCheckerCore struct {
 	resource permissions.ResourceMetadata
 }
 
-func (a *resourceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
+func (a *resourceLevelScopeCheckerCore) Allowed() bool {
 	if a.resource.GetScope() == permissions.GlobalScope {
 		a.trace.RecordAllowOnResourceLevel(a.access.String(), a.resource.String())
-		return sac.Allow
+		return true
 	}
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
 		if utils.Should(err) != nil {
-			return sac.Deny
+			return false
 		}
 		if scope.State == effectiveaccessscope.Included {
 			a.trace.RecordAllowOnResourceLevel(a.access.String(), a.resource.String())
-			return sac.Allow
+			return true
 		}
 	}
 	a.trace.RecordDenyOnResourceLevel(a.access.String(), a.resource.String())
-	return sac.Deny
+	return false
 }
 
 func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
@@ -231,19 +231,19 @@ type clusterNamespaceLevelScopeCheckerCore struct {
 	namespace string
 }
 
-func (a *clusterNamespaceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
+func (a *clusterNamespaceLevelScopeCheckerCore) Allowed() bool {
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
 		if utils.Should(err) != nil {
-			return sac.Deny
+			return false
 		}
 		if effectiveAccessScopeAllows(scope, a.resource, a.clusterID, a.namespace) {
 			a.trace.RecordAllowOnScopeLevel(a.access.String(), a.resource.String(), a.clusterID, a.namespace, role.GetRoleName())
-			return sac.Allow
+			return true
 		}
 	}
 	a.trace.RecordDenyOnScopeLevel(a.access.String(), a.resource.String(), a.clusterID, a.namespace)
-	return sac.Deny
+	return false
 }
 
 func (a *clusterNamespaceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {

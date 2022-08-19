@@ -221,14 +221,14 @@ func (mr *MockScopeCheckerMockRecorder) SubScopeChecker(keys ...interface{}) *go
 }
 
 // TryAllowed mocks base method.
-func (m *MockScopeChecker) TryAllowed(subScopeKeys ...sac.ScopeKey) sac.TryAllowedResult {
+func (m *MockScopeChecker) TryAllowed(subScopeKeys ...sac.ScopeKey) bool {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range subScopeKeys {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TryAllowed", varargs...)
-	ret0, _ := ret[0].(sac.TryAllowedResult)
+	ret0, _ := ret[0].(bool)
 	return ret0
 }
 

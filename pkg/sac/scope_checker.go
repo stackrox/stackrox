@@ -14,7 +14,7 @@ import (
 //go:generate mockgen-wrapper
 type ScopeChecker interface {
 	SubScopeChecker(keys ...ScopeKey) ScopeChecker
-	TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult
+	TryAllowed(subScopeKeys ...ScopeKey) bool
 	Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error)
 	AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error)
 	AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error)
@@ -57,12 +57,12 @@ func (c scopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 }
 
 // TryAllowed checks (in a non-blocking way) if access to the given (sub-)scope is allowed.
-func (c scopeChecker) TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult {
+func (c scopeChecker) TryAllowed(subScopeKeys ...ScopeKey) bool {
 	curr := c.core
 	for _, key := range subScopeKeys {
 		curr = curr.SubScopeChecker(key)
 	}
-	return curr.TryAllowed()
+	return curr.Allowed()
 }
 
 // Allowed checks (in a blocking way) if access to the given (sub-)scope is allowed.
@@ -71,29 +71,24 @@ func (c scopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bo
 	for _, key := range subScopeKeys {
 		curr = curr.SubScopeChecker(key)
 	}
-
-	tryResult := curr.TryAllowed()
-
-	return tryResult == Allow, nil
+	return curr.Allowed(), nil
 }
 
 // AnyAllowed checks if access to any of the given subscopes is allowed.
 func (c scopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
-	result := Deny
 	for _, subScopeKeys := range subScopeKeyss {
-		if subScopeRes := c.TryAllowed(subScopeKeys...); subScopeRes == Allow {
-			result = Allow
-			break
+		if c.TryAllowed(subScopeKeys...) {
+			return true, nil
 		}
 	}
 
-	return result == Allow, nil
+	return false, nil
 }
 
 // AllAllowed checks if access to all of the given subscopes is allowed.
 func (c scopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
 	for _, subScopeKeys := range subScopeKeyss {
-		if subScopeRes := c.TryAllowed(subScopeKeys...); subScopeRes == Deny {
+		if !c.TryAllowed(subScopeKeys...) {
 			return false, nil
 		}
 	}
@@ -135,9 +130,7 @@ func (c scopeChecker) Namespace(namespace string) ScopeChecker {
 
 // Check checks the given predicate in this scope.
 func (c scopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, error) {
-	res := pred.TryAllowed(c)
-
-	return res == Allow, nil
+	return pred.TryAllowed(c), nil
 }
 
 // EffectiveAccessScope returns underlying effective access scope.
