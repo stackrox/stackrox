@@ -27,11 +27,12 @@ func Split(node *storage.Node, withComponents bool) *NodeParts {
 }
 
 func splitComponents(parts *NodeParts) []*ComponentParts {
+	os := parts.Node.GetScan().GetOperatingSystem()
 	components := parts.Node.GetScan().GetComponents()
 	addedComponents := set.NewStringSet()
 	ret := make([]*ComponentParts, 0, len(components))
 	for _, component := range parts.Node.GetScan().GetComponents() {
-		generatedComponent := generateNodeComponent(parts.Node.GetOperatingSystem(), component)
+		generatedComponent := generateNodeComponent(os, component)
 		if !addedComponents.Add(generatedComponent.GetId()) {
 			continue
 		}
@@ -39,7 +40,7 @@ func splitComponents(parts *NodeParts) []*ComponentParts {
 			Component: generatedComponent,
 		}
 		cp.Edge = generateNodeComponentEdge(parts.Node, cp.Component)
-		cp.Children = splitCVEs(parts.Node.GetScan().GetOperatingSystem(), cp, component)
+		cp.Children = splitCVEs(os, cp, component)
 
 		ret = append(ret, cp)
 	}
