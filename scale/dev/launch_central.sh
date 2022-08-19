@@ -23,4 +23,4 @@ if [[ "$ROX_POSTGRES_DATASTORE" == "true" ]]; then
   kubectl -n stackrox patch deploy/central-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"memory":"32Gi","cpu":"16"},"limits":{"memory":"32Gi","cpu":"16"}}}]}}}}'
 fi
 
-./port-forward.sh 8000
+$DIR/port-forward.sh 8000
