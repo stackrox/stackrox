@@ -358,8 +358,8 @@ export const IMAGE_CVE_LIST_FRAGMENT = gql`
         lastModified
         lastScanned
         link
+        operatingSystem
         publishedOn
-        scoreVersion
         severity
         summary
         activeState(query: $query) {
@@ -432,6 +432,7 @@ export const VULN_IMAGE_CVE_LIST_FRAGMENT = gql`
         createdAt
         cve
         cvss
+        discoveredAtImage
         envImpact
         fixedByVersion
         id
@@ -440,6 +441,7 @@ export const VULN_IMAGE_CVE_LIST_FRAGMENT = gql`
         lastModified
         lastScanned
         link
+        operatingSystem
         publishedOn
         scoreVersion
         severity
@@ -451,7 +453,6 @@ export const VULN_IMAGE_CVE_LIST_FRAGMENT = gql`
         componentCount: imageComponentCount
         imageCount
         deploymentCount
-        operatingSystem
     }
 `;
 
