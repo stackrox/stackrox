@@ -127,7 +127,7 @@ spec:
                       provided in Prometheus compatible format.
                     properties:
                       exposeEndpoint:
-                        description: Expose Central's monitoring endpoint. A new service,
+                        description: Expose the monitoring endpoint. A new service,
                           "monitoring", with port 9090, will be created as well as
                           a network policy allowing inbound connections to the port.
                         enum:
@@ -624,7 +624,7 @@ spec:
                       provided in Prometheus compatible format.
                     properties:
                       exposeEndpoint:
-                        description: Expose monitoring endpoint. A new service,
+                        description: Expose the monitoring endpoint. A new service,
                           "monitoring", with port 9090, will be created as well as
                           a network policy allowing inbound connections to the port.
                         enum:

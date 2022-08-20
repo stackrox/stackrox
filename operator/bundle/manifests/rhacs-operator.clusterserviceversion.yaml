@@ -175,7 +175,7 @@ spec:
           operator.
         displayName: Host
         path: central.exposure.route.host
-      - description: Expose Central's monitoring endpoint. A new service, "monitoring",
+      - description: Expose the monitoring endpoint. A new service, "monitoring",
           with port 9090, will be created as well as a network policy allowing inbound
           connections to the port.
         displayName: Expose Endpoint
@@ -310,7 +310,7 @@ spec:
         path: scanner.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: Expose monitoring endpoint. A new service, "monitoring",
+      - description: Expose the monitoring endpoint. A new service, "monitoring",
           with port 9090, will be created as well as a network policy allowing inbound
           connections to the port.
         displayName: Expose Endpoint

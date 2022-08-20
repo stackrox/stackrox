@@ -168,9 +168,9 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 
 // Monitoring defines settings for monitoring endpoint.
 type Monitoring struct {
-	// Expose monitoring endpoint. A new service, "monitoring", with port 9090,
-	// will be created as well as a network policy allowing inbound connections
-	// to the port.
+	// Expose the monitoring endpoint. A new service, "monitoring",
+	// with port 9090, will be created as well as a network policy allowing
+	// inbound connections to the port.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	ExposeEndpoint *ExposeEndpoint `json:"exposeEndpoint,omitempty"`
 }
