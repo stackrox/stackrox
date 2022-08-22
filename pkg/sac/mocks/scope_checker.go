@@ -87,21 +87,6 @@ func (mr *MockScopeCheckerMockRecorder) Allowed(ctx interface{}, subScopeKeys ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Allowed", reflect.TypeOf((*MockScopeChecker)(nil).Allowed), varargs...)
 }
 
-// AnyAllowed mocks base method.
-func (m *MockScopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]sac.ScopeKey) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AnyAllowed", ctx, subScopeKeyss)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AnyAllowed indicates an expected call of AnyAllowed.
-func (mr *MockScopeCheckerMockRecorder) AnyAllowed(ctx, subScopeKeyss interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AnyAllowed", reflect.TypeOf((*MockScopeChecker)(nil).AnyAllowed), ctx, subScopeKeyss)
-}
-
 // Check mocks base method.
 func (m *MockScopeChecker) Check(ctx context.Context, pred sac.ScopePredicate) (bool, error) {
 	m.ctrl.T.Helper()
