@@ -108,6 +108,7 @@ SHELL = /usr/bin/env bash
 # This Makefile is not created for and likely would not benefit from concurrent jobs execution.
 .NOTPARALLEL:
 
+.PHONY: all
 all: build
 
 ##@ General
@@ -123,15 +124,19 @@ all: build
 # More info on the awk command:
 # http://linuxcommand.org/lc3_adv_awk.php
 
+.PHONY: help
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
+.PHONY: tag
 tag: ## Print the correct operator version (== image tag).
 	@echo $(VERSION)
 
+.PHONY: image-flavor
 image-flavor: ## Print the current image flavor.
 	@echo $(ROX_IMAGE_FLAVOR)
 
+.PHONY: image-tag-base
 image-tag-base: ## Print current image tag base.
 	@echo $(IMAGE_TAG_BASE)
 
@@ -150,10 +155,12 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 ##@ Dependencies download
 
 CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen
+.PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
 
 KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize
+.PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
@@ -179,6 +186,7 @@ kuttl: ## Download kuttl.
 	get_github_release $(KUTTL) $${KUTTL_URL}
 
 ENVTEST = $(PROJECT_DIR)/bin/setup-envtest
+.PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
@@ -208,26 +216,33 @@ endef
 
 ##@ Development
 
+
+.PHONY: parent-proto-generate
 parent-proto-generate: ## Make sure ../generated directory has up-to-date content that this operator (transitively) depends upon.
 	$(MAKE) -C .. proto-generated-srcs
 
+.PHONY: manifests
 manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
+.PHONY: generate
 generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	# The generated source files might not comply with the current go formatting, so format them explicitly.
 	go fmt ./apis/...
 
+.PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...
 
+.PHONY: vet
 vet: ## Run go vet against code.
 	go vet ./...
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.22
 
+.PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
@@ -236,20 +251,25 @@ CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
 validate-crs:
 	./tests/scripts/validate-crs.sh ./tests $(CRDS)
 
+.PHONY: test-e2e
 test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	KUTTL=$(KUTTL) ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
+	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
 
+
+.PHONY: test-e2e-deployed
 test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} SKIP_MANAGER_START=1 $(KUTTL) test
 
+.PHONY: test-upgrade
 test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts-upgrade
 	SKIP_MANAGER_START=1 \
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
 	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade tests/upgrade
 
+.PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
 # Create stackrox namespace if not exists.
 	echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "stackrox" } }' | kubectl apply -f -
@@ -270,6 +290,7 @@ ensure-rox-main-image-exists:
 
 ##@ Build
 
+.PHONY: build
 build: generate fmt vet ## Build operator local binary.
 	../scripts/go-build-file.sh ./main.go bin/manager
 
@@ -297,6 +318,7 @@ check-expected-go-version:
 	actual=$$(grep '^FROM golang' Dockerfile | awk '{print $$2}' | cut -d: -f2); \
 	[ "$${expected}" = "$${actual}" ] || { echo "../EXPECTED_GO_VERSION $${expected}, Dockerfile $${actual}; please update to match"; exit 1; }
 
+.PHONY: docker-build
 docker-build: check-expected-go-version test smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
 		-t ${IMG} \
@@ -305,6 +327,10 @@ docker-build: check-expected-go-version test smuggled-status-sh ## Build docker 
 		..
 
 ##@ Deployment
+
+ifndef ignore-not-found
+  ignore-not-found = false
+endif
 
 .PHONY: olm-install
 olm-install: operator-sdk ## Install OLM on Kubernetes cluster
@@ -320,7 +346,7 @@ install: check-ci-setup manifests kustomize ## Install CRDs into the K8s cluster
 
 .PHONY: uninstall
 uninstall: check-ci-setup manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found -f -
+	$(KUSTOMIZE) build config/crd | kubectl delete kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
 deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s cluster specified in ~/.kube/config.
@@ -333,7 +359,7 @@ deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s c
 
 .PHONY: undeploy
 undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found -f -
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-via-olm
 deploy-via-olm: ## Deploy operator image to the cluster using OLM.
