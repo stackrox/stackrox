@@ -180,6 +180,11 @@ class CSVTest extends BaseSpecification {
         and:
         "Fetch fixable CVE CSV"
         Response response = null
+        def csvEndpoint = "/api/vm/export/csv"
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            csvEndpoint = "/api/export/csv/image/cve"
+        }
+        def csvURL = "https://${Env.mustGetHostname()}:${Env.mustGetPort()}" + csvEndpoint
         withRetry(10, 3) {
             response = given()
                     .auth().preemptive().basic(Env.mustGetUsername(), Env.mustGetPassword())
@@ -189,7 +194,7 @@ class CSVTest extends BaseSpecification {
                     .param("pagination.sortOption.reversed", "true")
                     .urlEncodingEnabled(true)
                     .when()
-                    .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}/api/vm/export/csv")
+                    .get(csvURL)
             assert response.statusCode == 200
         }
 
