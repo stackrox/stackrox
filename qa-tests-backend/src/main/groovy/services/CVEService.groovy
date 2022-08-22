@@ -1,9 +1,12 @@
 package services
 
 import com.google.protobuf.Duration
+
 import io.stackrox.proto.api.v1.CVEServiceGrpc
 import io.stackrox.proto.api.v1.CveService
 import io.stackrox.proto.api.v1.ImageCVEServiceGrpc
+
+import util.Env
 
 class CVEService extends BaseService {
     static getCVEClient() {
