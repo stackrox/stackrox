@@ -123,10 +123,10 @@ require (
 	gorm.io/gorm v1.23.8
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.2
-	k8s.io/api v0.23.9
-	k8s.io/apimachinery v0.23.9
-	k8s.io/apiserver v0.23.9
-	k8s.io/client-go v0.23.9
+	k8s.io/api v0.23.10
+	k8s.io/apimachinery v0.23.10
+	k8s.io/apiserver v0.23.10
+	k8s.io/client-go v0.23.10
 	k8s.io/kubectl v0.23.1
 	k8s.io/kubelet v0.22.11
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
