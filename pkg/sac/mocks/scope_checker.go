@@ -68,9 +68,9 @@ func (mr *MockScopeCheckerMockRecorder) AllAllowed(ctx, subScopeKeyss interface{
 }
 
 // Allowed mocks base method.
-func (m *MockScopeChecker) Allowed(ctx context.Context, subScopeKeys ...sac.ScopeKey) (bool, error) {
+func (m *MockScopeChecker) Allowed(subScopeKeys ...sac.ScopeKey) (bool, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
+	varargs := []interface{}{}
 	for _, a := range subScopeKeys {
 		varargs = append(varargs, a)
 	}
@@ -81,10 +81,9 @@ func (m *MockScopeChecker) Allowed(ctx context.Context, subScopeKeys ...sac.Scop
 }
 
 // Allowed indicates an expected call of Allowed.
-func (mr *MockScopeCheckerMockRecorder) Allowed(ctx interface{}, subScopeKeys ...interface{}) *gomock.Call {
+func (mr *MockScopeCheckerMockRecorder) Allowed(subScopeKeys ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, subScopeKeys...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Allowed", reflect.TypeOf((*MockScopeChecker)(nil).Allowed), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Allowed", reflect.TypeOf((*MockScopeChecker)(nil).Allowed), subScopeKeys...)
 }
 
 // Check mocks base method.

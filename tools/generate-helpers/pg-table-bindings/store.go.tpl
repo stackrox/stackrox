@@ -344,7 +344,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
         ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
     {{- end }}
     {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped)  }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
@@ -367,14 +367,14 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     }
     {{- else if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
     {{- else if .Obj.IsDirectlyScoped -}}
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return err
     } else if !ok {
         var deniedIds []string
@@ -384,7 +384,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
             {{- else if .Obj.IsNamespaceScope }}
             subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
             {{- end }}
-            if ok, err := subScopeChecker.Allowed(ctx); err != nil {
+            if ok, err := subScopeChecker.Allowed(); err != nil {
                 return err
             } else if !ok {
                 deniedIds = append(deniedIds, {{ "obj" | .Obj.GetID }})
@@ -431,7 +431,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
+    if ok, err := scopeChecker.Allowed(); err != nil || !ok {
         return 0, err
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
@@ -469,7 +469,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return false, err
     } else if !ok {
         return false, nil
@@ -522,7 +522,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return nil, false, err
     } else if !ok {
         return nil, false, nil
@@ -610,7 +610,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
@@ -665,7 +665,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
@@ -711,7 +711,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return nil, err
     } else if !ok {
         return nil, nil
@@ -765,7 +765,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return nil, nil, err
     } else if !ok {
         return nil, nil, nil
@@ -843,7 +843,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return nil, err
     } else if !ok {
         return nil, nil
@@ -908,7 +908,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
@@ -950,7 +950,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
     }
 {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return err
     } else if !ok {
         return nil

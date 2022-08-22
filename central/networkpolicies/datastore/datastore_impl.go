@@ -33,7 +33,7 @@ func (ds *datastoreImpl) GetNetworkPolicy(ctx context.Context, id string) (*stor
 		return nil, false, err
 	}
 
-	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(np).Allowed(ctx); err != nil || !ok {
+	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(np).Allowed(); err != nil || !ok {
 		return nil, false, err
 	}
 
@@ -97,7 +97,7 @@ func (ds *datastoreImpl) CountMatchingNetworkPolicies(ctx context.Context, clust
 }
 
 func (ds *datastoreImpl) UpsertNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error {
-	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(np).Allowed(ctx); err != nil {
+	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(np).Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -117,7 +117,7 @@ func (ds *datastoreImpl) RemoveNetworkPolicy(ctx context.Context, id string) err
 		return err
 	}
 
-	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(np).Allowed(ctx); err != nil {
+	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(np).Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -130,7 +130,7 @@ func (ds *datastoreImpl) RemoveNetworkPolicy(ctx context.Context, id string) err
 ///////////////////////////////
 
 func (ds *datastoreImpl) GetUndoRecord(ctx context.Context, clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error) {
-	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, sac.ClusterScopeKey(clusterID)).Allowed(ctx); err != nil || !ok {
+	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, sac.ClusterScopeKey(clusterID)).Allowed(); err != nil || !ok {
 		return nil, false, err
 	}
 
@@ -143,7 +143,7 @@ func (ds *datastoreImpl) GetUndoRecord(ctx context.Context, clusterID string) (*
 }
 
 func (ds *datastoreImpl) UpsertUndoRecord(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error {
-	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS, sac.ClusterScopeKey(undoRecord.GetClusterId())).Allowed(ctx); err != nil {
+	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS, sac.ClusterScopeKey(undoRecord.GetClusterId())).Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -173,7 +173,7 @@ func (ds *datastoreImpl) GetUndoDeploymentRecord(ctx context.Context, deployment
 		return nil, false, err
 	}
 
-	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(undoRecord).Allowed(ctx); err != nil || !ok {
+	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(undoRecord).Allowed(); err != nil || !ok {
 		return nil, false, err
 	}
 
@@ -181,7 +181,7 @@ func (ds *datastoreImpl) GetUndoDeploymentRecord(ctx context.Context, deployment
 }
 
 func (ds *datastoreImpl) UpsertUndoDeploymentRecord(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
-	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(undoRecord).Allowed(ctx); err != nil {
+	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(undoRecord).Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -203,7 +203,7 @@ func filterResults(ctx context.Context, resourceScopeChecker sac.ScopeChecker, r
 	var allowed []*storage.NetworkPolicy
 	for _, netPol := range results {
 		scopeKeys := sac.KeyForNSScopedObj(netPol)
-		if ok, _ := resourceScopeChecker.Allowed(ctx, scopeKeys...); ok {
+		if ok, _ := resourceScopeChecker.Allowed(scopeKeys...); ok {
 			allowed = append(allowed, netPol)
 		}
 	}

@@ -1,7 +1,6 @@
 package sac
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -160,7 +159,7 @@ type ScopeSuffix []ScopeKey
 
 // TryAllowed implements the ScopePredicate interface.
 func (i ScopeSuffix) TryAllowed(sc ScopeChecker) bool {
-	allowed, _ := sc.Allowed(context.TODO(), i...)
+	allowed, _ := sc.Allowed(i...)
 	return allowed
 }
 

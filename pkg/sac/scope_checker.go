@@ -14,7 +14,7 @@ import (
 //go:generate mockgen-wrapper
 type ScopeChecker interface {
 	SubScopeChecker(keys ...ScopeKey) ScopeChecker
-	Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error)
+	Allowed(subScopeKeys ...ScopeKey) (bool, error)
 	AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error)
 	ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker
 	ForNamespaceScopedObject(obj NamespaceScopedObject) ScopeChecker
@@ -64,7 +64,7 @@ func (c scopeChecker) TryAllowed(subScopeKeys ...ScopeKey) bool {
 }
 
 // Allowed checks (in a blocking way) if access to the given (sub-)scope is allowed.
-func (c scopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error) {
+func (c scopeChecker) Allowed(subScopeKeys ...ScopeKey) (bool, error) {
 	curr := c.core
 	for _, key := range subScopeKeys {
 		curr = curr.SubScopeChecker(key)

@@ -38,7 +38,7 @@ func (suite *orScopeCheckerTestSuite) TestAllowed() {
 	// 1. Expect True when at least 1 ScopeChecker returns true.
 	suite.scopeChecker1.EXPECT().Allowed(gomock.Any()).Return(true, nil)
 
-	allowed, err := suite.orScopeChecker.Allowed(context.Background())
+	allowed, err := suite.orScopeChecker.Allowed()
 	suite.True(allowed)
 	suite.NoError(err)
 	suite.Nil(err)
@@ -47,7 +47,7 @@ func (suite *orScopeCheckerTestSuite) TestAllowed() {
 	suite.scopeChecker1.EXPECT().Allowed(gomock.Any()).Return(false, nil)
 	suite.scopeChecker2.EXPECT().Allowed(gomock.Any()).Return(false, nil)
 
-	allowed, err = suite.orScopeChecker.Allowed(context.Background())
+	allowed, err = suite.orScopeChecker.Allowed()
 	suite.False(allowed)
 	suite.NoError(err)
 	suite.Nil(err)
@@ -56,7 +56,7 @@ func (suite *orScopeCheckerTestSuite) TestAllowed() {
 	suite.scopeChecker1.EXPECT().Allowed(gomock.Any()).Return(false, nil)
 	suite.scopeChecker2.EXPECT().Allowed(gomock.Any()).Return(false, errors.New("something happened"))
 
-	allowed, err = suite.orScopeChecker.Allowed(context.Background())
+	allowed, err = suite.orScopeChecker.Allowed()
 	suite.False(allowed)
 	suite.Error(err)
 }

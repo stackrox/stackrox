@@ -238,7 +238,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NodeComponent) erro
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NodeComponent")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -251,7 +251,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NodeComponen
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NodeComponent")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
