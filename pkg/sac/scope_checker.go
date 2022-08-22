@@ -14,7 +14,6 @@ import (
 //go:generate mockgen-wrapper
 type ScopeChecker interface {
 	SubScopeChecker(keys ...ScopeKey) ScopeChecker
-	TryAllowed(subScopeKeys ...ScopeKey) bool
 	Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error)
 	AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error)
 	AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error)

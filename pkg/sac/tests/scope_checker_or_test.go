@@ -34,21 +34,6 @@ func (suite *orScopeCheckerTestSuite) SetupTest() {
 	suite.orScopeChecker = sac.NewOrScopeChecker(suite.scopeChecker1, suite.scopeChecker2)
 }
 
-func (suite *orScopeCheckerTestSuite) TestTryAllowed() {
-	// 1. Expect true when at least 1 ScopeChecker returns true.
-	suite.scopeChecker1.EXPECT().TryAllowed().Return(true)
-
-	res := suite.orScopeChecker.TryAllowed()
-	suite.Equal(true, res)
-
-	// 2. Expect Deny when all ScopeChecker return false.
-	suite.scopeChecker1.EXPECT().TryAllowed().Return(false)
-	suite.scopeChecker2.EXPECT().TryAllowed().Return(false)
-
-	res = suite.orScopeChecker.TryAllowed()
-	suite.Equal(false, res)
-}
-
 func (suite *orScopeCheckerTestSuite) TestAllowed() {
 	// 1. Expect True when at least 1 ScopeChecker returns true.
 	suite.scopeChecker1.EXPECT().Allowed(gomock.Any()).Return(true, nil)

@@ -107,7 +107,7 @@ func (ds *sacFilterImpl) filterClusters(ctx context.Context, clusters set.String
 	// Filter the compliance results by cluster.
 	allowed := set.NewStringSet()
 	for cluster := range clusters {
-		if resourceScopeChecker.TryAllowed(sac.ClusterScopeKey(cluster)) {
+		if ok, _ := resourceScopeChecker.Allowed(ctx, sac.ClusterScopeKey(cluster)); ok {
 			allowed.Add(cluster)
 		}
 	}
