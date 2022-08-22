@@ -33,6 +33,9 @@ export function getFilteredCVEColumns(columns, workflowState) {
     const shouldKeepCveType =
         currentEntityType === entityTypes.CVE || currentEntityType === entityTypes.CLUSTER_CVE;
 
+    const shouldKeepSeverity =
+        currentEntityType === entityTypes.IMAGE_CVE || currentEntityType === entityTypes.NODE_CVE;
+
     return columns.filter((col) => {
         switch (col.accessor) {
             // TODO: remove after generic CVE list is removed
@@ -55,7 +58,7 @@ export function getFilteredCVEColumns(columns, workflowState) {
                 return shouldKeepEntitiesColumn;
             }
             case 'severity': {
-                return shouldKeepDiscoveredAtImageColumn;
+                return shouldKeepSeverity || shouldKeepDiscoveredAtImageColumn;
             }
             default: {
                 return true;
