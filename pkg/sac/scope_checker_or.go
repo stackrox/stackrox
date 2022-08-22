@@ -45,18 +45,15 @@ func (s orScopeChecker) Allowed(subScopeKeys ...ScopeKey) (bool, error) {
 	return false, allowedErrs.ErrorOrNil()
 }
 
-func (s orScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
-	var allAllowedErrs *multierror.Error
+func (s orScopeChecker) AllAllowed(subScopeKeyss [][]ScopeKey) bool {
 	for _, checker := range s.scopeCheckers {
-		allowed, err := checker.AllAllowed(ctx, subScopeKeyss)
+		allowed := checker.AllAllowed(subScopeKeyss)
 		// Short-circuit on the first allowed check result.
-		if err != nil {
-			allAllowedErrs = multierror.Append(allAllowedErrs, err)
-		} else if allowed {
-			return allowed, nil
+		if allowed {
+			return allowed
 		}
 	}
-	return false, allAllowedErrs.ErrorOrNil()
+	return false
 }
 
 func (s orScopeChecker) ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker {
