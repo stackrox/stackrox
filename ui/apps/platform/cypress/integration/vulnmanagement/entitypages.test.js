@@ -372,11 +372,16 @@ describe('Entities single views', () => {
     });
 
     it('should show the active state in the fixable CVES widget for a single deployment', () => {
+        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
+
+        const fixableCvesFixture = usingVMUpdates
+            ? 'vulnerabilities/fixableCvesForEntity.json'
+            : 'vulnerabilities/fixableCvesForEntityLegacy.json';
         const getFixableCvesForEntity = api.graphql(
             api.vulnMgmt.graphqlOps.getFixableCvesForEntity
         );
         cy.intercept('POST', getFixableCvesForEntity, {
-            fixture: 'vulnerabilities/fixableCvesForEntity.json',
+            fixture: fixableCvesFixture,
         }).as('getFixableCvesForEntity');
 
         visitVulnerabilityManagementEntities('deployments');
