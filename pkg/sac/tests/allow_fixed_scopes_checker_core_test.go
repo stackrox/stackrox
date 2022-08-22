@@ -173,6 +173,7 @@ func TestAllowFixedScopes(t *testing.T) {
 		allowed, err := sc.Allowed(c.scope...)
 		assert.NoError(t, err)
 		assert.Equal(t, c.expected, allowed, "expected result for scope %v to be %s", c.scope, c.expected)
+		assert.Equal(t, c.expected, sc.IsAllowed(c.scope...), "expected result for scope %v to be %s", c.scope, c.expected)
 	}
 }
 

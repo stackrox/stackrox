@@ -157,6 +157,24 @@ func (mr *MockScopeCheckerMockRecorder) ForNamespaceScopedObject(obj interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForNamespaceScopedObject", reflect.TypeOf((*MockScopeChecker)(nil).ForNamespaceScopedObject), obj)
 }
 
+// IsAllowed mocks base method.
+func (m *MockScopeChecker) IsAllowed(subScopeKeys ...sac.ScopeKey) bool {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range subScopeKeys {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "IsAllowed", varargs...)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsAllowed indicates an expected call of IsAllowed.
+func (mr *MockScopeCheckerMockRecorder) IsAllowed(subScopeKeys ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAllowed", reflect.TypeOf((*MockScopeChecker)(nil).IsAllowed), subScopeKeys...)
+}
+
 // Namespace mocks base method.
 func (m *MockScopeChecker) Namespace(namespace string) sac.ScopeChecker {
 	m.ctrl.T.Helper()
