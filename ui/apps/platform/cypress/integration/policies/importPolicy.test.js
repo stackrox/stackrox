@@ -22,8 +22,8 @@ describe('Import policy', () => {
         visitPolicies();
 
         const fileName = 'policies/good_policy_to_import.json';
-        cy.fixture(fileName).then((fileContent) => {
-            const importedPolicyName = fileContent.policies[0].name;
+        cy.fixture(fileName).then((contents) => {
+            const importedPolicyName = contents.policies[0].name;
 
             cy.get(`${selectors.table.policyLink}:contains("${importedPolicyName}")`).should(
                 'not.exist'
@@ -31,12 +31,13 @@ describe('Import policy', () => {
 
             cy.get(selectors.table.importButton).click();
 
-            cy.get(selectors.importUploadModal.fileInput).attachFile({
-                fileContent,
-                fileName,
-                mimeType: 'application/json',
-                encoding: 'utf8',
-            });
+            cy.get(selectors.importUploadModal.fileInput).selectFile(
+                {
+                    contents,
+                    fileName,
+                },
+                { force: true } // because input element has display: none style
+            );
             cy.get(
                 `${selectors.importUploadModal.policyNames}:nth-child(1):contains("${importedPolicyName}")`
             );
@@ -66,19 +67,20 @@ describe('Import policy', () => {
 
         cy.get(selectors.table.importButton).click();
 
-        const fileContent = {
+        const contents = {
             policies: [
                 {
                     name: 'Dupe Name Policy',
                 },
             ],
         };
-        cy.get(selectors.importUploadModal.fileInput).attachFile({
-            fileContent,
-            fileName: 'dummy.json',
-            mimeType: 'application/json',
-            encoding: 'utf8',
-        });
+        cy.get(selectors.importUploadModal.fileInput).selectFile(
+            {
+                contents,
+                fileName: 'dummy.json',
+            },
+            { force: true } // because input element has display: none style
+        );
 
         const body = {
             responses: [
@@ -127,19 +129,20 @@ describe('Import policy', () => {
 
         cy.get(selectors.table.importButton).click();
 
-        const fileContent = {
+        const contents = {
             policies: [
                 {
                     name: 'Dupe ID Policy',
                 },
             ],
         };
-        cy.get(selectors.importUploadModal.fileInput).attachFile({
-            fileContent,
-            fileName: 'dummy.json',
-            mimeType: 'application/json',
-            encoding: 'utf8',
-        });
+        cy.get(selectors.importUploadModal.fileInput).selectFile(
+            {
+                contents,
+                fileName: 'dummy.json',
+            },
+            { force: true } // because input element has display: none style
+        );
 
         const body = {
             responses: [
@@ -185,19 +188,20 @@ describe('Import policy', () => {
 
         cy.get(selectors.table.importButton).click();
 
-        const fileContent = {
+        const contents = {
             policies: [
                 {
                     name: 'Dupe Name and Dupe ID Policy',
                 },
             ],
         };
-        cy.get(selectors.importUploadModal.fileInput).attachFile({
-            fileContent,
-            fileName: 'dummy.json',
-            mimeType: 'application/json',
-            encoding: 'utf8',
-        });
+        cy.get(selectors.importUploadModal.fileInput).selectFile(
+            {
+                contents,
+                fileName: 'dummy.json',
+            },
+            { force: true } // because input element has display: none style
+        );
 
         const body = {
             responses: [
