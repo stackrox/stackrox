@@ -157,7 +157,7 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
 
 KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize
 .PHONY: kustomize
@@ -240,7 +240,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.22
+ENVTEST_K8S_VERSION = 1.23
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
@@ -255,7 +255,6 @@ validate-crs:
 test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
-
 
 .PHONY: test-e2e-deployed
 test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
@@ -346,7 +345,7 @@ install: check-ci-setup manifests kustomize ## Install CRDs into the K8s cluster
 
 .PHONY: uninstall
 uninstall: check-ci-setup manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl delete kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
 deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s cluster specified in ~/.kube/config.
