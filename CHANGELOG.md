@@ -1,3 +1,4 @@
+
 # Changelog
 Entries in this file should be limited to:
 -  Any changes that introduce a deprecation in functionality, OR
@@ -14,8 +15,9 @@ authentication is still required for an email notifier, but the user can now cho
 - Support for violation tags and process tags has been removed.
 ### Deprecated Features
 ### Technical Changes
-- ROX-11181: Any clusters that have been unhealthy (defined as central being unable to reach sensor running on those clusters) for a period of time will be automatically removed. By default, it will remove if it's been unhealthy for 90 days, however that can be configured in the System Configuration page or using the cluster API.
+- ROX-11181: Any clusters that have been unhealthy (defined as central being unable to reach sensor running on those clusters) for a configured period of time will be automatically removed. Number of days after which an 'unhealthy' is removed can be configured in the System Configuration page or using the cluster API.
   - Any cluster that is expected to be unavailable for a period of time (e.g. clusters used in disaster recovery), can be tagged with a customizable label. Clusters with those labels will never be removed automatically.
+  - By default, this unhealthy cluster removal is disabled (number of days set to 0)
 
 ## [3.71.0]
 
