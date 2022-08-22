@@ -28,6 +28,9 @@ env:
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+# Ensure that only a single release automation workflow can run at a time.
+concurrency: Release automation
+
 jobs:
   run-parameters:
     name: Run parameters

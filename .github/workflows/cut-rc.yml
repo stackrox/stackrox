@@ -42,6 +42,9 @@ env:
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+# Ensure that only a single release automation workflow can run at a time.
+concurrency: Release automation
+
 jobs:
   run-parameters:
     name: Run parameters
@@ -185,7 +188,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":arrow_right: *Please assist the PR assignees in merging their changes to `${{needs.variables.outputs.branch}}` branch
-            and then close the <${{github.event.milestone.html_url}}|${{needs.variables.outputs.milestone}}> milestone again.*" }},
+            and then re-run failed jobs of the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|workflow run>.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ">
@@ -240,22 +243,8 @@ jobs:
               exit 1
             fi
           else
-            echo "Milestone ${{needs.variables.outputs.next-milestone}} has been created." >> $GITHUB_STEP_SUMMARY
+            echo ":arrow_right: Close the newly created milestone [${{needs.variables.outputs.next-milestone}}](${{github.event.milestone.html_url}}) when ready." >> $GITHUB_STEP_SUMMARY
           fi
-
-  reopen-milestone:
-    name: Reopen milestone ${{needs.variables.outputs.milestone}}
-    needs: [variables, cut-rc]
-    if: failure()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Reopen milestone ${{needs.variables.outputs.milestone}}
-        if: env.DRY_RUN == 'false'
-        run: |
-          gh api "repos/${{github.repository}}/milestones/${{github.event.milestone.number}}" \
-            -X PATCH -f state=open
-      - run: |
-          echo "::warning::Milestone ${{needs.variables.outputs.milestone}} has been reopened."
 
   pre-release:
     name: Publish a GitHub pre-release
