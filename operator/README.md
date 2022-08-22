@@ -178,9 +178,9 @@ $ kubectl create ns bundle-test
 # 2. Create image pull secrets.
 # If the inner magic does not work, just provide --docker-username and --docker-password with your DockerHub creds.
 $ kubectl -n bundle-test create secret docker-registry my-opm-image-pull-secrets \
-  --docker-server=https://index.docker.io/v1/ \
+  --docker-server=https://quay.io/v2/ \
   --docker-email=ignored@email.com \
-  $($(command -v docker-credential-osxkeychain || command -v docker-credential-secretservice) get <<<"docker.io" | jq -r '"--docker-username=\(.Username) --docker-password=\(.Secret)"')
+  $($(command -v docker-credential-osxkeychain || command -v docker-credential-secretservice) get <<<"quay.io" | jq -r '"--docker-username=\(.Username) --docker-password=\(.Secret)"')
 
 # 3. Configure default service account to use these pull secrets.
 $ kubectl -n bundle-test patch serviceaccount default -p '{"imagePullSecrets": [{"name": "my-opm-image-pull-secrets"}]}'
@@ -190,7 +190,7 @@ $ kubectl -n bundle-test patch serviceaccount default -p '{"imagePullSecrets": [
 
 # 4. Run bundle.
 $ bin/operator-sdk-1.14.0 run bundle \
-  docker.io/stackrox/stackrox-operator-bundle:v$(make --quiet tag) \
+  quay.io/rhacs-eng/stackrox-operator-bundle:v$(make --quiet tag) \
   --pull-secret-name my-opm-image-pull-secrets \
   --service-account default \
   --namespace bundle-test
@@ -257,13 +257,13 @@ The following command will install operator to the currently selected kubernetes
 If operator image has a `-dirty` suffix then the following command has to be used instead:
 
 ```bash
-make kuttle deploy-dirty-tag-via-olm
+make kuttl deploy-dirty-tag-via-olm
 ```
 
 For upgrading an existing operator:
 
 ```bash
-make kuttle upgrade-via-olm
+make kuttl upgrade-via-olm
 
 ```
 Note ерфе there is a specific command for upgrading `-dirty` suffixed tags `upgrade-dirty-tag-via-olm`
