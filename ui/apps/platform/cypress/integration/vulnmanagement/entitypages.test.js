@@ -53,7 +53,9 @@ describe('Entities single views', () => {
         cy.intercept('POST', api.vulnMgmt.graphqlEntities2('policies', 'DEPLOYMENT')).as(
             'policiesDEPLOYMENT'
         );
-        cy.get(`${selectors.tableBodyRows} ${selectors.failingDeploymentCountLink}:eq(0)`).click();
+        cy.get(`${selectors.tableBodyRows} ${selectors.failingDeploymentCountLink}:eq(0)`).click({
+            force: true,
+        });
         cy.wait('@policiesDEPLOYMENT');
 
         cy.get(selectors.sidePanelTableBodyRows).then((value) => {
@@ -122,7 +124,7 @@ describe('Entities single views', () => {
         cy.intercept('POST', api.vulnMgmt.graphqlEntities2('policies', 'DEPLOYMENT')).as(
             'policiesDEPLOYMENT'
         );
-        cy.get(`${selectors.failingDeploymentCountLink}:eq(0)`).click();
+        cy.get(`${selectors.failingDeploymentCountLink}:eq(0)`).click({ force: true });
         cy.wait('@policiesDEPLOYMENT');
 
         cy.get(`${selectors.sidePanel} ${selectors.statusChips}:contains('fail')`).should('exist');
@@ -137,7 +139,7 @@ describe('Entities single views', () => {
         cy.intercept('POST', api.vulnMgmt.graphqlEntities2('policies', 'DEPLOYMENT')).as(
             'policiesDEPLOYMENT'
         );
-        cy.get(`${selectors.failingDeploymentCountLink}:eq(0)`).click();
+        cy.get(`${selectors.failingDeploymentCountLink}:eq(0)`).click({ force: true });
         cy.wait('@policiesDEPLOYMENT');
 
         cy.get(selectors.sidePanelExpandButton).click();
@@ -338,7 +340,7 @@ describe('Entities single views', () => {
 
         // click on the first deployment in the list
         cy.intercept('POST', api.vulnMgmt.graphqlEntity('deployments')).as('deployment');
-        cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click();
+        cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click({ force: true });
         cy.wait('@deployment');
 
         // now, go to the components for that deployment
@@ -360,7 +362,7 @@ describe('Entities single views', () => {
         // click on the first component in that list
         cy.get(`[data-testid="side-panel"] ${selectors.tableRows}`, { timeout: 10000 })
             .eq(1)
-            .click();
+            .click({ force: true });
 
         cy.get(`[data-testid="Active status-value"]`)
             .invoke('text')
@@ -380,7 +382,7 @@ describe('Entities single views', () => {
         visitVulnerabilityManagementEntities('deployments');
 
         cy.intercept('POST', api.vulnMgmt.graphqlEntity('deployments')).as('deployment');
-        cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click();
+        cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click({ force: true });
         cy.wait('@deployment');
         cy.get('button:contains("Fixable CVEs")').click();
         cy.wait('@getFixableCvesForEntity');
