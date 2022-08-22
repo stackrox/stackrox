@@ -8,7 +8,7 @@ type SearchFilterInputProps = {
     className: string;
     handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
     placeholder: string;
-    searchCategory: SearchCategory;
+    searchCategory?: SearchCategory;
     searchFilter: SearchFilter;
     searchOptions: string[]; // differs from searchOptions prop of SearchInput
     autocompleteQueryPrefix?: string;
@@ -45,7 +45,7 @@ function SearchFilterInput({
                 : getEntryValueForOption(valuelessOption);
 
             fetchAutoCompleteResults({
-                categories: [searchCategory],
+                categories: searchCategory && [searchCategory],
                 query,
             })
                 .then((values) => {

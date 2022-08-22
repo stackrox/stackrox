@@ -62,13 +62,27 @@ export type SearchCategory =
 // The search categories could be deployments, policies, images etc.
 export type RawSearchRequest = {
     query: string;
-    categories: SearchCategory[];
+    categories?: SearchCategory[];
 };
+
+export type SearchResultCategory =
+    | 'ALERTS'
+    | 'CLUSTERS'
+    | 'DEPLOYMENTS'
+    | 'IMAGES'
+    | 'NAMESPACES'
+    | 'NODES'
+    | 'POLICIES'
+    | 'ROLES'
+    | 'ROLEBINDINGS'
+    | 'SECRETS'
+    | 'SERVICE_ACCOUNTS'
+    | 'SUBJECTS';
 
 export type SearchResult = {
     id: string;
     name: string;
-    category: SearchCategory;
+    category: SearchResultCategory;
     fieldToMatches: Record<string, SearchResultMatches>;
     score: number; // double
     // Location is intended to be a unique, yet human readable,
@@ -84,7 +98,7 @@ export type SearchResultMatches = {
 };
 
 export type SearchCategoryCount = {
-    category: SearchCategory;
+    category: SearchResultCategory;
     count: string; // int64
 };
 
@@ -114,16 +128,14 @@ export function fetchOptions(query = ''): Promise<SearchEntry[]> {
  * Get search options for category.
  */
 export function getSearchOptionsForCategory(
-    searchCategory: SearchCategory
+    searchCategory?: SearchCategory
 ): CancellableRequest<string[]> {
+    const queryString = searchCategory ? `categories=${searchCategory}` : '';
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<SearchOptionsResponse>(
-                `${baseUrl}/metadata/options?categories=${searchCategory}`,
-                {
-                    signal,
-                }
-            )
+            .get<SearchOptionsResponse>(`${baseUrl}/metadata/options?${queryString}`, {
+                signal,
+            })
             .then((response) => response?.data?.options ?? [])
     );
 }

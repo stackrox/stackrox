@@ -1,6 +1,7 @@
 import { selectors } from '../constants/SearchPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import { hasFeatureFlag } from '../helpers/features';
 import { visitMainDashboard } from '../helpers/main';
 
 function visitSearch() {
@@ -23,6 +24,12 @@ function searchWithFixture(searchTuples, fixture) {
 
 describe('Global Search Modal', () => {
     withAuth();
+
+    before(function beforeHook() {
+        if (hasFeatureFlag('ROX_SEARCH_PAGE_UI')) {
+            this.skip();
+        }
+    });
 
     it('should have empty state instead of count and tabs if search filter is empty', () => {
         visitSearch();
