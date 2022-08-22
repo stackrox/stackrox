@@ -120,6 +120,7 @@ const VulmMgmtDeployment = ({
                 Category: 'Vulnerability Management',
             }),
         },
+        fetchPolicy: 'no-cache',
     };
 
     return (
