@@ -1,0 +1,36 @@
+#search-page {
+    height: 100%;
+}
+
+#search-page .pf-l-stack__item:nth-child(1) {
+    flex-shrink: 0; /* shrink is counterpart to grow for sibling */
+}
+
+#search-page .pf-l-stack__item:nth-child(2) {
+    overflow-y: hidden;
+}
+
+#search-page .pf-l-split {
+    height: 100%;
+    max-height: 100%;
+    overflow-y: hidden;
+}
+
+/*
+ * Independent scrolling for category nav links at the left and search results table at the right.
+ */
+#search-page .pf-l-split__item {
+    overflow-y: scroll;
+}
+
+#search-page .pf-l-split__item:nth-child(1) {
+    flex-shrink: 0; /* shrink is counterpart to grow for sibling */
+}
+
+#search-page .pf-c-nav__link {
+    color: var(--pf-global--Color--100); /* instead of blue to avoid confusion with links in table */
+    /* font-size and spacing of sub nav link which is compatible with table row */
+    font-size: var(--pf-global--FontSize--sm);
+    padding-top: var(--pf-global--spacer--sm);
+    padding-bottom: var(--pf-global--spacer--sm);
+}
