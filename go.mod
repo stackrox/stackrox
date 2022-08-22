@@ -18,7 +18,7 @@ require (
 	github.com/RoaringBitmap/roaring v1.2.1
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.15.1
-	github.com/aws/aws-sdk-go v1.44.70
+	github.com/aws/aws-sdk-go v1.44.81
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
@@ -123,10 +123,10 @@ require (
 	gorm.io/gorm v1.23.8
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.2
-	k8s.io/api v0.23.9
-	k8s.io/apimachinery v0.23.9
-	k8s.io/apiserver v0.23.9
-	k8s.io/client-go v0.23.9
+	k8s.io/api v0.23.10
+	k8s.io/apimachinery v0.23.10
+	k8s.io/apiserver v0.23.10
+	k8s.io/client-go v0.23.10
 	k8s.io/kubectl v0.23.1
 	k8s.io/kubelet v0.22.11
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
