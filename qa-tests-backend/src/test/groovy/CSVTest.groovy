@@ -153,11 +153,7 @@ class CSVTest extends BaseSpecification {
         }
     }
 
-    // This test can not be enabled in postgres mode yet. CSV export relies on Vulnerabilities GraphQL resolver,
-    // which is deprecated in postgres mode. Most likely, the resolver lookup should be split into the union of
-    // multiple resolver lookup calls, one for each replacement of the Vulnerabilities resolver.
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify CVE CSV data scoped by entity is correct"() {
         when:
         "Query fixable CVEs from graphQL"
