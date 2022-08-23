@@ -16,6 +16,7 @@ import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import entityTypes from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import queryService from 'utils/queryService';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import FixableCveExportButton from '../VulnMgmtComponents/FixableCveExportButton';
 import TableWidget from './TableWidget';
@@ -42,13 +43,16 @@ const TableWidgetFixableCves = ({
     const [fixableCvesPage, setFixableCvesPage] = useState(0);
     const [cveSort, setCveSort] = useState(defaultCveSort);
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+
     const displayedEntityType = resourceLabels[entityType];
 
     const queryFieldName = queryFieldNames[entityType];
-    let queryVulnCounterFieldName = 'vulnCounter';
-    let queryVulnsFieldName = 'vulns';
-    let queryCVEFieldsName = 'cveFields';
-    let queryFragment = VULN_CVE_LIST_FRAGMENT;
+    let queryVulnCounterFieldName = showVMUpdates ? 'imageVulnerabilityCounter' : 'vulnCounter';
+    let queryVulnsFieldName = showVMUpdates ? 'imageVulnerabilities' : 'vulns';
+    let queryCVEFieldsName = showVMUpdates ? 'imageCVEFields' : 'cveFields';
+    let queryFragment = showVMUpdates ? IMAGE_CVE_LIST_FRAGMENT : VULN_CVE_LIST_FRAGMENT;
 
     if (vulnType === entityTypes.CLUSTER_CVE) {
         queryVulnCounterFieldName = 'clusterVulnerabilityCounter';

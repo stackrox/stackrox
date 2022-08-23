@@ -14,6 +14,7 @@ import Loader from 'Components/Loader';
 import NumberedList from 'Components/NumberedList';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const MOST_COMMON_VULNERABILITIES = gql`
     query mostCommonVulnerabilitiesInDeployment(
@@ -36,6 +37,23 @@ const MOST_COMMON_VULNERABILITIES = gql`
     }
 `;
 
+const MOST_COMMON_IMAGE_VULNERABILITIES = gql`
+    query mostCommonImageVulnerabilities($query: String, $vulnPagination: Pagination) {
+        results: imageVulnerabilities(query: $query, pagination: $vulnPagination) {
+            id
+            cve
+            cvss
+            scoreVersion
+            isFixable
+            deploymentCount
+            imageCount
+            summary
+            imageCount
+            lastScanned
+        }
+    }
+`;
+
 const processData = (data, workflowState) => {
     const results = sortBy(data.results, ['cvss']);
 
@@ -44,7 +62,14 @@ const processData = (data, workflowState) => {
 };
 
 const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
-    const { loading, data = {} } = useQuery(MOST_COMMON_VULNERABILITIES, {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+
+    const queryToUse = showVMUpdates
+        ? MOST_COMMON_IMAGE_VULNERABILITIES
+        : MOST_COMMON_VULNERABILITIES;
+
+    const { loading, data = {} } = useQuery(queryToUse, {
         variables: {
             query: queryService.objectToWhereClause({
                 'Deployment ID': deploymentId,
@@ -90,10 +115,14 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
         ])
         .toUrl();
 
+    const header = showVMUpdates
+        ? 'Most Common Image Vulnerabilities'
+        : 'Most Common Vulnerabilities';
+
     return (
         <Widget
             className="h-full pdf-page"
-            header="Most Common Vulnerabilities"
+            header={header}
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
