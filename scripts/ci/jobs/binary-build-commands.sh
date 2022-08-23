@@ -5,10 +5,13 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
-make_bin() {
-    info "Making bin"
+make_cache() {
+    info "Making cache"
 
     go mod download
+    cd ui
+    yarn install
+    cd ..
 }
 
-make_bin "$*"
+make_cache "$*"
