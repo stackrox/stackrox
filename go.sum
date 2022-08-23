@@ -2746,8 +2746,8 @@ github.com/spiffe/go-spiffe/v2 v2.1.0/go.mod h1:5qg6rpqlwIub0JAiF1UK9IMD6BpPTmvG
 github.com/src-d/gcfg v1.4.0/go.mod h1:p/UMsR43ujA89BJY9duynAwIpvqEujIH/jFlfL7jWoI=
 github.com/ssgreg/nlreturn/v2 v2.1.0/go.mod h1:E/iiPB78hV7Szg2YfRgyIrk1AD6JVMTRkkxBiELzh2I=
 github.com/ssgreg/nlreturn/v2 v2.2.1/go.mod h1:E/iiPB78hV7Szg2YfRgyIrk1AD6JVMTRkkxBiELzh2I=
-github.com/stackrox/bleve v0.0.0-20220823175043-006bb312b05f h1:l14VlKQdJXfeH6QkKY+DGu9S7iq8wo+8XbIMrWcvNog=
-github.com/stackrox/bleve v0.0.0-20220823175043-006bb312b05f/go.mod h1:iEpZccUqBH5f0BOF0uH78s8+dUaG/OWu4xuYMXBOdGs=
+github.com/stackrox/bleve v0.0.0-20220823204005-3f423584e6aa h1:0LS5LzqJqvQHcWwzHcAekkhKBJRgQFnig/IGsjm20B0=
+github.com/stackrox/bleve v0.0.0-20220823204005-3f423584e6aa/go.mod h1:iEpZccUqBH5f0BOF0uH78s8+dUaG/OWu4xuYMXBOdGs=
 github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855 h1:5pQczch8XO6MddfAHXdoYEVFMv5kqBBrpzJ/p5M5AkA=
 github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855/go.mod h1:hJeI5MbszujJq1W6nrGMoO0ACa85iQi5pqHl68id0h0=
 github.com/stackrox/docker-registry-client v0.0.0-20220204234128-07f109db0819 h1:1jcyovr8lC0vBax5TFNzpXOChl/sJr/IoLVUFkYEMpM=
