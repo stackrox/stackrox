@@ -60,6 +60,8 @@ test_upgrade() {
     validate_sensor_bundle_via_upgrader "$TEST_ROOT/$DEPLOY_DIR"
     sensor_wait
 
+    touch "${STATE_DEPLOYED}"
+
     test_sensor_bundle
     test_upgrader
     remove_existing_stackrox_resources
