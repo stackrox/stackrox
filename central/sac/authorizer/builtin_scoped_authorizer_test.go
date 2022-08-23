@@ -135,6 +135,12 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 			scopeKeys: readCluster(firstCluster.ID, resources.Cluster.Resource),
 			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
 		},
+		{
+			name:      "deny read from anything when scope deny all",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeExcludeAll)},
+			scopeKeys: []sac.ScopeKey{sac.AccessModeScopeKey(storage.Access_READ_ACCESS), sac.ResourceScopeKey(resources.InstallationInfo.Resource)},
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny},
+		},
 	}
 	for _, tc := range tests {
 		tc := tc
