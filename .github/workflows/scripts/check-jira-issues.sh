@@ -84,6 +84,8 @@ if [ "$DRY_RUN" = "false" ]; then
     while read -r KEY; do
         comment_issue "$KEY"
     done <<<"$OPEN_ISSUES"
+else
+    exit 0
 fi
 
 exit 1
