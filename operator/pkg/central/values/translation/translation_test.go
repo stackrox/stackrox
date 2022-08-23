@@ -31,8 +31,8 @@ func TestTranslate(t *testing.T) {
 	claimName := "central-claim-name"
 	scannerComponentPolicy := platform.ScannerComponentEnabled
 	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
-	centralMonitoringExposeEndpointEnabled := platform.ExposeEndpointEnabled
-	centralMonitoringExposeEndpointDisabled := platform.ExposeEndpointDisabled
+	monitoringExposeEndpointEnabled := platform.ExposeEndpointEnabled
+	monitoringExposeEndpointDisabled := platform.ExposeEndpointDisabled
 
 	truth := true
 	lbPort := int32(12345)
@@ -107,7 +107,7 @@ func TestTranslate(t *testing.T) {
 								Name: "my-default-tls-secret",
 							},
 							Monitoring: &platform.Monitoring{
-								ExposeEndpoint: &centralMonitoringExposeEndpointEnabled,
+								ExposeEndpoint: &monitoringExposeEndpointEnabled,
 							},
 							Persistence: &platform.Persistence{
 								HostPath: &platform.HostPathSpec{
@@ -181,6 +181,9 @@ func TestTranslate(t *testing.T) {
 										corev1.ResourceMemory: resource.MustParse("120"),
 									},
 								},
+							},
+							Monitoring: &platform.Monitoring{
+								ExposeEndpoint: &monitoringExposeEndpointEnabled,
 							},
 						},
 						Customize: &platform.CustomizeSpec{
@@ -361,6 +364,7 @@ func TestTranslate(t *testing.T) {
 							"memory": "120",
 						},
 					},
+					"exposeMonitoring": true,
 				},
 				"system": map[string]interface{}{
 					"createSCCs": true,
@@ -403,7 +407,12 @@ func TestTranslate(t *testing.T) {
 					Spec: platform.CentralSpec{
 						Central: &platform.CentralComponentSpec{
 							Monitoring: &platform.Monitoring{
-								ExposeEndpoint: &centralMonitoringExposeEndpointDisabled,
+								ExposeEndpoint: &monitoringExposeEndpointDisabled,
+							},
+						},
+						Scanner: &platform.ScannerComponentSpec{
+							Monitoring: &platform.Monitoring{
+								ExposeEndpoint: &monitoringExposeEndpointDisabled,
 							},
 						},
 					},
@@ -417,6 +426,9 @@ func TestTranslate(t *testing.T) {
 							"createClaim": false,
 						},
 					},
+				},
+				"scanner": map[string]interface{}{
+					"exposeMonitoring": false,
 				},
 			},
 		},

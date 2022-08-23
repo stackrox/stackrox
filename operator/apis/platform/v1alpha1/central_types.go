@@ -166,36 +166,6 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 	return pointer.BoolPtrDerefOr(c.AdminPasswordGenerationDisabled, false)
 }
 
-// Monitoring defines settings for monitoring endpoint.
-type Monitoring struct {
-	// Expose Central's monitoring endpoint. A new service, "monitoring",
-	// with port 9090, will be created as well as a network policy allowing
-	// inbound connections to the port.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
-	ExposeEndpoint *ExposeEndpoint `json:"exposeEndpoint,omitempty"`
-}
-
-// IsEnabled checks whether exposing of endpoint is enabled.
-// This method is safe to be used with nil receivers.
-func (s *Monitoring) IsEnabled() bool {
-	if s == nil || s.ExposeEndpoint == nil {
-		return false // disabled by default
-	}
-
-	return *s.ExposeEndpoint == ExposeEndpointEnabled
-}
-
-// ExposeEndpoint is a type for monitoring sub-struct.
-//+kubebuilder:validation:Enum=Enabled;Disabled
-type ExposeEndpoint string
-
-const (
-	// ExposeEndpointEnabled means that component should expose monitoring port.
-	ExposeEndpointEnabled ExposeEndpoint = "Enabled"
-	// ExposeEndpointDisabled means that component should not expose monitoring port.
-	ExposeEndpointDisabled ExposeEndpoint = "Disabled"
-)
-
 // Persistence defines persistence settings for central.
 type Persistence struct {
 	// Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
@@ -320,6 +290,12 @@ type ScannerComponentSpec struct {
 	// Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="DB",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
 	DB *DeploymentSpec `json:"db,omitempty"`
+
+	// Configures monitoring endpoint for Scanner. The monitoring endpoint
+	// allows other services to collect metrics from Scanner, provided in
+	// Prometheus compatible format.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
 // GetAnalyzer returns the analyzer component even if receiver is nil

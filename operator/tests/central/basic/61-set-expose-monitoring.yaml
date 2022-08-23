@@ -6,3 +6,6 @@ spec:
   central:
     monitoring:
       exposeEndpoint: Enabled
+  scanner:
+    monitoring:
+      exposeEndpoint: Enabled

@@ -61,3 +61,26 @@ spec:
     - Ingress
 
 {{ end -}}
+
+{{ if ._rox.scanner.exposeMonitoring }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanner-monitoring
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "scanner-monitoring") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "scanner-monitoring") | nindent 4 }}
+spec:
+  ingress:
+  - ports:
+    - port: 9090
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: scanner
+  policyTypes:
+    - Ingress
+{{ end }}

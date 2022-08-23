@@ -19,6 +19,11 @@ spec:
     - name: grpcs-scanner
       port: 8443
       targetPort: 8443
+    {{ if ._rox.scanner.exposeMonitoring -}}
+    - name: monitoring
+      port: 9090
+      targetPort: monitoring
+    {{- end}}
   selector:
     app: scanner
   type: ClusterIP
