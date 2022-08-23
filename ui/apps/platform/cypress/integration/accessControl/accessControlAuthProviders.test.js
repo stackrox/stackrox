@@ -3,51 +3,57 @@ import {
     selectors,
     accessModalSelectors,
 } from '../../constants/AccessControlPage';
-import { permissions as permissionsApi } from '../../constants/apiEndpoints';
+import * as api from '../../constants/apiEndpoints';
 import sampleCert from '../../helpers/sampleCert';
 import { generateNameWithDate, getInputByLabel } from '../../helpers/formHelpers';
+import { visit, visitWithPermissions } from '../../helpers/visit';
 import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAccessRole.json';
 
 import withAuth from '../../helpers/basicAuth';
 
-// TODO Fix 'v1/authProviders*' without initial slash and with asterisk in apiEndpoints?
-const authProvidersApi = {
-    list: '/v1/authProviders',
-    create: '/v1/authProviders',
-};
-
-const mypermissionApi = '/v1/mypermissions';
-
-const groupsApi = {
-    list: '/v1/groups',
-    batch: '/v1/groupsbatch',
-};
-
 const h1 = 'Access Control';
 const h2 = 'Auth providers';
+
+const routeMatcherMap = {
+    authProviders: {
+        method: 'GET',
+        url: api.auth.authProviders,
+    },
+    roles: {
+        method: 'GET',
+        url: api.roles.list,
+    },
+    groups: {
+        method: 'GET',
+        url: api.groups.list,
+    },
+};
+
+function visitAuthProviders(staticResponseMap) {
+    visit(authProvidersUrl, { routeMatcherMap }, staticResponseMap);
+
+    cy.get(selectors.breadcrumbNav).should('not.exist');
+    cy.get(`${selectors.h1}:contains("${h1}")`);
+    cy.get(`${selectors.navLinkCurrent}:contains("${h2}")`);
+    cy.get(selectors.list.createButton).should('have.text', 'Create auth provider');
+    cy.contains(selectors.h2, /^\d+ results? found$/).should('exist');
+}
+
+function visitAuthProviderById(id, staticResponseMap) {
+    visit(`${authProvidersUrl}/${id}`, { routeMatcherMap }, staticResponseMap);
+}
 
 describe('Access Control Auth providers', () => {
     withAuth();
 
-    function visitAuthProviders(saveProviderMock = {}) {
-        cy.intercept('GET', authProvidersApi.list).as('GetAuthProviders');
-        cy.intercept('GET', mypermissionApi).as('GetMyPermissions');
-        cy.intercept('POST', authProvidersApi.create, saveProviderMock).as('CreateAuthProvider');
-        cy.visit(authProvidersUrl);
-        cy.wait('@GetAuthProviders');
-        cy.wait('@GetMyPermissions');
-    }
-
     it('displays alert if no permission', () => {
-        cy.intercept('GET', permissionsApi.mypermissions, {
+        const permissionsStaticResponse = {
             fixture: 'auth/mypermissionsMinimalAccess.json',
-        }).as('GetMyPermissions');
-        cy.visit(authProvidersUrl);
-        cy.wait('@GetMyPermissions');
+        };
+        visitWithPermissions(authProvidersUrl, permissionsStaticResponse);
 
-        cy.get(selectors.h1).should('have.text', h1);
+        cy.get(`${selectors.h1}:contains("${h1}")`);
         cy.get(selectors.navLink).should('not.exist');
-
         cy.get(selectors.h2).should('not.exist');
 
         cy.get(selectors.alertTitle).should(
@@ -56,19 +62,13 @@ describe('Access Control Auth providers', () => {
         );
     });
 
-    it('list has headings, link, button, and table head cells, and no breadcrumbs', () => {
-        cy.intercept('GET', authProvidersApi.list, {
-            fixture: 'auth/authProviders-id1-id2-id3.json',
-        }).as('GetAuthProviders');
-        visitAuthProviders();
-
-        cy.get(selectors.breadcrumbNav).should('not.exist');
-
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
-
-        cy.contains(selectors.h2, /^\d+ results? found$/).should('exist');
-        cy.get(selectors.list.createButton).should('have.text', 'Create auth provider');
+    it('list has table head cells', () => {
+        const staticResponseMap = {
+            authProviders: {
+                fixture: 'auth/authProviders-id1-id2-id3.json',
+            },
+        };
+        visitAuthProviders(staticResponseMap);
 
         cy.get(`${selectors.list.th}:contains("Name")`);
         cy.get(`${selectors.list.th}:contains("Type")`);
@@ -161,22 +161,24 @@ describe('Access Control Auth providers', () => {
     });
 
     it('edits OpenID Connect with a client secret without losing the value', () => {
-        cy.intercept('GET', authProvidersApi.list, {
-            fixture: 'auth/authProvidersWithClientSecret.json',
-        }).as('GetAuthProviders');
-        cy.intercept('GET', groupsApi.list, {
-            fixture: 'auth/groupsWithClientSecret.json',
-        }).as('GetGroups'); // to compute default access role
+        const staticResponseMap = {
+            authProviders: {
+                fixture: 'auth/authProvidersWithClientSecret.json',
+            },
+            groups: {
+                fixture: 'auth/groupsWithClientSecret.json', // to compute default access role
+            },
+        };
+
         cy.intercept('PUT', '/v1/authProviders/auth-provider-1', {
             body: {},
         }).as('PutAuthProvider');
-        cy.intercept('POST', groupsApi.batch, {
+        cy.intercept('POST', api.groups.batch, {
             body: {},
         }).as('PostGroupsBatch');
 
         const id = 'auth-provider-1';
-        cy.visit(`${authProvidersUrl}/${id}`);
-        cy.wait(['@GetAuthProviders', '@GetGroups']);
+        visitAuthProviderById(id, staticResponseMap);
 
         const { inputIssuer, inputClientSecret, checkboxDoNotUseClientSecret } =
             selectors.form.authProvider.oidc;
@@ -208,16 +210,19 @@ describe('Access Control Auth providers', () => {
     });
 
     it('edit OpenID Connect minimum access role', () => {
-        cy.intercept('GET', authProvidersApi.list, {
-            fixture: 'auth/authProvidersWithClientSecret.json',
-        }).as('GetAuthProviders');
-        cy.intercept('GET', groupsApi.list, {
-            fixture: 'auth/groupsWithClientSecret.json',
-        }).as('GetGroups'); // to compute default access role
+        const staticResponseMap = {
+            authProviders: {
+                fixture: 'auth/authProvidersWithClientSecret.json',
+            },
+            groups: {
+                fixture: 'auth/groupsWithClientSecret.json', // to compute default access role
+            },
+        };
+
         cy.intercept('PUT', '/v1/authProviders/auth-provider-1', {
             body: {},
         }).as('PutAuthProvider');
-        cy.intercept('POST', groupsApi.batch, (req) => {
+        cy.intercept('POST', api.groups.batch, (req) => {
             expect(req.body).to.deep.equal(
                 updateMinimumAccessRoleRequest,
                 `request: ${JSON.stringify(req.body)} expected: ${JSON.stringify(
@@ -228,8 +233,7 @@ describe('Access Control Auth providers', () => {
         }).as('PostGroupsBatch');
 
         const id = 'auth-provider-1';
-        cy.visit(`${authProvidersUrl}/${id}`);
-        cy.wait(['@GetAuthProviders', '@GetGroups']);
+        visitAuthProviderById(id, staticResponseMap);
 
         const { selectMinimumAccessRole, selectMinimumAccessRoleItem } =
             selectors.form.minimumAccessRole;
@@ -299,7 +303,7 @@ describe('Access Control Auth providers', () => {
             active: false,
         };
 
-        visitAuthProviders(mockUserCertResponse);
+        visitAuthProviders();
 
         const type = 'User Certificates';
 
@@ -331,14 +335,16 @@ describe('Access Control Auth providers', () => {
             delay: 1,
         });
 
+        cy.intercept('POST', api.auth.authProviders, { body: mockUserCertResponse }).as(
+            'CreateAuthProvider'
+        ); // mock POST means that the list is empty after save
+
         cy.get(selectors.form.saveButton).should('be.enabled').click();
 
         cy.wait('@CreateAuthProvider'); // wait for POST to finish
-        cy.wait('@GetAuthProviders'); // wait for GET to finish, which means redirect back to list page
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/access-control/auth-providers');
-            expect(loc.search).to.eq('');
-        });
+        cy.wait('@authProviders'); // wait for GET to finish, which means redirect back to list page
+        cy.location('pathname').should('eq', '/main/access-control/auth-providers');
+        cy.location('search').should('eq', '');
     });
 
     it('add Google IAP', () => {
@@ -371,16 +377,14 @@ describe('Access Control Auth providers', () => {
     });
 
     describe('empty state', () => {
-        function gotoAuthProvidersWithMock(fixture = 'auth/authProviders-id1-id2-id3.json') {
-            cy.intercept('GET', authProvidersApi.list, { fixture }).as('GetAuthProviders');
-
-            cy.visit(authProvidersUrl);
-            cy.wait('@GetAuthProviders');
-        }
-
         it('should show a confirmation before deleting a provider', () => {
-            gotoAuthProvidersWithMock('auth/authProviders-id1.json');
-            cy.log(selectors.list);
+            const staticResponseMap = {
+                authProviders: {
+                    fixture: 'auth/authProviders-id1.json',
+                },
+            };
+            visitAuthProviders(staticResponseMap);
+
             cy.get(selectors.list.authProviders.tdActions).click();
 
             cy.get(selectors.list.authProviders.deleteActionItem).click();
@@ -394,34 +398,33 @@ describe('Access Control Auth providers', () => {
         });
 
         it('should show empty state after deleting the last provider', () => {
-            gotoAuthProvidersWithMock('auth/authProviders-id1.json');
+            const staticResponseMap = {
+                authProviders: {
+                    fixture: 'auth/authProviders-id1.json',
+                },
+            };
+            visitAuthProviders(staticResponseMap);
+
             const id = 'authProvider-id1';
-            cy.intercept('DELETE', `${authProvidersApi.list}/${id}`, {}).as('DeleteAuthProvider');
+            cy.intercept('DELETE', `${api.auth.authProviders}/${id}`, {}).as('DeleteAuthProvider');
             cy.log(selectors.list);
             cy.get(selectors.list.authProviders.tdActions).click();
 
             cy.get(selectors.list.authProviders.deleteActionItem).click();
 
-            // mock now with empty list of providers like nothing is left
-            cy.intercept('GET', authProvidersApi.list, { authProviders: [] }).as(
-                'GetAuthProviders'
-            );
+            // Mock now with empty list of providers like nothing is left.
+            // Same alias as in staticResponseMap above.
+            cy.intercept('GET', api.auth.authProviders, { authProviders: [] }).as('authProviders');
             cy.get(accessModalSelectors.delete).click();
+            cy.wait(['@DeleteAuthProvider', '@authProviders']);
 
-            cy.wait(['@DeleteAuthProvider', '@GetAuthProviders']);
-
-            // TODO: uncomment out this last check,
-            //       after we are able to upgrade to Cypress 7.0.0+
-            //       See this GitHub issue: https://github.com/cypress-io/cypress/issues/9302#issuecomment-813691003
-            // should show empty state
-            // cy.get(selectors.list.authProviders.emptyState);
+            cy.get(selectors.list.authProviders.emptyState);
         });
     });
 
     it('displays message instead of form if entity id does not exist', () => {
-        cy.intercept('GET', authProvidersApi.list).as('GetAuthProviders');
-        cy.visit(`${authProvidersUrl}/bogus`);
-        cy.wait('@GetAuthProviders');
+        const id = 'bogus';
+        visitAuthProviderById(id);
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2)`).should('not.exist');

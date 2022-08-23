@@ -1,6 +1,4 @@
 {
-    "name": "",
-    "globalAccess": "NO_ACCESS",
     "resourceToAccess": {
         "APIToken": "NO_ACCESS",
         "Alert": "READ_ACCESS",

@@ -30,3 +30,26 @@ export function visit(pageUrl, requestConfig, staticResponseMap) {
     cy.wait(['@featureflags', '@mypermissions', '@config/public']);
     waitForResponses(requestConfig);
 }
+
+/*
+ * Visit page to test conditional rendering for user role permissions.
+ *
+ * { body: { resourceToAccess: { … } } }
+ * { fixture: 'fixtures/wherever/whatever.json' }
+ */
+export function visitWithPermissions(
+    pageUrl,
+    permissionsStaticResponse,
+    requestConfig,
+    staticResponseMap
+) {
+    cy.intercept('GET', api.featureFlags).as('featureflags');
+    cy.intercept('GET', api.roles.mypermissions, permissionsStaticResponse).as('mypermissions');
+    cy.intercept('GET', api.system.configPublic).as('config/public');
+    interceptRequests(requestConfig, staticResponseMap);
+
+    cy.visit(pageUrl);
+
+    cy.wait(['@featureflags', '@mypermissions', '@config/public']);
+    waitForResponses(requestConfig);
+}
