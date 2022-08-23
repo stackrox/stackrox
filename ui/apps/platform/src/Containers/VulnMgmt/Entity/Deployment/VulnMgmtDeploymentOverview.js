@@ -127,6 +127,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                             entityType={entityTypes.DEPLOYMENT}
                             name={safeData?.name}
                             id={safeData?.id}
+                            vulnType={entityTypes.IMAGE_CVE}
                         />
                     </Tab>
                 </BinderTabs>

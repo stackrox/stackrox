@@ -141,6 +141,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                     entityType={entityTypes.NAMESPACE}
                                     name={safeData?.metadata?.name}
                                     id={safeData?.metadata?.id}
+                                    vulnType={entityTypes.IMAGE_CVE}
                                 />
                             </Tab>
                         </BinderTabs>
