@@ -44,6 +44,19 @@ IMAGE_TAG_BASE ?= $(IMAGE_REPO)/stackrox-operator
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
+# BUNDLE_GEN_FLAGS are the flags passed to the operator-sdk generate bundle command
+# Version is hardcoded to 0.0.1 here because otherwise git-versioned files are changed which we want to avoid.
+# The correct version is updated later.
+BUNDLE_GEN_FLAGS ?= -q --overwrite --version 0.0.1 $(BUNDLE_METADATA_OPTS)
+
+# USE_IMAGE_DIGESTS defines if images are resolved via tags or digests
+# You can enable this value if you would like to use SHA Based Digests
+# To enable set flag to true
+USE_IMAGE_DIGESTS ?= false
+ifeq ($(USE_IMAGE_DIGESTS), true)
+    BUNDLE_GEN_FLAGS += --use-image-digests
+endif
+
 # INDEX_IMG defines the image:tag used for the index (a.k.a. catalog) image, containing the single operator bundle image.
 INDEX_IMG_BASE = $(IMAGE_TAG_BASE)-index
 INDEX_IMG ?= $(INDEX_IMG_BASE):v$(VERSION)
@@ -397,14 +410,12 @@ ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 
 .PHONY: bundle
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
-# Version is hardcoded to 0.0.1 here because otherwise git-versioned files are changed which we want to avoid.
-# The correct version is updated later.
 # Likewise, we hardcode the image reference to quay.io/stackrox-io/stackrox-operator. If this is overridden via
 # the IMG_REPO environment variable, the final reference will be injected in the bundle-post-process step.
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=quay.io/stackrox-io/stackrox-operator:0.0.1
 	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image scorecard-test=quay.io/operator-framework/scorecard-test:v$(OPERATOR_SDK_VERSION)
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version 0.0.1 $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 # Delete lines that copy the original bundle files in bundle.Dockerfile (we can't just use `rm` in scratch image).
 # Post-processed files will be copied instead, as configured in bundle.Dockerfile.extra.
 	sed -i'.bak' -e '/# Copy files to locations specified by labels./d' bundle.Dockerfile
