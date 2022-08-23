@@ -16,6 +16,7 @@ import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities
 import DeploymentsWithMostSeverePolicyViolations from 'Containers/VulnMgmt/widgets/DeploymentsWithMostSeverePolicyViolations';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
@@ -41,6 +42,9 @@ const emptyNamespace = {
 };
 
 const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+
     const workflowState = useContext(workflowStateContext);
 
     // guard against incomplete GraphQL-cached data
@@ -141,7 +145,9 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                     entityType={entityTypes.NAMESPACE}
                                     name={safeData?.metadata?.name}
                                     id={safeData?.metadata?.id}
-                                    vulnType={entityTypes.IMAGE_CVE}
+                                    vulnType={
+                                        showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE
+                                    }
                                 />
                             </Tab>
                         </BinderTabs>
