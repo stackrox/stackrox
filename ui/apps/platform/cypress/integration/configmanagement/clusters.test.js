@@ -10,6 +10,7 @@ import {
 } from '../../helpers/configWorkflowUtils';
 import { url, selectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { triggerScan } from '../../helpers/compliance';
 
 describe('Config Management Entities (Clusters)', () => {
     withAuth();
@@ -27,6 +28,8 @@ describe('Config Management Entities (Clusters)', () => {
     });
 
     it('should click on the controls link in the clusters list and open the side panel with the controls list', () => {
+        triggerScan(); // because test assumes that scan results are available
+
         clickOnRowEntity('clusters', 'controls');
     });
 
