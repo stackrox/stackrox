@@ -109,6 +109,73 @@ jobs:
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}
 
+  ci:
+    name: Configure OpenShift CI jobs
+    needs: [variables]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out openshift/release
+        uses: actions/checkout@v3
+        with:
+          repository: openshift/release
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+      - name: Check remote branch exists
+        id: check-existing
+        run: |
+          if git ls-remote --quiet --exit-code origin "stackrox-release-$RELEASE"; then
+            echo "::set-output name=branch-exists::true"
+            echo "::notice::OpenShift CI configuration branch exists. Assuming CI is ready."
+          else
+            echo "::set-output name=branch-exists::false"
+          fi
+      - name: Initialize mandatory git config
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          git config user.name "${{github.event.sender.login}}"
+          git config user.email noreply@github.com
+      - name: Branch
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        env:
+          RELEASE: "${{needs.variables.outputs.release}}"
+          CFG_DIR: "ci-operator/config/stackrox/stackrox"
+          JOBS_DIR: "ci-operator/jobs/stackrox/stackrox"
+        run: |
+          PREFIX="$CFG_DIR/stackrox-stackrox-release-$RELEASE"
+          git switch --create "stackrox-release-$RELEASE"
+
+          # Duplicate the main config.
+          yq ".promotion.tag=\"$RELEASE\" | .zz_generated_metadata.branch=\"release-$RELEASE\"" \
+            "$CFG_DIR/stackrox-stackrox-master.yaml" \
+            > "${PREFIX}.yaml"
+
+          # Duplicate the opensource images config.
+          yq ".promotion.tag=\"$RELEASE-stackrox-branding\" | .zz_generated_metadata.branch=\"release-$RELEASE\"" \
+            "$CFG_DIR/stackrox-stackrox-master__stackrox_branding.yaml" \
+            > "${PREFIX}__stackrox_branding.yaml"
+
+          git add "$CFG_DIR"
+
+          make update
+
+          # Delete periodic and presubmit jobs if any.
+          PREFIX="$JOBS_DIR/stackrox-stackrox-release-$RELEASE"
+          rm -vf "$PREFIX-periodics.yaml" "$PREFIX-presubmits.yaml"
+
+          git add ci-operator
+          git commit -m "Release $RELEASE files" >> $GITHUB_STEP_SUMMARY
+      - name: Push and create PR
+        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          git push --set-upstream origin stackrox-release-${RELEASE}
+
+          PR_URL=$(gh pr create --repo openshift/release \
+            --title "Stackrox release ${{needs.variables.outputs.release}}" \
+            --base "stackrox-release-${{needs.variables.outputs.release}}" \
+            --body "CI configuration files to support Stackrox release \`${{needs.variables.outputs.release}}\`." \
+            --assignee "$GITHUB_ACTOR")
+
+          echo ":arrow_right: Review and merge the [PR]($PR_URL) that has been created for the \`openshift/release\` repository." >> $GITHUB_STEP_SUMMARY
+
   branch:
     name: Prepare release branch
     needs: [variables, check-docs-branch]
