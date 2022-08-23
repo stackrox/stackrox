@@ -908,6 +908,7 @@ export const VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
         }
         imageCount(query: $query)
         deploymentCount(query: $query)
+        operatingSystem
         priority
     }
 `;
