@@ -2,6 +2,8 @@ import React, { ReactNode } from 'react';
 import { Button, Popover, PopoverPosition } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
+import './WidgetOptionsMenu.css';
+
 export type OptionsMenuProps = {
     bodyContent: ReactNode;
 };
@@ -9,8 +11,8 @@ export type OptionsMenuProps = {
 function WidgetOptionsMenu({ bodyContent }: OptionsMenuProps) {
     return (
         <Popover
+            className="widget-options-menu"
             minWidth="0px"
-            className="pf-u-pr-0"
             position={PopoverPosition.bottomEnd}
             enableFlip={false}
             bodyContent={bodyContent}
