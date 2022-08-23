@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -17,6 +18,7 @@ func (s errScopeCheckerCore) SubScopeChecker(_ ScopeKey) ScopeCheckerCore {
 }
 
 func (s errScopeCheckerCore) TryAllowed() TryAllowedResult {
+	logging.LoggerForModule().Error("This should not be called", s.err)
 	utils.Must(s.err)
 	return Deny
 }
