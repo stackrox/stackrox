@@ -12,8 +12,8 @@ make_cache() {
     cd ui
     yarn install
     cd ..
-    mkdir /cache-saved
-    touch /cache-saved/to-keep-openshift-release-happy.txt
+    mkdir -p /cache-saved
+    touch /cache-saved/to-keep-openshift-release-happy.txt || true
 }
 
 make_cache "$*"
