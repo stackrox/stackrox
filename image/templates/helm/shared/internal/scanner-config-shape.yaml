@@ -34,5 +34,6 @@ scanner:
     cert: null # string
     key: null # string
     generate: null # bool
+  exposeMonitoring: null # bool
 system:
   enablePodSecurityPolicies: null # bool

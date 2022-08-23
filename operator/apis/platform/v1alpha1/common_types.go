@@ -166,3 +166,33 @@ const (
 	// ScannerAutoScalingDisabled means that scanner autoscaling should be disabled.
 	ScannerAutoScalingDisabled AutoScalingPolicy = "Disabled"
 )
+
+// Monitoring defines settings for monitoring endpoint.
+type Monitoring struct {
+	// Expose the monitoring endpoint. A new service, "monitoring",
+	// with port 9090, will be created as well as a network policy allowing
+	// inbound connections to the port.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	ExposeEndpoint *ExposeEndpoint `json:"exposeEndpoint,omitempty"`
+}
+
+// IsEnabled checks whether exposing of endpoint is enabled.
+// This method is safe to be used with nil receivers.
+func (s *Monitoring) IsEnabled() bool {
+	if s == nil || s.ExposeEndpoint == nil {
+		return false // disabled by default
+	}
+
+	return *s.ExposeEndpoint == ExposeEndpointEnabled
+}
+
+// ExposeEndpoint is a type for monitoring sub-struct.
+//+kubebuilder:validation:Enum=Enabled;Disabled
+type ExposeEndpoint string
+
+const (
+	// ExposeEndpointEnabled means that component should expose monitoring port.
+	ExposeEndpointEnabled ExposeEndpoint = "Enabled"
+	// ExposeEndpointDisabled means that component should not expose monitoring port.
+	ExposeEndpointDisabled ExposeEndpoint = "Disabled"
+)
