@@ -66,11 +66,11 @@ if [ -z "$ISSUES" ]; then
 fi
 
 gh_summary <<EOF
-The following Jira issues are still open for release $RELEASE_PATCH:
+:red_circle: The following Jira issues are still open for release $RELEASE_PATCH:
 
 $ISSUES
 
-Contact the assignees to clarify the status.
+:arrow_right: Contact the assignees to clarify the status.
 EOF
 
 gh_log error "There are non-closed Jira issues for version $RELEASE_PATCH."
