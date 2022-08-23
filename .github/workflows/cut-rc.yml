@@ -289,9 +289,32 @@ jobs:
             create next milestone `${{needs.variables.outputs.next-milestone}}`." }}
             ]}
 
+  wait-for-images:
+    name: Wait for images on Quay.io
+    needs: [variables, cut-rc]
+    runs-on: ubuntu-latest
+    if: >- # Skip if no clusters are going to be created.
+      github.event.inputs.create-gke-cluster != 'false' ||
+      github.event.inputs.create-os4-cluster != 'false' ||
+      needs.variables.outputs.rc == '1' &&
+      github.event.inputs.create-long-cluster != 'false'
+    env:
+      QUAY_TOKEN: ${{secrets.QUAY_RHACS_ENG_BEARER_TOKEN}}
+    strategy:
+      matrix:
+        image: [main, scanner, scanner-db, collector]
+    steps:
+      - name: Wait for the ${{matrix.image}} image
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            wait-for-image \
+            "${{matrix.image}}" \
+            "${{needs.variables.outputs.milestone}}"
+
   create-k8s-cluster:
     name: Create k8s cluster
-    needs: [variables, cut-rc]
+    needs: [variables, wait-for-images]
     # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
     if: github.event.inputs.dry-run != 'true' && github.event.inputs.create-gke-cluster != 'false'
     uses: ./.github/workflows/create-cluster.yml
@@ -304,7 +327,7 @@ jobs:
 
   create-os4-cluster:
     name: Create OS4 cluster
-    needs: [variables, cut-rc]
+    needs: [variables, wait-for-images]
     # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
     if: github.event.inputs.dry-run != 'true' && github.event.inputs.create-os4-cluster != 'false'
     uses: ./.github/workflows/create-cluster.yml
@@ -393,7 +416,7 @@ jobs:
 
   create-long-running-cluster:
     name: Create GKE long-running cluster
-    needs: [variables, cut-rc]
+    needs: [variables, wait-for-images]
     # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
     if: >-
       github.event.inputs.dry-run != 'true' &&
