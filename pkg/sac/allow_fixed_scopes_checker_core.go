@@ -1,8 +1,6 @@
 package sac
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
@@ -35,10 +33,6 @@ func (c allowFixedScopesCheckerCore) TryAllowed() TryAllowedResult {
 		return Allow
 	}
 	return Deny
-}
-
-func (c allowFixedScopesCheckerCore) PerformChecks(_ context.Context) error {
-	return nil
 }
 
 func (c allowFixedScopesCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerCore {

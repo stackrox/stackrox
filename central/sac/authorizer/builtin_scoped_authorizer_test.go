@@ -1,7 +1,6 @@
 package authorizer
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
@@ -654,7 +653,6 @@ func checkEffectiveAccessScope(t *testing.T, scc sac.ScopeCheckerCore, resource 
 func TestGlobalScopeCheckerCore(t *testing.T) {
 	t.Parallel()
 	scc := newGlobalScopeCheckerCore(nil, nil, nil, nil)
-	assert.Equal(t, nil, scc.PerformChecks(context.Background()))
 	assert.Equal(t, sac.Deny, scc.TryAllowed())
 }
 
@@ -696,8 +694,6 @@ func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T)
 					expected := tc.results[i]
 					assert.Equal(t, expected, scc.TryAllowed())
 				}
-				err := scc.PerformChecks(context.Background())
-				assert.NoError(t, err)
 			}
 		})
 	}

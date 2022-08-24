@@ -1,7 +1,6 @@
 package sac
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -90,10 +89,6 @@ func (c *testScopeCheckerCore) EffectiveAccessScope(resource permissions.Resourc
 		}
 	}
 	return effectiveaccessscope.FromClustersAndNamespacesMap(includedClusters, includedClusterNamespacePairs), nil
-}
-
-func (c *testScopeCheckerCore) PerformChecks(_ context.Context) error {
-	return nil
 }
 
 func (c *testScopeCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerCore {

@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -50,20 +49,6 @@ func (m *MockScopeCheckerCore) EffectiveAccessScope(resource permissions.Resourc
 func (mr *MockScopeCheckerCoreMockRecorder) EffectiveAccessScope(resource interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EffectiveAccessScope", reflect.TypeOf((*MockScopeCheckerCore)(nil).EffectiveAccessScope), resource)
-}
-
-// PerformChecks mocks base method.
-func (m *MockScopeCheckerCore) PerformChecks(ctx context.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PerformChecks", ctx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// PerformChecks indicates an expected call of PerformChecks.
-func (mr *MockScopeCheckerCoreMockRecorder) PerformChecks(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerformChecks", reflect.TypeOf((*MockScopeCheckerCore)(nil).PerformChecks), ctx)
 }
 
 // SubScopeChecker mocks base method.

@@ -14,7 +14,6 @@ import (
 //go:generate mockgen-wrapper
 type ScopeChecker interface {
 	SubScopeChecker(keys ...ScopeKey) ScopeChecker
-	PerformChecks(ctx context.Context) error
 	TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult
 	Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error)
 	TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult
@@ -57,11 +56,6 @@ func (c scopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	return scopeChecker{
 		core: curr,
 	}
-}
-
-// PerformChecks calls the `PerformChecks()` method on the wrapped ScopeCheckerCore.
-func (c scopeChecker) PerformChecks(ctx context.Context) error {
-	return c.core.PerformChecks(ctx)
 }
 
 // TryAllowed checks (in a non-blocking way) if access to the given (sub-)scope is allowed.
