@@ -8,16 +8,10 @@ import (
 	"github.com/stackrox/rox/pkg/reflectutils"
 )
 
-type objPredPair struct {
-	obj  interface{}
-	pred ScopePredicate
-}
-
 // ObjectFilter allows efficiently filtering (wrt. SAC constraints) objects.
 type ObjectFilter struct {
 	checker ScopeChecker
 	allowed []interface{}
-	maybe   []objPredPair
 }
 
 // NewObjectFilter creates a new object filter instance.
@@ -31,32 +25,11 @@ func NewObjectFilter(checker ScopeChecker) *ObjectFilter {
 func (f *ObjectFilter) Add(obj interface{}, pred ScopePredicate) {
 	if res := pred.TryAllowed(f.checker); res == Allow {
 		f.allowed = append(f.allowed, obj)
-	} else if res == Unknown {
-		f.maybe = append(f.maybe, objPredPair{
-			obj:  obj,
-			pred: pred,
-		})
 	}
 }
 
 // GetAllowed returns the list of allowed objects, or an error.
 func (f *ObjectFilter) GetAllowed(ctx context.Context) ([]interface{}, error) {
-	currMaybe := f.maybe
-	f.maybe = nil
-
-	if len(currMaybe) > 0 {
-		if err := f.checker.PerformChecks(ctx); err != nil {
-			return nil, err
-		}
-		for _, objAndPred := range currMaybe {
-			f.Add(objAndPred.obj, objAndPred.pred)
-		}
-
-		if len(f.maybe) > 0 {
-			return nil, errors.New("still Unknown objects after second iteration")
-		}
-	}
-
 	allowed := f.allowed
 	f.allowed = nil
 

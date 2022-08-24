@@ -66,7 +66,7 @@ func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storag
 // admin rights can be allowed on global scope.
 //
 // PerformChecks() has nothing to do because built-in authorizer never defers
-// authorization decisions, i.e., TryAllowed() returns sac.Unknown only in case
+// authorization decisions, i.e., TryAllowed() returns sac.Deny in case
 // of a non-recoverable error.
 //
 // SubScopeChecker() extracts the access mode from the scope key and returns
@@ -179,7 +179,7 @@ func (a *resourceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
 		if utils.Should(err) != nil {
-			return sac.Unknown
+			return sac.Deny
 		}
 		if scope.State == effectiveaccessscope.Included {
 			a.trace.RecordAllowOnResourceLevel(a.access.String(), a.resource.String())
@@ -244,7 +244,7 @@ func (a *clusterNamespaceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResul
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
 		if utils.Should(err) != nil {
-			return sac.Unknown
+			return sac.Deny
 		}
 		if effectiveAccessScopeAllows(scope, a.resource, a.clusterID, a.namespace) {
 			a.trace.RecordAllowOnScopeLevel(a.access.String(), a.resource.String(), a.clusterID, a.namespace, role.GetRoleName())

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
@@ -14,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -201,30 +199,13 @@ func (ds *datastoreImpl) getNetworkPolicy(ctx context.Context, id string) (*stor
 	return netpol, true, nil
 }
 
-func filterResultsOnce(resourceScopeChecker sac.ScopeChecker, results []*storage.NetworkPolicy) (allowed []*storage.NetworkPolicy, maybe []*storage.NetworkPolicy) {
+func filterResults(ctx context.Context, resourceScopeChecker sac.ScopeChecker, results []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, error) {
+	var allowed []*storage.NetworkPolicy
 	for _, netPol := range results {
 		scopeKeys := sac.KeyForNSScopedObj(netPol)
 		if res := resourceScopeChecker.TryAllowed(scopeKeys...); res == sac.Allow {
 			allowed = append(allowed, netPol)
-		} else if res == sac.Unknown {
-			maybe = append(maybe, netPol)
 		}
 	}
-	return
-}
-
-func filterResults(ctx context.Context, resourceScopeChecker sac.ScopeChecker, results []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, error) {
-	allowed, maybe := filterResultsOnce(resourceScopeChecker, results)
-	if len(maybe) > 0 {
-		if err := resourceScopeChecker.PerformChecks(ctx); err != nil {
-			return nil, err
-		}
-		extraAllowed, maybe := filterResultsOnce(resourceScopeChecker, maybe)
-		if len(maybe) > 0 {
-			utils.Should(errors.Errorf("still %d maybe results after PerformChecks", len(maybe)))
-		}
-		allowed = append(allowed, extraAllowed...)
-	}
-
 	return allowed, nil
 }

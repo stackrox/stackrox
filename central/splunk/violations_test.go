@@ -1351,10 +1351,9 @@ func (s *violationsTestSuite) TestViolationsHandlerError() {
 
 	// context.Background() did not go through our context validation and will not include any global access scope.
 	// We use this to make datastore generate an error which will make the request fail.
-	s.prepare().setContext(context.Background()).setAlerts(&s.deployAlert).runRequest(w)
-
-	s.Equal(http.StatusInternalServerError, w.Code)
-	s.Contains(w.Body.String(), "access scope was not found in context")
+	s.Panics(func() {
+		s.prepare().setContext(context.Background()).setAlerts(&s.deployAlert).runRequest(w)
+	})
 }
 
 // failingResponseWriter is an implementation of http.ResponseWriter that returns error on attempt to write to it
