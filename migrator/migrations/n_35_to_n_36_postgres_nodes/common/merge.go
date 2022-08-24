@@ -1,7 +1,6 @@
 package common
 
 import (
-	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
 	converter "github.com/stackrox/rox/migrator/migrations/cvehelper"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
@@ -83,7 +82,7 @@ func generateEmbeddedCVE(os string, cp *CVEParts) *storage.EmbeddedVulnerability
 		ret.Cvss = distroSpecifics.GetCvss()
 		ret.CvssV2 = distroSpecifics.GetCvssV2()
 		ret.CvssV3 = distroSpecifics.GetCvssV3()
-		ret.ScoreVersion = utils.CVEScoreVersionToEmbeddedScoreVersion(distroSpecifics.GetScoreVersion())
+		ret.ScoreVersion = converter.CVEScoreVersionToEmbeddedScoreVersion(distroSpecifics.GetScoreVersion())
 	}
 
 	// The `Suppressed` field is transferred to `State` field in `converter.ProtoCVEToEmbeddedCVE` and node cve deferral
