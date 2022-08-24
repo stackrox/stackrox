@@ -152,13 +152,72 @@ class CSVTest extends BaseSpecification {
         }
     }
 
+    def isPostgresRun() {
+        return Env.CI_JOBNAME.contains("postgres")
+    }
+
+    // Non-postgres runs
+    // "CVE", "CVE Type(s)", "Fixable", "CVSS Score (version)", "Env Impact (%)", "Impact Score", "Deployments",
+    // "Images", "Nodes", "Components", "Scanned", "Published", "Summary"
+    // Postgres runs
+    // "Image CVE", "Fixable", "CVSS Score", "Env Impact (%s)", "Impact Score", "Deployments", "Images",
+    // "Image Components", "Last Scanned", "Published", "Summary"
+
+    def getCVEIndex() {
+        return 0
+    }
+
+    def getCVSSScoreIndex() {
+        if (isPostgresRun()) {
+            return 2
+        } else {
+            return 3
+        }
+    }
+
+    def getDeploymentCountIndex() {
+        if (isPostgresRun()) {
+            return 5
+        } else {
+            return 6
+        }
+    }
+
+    def getImageCountIndex() {
+        if (isPostgresRun()) {
+            return 6
+        } else {
+            return 7
+        }
+    }
+
+    def getImageComponentCountIndex() {
+        if (isPostgresRun()) {
+            return 7
+        } else {
+            return 9
+        }
+    }
+
+    def getComponentId() {
+        if (isPostgresRun()) {
+            return "openssl#1.0.1k-3+deb8u5#debian:8"
+        } else {
+            return "b3BlbnNzbA:MS4wLjFrLTMrZGViOHU1"
+        }
+    }
+
+    def getComponentQuery() {
+        return "COMPONENT ID:" + getComponentId() + "+Fixable:true"
+    }
+
     @Category(BAT)
     def "Verify CVE CSV data scoped by entity is correct"() {
         when:
         "Query fixable CVEs from graphQL"
         def gqlService = new GraphQLService()
         def graphQLQuery = ""
-        if (Env.CI_JOBNAME.contains("postgres")) {
+        if (isPostgresRun()) {
             graphQLQuery = postgresGraphQLQuery
         } else {
             graphQLQuery = baseGraphQLQuery
@@ -176,7 +235,7 @@ class CSVTest extends BaseSpecification {
         "Fetch fixable CVE CSV"
         Response response = null
         def csvEndpoint = "/api/vm/export/csv"
-        if (Env.CI_JOBNAME.contains("postgres")) {
+        if (isPostgresRun()) {
             csvEndpoint = "/api/export/csv/image/cve"
         }
         def csvURL = "https://${Env.mustGetHostname()}:${Env.mustGetPort()}" + csvEndpoint
@@ -217,11 +276,11 @@ class CSVTest extends BaseSpecification {
             // "CVE", "CVE Type(s)", "Fixable", "CVSS Score (version)", "Env Impact (%)", "Impact Score", "Deployments",
             // "Images", "Nodes", "Components", "Scanned", "Published", "Summary"
             csvCVEs.add(
-                    new CVE(lines.get(i)[0],
-                            lines.get(i)[3].split()[0].toFloat(),
-                            lines.get(i)[6].toInteger(),
-                            lines.get(i)[7].toInteger(),
-                            lines.get(i)[9].toInteger())
+                    new CVE(lines.get(i)[getCVEIndex()],
+                            lines.get(i)[getCVSSScoreIndex()].split()[0].toFloat(),
+                            lines.get(i)[getDeploymentCountIndex()].toInteger(),
+                            lines.get(i)[getImageCountIndex()].toInteger(),
+                            lines.get(i)[getImageComponentCountIndex()].toInteger())
             )
         }
 
@@ -250,12 +309,12 @@ class CSVTest extends BaseSpecification {
         ] | "Image Sha:sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f+Fixable:true"
         FIXABLE_CVES_IN_COMPONENT_QUERY | FIXABLE_CVES_IN_COMPONENT_POSTGRES_QUERY   | [
                 // openssl 1.0.1k-3+deb8u5
-                id        : "b3BlbnNzbA:MS4wLjFrLTMrZGViOHU1",
+                id        : getComponentId(),
                 query: "",
                 scopeQuery: "",
                 vulnQuery : "Fixable:true",
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
-        ] | "COMPONENT ID:b3BlbnNzbA:MS4wLjFrLTMrZGViOHU1+Fixable:true"
+        ] | getComponentQuery()
         FIXABLE_CVES_IN_DEPLOYMENT_QUERY | FIXABLE_CVES_IN_DEPLOYMENT_POSTGRES_QUERY | [
                 id        : CVE_DEPLOYMENT.deploymentUid,
                 query: "",
