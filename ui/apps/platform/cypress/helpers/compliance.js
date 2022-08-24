@@ -94,6 +94,17 @@ export function scanCompliance() {
 }
 
 /*
+ * Call directly in first test (of a test file for another container) which assumes that scan results are available.
+ * Although compliance test file bends the guideline that tests should not depend on side effects within the same test file,
+ * configmanagement test files break the guideline if they assume that compliance test file has already run.
+ * Cypress 10 apparently no longer runs tests files in a determinate order.
+ */
+export function triggerScan() {
+    visitComplianceDashboard();
+    scanCompliance();
+}
+
+/*
  * For example, visitComplianceEntities('clusters')
  */
 export function visitComplianceEntities(entitiesKey) {

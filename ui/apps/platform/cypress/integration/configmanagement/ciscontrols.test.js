@@ -13,11 +13,14 @@ import {
     controlStatus,
 } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { triggerScan } from '../../helpers/compliance';
 
 describe('Config Management Entities (CIS controls)', () => {
     withAuth();
 
     it('should render the controls list and open the side panel when a row is clicked', () => {
+        triggerScan(); // because tests assume that scan results are available
+
         renderListAndSidePanel('controls');
     });
 

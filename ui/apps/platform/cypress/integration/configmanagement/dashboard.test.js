@@ -1,6 +1,7 @@
 import { url, selectors } from '../../constants/ConfigManagementPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
+import { triggerScan } from '../../helpers/compliance';
 
 const policyViolationsBySeverityLinkShouldMatchList = (linkSelector) => {
     cy.intercept('POST', api.graphqlPluralEntity('policies')).as('entities');
@@ -318,6 +319,8 @@ describe('Config Management Dashboard Page', () => {
     });
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', () => {
+        triggerScan(); // because this and the following test assumes that scan results are available
+
         const keyPlural = 'controls';
         cy.intercept('POST', api.graphqlPluralEntity(keyPlural)).as('entities');
         cy.intercept('POST', api.graphql('complianceByControls')).as('dashboard');
