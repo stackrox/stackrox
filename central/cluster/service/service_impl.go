@@ -137,7 +137,8 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 	}
 
 	clusterRetentionConfig := sysConfig.GetPrivateConfig().GetDecommissionedClusterRetention()
-	if clusterRetentionConfig == nil {
+	if clusterRetentionConfig == nil || clusterRetentionConfig.GetRetentionDurationDays() == 0 {
+		// If retention is disabled, there is no "days remaining" calculation to be done.
 		return nil, nil
 	}
 
