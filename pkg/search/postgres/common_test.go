@@ -153,7 +153,7 @@ func TestMultiTableQueries(t *testing.T) {
 			expectedFrom:       "deployments",
 			expectedWhere:      "NOT (deployments_containers.Image_Name_FullName ilike $$)",
 			expectedJoinTables: []string{"deployments_containers"},
-			expectedData:       []interface{}{"central%"},
+			expectedData:       []interface{}{"%central%"},
 		},
 		{
 			desc:          "nil query",

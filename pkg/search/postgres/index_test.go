@@ -164,6 +164,21 @@ func (s *IndexSuite) TestString() {
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct2},
 		},
 		{
+			desc:            "substring",
+			q:               search.NewQueryBuilder().AddStrings(search.TestString, "irs").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
+		},
+		{
+			desc:            "substring (but case insensitive)",
+			q:               search.NewQueryBuilder().AddStrings(search.TestString, "CON").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc:            "suffix",
+			q:               search.NewQueryBuilder().AddStrings(search.TestString, "rst").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
+		},
+		{
 			desc:            "regex",
 			q:               search.NewQueryBuilder().AddRegexes(search.TestString, "f.*").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct2},

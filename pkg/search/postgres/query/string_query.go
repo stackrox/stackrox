@@ -26,7 +26,7 @@ func newStringQueryWhereClause(columnName string, value string, queryModifiers .
 	if len(queryModifiers) == 0 {
 		return WhereClause{
 			Query:  fmt.Sprintf("%s ilike $$", columnName),
-			Values: []interface{}{value + "%"},
+			Values: []interface{}{"%" + value + "%"},
 			equivalentGoFunc: func(foundValue interface{}) bool {
 				return strings.HasPrefix(foundValue.(string), value)
 			},
@@ -42,7 +42,7 @@ func newStringQueryWhereClause(columnName string, value string, queryModifiers .
 		if len(queryModifiers) == 1 {
 			return WhereClause{
 				Query:  fmt.Sprintf("NOT (%s ilike $$)", columnName),
-				Values: []interface{}{value + "%"},
+				Values: []interface{}{"%" + value + "%"},
 				equivalentGoFunc: func(foundValue interface{}) bool {
 					return !strings.HasPrefix(foundValue.(string), value)
 				},
