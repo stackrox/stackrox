@@ -23,26 +23,24 @@ find_tag() {
 
 # Seconds:
 TIME_LIMIT=1200
-INTERVAL=10
+INTERVAL=30
 
 # bash built-in variable
 SECONDS=0
 
 FOUND_TAG=""
 while [ "$SECONDS" -le "$TIME_LIMIT" ]; do
-    FOUND_TAG=$(find_tag "$NAME" "$TAG")
+    FOUND_TAG="$(find_tag "$NAME" "$TAG")"
     if [ "$FOUND_TAG" = "$TAG" ]; then
         gh_log notice "Image '$NAME:$TAG' has been found on Quay.io."
-        break
+        exit 0
     fi
-    if [ "$DRY_RUN" == "true" ]; then
+    if [ "$DRY_RUN" = "true" ]; then
         break
     fi
     echo "Waiting..."
     sleep "$INTERVAL"
 done
 
-if [ "$FOUND_TAG" != "$TAG" ]; then
-    gh_log error "Image '$NAME:$TAG' has not been found on Quay.io."
-    exit 1
-fi
+gh_log error "Image '$NAME:$TAG' has not been found on Quay.io."
+exit 1
