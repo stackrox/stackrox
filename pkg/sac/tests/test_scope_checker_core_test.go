@@ -15,6 +15,7 @@ const (
 	resourceConfig       = permissions.Resource("Config")
 	resourceDeployment   = permissions.Resource("Deployment")
 	resourceImage        = permissions.Resource("Image")
+	resourceInstallation = permissions.Resource("InstallationInfo")
 	resourceNetworkGraph = permissions.Resource("NetworkGraph")
 	resourceNode         = permissions.Resource("Node")
 	resourceRisk         = permissions.Resource("Risk")
@@ -159,6 +160,24 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 			},
 			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
 		},
+		{
+			name:                "Read from included internal resource is denied",
+			scopeCheckerBuilder: createTestResourceLevelReadAndReadWriteMixScope,
+			scopeKeys: []sac.ScopeKey{
+				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKey(resourceInstallation),
+			},
+			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
+		},
+		{
+			name:                "Write to NOT included internal resource is denied",
+			scopeCheckerBuilder: createTestResourceLevelReadAndReadWriteMixScope,
+			scopeKeys: []sac.ScopeKey{
+				sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKey(resourceInstallation),
+			},
+			tryResults: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
+		},
 	}
 
 	for ix := range testcases {
@@ -228,6 +247,7 @@ func createTestResourceLevelReadAndReadWriteMixScope(t *testing.T) sac.ScopeChec
 		resourceWithAccess(storage.Access_READ_ACCESS, resourceConfig),
 		resourceWithAccess(storage.Access_READ_ACCESS, resourceDeployment),
 		resourceWithAccess(storage.Access_READ_ACCESS, resourceImage),
+		resourceWithAccess(storage.Access_READ_ACCESS, resourceInstallation),
 		resourceWithAccess(storage.Access_READ_ACCESS, resourceRisk),
 		resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resourceAlert),
 		resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resourceDeployment),
