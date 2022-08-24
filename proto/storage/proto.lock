@@ -15150,6 +15150,11 @@
                 "id": 2,
                 "name": "version",
                 "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "last_persisted",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           }

@@ -90,7 +90,7 @@ func (m *GetUpgradeStatusResponse) Clone() *GetUpgradeStatusResponse {
 type CentralUpgradeStatus struct {
 	// Current Central Version
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	// The version of previous replica in Central. This is the version we can force rollback to.
+	// The version of previous clone in Central. This is the version we can force rollback to.
 	ForceRollbackTo string `protobuf:"bytes,2,opt,name=force_rollback_to,json=forceRollbackTo,proto3" json:"force_rollback_to,omitempty"`
 	// If true, we can rollback to the current version if an upgrade failed.
 	CanRollbackAfterUpgrade bool `protobuf:"varint,3,opt,name=can_rollback_after_upgrade,json=canRollbackAfterUpgrade,proto3" json:"can_rollback_after_upgrade,omitempty"`
