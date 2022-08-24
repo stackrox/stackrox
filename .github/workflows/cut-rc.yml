@@ -409,7 +409,7 @@ jobs:
       wait: true
 
   patch-long-running-cluster:
-    name: Patch OS4 cluster
+    name: Patch long-running cluster
     needs: [variables, create-long-running-cluster]
     runs-on: ubuntu-latest
     env:
