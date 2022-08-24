@@ -34,34 +34,38 @@ var (
 )
 
 // Load loads a Postgres instance and returns a GormDB.
-func Load(conf *config.Config) (*pgxpool.Pool, *gorm.DB, error) {
+func Load(conf *config.Config, databaseName string) (*pgxpool.Pool, *gorm.DB, error) {
+	log.WriteToStderrf("Load database = %q", databaseName)
 	once.Do(func() {
 		ctx := context.Background()
-
-		activeDB := pgconfig.GetActiveDB()
 
 		sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
 			return
 		}
 		// Create the central database if necessary
-		if !pgadmin.CheckIfDBExists(adminConfig, activeDB) {
-			err = pgadmin.CreateDB(sourceMap, adminConfig, pgadmin.AdminDB, activeDB)
+		if !pgadmin.CheckIfDBExists(adminConfig, databaseName) {
+			err = pgadmin.CreateDB(sourceMap, adminConfig, pgadmin.AdminDB, databaseName)
 			if err != nil {
 				log.WriteToStderrf("Could not create central database: %v", err)
 				return
 			}
 		}
-		adminConfig.ConnConfig.Database = activeDB
 
 		// Add the active database and password to the source
-		gormSource := fmt.Sprintf("%s password=%s database=%s client_encoding=UTF-8", conf.CentralDB.Source, adminConfig.ConnConfig.Password, activeDB)
+		gormSource := fmt.Sprintf("%s password=%s database=%s client_encoding=UTF-8", conf.CentralDB.Source, adminConfig.ConnConfig.Password, databaseName)
 		gormSource = pgutils.PgxpoolDsnToPgxDsn(gormSource)
 
 		// Waits for central-db ready with retries
 		err = retry.WithRetry(func() error {
 			if postgresDB == nil {
-				postgresDB, err = pgxpool.ConnectConfig(ctx, adminConfig)
+				// Clone config to connect to template DB
+				tempConfig := adminConfig.Copy()
+
+				// Need to connect on a static DB so we can rename the used DBs.
+				tempConfig.ConnConfig.Database = databaseName
+
+				postgresDB, err = pgxpool.ConnectConfig(ctx, tempConfig)
 				if err != nil {
 					log.WriteToStderrf("fail to connect to central db %v", err)
 					return err

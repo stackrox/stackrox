@@ -6,13 +6,12 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/version/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/version/postgres"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 )
@@ -69,10 +68,7 @@ func (s *storeImpl) getRocksDBVersion() (*storage.Version, error) {
 
 func (s *storeImpl) GetVersion() (*storage.Version, error) {
 	if features.PostgresDatastore.Enabled() {
-		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.Version)))
+		ctx := sac.WithAllAccess(context.Background())
 		version, exists, err := s.pgStore.Get(ctx)
 		if err != nil || !exists {
 			return nil, err
@@ -103,10 +99,7 @@ func (s *storeImpl) GetVersion() (*storage.Version, error) {
 
 func (s *storeImpl) UpdateVersion(version *storage.Version) error {
 	if features.PostgresDatastore.Enabled() {
-		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.Version)))
+		ctx := sac.WithAllAccess(context.Background())
 		return s.pgStore.Upsert(ctx, version)
 	}
 	bytes, err := proto.Marshal(version)
