@@ -7,7 +7,7 @@ LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
 LABEL operators.operatorframework.io.bundle.package.v1=rhacs-operator
 LABEL operators.operatorframework.io.bundle.channels.v1=latest
 LABEL operators.operatorframework.io.bundle.channel.default.v1=latest
-LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v1.13.0+git
+LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v1.19.0+git
 LABEL operators.operatorframework.io.metrics.mediatype.v1=metrics+v1
 LABEL operators.operatorframework.io.metrics.project_layout=go.kubebuilder.io/v3
 
