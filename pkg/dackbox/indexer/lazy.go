@@ -2,11 +2,14 @@ package indexer
 
 import (
 	"fmt"
+	"hash"
+	"hash/fnv"
 	"strings"
 	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/gogo/protobuf/proto"
+	"github.com/mitchellh/hashstructure"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/logging"
@@ -38,6 +41,8 @@ func NewLazy(toIndex queue.WaitableQueue, wrapper Wrapper, index bleve.Index, ac
 		index:      index,
 		acker:      acker,
 		toIndex:    toIndex,
+		deduper:    make(map[string]uint64),
+		hasher:     fnv.New64a(),
 		buff:       NewBuffer(maxBatchSize),
 		stopSignal: concurrency.NewSignal(),
 	}
@@ -48,6 +53,8 @@ type lazyImpl struct {
 	index   bleve.Index
 	acker   Acker
 	toIndex queue.WaitableQueue
+	deduper map[string]uint64
+	hasher  hash.Hash64
 
 	buff Buffer
 
@@ -83,6 +90,27 @@ func (li *lazyImpl) runIndexing() {
 	}
 }
 
+func (li *lazyImpl) isDeduped(key string, value proto.Message) bool {
+	if value == nil {
+		delete(li.deduper, key)
+		return false
+	}
+	li.hasher.Reset()
+	hashValue, err := hashstructure.Hash(value, &hashstructure.HashOptions{
+		Hasher: li.hasher,
+	})
+	if err != nil {
+		log.Errorf("error calculating hash: %v", err)
+		return false
+	}
+	val, ok := li.deduper[key]
+	if ok && val == hashValue {
+		return true
+	}
+	li.deduper[key] = hashValue
+	return false
+}
+
 func (li *lazyImpl) consumeFromQueue() {
 	for li.toIndex.Length() > 0 {
 		key, value, signal := li.toIndex.Pop()
@@ -91,6 +119,11 @@ func (li *lazyImpl) consumeFromQueue() {
 		}
 
 		if key != nil {
+			if li.isDeduped(string(key), value) {
+				indexObjectsDeduped.Inc()
+				continue
+			}
+			indexObjectsIndexed.Inc()
 			li.handleKeyValue(key, value)
 		} else {
 			li.buff.AddSignalToSend(signal)
