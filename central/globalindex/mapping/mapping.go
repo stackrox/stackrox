@@ -98,17 +98,6 @@ func singleTermAnalyzer() map[string]interface{} {
 
 func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	// Note: with the dackbox graph split brought with the postgres migration, the concept
-	// of Component (ImageComponent) was split into ImageComponent and NodeComponent.
-	// The old content seems to focus mostly on image Components.
-	componentSearchOptions := search.CombineOptionsMaps(
-		schema.ImageComponentsSchema.OptionsMap,
-		schema.ImageComponentEdgesSchema.OptionsMap,
-		schema.ImageComponentCveEdgesSchema.OptionsMap,
-		schema.ImagesSchema.OptionsMap,
-		schema.ImageCvesSchema.OptionsMap,
-	)
-
-	// Note: with the dackbox graph split brought with the postgres migration, the concept
 	// of CVE was split into ClusterCVE, ImageCVE and NodeCVE. The old content seems to focus
 	// mostly on image CVEs.
 	cveSearchOptions := search.CombineOptionsMaps(
@@ -118,6 +107,17 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.ImageComponentEdgesSchema.OptionsMap,
 		schema.ImagesSchema.OptionsMap,
 		schema.DeploymentsSchema.OptionsMap,
+	)
+
+	// Note: with the dackbox graph split brought with the postgres migration, the concept
+	// of Component (ImageComponent) was split into ImageComponent and NodeComponent.
+	// The old content seems to focus mostly on image Components.
+	imageComponentSearchOptions := search.CombineOptionsMaps(
+		schema.ImageComponentsSchema.OptionsMap,
+		schema.ImageComponentEdgesSchema.OptionsMap,
+		schema.ImageComponentCveEdgesSchema.OptionsMap,
+		schema.ImagesSchema.OptionsMap,
+		schema.ImageCvesSchema.OptionsMap,
 	)
 
 	// Images in dackbox support an expanded set of search options
@@ -149,7 +149,8 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_COMPONENT_VULN_EDGE:   schema.ImageComponentCveEdgesSchema.OptionsMap,
 		v1.SearchCategory_DEPLOYMENTS:           schema.DeploymentsSchema.OptionsMap,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE:  schema.ImageComponentEdgesSchema.OptionsMap,
-		v1.SearchCategory_IMAGE_COMPONENTS:      componentSearchOptions,
+		v1.SearchCategory_IMAGE_COMPONENTS:      imageComponentSearchOptions,
+		v1.SearchCategory_IMAGE_INTEGRATIONS:    schema.ImageIntegrationsSchema.OptionsMap,
 		v1.SearchCategory_IMAGE_VULN_EDGE:       schema.ImageCveEdgesSchema.OptionsMap,
 		v1.SearchCategory_IMAGES:                imageSearchOptions,
 		v1.SearchCategory_NAMESPACES:            schema.NamespacesSchema.OptionsMap,
