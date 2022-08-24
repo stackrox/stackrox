@@ -153,6 +153,20 @@ func GetDatabaseClones(pgConfig *pgxpool.Config) []string {
 	return clones
 }
 
+// AnalyzeDatabase - runs ANALYZE on the database named dbName
+func AnalyzeDatabase(config *pgxpool.Config, dbName string) error {
+	log.Debugf("Analyze - %q", dbName)
+
+	// Connect to different database for admin functions
+	connectPool := GetClonePool(config, dbName)
+	// Close the admin connection pool
+	defer connectPool.Close()
+
+	_, err := connectPool.Exec(context.Background(), "ANALYZE")
+
+	return err
+}
+
 // GetAdminPool - returns a pool to connect to the admin database.
 // This is useful for renaming databases such as a restore to active.
 // THIS POOL SHOULD BE CLOSED ONCE ITS PURPOSE HAS BEEN FULFILLED.
@@ -183,6 +197,7 @@ func GetClonePool(pgConfig *pgxpool.Config, clone string) *pgxpool.Pool {
 	postgresDB := getPool(tempConfig)
 
 	log.Debugf("Got connection pool for database %q", clone)
+
 	return postgresDB
 }
 
