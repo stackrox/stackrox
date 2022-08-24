@@ -8,14 +8,13 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[Unknown-0]
-	_ = x[Deny-1]
-	_ = x[Allow-2]
+	_ = x[Deny-0]
+	_ = x[Allow-1]
 }
 
-const _TryAllowedResult_name = "UnknownDenyAllow"
+const _TryAllowedResult_name = "DenyAllow"
 
-var _TryAllowedResult_index = [...]uint8{0, 7, 11, 16}
+var _TryAllowedResult_index = [...]uint8{0, 4, 9}
 
 func (i TryAllowedResult) String() string {
 	if i < 0 || i >= TryAllowedResult(len(_TryAllowedResult_index)-1) {

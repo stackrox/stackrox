@@ -81,12 +81,6 @@ func (c scopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bo
 	}
 
 	tryResult := curr.TryAllowed()
-	if tryResult == Unknown {
-		if err := curr.PerformChecks(ctx); err != nil {
-			return false, err
-		}
-		tryResult = curr.TryAllowed()
-	}
 
 	return tryResult == Allow, nil
 }
@@ -97,8 +91,6 @@ func (c scopeChecker) TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult
 	for _, subScopeKeys := range subScopeKeyss {
 		if subScopeRes := c.TryAllowed(subScopeKeys...); subScopeRes == Allow {
 			return Allow
-		} else if subScopeRes == Unknown {
-			result = Unknown
 		}
 	}
 	return result
@@ -107,12 +99,6 @@ func (c scopeChecker) TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult
 // AnyAllowed checks if access to any of the given subscopes is allowed.
 func (c scopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
 	tryResult := c.TryAnyAllowed(subScopeKeyss)
-	if tryResult == Unknown {
-		if err := c.PerformChecks(ctx); err != nil {
-			return false, err
-		}
-		tryResult = c.TryAnyAllowed(subScopeKeyss)
-	}
 
 	return tryResult == Allow, nil
 }
@@ -123,8 +109,6 @@ func (c scopeChecker) TryAllAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult
 	for _, subScopeKeys := range subScopeKeyss {
 		if subScopeRes := c.TryAllowed(subScopeKeys...); subScopeRes == Deny {
 			return Deny
-		} else if subScopeRes == Unknown {
-			result = Unknown
 		}
 	}
 	return result
@@ -133,12 +117,6 @@ func (c scopeChecker) TryAllAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult
 // AllAllowed checks if access to all of the given subscopes is allowed.
 func (c scopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
 	tryResult := c.TryAllAllowed(subScopeKeyss)
-	if tryResult == Unknown {
-		if err := c.PerformChecks(ctx); err != nil {
-			return false, err
-		}
-		tryResult = c.TryAllAllowed(subScopeKeyss)
-	}
 
 	return tryResult == Allow, nil
 }
@@ -178,12 +156,7 @@ func (c scopeChecker) Namespace(namespace string) ScopeChecker {
 // Check checks the given predicate in this scope.
 func (c scopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, error) {
 	res := pred.TryAllowed(c)
-	if res == Unknown {
-		if err := c.PerformChecks(ctx); err != nil {
-			return false, err
-		}
-		res = pred.TryAllowed(c)
-	}
+
 	return res == Allow, nil
 }
 

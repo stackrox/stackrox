@@ -171,8 +171,6 @@ func (p AnyScope) TryAllowed(sc ScopeChecker) TryAllowedResult {
 	for _, pred := range p {
 		if predRes := pred.TryAllowed(sc); predRes == Allow {
 			return Allow
-		} else if predRes == Unknown {
-			res = Unknown
 		}
 	}
 	return res
@@ -187,8 +185,6 @@ func (p AllScopes) TryAllowed(sc ScopeChecker) TryAllowedResult {
 	for _, pred := range p {
 		if predRes := pred.TryAllowed(sc); predRes == Deny {
 			return Deny
-		} else if predRes == Unknown {
-			res = Unknown
 		}
 	}
 	return res

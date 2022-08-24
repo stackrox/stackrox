@@ -70,13 +70,6 @@ func (suite *orScopeCheckerTestSuite) TestTryAllowed() {
 
 	res = suite.orScopeChecker.TryAllowed()
 	suite.Equal(sac.Deny, res)
-
-	// 3. Expect Unknown when at least 1 ScopeChecker returns Unknown.
-	suite.scopeChecker1.EXPECT().TryAllowed().Return(sac.Unknown)
-	suite.scopeChecker2.EXPECT().TryAllowed().Return(sac.Deny)
-
-	res = suite.orScopeChecker.TryAllowed()
-	suite.Equal(sac.Unknown, res)
 }
 
 func (suite *orScopeCheckerTestSuite) TestAllowed() {
@@ -97,7 +90,7 @@ func (suite *orScopeCheckerTestSuite) TestAllowed() {
 	suite.NoError(err)
 	suite.Nil(err)
 
-	// 3. Expect an error and False when all ScopeCheckers return Deny / Unknown and at least 1 returned an error.
+	// 3. Expect an error and False when all ScopeCheckers return Deny and at least 1 returned an error.
 	suite.scopeChecker1.EXPECT().Allowed(gomock.Any()).Return(false, nil)
 	suite.scopeChecker2.EXPECT().Allowed(gomock.Any()).Return(false, errors.New("something happened"))
 
@@ -119,14 +112,6 @@ func (suite *orScopeCheckerTestSuite) TestTryAnyAllowed() {
 
 	result = suite.orScopeChecker.TryAnyAllowed(nil)
 	suite.Equal(sac.Deny, result)
-
-	// 3. Expect Unknown when at least 1 ScopeChecker returns Unknown.
-	suite.scopeChecker1.EXPECT().TryAnyAllowed(gomock.Any()).Return(sac.Unknown)
-	suite.scopeChecker2.EXPECT().TryAnyAllowed(gomock.Any()).Return(sac.Deny)
-
-	result = suite.orScopeChecker.TryAnyAllowed(nil)
-	suite.Equal(sac.Unknown, result)
-
 }
 
 func (suite *orScopeCheckerTestSuite) TestAnyAllowed() {
@@ -147,7 +132,7 @@ func (suite *orScopeCheckerTestSuite) TestAnyAllowed() {
 	suite.Nil(err)
 	suite.False(allowed)
 
-	// 3. Expect an error and False when all ScopeCheckers return Deny / Unknown and at least 1 returned an error.
+	// 3. Expect an error and False when all ScopeCheckers return Deny and at least 1 returned an error.
 	suite.scopeChecker1.EXPECT().AnyAllowed(gomock.Any(), gomock.Any()).Return(false, nil)
 	suite.scopeChecker2.EXPECT().AnyAllowed(gomock.Any(), gomock.Any()).Return(false,
 		errors.New("something happened"))
@@ -170,13 +155,6 @@ func (suite *orScopeCheckerTestSuite) TestTryAllAllowed() {
 
 	result = suite.orScopeChecker.TryAllAllowed(nil)
 	suite.Equal(sac.Deny, result)
-
-	// 3. Expect Unknown when at least 1 ScopeChecker returns Unknown.
-	suite.scopeChecker1.EXPECT().TryAllAllowed(gomock.Any()).Return(sac.Unknown)
-	suite.scopeChecker2.EXPECT().TryAllAllowed(gomock.Any()).Return(sac.Deny)
-
-	result = suite.orScopeChecker.TryAllAllowed(nil)
-	suite.Equal(sac.Unknown, result)
 }
 
 func (suite *orScopeCheckerTestSuite) TestAllAllowed() {
@@ -197,7 +175,7 @@ func (suite *orScopeCheckerTestSuite) TestAllAllowed() {
 	suite.Nil(err)
 	suite.False(allowed)
 
-	// 3. Expect an error and False when all ScopeCheckers return Deny / Unknown and at least 1 returned an error.
+	// 3. Expect an error and False when all ScopeCheckers return Deny and at least 1 returned an error.
 	suite.scopeChecker1.EXPECT().AllAllowed(gomock.Any(), gomock.Any()).Return(false, nil)
 	suite.scopeChecker2.EXPECT().AllAllowed(gomock.Any(), gomock.Any()).Return(false, errors.New("something happened"))
 

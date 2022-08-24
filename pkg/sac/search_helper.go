@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 // SearchHelper facilitates applying scoped access control to search operations.
@@ -148,55 +147,23 @@ func (h *searchHelper) executeCount(ctx context.Context, q *v1.Query, searcher b
 	return len(results), err
 }
 
-func filterDocsOnce(resultsChecker searchResultsChecker, resourceScopeChecker ScopeChecker, results []*bleveSearchLib.DocumentMatch) (allowed []*bleveSearchLib.DocumentMatch, maybe []*bleveSearchLib.DocumentMatch) {
+func filterDocs(ctx context.Context, resultsChecker searchResultsChecker, resourceScopeChecker ScopeChecker, results []*bleveSearchLib.DocumentMatch) ([]*bleveSearchLib.DocumentMatch, error) {
+	var allowed []*bleveSearchLib.DocumentMatch
 	for _, result := range results {
 		if res := resultsChecker.TryAllowed(resourceScopeChecker, result.Fields); res == Allow {
 			allowed = append(allowed, result)
-		} else if res == Unknown {
-			maybe = append(maybe, result)
 		}
-	}
-	return
-}
-
-func filterDocs(ctx context.Context, resultsChecker searchResultsChecker, resourceScopeChecker ScopeChecker, results []*bleveSearchLib.DocumentMatch) ([]*bleveSearchLib.DocumentMatch, error) {
-	allowed, maybe := filterDocsOnce(resultsChecker, resourceScopeChecker, results)
-	if len(maybe) > 0 {
-		if err := resourceScopeChecker.PerformChecks(ctx); err != nil {
-			return nil, err
-		}
-		extraAllowed, maybe := filterDocsOnce(resultsChecker, resourceScopeChecker, maybe)
-		if len(maybe) > 0 {
-			utils.Should(errors.Errorf("still %d maybe results after PerformChecks", len(maybe)))
-		}
-		allowed = append(allowed, extraAllowed...)
 	}
 
 	return allowed, nil
 }
 
-func (h *searchHelper) filterResultsOnce(resourceScopeChecker ScopeChecker, results []search.Result) (allowed []search.Result, maybe []search.Result) {
+func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker ScopeChecker, results []search.Result) ([]search.Result, error) {
+	var allowed []search.Result
 	for _, result := range results {
 		if res := h.resultsChecker.TryAllowed(resourceScopeChecker, result.Fields); res == Allow {
 			allowed = append(allowed, result)
-		} else if res == Unknown {
-			maybe = append(maybe, result)
 		}
-	}
-	return
-}
-
-func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker ScopeChecker, results []search.Result) ([]search.Result, error) {
-	allowed, maybe := h.filterResultsOnce(resourceScopeChecker, results)
-	if len(maybe) > 0 {
-		if err := resourceScopeChecker.PerformChecks(ctx); err != nil {
-			return nil, err
-		}
-		extraAllowed, maybe := h.filterResultsOnce(resourceScopeChecker, maybe)
-		if len(maybe) > 0 {
-			utils.Should(errors.Errorf("still %d maybe results after PerformChecks", len(maybe)))
-		}
-		allowed = append(allowed, extraAllowed...)
 	}
 
 	return allowed, nil
