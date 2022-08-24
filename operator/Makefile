@@ -245,10 +245,10 @@ test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on 
 	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} SKIP_MANAGER_START=1 $(KUTTL) test
 
 test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
-	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
+	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts-upgrade
 	SKIP_MANAGER_START=1 \
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
-	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} $(KUTTL) test --config kuttl-test.yaml tests/upgrade
+	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade tests/upgrade
 
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
 # Create stackrox namespace if not exists.

@@ -102,6 +102,7 @@ class PostClusterTest(StoreArtifacts):
 
     def __init__(
         self,
+        collect_central_artifacts=True,
         check_stackrox_logs=False,
         artifact_destination_prefix=None,
     ):
@@ -115,13 +116,12 @@ class PostClusterTest(StoreArtifacts):
             "openshift-etcd",
             "openshift-controller-manager",
         ]
-        self.central_is_responsive = False
+        self.collect_central_artifacts = collect_central_artifacts
 
     def run(self, test_outputs=None):
-        self.central_is_responsive = self.wait_for_central_api()
         self.collect_service_logs()
         self.collect_collector_metrics()
-        if self.central_is_responsive:
+        if self.collect_central_artifacts and self.wait_for_central_api():
             self.get_central_debug_dump()
             self.get_central_diagnostics()
             self.grab_central_data()
