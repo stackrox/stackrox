@@ -66,11 +66,11 @@ if [ -z "$ISSUES" ]; then
 fi
 
 gh_summary <<EOF
-The following Jira issues are still open for release $RELEASE_PATCH:
+:red_circle: The following Jira issues are still open for release $RELEASE_PATCH:
 
 $ISSUES
 
-Contact the assignees to clarify the status.
+:arrow_right: Contact the assignees to clarify the status.
 EOF
 
 gh_log error "There are non-closed Jira issues for version $RELEASE_PATCH."
@@ -84,6 +84,8 @@ if [ "$DRY_RUN" = "false" ]; then
     while read -r KEY; do
         comment_issue "$KEY"
     done <<<"$OPEN_ISSUES"
+else
+    exit 0
 fi
 
 exit 1
