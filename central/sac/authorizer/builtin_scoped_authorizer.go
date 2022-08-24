@@ -125,7 +125,11 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 	if !ok {
 		return errorScopeChecker(a, scopeKey)
 	}
-	resource, ok := resources.MetadataForResource(permissions.Resource(scope.String()))
+	res := permissions.Resource(scope.String())
+	resource, ok := resources.MetadataForResource(res)
+	if !ok {
+		resource, ok = resources.MetadataForInternalResource(res)
+	}
 	if !ok {
 		return sac.ErrorAccessScopeCheckerCore(errors.Wrapf(ErrUnknownResource, "on scope key %q", scopeKey))
 	}
