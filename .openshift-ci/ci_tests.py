@@ -56,6 +56,12 @@ class OperatorE2eTest(BaseTest):
     E2E_TEST_TIMEOUT_SEC = 50 * 60
     SCORECARD_TEST_TIMEOUT_SEC = 20 * 60
 
+    def __init__(self):
+        self.test_outputs = [
+            "operator/build/kuttl-test-artifacts",
+            "operator/build/kuttl-test-artifacts-upgrade",
+        ]
+
     def run(self):
         print("Deploying operator")
         self.run_with_graceful_kill(
