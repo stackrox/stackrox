@@ -25,4 +25,7 @@
 #     openshift/release you created earlier
 #   - say `/test pj-rehearse-max` on the openshift/release PR to validate the change
 
+# For an example, see https://github.com/stackrox/stackrox/pull/2762 and its counterpart
+# https://github.com/openshift/release/pull/31561
+
 FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
