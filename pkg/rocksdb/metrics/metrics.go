@@ -31,12 +31,28 @@ var (
 		Name:      "rocksdb_prefix_bytes",
 		Help:      "RocksDB prefix bytes (equivalent to bolt bucket)",
 	}, []string{"Prefix", "Type"})
+
+	jemallocAllocations = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "rocksdb_jemalloc_size",
+		Help:      "RocksDB jemalloc size",
+	})
+
+	mmapAllocations = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "mmap_size",
+		Help:      "Memory map size",
+	}, []string{"Type"})
 )
 
 func init() {
 	prometheus.MustRegister(
 		rocksDBPrefixSize,
 		rocksDBPrefixBytes,
+		jemallocAllocations,
+		mmapAllocations,
 	)
 }
 

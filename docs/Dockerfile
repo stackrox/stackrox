@@ -1,4 +1,4 @@
-FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.35 AS builder
+FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.45-1-gb261a631d3 AS builder
 
 WORKDIR /workspace
 COPY content content
