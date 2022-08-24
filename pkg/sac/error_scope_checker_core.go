@@ -1,8 +1,6 @@
 package sac
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
@@ -21,10 +19,6 @@ func (s errScopeCheckerCore) TryAllowed() TryAllowedResult {
 	logging.LoggerForModule().Error("This should not be called", s.err)
 	utils.Must(s.err)
 	return Deny
-}
-
-func (s errScopeCheckerCore) PerformChecks(ctx context.Context) error {
-	return s.err
 }
 
 // ErrorAccessScopeCheckerCore returns an access scope checker that always returns an error.

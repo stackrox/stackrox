@@ -65,10 +65,6 @@ func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storag
 // if the request should be allowed. This simplifies logic as only user with
 // admin rights can be allowed on global scope.
 //
-// PerformChecks() has nothing to do because built-in authorizer never defers
-// authorization decisions, i.e., TryAllowed() returns sac.Deny in case
-// of a non-recoverable error.
-//
 // SubScopeChecker() extracts the access mode from the scope key and returns
 // an accessModeLevelScopeCheckerCore embedding the current instance and setting
 // the desired access mode.
@@ -83,10 +79,6 @@ type globalScopeChecker struct {
 
 func (a *globalScopeChecker) TryAllowed() sac.TryAllowedResult {
 	return sac.Deny
-}
-
-func (a *globalScopeChecker) PerformChecks(_ context.Context) error {
-	return nil
 }
 
 func (a *globalScopeChecker) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
@@ -108,8 +100,7 @@ func (a *globalScopeChecker) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeChe
 }
 
 // accessModeLevelScopeCheckerCore embeds globalScopeChecker and additionally
-// maintains the access mode. It inherits TryAllowed() and PerformChecks()
-// behavior.
+// maintains the access mode. It inherits TryAllowed() behavior.
 //
 // SubScopeChecker() extracts the resource from the scope key and returns a
 // resourceLevelScopeCheckerCore with the list of resolved roles filtered down

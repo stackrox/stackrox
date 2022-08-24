@@ -31,17 +31,6 @@ func (s orScopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	}
 }
 
-func (s orScopeChecker) PerformChecks(ctx context.Context) error {
-	var performChecksErrs *multierror.Error
-	for _, checker := range s.scopeCheckers {
-		err := checker.PerformChecks(ctx)
-		if err != nil {
-			performChecksErrs = multierror.Append(performChecksErrs, err)
-		}
-	}
-	return performChecksErrs.ErrorOrNil()
-}
-
 func (s orScopeChecker) TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult {
 	result := Deny
 	for _, checker := range s.scopeCheckers {

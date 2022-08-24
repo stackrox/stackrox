@@ -188,20 +188,6 @@ func (mr *MockScopeCheckerMockRecorder) Namespace(namespace interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Namespace", reflect.TypeOf((*MockScopeChecker)(nil).Namespace), namespace)
 }
 
-// PerformChecks mocks base method.
-func (m *MockScopeChecker) PerformChecks(ctx context.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PerformChecks", ctx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// PerformChecks indicates an expected call of PerformChecks.
-func (mr *MockScopeCheckerMockRecorder) PerformChecks(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerformChecks", reflect.TypeOf((*MockScopeChecker)(nil).PerformChecks), ctx)
-}
-
 // Resource mocks base method.
 func (m *MockScopeChecker) Resource(resource permissions.ResourceHandle) sac.ScopeChecker {
 	m.ctrl.T.Helper()
