@@ -25,6 +25,7 @@ import (
 )
 
 func main() {
+	log.WriteToStderr("Start migrator main")
 	startProfilingServer()
 	if err := run(); err != nil {
 		log.WriteToStderrf("Migrator failed: %s", err)
@@ -33,6 +34,9 @@ func main() {
 }
 
 func startProfilingServer() {
+	if true {
+		return
+	}
 	handler := http.NewServeMux()
 	for path, debugHandler := range routes.DebugRoutes {
 		handler.Handle(path, debugHandler)
@@ -46,6 +50,7 @@ func startProfilingServer() {
 }
 
 func run() error {
+	log.WriteToStderr("Start migrator run")
 	conf := config.GetConfig()
 	if conf == nil {
 		log.WriteToStderrf("cannot get central configuration. Skipping migrator")

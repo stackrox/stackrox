@@ -82,16 +82,19 @@ type DBReplicaManager struct {
 // from disk.
 func Scan(basePath string, forceVersion string) (*DBReplicaManager, error) {
 	manager := DBReplicaManager{basePath: basePath, replicaMap: make(map[string]*dbReplica), forceRollbackVersion: forceVersion}
+	log.Infof("manager created")
 
 	files, err := os.ReadDir(basePath)
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("files %v", files)
 
 	// We use replicas to collect all db replicas (directory starting with db- or .restore-) matching upgrade or restore pattern.
 	// We maintain replicas with a known link in replicaMap. All unknown replicas are to be removed.
 	replicasToRemove := set.NewStringSet()
 	for _, f := range files {
+		log.Infof("file %s", f)
 		switch name := f.Name(); {
 		case knownReplicas.Contains(name):
 			path := manager.getPath(name)
