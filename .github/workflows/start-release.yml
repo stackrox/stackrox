@@ -144,25 +144,23 @@ jobs:
           git switch --create "stackrox-release-$RELEASE"
 
           # Duplicate the main config.
-          yq ".promotion.tag=\"$RELEASE\" | .zz_generated_metadata.branch=\"release-$RELEASE\"" \
+          yq "del(.tests[] | select(.postsubmit != true or has(\"cron\"))) | .promotion.tag=\"$RELEASE\" | .zz_generated_metadata.branch=\"release-$RELEASE\"" \
             "$CFG_DIR/stackrox-stackrox-master.yaml" \
             > "${PREFIX}.yaml"
 
           # Duplicate the opensource images config.
-          yq ".promotion.tag=\"$RELEASE-stackrox-branding\" | .zz_generated_metadata.branch=\"release-$RELEASE\"" \
+          yq "del(.tests[] | select(.postsubmit != true or has(\"cron\"))) | .promotion.tag=\"$RELEASE-stackrox-branding\" | .zz_generated_metadata.branch=\"release-$RELEASE\"" \
             "$CFG_DIR/stackrox-stackrox-master__stackrox_branding.yaml" \
             > "${PREFIX}__stackrox_branding.yaml"
 
           git add "$CFG_DIR"
-
+      - name: Make update
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
           make update
 
-          # Delete periodic and presubmit jobs if any.
-          PREFIX="$JOBS_DIR/stackrox-stackrox-release-$RELEASE"
-          rm -vf "$PREFIX-periodics.yaml" "$PREFIX-presubmits.yaml"
-
           git add ci-operator
-          git commit -m "Release $RELEASE files" >> $GITHUB_STEP_SUMMARY
+          git commit -m "Release ${{needs.variables.outputs.release}} files" >> $GITHUB_STEP_SUMMARY
       - name: Push and create PR
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
         run: |
