@@ -14,8 +14,8 @@ import (
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
-	"github.com/stackrox/rox/central/node/datastore/internal/search"
-	"github.com/stackrox/rox/central/node/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/node/datastore/search"
+	postgres2 "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeComponentDS "github.com/stackrox/rox/central/nodecomponent/datastore"
 	nodeComponentSearch "github.com/stackrox/rox/central/nodecomponent/datastore/search"
 	nodeComponentPostgres "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
@@ -80,12 +80,12 @@ func (suite *NodePostgresDataStoreTestSuite) SetupSuite() {
 }
 
 func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
-	postgres.Destroy(suite.ctx, suite.db)
+	postgres2.Destroy(suite.ctx, suite.db)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockRisk = mockRisks.NewMockDataStore(suite.mockCtrl)
-	storage := postgres.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
-	indexer := postgres.NewIndexer(suite.db)
+	storage := postgres2.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
+	indexer := postgres2.NewIndexer(suite.db)
 	searcher := search.NewV2(storage, indexer)
 	suite.datastore = NewWithPostgres(storage, indexer, searcher, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
