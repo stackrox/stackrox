@@ -164,6 +164,7 @@ func AnalyzeDatabase(config *pgxpool.Config, dbName string) error {
 
 	_, err := connectPool.Exec(context.Background(), "ANALYZE")
 
+	log.Debug("Anaylze done")
 	return err
 }
 
