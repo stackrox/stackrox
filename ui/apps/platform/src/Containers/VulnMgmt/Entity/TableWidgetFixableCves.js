@@ -79,9 +79,7 @@ const TableWidgetFixableCves = ({
         query getFixableCvesForEntity(
             $id: ID!
             ${
-                entityType !== entityTypes.NODE_COMPONENT &&
-                vulnType !== entityTypes.NODE_CVE &&
-                vulnType !== entityTypes.CLUSTER_CVE
+                entityType !== entityTypes.NODE_COMPONENT && vulnType !== entityTypes.NODE_CVE
                     ? '$query: String'
                     : ''
             }
