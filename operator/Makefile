@@ -410,7 +410,7 @@ ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 
 .PHONY: bundle
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
-# Likewise, we hardcode the image reference to quay.io/stackrox-io/stackrox-operator. If this is overridden via
+# We hardcode the image reference to quay.io/stackrox-io/stackrox-operator. If this is overridden via
 # the IMG_REPO environment variable, the final reference will be injected in the bundle-post-process step.
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=quay.io/stackrox-io/stackrox-operator:0.0.1
