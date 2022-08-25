@@ -63,7 +63,7 @@ func (s *globalDataStore) GetAllClusterNodeStores(ctx context.Context, writeAcce
 	} else if !ok {
 		scopeChecker := nodesSAC.ScopeChecker(ctx, accessMode)
 		for clusterID := range clusterIDs {
-			if ok, _ := scopeChecker.Allowed(sac.ClusterScopeKey(clusterID)); !ok {
+			if !scopeChecker.IsAllowed(sac.ClusterScopeKey(clusterID)) {
 				clusterIDs.Remove(clusterID)
 			}
 		}

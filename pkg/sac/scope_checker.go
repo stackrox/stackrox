@@ -15,8 +15,6 @@ import (
 type ScopeChecker interface {
 	SubScopeChecker(keys ...ScopeKey) ScopeChecker
 	IsAllowed(subScopeKeys ...ScopeKey) bool
-	// Deprecated: Allowed is deprecated, use IsAllowed instead.
-	Allowed(subScopeKeys ...ScopeKey) (bool, error)
 	AllAllowed(subScopeKeyss [][]ScopeKey) bool
 	ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker
 	ForNamespaceScopedObject(obj NamespaceScopedObject) ScopeChecker
@@ -56,11 +54,6 @@ func (c scopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	}
 }
 
-// Allowed checks (in a blocking way) if access to the given (sub-)scope is allowed.
-func (c scopeChecker) Allowed(subScopeKeys ...ScopeKey) (bool, error) {
-	return c.IsAllowed(subScopeKeys...), nil
-}
-
 // IsAllowed checks (in a blocking way) if access to the given (sub-)scope is allowed.
 func (c scopeChecker) IsAllowed(subScopeKeys ...ScopeKey) bool {
 	curr := c.core
@@ -73,8 +66,7 @@ func (c scopeChecker) IsAllowed(subScopeKeys ...ScopeKey) bool {
 // AllAllowed checks if access to all of the given subscopes is allowed.
 func (c scopeChecker) AllAllowed(subScopeKeyss [][]ScopeKey) bool {
 	for _, subScopeKeys := range subScopeKeyss {
-		allowed, err := c.Allowed(subScopeKeys...)
-		if !allowed || err != nil {
+		if !c.IsAllowed(subScopeKeys...) {
 			return false
 		}
 	}
