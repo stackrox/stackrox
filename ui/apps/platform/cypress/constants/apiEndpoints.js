@@ -115,7 +115,7 @@ export const images = {
 
 export const auth = {
     loginAuthProviders: '/v1/login/authproviders',
-    authProviders: '/v1/authProviders*',
+    authProviders: '/v1/authProviders',
     authStatus: '/v1/auth/status',
     logout: '/sso/session/logout',
     tokenRefresh: '/sso/session/tokenrefresh',
@@ -161,7 +161,7 @@ export const policies = {
 };
 
 export const roles = {
-    list: '/v1/roles/*',
+    list: '/v1/roles',
     mypermissions: 'v1/mypermissions',
 };
 
@@ -174,7 +174,8 @@ export const accessScopes = {
 };
 
 export const groups = {
-    list: '/v1/groups/*',
+    batch: '/v1/groupsbatch',
+    list: '/v1/groups',
 };
 
 export const userAttributes = {
