@@ -1,3 +1,6 @@
+//go:build sql_integration
+// +build sql_integration
+
 package postgres
 
 import (
@@ -16,24 +19,25 @@ import (
 func TestFlowStore(t *testing.T) {
 	ctx := context.Background()
 	envIsolator := envisolator.NewEnvIsolator(t)
+	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	defer envIsolator.RestoreAll()
 
 	if !features.PostgresDatastore.Enabled() {
 		t.Skip("Skip postgres store tests")
 		t.SkipNow()
-	} else {
-		envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
-
-		source := pgtest.GetConnectionString(t)
-		config, _ := pgxpool.ParseConfig(source)
-		pool, _ := pgxpool.ConnectConfig(ctx, config)
-		defer pool.Close()
-
-		gormDB := pgtest.OpenGormDB(t, source)
-		defer pgtest.CloseGormDB(t, gormDB)
-		pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-
-		store := NewClusterStore(pool)
-		flowSuite := testcommon.NewFlowStoreTest(store)
-		suite.Run(t, flowSuite)
 	}
+
+	source := pgtest.GetConnectionString(t)
+	config, _ := pgxpool.ParseConfig(source)
+	pool, _ := pgxpool.ConnectConfig(ctx, config)
+	defer pool.Close()
+
+	gormDB := pgtest.OpenGormDB(t, source)
+	defer pgtest.CloseGormDB(t, gormDB)
+	Destroy(ctx, pool)
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, networkFlowsTable)
+
+	store := NewClusterStore(pool)
+	flowSuite := testcommon.NewFlowStoreTest(store)
+	suite.Run(t, flowSuite)
 }
