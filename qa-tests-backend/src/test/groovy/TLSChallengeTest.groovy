@@ -9,20 +9,15 @@ import objects.Deployment
 import objects.Secret
 import orchestratormanager.OrchestratorManagerException
 
-import util.Env
-
 import org.junit.experimental.categories.Category
 import services.ClusterService
 
-import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Shared
 import util.ApplicationHealth
 import util.Timer
 
 @Retry(count = 1)
-// TODO: ROX-12307: Enable test
-@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
 class TLSChallengeTest extends BaseSpecification {
     @Shared
     private EnvVar originalCentralEndpoint = new EnvVar()
