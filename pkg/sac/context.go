@@ -14,7 +14,7 @@ type globalAccessScopeContextKey struct{}
 func GlobalAccessScopeChecker(ctx context.Context) ScopeChecker {
 	core, _ := ctx.Value(globalAccessScopeContextKey{}).(ScopeCheckerCore)
 	if core == nil {
-		utils.Should(errors.New("global access scope was not found in context"))
+		utils.Must(errors.New("global access scope was not found in context"))
 		core = DenyAllAccessScopeChecker()
 	}
 	return NewScopeChecker(core)

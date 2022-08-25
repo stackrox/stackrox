@@ -123,6 +123,7 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 	}
 	if !ok {
 		utils.Must(errors.Wrapf(ErrUnknownResource, "on scope key %q", scopeKey))
+		return sac.DenyAllAccessScopeChecker()
 	}
 	filteredRoles := make([]permissions.ResolvedRole, 0, len(a.roles))
 	for _, role := range a.roles {
