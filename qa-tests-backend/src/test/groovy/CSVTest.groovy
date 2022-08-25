@@ -153,7 +153,8 @@ class CSVTest extends BaseSpecification {
     }
 
     def isPostgresRun() {
-        return Env.CI_JOBNAME.contains("postgres")
+    return true
+//        return Env.CI_JOBNAME.contains("postgres")
     }
 
     // Non-postgres runs
@@ -168,43 +169,23 @@ class CSVTest extends BaseSpecification {
     }
 
     def getCVSSScoreIndex() {
-        if (isPostgresRun()) {
-            return 2
-        } else {
-            return 3
-        }
+        return isPostgresRun() ? 2 : 3
     }
 
     def getDeploymentCountIndex() {
-        if (isPostgresRun()) {
-            return 5
-        } else {
-            return 6
-        }
+        return isPostgresRun() ? 5 : 6
     }
 
     def getImageCountIndex() {
-        if (isPostgresRun()) {
-            return 6
-        } else {
-            return 7
-        }
+        return isPostgresRun() ? 6 : 7
     }
 
     def getImageComponentCountIndex() {
-        if (isPostgresRun()) {
-            return 7
-        } else {
-            return 9
-        }
+        return isPostgresRun() ? 7 : 9
     }
 
     def getComponentId() {
-        if (isPostgresRun()) {
-            return "openssl#1.0.1k-3+deb8u5#debian:8"
-        } else {
-            return "b3BlbnNzbA:MS4wLjFrLTMrZGViOHU1"
-        }
+        return isPostgresRun() ? "openssl#1.0.1k-3+deb8u5#debian:8" : "b3BlbnNzbA:MS4wLjFrLTMrZGViOHU1"
     }
 
     def getComponentQuery() {
