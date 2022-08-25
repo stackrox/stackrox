@@ -71,7 +71,7 @@ func Load(conf *config.Config, databaseName string) (*pgxpool.Pool, *gorm.DB, er
 					return err
 				}
 			}
-			log.WriteToStderrf("connect to gorm: %v", gormSource)
+
 			gormDB, err = gorm.Open(postgres.Open(gormSource), &gorm.Config{
 				NamingStrategy:  pgutils.NamingStrategy,
 				CreateBatchSize: 1000})
