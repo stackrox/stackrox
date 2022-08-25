@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -45,6 +46,7 @@ type datastoreImpl struct {
 	indexer    index.Indexer
 	searcher   search.Searcher
 	keyedMutex *concurrency.KeyedMutex
+	keyFence   dackboxConcurrency.KeyFence
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
@@ -141,13 +143,25 @@ func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Al
 	defer waitGroup.Done()
 	ds.keyedMutex.Lock(alert.GetId())
 	defer ds.keyedMutex.Unlock(alert.GetId())
-	oldAlert, exists, err := ds.GetAlert(ctx, alert.GetId())
+	// Avoid `ds.GetMany` since it performs read SAC check, which is not expected for user performing an upsert.
+	// Reading a record out of DB during an upsert is only a side effect.
+	oldAlert, exists, err := ds.storage.Get(ctx, alert.GetId())
 	if err != nil {
 		log.Errorf("error in get alert: %+v", err)
 		c <- err
 		return
 	}
 	if exists {
+		ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...)
+		if err != nil {
+			c <- err
+			return
+		}
+		if !ok {
+			c <- sac.ErrResourceAccessDenied
+			return
+		}
+
 		if !hasSameScope(getNSScopedObjectFromAlert(alert), getNSScopedObjectFromAlert(oldAlert)) {
 			c <- fmt.Errorf("cannot change the cluster or namespace of an existing alert %q", alert.GetId())
 			return
@@ -187,7 +201,9 @@ func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
 	ds.keyedMutex.Lock(id)
 	defer ds.keyedMutex.Unlock(id)
 
-	alert, exists, err := ds.GetAlert(ctx, id)
+	// Avoid `ds.GetMany` since it performs read SAC check, which is not expected for user performing an upsert.
+	// Reading a record out of DB during an upsert is only a side effect.
+	alert, exists, err := ds.storage.Get(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -195,12 +211,58 @@ func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
 		return fmt.Errorf("alert with id '%s' does not exist", id)
 	}
 
-	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
+	ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...)
+	if err != nil {
+		return err
+	}
+	if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 	alert.State = storage.ViolationState_RESOLVED
 	alert.ResolvedAt = types.TimestampNow()
 	return ds.updateAlertNoLock(ctx, alert)
+}
+
+func (ds *datastoreImpl) MarkAlertStaleBatch(ctx context.Context, ids ...string) ([]*storage.Alert, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertStaleBatch")
+
+	idsAsBytes := make([][]byte, 0, len(ids))
+	for _, id := range ids {
+		idsAsBytes = append(idsAsBytes, []byte(id))
+	}
+
+	var resolvableAlerts []*storage.Alert
+	err := ds.keyFence.DoStatusWithLock(dackboxConcurrency.DiscreteKeySet(idsAsBytes...), func() error {
+		var err error
+		var missing []int
+		// Avoid `ds.GetMany` since it performs read SAC check, which is not expected for user performing an upsert.
+		// Reading record out of DB during an upsert is only a side effect.
+		resolvableAlerts, missing, err = ds.storage.GetMany(ctx, ids)
+		if err != nil {
+			return err
+		}
+
+		if len(missing) > 0 {
+			return errors.Errorf("%d/%d alert(s) to be marked stale do not exist", len(missing), len(ids))
+		}
+
+		for _, alert := range resolvableAlerts {
+			ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return sac.ErrResourceAccessDenied
+			}
+		}
+
+		for _, alert := range resolvableAlerts {
+			alert.State = storage.ViolationState_RESOLVED
+			alert.ResolvedAt = types.TimestampNow()
+		}
+		return ds.updateAlertNoLock(ctx, resolvableAlerts...)
+	})
+	return resolvableAlerts, err
 }
 
 func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error {
@@ -248,15 +310,23 @@ func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject 
 	return nil
 }
 
-func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alert *storage.Alert) error {
+func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*storage.Alert) error {
 	// Checks pass then update.
-	if err := ds.storage.Upsert(ctx, alert); err != nil {
+	if err := ds.storage.UpsertMany(ctx, alerts); err != nil {
 		return err
 	}
-	if err := ds.indexer.AddListAlert(fillSortHelperFields(convert.AlertToListAlert(alert))); err != nil {
+
+	ids := make([]string, 0, len(alerts))
+	listAlerts := make([]*storage.ListAlert, 0, len(alerts))
+	for _, alert := range alerts {
+		ids = append(ids, alert.GetId())
+		listAlerts = append(listAlerts, fillSortHelperFields(convert.AlertToListAlert(alert)))
+	}
+
+	if err := ds.indexer.AddListAlerts(listAlerts); err != nil {
 		return err
 	}
-	return ds.storage.AckKeysIndexed(ctx, alert.GetId())
+	return ds.storage.AckKeysIndexed(ctx, ids...)
 }
 
 func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {

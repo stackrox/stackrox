@@ -37,7 +37,6 @@ import (
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -727,16 +726,20 @@ func (ds *datastoreImpl) getAlerts(ctx context.Context, deploymentID string) ([]
 }
 
 func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.Alert) error {
-	errorList := errorhelpers.NewErrorList("unable to mark some alerts stale")
+	ids := make([]string, 0, len(alerts))
 	for _, alert := range alerts {
-		errorList.AddError(ds.alertDataStore.MarkAlertStale(ctx, alert.GetId()))
-		if errorList.ToError() == nil {
-			// run notifier for all the resolved alerts
-			alert.State = storage.ViolationState_RESOLVED
-			ds.notifier.ProcessAlert(ctx, alert)
-		}
+		ids = append(ids, alert.GetId())
 	}
-	return errorList.ToError()
+
+	resolvedAlerts, err := ds.alertDataStore.MarkAlertStaleBatch(ctx, ids...)
+	if err != nil {
+		return err
+	}
+
+	for _, alert := range resolvedAlerts {
+		ds.notifier.ProcessAlert(ctx, alert)
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) cleanUpNodeStore(ctx context.Context) {

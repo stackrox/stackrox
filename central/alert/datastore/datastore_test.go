@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -119,8 +118,10 @@ func (s *alertDataStoreTestSuite) TestCountAlerts_Error() {
 
 func (s *alertDataStoreTestSuite) TestAddAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().Upsert(gomock.Any(), fakeAlert).Return(nil)
-	s.indexer.EXPECT().AddListAlert(fillSortHelperFields(convert.AlertToListAlert(alerttest.NewFakeAlert()))).Return(errFake)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(nil)
+	s.indexer.EXPECT().AddListAlerts([]*storage.ListAlert{
+		fillSortHelperFields(convert.AlertToListAlert(alerttest.NewFakeAlert())),
+	}).Return(errFake)
 
 	// We don't expect AckKeysIndexed, since the error returned from the above call will prevent this.
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
@@ -130,7 +131,7 @@ func (s *alertDataStoreTestSuite) TestAddAlert() {
 
 func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().Upsert(gomock.Any(), fakeAlert).Return(errFake)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(errFake)
 
 	// No AckKeysIndexed call due to error on upsert.
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
@@ -138,48 +139,48 @@ func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
 	s.Equal(errFake, err)
 }
 
-func (s *alertDataStoreTestSuite) TestMarkAlertStale() {
+func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatch() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
-	s.indexer.EXPECT().AddListAlert(gomock.Any()).Return(nil)
+	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
+	s.indexer.EXPECT().AddListAlerts(gomock.Any()).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(gomock.Any(), fakeAlert.GetId()).Times(1).Return(nil)
 
-	err := s.dataStore.MarkAlertStale(s.hasWriteCtx, alerttest.FakeAlertID)
+	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 	s.NoError(err)
 
 	s.Equal(storage.ViolationState_RESOLVED, fakeAlert.GetState())
 }
 
-func (s *alertDataStoreTestSuite) TestMarkAlertStaleWhenStorageFails() {
+func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatchWhenStorageFails() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, false, errFake)
+	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, []int{0}, errFake)
 
-	err := s.dataStore.MarkAlertStale(s.hasWriteCtx, alerttest.FakeAlertID)
+	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 
 	s.Equal(errFake, err)
 }
 
-func (s *alertDataStoreTestSuite) TestMarkAlertStaleWhenTheAlertWasNotFoundInStorage() {
+func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatchWhenTheAlertWasNotFoundInStorage() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, false, nil)
+	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, []int{0}, nil)
 
-	err := s.dataStore.MarkAlertStale(s.hasWriteCtx, alerttest.FakeAlertID)
+	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 
-	s.EqualError(err, fmt.Sprintf("alert with id '%s' does not exist", alerttest.FakeAlertID))
+	s.EqualError(err, "1/1 alert(s) to be marked stale do not exist")
 }
 
 func (s *alertDataStoreTestSuite) TestKeyIndexing() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, false, nil)
+	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, []int{0}, nil)
 
-	err := s.dataStore.MarkAlertStale(s.hasWriteCtx, alerttest.FakeAlertID)
+	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 
-	s.EqualError(err, fmt.Sprintf("alert with id '%s' does not exist", alerttest.FakeAlertID))
+	s.EqualError(err, "1/1 alert(s) to be marked stale do not exist")
 }
 
 func TestAlertDataStoreWithSAC(t *testing.T) {
@@ -236,14 +237,14 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertEnforced() {
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
-func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleEnforced() {
+func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleBatchEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
+	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Times(0)
 	s.indexer.EXPECT().AddListAlert(gomock.Any()).Times(0)
 
-	err := s.dataStore.MarkAlertStale(s.hasReadCtx, alerttest.FakeAlertID)
+	_, err := s.dataStore.MarkAlertStaleBatch(s.hasReadCtx, alerttest.FakeAlertID)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	s.Equal(storage.ViolationState_ACTIVE, fakeAlert.GetState())

@@ -202,7 +202,7 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 			s.NoError(err)
 
 			ctx := s.testContexts[c.scopeKey]
-			err = s.datastore.MarkAlertStale(ctx, alert1.GetId())
+			_, err = s.datastore.MarkAlertStaleBatch(ctx, alert1.GetId())
 			if !c.expectError {
 				s.NoError(err)
 			} else if !c.expectedFound {
@@ -210,7 +210,7 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 			} else {
 				s.Equal(c.expectedError, err)
 			}
-			err = s.datastore.MarkAlertStale(ctx, alert2.GetId())
+			_, err = s.datastore.MarkAlertStaleBatch(ctx, alert2.GetId())
 			if !c.expectError {
 				s.NoError(err)
 			} else if !c.expectedFound {

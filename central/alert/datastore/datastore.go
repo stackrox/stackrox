@@ -16,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -37,6 +38,8 @@ type DataStore interface {
 	UpsertAlert(ctx context.Context, alert *storage.Alert) error
 	UpsertAlerts(ctx context.Context, alerts []*storage.Alert) error
 	MarkAlertStale(ctx context.Context, id string) error
+	// MarkAlertStaleBatch marks alerts with specific id as RESOLVED and returns resolved alerts.
+	MarkAlertStaleBatch(ctx context.Context, id ...string) ([]*storage.Alert, error)
 
 	DeleteAlerts(ctx context.Context, ids ...string) error
 }
@@ -48,6 +51,7 @@ func New(alertStore store.Store, indexer index.Indexer, searcher search.Searcher
 		indexer:    indexer,
 		searcher:   searcher,
 		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		keyFence:   dackboxConcurrency.NewKeyFence(),
 	}
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
