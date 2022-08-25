@@ -12,10 +12,8 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -41,9 +39,8 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NetworkEntitiesSchema
-	targetResource = resources.NetworkGraph
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.NetworkEntitiesSchema
 )
 
 type Store interface {
@@ -217,8 +214,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkEntity) 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkEntity) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NetworkEntity")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := permissionCheckerSingleton().UpsertAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -230,8 +226,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkEntity) erro
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkEntity")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := permissionCheckerSingleton().UpsertManyAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -256,14 +251,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return 0, err
-	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
-
-	if err != nil {
+	if ok, err := permissionCheckerSingleton().CountAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
 
@@ -275,13 +263,7 @@ func (s *storeImpl) Exists(ctx context.Context, infoId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkEntity")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return false, err
-	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
+	if ok, err := permissionCheckerSingleton().ExistsAllowed(ctx); err != nil || !ok {
 		return false, err
 	}
 
@@ -301,14 +283,7 @@ func (s *storeImpl) Get(ctx context.Context, infoId string) (*storage.NetworkEnt
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkEntity")
 
 	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, false, err
-	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
+	if ok, err := permissionCheckerSingleton().GetAllowed(ctx); err != nil || !ok {
 		return nil, false, err
 	}
 
@@ -343,14 +318,10 @@ func (s *storeImpl) Delete(ctx context.Context, infoId string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkEntity")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
+	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
 		return err
-	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
 
 	q := search.ConjunctionQuery(
@@ -366,14 +337,10 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkEntity")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
+	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
 		return err
-	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
 
 	q := search.ConjunctionQuery(
@@ -388,14 +355,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NetworkEntityIDs")
 	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
+	if ok, err := permissionCheckerSingleton().GetIDsAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
 	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
@@ -420,18 +380,10 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Netwo
 	}
 
 	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
+	if ok, err := permissionCheckerSingleton().GetManyAllowed(ctx); err != nil {
 		return nil, nil, err
-	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, nil, err
+	} else if !ok {
+		return nil, nil, nil
 	}
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
@@ -476,18 +428,10 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "NetworkEntity")
 
 	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
+	if ok, err := permissionCheckerSingleton().GetManyAllowed(ctx); err != nil {
 		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, err
+	} else if !ok {
+		return nil, nil
 	}
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
@@ -517,15 +461,10 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkEntity")
 
 	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
+	if ok, err := permissionCheckerSingleton().DeleteManyAllowed(ctx); err != nil {
 		return err
-	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
 
 	q := search.ConjunctionQuery(
@@ -539,6 +478,9 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error {
 	var sacQueryFilter *v1.Query
+	if ok, err := permissionCheckerSingleton().WalkAllowed(ctx); err != nil || !ok {
+		return err
+	}
 	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err

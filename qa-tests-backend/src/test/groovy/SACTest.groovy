@@ -587,7 +587,6 @@ class SACTest extends BaseSpecification {
         "searchDeploymentsImagesToken"     | NAMESPACE_QA1  | [SSOC.SearchCategory.IMAGES]
     }
 
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify that SAC has the same effect as query restriction for network flows"() {
         when:
         "Obtaining the network graph for the StackRox namespace with all access"
