@@ -1,5 +1,4 @@
 import { selectors } from '../../constants/ViolationsPage';
-import { selectors as PoliciesPageSelectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     clickDeploymentTabWithFixture,
@@ -153,7 +152,10 @@ describe('Violations page', () => {
         visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
         cy.get(selectors.details.policyTab).click();
-        cy.get(PoliciesPageSelectors.policyDetailsPanel.detailsSection);
+        cy.get('h3:contains("Policy overview")');
+        cy.get('h3:contains("Policy behavior")');
+        cy.get('h3:contains("Policy criteria")');
+        // Conditionally rendered: Policy scope
     });
 
     it('should sort violations when clicking on a table header', () => {
