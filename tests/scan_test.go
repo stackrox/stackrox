@@ -33,9 +33,9 @@ func verifySummariesExist(t *testing.T, image *storage.Image, shouldExist bool) 
 
 // Grab the backup DB and open it, ensuring that there are values for deployments
 func TestScan(t *testing.T) {
-	deployment := "nginx-1-18"
-	imageID := "sha256:cc54bf7fa755cebebbe98e11da2ff3626852fc5a9db3397bdbec74339da9ff72"
-	image := fmt.Sprintf("docker.io/library/nginx:1.18@%s", imageID)
+	deployment := "nginx-1-17"
+	imageID := "sha256:f83b2ffd963ac911f9e638184c8d580cc1f3139d5c8c33c87c3fb90aebdebf76"
+	image := fmt.Sprintf("quay.io/rhacs-eng/qa:nginx-1-17-1@%s", imageID)
 	setupDeployment(t, image, deployment)
 	defer teardownDeployment(t, deployment)
 
