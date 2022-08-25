@@ -26,11 +26,8 @@ func (s uniformScopeCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerCore 
 	return s
 }
 
-func (s uniformScopeCheckerCore) TryAllowed() TryAllowedResult {
-	if s {
-		return Allow
-	}
-	return Deny
+func (s uniformScopeCheckerCore) Allowed() bool {
+	return bool(s)
 }
 
 func (s uniformScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {

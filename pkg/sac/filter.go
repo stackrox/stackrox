@@ -23,7 +23,7 @@ func NewObjectFilter(checker ScopeChecker) *ObjectFilter {
 
 // Add adds an object to the filter, using the given predicate to determine whether it is allowed.
 func (f *ObjectFilter) Add(obj interface{}, pred ScopePredicate) {
-	if res := pred.TryAllowed(f.checker); res == Allow {
+	if pred.TryAllowed(f.checker) {
 		f.allowed = append(f.allowed, obj)
 	}
 }

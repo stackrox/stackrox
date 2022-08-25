@@ -22,7 +22,7 @@ type SearchHelper interface {
 
 // searchResultsChecker is responsible for checking whether a single search result is allowed to be seen.
 type searchResultsChecker interface {
-	TryAllowed(resourceSC ScopeChecker, resultFields map[string]interface{}) TryAllowedResult
+	TryAllowed(resourceSC ScopeChecker, resultFields map[string]interface{}) bool
 	SearchFieldLabels() []search.FieldLabel
 	BleveHook(ctx context.Context, resourceChecker ScopeChecker) blevesearch.HookForCategory
 }
@@ -150,7 +150,7 @@ func (h *searchHelper) executeCount(ctx context.Context, q *v1.Query, searcher b
 func filterDocs(ctx context.Context, resultsChecker searchResultsChecker, resourceScopeChecker ScopeChecker, results []*bleveSearchLib.DocumentMatch) ([]*bleveSearchLib.DocumentMatch, error) {
 	var allowed []*bleveSearchLib.DocumentMatch
 	for _, result := range results {
-		if res := resultsChecker.TryAllowed(resourceScopeChecker, result.Fields); res == Allow {
+		if resultsChecker.TryAllowed(resourceScopeChecker, result.Fields) {
 			allowed = append(allowed, result)
 		}
 	}
@@ -161,7 +161,7 @@ func filterDocs(ctx context.Context, resultsChecker searchResultsChecker, resour
 func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker ScopeChecker, results []search.Result) ([]search.Result, error) {
 	var allowed []search.Result
 	for _, result := range results {
-		if res := h.resultsChecker.TryAllowed(resourceScopeChecker, result.Fields); res == Allow {
+		if h.resultsChecker.TryAllowed(resourceScopeChecker, result.Fields) {
 			allowed = append(allowed, result)
 		}
 	}
@@ -324,9 +324,9 @@ func (c *linkedFieldResultsChecker) BleveHook(ctx context.Context, resourceCheck
 	return mainHook.SubQueryHooks
 }
 
-func (c *linkedFieldResultsChecker) TryAllowed(resourceSC ScopeChecker, resultFields map[string]interface{}) TryAllowedResult {
+func (c *linkedFieldResultsChecker) TryAllowed(resourceSC ScopeChecker, resultFields map[string]interface{}) bool {
 	// We allow everything, since the linked field checker is responsible for denying.
-	return Allow
+	return true
 }
 
 func (c *linkedFieldResultsChecker) SearchFieldLabels() []search.FieldLabel {
@@ -377,7 +377,7 @@ func newClusterNSFieldBaseResultsChecker(opts search.OptionsMap, namespaceScoped
 	return newLinkedFieldResultsChecker(clusterIDField.GetCategory(), checker), nil
 }
 
-func (c *clusterNSFieldBasedResultsChecker) TryAllowed(resourceSC ScopeChecker, resultFields map[string]interface{}) TryAllowedResult {
+func (c *clusterNSFieldBasedResultsChecker) TryAllowed(resourceSC ScopeChecker, resultFields map[string]interface{}) bool {
 	key := make([]ScopeKey, 0, 2)
 	clusterID, _ := resultFields[c.clusterIDFieldPath].(string)
 	key = append(key, ClusterScopeKey(clusterID))
