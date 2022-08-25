@@ -18,6 +18,10 @@ import { interceptRequests, waitForResponses } from './request';
  * graphqlMultiAliasMap: { opname: { aliases, routeHandler }, … }
  *
  * Optionally wait for responses with waitOptions: { requestTimeout, responseTimeout }
+ *
+ * @param {string} pageUrl
+ * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visit(pageUrl, requestConfig, staticResponseMap) {
     cy.intercept('GET', api.featureFlags).as('featureflags');
@@ -32,10 +36,15 @@ export function visit(pageUrl, requestConfig, staticResponseMap) {
 }
 
 /*
- * Visit page to test conditional rendering for user role permissions.
+ * Visit page to test conditional rendering for user role permissions specified as response or fixture.
  *
  * { body: { resourceToAccess: { … } } }
  * { fixture: 'fixtures/wherever/whatever.json' }
+ *
+ * @param {string} pageUrl
+ * @param {{ body: { resourceToAccess: Record<string, string> } } | { fixture: string }} permissionsStaticResponseMap
+ * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitWithPermissions(
     pageUrl,

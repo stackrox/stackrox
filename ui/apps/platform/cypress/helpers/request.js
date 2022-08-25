@@ -8,6 +8,9 @@
  *
  * Optionally assign aliases for multiple GraphQL requests with routeMatcher opname key:
  * opnameAliasesMap: { opname: { aliases, routeHandler }, … }
+ *
+ * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean> }} [requestConfig]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function interceptRequests(requestConfig, staticResponseMap) {
     if (requestConfig?.routeMatcherMap) {
@@ -40,6 +43,8 @@ export function interceptRequests(requestConfig, staticResponseMap) {
  * Wait for responses after initial page visit or subsequent interaction.
  *
  * Optionally wait with waitOptions: { requestTimeout, responseTimeout }
+ *
+ * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
  */
 export function waitForResponses(requestConfig) {
     if (requestConfig?.routeMatcherMap) {
@@ -62,6 +67,10 @@ export function waitForResponses(requestConfig) {
 
 /*
  * Intercept requests before interaction and then wait for responses.
+ *
+ * @param {() => void} interactionCallback
+ * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap) {
     interceptRequests(requestConfig, staticResponseMap);
