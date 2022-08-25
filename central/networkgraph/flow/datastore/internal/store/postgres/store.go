@@ -27,7 +27,7 @@ import (
 // can be handled via query and become much more efficient.  In order to really see the benefits of Postgres for
 // this store, we will need to refactor how it is used.
 const (
-	baseTable = "network_flows"
+	networkFlowsTable = pkgSchema.NetworkFlowsTableName
 
 	// The store now uses a serial primary key id so that the store can quickly insert rows.  As such, in order
 	// to get the most recent row or a count of distinct rows we need to do a self join to match the fields AND
@@ -58,7 +58,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), baseTable)
+	schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), networkFlowsTable)
 
 	// We begin to process in batches after this number of records
 	batchAfter = 100
@@ -164,7 +164,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{baseTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{networkFlowsTable}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -654,7 +654,7 @@ func Destroy(ctx context.Context, db *pgxpool.Pool) {
 
 // CreateTableAndNewStore returns a new Store instance for testing
 func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, clusterID string) FlowStore {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, networkFlowsTable)
 	return New(db, clusterID)
 }
 
