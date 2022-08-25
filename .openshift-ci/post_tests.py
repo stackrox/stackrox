@@ -119,12 +119,12 @@ class PostClusterTest(StoreArtifacts):
         self.collect_central_artifacts = collect_central_artifacts
 
     def run(self, test_outputs=None):
-        self.collect_service_logs()
         self.collect_collector_metrics()
         if self.collect_central_artifacts and self.wait_for_central_api():
             self.get_central_debug_dump()
             self.get_central_diagnostics()
             self.grab_central_data()
+        self.collect_service_logs()
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
         self.store_artifacts(test_outputs)
