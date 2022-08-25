@@ -92,7 +92,7 @@ dependencies {
 
     implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.2.13'
 
-    implementation group: 'org.spockframework', name: 'spock-core', version: '1.2-groovy-2.4'
+    implementation group: 'org.spockframework', name: 'spock-core', version: '2.1-groovy-3.0'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
