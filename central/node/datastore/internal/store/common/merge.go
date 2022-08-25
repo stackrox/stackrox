@@ -19,6 +19,7 @@ func mergeComponents(parts *NodeParts, node *storage.Node) {
 		return
 	}
 
+	os := node.GetScan().GetOperatingSystem()
 	// Use the edges to combine into the parent node.
 	for _, cp := range parts.Children {
 		// Parse the IDs of the edge.
@@ -33,11 +34,11 @@ func mergeComponents(parts *NodeParts, node *storage.Node) {
 		}
 
 		// Generate an embedded component for the edge and non-embedded version.
-		node.Scan.Components = append(node.Scan.Components, generateEmbeddedComponent(cp))
+		node.Scan.Components = append(node.Scan.Components, generateEmbeddedComponent(os, cp))
 	}
 }
 
-func generateEmbeddedComponent(cp *ComponentParts) *storage.EmbeddedNodeScanComponent {
+func generateEmbeddedComponent(os string, cp *ComponentParts) *storage.EmbeddedNodeScanComponent {
 	if cp.Component == nil || cp.Edge == nil {
 		return nil
 	}
@@ -54,12 +55,12 @@ func generateEmbeddedComponent(cp *ComponentParts) *storage.EmbeddedNodeScanComp
 
 	ret.Vulns = make([]*storage.EmbeddedVulnerability, 0, len(cp.Children))
 	for _, cve := range cp.Children {
-		ret.Vulns = append(ret.Vulns, generateEmbeddedCVE(cve))
+		ret.Vulns = append(ret.Vulns, generateEmbeddedCVE(os, cve))
 	}
 	return ret
 }
 
-func generateEmbeddedCVE(cp *CVEParts) *storage.EmbeddedVulnerability {
+func generateEmbeddedCVE(os string, cp *CVEParts) *storage.EmbeddedVulnerability {
 	if cp.CVE == nil || cp.Edge == nil {
 		return nil
 	}
@@ -74,6 +75,14 @@ func generateEmbeddedCVE(cp *CVEParts) *storage.EmbeddedVulnerability {
 	// Only legacy vuln snoozing feature affected node vulns state.
 	if ret.GetSuppressed() {
 		ret.State = storage.VulnerabilityState_DEFERRED
+	}
+
+	if distroSpecifics, ok := cp.CVE.GetDistroSpecifics()[os]; ok {
+		ret.Severity = distroSpecifics.GetSeverity()
+		ret.Cvss = distroSpecifics.GetCvss()
+		ret.CvssV2 = distroSpecifics.GetCvssV2()
+		ret.CvssV3 = distroSpecifics.GetCvssV3()
+		ret.ScoreVersion = utils.CVEScoreVersionToEmbeddedScoreVersion(distroSpecifics.GetScoreVersion())
 	}
 
 	// The `Suppressed` field is transferred to `State` field in `converter.ProtoCVEToEmbeddedCVE` and node cve deferral

@@ -25,7 +25,8 @@ func TestSplitAndMergeNode(t *testing.T) {
 			FixableCves: 2,
 		},
 		Scan: &storage.NodeScan{
-			ScanTime: ts,
+			ScanTime:        ts,
+			OperatingSystem: "rhel:8",
 			Components: []*storage.EmbeddedNodeScanComponent{
 				{
 					Name:    "comp1",
@@ -39,6 +40,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 						{
 							Cve:               "cve1",
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+							Severity:          storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 						},
 						{
 							Cve:               "cve2",
@@ -46,6 +48,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "ver3",
 							},
+							Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 						},
 					},
 				},
@@ -59,10 +62,12 @@ func TestSplitAndMergeNode(t *testing.T) {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "ver2",
 							},
+							Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 						},
 						{
 							Cve:               "cve2",
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+							Severity:          storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 						},
 					},
 				},
@@ -75,7 +80,8 @@ func TestSplitAndMergeNode(t *testing.T) {
 			Id:   "id",
 			Name: "name",
 			Scan: &storage.NodeScan{
-				ScanTime: ts,
+				ScanTime:        ts,
+				OperatingSystem: "rhel:8",
 			},
 			SetComponents: &storage.Node_Components{
 				Components: 3,
@@ -119,6 +125,11 @@ func TestSplitAndMergeNode(t *testing.T) {
 						CVE: &storage.CVE{
 							Id:   "cve1",
 							Type: storage.CVE_NODE_CVE,
+							DistroSpecifics: map[string]*storage.CVE_DistroSpecific{
+								"rhel:8": {
+									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								},
+							},
 						},
 						Edge: &storage.ComponentCVEEdge{
 							Id:               edges.EdgeID{ParentID: scancomponent.ComponentID("comp1", "ver2", ""), ChildID: "cve1"}.ToString(),
@@ -130,6 +141,11 @@ func TestSplitAndMergeNode(t *testing.T) {
 						CVE: &storage.CVE{
 							Id:   "cve2",
 							Type: storage.CVE_NODE_CVE,
+							DistroSpecifics: map[string]*storage.CVE_DistroSpecific{
+								"rhel:8": {
+									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								},
+							},
 						},
 						Edge: &storage.ComponentCVEEdge{
 							Id: edges.EdgeID{ParentID: scancomponent.ComponentID("comp1", "ver2", ""), ChildID: "cve2"}.ToString(),
@@ -160,6 +176,11 @@ func TestSplitAndMergeNode(t *testing.T) {
 						CVE: &storage.CVE{
 							Id:   "cve1",
 							Type: storage.CVE_NODE_CVE,
+							DistroSpecifics: map[string]*storage.CVE_DistroSpecific{
+								"rhel:8": {
+									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								},
+							},
 						},
 						Edge: &storage.ComponentCVEEdge{
 							Id: edges.EdgeID{ParentID: scancomponent.ComponentID("comp2", "ver1", ""), ChildID: "cve1"}.ToString(),
@@ -175,6 +196,11 @@ func TestSplitAndMergeNode(t *testing.T) {
 						CVE: &storage.CVE{
 							Id:   "cve2",
 							Type: storage.CVE_NODE_CVE,
+							DistroSpecifics: map[string]*storage.CVE_DistroSpecific{
+								"rhel:8": {
+									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								},
+							},
 						},
 						Edge: &storage.ComponentCVEEdge{
 							Id:               edges.EdgeID{ParentID: scancomponent.ComponentID("comp2", "ver1", ""), ChildID: "cve2"}.ToString(),
