@@ -55,16 +55,6 @@ func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (
 	return false, allowedErrs.ErrorOrNil()
 }
 
-func (s orScopeChecker) TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult {
-	result := Deny
-	for _, checker := range s.scopeCheckers {
-		if res := checker.TryAnyAllowed(subScopeKeyss); res == Allow {
-			return res
-		}
-	}
-	return result
-}
-
 func (s orScopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
 	var anyAllowedErrs *multierror.Error
 	for _, checker := range s.scopeCheckers {
