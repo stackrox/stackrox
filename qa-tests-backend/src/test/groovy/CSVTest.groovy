@@ -153,8 +153,7 @@ class CSVTest extends BaseSpecification {
     }
 
     def isPostgresRun() {
-    return true
-//        return Env.CI_JOBNAME.contains("postgres")
+        return Env.CI_JOBNAME.contains("postgres")
     }
 
     // Non-postgres runs
