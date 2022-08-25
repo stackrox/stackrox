@@ -510,3 +510,15 @@ func GetFixedVersions(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem) []string {
 	}
 	return versions
 }
+
+// CVEScoreVersionToEmbeddedScoreVersion converts versions between cve protos.
+func CVEScoreVersionToEmbeddedScoreVersion(v storage.CVE_ScoreVersion) storage.EmbeddedVulnerability_ScoreVersion {
+	switch v {
+	case storage.CVE_V2:
+		return storage.EmbeddedVulnerability_V2
+	case storage.CVE_V3:
+		return storage.EmbeddedVulnerability_V3
+	default:
+		return storage.EmbeddedVulnerability_V2
+	}
+}
