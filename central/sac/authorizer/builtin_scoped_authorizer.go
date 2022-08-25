@@ -58,10 +58,10 @@ func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storag
 	return scc
 }
 
-// globalScopeCheckerCore maintains a list of resolved roles, a cache for
+// globalScopeChecker maintains a list of resolved roles, a cache for
 // effective access scopes, and optionally a structure for collecting traces.
 //
-// TryAllowed() always returns Deny since narrower scope is required to decide
+// Allowed() always returns false since narrower scope is required to decide
 // if the request should be allowed. This simplifies logic as only user with
 // admin rights can be allowed on global scope.
 //
@@ -151,7 +151,7 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 // resourceLevelScopeCheckerCore embeds accessModeLevelScopeCheckerCore and
 // additionally maintains the resource.
 //
-// TryAllowed() returns Allow if the resource itself has "global" scope or if
+// Allowed() returns true if the resource itself has "global" scope or if
 // there exists a resolved role where the root node is marked as Included.
 //
 // SubScopeChecker() extracts the cluster ID from the scope key and returns a
@@ -219,7 +219,7 @@ func (a *resourceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) s
 // clusterNamespaceLevelScopeCheckerCore embeds resourceLevelScopeCheckerCore
 // and maintains the cluster ID and a (potentially empty) namespace name.
 //
-// TryAllowed() returns Allow only if there exists a role that includes the
+// Allowed() returns true only if there exists a role that includes the
 // requested scope.
 //
 // SubScopeChecker() returns another clusterNamespaceLevelScopeCheckerCore
