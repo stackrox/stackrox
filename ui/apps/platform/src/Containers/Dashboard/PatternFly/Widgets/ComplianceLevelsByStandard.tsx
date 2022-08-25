@@ -4,8 +4,6 @@ import {
     Flex,
     FlexItem,
     Title,
-    Dropdown,
-    DropdownToggle,
     FormGroup,
     ToggleGroup,
     ToggleGroupItem,
@@ -21,7 +19,6 @@ import { useQuery } from '@apollo/client';
 import { sortBy } from 'lodash';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import { SearchFilter } from 'types/search';
@@ -40,6 +37,7 @@ import { complianceBasePath, urlEntityListTypes } from 'routePaths';
 import { standardLabels } from 'messages/standards';
 import ComplianceLevelsByStandardChart, { ComplianceData } from './ComplianceLevelsByStandardChart';
 import WidgetCard from './WidgetCard';
+import WidgetOptionsMenu from './WidgetOptionsMenu';
 
 const fieldIdPrefix = 'compliance-levels-by-standard';
 
@@ -123,7 +121,6 @@ type SortBy = 'asc' | 'desc';
 const defaultConfig = { sortDataBy: 'asc' } as const;
 
 function ComplianceLevelsByStandard() {
-    const { isOpen: isOptionsOpen, onToggle: toggleOptionsOpen } = useSelectToggle();
     const { searchFilter } = useURLSearch();
     const { pathname } = useLocation();
     const [{ sortDataBy }, updateConfig] = useWidgetConfig<{ sortDataBy: SortBy }>(
@@ -161,39 +158,30 @@ function ComplianceLevelsByStandard() {
                         <Title headingLevel="h2">Compliance by standard</Title>
                     </FlexItem>
                     <FlexItem>
-                        <Dropdown
-                            className="pf-u-mr-sm"
-                            toggle={
-                                <DropdownToggle
-                                    id={`${fieldIdPrefix}-options-toggle`}
-                                    toggleVariant="secondary"
-                                    onToggle={toggleOptionsOpen}
-                                >
-                                    Options
-                                </DropdownToggle>
+                        <WidgetOptionsMenu
+                            bodyContent={
+                                <Form>
+                                    <FormGroup fieldId={`${fieldIdPrefix}-sort-by`} label="Sort by">
+                                        <ToggleGroup aria-label="Sort coverage by ascending or descending percentage">
+                                            <ToggleGroupItem
+                                                text="Ascending"
+                                                buttonId={`${fieldIdPrefix}-sort-by-asc`}
+                                                isSelected={sortDataBy === 'asc'}
+                                                onChange={() => updateConfig({ sortDataBy: 'asc' })}
+                                            />
+                                            <ToggleGroupItem
+                                                text="Descending"
+                                                buttonId={`${fieldIdPrefix}-sort-by-desc`}
+                                                isSelected={sortDataBy === 'desc'}
+                                                onChange={() =>
+                                                    updateConfig({ sortDataBy: 'desc' })
+                                                }
+                                            />
+                                        </ToggleGroup>
+                                    </FormGroup>
+                                </Form>
                             }
-                            position="right"
-                            isOpen={isOptionsOpen}
-                        >
-                            <Form className="pf-u-px-md pf-u-py-sm">
-                                <FormGroup fieldId={`${fieldIdPrefix}-sort-by`} label="Sort by">
-                                    <ToggleGroup aria-label="Sort coverage by ascending or descending percentage">
-                                        <ToggleGroupItem
-                                            text="Ascending"
-                                            buttonId={`${fieldIdPrefix}-sort-by-asc`}
-                                            isSelected={sortDataBy === 'asc'}
-                                            onChange={() => updateConfig({ sortDataBy: 'asc' })}
-                                        />
-                                        <ToggleGroupItem
-                                            text="Descending"
-                                            buttonId={`${fieldIdPrefix}-sort-by-desc`}
-                                            isSelected={sortDataBy === 'desc'}
-                                            onChange={() => updateConfig({ sortDataBy: 'desc' })}
-                                        />
-                                    </ToggleGroup>
-                                </FormGroup>
-                            </Form>
-                        </Dropdown>
+                        />
                         <Button variant="secondary" component={LinkShim} href={complianceBasePath}>
                             View all
                         </Button>

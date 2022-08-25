@@ -81,8 +81,8 @@ button.pf-c-toggle-group__button:disabled {
 }
 
 /* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
-.pf-c-tree-view__node-title .pf-c-button__icon.pf-m-end svg,
 .pf-c-button__icon.pf-m-start svg,
+.pf-c-button__icon.pf-m-end svg,
 .pf-c-empty-state__content svg,
 .pf-c-table__toggle-icon svg,
 .pf-c-expandable-section__toggle-icon svg,
