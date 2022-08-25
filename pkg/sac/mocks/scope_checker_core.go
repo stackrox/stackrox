@@ -36,6 +36,20 @@ func (m *MockScopeCheckerCore) EXPECT() *MockScopeCheckerCoreMockRecorder {
 	return m.recorder
 }
 
+// Allowed mocks base method.
+func (m *MockScopeCheckerCore) Allowed() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Allowed")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Allowed indicates an expected call of Allowed.
+func (mr *MockScopeCheckerCoreMockRecorder) Allowed() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Allowed", reflect.TypeOf((*MockScopeCheckerCore)(nil).Allowed))
+}
+
 // EffectiveAccessScope mocks base method.
 func (m *MockScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	m.ctrl.T.Helper()
@@ -63,18 +77,4 @@ func (m *MockScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeC
 func (mr *MockScopeCheckerCoreMockRecorder) SubScopeChecker(scopeKey interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubScopeChecker", reflect.TypeOf((*MockScopeCheckerCore)(nil).SubScopeChecker), scopeKey)
-}
-
-// TryAllowed mocks base method.
-func (m *MockScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TryAllowed")
-	ret0, _ := ret[0].(sac.TryAllowedResult)
-	return ret0
-}
-
-// TryAllowed indicates an expected call of TryAllowed.
-func (mr *MockScopeCheckerCoreMockRecorder) TryAllowed() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryAllowed", reflect.TypeOf((*MockScopeCheckerCore)(nil).TryAllowed))
 }

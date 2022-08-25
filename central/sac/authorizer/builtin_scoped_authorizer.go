@@ -58,10 +58,10 @@ func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storag
 	return scc
 }
 
-// globalScopeCheckerCore maintains a list of resolved roles, a cache for
+// globalScopeChecker maintains a list of resolved roles, a cache for
 // effective access scopes, and optionally a structure for collecting traces.
 //
-// TryAllowed() always returns Deny since narrower scope is required to decide
+// Allowed() always returns false since narrower scope is required to decide
 // if the request should be allowed. This simplifies logic as only user with
 // admin rights can be allowed on global scope.
 //
@@ -77,8 +77,8 @@ type globalScopeChecker struct {
 	trace *observe.AuthzTrace
 }
 
-func (a *globalScopeChecker) TryAllowed() sac.TryAllowedResult {
-	return sac.Deny
+func (a *globalScopeChecker) Allowed() bool {
+	return false
 }
 
 func (a *globalScopeChecker) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
@@ -100,7 +100,7 @@ func (a *globalScopeChecker) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeChe
 }
 
 // accessModeLevelScopeCheckerCore embeds globalScopeChecker and additionally
-// maintains the access mode. It inherits TryAllowed() behavior.
+// maintains the access mode. It inherits Allowed() behavior.
 //
 // SubScopeChecker() extracts the resource from the scope key and returns a
 // resourceLevelScopeCheckerCore with the list of resolved roles filtered down
@@ -151,7 +151,7 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 // resourceLevelScopeCheckerCore embeds accessModeLevelScopeCheckerCore and
 // additionally maintains the resource.
 //
-// TryAllowed() returns Allow if the resource itself has "global" scope or if
+// Allowed() returns true if the resource itself has "global" scope or if
 // there exists a resolved role where the root node is marked as Included.
 //
 // SubScopeChecker() extracts the cluster ID from the scope key and returns a
@@ -162,23 +162,23 @@ type resourceLevelScopeCheckerCore struct {
 	resource permissions.ResourceMetadata
 }
 
-func (a *resourceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
+func (a *resourceLevelScopeCheckerCore) Allowed() bool {
 	if a.resource.GetScope() == permissions.GlobalScope {
 		a.trace.RecordAllowOnResourceLevel(a.access.String(), a.resource.String())
-		return sac.Allow
+		return true
 	}
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
 		if utils.Should(err) != nil {
-			return sac.Deny
+			return false
 		}
 		if scope.State == effectiveaccessscope.Included {
 			a.trace.RecordAllowOnResourceLevel(a.access.String(), a.resource.String())
-			return sac.Allow
+			return true
 		}
 	}
 	a.trace.RecordDenyOnResourceLevel(a.access.String(), a.resource.String())
-	return sac.Deny
+	return false
 }
 
 func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
@@ -219,7 +219,7 @@ func (a *resourceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) s
 // clusterNamespaceLevelScopeCheckerCore embeds resourceLevelScopeCheckerCore
 // and maintains the cluster ID and a (potentially empty) namespace name.
 //
-// TryAllowed() returns Allow only if there exists a role that includes the
+// Allowed() returns true only if there exists a role that includes the
 // requested scope.
 //
 // SubScopeChecker() returns another clusterNamespaceLevelScopeCheckerCore
@@ -231,19 +231,19 @@ type clusterNamespaceLevelScopeCheckerCore struct {
 	namespace string
 }
 
-func (a *clusterNamespaceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
+func (a *clusterNamespaceLevelScopeCheckerCore) Allowed() bool {
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
 		if utils.Should(err) != nil {
-			return sac.Deny
+			return false
 		}
 		if effectiveAccessScopeAllows(scope, a.resource, a.clusterID, a.namespace) {
 			a.trace.RecordAllowOnScopeLevel(a.access.String(), a.resource.String(), a.clusterID, a.namespace, role.GetRoleName())
-			return sac.Allow
+			return true
 		}
 	}
 	a.trace.RecordDenyOnScopeLevel(a.access.String(), a.resource.String(), a.clusterID, a.namespace)
-	return sac.Deny
+	return false
 }
 
 func (a *clusterNamespaceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {

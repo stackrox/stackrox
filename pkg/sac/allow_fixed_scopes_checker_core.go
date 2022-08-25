@@ -28,11 +28,8 @@ func AllowFixedScopes(keyLists ...[]ScopeKey) ScopeCheckerCore {
 	return sets
 }
 
-func (c allowFixedScopesCheckerCore) TryAllowed() TryAllowedResult {
-	if len(c) == 0 {
-		return Allow
-	}
-	return Deny
+func (c allowFixedScopesCheckerCore) Allowed() bool {
+	return len(c) == 0
 }
 
 func (c allowFixedScopesCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerCore {

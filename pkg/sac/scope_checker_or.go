@@ -31,14 +31,13 @@ func (s orScopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	}
 }
 
-func (s orScopeChecker) TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult {
-	result := Deny
+func (s orScopeChecker) TryAllowed(subScopeKeys ...ScopeKey) bool {
 	for _, checker := range s.scopeCheckers {
-		if res := checker.TryAllowed(subScopeKeys...); res == Allow {
-			return res
+		if checker.TryAllowed(subScopeKeys...) {
+			return true
 		}
 	}
-	return result
+	return false
 }
 
 func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error) {
