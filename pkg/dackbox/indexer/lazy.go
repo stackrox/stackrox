@@ -90,14 +90,14 @@ func (li *lazyImpl) runIndexing() {
 	}
 }
 
-func (li *lazyImpl) isDeduped(key string, value proto.Message) bool {
+func (li *lazyImpl) evaluateDeduping(key string, value proto.Message) bool {
 	if value == nil {
 		delete(li.deduper, key)
 		return false
 	}
-	li.hasher.Reset()
 	hashValue, err := hashstructure.Hash(value, &hashstructure.HashOptions{
-		Hasher: li.hasher,
+		Hasher:  li.hasher,
+		TagName: "search",
 	})
 	if err != nil {
 		log.Errorf("error calculating hash: %v", err)
@@ -119,7 +119,7 @@ func (li *lazyImpl) consumeFromQueue() {
 		}
 
 		if key != nil {
-			if li.isDeduped(string(key), value) {
+			if li.evaluateDeduping(string(key), value) {
 				indexObjectsDeduped.Inc()
 				continue
 			}
