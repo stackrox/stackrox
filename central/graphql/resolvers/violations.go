@@ -47,11 +47,11 @@ func (resolver *Resolver) ViolationCount(ctx context.Context, args RawQuery) (in
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.ViolationsDataStore.Search(ctx, q)
+	count, err := resolver.ViolationsDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // Violation returns the violation with the requested ID
