@@ -3,6 +3,7 @@ package postgreshelper
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -71,7 +72,8 @@ func Load(conf *config.Config, databaseName string) (*pgxpool.Pool, *gorm.DB, er
 					return err
 				}
 			}
-			log.WriteToStderrf("connect to gorm: %v", gormSource)
+			log.WriteToStderrf("connect to gorm: %v", strings.Replace(gormSource, adminConfig.ConnConfig.Password, "<REDACTED>", -1))
+
 			gormDB, err = gorm.Open(postgres.Open(gormSource), &gorm.Config{
 				NamingStrategy:  pgutils.NamingStrategy,
 				CreateBatchSize: 1000})
