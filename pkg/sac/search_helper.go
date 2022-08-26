@@ -385,7 +385,8 @@ func (c *clusterNSFieldBasedResultsChecker) TryAllowed(resourceSC ScopeChecker, 
 		namespace, _ := resultFields[c.namespaceFieldPath].(string)
 		key = append(key, NamespaceScopeKey(namespace))
 	}
-	return resourceSC.TryAllowed(key...)
+	allowed, _ := resourceSC.Allowed(context.TODO(), key...)
+	return allowed
 }
 
 func (c *clusterNSFieldBasedResultsChecker) SearchFieldLabels() []search.FieldLabel {
