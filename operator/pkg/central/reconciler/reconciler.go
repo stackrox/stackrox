@@ -35,5 +35,6 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 		pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod),
+		pkgReconciler.WithExtraPredicate(utils.PauseReconcileAnnotationPredicate{}),
 	)
 }
