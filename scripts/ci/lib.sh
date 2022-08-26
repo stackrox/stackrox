@@ -434,6 +434,24 @@ poll_for_system_test_images() {
 
     require_environment "QUAY_RHACS_ENG_BEARER_TOKEN"
 
+    # Require imagea based on the job
+    case "$CI_JOB_NAME" in
+        *-operator-e2e-tests)
+            reqd_images=("operator-controller" "operator-bundle" "operator-bundle-index")
+            ;;
+        *-race-condition-qa-e2e-test)
+            reqd_images=("main-rcd" "roxctl")
+            ;;
+        *-postgres-*)
+            reqd_images=("main" "roxctl" "central-db")
+            ;;
+        *)
+            reqd_images=("main" "roxctl")
+            ;;
+    esac
+
+    info "Will poll for: ${reqd_images[*]}"
+
     local tag
     tag="$(make --quiet tag)"
     local start_time
@@ -450,12 +468,22 @@ poll_for_system_test_images() {
     }
 
     while true; do
-        if _image_exists "main" && _image_exists "roxctl" && _image_exists "central-db"; then
+        local all_exist=true
+        for image in "${reqd_images[@]}"
+        do
+            if ! _image_exists "$image"; then
+                info "$image does not exist"
+                all_exist=false
+                break
+            fi
+        done
+
+        if $all_exist; then
             info "All images exist"
             break
         fi
         if (( $(date '+%s') - start_time > time_limit )); then
-           die "Timed out waiting for images after ${time_limit} seconds"
+           die "ERROR: Timed out waiting for images after ${time_limit} seconds"
         fi
         sleep 60
     done
