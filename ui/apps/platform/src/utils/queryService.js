@@ -72,12 +72,35 @@ function entityContextToQueryObject(entityContext) {
         const entityQueryObj = {};
         if (key === entityTypes.IMAGE) {
             entityQueryObj[`${key} SHA`] = entityContext[key];
-        } else if (key === entityTypes.COMPONENT) {
-            const parsedComponentID = entityContext[key].split(':').map(decodeBase64);
+        } else if (
+            key === entityTypes.COMPONENT ||
+            key === entityTypes.IMAGE_COMPONENT ||
+            key === entityTypes.NODE_COMPONENT
+        ) {
+            const parsedComponentID =
+                key === entityTypes.COMPONENT
+                    ? entityContext[key].split(':').map(decodeBase64)
+                    : entityContext[key].split('#');
             // eslint-disable-next-line dot-notation
-            [entityQueryObj['COMPONENT'], entityQueryObj[`COMPONENT VERSION`]] = parsedComponentID;
-        } else if (key === entityTypes.CVE) {
-            entityQueryObj[key] = entityContext[key];
+            [
+                entityQueryObj.COMPONENT,
+                entityQueryObj[`COMPONENT VERSION`],
+                entityQueryObj['COMPONENT OS'],
+            ] = parsedComponentID;
+            if (entityQueryObj['COMPONENT OS']) {
+                entityQueryObj[`COMPONENT VERSION`] = `${entityQueryObj[`COMPONENT VERSION`]}#${
+                    entityQueryObj[`COMPONENT OS`]
+                }`;
+
+                delete entityQueryObj[`COMPONENT OS`];
+            }
+        } else if (
+            key === entityTypes.CVE ||
+            key === entityTypes.IMAGE_CVE ||
+            key === entityTypes.NODE_CVE ||
+            key === entityTypes.CLUSTER_CVE
+        ) {
+            entityQueryObj.CVE = entityContext[key];
         } else {
             entityQueryObj[`${key} ID`] = entityContext[key];
         }
