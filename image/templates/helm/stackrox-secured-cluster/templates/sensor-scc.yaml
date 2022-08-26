@@ -17,7 +17,7 @@ users:
   - system:serviceaccount:{{ ._rox._namespace }}:sensor-upgrader
 priority: 0
 runAsUser:
-  type: RunAsAny
+  type: MustRunAsNonRoot
 seLinuxContext:
   type: RunAsAny
 seccompProfiles:
@@ -33,7 +33,7 @@ allowHostIPC: false
 allowHostNetwork: false
 allowHostPID: false
 allowHostPorts: false
-allowPrivilegeEscalation: true
+allowPrivilegeEscalation: false
 allowPrivilegedContainer: false
 allowedCapabilities: []
 defaultAddCapabilities: []
