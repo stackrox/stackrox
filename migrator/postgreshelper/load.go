@@ -46,7 +46,7 @@ func Load(conf *config.Config, databaseName string) (*pgxpool.Pool, *gorm.DB, er
 		}
 		// Create the central database if necessary
 		if !pgadmin.CheckIfDBExists(adminConfig, databaseName) {
-			err = pgadmin.CreateDB(sourceMap, adminConfig, pgadmin.AdminDB, databaseName)
+			err = pgadmin.CreateDB(sourceMap, adminConfig, pgadmin.EmptyDB, databaseName)
 			if err != nil {
 				log.WriteToStderrf("Could not create central database: %v", err)
 				return
