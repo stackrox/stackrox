@@ -169,8 +169,6 @@ func (s *GraphQLImageVulnerabilityTestSuite) TearDownSuite() {
 	s.db.Close()
 }
 
-// permission checks
-
 func (s *GraphQLImageVulnerabilityTestSuite) TestUnauthorizedImageVulnerabilityEndpoint() {
 	_, err := s.resolver.ImageVulnerability(s.ctx, IDQuery{})
 	s.Error(err, "Unauthorized request got through")
@@ -440,6 +438,15 @@ func (s *GraphQLImageVulnerabilityTestSuite) getImageResolver(ctx context.Contex
 	s.NoError(err)
 	s.Equal(imageID, image.Id(ctx))
 	return image
+}
+
+func (s *GraphQLImageVulnerabilityTestSuite) getImageComponentResolver(ctx context.Context, id string) ImageComponentResolver {
+	compID := graphql.ID(id)
+
+	comp, err := s.resolver.ImageComponent(ctx, IDQuery{ID: &compID})
+	s.NoError(err)
+	s.Equal(compID, comp.Id(ctx))
+	return comp
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) getImageVulnerabilityResolver(ctx context.Context, id string) ImageVulnerabilityResolver {
