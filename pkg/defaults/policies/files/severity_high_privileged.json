@@ -11,6 +11,16 @@
   "lifecycleStages": [
     "DEPLOY"
   ],
+  "exclusions": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    }
+  ],
   "severity": "HIGH_SEVERITY",
   "policyVersion": "1.1",
   "policySections": [
