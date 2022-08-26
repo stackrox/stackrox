@@ -332,11 +332,11 @@ func (resolver *policyResolver) FullMitreAttackVectors(ctx context.Context) ([]*
 }
 
 func (resolver *policyResolver) getPolicyQuery() *v1.Query {
-	return search.NewQueryBuilder().AddStrings(search.PolicyID, resolver.data.GetId()).ProtoQuery()
+	return search.NewQueryBuilder().AddExactMatches(search.PolicyID, resolver.data.GetId()).ProtoQuery()
 }
 
 func (resolver *policyResolver) getRawPolicyQuery() string {
-	return search.NewQueryBuilder().AddStrings(search.PolicyID, resolver.data.GetId()).Query()
+	return search.NewQueryBuilder().AddExactMatches(search.PolicyID, resolver.data.GetId()).Query()
 }
 
 func (resolver *policyResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
