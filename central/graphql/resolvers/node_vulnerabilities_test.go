@@ -155,6 +155,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TearDownSuite() {
 	nodeComponentPostgres.Destroy(s.ctx, s.db)
 	nodeCVEPostgres.Destroy(s.ctx, s.db)
 	nodeComponentCVEEdgePostgres.Destroy(s.ctx, s.db)
+	s.db.Close()
 }
 
 // permission checks
