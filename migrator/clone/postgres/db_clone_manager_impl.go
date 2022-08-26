@@ -224,6 +224,13 @@ func (d *dbCloneManagerImpl) Persist(cloneName string) error {
 
 	switch cloneName {
 	case RestoreClone:
+		// For a restore, we should analyze it to get the stats because pg_dump does not
+		// contain that information.
+		err := pgadmin.AnalyzeDatabase(d.adminConfig, "central_restore")
+		if err != nil {
+			log.Warnf("unable to force analyze restore database:  %v", err)
+		}
+
 		return d.doPersist(cloneName, BackupClone)
 	case CurrentClone:
 		// No need to persist
