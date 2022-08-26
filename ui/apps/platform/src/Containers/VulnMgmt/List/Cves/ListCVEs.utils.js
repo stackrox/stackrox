@@ -28,6 +28,10 @@ export function getFilteredCVEColumns(columns, workflowState) {
     const shouldKeepEntitiesColumn =
         !workflowState.isPrecedingSingle(entityTypes.COMPONENT) ||
         !workflowState.getSingleAncestorOfType(entityTypes.NODE);
+    // special case CLUSTER CVE under CLUSTER
+    const clusterCveUnderCluster =
+        workflowState.getSingleAncestorOfType(entityTypes.CLUSTER) &&
+        currentEntityType === entityTypes.CLUSTER_CVE;
 
     // TODO: remove this temporary conditional check, after generic CVE list is removed
     const shouldKeepCveType =
@@ -55,7 +59,7 @@ export function getFilteredCVEColumns(columns, workflowState) {
                 return shouldKeepDiscoveredAtImageColumn;
             }
             case 'entities': {
-                return shouldKeepEntitiesColumn;
+                return shouldKeepEntitiesColumn && !clusterCveUnderCluster;
             }
             case 'severity': {
                 return shouldKeepSeverity || shouldKeepDiscoveredAtImageColumn;
