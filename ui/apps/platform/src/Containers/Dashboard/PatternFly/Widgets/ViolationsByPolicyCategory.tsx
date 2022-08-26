@@ -9,6 +9,7 @@ import {
     ToggleGroup,
     ToggleGroupItem,
 } from '@patternfly/react-core';
+import xor from 'lodash/xor';
 
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
@@ -21,10 +22,11 @@ import WidgetCard from './WidgetCard';
 import NoDataEmptyState from './NoDataEmptyState';
 import ViolationsByPolicyCategoryChart, { Config } from './ViolationsByPolicyCategoryChart';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
+import WidgetOptionsResetButton from './WidgetOptionsResetButton';
 
 const fieldIdPrefix = 'policy-category-violations';
 
-const defaultHiddenSeverities = ['MEDIUM_SEVERITY', 'LOW_SEVERITY'] as const;
+const defaultHiddenSeverities = ['LOW_SEVERITY', 'MEDIUM_SEVERITY'] as const;
 
 const defaultConfig = {
     sortType: 'Severity',
@@ -59,6 +61,12 @@ function ViolationsByPolicyCategory() {
     const query = getRequestQueryStringForSearchFilter(queryFilter);
     const { data: alertGroups, loading, error } = useAlertGroups(query, 'CATEGORY');
 
+    const isOptionsChanged =
+        lifecycle !== defaultConfig.lifecycle ||
+        sortType !== defaultConfig.sortType ||
+        // Compares the arrays and ensures the contain the same items, in any order
+        xor(hiddenSeverities, defaultConfig.hiddenSeverities).length !== 0;
+
     return (
         <WidgetCard
             isLoading={loading}
@@ -69,6 +77,9 @@ function ViolationsByPolicyCategory() {
                         <Title headingLevel="h2">Policy violations by category</Title>
                     </FlexItem>
                     <FlexItem>
+                        {isOptionsChanged && (
+                            <WidgetOptionsResetButton onClick={() => updateConfig(defaultConfig)} />
+                        )}
                         <WidgetOptionsMenu
                             bodyContent={
                                 <Form>
