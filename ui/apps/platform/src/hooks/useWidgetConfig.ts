@@ -29,7 +29,11 @@ function loadConfigs(): WidgetConfigStorage {
 //
 // This is not an exhaustive type check (won't check array length, union types, ...) but
 // should cover most possible error states.
-function loadSafeConfig<T>(widgetId: string, routeId: string, defaultConfig: T): T {
+function loadSafeConfig<T extends WidgetConfig>(
+    widgetId: string,
+    routeId: string,
+    defaultConfig: T
+): T {
     const rootConfigs = loadConfigs();
     const parsedConfig = rootConfigs[widgetId]?.[routeId] ?? {};
     const configObject = isPlainObject(parsedConfig) ? parsedConfig : {};

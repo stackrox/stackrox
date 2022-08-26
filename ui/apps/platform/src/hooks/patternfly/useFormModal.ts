@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FormikProps, useFormik } from 'formik';
+import { FormikProps, FormikValues, useFormik } from 'formik';
 
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -19,7 +19,7 @@ type UseFormModalResults<T> = {
     onHandleCancel: () => void;
 };
 
-function useFormModal<T>({
+function useFormModal<T extends FormikValues>({
     initialValues,
     validationSchema,
     onSendRequest,
