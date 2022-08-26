@@ -1406,7 +1406,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"imageScope: VulnReqImageScope",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_CVEs", []string{
-		"ids: [String!]!",
+		"cves: [String!]!",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope", []string{
 		"globalScope: VulnerabilityRequest_Scope_Global",
@@ -15172,6 +15172,7 @@ func (resolver *Resolver) wrapVulnerabilityRequest_CVEses(values []*storage.Vuln
 	return output, nil
 }
 
+<<<<<<< HEAD
 func (resolver *Resolver) wrapVulnerabilityRequest_CVEsWithContext(ctx context.Context, value *storage.VulnerabilityRequest_CVEs, ok bool, err error) (*vulnerabilityRequest_CVEsResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
@@ -15192,6 +15193,10 @@ func (resolver *Resolver) wrapVulnerabilityRequest_CVEsesWithContext(ctx context
 
 func (resolver *vulnerabilityRequest_CVEsResolver) Ids(ctx context.Context) []string {
 	value := resolver.data.GetIds()
+=======
+func (resolver *vulnerabilityRequest_CVEsResolver) Cves(ctx context.Context) []string {
+	value := resolver.data.GetCves()
+>>>>>>> 67134959a (Follow up on vulnerability request proto change)
 	return value
 }
 

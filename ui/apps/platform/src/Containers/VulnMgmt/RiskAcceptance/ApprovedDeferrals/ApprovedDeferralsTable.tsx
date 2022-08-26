@@ -199,7 +199,7 @@ function ApprovedDeferralsTable({
                                             isSelected: selected[rowIndex],
                                         }}
                                     />
-                                    <Td dataLabel="Requested entity">{row.cves.ids[0]}</Td>
+                                    <Td dataLabel="Requested entity">{row.cves.cves[0]}</Td>
                                     <Td dataLabel="Requested action">
                                         <VulnRequestedAction
                                             targetState={row.targetState}
@@ -229,7 +229,7 @@ function ApprovedDeferralsTable({
                                     <Td dataLabel="Comments">
                                         <RequestCommentsButton
                                             comments={row.comments}
-                                            cve={row.cves.ids[0]}
+                                            cve={row.cves.cves[0]}
                                         />
                                     </Td>
                                     <Td dataLabel="Requestor">{row.requestor.name}</Td>

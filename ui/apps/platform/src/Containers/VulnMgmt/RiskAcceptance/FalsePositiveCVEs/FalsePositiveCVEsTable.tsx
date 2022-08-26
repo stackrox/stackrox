@@ -239,7 +239,7 @@ function FalsePositiveCVEsTable({
                                     <Td dataLabel="Comments">
                                         <RequestCommentsButton
                                             comments={row.vulnerabilityRequest.comments}
-                                            cve={row.vulnerabilityRequest.cves.ids[0]}
+                                            cve={row.vulnerabilityRequest.cves.cves[0]}
                                         />
                                     </Td>
                                     <Td dataLabel="Approver">
