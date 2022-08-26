@@ -203,7 +203,7 @@ func filterResults(ctx context.Context, resourceScopeChecker sac.ScopeChecker, r
 	var allowed []*storage.NetworkPolicy
 	for _, netPol := range results {
 		scopeKeys := sac.KeyForNSScopedObj(netPol)
-		if resourceScopeChecker.TryAllowed(scopeKeys...) {
+		if ok, _ := resourceScopeChecker.Allowed(ctx, scopeKeys...); ok {
 			allowed = append(allowed, netPol)
 		}
 	}

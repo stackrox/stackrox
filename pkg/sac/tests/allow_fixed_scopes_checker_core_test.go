@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -170,7 +171,9 @@ func TestAllowFixedScopes(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		assert.Equal(t, c.expected, sc.TryAllowed(c.scope...), "expected result for scope %v to be %s", c.scope, c.expected)
+		allowed, err := sc.Allowed(context.Background(), c.scope...)
+		assert.NoError(t, err)
+		assert.Equal(t, c.expected, allowed, "expected result for scope %v to be %s", c.scope, c.expected)
 	}
 }
 
