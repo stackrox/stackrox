@@ -55,7 +55,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // SuppressCVEs suppresses CVEs for specific duration or indefinitely.
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
 	createdAt := types.TimestampNow()
-	if err := s.cves.Suppress(ctx, createdAt, request.GetDuration(), request.GetIds()...); err != nil {
+	if err := s.cves.Suppress(ctx, createdAt, request.GetDuration(), request.GetCves()...); err != nil {
 		return nil, err
 	}
 	// This handles updating image-cve edges and reprocessing affected deployments.
@@ -67,7 +67,7 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 
 // UnsuppressCVEs unsuppresses given CVEs indefinitely.
 func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.UnsuppressCVERequest) (*v1.Empty, error) {
-	if err := s.cves.Unsuppress(ctx, request.GetIds()...); err != nil {
+	if err := s.cves.Unsuppress(ctx, request.GetCves()...); err != nil {
 		return nil, err
 	}
 	// This handles updating image-cve edges and reprocessing affected deployments.

@@ -319,7 +319,7 @@
     "v1SuppressCVERequest": {
       "type": "object",
       "properties": {
-        "ids": {
+        "cves": {
           "type": "array",
           "items": {
             "type": "string"
@@ -334,7 +334,7 @@
     "v1UnsuppressCVERequest": {
       "type": "object",
       "properties": {
-        "ids": {
+        "cves": {
           "type": "array",
           "items": {
             "type": "string"

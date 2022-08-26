@@ -10,21 +10,17 @@ import "api/v1/empty.proto";
 package v1;
 
 message SuppressCVERequest {
-    // TODO: Rename this field to cves.
-
     // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
     // For example, CVE-2021-44832.
-    repeated string          ids      = 1;
+    repeated string          cves      = 1;
     reserved 2;
     google.protobuf.Duration duration = 3;
 }
 
 message UnsuppressCVERequest {
-    // TODO: Rename this field to cves.
-
     // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
     // For example, CVE-2021-44832.
-    repeated string ids  = 1;
+    repeated string cves  = 1;
 }
 
 // CVEService APIs can be used to manage cves.

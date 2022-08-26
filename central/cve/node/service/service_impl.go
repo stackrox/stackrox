@@ -53,10 +53,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // SuppressCVEs suppresses CVEs from policy workflow and API endpoints that include cve in the responses.
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
 	createdAt := types.TimestampNow()
-	if len(request.GetIds()) == 0 {
+	if len(request.GetCves()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to snooze")
 	}
-	if err := s.cves.Suppress(ctx, createdAt, request.GetDuration(), request.GetIds()...); err != nil {
+	if err := s.cves.Suppress(ctx, createdAt, request.GetDuration(), request.GetCves()...); err != nil {
 		return nil, err
 	}
 	// Nodes are not part of policy workflow, and we do not reprocess risk on cve snooze. Hence, nothing to do.
@@ -65,10 +65,10 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 
 // UnsuppressCVEs un-suppresses given node CVEs.
 func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.UnsuppressCVERequest) (*v1.Empty, error) {
-	if len(request.GetIds()) == 0 {
+	if len(request.GetCves()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to un-snooze")
 	}
-	if err := s.cves.Unsuppress(ctx, request.GetIds()...); err != nil {
+	if err := s.cves.Unsuppress(ctx, request.GetCves()...); err != nil {
 		return nil, err
 	}
 	// Nodes are not part of policy workflow, and we do not reprocess risk on cve un-snooze. Hence, nothing to do.
