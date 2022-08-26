@@ -114,10 +114,10 @@ jobs:
     needs: [variables]
     runs-on: ubuntu-latest
     steps:
-      - name: Check out openshift/release
+      - name: Check out stackrox/openshift-release
         uses: actions/checkout@v3
         with:
-          repository: openshift/release
+          repository: stackrox/openshift-release
           token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
       - name: Check remote branch exists
         id: check-existing
@@ -174,7 +174,7 @@ jobs:
 
           PR_URL=$(gh pr create --repo openshift/release \
             --title "Stackrox release ${{needs.variables.outputs.release}}" \
-            --base "stackrox-release-${{needs.variables.outputs.release}}" \
+            --base "master" \
             --body "CI configuration files to support Stackrox release \`${{needs.variables.outputs.release}}\`." \
             --assignee "$GITHUB_ACTOR")
 
