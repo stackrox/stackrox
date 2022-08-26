@@ -54,19 +54,19 @@ volumes:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: use-nonroot-scc
+  name: use-anyuid-scc
   namespace: {{ ._rox._namespace }}
   labels:
-    {{- include "srox.labels" (list . "role" "use-nonroot-scc") | nindent 4 }}
+    {{- include "srox.labels" (list . "role" "use-anyuid-scc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "role" "use-nonroot-scc") | nindent 4 }}
+    {{- include "srox.annotations" (list . "role" "use-anyuid-scc") | nindent 4 }}
 rules:
 - apiGroups:
   - security.openshift.io
   resources:
   - securitycontextconstraints
   resourceNames:
-  - nonroot
+  - anyuid
   verbs:
   - use
 ---
@@ -82,7 +82,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: use-nonroot-scc
+  name: use-anyuid-scc
 subjects:
 - kind: ServiceAccount
   name: sensor
