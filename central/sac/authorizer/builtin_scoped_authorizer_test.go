@@ -253,10 +253,10 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 			t.Parallel()
 			scc := subScopeChecker
 			for i, scopeKey := range tc.scopeKeys {
-				scc = scc.SubScopeChecker(scopeKey)
 				if i >= len(tc.results) {
-					assert.Panics(t, func() { scc.Allowed() })
+					assert.Panics(t, func() { scc.SubScopeChecker(scopeKey) })
 				} else {
+					scc = scc.SubScopeChecker(scopeKey)
 					expected := tc.results[i]
 					assert.Equalf(t, expected, scc.Allowed(), "scope %s, level [%d]", scopeKey, i)
 				}
