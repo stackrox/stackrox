@@ -437,7 +437,7 @@ poll_for_system_test_images() {
     # Require imagea based on the job
     case "$CI_JOB_NAME" in
         *-operator-e2e-tests)
-            reqd_images=("operator-controller" "operator-bundle" "operator-bundle-index")
+            reqd_images=("operator-controller" "operator-bundle" "operator-bundle-index" "main")
             ;;
         *-race-condition-qa-e2e-test)
             reqd_images=("main-rcd" "roxctl")
