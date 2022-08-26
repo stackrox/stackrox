@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	"github.com/stackrox/rox/central/node/datastore/store"
-	common2 "github.com/stackrox/rox/central/node/datastore/store/common"
+	"github.com/stackrox/rox/central/node/datastore/store/common"
 	nodeComponentEdgeDackBox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -156,7 +156,7 @@ func (b *storeImpl) Upsert(_ context.Context, node *storage.Node) error {
 	}
 
 	// If the node scan is not updated, skip updating that part in DB, i.e. rewriting components and cves.
-	parts := common2.Split(node, scanUpdated)
+	parts := common.Split(node, scanUpdated)
 
 	clusterKey := clusterDackBox.BucketHandler.GetKey(node.GetClusterId())
 	keysToUpdate := append(gatherKeysForNodeParts(parts), clusterKey)
@@ -264,7 +264,7 @@ func (b *storeImpl) IncTxnCount() error {
 // Writing a node to the DB and graph.
 //////////////////////////////////////
 
-func gatherKeysForNodeParts(parts *common2.NodeParts) [][]byte {
+func gatherKeysForNodeParts(parts *common.NodeParts) [][]byte {
 	var allKeys [][]byte
 	allKeys = append(allKeys, nodeDackBox.BucketHandler.GetKey(parts.Node.GetId()))
 	for _, componentParts := range parts.Children {
@@ -276,7 +276,7 @@ func gatherKeysForNodeParts(parts *common2.NodeParts) [][]byte {
 	return allKeys
 }
 
-func (b *storeImpl) writeNodeParts(parts *common2.NodeParts, clusterKey []byte, iTime *protoTypes.Timestamp, scanUpdated bool) error {
+func (b *storeImpl) writeNodeParts(parts *common.NodeParts, clusterKey []byte, iTime *protoTypes.Timestamp, scanUpdated bool) error {
 	dackTxn, err := b.dacky.NewTransaction()
 	if err != nil {
 		return err
@@ -313,7 +313,7 @@ func (b *storeImpl) writeNodeParts(parts *common2.NodeParts, clusterKey []byte, 
 	return dackTxn.Commit()
 }
 
-func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *common2.ComponentParts, iTime *protoTypes.Timestamp) ([]byte, error) {
+func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *common.ComponentParts, iTime *protoTypes.Timestamp) ([]byte, error) {
 	var cveKeys [][]byte
 	for _, cveData := range parts.Children {
 		cveKey, err := b.writeCVEParts(txn, cveData, iTime)
@@ -335,7 +335,7 @@ func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *common2
 	return componentKey, nil
 }
 
-func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *common2.CVEParts, iTime *protoTypes.Timestamp) ([]byte, error) {
+func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *common.CVEParts, iTime *protoTypes.Timestamp) ([]byte, error) {
 	if err := componentCVEEdgeDackBox.Upserter.UpsertIn(nil, parts.Edge, txn); err != nil {
 		return nil, err
 	}
@@ -443,7 +443,7 @@ func (b *storeImpl) readNode(txn *dackbox.Transaction, id string) (*storage.Node
 		return nil, err
 	}
 
-	return common2.Merge(parts), nil
+	return common.Merge(parts), nil
 }
 
 type nodeKeySet struct {
@@ -465,9 +465,9 @@ type cveKeySet struct {
 	cveKey              []byte
 }
 
-func (b *storeImpl) readNodeParts(txn *dackbox.Transaction, keys *nodeKeySet) (*common2.NodeParts, error) {
+func (b *storeImpl) readNodeParts(txn *dackbox.Transaction, keys *nodeKeySet) (*common.NodeParts, error) {
 	// Read the objects for the keys.
-	parts := &common2.NodeParts{}
+	parts := &common.NodeParts{}
 	msg, err := nodeDackBox.Reader.ReadIn(keys.nodeKey, txn)
 	if err != nil {
 		return nil, err
@@ -477,7 +477,7 @@ func (b *storeImpl) readNodeParts(txn *dackbox.Transaction, keys *nodeKeySet) (*
 	}
 	parts.Node = msg.(*storage.Node)
 	for _, component := range keys.componentKeys {
-		componentPart := &common2.ComponentParts{}
+		componentPart := &common.ComponentParts{}
 		compEdgeMsg, err := nodeComponentEdgeDackBox.Reader.ReadIn(component.nodeComponentEdgeKey, txn)
 		if err != nil {
 			return nil, err
@@ -510,7 +510,7 @@ func (b *storeImpl) readNodeParts(txn *dackbox.Transaction, keys *nodeKeySet) (*
 				continue
 			}
 			cve := cveMsg.(*storage.CVE)
-			componentPart.Children = append(componentPart.Children, &common2.CVEParts{
+			componentPart.Children = append(componentPart.Children, &common.CVEParts{
 				Edge: cveEdgeMsg.(*storage.ComponentCVEEdge),
 				CVE:  cve,
 			})

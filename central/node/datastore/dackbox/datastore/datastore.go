@@ -9,7 +9,7 @@ import (
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
-	search2 "github.com/stackrox/rox/central/node/datastore/search"
+	"github.com/stackrox/rox/central/node/datastore/search"
 	"github.com/stackrox/rox/central/node/datastore/store"
 	dackBoxStore "github.com/stackrox/rox/central/node/datastore/store/dackbox"
 	"github.com/stackrox/rox/central/node/datastore/store/postgres"
@@ -50,7 +50,7 @@ func newDatastore(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIn
 	dataStore := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
 	indexer := nodeIndexer.New(bleveIndex)
 
-	searcher := search2.New(dataStore,
+	searcher := search.New(dataStore,
 		dacky,
 		cveIndexer.New(bleveIndex),
 		componentCVEEdgeIndexer.New(bleveIndex),
@@ -70,7 +70,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve
 }
 
 // NewWithPostgres returns a new instance of DataStore using the input store, indexer, and searcher.
-func NewWithPostgres(storage store.Store, indexer nodeIndexer.Indexer, searcher search2.Searcher, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
+func NewWithPostgres(storage store.Store, indexer nodeIndexer.Indexer, searcher search.Searcher, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
 	ds := newDatastoreImpl(storage, indexer, searcher, risks, nodeRanker, nodeComponentRanker)
 	ds.initializeRankers()
 	return ds
@@ -80,7 +80,7 @@ func NewWithPostgres(storage store.Store, indexer nodeIndexer.Indexer, searcher 
 func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
 	dbstore := postgres.New(pool, false, concurrency.NewKeyFence())
 	indexer := postgres.NewIndexer(pool)
-	searcher := search2.NewV2(dbstore, indexer)
+	searcher := search.NewV2(dbstore, indexer)
 	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
