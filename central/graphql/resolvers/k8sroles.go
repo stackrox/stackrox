@@ -93,11 +93,11 @@ func (resolver *Resolver) K8sRoleCount(ctx context.Context, args RawQuery) (int3
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.K8sRoleStore.Search(ctx, query)
+	count, err := resolver.K8sRoleStore.Count(ctx, query)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 func (resolver *k8SRoleResolver) Type(ctx context.Context) (string, error) {

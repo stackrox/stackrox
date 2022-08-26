@@ -74,11 +74,11 @@ func (resolver *Resolver) ServiceAccountCount(ctx context.Context, args RawQuery
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.ServiceAccountsDataStore.Search(ctx, query)
+	count, err := resolver.ServiceAccountsDataStore.Count(ctx, query)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 func (resolver *serviceAccountResolver) K8sRoleCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -182,11 +182,11 @@ func (resolver *serviceAccountResolver) DeploymentCount(ctx context.Context, arg
 		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, resolver.data.GetName()).ProtoQuery()
 
-	results, err := resolver.root.DeploymentDataStore.Search(ctx, search.ConjunctionQuery(scopedQuery, q))
+	count, err := resolver.root.DeploymentDataStore.Count(ctx, search.ConjunctionQuery(scopedQuery, q))
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // Permission returns which scopes do the permissions for the service acc
