@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/random"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -516,6 +517,24 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 	}
 }
 
+func tracedQuery(ctx context.Context, pool *pgxpool.Pool, sql string, args ...interface{}) (pgx.Rows, error) {
+	if strings.Contains(sql, "select distinct(deployments.Id)") {
+		debug.PrintStack()
+	}
+	log.Infof("SQL: %v", sql)
+	t := time.Now()
+	rows, err := pool.Query(ctx, sql, args...)
+	postgres.AddTracedQuery(ctx, t, sql, args)
+	return rows, err
+}
+
+func tracedQueryRow(ctx context.Context, pool *pgxpool.Pool, sql string, args ...interface{}) pgx.Row {
+	t := time.Now()
+	row := pool.QueryRow(ctx, sql, args...)
+	postgres.AddTracedQuery(ctx, t, sql, args)
+	return row
+}
+
 // RunSearchRequest executes a request against the database for given category
 func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) ([]searchPkg.Result, error) {
 	schema := mapping.GetTableFromCategory(category)
@@ -551,7 +570,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	}
 
 	queryStr := query.AsSQL()
-	rows, err := db.Query(ctx, queryStr, query.Data...)
+	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
 		debug.PrintStack()
 		log.Errorf("Query issue: %s %+v: %v", queryStr, query.Data, err)
@@ -646,7 +665,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 
 	queryStr := query.AsSQL()
 	var count int
-	row := db.QueryRow(ctx, queryStr, query.Data...)
+	row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 	if err := row.Scan(&count); err != nil {
 		debug.PrintStack()
 		log.Errorf("Query issue: %s %+v: %v", queryStr, query.Data, err)
@@ -666,7 +685,7 @@ func RunGetQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Quer
 	}
 
 	queryStr := query.AsSQL()
-	row := db.QueryRow(ctx, queryStr, query.Data...)
+	row := tracedQueryRow(db, ctx, queryStr, query.Data...)
 
 	var data []byte
 	err = row.Scan(&data)
@@ -684,7 +703,7 @@ func RunGetManyQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	}
 
 	queryStr := query.AsSQL()
-	rows, err := db.Query(ctx, queryStr, query.Data...)
+	rows, err := tracedQuery(db, ctx, queryStr, query.Data...)
 	if err != nil {
 		return nil, err
 	}
