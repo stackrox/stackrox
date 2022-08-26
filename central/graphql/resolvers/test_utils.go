@@ -152,6 +152,18 @@ func getIDList(ctx context.Context, resolvers interface{}) []string {
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
+	case []NodeVulnerabilityResolver:
+		for _, r := range res {
+			list = append(list, string(r.Id(ctx)))
+		}
+	case []*nodeResolver:
+		for _, r := range res {
+			list = append(list, string(r.Id(ctx)))
+		}
+	case []NodeComponentResolver:
+		for _, r := range res {
+			list = append(list, string(r.Id(ctx)))
+		}
 	}
 	return list
 }

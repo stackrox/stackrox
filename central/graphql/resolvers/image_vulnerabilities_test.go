@@ -237,10 +237,9 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesFixable() {
 	idList := getIDList(ctx, vulns)
 	s.ElementsMatch(idList, []string{"cve-2018-1#"})
 
-	// TODO this value returns 2 instead of 1
-	// count, err := s.resolver.ImageVulnerabilityCount(ctx, RawQuery{Query: &query})
-	// s.NoError(err)
-	// s.Equal(expected, count)
+	count, err := s.resolver.ImageVulnerabilityCount(ctx, RawQuery{Query: &query})
+	s.NoError(err)
+	s.Equal(expected, count)
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesNonFixable() {
@@ -270,14 +269,13 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesNonFixable(
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesFixedByVersion() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
-
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    "comp1#0.9#",
 	})
+	vuln := s.getImageVulnerabilityResolver(scopedCtx, "cve-2018-1#")
 
-	fixedBy, err := vuln.FixedByVersion(scopedCtx)
+	fixedBy, err := vuln.FixedByVersion(ctx)
 	s.NoError(err)
 	s.Equal("1.1", fixedBy)
 
@@ -285,19 +283,19 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesFixedByVers
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    "comp2#1.1#",
 	})
+	vuln = s.getImageVulnerabilityResolver(scopedCtx, "cve-2018-1#")
 
-	fixedBy, err = vuln.FixedByVersion(scopedCtx)
+	fixedBy, err = vuln.FixedByVersion(ctx)
 	s.NoError(err)
 	s.Equal("1.5", fixedBy)
-
-	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-1#")
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    "comp2#1.1#",
 	})
+	vuln = s.getImageVulnerabilityResolver(scopedCtx, "cve-2017-1#")
 
-	fixedBy, err = vuln.FixedByVersion(scopedCtx)
+	fixedBy, err = vuln.FixedByVersion(ctx)
 	s.NoError(err)
 	s.Equal("", fixedBy)
 }
