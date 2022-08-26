@@ -122,7 +122,8 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 		resource, ok = resources.MetadataForInternalResource(res)
 	}
 	if !ok {
-		return sac.ErrorAccessScopeCheckerCore(errors.Wrapf(ErrUnknownResource, "on scope key %q", scopeKey))
+		utils.Must(errors.Wrapf(ErrUnknownResource, "on scope key %q", scopeKey))
+		return sac.DenyAllAccessScopeChecker()
 	}
 	filteredRoles := make([]permissions.ResolvedRole, 0, len(a.roles))
 	for _, role := range a.roles {
@@ -262,7 +263,8 @@ func (a *clusterNamespaceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.Sco
 }
 
 func errorScopeChecker(level interface{}, scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
-	return sac.ErrorAccessScopeCheckerCore(errors.Wrapf(ErrUnexpectedScopeKey, "%T scope checked encountered %q", level, scopeKey))
+	utils.Must(errors.Wrapf(ErrUnexpectedScopeKey, "%T scope checked encountered %q", level, scopeKey))
+	return sac.DenyAllAccessScopeChecker()
 }
 
 type authorizerDataCache struct {
