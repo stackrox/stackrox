@@ -816,7 +816,6 @@ gate_job() {
 
     info "Will determine whether to run: $job"
 
-    # TODO(RS-509) remove once this behaves better
     if [[ "$job_config" == "null" ]]; then
         info "$job will run because there is no gating criteria for $job"
         return
@@ -900,7 +899,6 @@ gate_pr_job() {
         fi
         echo "Diffbase diff:"
         { git diff --name-only "${diff_base}" | cat ; } || true
-        # TODO(RS-509) remove once this behaves better
         ignored_regex="${changed_path_to_ignore}"
         [[ -n "$ignored_regex" ]] || ignored_regex='$^' # regex that matches nothing
         match_regex="${run_with_changed_path}"
