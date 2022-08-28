@@ -162,11 +162,11 @@ func (resolver *Resolver) NamespaceCount(ctx context.Context, args RawQuery) (in
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.NamespaceDataStore.Search(ctx, q)
+	count, err := resolver.NamespaceDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args RawQuery) ([]*controlResultResolver, error) {
@@ -259,11 +259,11 @@ func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context, args
 		return 0, err
 	}
 
-	results, err := resolver.root.ServiceAccountsDataStore.Search(ctx, q)
+	count, err := resolver.root.ServiceAccountsDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // ServiceAccounts returns the ServiceAccounts which have any permission on this cluster namespace
@@ -295,11 +295,11 @@ func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context, args RawQue
 		return 0, err
 	}
 
-	results, err := resolver.root.K8sRoleStore.Search(ctx, q)
+	count, err := resolver.root.K8sRoleStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // K8sRoles returns count of K8s roles in this cluster namespace
