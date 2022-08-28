@@ -72,11 +72,11 @@ func (resolver *Resolver) PolicyCount(ctx context.Context, args RawQuery) (int32
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.PolicyDataStore.Search(ctx, q)
+	count, err := resolver.PolicyDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // Alerts returns GraphQL resolvers for all alerts for this policy
@@ -242,12 +242,12 @@ func (resolver *policyResolver) FailingDeploymentCount(ctx context.Context, args
 
 	q = search.ConjunctionQuery(q, resolver.getPolicyQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
-	results, err := resolver.root.ViolationsDataStore.Search(ctx, q)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
 	// This is because alert <-> policy <-> deployment is generally 1:1.
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // PolicyStatus returns the policy statusof this policy

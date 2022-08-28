@@ -59,11 +59,11 @@ func (resolver *Resolver) PodCount(ctx context.Context, args RawQuery) (int32, e
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.PodDataStore.Search(ctx, q)
+	count, err := resolver.PodDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // ContainerCount returns the number of active containers.

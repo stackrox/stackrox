@@ -176,11 +176,11 @@ func (resolver *Resolver) ClusterCount(ctx context.Context, args RawQuery) (int3
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.ClusterDataStore.Search(ctx, q)
+	count, err := resolver.ClusterDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // Alerts returns GraphQL resolvers for all alerts on this cluster
@@ -381,11 +381,11 @@ func (resolver *clusterResolver) K8sRoleCount(ctx context.Context, args RawQuery
 		return 0, err
 	}
 
-	results, err := resolver.root.K8sRoleStore.Search(ctx, q)
+	count, err := resolver.root.K8sRoleStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // K8sRole returns clusterResolver GraphQL resolver for a given k8s role
@@ -443,11 +443,11 @@ func (resolver *clusterResolver) ServiceAccountCount(ctx context.Context, args R
 		return 0, err
 	}
 
-	results, err := resolver.root.ServiceAccountsDataStore.Search(ctx, q)
+	count, err := resolver.root.ServiceAccountsDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // ServiceAccount returns clusterResolver GraphQL resolver for a given service account

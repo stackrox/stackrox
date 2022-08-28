@@ -157,6 +157,10 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 	return ds.podSearcher.Search(ctx, q)
 }
 
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.podSearcher.Count(ctx, q)
+}
+
 func (ds *datastoreImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "SearchRawPods")
 

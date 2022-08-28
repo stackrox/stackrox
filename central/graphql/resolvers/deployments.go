@@ -112,11 +112,11 @@ func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (i
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.DeploymentDataStore.Search(ctx, q)
+	count, err := resolver.DeploymentDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
@@ -215,11 +215,11 @@ func (resolver *deploymentResolver) DeployAlertCount(ctx context.Context, args R
 		return 0, err
 	}
 
-	results, err := resolver.root.ViolationsDataStore.Search(ctx, q)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 func (resolver *deploymentResolver) Policies(ctx context.Context, args PaginatedQuery) ([]*policyResolver, error) {

@@ -23,6 +23,7 @@ import (
 // DataStore is an intermediary to PodStorage.
 //go:generate mockgen-wrapper
 type DataStore interface {
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error)
 
