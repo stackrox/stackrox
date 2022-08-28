@@ -43,6 +43,7 @@ const (
 	RequiredLabelKey                = "requiredLabel"
 	ResourceKey                     = "resource"
 	RuntimeClassKey                 = "runtimeClass"
+	SbomKey                         = "sbom"
 	SeccompProfileTypeKey           = "seccompProfileType"
 	ServiceAccountKey               = "serviceAccount"
 	VolumeKey                       = "volume"
@@ -89,6 +90,7 @@ func init() {
 	registerFunc(RequiredLabelKey, requiredLabelPrinter)
 	registerFunc(ResourceKey, resourcePrinter)
 	registerFunc(RuntimeClassKey, runtimeClassPrinter)
+	registerFunc(SbomKey, sbomPrinter)
 	registerFunc(SeccompProfileTypeKey, seccompProfileTypePrinter)
 	registerFunc(ServiceAccountKey, serviceAccountPrinter)
 	registerFunc(VolumeKey, volumePrinter)

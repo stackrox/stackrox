@@ -58,6 +58,7 @@ var (
 	RequiredImageLabel            = newFieldName("Required Image Label")
 	RequiredLabel                 = newFieldName("Required Label")
 	RuntimeClass                  = newFieldName("Runtime Class")
+	SBOMVerificationStatus        = newFieldName("SBOM Verification Status")
 	SeccompProfileType            = newFieldName("Seccomp Profile Type")
 	ServiceAccount                = newFieldName("Service Account")
 	Severity                      = newFieldName("Severity")

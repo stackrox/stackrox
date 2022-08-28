@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/sbom"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -137,6 +138,9 @@ func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integr
 		signatureIntegrationGetter: signatureIntegrationGetter,
 		signatureVerifier:          signatures.VerifyAgainstSignatureIntegrations,
 		signatureFetcher:           signatures.NewSignatureFetcher(),
+
+		sbomFetcher:  sbom.NewFetcher(),
+		sbomVerifier: sbom.NewVerifier(),
 
 		imageGetter: imageGetter,
 

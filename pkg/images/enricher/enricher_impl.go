@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sbom"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
@@ -56,6 +57,9 @@ type enricherImpl struct {
 	signatureIntegrationGetter SignatureIntegrationGetter
 	signatureVerifier          signatureVerifierForIntegrations
 	signatureFetcher           signatures.SignatureFetcher
+
+	sbomFetcher  sbom.Fetcher
+	sbomVerifier sbom.Verifier
 
 	imageGetter ImageGetter
 
@@ -184,8 +188,16 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	} else {
 		delete(imageNoteSet, storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA)
 	}
-
 	updated = updated || didUpdateSigVerificationData
+
+	didUpdateSBOM, err := e.enrichWithSBOM(ctx, enrichContext, image)
+	errorList.AddError(err)
+	// TODO: add image note for sbom missing.
+	updated = updated || didUpdateSBOM
+
+	didUpdateSBOMVerification, err := e.enrichWithSBOMVerification(ctx, enrichContext, image)
+	errorList.AddError(err)
+	updated = updated || didUpdateSBOMVerification
 
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
@@ -221,6 +233,7 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 	usesExistingScan := e.useExistingScan(img, existingImg, option)
 	e.useExistingSignature(img, existingImg, option)
 	e.useExistingSignatureVerificationData(img, existingImg, option)
+	e.useExistingSBOM(img, existingImg)
 
 	return usesExistingScan
 }
@@ -356,6 +369,7 @@ func (e *enricherImpl) fetchFromDatabase(ctx context.Context, img *storage.Image
 		// When refetched values should be used, reset the existing values for signature and signature verification data.
 		img.Signature = nil
 		img.SignatureVerificationData = nil
+		img.Sbom = nil
 		return img, false
 	}
 	// See if the image exists in the DB with a scan, if it does, then use that instead of fetching
@@ -405,6 +419,12 @@ func (e *enricherImpl) useExistingSignatureVerificationData(img *storage.Image, 
 
 	if existingImg.GetSignatureVerificationData() != nil {
 		img.SignatureVerificationData = existingImg.GetSignatureVerificationData()
+	}
+}
+
+func (e *enricherImpl) useExistingSBOM(img *storage.Image, existingImg *storage.Image) {
+	if existingImg.GetSbom() != nil {
+		img.Sbom = existingImg.GetSbom()
 	}
 }
 
@@ -638,6 +658,106 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		Signatures: fetchedSignatures,
 		Fetched:    protoconv.ConvertTimeToTimestamp(time.Now()),
 	}
+	return true, nil
+}
+
+// enrichWithSBOM enriches the image with a SBOM.
+// It returns a bool indicating whether a SBOM has been updated on the image or not.
+// Based on the given FetchOption, it will try to short-circuit using values from existing images where
+// possible.
+func (e *enricherImpl) enrichWithSBOM(ctx context.Context, enrichmentContext EnrichmentContext,
+	img *storage.Image) (bool, error) {
+	// If no external metadata should be taken into account, we skip the fetching of signatures.
+	if enrichmentContext.FetchOpt == NoExternalMetadata {
+		return false, nil
+	}
+
+	// Short-circuit if possible when we are using existing values.
+	if img.GetSbom() != nil {
+		return false, nil
+	}
+
+	imgName := img.GetName().GetFullName()
+
+	if err := e.checkRegistryForImage(img); err != nil {
+		return false, errors.Wrapf(err, "checking registry for image %q", imgName)
+	}
+
+	registrySet, err := e.getRegistriesForContext(enrichmentContext)
+	if err != nil {
+		return false, errors.Wrap(err, "getting registries for context")
+	}
+
+	matchingRegistries, err := getMatchingRegistries(registrySet.GetAll(), img)
+	if err != nil {
+		// Do not return an error for internal images when no integration is found.
+		if enrichmentContext.Internal {
+			return false, nil
+		}
+		return false, errors.Wrapf(err, "getting matching registries for image %q", imgName)
+	}
+
+	var fetchedSBOM *storage.ImageSBOM
+	for _, matchingReg := range matchingRegistries {
+		fetchedSBOM, err = e.sbomFetcher.FetchSBOM(ctx, img, matchingReg)
+		if err == nil {
+			break
+		}
+		// TODO: Should log critical errors, filter out non-critical errors (i.e. not found / unauthorized).
+		log.Infof("Issue fetching image SBOMs for image %q: %v", imgName, err)
+	}
+
+	if fetchedSBOM == nil {
+		// If SBOM is already set but cannot be fetched anymore, we assume it has been deleted.
+		if img.GetSbom() != nil {
+			log.Infof("Removing pre-existing SBOM from image %q as it could not be fetched anymore", imgName)
+			img.Sbom = nil
+			return true, nil
+		}
+		log.Infof("Image %q has no SBOM associated with it", imgName)
+		return false, nil
+	}
+
+	log.Infof("Found a SBOM for image %q: %+v", imgName, fetchedSBOM)
+
+	img.Sbom = fetchedSBOM
+	return true, nil
+}
+
+// enrichWithSBOMVerification enriches the image with a SBOM verification result.
+// It returns a bool indicating whether a SBOM verification result has been updated on the image or not.
+// Based on the given FetchOption, it will try to short-circuit using values from existing images where
+// possible.
+func (e *enricherImpl) enrichWithSBOMVerification(ctx context.Context, enrichmentContext EnrichmentContext,
+	img *storage.Image) (bool, error) {
+	// If no external metadata should be taken into account, we skip the verification.
+	if enrichmentContext.FetchOpt == NoExternalMetadata {
+		return false, nil
+	}
+
+	imgName := img.GetName().GetFullName()
+
+	// Short-circuit if no signature is available.
+	if len(img.GetSbom().GetSboms()) == 0 {
+		// Make sure to delete the SBOM verification result when no SBOMs are available anymore.
+		if img.GetSbom().GetResult() != nil {
+			log.Infof("Removing SBOM verification result from iamge %q since no SBOM is available", imgName)
+			img.GetSbom().Result = nil
+		}
+
+		log.Infof("Skipping verification of SBOM for image %q since no SBOMs are attached", imgName)
+		return false, nil
+	}
+
+	verifySBOMCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	err := e.sbomVerifier.VerifySBOM(verifySBOMCtx, img)
+	if err != nil {
+		log.Infof("Some error occurred when verifying the SBOM for image %q: %v", imgName, err)
+		return false, nil
+	}
+
 	return true, nil
 }
 

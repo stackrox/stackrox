@@ -66,6 +66,7 @@ var (
 		fieldnames.RequiredImageLabel:           {{required: set.NewStringSet(search.ImageLabel.String()), printerFuncKey: printer.RequiredImageLabelKey}},
 		fieldnames.RequiredLabel:                {{required: set.NewStringSet(search.Label.String()), printerFuncKey: printer.RequiredLabelKey}},
 		fieldnames.RuntimeClass:                 {{required: set.NewStringSet(augmentedobjs.RuntimeClassCustomTag), printerFuncKey: printer.RuntimeClassKey}},
+		fieldnames.SBOMVerificationStatus:       {{required: set.NewStringSet(search.SBOMVerificationStatus.String()), printerFuncKey: printer.SbomKey}},
 		fieldnames.SeccompProfileType:           {{required: set.NewStringSet(search.SeccompProfileType.String()), printerFuncKey: printer.SeccompProfileTypeKey}},
 		fieldnames.ServiceAccount:               {{required: set.NewStringSet(search.ServiceAccountName.String()), printerFuncKey: printer.ServiceAccountKey}},
 		fieldnames.Severity:                     {{required: set.NewStringSet(search.Severity.String()), printerFuncKey: printer.CveKey}},

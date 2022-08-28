@@ -832,5 +832,15 @@ func initializeFieldMetadata() FieldMetadata {
 		)
 	}
 
+	f.registerFieldMetadata(fieldnames.SBOMVerificationStatus,
+		querybuilders.ForSBOMVerificationStatus(),
+		violationmessages.ImageContextFields,
+		func(configuration *validateConfiguration) *regexp.Regexp {
+			return stringValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, negationForbidden,
+	)
+
 	return f
 }
