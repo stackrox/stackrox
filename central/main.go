@@ -672,13 +672,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/db/backup",
 			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), false),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), false)),
 			Compression:   true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/extensions/backup",
 			Authorizer:    user.WithRole(role.Admin),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), true),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), true)),
 			Compression:   true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
@@ -703,13 +703,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/db/backup",
 			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, false),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, false)),
 			Compression:   true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/extensions/backup",
 			Authorizer:    user.WithRole(role.Admin),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, true),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, true)),
 			Compression:   true,
 		})
 	}
@@ -750,6 +750,17 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 
 	customRoutes = append(customRoutes, debugRoutes()...)
 	return
+}
+
+func notImplementedOnManagedServices(fn http.Handler) http.Handler {
+	if !env.ManagedCentral.BooleanSetting() {
+		return fn
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		errMsg := "api is not supported in a managed central environment."
+		log.Error(errMsg)
+		http.Error(w, errMsg, http.StatusNotImplemented)
+	})
 }
 
 func debugRoutes() []routes.CustomRoute {
