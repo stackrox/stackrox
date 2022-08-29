@@ -29,8 +29,11 @@ var (
                )
                `,
 		GormModel: (*NodeComponentsCvesEdges)(nil),
-		Indexes:   []string{},
-		Children:  []*postgres.CreateStmts{},
+		Indexes: []string{
+			"create index if not exists nodeComponentsCvesEdges_NodeComponentId on node_components_cves_edges using hash(NodeComponentId)",
+			"create index if not exists nodeComponentsCvesEdges_NodeCveId on node_components_cves_edges using hash(NodeCveId)",
+		},
+		Children: []*postgres.CreateStmts{},
 	}
 
 	// NodeComponentsCvesEdgesSchema is the go schema for table `node_components_cves_edges`.
@@ -71,8 +74,8 @@ type NodeComponentsCvesEdges struct {
 	Id                string         `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable         bool           `gorm:"column:isfixable;type:bool"`
 	FixedBy           string         `gorm:"column:fixedby;type:varchar"`
-	NodeComponentId   string         `gorm:"column:nodecomponentid;type:varchar"`
-	NodeCveId         string         `gorm:"column:nodecveid;type:varchar"`
+	NodeComponentId   string         `gorm:"column:nodecomponentid;type:varchar;index:nodecomponentscvesedges_nodecomponentid,type:hash"`
+	NodeCveId         string         `gorm:"column:nodecveid;type:varchar;index:nodecomponentscvesedges_nodecveid,type:hash"`
 	Serialized        []byte         `gorm:"column:serialized;type:bytea"`
 	NodeComponentsRef NodeComponents `gorm:"foreignKey:nodecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
