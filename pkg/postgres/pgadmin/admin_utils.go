@@ -190,7 +190,7 @@ func AnalyzeDatabase(config *pgxpool.Config, dbName string) error {
 
 // terminateConnection - terminates connections to the specified database
 func terminateConnection(config *pgxpool.Config, dbName string) error {
-	log.Infof("terminateConnection - %q", dbName)
+	log.Debugf("terminateConnection - %q", dbName)
 
 	// Connect to different database for admin functions
 	connectPool := GetAdminPool(config)
@@ -199,7 +199,7 @@ func terminateConnection(config *pgxpool.Config, dbName string) error {
 
 	_, err := connectPool.Exec(context.Background(), terminateConnectionStmt, dbName)
 
-	log.Info("terminateConnection done")
+	log.Debug("terminateConnection done")
 	return err
 }
 

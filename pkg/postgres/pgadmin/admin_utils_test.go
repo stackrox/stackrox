@@ -65,10 +65,9 @@ func (s *PostgresRestoreSuite) SetupTest() {
 
 func (s *PostgresRestoreSuite) TearDownTest() {
 	//Clean up
-	err := DropDB(s.sourceMap, s.config, restoreDB)
-	s.Nil(err)
-	err = DropDB(s.sourceMap, s.config, activeDB)
-	s.Nil(err)
+	s.Nil(DropDB(s.sourceMap, s.config, restoreDB))
+	s.Nil(DropDB(s.sourceMap, s.config, activeDB))
+	s.Nil(DropDB(s.sourceMap, s.config, tempDB))
 
 	if s.pool != nil {
 		s.pool.Close()
@@ -128,5 +127,6 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	// Successfully drop the restore DB
 	err = DropDB(s.sourceMap, s.config, restoreDB)
 	s.Nil(err)
+	// Make sure the connection to the restore db was terminated
 	s.NotNil(restorePool.Ping(s.ctx))
 }
