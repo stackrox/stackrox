@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useFormik, FormikProps } from 'formik';
+import { useFormik, FormikProps, FormikValues } from 'formik';
 import { Schema } from 'yup';
 
 import { IntegrationOptions } from 'services/IntegrationsService';
@@ -20,7 +20,7 @@ export type UseIntegrationFormResult<T> = FormikProps<T> & {
     message: FormResponseMessage;
 };
 
-function useIntegrationForm<T>({
+function useIntegrationForm<T extends FormikValues>({
     initialValues,
     validationSchema,
 }: UseIntegrationForm<T>): UseIntegrationFormResult<T> {
