@@ -45,6 +45,9 @@ updates:
     open-pull-requests-limit: 3
     reviewers:
       - "stackrox/backend-dep-updaters"
+    ignore:
+      - dependency-name: "github.com/aws/aws-sdk-go"
+        update-types: ["version-update:semver-patch"]
 
   - package-ecosystem: 'gomod'
     directory: '/tools/linters/'
