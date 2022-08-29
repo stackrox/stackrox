@@ -3,14 +3,14 @@ set -eu
 source "local-test-example/common.sh"
 source "local-test-example/config.sh"
 
-function install_golang_1_17_2 {
+function install_golang_1_17_12 {
   # Default path to 'go' is /usr/local/go/bin/go
-  # But ACS requires 1.17.2 which will be installed at $HOME/go/bin/go1.17.2
+  # But ACS requires 1.17.12 which will be installed at $HOME/go/bin/go1.17.12
 
-  if ! go version | grep 'go1.17.2' &> /dev/null; then
-    echo "Installing go v1.17.2"
-    go install golang.org/dl/go1.17.2@latest
-    ln -sf "$HOME/go/bin/go1.17.2" "$HOME/go/bin/go"
+  if ! go version | grep 'go1.17.12' &> /dev/null; then
+    echo "Installing go v1.17.12"
+    go install golang.org/dl/go1.17.12@latest
+    ln -sf "$HOME/go/bin/go1.17.12" "$HOME/go/bin/go"
     path_prepend "$HOME/go/bin/"
   fi
 
@@ -129,7 +129,7 @@ function docker_login {
 # __MAIN__
 install_gradle
 install_helm
-install_golang_1_17_2
+install_golang_1_17_12
 install_openjdk11
 install_rocksdb
 test_stackrox_workflow_roxhelp
