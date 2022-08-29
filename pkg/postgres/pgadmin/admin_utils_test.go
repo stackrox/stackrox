@@ -64,7 +64,7 @@ func (s *PostgresRestoreSuite) SetupTest() {
 }
 
 func (s *PostgresRestoreSuite) TearDownTest() {
-	//Clean up
+	// Clean up
 	s.Nil(DropDB(s.sourceMap, s.config, restoreDB))
 	s.Nil(DropDB(s.sourceMap, s.config, activeDB))
 	s.Nil(DropDB(s.sourceMap, s.config, tempDB))
