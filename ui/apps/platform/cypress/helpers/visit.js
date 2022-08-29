@@ -80,7 +80,10 @@ export function visitWithPermissions(
     requestConfig,
     staticResponseMap
 ) {
-    interceptRequests(requestConfigGeneric);
+    const staticResponseMapGeneric = {
+        mypermissions: permissionsStaticResponse,
+    };
+    interceptRequests(requestConfigGeneric, staticResponseMapGeneric);
     interceptRequests(requestConfig, staticResponseMap);
 
     cy.visit(pageUrl);
