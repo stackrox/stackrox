@@ -439,7 +439,7 @@ poll_for_system_test_images() {
         *-operator-e2e-tests)
             reqd_images=("stackrox-operator-controller" "stackrox-operator-bundle" "stackrox-operator-bundle-index" "main")
             ;;
-        *-race-condition-qa-e2e-test)
+        *-race-condition-qa-e2e-tests)
             reqd_images=("main-rcd" "roxctl")
             ;;
         *-postgres-*)
