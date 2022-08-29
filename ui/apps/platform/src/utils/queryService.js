@@ -73,34 +73,23 @@ function entityContextToQueryObject(entityContext) {
         if (key === entityTypes.IMAGE) {
             entityQueryObj[`${key} SHA`] = entityContext[key];
         } else if (
-            key === entityTypes.COMPONENT ||
-            key === entityTypes.IMAGE_COMPONENT ||
-            key === entityTypes.NODE_COMPONENT
+            // TODO: remove the plain COMPONENT option after migration to Postgres
+            key === entityTypes.COMPONENT
         ) {
-            const parsedComponentID =
-                key === entityTypes.COMPONENT
-                    ? entityContext[key].split(':').map(decodeBase64)
-                    : entityContext[key].split('#');
+            const parsedComponentID = entityContext[key].split(':').map(decodeBase64);
             // eslint-disable-next-line dot-notation
-            [
-                entityQueryObj.COMPONENT,
-                entityQueryObj[`COMPONENT VERSION`],
-                entityQueryObj['COMPONENT OS'],
-            ] = parsedComponentID;
-            if (entityQueryObj['COMPONENT OS']) {
-                entityQueryObj[`COMPONENT VERSION`] = `${entityQueryObj[`COMPONENT VERSION`]}#${
-                    entityQueryObj[`COMPONENT OS`]
-                }`;
-
-                delete entityQueryObj[`COMPONENT OS`];
-            }
+            [entityQueryObj['COMPONENT'], entityQueryObj[`COMPONENT VERSION`]] = parsedComponentID;
+        } else if (key === entityTypes.IMAGE_COMPONENT || key === entityTypes.NODE_COMPONENT) {
+            entityQueryObj['COMPONENT ID'] = entityContext[key];
+        } else if (key === entityTypes.CVE) {
+            // TODO: remove the plain CVE option after migration to Postgres
+            entityQueryObj.CVE = entityContext[key];
         } else if (
-            key === entityTypes.CVE ||
             key === entityTypes.IMAGE_CVE ||
             key === entityTypes.NODE_CVE ||
             key === entityTypes.CLUSTER_CVE
         ) {
-            entityQueryObj.CVE = entityContext[key];
+            entityQueryObj['CVE ID'] = entityContext[key];
         } else {
             entityQueryObj[`${key} ID`] = entityContext[key];
         }
