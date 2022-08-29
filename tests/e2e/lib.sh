@@ -20,7 +20,11 @@ deploy_stackrox() {
     wait_for_api
     setup_client_TLS_certs
 
-    deploy_sensor
+    if [ ! -z $SENSOR_IMAGE_TAG ]; then
+        echo "Deploying sensor with custom image: $SENSOR_IMAGE_TAG"
+    fi
+    MAIN_IMAGE_TAG=${SENSOR_IMAGE_TAG:-$MAIN_IMAGE_TAG} deploy_sensor
+    echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait
 
     # Bounce collectors to avoid restarts on initial module pull
