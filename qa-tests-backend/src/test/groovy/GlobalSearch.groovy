@@ -5,7 +5,6 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import objects.Deployment
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
-import util.Env
 
 class GlobalSearch extends BaseSpecification {
     static final private List<SearchServiceOuterClass.SearchCategory> EXPECTED_DEPLOYMENT_CATEGORIES = []

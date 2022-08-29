@@ -6,7 +6,6 @@ import services.ImageIntegrationService
 import services.ImageService
 import spock.lang.IgnoreIf
 import spock.lang.Unroll
-import util.Env
 
 @Category(BAT)
 class VulnMgmtTest extends BaseSpecification {

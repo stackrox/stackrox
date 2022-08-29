@@ -21,7 +21,6 @@ import spock.lang.Shared
 import spock.lang.Timeout
 import spock.lang.Unroll
 import util.ChaosMonkey
-import util.Env
 import util.Helpers
 import util.Timer
 

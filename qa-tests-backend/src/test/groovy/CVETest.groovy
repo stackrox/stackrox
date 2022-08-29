@@ -6,7 +6,6 @@ import services.GraphQLService
 import services.ImageService
 import spock.lang.Ignore
 import spock.lang.Unroll
-import util.Env
 
 class CVETest extends BaseSpecification {
     private static final GET_CVES_QUERY = """
@@ -469,7 +468,9 @@ class CVETest extends BaseSpecification {
         when:
         "Query fixable CVEs by a specific CVE in the image"
         def gqlService = new GraphQLService()
-        def fixableCvesByEntityQuery = isPostgresRun() ? FIXABLE_CVES_BY_ENTITY_POSTGRES_QUERY : FIXABLE_CVES_BY_ENTITY_QUERY
+        def fixableCvesByEntityQuery = isPostgresRun() ?
+            FIXABLE_CVES_BY_ENTITY_POSTGRES_QUERY :
+            FIXABLE_CVES_BY_ENTITY_QUERY
         def scopeQuery = isPostgresRun() ? "" : "CVE:CVE-2020-8285"
         def ret = gqlService.Call(fixableCvesByEntityQuery, [
                 id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
