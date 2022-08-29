@@ -105,6 +105,24 @@ func (resolver *Resolver) wrap{{plural .Data.Name}}(values []*{{importedName .Da
 	}
 	return output, nil
 }
+
+func (resolver *Resolver) wrap{{.Data.Name}}WithContext(ctx context.Context, value *{{importedName .Data.Type}}, ok bool, err error) (*{{lower .Data.Name}}Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &{{lower .Data.Name}}Resolver{ctx: ctx, root: resolver, data: value{{if .ListData}}, list: nil{{end}}}, nil
+}
+
+func (resolver *Resolver) wrap{{plural .Data.Name}}WithContext(ctx context.Context, values []*{{importedName .Data.Type}}, err error) ([]*{{lower .Data.Name}}Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*{{lower .Data.Name}}Resolver, len(values))
+	for i, v := range values {
+		output[i] = &{{lower .Data.Name}}Resolver{ctx: ctx, root: resolver, data: v{{if .ListData}}, list: nil{{end}}}
+	}
+	return output, nil
+}
 {{if .ListData}}
 func (resolver *Resolver) wrapList{{plural .Data.Name}}(values []*{{listName .Data}}, err error) ([]*{{lower .Data.Name}}Resolver, error) {
 	if err != nil || values == nil {
