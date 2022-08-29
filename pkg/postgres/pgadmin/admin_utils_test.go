@@ -1,4 +1,4 @@
-package restore
+package pgadmin
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -16,7 +15,9 @@ import (
 )
 
 const (
+	activeDB  = migrations.CurrentDatabase
 	restoreDB = migrations.RestoreDatabase
+	tempDB    = "central_temp"
 
 	// Database with no typical connections that will be used as a template in a create
 	adminDB = "template1"
@@ -28,6 +29,7 @@ type PostgresRestoreSuite struct {
 	pool        *pgxpool.Pool
 	config      *pgxpool.Config
 	sourceMap   map[string]string
+	ctx         context.Context
 }
 
 func TestRestore(t *testing.T) {
@@ -52,6 +54,7 @@ func (s *PostgresRestoreSuite) SetupTest() {
 	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.Require().NoError(err)
 
+	s.ctx = ctx
 	s.pool = pool
 	s.config = config
 	s.sourceMap, err = pgconfig.ParseSource(source)
@@ -61,6 +64,11 @@ func (s *PostgresRestoreSuite) SetupTest() {
 }
 
 func (s *PostgresRestoreSuite) TearDownTest() {
+	//Clean up
+	err := DropDB(s.sourceMap, s.config, restoreDB)
+	s.Nil(err)
+	err = DropDB(s.sourceMap, s.config, activeDB)
+	s.Nil(err)
 
 	if s.pool != nil {
 		s.pool.Close()
@@ -68,35 +76,57 @@ func (s *PostgresRestoreSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 
-func (s *PostgresRestoreSuite) TestRestoreUtilities() {
+func (s *PostgresRestoreSuite) TestUtilities() {
 	// Drop the restore DB if it is lingering from a previous test.
 	// Clean up any databases that were created
-	_ = pgadmin.DropDB(s.sourceMap, s.config, restoreDB)
+	_ = DropDB(s.sourceMap, s.config, restoreDB)
 
 	// Everything fresh.  A restore database should not exist.
-	s.False(CheckIfRestoreDBExists(s.config))
+	s.False(CheckIfDBExists(s.config, restoreDB))
 
 	// Create a restore DB
-	err := pgadmin.CreateDB(s.sourceMap, s.config, adminDB, restoreDB)
+	err := CreateDB(s.sourceMap, s.config, adminDB, restoreDB)
 	s.Nil(err)
 
 	// Verify restore DB was created
-	s.True(CheckIfRestoreDBExists(s.config))
+	s.True(CheckIfDBExists(s.config, restoreDB))
 
-	// Make a copy of the config and set a user that does not have
-	// permissions to create, drop, etc
-	badConfig := s.config.Copy()
-	badConfig.ConnConfig.User = "baduser"
+	// Get a connection to the restore database
+	restorePool := GetClonePool(s.config, restoreDB)
+	s.NotNil(restorePool)
+	err = restorePool.Ping(s.ctx)
+	s.Nil(err)
 
-	// Fail to create restore DB because of insufficient user permissions
-	err = pgadmin.CreateDB(s.sourceMap, badConfig, adminDB, restoreDB)
+	// Successfully create active DB from restore DB
+	err = CreateDB(s.sourceMap, s.config, restoreDB, activeDB)
+	s.Nil(err)
+	// Have to terminate connections from the source DB before we can create
+	// the copy.  Make sure connection was terminated.
+	err = restorePool.Ping(s.ctx)
 	s.NotNil(err)
 
-	// Fail to drop restore DB because of insufficient user permissions
-	err = pgadmin.DropDB(s.sourceMap, badConfig, restoreDB)
+	// Rename database to a database that exists
+	err = RenameDB(s.pool, restoreDB, activeDB)
 	s.NotNil(err)
+
+	// Get a connection to the active DB
+	activePool := GetClonePool(s.config, activeDB)
+	s.NotNil(activePool)
+
+	// Rename activeDB to a new one
+	err = RenameDB(s.pool, activeDB, tempDB)
+	s.Nil(err)
+	s.True(CheckIfDBExists(s.config, tempDB))
+	// Make sure connection to active database was terminated
+	s.NotNil(activePool.Ping(s.ctx))
+
+	// Reacquire a connection to the restore database
+	restorePool = GetClonePool(s.config, restoreDB)
+	s.NotNil(restorePool)
+	s.Nil(restorePool.Ping(s.ctx))
 
 	// Successfully drop the restore DB
-	err = pgadmin.DropDB(s.sourceMap, s.config, restoreDB)
+	err = DropDB(s.sourceMap, s.config, restoreDB)
 	s.Nil(err)
+	s.NotNil(restorePool.Ping(s.ctx))
 }
