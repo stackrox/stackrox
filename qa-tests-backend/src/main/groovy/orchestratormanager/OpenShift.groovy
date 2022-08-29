@@ -47,7 +47,7 @@ class OpenShift extends Kubernetes {
 
         try {
             String sccName = "anyuid"
-            if (Env.CI_JOBNAME =~ /-(rosa|aro)-/ || Env.CI_JOBNAME =~ /^osd-/) {
+            if (Env.CI_JOBNAME =~ /^(rosa|aro)-/ || Env.CI_JOBNAME =~ /^osd-/) {
                 log.debug "Using a non default SCC"
                 sccName = "qatest-anyuid"
             }
