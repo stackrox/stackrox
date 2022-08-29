@@ -41,10 +41,6 @@ func (s orScopeChecker) IsAllowed(subScopeKeys ...ScopeKey) bool {
 	return false
 }
 
-func (s orScopeChecker) Allowed(subScopeKeys ...ScopeKey) (bool, error) {
-	return s.IsAllowed(subScopeKeys...), nil
-}
-
 func (s orScopeChecker) AllAllowed(subScopeKeyss [][]ScopeKey) bool {
 	for _, checker := range s.scopeCheckers {
 		// Short-circuit on the first allowed check result.

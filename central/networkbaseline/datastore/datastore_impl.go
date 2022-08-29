@@ -170,7 +170,7 @@ func (ds *dataStoreImpl) allowed(
 	access storage.Access,
 	baseline *storage.NetworkBaseline,
 ) (bool, error) {
-	return networkBaselineSAC.ScopeChecker(ctx, access).ForNamespaceScopedObject(baseline).Allowed()
+	return networkBaselineSAC.ScopeChecker(ctx, access).ForNamespaceScopedObject(baseline).IsAllowed(), nil
 }
 
 func (ds *dataStoreImpl) Walk(ctx context.Context, f func(baseline *storage.NetworkBaseline) error) error {

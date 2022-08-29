@@ -63,8 +63,8 @@ func (d *datastoreImpl) GetServiceAccount(ctx context.Context, id string) (*stor
 		return nil, false, err
 	}
 
-	if ok, err := serviceAccountsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(acc).Allowed(); err != nil || !ok {
-		return nil, false, err
+	if !serviceAccountsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(acc).IsAllowed() {
+		return nil, false, nil
 	}
 
 	return acc, true, nil
