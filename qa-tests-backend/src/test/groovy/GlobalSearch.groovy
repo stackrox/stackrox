@@ -21,7 +21,7 @@ class GlobalSearch extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
 
     def setupSpec() {
-        if (Env.CI_JOBNAME.contains("postgres")) {
+        if (isPostgresRun()) {
             EXPECTED_DEPLOYMENT_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.CLUSTERS,
                                               SearchServiceOuterClass.SearchCategory.NAMESPACES,
                                               SearchServiceOuterClass.SearchCategory.IMAGES,

@@ -469,16 +469,8 @@ class CVETest extends BaseSpecification {
         when:
         "Query fixable CVEs by a specific CVE in the image"
         def gqlService = new GraphQLService()
-        def fixableCvesByEntityQuery = ""
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            fixableCvesByEntityQuery = FIXABLE_CVES_BY_ENTITY_POSTGRES_QUERY
-        } else {
-            fixableCvesByEntityQuery = FIXABLE_CVES_BY_ENTITY_QUERY
-        }
-        def scopeQuery = ""
-        if (! Env.CI_JOBNAME.contains("postgres")) {
-            scopeQuery = "CVE:CVE-2020-8285"
-        }
+        def fixableCvesByEntityQuery = isPostgresRun() ? FIXABLE_CVES_BY_ENTITY_POSTGRES_QUERY : FIXABLE_CVES_BY_ENTITY_QUERY
+        def scopeQuery = isPostgresRun() ? "" : "CVE:CVE-2020-8285"
         def ret = gqlService.Call(fixableCvesByEntityQuery, [
                 id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
                 query: "",
@@ -498,19 +490,9 @@ class CVETest extends BaseSpecification {
         when:
         "Query fixable CVEs by a specific CVE in the image"
         def gqlService = new GraphQLService()
-        def scopedFixableQuery = ""
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            scopedFixableQuery = SCOPED_FIXABLE_POSTGRES_QUERY
-        } else {
-            scopedFixableQuery = SCOPED_FIXABLE_QUERY
-        }
-        def cveId = "CVE-2019-9893"
-        def scopeQuery = "Image Sha:${digest}"
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            cveId = cveId + "#" + "${os}"
-        } else {
-            scopeQuery = scopeQuery + "+CVE:" + cveId
-        }
+        def scopedFixableQuery = isPostgresRun() ?  SCOPED_FIXABLE_POSTGRES_QUERY : SCOPED_FIXABLE_QUERY
+        def cveId = isPostgresRun() ? "CVE-2019-9893#${os}" : "CVE-2019-9893"
+        def scopeQuery = isPostgresRun() ? "Image Sha:${digest}" : "Image Sha:${digest}+CVE:" + cveId
         def ret = gqlService.Call(scopedFixableQuery, [
                 id: cveId,
                 scopeQuery: scopeQuery,

@@ -102,7 +102,7 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+    @IgnoreIf({ isPostgresRun() })
     def "Verify role based scoping on vuln mgmt: #roleName #baseQuery"() {
         when:
         "Get Node CVEs and components"

@@ -217,11 +217,7 @@ class AdmissionControllerTest extends BaseSpecification {
         "Suppress CVE and check that the deployment can now launch"
 
         def cve = "CVE-2019-3462"
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            CVEService.suppressImageCVE(cve)
-        } else {
-            CVEService.suppressCVE(cve)
-        }
+        CVEService.suppressImageCVE(cve)
 
         log.info("Suppressed "+cve)
         // Allow propagation of CVE suppression and invalidation of cache
@@ -235,11 +231,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Unsuppress CVE"
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            CVEService.unsuppressImageCVE(cve)
-        } else {
-            CVEService.unsuppressCVE(cve)
-        }
+        CVEService.unsuppressImageCVE(cve)
         log.info("Unsuppressed "+cve)
         // Allow propagation of CVE suppression and invalidation of cache
         Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
