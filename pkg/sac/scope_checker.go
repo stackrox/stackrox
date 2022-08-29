@@ -15,7 +15,6 @@ import (
 type ScopeChecker interface {
 	SubScopeChecker(keys ...ScopeKey) ScopeChecker
 	Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error)
-	AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error)
 	AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error)
 	ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker
 	ForNamespaceScopedObject(obj NamespaceScopedObject) ScopeChecker
@@ -71,17 +70,6 @@ func (c scopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bo
 		curr = curr.SubScopeChecker(key)
 	}
 	return curr.Allowed(), nil
-}
-
-// AnyAllowed checks if access to any of the given subscopes is allowed.
-func (c scopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
-	for _, subScopeKeys := range subScopeKeyss {
-		if c.TryAllowed(subScopeKeys...) {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 // AllAllowed checks if access to all of the given subscopes is allowed.
