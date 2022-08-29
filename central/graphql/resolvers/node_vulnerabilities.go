@@ -36,7 +36,8 @@ func init() {
 }
 
 // NodeVulnerabilityResolver represents the supported API on node vulnerabilities
-//  NOTE: This list is and should remain alphabetically ordered
+//
+//	NOTE: This list is and should remain alphabetically ordered
 type NodeVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
@@ -268,24 +269,29 @@ Sub Resolver Functions
 */
 
 // EnvImpact is the fraction of nodes that contain the nodeCVE
-func (resolver *nodeCVEResolver) EnvImpact(_ context.Context) (float64, error) {
+func (resolver *nodeCVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "EnvImpact")
 
-	nodeLoader, err := loaders.GetNodeLoader(resolver.ctx)
+	allCount, err := resolver.root.NodeCount(ctx, RawQuery{})
+	if err != nil || allCount == 0 {
+		return 0, err
+	}
+	if features.PostgresDatastore.Enabled() {
+		ctx = scoped.Context(resolver.ctx, scoped.Scope{
+			ID:    resolver.data.GetId(),
+			Level: v1.SearchCategory_NODE_VULNERABILITIES,
+		})
+	} else {
+		ctx = scoped.Context(resolver.ctx, scoped.Scope{
+			ID:    resolver.data.GetId(),
+			Level: v1.SearchCategory_VULNERABILITIES,
+		})
+	}
+	scopedCount, err := resolver.root.NodeCount(ctx, RawQuery{})
 	if err != nil {
 		return 0, err
 	}
-	numNodes, err := nodeLoader.CountAll(resolver.ctx)
-	if err != nil || numNodes == 0 {
-		return 0, err
-	}
-
-	query := resolver.getNodeCVEQuery()
-	numNodesWithCVE, err := nodeLoader.CountFromQuery(resolver.ctx, query)
-	if err != nil || numNodesWithCVE == 0 {
-		return 0, err
-	}
-	return float64(numNodesWithCVE) / float64(numNodes), nil
+	return float64(scopedCount) / float64(allCount), nil
 }
 
 // FixedByVersion returns the version of the parent component that removes this CVE

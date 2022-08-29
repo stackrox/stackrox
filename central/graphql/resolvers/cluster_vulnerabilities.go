@@ -365,13 +365,24 @@ func (resolver *clusterCVEResolver) VulnerabilityTypes() []string {
 	return []string{resolver.data.GetType().String()}
 }
 
-func (resolver *clusterCVEResolver) EnvImpact(_ context.Context) (float64, error) {
+func (resolver *clusterCVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "EnvImpact")
-	allCount, err := resolver.root.ClusterCount(resolver.ctx, RawQuery{})
+	allCount, err := resolver.root.ClusterCount(ctx, RawQuery{})
 	if err != nil || allCount == 0 {
 		return 0, err
 	}
-	scopedCount, err := resolver.root.ClusterCount(resolver.clusterVulnerabilityScopeContext(), RawQuery{})
+	if features.PostgresDatastore.Enabled() {
+		ctx = scoped.Context(ctx, scoped.Scope{
+			ID:    resolver.data.GetId(),
+			Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
+		})
+	} else {
+		ctx = scoped.Context(ctx, scoped.Scope{
+			ID:    resolver.data.GetId(),
+			Level: v1.SearchCategory_VULNERABILITIES,
+		})
+	}
+	scopedCount, err := resolver.root.ClusterCount(ctx, RawQuery{})
 	if err != nil {
 		return 0, err
 	}

@@ -44,7 +44,8 @@ func init() {
 }
 
 // ImageVulnerabilityResolver represents the supported API on image vulnerabilities
-//  NOTE: This list is and should remain alphabetically ordered
+//
+//	NOTE: This list is and should remain alphabetically ordered
 type ImageVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
@@ -302,13 +303,24 @@ func withImageCveTypeFiltering(q string) string {
 Sub Resolver Functions
 */
 
-func (resolver *imageCVEResolver) EnvImpact(_ context.Context) (float64, error) {
+func (resolver *imageCVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "EnvImpact")
-	allCount, err := resolver.root.DeploymentCount(resolver.ctx, RawQuery{})
+	allCount, err := resolver.root.DeploymentCount(ctx, RawQuery{})
 	if err != nil || allCount == 0 {
 		return 0, err
 	}
-	scopedCount, err := resolver.root.DeploymentCount(resolver.imageVulnerabilityScopeContext(), RawQuery{})
+	if features.PostgresDatastore.Enabled() {
+		ctx = scoped.Context(resolver.ctx, scoped.Scope{
+			ID:    resolver.data.GetId(),
+			Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+		})
+	} else {
+		ctx = scoped.Context(resolver.ctx, scoped.Scope{
+			ID:    resolver.data.GetId(),
+			Level: v1.SearchCategory_VULNERABILITIES,
+		})
+	}
+	scopedCount, err := resolver.root.DeploymentCount(ctx, RawQuery{})
 	if err != nil {
 		return 0, err
 	}
