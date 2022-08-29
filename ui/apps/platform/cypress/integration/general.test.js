@@ -6,7 +6,6 @@ import withAuth from '../helpers/basicAuth';
 import { visitComplianceDashboard, visitComplianceEntities } from '../helpers/compliance';
 import { visitMainDashboard, visitMainDashboardFromLeftNav } from '../helpers/main';
 import { visitNetworkGraph } from '../helpers/networkGraph';
-import { visit } from '../helpers/visit';
 import { visitViolations, visitViolationsWithUncaughtException } from '../helpers/violations';
 
 //
