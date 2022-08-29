@@ -10,7 +10,7 @@ import (
 // MapSearchTagsToFieldPaths creates a FieldMap, by walking the given object.
 func MapSearchTagsToFieldPaths(toWalk interface{}) FieldMap {
 	fieldMap := make(FieldMap)
-	protowalk.WalkProto(reflect.TypeOf(toWalk), nil, func(fp protowalk.FieldPath) bool {
+	protowalk.WalkProto(reflect.TypeOf(toWalk), func(fp protowalk.FieldPath) bool {
 		// Current field is the last field in the path.
 		currentField := fp.Field()
 

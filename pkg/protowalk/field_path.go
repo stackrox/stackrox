@@ -106,6 +106,8 @@ func (p FieldPath) ProtoPath() string {
 	return strings.Join(p.ProtoPathElems(), ".")
 }
 
+// JSONPathElems returns the elements of the path to this field in normal json.Marshal JSON serialization (i.e., not
+// JSONPb). Note that this is not to be confused with the JSONPath query language.
 func (p FieldPath) JSONPathElems() []string {
 	result := make([]string, 0, len(p))
 	for _, f := range p {
@@ -118,6 +120,7 @@ func (p FieldPath) JSONPathElems() []string {
 	return result
 }
 
+// JSONPath returns the path to this field in normal json.Marshal JSON serialization (i.e., not JSONPb).
 func (p FieldPath) JSONPath() string {
 	return strings.Join(p.JSONPathElems(), ".")
 }
@@ -135,25 +138,4 @@ func (p FieldPath) StructFields() []reflect.StructField {
 // convenience only.
 func (p FieldPath) Field() Field {
 	return p[len(p)-1]
-}
-
-func protoTagValue(protoTag string, key string) string {
-	elems := strings.Split(protoTag, ",")
-	keyPrefix := key + "="
-	for _, e := range elems {
-		if stringutils.ConsumePrefix(&e, keyPrefix) {
-			return e
-		}
-	}
-	return ""
-}
-
-func fieldName(protoTag string) string {
-	elems := strings.Split(protoTag, ",")
-	for _, e := range elems {
-		if stringutils.ConsumePrefix(&e, "name=") {
-			return e
-		}
-	}
-	return ""
 }

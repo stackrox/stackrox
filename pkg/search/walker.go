@@ -25,7 +25,7 @@ func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap
 		prefix:   prefix,
 		fields:   make(map[FieldLabel]*Field),
 	}
-	protowalk.WalkProto(reflect.TypeOf(obj), nil, sw.handleField)
+	protowalk.WalkProto(reflect.TypeOf(obj), sw.handleField)
 	return OptionsMapFromMap(category, sw.fields)
 }
 

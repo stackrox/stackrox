@@ -4,7 +4,18 @@ import (
 	"reflect"
 )
 
-func WalkProto(ty reflect.Type, fieldPath FieldPath, callback func(FieldPath) bool) {
+// WalkProto traverses a protobuf message, calling the given callback for each traversed field.
+// ty should be a pointer to a struct that represents a protobuf message. Fields are then traversed in depth-first
+// order, with callback being invoked with the complete field path (from the root) for each field encountered during
+// traversal.
+// If callback returns false and the current field is not a leaf field, the descendant fields of that fields will not
+// be visited. Note that in contrast to the hierarchy at the protobuf level, each alternative of a oneof is regarded
+// as a descendant of the oneof "field".
+func WalkProto(ty reflect.Type, callback func(FieldPath) bool) {
+	walkProto(ty, nil, callback)
+}
+
+func walkProto(ty reflect.Type, fieldPath FieldPath, callback func(FieldPath) bool) {
 	if len(fieldPath) > 0 {
 		if !callback(fieldPath) {
 			return
@@ -18,7 +29,7 @@ func WalkProto(ty reflect.Type, fieldPath FieldPath, callback func(FieldPath) bo
 			if !wrapperTy.Implements(ty) {
 				continue
 			}
-			WalkProto(wrapperTy, fieldPath, callback)
+			walkProto(wrapperTy, fieldPath, callback)
 		}
 		return
 	}
@@ -36,6 +47,6 @@ func WalkProto(ty reflect.Type, fieldPath FieldPath, callback func(FieldPath) bo
 		}
 
 		nextPath := append(fieldPath, Field{ContainingType: ty, StructField: f})
-		WalkProto(nextPath.Field().ElemType(), nextPath, callback)
+		walkProto(nextPath.Field().ElemType(), nextPath, callback)
 	}
 }
