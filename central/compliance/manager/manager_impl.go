@@ -610,9 +610,7 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 	for _, clusterStandardPair := range clusterStandardPairs {
 		clusterScopes.add(clusterStandardPair.ClusterID)
 	}
-	if ok, err := complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).AllAllowed(ctx, clusterScopes.get()); err != nil {
-		return nil, err
-	} else if !ok {
+	if !complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).AllAllowed(clusterScopes.get()) {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -684,9 +682,7 @@ func (m *manager) GetRunStatuses(ctx context.Context, ids ...string) ([]*v1.Comp
 	for _, runStatus := range runStatuses {
 		clusterScopes.add(runStatus.GetClusterId())
 	}
-	if ok, err := complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(ctx, clusterScopes.get()); err != nil {
-		return nil, err
-	} else if !ok {
+	if !complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(clusterScopes.get()) {
 		return nil, errox.NotFound
 	}
 
