@@ -18,7 +18,7 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) UpsertBaselineResults(ctx context.Context, results *storage.ProcessBaselineResults) error {
-	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(results).Allowed(ctx); err != nil {
+	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(results).Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -38,7 +38,7 @@ func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID str
 		return nil, err
 	}
 
-	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(ctx); err != nil {
+	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, sac.ErrResourceAccessDenied
@@ -58,7 +58,7 @@ func (d *datastoreImpl) DeleteBaselineResults(ctx context.Context, deploymentID 
 		return err
 	}
 
-	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(ctx); err != nil {
+	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

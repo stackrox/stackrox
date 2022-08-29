@@ -216,7 +216,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SimpleAccessScope) 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "SimpleAccessScope")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -229,7 +229,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.SimpleAccess
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "SimpleAccessScope")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -255,7 +255,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
+	if ok, err := scopeChecker.Allowed(); err != nil || !ok {
 		return 0, err
 	}
 
@@ -268,7 +268,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return false, err
 	} else if !ok {
 		return false, nil
@@ -292,7 +292,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.SimpleAccessSc
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return nil, false, err
 	} else if !ok {
 		return nil, false, nil
@@ -330,7 +330,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -350,7 +350,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -370,7 +370,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -399,7 +399,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Simpl
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return nil, nil, err
 	} else if !ok {
 		return nil, nil, nil
@@ -449,7 +449,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -467,7 +467,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.SimpleAccessScope) error) error {
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return nil

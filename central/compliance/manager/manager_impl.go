@@ -566,7 +566,7 @@ func (m *manager) expandClusters(ctx context.Context, clusterIDOrWildcard string
 	}
 	var clusterIDs []string
 	for _, cluster := range clusters {
-		ok, err := complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).Allowed(ctx, sac.ClusterScopeKey(cluster.GetId()))
+		ok, err := complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).Allowed(sac.ClusterScopeKey(cluster.GetId()))
 		if err != nil {
 			return nil, err
 		}

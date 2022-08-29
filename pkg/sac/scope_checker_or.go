@@ -31,10 +31,10 @@ func (s orScopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	}
 }
 
-func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error) {
+func (s orScopeChecker) Allowed(subScopeKeys ...ScopeKey) (bool, error) {
 	var allowedErrs *multierror.Error
 	for _, checker := range s.scopeCheckers {
-		allowed, err := checker.Allowed(ctx, subScopeKeys...)
+		allowed, err := checker.Allowed(subScopeKeys...)
 		// Short-circuit on the first allowed check result.
 		if err != nil {
 			allowedErrs = multierror.Append(allowedErrs, err)
