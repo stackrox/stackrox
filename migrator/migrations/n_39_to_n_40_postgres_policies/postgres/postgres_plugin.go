@@ -516,7 +516,7 @@ func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.
 	return New(db)
 }
 
-//// Stubs for satisfying legacy interfaces
+// // Stubs for satisfying legacy interfaces
 func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
 	return errors.New("unimplemented")
 }
