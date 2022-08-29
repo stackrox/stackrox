@@ -31,26 +31,25 @@ func (s orScopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	}
 }
 
-func (s orScopeChecker) Allowed(subScopeKeys ...ScopeKey) (bool, error) {
-	var allowedErrs *multierror.Error
+func (s orScopeChecker) IsAllowed(subScopeKeys ...ScopeKey) bool {
 	for _, checker := range s.scopeCheckers {
-		allowed, err := checker.Allowed(subScopeKeys...)
 		// Short-circuit on the first allowed check result.
-		if err != nil {
-			allowedErrs = multierror.Append(allowedErrs, err)
-		} else if allowed {
-			return allowed, nil
+		if checker.IsAllowed(subScopeKeys...) {
+			return true
 		}
 	}
-	return false, allowedErrs.ErrorOrNil()
+	return false
+}
+
+func (s orScopeChecker) Allowed(subScopeKeys ...ScopeKey) (bool, error) {
+	return s.IsAllowed(subScopeKeys...), nil
 }
 
 func (s orScopeChecker) AllAllowed(subScopeKeyss [][]ScopeKey) bool {
 	for _, checker := range s.scopeCheckers {
-		allowed := checker.AllAllowed(subScopeKeyss)
 		// Short-circuit on the first allowed check result.
-		if allowed {
-			return allowed
+		if checker.AllAllowed(subScopeKeyss) {
+			return true
 		}
 	}
 	return false

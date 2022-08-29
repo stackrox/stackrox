@@ -40,7 +40,7 @@ func (h ForResourceHelper) ScopeChecker(ctx context.Context, am storage.Access, 
 // AccessAllowed checks if in the given context, we have access of the specified kind to the resource or
 // a subscope thereof.
 func (h ForResourceHelper) AccessAllowed(ctx context.Context, am storage.Access, keys ...ScopeKey) (bool, error) {
-	return h.ScopeChecker(ctx, am, keys...).Allowed()
+	return h.ScopeChecker(ctx, am, keys...).IsAllowed(), nil
 }
 
 // ReadAllowed checks if in the given context, we have read access to the resource or a subscope thereof.
