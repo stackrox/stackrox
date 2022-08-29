@@ -434,7 +434,7 @@ poll_for_system_test_images() {
 
     require_environment "QUAY_RHACS_ENG_BEARER_TOKEN"
 
-    # Require imagea based on the job
+    # Require images based on the job
     case "$CI_JOB_NAME" in
         *-operator-e2e-tests)
             reqd_images=("stackrox-operator-controller" "stackrox-operator-bundle" "stackrox-operator-bundle-index" "main")
