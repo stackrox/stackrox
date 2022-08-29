@@ -38,7 +38,7 @@ func (f *ObjectFilter) GetAllowed(ctx context.Context) ([]interface{}, error) {
 
 // FilterSlice filters the given slice of objects, using scopePredFunc to determine the scope predicate for each object.
 func FilterSlice(ctx context.Context, sc ScopeChecker, objs []interface{}, scopePredFunc func(interface{}) ScopePredicate) ([]interface{}, error) {
-	if ok, err := sc.Allowed(ctx); err != nil {
+	if ok, err := sc.Allowed(); err != nil {
 		return nil, err
 	} else if ok {
 		return objs, nil
@@ -59,7 +59,7 @@ var (
 // FilterSliceReflect uses reflection to filter the given typed slice, applying a typed predicate function to obtain
 // scope keys.
 func FilterSliceReflect(ctx context.Context, sc ScopeChecker, objSlice interface{}, scopePredFunc interface{}) (interface{}, error) {
-	if ok, err := sc.Allowed(ctx); err != nil {
+	if ok, err := sc.Allowed(); err != nil {
 		return nil, err
 	} else if ok {
 		return objSlice, nil
@@ -98,7 +98,7 @@ func FilterSliceReflect(ctx context.Context, sc ScopeChecker, objSlice interface
 // If the scopePredFunc takes in two arguments, the arguments are the key and the value. Otherwise, just the value is
 // passed.
 func FilterMapReflect(ctx context.Context, sc ScopeChecker, objMap interface{}, scopePredFunc interface{}) (interface{}, error) {
-	if ok, err := sc.Allowed(ctx); err != nil {
+	if ok, err := sc.Allowed(); err != nil {
 		return nil, err
 	} else if ok {
 		return objMap, nil

@@ -118,7 +118,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.TrimmedType}}")
 
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
@@ -157,7 +157,7 @@ func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
 
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return nil, false, err
     } else if !ok {
         return nil, false, nil
@@ -199,7 +199,7 @@ func (s *storeImpl) Delete(ctx context.Context) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
 
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+    if ok, err := scopeChecker.Allowed(); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied

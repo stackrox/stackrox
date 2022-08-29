@@ -107,7 +107,7 @@ func (ds *sacFilterImpl) filterClusters(ctx context.Context, clusters set.String
 	// Filter the compliance results by cluster.
 	allowed := set.NewStringSet()
 	for cluster := range clusters {
-		if ok, _ := resourceScopeChecker.Allowed(ctx, sac.ClusterScopeKey(cluster)); ok {
+		if ok, _ := resourceScopeChecker.Allowed(sac.ClusterScopeKey(cluster)); ok {
 			allowed.Add(cluster)
 		}
 	}
@@ -137,7 +137,7 @@ func (ds *sacFilterImpl) filterDomain(ctx context.Context, domain *storage.Compl
 	}
 
 	deploymentsInClusterChecker := deploymentsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, sac.ClusterScopeKey(domain.Cluster.Id))
-	ok, err = deploymentsInClusterChecker.Allowed(ctx)
+	ok, err = deploymentsInClusterChecker.Allowed()
 	if err != nil {
 		return nil, false, err
 	} else if ok {

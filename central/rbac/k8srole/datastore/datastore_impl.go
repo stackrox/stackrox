@@ -66,7 +66,7 @@ func (d *datastoreImpl) GetRole(ctx context.Context, id string) (*storage.K8SRol
 		return nil, false, err
 	}
 
-	if ok, err := k8sRolesSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(role).Allowed(ctx); err != nil || !ok {
+	if ok, err := k8sRolesSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(role).Allowed(); err != nil || !ok {
 		return nil, false, err
 	}
 	return role, true, nil

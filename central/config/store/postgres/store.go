@@ -75,7 +75,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Config) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Config")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -113,7 +113,7 @@ func (s *storeImpl) Get(ctx context.Context) (*storage.Config, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Config")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return nil, false, err
 	} else if !ok {
 		return nil, false, nil
@@ -152,7 +152,7 @@ func (s *storeImpl) Delete(ctx context.Context) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Config")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

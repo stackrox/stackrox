@@ -69,7 +69,7 @@ func insertIntoVersions(ctx context.Context, tx pgx.Tx, obj *storage.Version) er
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Version) error {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -105,7 +105,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Version) error {
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context) (*storage.Version, bool, error) {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return nil, false, err
 	} else if !ok {
 		return nil, false, nil
@@ -141,7 +141,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context) error {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := scopeChecker.Allowed(); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
