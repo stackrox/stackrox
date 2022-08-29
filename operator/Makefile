@@ -331,6 +331,7 @@ check-expected-go-version:
 	[ "$${expected}" = "$${actual}" ] || { echo "../EXPECTED_GO_VERSION $${expected}, Dockerfile $${actual}; please update to match"; exit 1; }
 
 build/Dockerfile.gen: Dockerfile
+	mkdir -p build/
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g' < $< > $@
 
 .PHONY: docker-build
