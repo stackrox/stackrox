@@ -10,9 +10,11 @@ import queryService from 'utils/queryService';
 import useTableSort from 'hooks/patternfly/useTableSort';
 import DeferredCVEsTable from './DeferredCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
+import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 
 type DeferredCVEsProps = {
     imageId: string;
+    showComponentDetails: (components: EmbeddedImageScanComponent[]) => void;
 };
 
 const sortFields = ['Severity'];
@@ -21,7 +23,7 @@ const defaultSortOption: SortOption = {
     direction: 'desc',
 };
 
-function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
+function DeferredCVEs({ imageId, showComponentDetails }: DeferredCVEsProps): ReactElement {
     const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
     const { sortOption, getSortParams } = useTableSort({
@@ -64,6 +66,7 @@ function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
             searchFilter={searchFilter}
             setSearchFilter={setSearchFilter}
             getSortParams={getSortParams}
+            showComponentDetails={showComponentDetails}
         />
     );
 }

@@ -10,9 +10,11 @@ import useTableSort from 'hooks/patternfly/useTableSort';
 import { SortOption } from 'types/table';
 import FalsePositiveCVEsTable from './FalsePositiveCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
+import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 
 type FalsePositiveCVEsProps = {
     imageId: string;
+    showComponentDetails: (components: EmbeddedImageScanComponent[]) => void;
 };
 
 const sortFields = ['Severity'];
@@ -21,7 +23,10 @@ const defaultSortOption: SortOption = {
     direction: 'desc',
 };
 
-function FalsePositiveCVEs({ imageId }: FalsePositiveCVEsProps): ReactElement {
+function FalsePositiveCVEs({
+    imageId,
+    showComponentDetails,
+}: FalsePositiveCVEsProps): ReactElement {
     const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
     const { sortOption, getSortParams } = useTableSort({
@@ -64,6 +69,7 @@ function FalsePositiveCVEs({ imageId }: FalsePositiveCVEsProps): ReactElement {
             searchFilter={searchFilter}
             setSearchFilter={setSearchFilter}
             getSortParams={getSortParams}
+            showComponentDetails={showComponentDetails}
         />
     );
 }

@@ -2,6 +2,8 @@ import React, { ReactElement, useState } from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
     Bullseye,
+    Button,
+    ButtonVariant,
     Divider,
     DropdownItem,
     PageSection,
@@ -22,8 +24,7 @@ import useAuthStatus from 'hooks/useAuthStatus';
 import { SearchFilter } from 'types/search';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { GetSortParams } from 'hooks/patternfly/useTableSort';
-import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import { Vulnerability } from '../imageVulnerabilities.graphql';
+import { Vulnerability, EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 import { DeferredCVEsToBeAssessed } from './types';
 import DeferredCVEActionsColumn from './DeferredCVEActionsColumn';
 import useRiskAcceptance from '../useRiskAcceptance';
@@ -43,6 +44,7 @@ export type DeferredCVEsTableProps = {
     searchFilter: SearchFilter;
     setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
     getSortParams: GetSortParams;
+    showComponentDetails: (components: EmbeddedImageScanComponent[]) => void;
 } & UsePaginationResult;
 
 function DeferredCVEsTable({
@@ -57,6 +59,7 @@ function DeferredCVEsTable({
     setSearchFilter,
     isLoading,
     getSortParams,
+    showComponentDetails,
 }: DeferredCVEsTableProps): ReactElement {
     const {
         selected,
@@ -238,7 +241,15 @@ function DeferredCVEsTable({
                                         )}
                                     </Td>
                                     <Td dataLabel="Affected components">
-                                        <AffectedComponentsButton components={row.components} />
+                                        <Button
+                                            variant={ButtonVariant.link}
+                                            isInline
+                                            onClick={() => {
+                                                showComponentDetails(row.components);
+                                            }}
+                                        >
+                                            {row.components.length} components
+                                        </Button>
                                     </Td>
                                     <Td dataLabel="Comments">
                                         {row.vulnerabilityRequest ? (
