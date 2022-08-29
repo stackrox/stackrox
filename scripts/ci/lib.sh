@@ -457,25 +457,11 @@ poll_for_system_test_images() {
     local start_time
     start_time="$(date '+%s')"
 
-    _image_exists() {
-        local name="$1"
-        local v=""
-        if [[ "$name" =~ stackrox-operator-bundle ]]; then
-            v="v"
-        fi
-        local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$v$tag"
-        info "Checking for $name using $url"
-        local check
-        check=$(curl --location -sS -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" "$url")
-        echo "$check"
-        [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$v$tag" ]]
-    }
-
     while true; do
         local all_exist=true
         for image in "${reqd_images[@]}"
         do
-            if ! _image_exists "$image"; then
+            if ! check_rhacs_eng_image_exists "$image" "$tag"; then
                 info "$image does not exist"
                 all_exist=false
                 break
@@ -491,6 +477,25 @@ poll_for_system_test_images() {
         fi
         sleep 60
     done
+}
+
+check_rhacs_eng_image_exists() {
+    local name="$1"
+    local tag="$2"
+
+    if [[ "$name" =~ stackrox-operator-bundle ]]; then
+        tag="v$tag"
+    elif [[ "$name" == "main-rcd" ]]; then
+        name="main"
+        tag="${tag}-rcd"
+    fi
+
+    local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
+    info "Checking for $name using $url"
+    local check
+    check=$(curl --location -sS -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" "$url")
+    echo "$check"
+    [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
 }
 
 check_docs() {
