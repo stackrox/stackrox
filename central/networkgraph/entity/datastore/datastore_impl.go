@@ -488,7 +488,7 @@ func allowed(ctx context.Context, access storage.Access, id string) (bool, error
 	if err != nil {
 		return false, err
 	}
-	return networkGraphSAC.ScopeChecker(ctx, access).Allowed(scopeKey...)
+	return networkGraphSAC.ScopeChecker(ctx, access).IsAllowed(scopeKey...), nil
 }
 
 func validateExternalNetworkEntity(entity *storage.NetworkEntity) error {

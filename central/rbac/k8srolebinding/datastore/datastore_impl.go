@@ -65,8 +65,8 @@ func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage
 		return nil, false, err
 	}
 
-	if ok, err := k8sRoleBindingsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(binding).Allowed(); err != nil || !ok {
-		return nil, false, err
+	if !k8sRoleBindingsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(binding).IsAllowed() {
+		return nil, false, nil
 	}
 
 	return binding, true, nil
