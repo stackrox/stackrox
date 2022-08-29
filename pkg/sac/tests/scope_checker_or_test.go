@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -33,31 +32,19 @@ func (suite *orScopeCheckerTestSuite) SetupTest() {
 	suite.orScopeChecker = sac.NewOrScopeChecker(suite.scopeChecker1, suite.scopeChecker2)
 }
 
-func (suite *orScopeCheckerTestSuite) TestAllowed() {
-	// 1. Expect True when at least 1 ScopeChecker returns true.
-	suite.scopeChecker1.EXPECT().Allowed(gomock.Any()).Return(true, nil)
+func (suite *orScopeCheckerTestSuite) TestIsAllowed() {
+	// 1. Expect True when at least 1 ScopeChecker returns Allow.
+	suite.scopeChecker1.EXPECT().IsAllowed(gomock.Any()).Return(true)
 
-	allowed, err := suite.orScopeChecker.Allowed()
+	allowed := suite.orScopeChecker.IsAllowed()
 	suite.True(allowed)
-	suite.NoError(err)
-	suite.Nil(err)
 
-	// 2. Expect False when all ScopeCheckers return false.
-	suite.scopeChecker1.EXPECT().Allowed(gomock.Any()).Return(false, nil)
-	suite.scopeChecker2.EXPECT().Allowed(gomock.Any()).Return(false, nil)
+	// 2. Expect False when all ScopeCheckers return Deny.
+	suite.scopeChecker1.EXPECT().IsAllowed(gomock.Any()).Return(false)
+	suite.scopeChecker2.EXPECT().IsAllowed(gomock.Any()).Return(false)
 
-	allowed, err = suite.orScopeChecker.Allowed()
+	allowed = suite.orScopeChecker.IsAllowed()
 	suite.False(allowed)
-	suite.NoError(err)
-	suite.Nil(err)
-
-	// 3. Expect an error and False when all ScopeCheckers return Deny and at least 1 returned an error.
-	suite.scopeChecker1.EXPECT().Allowed(gomock.Any()).Return(false, nil)
-	suite.scopeChecker2.EXPECT().Allowed(gomock.Any()).Return(false, errors.New("something happened"))
-
-	allowed, err = suite.orScopeChecker.Allowed()
-	suite.False(allowed)
-	suite.Error(err)
 }
 
 func (suite *orScopeCheckerTestSuite) TestAllAllowed() {

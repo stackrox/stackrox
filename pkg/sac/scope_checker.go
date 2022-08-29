@@ -14,6 +14,8 @@ import (
 //go:generate mockgen-wrapper
 type ScopeChecker interface {
 	SubScopeChecker(keys ...ScopeKey) ScopeChecker
+	IsAllowed(subScopeKeys ...ScopeKey) bool
+	// Deprecated: Allowed is deprecated, use IsAllowed instead.
 	Allowed(subScopeKeys ...ScopeKey) (bool, error)
 	AllAllowed(subScopeKeyss [][]ScopeKey) bool
 	ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker
@@ -56,11 +58,16 @@ func (c scopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 
 // Allowed checks (in a blocking way) if access to the given (sub-)scope is allowed.
 func (c scopeChecker) Allowed(subScopeKeys ...ScopeKey) (bool, error) {
+	return c.IsAllowed(subScopeKeys...), nil
+}
+
+// IsAllowed checks (in a blocking way) if access to the given (sub-)scope is allowed.
+func (c scopeChecker) IsAllowed(subScopeKeys ...ScopeKey) bool {
 	curr := c.core
 	for _, key := range subScopeKeys {
 		curr = curr.SubScopeChecker(key)
 	}
-	return curr.Allowed(), nil
+	return curr.Allowed()
 }
 
 // AllAllowed checks if access to all of the given subscopes is allowed.
@@ -109,7 +116,7 @@ func (c scopeChecker) Namespace(namespace string) ScopeChecker {
 
 // Check checks the given predicate in this scope.
 func (c scopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, error) {
-	return pred.TryAllowed(c), nil
+	return pred.Allowed(c), nil
 }
 
 // EffectiveAccessScope returns underlying effective access scope.
