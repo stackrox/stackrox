@@ -21,7 +21,7 @@ message ImageComponentEdge {
 
   string    location                          = 3 [(gogoproto.moretags) = 'search:"Component Location,store,hidden"'];
   string    image_id                          = 4 [(gogoproto.moretags) = 'sql:"fk(Image:id),index=hash"'];
-  string    image_component_id                = 5 [(gogoproto.moretags) = 'sql:"fk(ImageComponent:id),no-fk-constraint"'];
+  string    image_component_id                = 5 [(gogoproto.moretags) = 'sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"'];
 }
 
 message ComponentCVEEdge {
@@ -35,7 +35,7 @@ message ComponentCVEEdge {
     string  fixed_by                          = 3 [(gogoproto.moretags) = 'search:"Fixed By,store,hidden"'];
   }
   string    image_component_id                = 4 [(gogoproto.moretags) = 'sql:"fk(ImageComponent:id),index=hash"'];
-  string    image_cve_id                      = 5 [(gogoproto.moretags) = 'sql:"fk(ImageCVE:id),no-fk-constraint"'];
+  string    image_cve_id                      = 5 [(gogoproto.moretags) = 'sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"'];
 }
 
 message ImageCVEEdge {
@@ -44,7 +44,7 @@ message ImageCVEEdge {
   google.protobuf.Timestamp first_image_occurrence      = 2 [(gogoproto.moretags) = 'search:"First Image Occurrence Timestamp,hidden"'];
   VulnerabilityState        state                       = 3 [(gogoproto.moretags) = 'search:"Vulnerability State"'];
   string                    image_id                    = 4 [(gogoproto.moretags) = 'sql:"fk(Image:id),index=hash"'];
-  string                    image_cve_id                = 5 [(gogoproto.moretags) = 'sql:"fk(ImageCVE:id),no-fk-constraint"'];
+  string                    image_cve_id                = 5 [(gogoproto.moretags) = 'sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"'];
 }
 
 //// Node related relations.
@@ -52,8 +52,8 @@ message ImageCVEEdge {
 message NodeComponentEdge {
   // base 64 encoded Node:Component ids.
   string id                = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
-  string node_id           = 2 [(gogoproto.moretags) = 'sql:"fk(Node:id)"'];
-  string node_component_id = 3 [(gogoproto.moretags) = 'sql:"fk(NodeComponent:id),no-fk-constraint"'];
+  string node_id           = 2 [(gogoproto.moretags) = 'sql:"fk(Node:id),index=hash"'];
+  string node_component_id = 3 [(gogoproto.moretags) = 'sql:"fk(NodeComponent:id),no-fk-constraint,index=hash"'];
 }
 
 message NodeComponentCVEEdge {
@@ -63,8 +63,8 @@ message NodeComponentCVEEdge {
   oneof has_fixed_by {
     string  fixed_by            = 3 [(gogoproto.moretags) = 'search:"Fixed By,store,hidden"'];
   }
-  string    node_component_id   = 4 [(gogoproto.moretags) = 'sql:"fk(NodeComponent:id)"'];
-  string    node_cve_id         = 5 [(gogoproto.moretags) = 'sql:"fk(NodeCVE:id),no-fk-constraint"'];
+  string    node_component_id   = 4 [(gogoproto.moretags) = 'sql:"fk(NodeComponent:id),index=hash"'];
+  string    node_cve_id         = 5 [(gogoproto.moretags) = 'sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"'];
 }
 
 //// Cluster related relations.
@@ -82,5 +82,5 @@ message ClusterCVEEdge {
     string    fixed_by      = 3 [(gogoproto.moretags) = 'search:"Cluster CVE Fixed By,store,hidden"'];
   }
   string      cluster_id    = 4 [(gogoproto.moretags) = 'sql:"fk(Cluster:id)"'];
-  string      cve_id        = 5 [(gogoproto.moretags) = 'sql:"fk(ClusterCVE:id),no-fk-constraint"'];
+  string      cve_id        = 5 [(gogoproto.moretags) = 'sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"'];
 }
