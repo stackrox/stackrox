@@ -2,6 +2,36 @@ import * as api from '../constants/apiEndpoints';
 
 import { interceptRequests, waitForResponses } from './request';
 
+// generic requests to render the MainPage component
+const requestConfigGeneric = {
+    routeMatcherMap: {
+        featureflags: {
+            method: 'GET',
+            url: api.featureFlags,
+        }, // sagas/featureFlagSagas
+        mypermissions: {
+            method: 'GET',
+            url: api.roles.mypermissions,
+        }, // sagas/authSagas
+        'config/public': {
+            method: 'GET',
+            url: api.system.configPublic,
+        }, // sagas/systemConfig
+        'auth/status': {
+            method: 'GET',
+            url: api.auth.authStatus,
+        }, // sagas/authSagas
+        credentialexpiry_CENTRAL: {
+            method: 'GET',
+            url: api.certExpiry.central,
+        }, // MainPage/CredentialExpiryService
+        credentialexpiry_SCANNER: {
+            method: 'GET',
+            url: api.certExpiry.scanner,
+        }, // MainPage/CredentialExpiryService
+    },
+};
+
 /*
  * Wait for prerequisite requests to render container components.
  *
@@ -24,14 +54,12 @@ import { interceptRequests, waitForResponses } from './request';
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visit(pageUrl, requestConfig, staticResponseMap) {
-    cy.intercept('GET', api.featureFlags).as('featureflags');
-    cy.intercept('GET', api.roles.mypermissions).as('mypermissions');
-    cy.intercept('GET', api.system.configPublic).as('config/public');
+    interceptRequests(requestConfigGeneric);
     interceptRequests(requestConfig, staticResponseMap);
 
     cy.visit(pageUrl);
 
-    cy.wait(['@featureflags', '@mypermissions', '@config/public']);
+    waitForResponses(requestConfigGeneric);
     waitForResponses(requestConfig);
 }
 
@@ -52,13 +80,11 @@ export function visitWithPermissions(
     requestConfig,
     staticResponseMap
 ) {
-    cy.intercept('GET', api.featureFlags).as('featureflags');
-    cy.intercept('GET', api.roles.mypermissions, permissionsStaticResponse).as('mypermissions');
-    cy.intercept('GET', api.system.configPublic).as('config/public');
+    interceptRequests(requestConfigGeneric);
     interceptRequests(requestConfig, staticResponseMap);
 
     cy.visit(pageUrl);
 
-    cy.wait(['@featureflags', '@mypermissions', '@config/public']);
+    waitForResponses(requestConfigGeneric);
     waitForResponses(requestConfig);
 }

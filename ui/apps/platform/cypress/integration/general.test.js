@@ -6,6 +6,7 @@ import withAuth from '../helpers/basicAuth';
 import { visitComplianceDashboard, visitComplianceEntities } from '../helpers/compliance';
 import { visitMainDashboard, visitMainDashboardFromLeftNav } from '../helpers/main';
 import { visitNetworkGraph } from '../helpers/networkGraph';
+import { visit } from '../helpers/visit';
 import { visitViolations, visitViolationsWithUncaughtException } from '../helpers/violations';
 
 //
@@ -51,10 +52,7 @@ describe('General sanity checks', () => {
         });
 
         it('for User Profile', () => {
-            cy.intercept('GET', api.roles.mypermissions).as('mypermissions');
-            cy.intercept('GET', api.auth.authStatus).as('authStatus');
-            cy.visit(userUrl);
-            cy.wait(['@mypermissions', '@authStatus']);
+            visit(userUrl);
 
             cy.title().should('match', new RegExp(`User Profile | ${productNameRegExp}`));
         });
@@ -62,8 +60,8 @@ describe('General sanity checks', () => {
         it('for API Docs', () => {
             // User Profile test often failed when preceded by this test, so move to last place.
             cy.intercept('GET', api.apiDocs.docs).as('apiDocs');
-            cy.visit(apidocsUrl);
-            cy.wait('@apiDocs', { timeout: 10000 }); // api docs are sloooooow
+            visit(apidocsUrl);
+            cy.wait('@apiDocs', { responseTimeout: 10000 }); // api docs are sloooooow
 
             cy.title().should('match', new RegExp(`API Reference | ${productNameRegExp}`));
         });
