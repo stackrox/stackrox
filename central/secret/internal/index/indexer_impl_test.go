@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -8,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,6 +18,10 @@ import (
 
 const (
 	fakeID = "ABC"
+)
+
+var (
+	ctx = sac.WithAllAccess(context.Background())
 )
 
 func TestSecretIndex(t *testing.T) {
@@ -76,7 +82,7 @@ func (suite *SecretIndexTestSuite) TestSecretSearch() {
 
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			results, err := suite.indexer.Search(c.q)
+			results, err := suite.indexer.Search(ctx, c.q)
 			require.NoError(t, err)
 			resultIDs := make([]string, 0, len(results))
 			for _, r := range results {
