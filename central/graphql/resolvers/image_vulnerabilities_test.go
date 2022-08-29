@@ -112,7 +112,8 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	// image datastore
 	riskMock := mockRisks.NewMockDataStore(gomock.NewController(s.T()))
 	imageStore := imagePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false)
-	s.resolver.ImageDataStore = imageDataStore.NewWithPostgres(imageStore, imagePostgres.NewIndexer(s.db), riskMock, ranking.NewRanker(), ranking.NewRanker())
+	imageDatastore := imageDataStore.NewWithPostgres(imageStore, imagePostgres.NewIndexer(s.db), riskMock, ranking.NewRanker(), ranking.NewRanker())
+	s.resolver.ImageDataStore = imageDatastore
 
 	// imageComponent datastore
 	imageCompStore := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
@@ -151,7 +152,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	// Add Test Data to DataStores
 	testImages := testImages()
 	for _, image := range testImages {
-		err = imageStore.Upsert(s.ctx, image)
+		err = imageDatastore.UpsertImage(s.ctx, image)
 		s.NoError(err)
 	}
 }
@@ -159,12 +160,12 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 func (s *GraphQLImageVulnerabilityTestSuite) TearDownSuite() {
 	s.envIsolator.RestoreAll()
 
-	pgtest.CloseGormDB(s.T(), s.gormDB)
 	imagePostgres.Destroy(s.ctx, s.db)
 	imageComponentPostgres.Destroy(s.ctx, s.db)
 	imageCVEPostgres.Destroy(s.ctx, s.db)
 	imageCVEEdgePostgres.Destroy(s.ctx, s.db)
 	componentCVEEdgePostgres.Destroy(s.ctx, s.db)
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.db.Close()
 }
 
@@ -370,10 +371,10 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestTopImageVulnerability() {
 
 	image := s.getImageResolver(ctx, "sha1")
 
-	_, err := image.TopImageVulnerability(ctx, RawQuery{})
+	expected := graphql.ID("cve-2019-1#")
+	topVuln, err := image.TopImageVulnerability(ctx, RawQuery{})
 	s.NoError(err)
-
-	// TODO figure out how to test this
+	s.Equal(expected, topVuln.Id(ctx))
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityImages() {

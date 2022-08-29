@@ -146,18 +146,19 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 	// Add Test Data to DataStores
 	testNodes := testNodes()
 	for _, node := range testNodes {
-		err = nodeStore.Upsert(s.ctx, node)
+		err = nodePostgresDataStore.UpsertNode(s.ctx, node)
 		s.NoError(err)
 	}
 }
 
 func (s *GraphQLNodeVulnerabilityTestSuite) TearDownSuite() {
 	s.envIsolator.RestoreAll()
-	pgtest.CloseGormDB(s.T(), s.gormDB)
+
 	nodePostgres.Destroy(s.ctx, s.db)
 	nodeComponentPostgres.Destroy(s.ctx, s.db)
 	nodeCVEPostgres.Destroy(s.ctx, s.db)
 	nodeComponentCVEEdgePostgres.Destroy(s.ctx, s.db)
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.db.Close()
 }
 
@@ -361,12 +362,12 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestTopNodeVulnerabilityUnscoped() {
 func (s *GraphQLNodeVulnerabilityTestSuite) TestTopNodeVulnerability() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	node := s.getNodeResolver(ctx, "id2")
+	node := s.getNodeResolver(ctx, "id1")
 
-	_, err := node.TopNodeVulnerability(ctx, RawQuery{})
+	expected := graphql.ID("cve-2019-1#")
+	topVuln, err := node.TopNodeVulnerability(ctx, RawQuery{})
 	s.NoError(err)
-
-	// TODO CVSS not populated in node_cves table. Figure out how to test this
+	s.Equal(expected, topVuln.Id(ctx))
 }
 
 func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilityEnvImpact() {
@@ -566,12 +567,14 @@ func testNodes() []*storage.Node {
 									Cve: "cve-2019-1",
 								},
 								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+								Cvss:     4,
 							},
 							{
 								CveBaseInfo: &storage.CVEInfo{
 									Cve: "cve-2019-2",
 								},
 								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+								Cvss:     3,
 							},
 						},
 					},

@@ -94,10 +94,12 @@ func testImages() []*storage.Image {
 							{
 								Cve:      "cve-2019-1",
 								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+								Cvss:     4,
 							},
 							{
 								Cve:      "cve-2019-2",
 								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+								Cvss:     3,
 							},
 						},
 					},
