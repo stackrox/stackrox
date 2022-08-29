@@ -4,10 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/node/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -246,7 +247,21 @@ func (resolver *nodeComponentResolver) NodeCount(ctx context.Context, args RawQu
 // NodeVulnerabilities contained in the node component
 func (resolver *nodeComponentResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeVulnerabilities")
-	return resolver.root.NodeVulnerabilities(resolver.nodeComponentScopeContext(ctx), args)
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	// Short path. Full node is embedded when node scan resolver is called.
+	embeddedComponent := embeddedobjs.NodeComponentFromContext(resolver.ctx)
+	if embeddedComponent == nil {
+		return resolver.root.NodeVulnerabilities(resolver.nodeComponentScopeContext(ctx), args)
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
 }
 
 // NodeVulnerabilityCount resolves the number of node vulnerabilities contained in the node component
@@ -317,4 +332,13 @@ func (resolver *nodeComponentResolver) TopNodeVulnerability(ctx context.Context)
 // UnusedVarSink represents a query sink
 func (resolver *nodeComponentResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
+}
+
+func getNodeCVEResolvers(ctx context.Context, root *Resolver, os string, vulns []*storage.NodeVulnerability, query *v1.Query) ([]NodeVulnerabilityResolver, error) {
+	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
+	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
+	if err != nil {
+		return nil, err
+	}
+
 }
