@@ -18,6 +18,7 @@ var (
 )
 
 // SacFilter provides the filtering abilities needed by the compliance datastore.
+//
 //go:generate mockgen-wrapper
 type SacFilter interface {
 	FilterRunResults(ctx context.Context, results *storage.ComplianceRunResults) (*storage.ComplianceRunResults, error)
@@ -107,7 +108,7 @@ func (ds *sacFilterImpl) filterClusters(ctx context.Context, clusters set.String
 	// Filter the compliance results by cluster.
 	allowed := set.NewStringSet()
 	for cluster := range clusters {
-		if ok, _ := resourceScopeChecker.Allowed(sac.ClusterScopeKey(cluster)); ok {
+		if resourceScopeChecker.IsAllowed(sac.ClusterScopeKey(cluster)) {
 			allowed.Add(cluster)
 		}
 	}
@@ -137,10 +138,7 @@ func (ds *sacFilterImpl) filterDomain(ctx context.Context, domain *storage.Compl
 	}
 
 	deploymentsInClusterChecker := deploymentsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, sac.ClusterScopeKey(domain.Cluster.Id))
-	ok, err = deploymentsInClusterChecker.Allowed()
-	if err != nil {
-		return nil, false, err
-	} else if ok {
+	if deploymentsInClusterChecker.IsAllowed() {
 		newDomain.Deployments = domain.Deployments
 	} else {
 		filteredMap, err := sac.FilterMapReflect(ctx, deploymentsInClusterChecker, domain.Deployments, func(deployment *storage.Deployment) sac.ScopePredicate {

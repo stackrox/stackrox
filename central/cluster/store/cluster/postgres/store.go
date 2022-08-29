@@ -132,9 +132,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Cluster) error {
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
 		ClusterID(obj.GetId())
-	if ok, err := scopeChecker.Allowed(); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -145,15 +143,11 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Cluster) err
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Cluster")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		var deniedIds []string
 		for _, obj := range objs {
 			subScopeChecker := scopeChecker.ClusterID(obj.GetId())
-			if ok, err := subScopeChecker.Allowed(); err != nil {
-				return err
-			} else if !ok {
+			if !subScopeChecker.IsAllowed() {
 				deniedIds = append(deniedIds, obj.GetId())
 			}
 		}
