@@ -115,12 +115,6 @@ class ProcessBaselinesTest extends BaseSpecification {
         orchestrator.execInContainer(deployment, "ls")
 
         String containerName = deployment.getName()
-//         ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
-//                     getProcessBaseline(clusterId, deployment, containerName)
-//         assert (baseline != null)
-//         assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
-//                     (baseline.key.containerName.equalsIgnoreCase(containerName)))
-//         assert baseline.elementsList.find { it.element.processName == processName } != null
 
         // wait for baseline to come out of observation
         ProcessBaselineOuterClass.ProcessBaseline baseline = evaluateWithRetry(10, 10) {
