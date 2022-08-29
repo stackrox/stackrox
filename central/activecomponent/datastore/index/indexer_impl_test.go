@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -8,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/activecomponent/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,6 +21,7 @@ func TestActiveComponentIndex(t *testing.T) {
 type ActiveComponentIndexTestSuite struct {
 	suite.Suite
 
+	ctx        context.Context
 	bleveIndex bleve.Index
 	indexer    Indexer
 	wrapper    Wrapper
@@ -29,6 +32,7 @@ func (suite *ActiveComponentIndexTestSuite) SetupTest() {
 	suite.bleveIndex, err = globalindex.MemOnlyIndex()
 	suite.Require().NoError(err)
 
+	suite.ctx = sac.WithAllAccess(context.Background())
 	suite.indexer = New(suite.bleveIndex)
 	suite.wrapper = Wrapper{}
 }
@@ -55,12 +59,12 @@ func (suite *ActiveComponentIndexTestSuite) TestIndexing() {
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
 
-	results, err := suite.indexer.Search(q)
+	results, err := suite.indexer.Search(suite.ctx, q)
 	suite.NoError(err)
 	suite.Len(results, 0)
 
 	suite.NoError(suite.addComponent(ac))
-	results, err = suite.indexer.Search(q)
+	results, err = suite.indexer.Search(suite.ctx, q)
 	suite.NoError(err)
 	suite.Len(results, 1)
 }

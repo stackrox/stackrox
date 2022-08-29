@@ -34,8 +34,8 @@ var (
 )
 
 type metadataIndex interface {
-	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
-	Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
+	Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
 }
 
 // NewStore returns a compliance store based on Postgres
@@ -176,7 +176,7 @@ func (s *storeImpl) getLatestRunMetadata(ctx context.Context, clusterID, standar
 				AddSortOption(search.NewSortOption(search.ComplianceRunFinishedTimestamp).Reversed(true)),
 		).
 		ProtoQuery()
-	metadataSearchResults, err := s.metadataIndex.Search(query)
+	metadataSearchResults, err := s.metadataIndex.Search(ctx, query)
 	if err != nil {
 		return types.ComplianceRunsMetadata{}, err
 	}

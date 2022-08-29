@@ -66,7 +66,7 @@ func (mr *MockIndexerMockRecorder) AddImageCVEs(cves interface{}) *gomock.Call {
 }
 
 // Count mocks base method.
-func (m *MockIndexer) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{q}
 	for _, a := range opts {
@@ -114,7 +114,7 @@ func (mr *MockIndexerMockRecorder) DeleteImageCVEs(ids interface{}) *gomock.Call
 }
 
 // Search mocks base method.
-func (m *MockIndexer) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (m *MockIndexer) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{q}
 	for _, a := range opts {

@@ -37,7 +37,7 @@ type IndexSuite struct {
 	pool    *pgxpool.Pool
 	store   postgres.Store
 	indexer interface {
-		Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+		Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
 	}
 }
 
@@ -98,7 +98,7 @@ type testCase struct {
 func (s *IndexSuite) runTestCases(cases []testCase) {
 	for _, c := range cases {
 		s.Run(c.desc, func() {
-			results, err := s.indexer.Search(c.q)
+			results, err := s.indexer.Search(ctx, c.q)
 			if c.expectErr {
 				s.Error(err)
 				return
@@ -704,7 +704,7 @@ type highlightTestCase struct {
 func (s *IndexSuite) runHighlightTestCases(cases []highlightTestCase) {
 	for _, c := range cases {
 		s.Run(c.desc, func() {
-			results, err := s.indexer.Search(c.q)
+			results, err := s.indexer.Search(ctx, c.q)
 			if c.expectErr {
 				s.Error(err)
 				return
@@ -1348,7 +1348,7 @@ func (s *IndexSuite) TestPagination() {
 	} {
 		s.Run(testCase.desc, func() {
 			q := search.NewQueryBuilder().AddBools(search.TestBool, true).WithPagination(testCase.pagination).ProtoQuery()
-			results, err := s.indexer.Search(q)
+			results, err := s.indexer.Search(ctx, q)
 			s.Require().NoError(err)
 
 			actualMatches := make([]int, 0, len(results))
