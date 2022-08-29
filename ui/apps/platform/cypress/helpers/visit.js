@@ -8,15 +8,15 @@ const requestConfigGeneric = {
         featureflags: {
             method: 'GET',
             url: api.featureFlags,
-        }, // sagas/featureFlagSagas
+        }, // reducers/featureFlags and sagas/featureFlagSagas
         mypermissions: {
             method: 'GET',
             url: api.roles.mypermissions,
-        }, // sagas/authSagas
+        }, // hooks/usePermissions and reducers/roles and sagas/authSagas
         'config/public': {
             method: 'GET',
             url: api.system.configPublic,
-        }, // sagas/systemConfig
+        }, // reducers/systemConfig and sagas/systemConfig
         'auth/status': {
             method: 'GET',
             url: api.auth.authStatus,
