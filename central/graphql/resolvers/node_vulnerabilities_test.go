@@ -7,9 +7,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
-	"time"
 
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -38,7 +36,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -468,136 +465,4 @@ func (s *GraphQLNodeVulnerabilityTestSuite) getNodeVulnerabilityResolver(ctx con
 	s.NoError(err)
 	s.Equal(vulnID, vuln.Id(ctx))
 	return vuln
-}
-
-func testNodes() []*storage.Node {
-	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
-	utils.CrashOnError(err)
-	t2, err := ptypes.TimestampProto(time.Unix(0, 2000))
-	utils.CrashOnError(err)
-	return []*storage.Node{
-		{
-			Id:   "id1",
-			Name: "name1",
-			SetCves: &storage.Node_Cves{
-				Cves: 3,
-			},
-			Scan: &storage.NodeScan{
-				ScanTime: t1,
-				Components: []*storage.EmbeddedNodeScanComponent{
-					{
-						Name:    "comp1",
-						Version: "0.9",
-						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
-									Cve: "cve-2018-1",
-								},
-								SetFixedBy: &storage.NodeVulnerability_FixedBy{
-									FixedBy: "1.1",
-								},
-							},
-						},
-					},
-					{
-						Name:    "comp2",
-						Version: "1.1",
-						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
-									Cve: "cve-2018-1",
-								},
-								SetFixedBy: &storage.NodeVulnerability_FixedBy{
-									FixedBy: "1.5",
-								},
-							},
-						},
-					},
-					{
-						Name:    "comp3",
-						Version: "1.0",
-						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
-									Cve: "cve-2019-1",
-								},
-								Cvss: 4,
-							},
-							{
-								CveBaseInfo: &storage.CVEInfo{
-									Cve: "cve-2019-2",
-								},
-								Cvss: 3,
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			Id:   "id2",
-			Name: "name2",
-			SetCves: &storage.Node_Cves{
-				Cves: 5,
-			},
-			Scan: &storage.NodeScan{
-				ScanTime: t2,
-				Components: []*storage.EmbeddedNodeScanComponent{
-					{
-						Name:    "comp1",
-						Version: "0.9",
-						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
-									Cve: "cve-2018-1",
-								},
-								SetFixedBy: &storage.NodeVulnerability_FixedBy{
-									FixedBy: "1.1",
-								},
-								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-							},
-						},
-					},
-					{
-						Name:    "comp3",
-						Version: "1.0",
-						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
-									Cve: "cve-2019-1",
-								},
-								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-								Cvss:     4,
-							},
-							{
-								CveBaseInfo: &storage.CVEInfo{
-									Cve: "cve-2019-2",
-								},
-								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-								Cvss:     3,
-							},
-						},
-					},
-					{
-						Name:    "comp4",
-						Version: "1.0",
-						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
-									Cve: "cve-2017-1",
-								},
-								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-							},
-							{
-								CveBaseInfo: &storage.CVEInfo{
-									Cve: "cve-2017-2",
-								},
-								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
 }

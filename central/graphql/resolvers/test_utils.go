@@ -124,6 +124,138 @@ func testImages() []*storage.Image {
 	}
 }
 
+func testNodes() []*storage.Node {
+	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
+	utils.CrashOnError(err)
+	t2, err := ptypes.TimestampProto(time.Unix(0, 2000))
+	utils.CrashOnError(err)
+	return []*storage.Node{
+		{
+			Id:   "id1",
+			Name: "name1",
+			SetCves: &storage.Node_Cves{
+				Cves: 3,
+			},
+			Scan: &storage.NodeScan{
+				ScanTime: t1,
+				Components: []*storage.EmbeddedNodeScanComponent{
+					{
+						Name:    "comp1",
+						Version: "0.9",
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "cve-2018-1",
+								},
+								SetFixedBy: &storage.NodeVulnerability_FixedBy{
+									FixedBy: "1.1",
+								},
+							},
+						},
+					},
+					{
+						Name:    "comp2",
+						Version: "1.1",
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "cve-2018-1",
+								},
+								SetFixedBy: &storage.NodeVulnerability_FixedBy{
+									FixedBy: "1.5",
+								},
+							},
+						},
+					},
+					{
+						Name:    "comp3",
+						Version: "1.0",
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "cve-2019-1",
+								},
+								Cvss: 4,
+							},
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "cve-2019-2",
+								},
+								Cvss: 3,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Id:   "id2",
+			Name: "name2",
+			SetCves: &storage.Node_Cves{
+				Cves: 5,
+			},
+			Scan: &storage.NodeScan{
+				ScanTime: t2,
+				Components: []*storage.EmbeddedNodeScanComponent{
+					{
+						Name:    "comp1",
+						Version: "0.9",
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "cve-2018-1",
+								},
+								SetFixedBy: &storage.NodeVulnerability_FixedBy{
+									FixedBy: "1.1",
+								},
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+					{
+						Name:    "comp3",
+						Version: "1.0",
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "cve-2019-1",
+								},
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+								Cvss:     4,
+							},
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "cve-2019-2",
+								},
+								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+								Cvss:     3,
+							},
+						},
+					},
+					{
+						Name:    "comp4",
+						Version: "1.0",
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "cve-2017-1",
+								},
+								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+							},
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "cve-2017-2",
+								},
+								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func checkVulnerabilityCounter(t *testing.T, resolver *VulnerabilityCounterResolver, total, fixable, critical, important, moderate, low int32) {
 	// we have to pass a context to the resolver functions because style checks don't like when we pass nil, this value isn't used though
 	ctx := context.Background()
