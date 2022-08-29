@@ -84,11 +84,10 @@ func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (Node
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
-	res, err := resolver.wrapNodeComponent(ret, true, err)
+	res, err := resolver.wrapNodeComponentWithContext(ctx, ret, true, err)
 	if err != nil {
 		return nil, err
 	}
-	res.ctx = ctx
 	return res, nil
 }
 
@@ -113,14 +112,14 @@ func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) 
 		return nil, err
 	}
 
-	componentResolvers, err := resolver.wrapNodeComponents(loader.FromQuery(ctx, query))
+	comps, err := loader.FromQuery(ctx, query)
+	componentResolvers, err := resolver.wrapNodeComponentsWithContext(ctx, comps, err)
 	if err != nil {
 		return nil, err
 	}
 
 	ret := make([]NodeComponentResolver, 0, len(componentResolvers))
 	for _, res := range componentResolvers {
-		res.ctx = ctx
 		ret = append(ret, res)
 	}
 	return ret, nil
@@ -159,14 +158,14 @@ func queryWithNodeIDRegexFilter(q string) string {
 		search.NewQueryBuilder().AddRegexes(search.NodeID, ".+").Query())
 }
 
-func (resolver *nodeComponentResolver) withNodeComponentScope(ctx context.Context) context.Context {
+func (resolver *nodeComponentResolver) withNodeComponentScope() context.Context {
 	if features.PostgresDatastore.Enabled() {
-		return scoped.Context(ctx, scoped.Scope{
+		return scoped.Context(resolver.ctx, scoped.Scope{
 			Level: v1.SearchCategory_NODE_COMPONENTS,
 			ID:    resolver.data.GetId(),
 		})
 	}
-	return scoped.Context(ctx, scoped.Scope{
+	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    resolver.data.GetId(),
 	})
@@ -185,7 +184,7 @@ Sub Resolver Functions
 */
 
 // FixedIn returns the node component version that fixes all the fixable vulnerabilities in this component.
-func (resolver *nodeComponentResolver) FixedIn(ctx context.Context) string {
+func (resolver *nodeComponentResolver) FixedIn(_ context.Context) string {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "FixedIn")
 	return ""
 }
@@ -233,39 +232,39 @@ func (resolver *nodeComponentResolver) Location(_ context.Context, _ RawQuery) (
 }
 
 // Nodes that contain the node component.
-func (resolver *nodeComponentResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
+func (resolver *nodeComponentResolver) Nodes(_ context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "Nodes")
-	return resolver.root.Nodes(resolver.withNodeComponentScope(ctx), args)
+	return resolver.root.Nodes(resolver.withNodeComponentScope(), args)
 }
 
 // NodeCount is the number of nodes that contain the node component
-func (resolver *nodeComponentResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
+func (resolver *nodeComponentResolver) NodeCount(_ context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeCount")
-	return resolver.root.NodeCount(resolver.withNodeComponentScope(ctx), args)
+	return resolver.root.NodeCount(resolver.withNodeComponentScope(), args)
 }
 
 // NodeVulnerabilities contained in the node component
-func (resolver *nodeComponentResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+func (resolver *nodeComponentResolver) NodeVulnerabilities(_ context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeVulnerabilities")
-	return resolver.root.NodeVulnerabilities(resolver.withNodeComponentScope(ctx), args)
+	return resolver.root.NodeVulnerabilities(resolver.withNodeComponentScope(), args)
 }
 
 // NodeVulnerabilityCount resolves the number of node vulnerabilities contained in the node component
-func (resolver *nodeComponentResolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+func (resolver *nodeComponentResolver) NodeVulnerabilityCount(_ context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeVulnerabilityCount")
-	return resolver.root.NodeVulnerabilityCount(resolver.withNodeComponentScope(ctx), args)
+	return resolver.root.NodeVulnerabilityCount(resolver.withNodeComponentScope(), args)
 }
 
 // NodeVulnerabilityCounter resolves the number of different types of node vulnerabilities contained in a node component
-func (resolver *nodeComponentResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+func (resolver *nodeComponentResolver) NodeVulnerabilityCounter(_ context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeVulnerabilityCounter")
-	return resolver.root.NodeVulnerabilityCounter(resolver.withNodeComponentScope(ctx), args)
+	return resolver.root.NodeVulnerabilityCounter(resolver.withNodeComponentScope(), args)
 }
 
 // PlottedNodeVulnerabilities returns the data required by top risky component scatter-plot on vuln mgmt dashboard
-func (resolver *nodeComponentResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
+func (resolver *nodeComponentResolver) PlottedNodeVulnerabilities(_ context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "PlottedNodeVulnerabilities")
-	return resolver.root.PlottedNodeVulnerabilities(resolver.withNodeComponentScope(ctx), args)
+	return resolver.root.PlottedNodeVulnerabilities(resolver.withNodeComponentScope(), args)
 }
 
 // Source returns the source type of the node component
@@ -275,7 +274,7 @@ func (resolver *nodeComponentResolver) Source(_ context.Context) string {
 }
 
 // TopNodeVulnerability returns the first node component vulnerability with the top CVSS score
-func (resolver *nodeComponentResolver) TopNodeVulnerability(ctx context.Context) (NodeVulnerabilityResolver, error) {
+func (resolver *nodeComponentResolver) TopNodeVulnerability(_ context.Context) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "TopNodeVulnerability")
 	if !features.PostgresDatastore.Enabled() {
 		query := resolver.nodeComponentQuery()
@@ -294,26 +293,25 @@ func (resolver *nodeComponentResolver) TopNodeVulnerability(ctx context.Context)
 			Offset: 0,
 		}
 
-		vulnLoader, err := loaders.GetCVELoader(ctx)
+		vulnLoader, err := loaders.GetCVELoader(resolver.ctx)
 		if err != nil {
 			return nil, err
 		}
-		vulns, err := vulnLoader.FromQuery(ctx, query)
+		vulns, err := vulnLoader.FromQuery(resolver.ctx, query)
 		if err != nil || len(vulns) == 0 {
 			return nil, err
 		} else if len(vulns) > 1 {
 			return nil, errors.New("multiple vulnerabilities matched for top node component vulnerability")
 		}
 
-		res, err := resolver.root.wrapCVE(vulns[0], true, nil)
+		res, err := resolver.root.wrapCVEWithContext(resolver.ctx, vulns[0], true, nil)
 		if err != nil {
 			return nil, err
 		}
-		res.ctx = ctx
 		return res, nil
 	}
 
-	return resolver.root.TopNodeVulnerability(resolver.withNodeComponentScope(ctx), RawQuery{})
+	return resolver.root.TopNodeVulnerability(resolver.withNodeComponentScope(), RawQuery{})
 }
 
 // UnusedVarSink represents a query sink

@@ -79,7 +79,7 @@ func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (
 		return nil, err
 	}
 	node, err := nodeLoader.FromID(ctx, string(args.ID))
-	return resolver.wrapNode(node, node != nil, err)
+	return resolver.wrapNodeWithContext(ctx, node, node != nil, err)
 }
 
 // Nodes returns resolvers for a matching nodes, or nil if no node is found in any cluster
@@ -97,7 +97,8 @@ func (resolver *Resolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*no
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapNodes(nodeLoader.FromQuery(ctx, q))
+	nodes, err := nodeLoader.FromQuery(ctx, q)
+	return resolver.wrapNodesWithContext(ctx, nodes, err)
 }
 
 // NodeCount returns count of nodes across clusters
@@ -117,12 +118,9 @@ func (resolver *Resolver) NodeCount(ctx context.Context, args RawQuery) (int32, 
 	return nodeLoader.CountFromQuery(ctx, query)
 }
 
-func (resolver *nodeResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
+func (resolver *nodeResolver) Cluster(_ context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Cluster")
-	if err := readClusters(ctx); err != nil {
-		return nil, err
-	}
-	return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetClusterId()))
+	return resolver.root.Cluster(resolver.ctx, struct{ graphql.ID }{graphql.ID(resolver.data.GetClusterId())})
 }
 
 func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args RawQuery) ([]*controlResultResolver, error) {
@@ -306,7 +304,7 @@ func (resolver *complianceControlCountResolver) UnknownCount() int32 {
 	return resolver.unknownCount
 }
 
-func (resolver *nodeResolver) NodeStatus(ctx context.Context, args RawQuery) (string, error) {
+func (resolver *nodeResolver) NodeStatus(_ context.Context, _ RawQuery) (string, error) {
 	return "active", nil
 }
 
@@ -318,7 +316,7 @@ func (resolver *nodeResolver) Components(ctx context.Context, args PaginatedQuer
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.componentsV2(resolver.withNodeScopeContext(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.componentsV2(resolver.nodeScopeContext(), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // ComponentCount returns the number of components in the node
@@ -330,25 +328,19 @@ func (resolver *nodeResolver) ComponentCount(ctx context.Context, args RawQuery)
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.componentCountV2(resolver.withNodeScopeContext(ctx), RawQuery{Query: &query})
+	return resolver.root.componentCountV2(resolver.nodeScopeContext(), RawQuery{Query: &query})
 }
 
 // NodeComponents returns the components in the node.
-func (resolver *nodeResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
+func (resolver *nodeResolver) NodeComponents(_ context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeComponents")
-	if err := readNodes(ctx); err != nil {
-		return nil, err
-	}
-	return resolver.root.NodeComponents(resolver.withNodeScopeContext(ctx), args)
+	return resolver.root.NodeComponents(resolver.nodeScopeContext(), args)
 }
 
 // NodeComponentCount returns the number of components in the node
-func (resolver *nodeResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+func (resolver *nodeResolver) NodeComponentCount(_ context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeComponentCount")
-	if err := readNodes(ctx); err != nil {
-		return 0, err
-	}
-	return resolver.root.NodeComponentCount(resolver.withNodeScopeContext(ctx), args)
+	return resolver.root.NodeComponentCount(resolver.nodeScopeContext(), args)
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
@@ -370,11 +362,11 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 }
 
 // TopNodeVulnerability returns the first node vulnerability with the top CVSS score.
-func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
+func (resolver *nodeResolver) TopNodeVulnerability(_ context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopNodeVulnerability")
 
 	if !features.PostgresDatastore.Enabled() {
-		if err := readNodes(ctx); err != nil {
+		if err := readNodes(resolver.ctx); err != nil {
 			return nil, err
 		}
 
@@ -382,13 +374,13 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 		if err != nil {
 			return nil, err
 		}
-		vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, query)
+		vulnResolver, err := resolver.unwrappedTopVulnQuery(resolver.ctx, query)
 		if err != nil || vulnResolver == nil {
 			return nil, err
 		}
 		return vulnResolver, nil
 	}
-	return resolver.root.TopNodeVulnerability(resolver.withNodeScopeContext(ctx), args)
+	return resolver.root.TopNodeVulnerability(resolver.nodeScopeContext(), args)
 }
 
 func (resolver *nodeResolver) getTopNodeCVEV1Query(args RawQuery) (*v1.Query, error) {
@@ -451,7 +443,7 @@ func (resolver *nodeResolver) Vulns(ctx context.Context, args PaginatedQuery) ([
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.vulnerabilitiesV2(resolver.withNodeScopeContext(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.vulnerabilitiesV2(resolver.nodeScopeContext(), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // VulnCount returns the number of vulnerabilities the node has.
@@ -462,7 +454,7 @@ func (resolver *nodeResolver) VulnCount(ctx context.Context, args RawQuery) (int
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.vulnerabilityCountV2(resolver.withNodeScopeContext(ctx), RawQuery{Query: &query})
+	return resolver.root.vulnerabilityCountV2(resolver.nodeScopeContext(), RawQuery{Query: &query})
 }
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in a node.
@@ -473,34 +465,25 @@ func (resolver *nodeResolver) VulnCounter(ctx context.Context, args RawQuery) (*
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.vulnCounterV2(resolver.withNodeScopeContext(ctx), RawQuery{Query: &query})
+	return resolver.root.vulnCounterV2(resolver.nodeScopeContext(), RawQuery{Query: &query})
 }
 
 // NodeVulnerabilities returns the vulnerabilities in the node.
-func (resolver *nodeResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+func (resolver *nodeResolver) NodeVulnerabilities(_ context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeVulnerabilities")
-	if err := readNodes(ctx); err != nil {
-		return nil, err
-	}
-	return resolver.root.NodeVulnerabilities(resolver.withNodeScopeContext(ctx), args)
+	return resolver.root.NodeVulnerabilities(resolver.nodeScopeContext(), args)
 }
 
 // NodeVulnerabilityCount returns the number of vulnerabilities the node has.
-func (resolver *nodeResolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+func (resolver *nodeResolver) NodeVulnerabilityCount(_ context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeVulnerabilityCount")
-	if err := readNodes(ctx); err != nil {
-		return 0, err
-	}
-	return resolver.root.NodeVulnerabilityCount(resolver.withNodeScopeContext(ctx), args)
+	return resolver.root.NodeVulnerabilityCount(resolver.nodeScopeContext(), args)
 }
 
 // NodeVulnerabilityCounter resolves the number of different types of vulnerabilities contained in a node.
-func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+func (resolver *nodeResolver) NodeVulnerabilityCounter(_ context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeVulnerabilityCounter")
-	if err := readNodes(ctx); err != nil {
-		return nil, err
-	}
-	return resolver.root.NodeVulnerabilityCounter(resolver.withNodeScopeContext(ctx), args)
+	return resolver.root.NodeVulnerabilityCounter(resolver.nodeScopeContext(), args)
 }
 
 // PlottedVulns returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
@@ -522,21 +505,20 @@ func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, ar
 	return resolver.root.PlottedNodeVulnerabilities(ctx, RawQuery{Query: &query})
 }
 
-func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
-	res, err := resolver.root.wrapNodeScan(resolver.data.GetScan(), true, nil)
+func (resolver *nodeResolver) Scan(_ context.Context) (*nodeScanResolver, error) {
+	res, err := resolver.root.wrapNodeScanWithContext(resolver.ctx, resolver.data.GetScan(), true, nil)
 	if err != nil || res == nil {
 		return nil, err
 	}
-	res.ctx = resolver.withNodeScopeContext(ctx)
 	return res, nil
 }
 
-func (resolver *nodeResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (resolver *nodeResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 
-func (resolver *nodeResolver) withNodeScopeContext(ctx context.Context) context.Context {
-	return scoped.Context(ctx, scoped.Scope{
+func (resolver *nodeResolver) nodeScopeContext() context.Context {
+	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODES,
 		ID:    resolver.data.GetId(),
 	})
