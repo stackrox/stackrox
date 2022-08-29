@@ -130,7 +130,7 @@ class GraphQLService {
         private Response parseResponse(HttpResponse response)  {
             def bsa = new ByteArrayOutputStream()
             response.getEntity().writeTo(bsa)
-            log.info "GraphQL response: " + bsa.toString()
+            log.info "GraphQL response: " + bsa
             def returnedValue = new JsonSlurper().parseText(bsa.toString())
             return new Response(response.getStatusLine().getStatusCode(), returnedValue.data, returnedValue.errors)
         }
