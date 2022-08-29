@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/node/datastore/internal/store/common/v2"
+	"github.com/stackrox/rox/central/node/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

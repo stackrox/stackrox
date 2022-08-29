@@ -6,7 +6,7 @@ import (
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
-	"github.com/stackrox/rox/central/node/datastore/internal/store"
+	"github.com/stackrox/rox/central/node/datastore/store"
 	nodeIndexer "github.com/stackrox/rox/central/node/index"
 	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
