@@ -61,34 +61,6 @@ func (suite *orScopeCheckerTestSuite) TestAllowed() {
 	suite.Error(err)
 }
 
-func (suite *orScopeCheckerTestSuite) TestAnyAllowed() {
-	// 1. Expect True when at least 1 ScopeChecker returns true.
-	suite.scopeChecker1.EXPECT().AnyAllowed(gomock.Any(), gomock.Any()).Return(true, nil)
-
-	allowed, err := suite.orScopeChecker.AnyAllowed(context.Background(), nil)
-	suite.NoError(err)
-	suite.Nil(err)
-	suite.True(allowed)
-
-	// 2. Expect False when all ScopeCheckers return false.
-	suite.scopeChecker1.EXPECT().AnyAllowed(gomock.Any(), gomock.Any()).Return(false, nil)
-	suite.scopeChecker2.EXPECT().AnyAllowed(gomock.Any(), gomock.Any()).Return(false, nil)
-
-	allowed, err = suite.orScopeChecker.AnyAllowed(context.Background(), nil)
-	suite.NoError(err)
-	suite.Nil(err)
-	suite.False(allowed)
-
-	// 3. Expect an error and False when all ScopeCheckers return Deny and at least 1 returned an error.
-	suite.scopeChecker1.EXPECT().AnyAllowed(gomock.Any(), gomock.Any()).Return(false, nil)
-	suite.scopeChecker2.EXPECT().AnyAllowed(gomock.Any(), gomock.Any()).Return(false,
-		errors.New("something happened"))
-
-	allowed, err = suite.orScopeChecker.AnyAllowed(context.Background(), nil)
-	suite.Error(err)
-	suite.False(allowed)
-}
-
 func (suite *orScopeCheckerTestSuite) TestAllAllowed() {
 	// 1. Expect True when at least 1 ScopeChecker returns true.
 	suite.scopeChecker1.EXPECT().AllAllowed(gomock.Any(), gomock.Any()).Return(true, nil)

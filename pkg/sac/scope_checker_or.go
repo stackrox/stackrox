@@ -45,20 +45,6 @@ func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (
 	return false, allowedErrs.ErrorOrNil()
 }
 
-func (s orScopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
-	var anyAllowedErrs *multierror.Error
-	for _, checker := range s.scopeCheckers {
-		allowed, err := checker.AnyAllowed(ctx, subScopeKeyss)
-		// Short-circuit on the first allowed check result.
-		if err != nil {
-			anyAllowedErrs = multierror.Append(anyAllowedErrs, err)
-		} else if allowed {
-			return allowed, nil
-		}
-	}
-	return false, anyAllowedErrs.ErrorOrNil()
-}
-
 func (s orScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
 	var allAllowedErrs *multierror.Error
 	for _, checker := range s.scopeCheckers {
