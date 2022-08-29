@@ -5,4 +5,3 @@ Run version compatibility tests
 """
 
 print("stub for version compatibility tests")
-
