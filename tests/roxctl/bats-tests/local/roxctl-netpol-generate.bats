@@ -16,11 +16,19 @@ setup_file() {
 setup() {
   out_dir="$(mktemp -d -u)"
   ofile="$(mktemp)"
+  export ROX_ROXCTL_NETPOL_GENERATE=true
 }
 
 teardown() {
   rm -rf "$out_dir"
   rm -f "$ofile"
+}
+
+@test "roxctl-release generate netpol should respect ROX_ROXCTL_NETPOL_GENERATE feature-flag" {
+  export ROX_ROXCTL_NETPOL_GENERATE=true
+  run roxctl-release generate netpol "$out_dir"
+  assert_failure
+  assert_line --partial 'unknown command "generate"'
 }
 
 @test "roxctl-release generate netpol should return error on empty or non-existing directory" {
