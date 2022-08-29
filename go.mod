@@ -1,6 +1,6 @@
 module github.com/stackrox/rox
 
-go 1.17
+go 1.18
 
 // CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
 // directive at the bottom of the file as well.

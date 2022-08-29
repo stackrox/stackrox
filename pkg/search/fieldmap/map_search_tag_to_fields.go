@@ -3,29 +3,24 @@ package fieldmap
 import (
 	"reflect"
 	"strings"
+
+	"github.com/stackrox/rox/pkg/protowalk"
 )
 
 // MapSearchTagsToFieldPaths creates a FieldMap, by walking the given object.
 func MapSearchTagsToFieldPaths(toWalk interface{}) FieldMap {
 	fieldMap := make(FieldMap)
-	visitFields(toWalk, func(fieldPath FieldPath) bool {
+	protowalk.WalkProto(reflect.TypeOf(toWalk), nil, func(fp protowalk.FieldPath) bool {
 		// Current field is the last field in the path.
-		currentField := fieldPath[len(fieldPath)-1]
-
-		// Get the proto tags for the field.
-		protoTag, oneofTag := getProtobufTags(currentField)
-		if protoTag == "" && oneofTag == "" {
-			// Skip non-protobuf fields.
-			return false
-		}
+		currentField := fp.Field()
 
 		// Get the search tags for the field.
-		searchTag := getSearchTagForField(currentField)
+		searchTag := getSearchTagForField(currentField.StructField)
 		if searchTag == "-" {
 			return false
 		}
 		if searchTag != "" {
-			fieldMap[strings.ToLower(searchTag)] = fieldPath
+			fieldMap[strings.ToLower(searchTag)] = fp.StructFields()
 		}
 		return true
 	})
@@ -38,8 +33,4 @@ func getSearchTagForField(field reflect.StructField) string {
 		return ""
 	}
 	return searchTags[0]
-}
-
-func getProtobufTags(field reflect.StructField) (string, string) {
-	return field.Tag.Get("protobuf"), field.Tag.Get("protobuf_oneof")
 }

@@ -5,13 +5,16 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/gogo/protobuf/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoreflect"
+	"github.com/stackrox/rox/pkg/protowalk"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 )
 
 type searchWalker struct {
 	category v1.SearchCategory
+	prefix   string
 	fields   map[FieldLabel]*Field
 }
 
@@ -19,9 +22,10 @@ type searchWalker struct {
 func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
 	sw := searchWalker{
 		category: category,
+		prefix:   prefix,
 		fields:   make(map[FieldLabel]*Field),
 	}
-	sw.walkRecursive(prefix, reflect.TypeOf(obj))
+	protowalk.WalkProto(reflect.TypeOf(obj), nil, sw.handleField)
 	return OptionsMapFromMap(category, sw.fields)
 }
 
@@ -67,83 +71,49 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
 	}
 }
 
-// handleStruct takes in a struct object and properly handles all of the fields
-func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
-	for i := 0; i < original.NumField(); i++ {
-		field := original.Field(i)
-		jsonTag := strings.TrimSuffix(field.Tag.Get("json"), ",omitempty")
-		if jsonTag == "-" {
-			continue
-		} else if jsonTag == "" { // If no JSON tag, then Bleve takes the field name
-			jsonTag = field.Name
-		}
-		fullPath := fmt.Sprintf("%s.%s", prefix, jsonTag)
-		searchTag := field.Tag.Get("search")
-		if searchTag == "-" {
-			continue
-		}
+var (
+	timestampType = reflect.TypeOf((*types.Timestamp)(nil))
+)
 
-		// Special case proto timestamp because we actually want to index seconds
-		if field.Type.String() == "*types.Timestamp" {
-			fieldName, searchField := s.getSearchField(fullPath+".seconds", searchTag)
-			if searchField == nil {
-				continue
-			}
-			searchField.Type = v1.SearchDataType_SEARCH_DATETIME
-			s.fields[FieldLabel(fieldName)] = searchField
-			continue
-		}
-		// If it is a oneof then call XXX_OneofWrappers to get the types.
-		// The return values is a slice of interfaces that are nil type pointers
-		if field.Tag.Get("protobuf_oneof") != "" {
-			ptrToOriginal := reflect.PtrTo(original)
-
-			methodName := fmt.Sprintf("Get%s", field.Name)
-			oneofGetter, ok := ptrToOriginal.MethodByName(methodName)
-			if !ok {
-				panic("didn't find oneof function, did the naming change?")
-			}
-			oneofInterfaces := oneofGetter.Func.Call([]reflect.Value{reflect.New(original)})
-			if len(oneofInterfaces) != 1 {
-				panic(fmt.Sprintf("found %d interfaces returned from oneof getter", len(oneofInterfaces)))
-			}
-
-			oneofInterface := oneofInterfaces[0].Type()
-
-			method, ok := ptrToOriginal.MethodByName("XXX_OneofWrappers")
-			if !ok {
-				panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", original.Name()))
-			}
-			out := method.Func.Call([]reflect.Value{reflect.New(original)})
-			actualOneOfFields := out[0].Interface().([]interface{})
-			for _, f := range actualOneOfFields {
-				typ := reflect.TypeOf(f)
-				if typ.Implements(oneofInterface) {
-					s.walkRecursive(fullPath, typ)
-				}
-			}
-			continue
-		}
-
-		searchDataType := s.walkRecursive(fullPath, field.Type)
-		fieldName, searchField := s.getSearchField(fullPath, searchTag)
-		if searchField == nil {
-			continue
-		}
-		if searchDataType < 0 {
-			panic(fmt.Sprintf("SearchDataType for field %s is invalid", fieldName))
-		}
-		searchField.Type = searchDataType
-		s.fields[FieldLabel(fieldName)] = searchField
+func (s *searchWalker) handleField(fp protowalk.FieldPath) bool {
+	field := fp.Field()
+	if field.JSONName() == "-" {
+		return false
 	}
+	searchTag := field.Tag.Get("search")
+	if searchTag == "-" {
+		return false
+	}
+
+	fullPath := s.prefix + "." + fp.JSONPath()
+	if field.ElemType() == timestampType {
+		fieldName, searchField := s.getSearchField(fullPath+".seconds", searchTag)
+		if searchField == nil {
+			return false
+		}
+		searchField.Type = v1.SearchDataType_SEARCH_DATETIME
+		s.fields[FieldLabel(fieldName)] = searchField
+		return false
+	}
+	if !field.IsLeaf() {
+		return true
+	}
+
+	fieldName, searchField := s.getSearchField(fullPath, searchTag)
+	if searchField == nil {
+		return false
+	}
+
+	searchField.Type = s.handleLeafField(fullPath, field.ElemType())
+	s.fields[FieldLabel(fieldName)] = searchField
+	return true
 }
 
-func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.SearchDataType {
-	switch original.Kind() {
-	case reflect.Ptr, reflect.Slice:
-		return s.walkRecursive(prefix, original.Elem())
-	case reflect.Struct:
-		s.handleStruct(prefix, original)
+func (s *searchWalker) handleLeafField(path string, ty reflect.Type) v1.SearchDataType {
+	if ty.Kind() == reflect.Ptr {
+		ty = ty.Elem()
+	}
+	switch ty.Kind() {
 	case reflect.Map:
 		return v1.SearchDataType_SEARCH_MAP
 	case reflect.String:
@@ -151,7 +121,7 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 	case reflect.Bool:
 		return v1.SearchDataType_SEARCH_BOOL
 	case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
-		enum, ok := reflect.Zero(original).Interface().(protoreflect.ProtoEnum)
+		enum, ok := reflect.Zero(ty).Interface().(protoreflect.ProtoEnum)
 		if !ok {
 			return v1.SearchDataType_SEARCH_NUMERIC
 		}
@@ -159,11 +129,8 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 		if err != nil {
 			panic(err)
 		}
-		enumregistry.Add(prefix, enumDesc)
+		enumregistry.Add(path, enumDesc)
 		return v1.SearchDataType_SEARCH_ENUM
-	case reflect.Interface:
-		return v1.SearchDataType_SEARCH_STRING
 	}
-	// TODO(ROX-9291): Add unknown SearchDataType to the enum, move enum definition to go struct.
-	return v1.SearchDataType(-1)
+	panic(fmt.Sprintf("unknown leaf field type %s at %s", ty.Name(), path))
 }
