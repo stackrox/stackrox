@@ -7,6 +7,7 @@ import { visitComplianceDashboard, visitComplianceEntities } from '../helpers/co
 import { visitMainDashboard, visitMainDashboardFromLeftNav } from '../helpers/main';
 import { visitNetworkGraph } from '../helpers/networkGraph';
 import { visitViolations, visitViolationsWithUncaughtException } from '../helpers/violations';
+import { visit } from '../helpers/visit';
 
 //
 // Sanity / general checks for UI being up and running
