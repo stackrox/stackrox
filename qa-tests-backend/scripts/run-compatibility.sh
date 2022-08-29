@@ -45,10 +45,9 @@ compatibility_test() {
         oc get scc qatest-anyuid || oc create -f "${ROOT}/qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
     fi
 
-    # export CLUSTER=$(echo $ORCHESTRATOR_FLAVOR | tr '[:upper:]')
-    export CLUSTER="$(echo $ORCHESTRATOR_FLAVOR | tr '[:lower:]' '[:upper:]')"
+    export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
-	# TODO(ROX-12320): Update the list of tests we want to run during "compatibility tests"
+    # TODO(ROX-12320): Update the list of tests we want to run during "compatibility tests"
     make -C qa-tests-backend compatibility-test || touch FAIL
 
     store_qa_test_results "compatibility-test-sensor-$SENSOR_IMAGE_TAG"
