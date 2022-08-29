@@ -379,9 +379,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestMultiKeyStruct)
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "TestMultiKeyStruct")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -392,9 +390,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestMultiKey
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TestMultiKeyStruct")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 

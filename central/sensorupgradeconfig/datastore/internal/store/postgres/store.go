@@ -75,9 +75,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SensorUpgradeConfig
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "SensorUpgradeConfig")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -113,9 +111,7 @@ func (s *storeImpl) Get(ctx context.Context) (*storage.SensorUpgradeConfig, bool
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "SensorUpgradeConfig")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(); err != nil {
-		return nil, false, err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return nil, false, nil
 	}
 
@@ -152,9 +148,7 @@ func (s *storeImpl) Delete(ctx context.Context) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "SensorUpgradeConfig")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
