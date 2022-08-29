@@ -437,7 +437,7 @@ poll_for_system_test_images() {
     # Require imagea based on the job
     case "$CI_JOB_NAME" in
         *-operator-e2e-tests)
-            reqd_images=("operator-controller" "operator-bundle" "operator-bundle-index" "main")
+            reqd_images=("stackrox-operator-controller" "stackrox-operator-bundle" "stackrox-operator-bundle-index" "main")
             ;;
         *-race-condition-qa-e2e-test)
             reqd_images=("main-rcd" "roxctl")
@@ -459,12 +459,16 @@ poll_for_system_test_images() {
 
     _image_exists() {
         local name="$1"
-        local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
+        local v=""
+        if [[ "$name" =~ stackrox-operator-bundle ]]; then
+            v="v"
+        fi
+        local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$v$tag"
         info "Checking for $name using $url"
         local check
         check=$(curl --location -sS -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" "$url")
         echo "$check"
-        [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
+        [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$v$tag" ]]
     }
 
     while true; do
