@@ -220,13 +220,10 @@ jobs:
           fi
       - name: Tag release branch with "${{needs.variables.outputs.milestone}}"
         run: |
-          git tag --annotate "${{needs.variables.outputs.milestone}}" --message ""
-      - name: Push
-        if: env.DRY_RUN == 'false'
-        run: |
-          git push --follow-tags
-      - run: |
-          echo "Release branch has been tagged with ${{needs.variables.outputs.milestone}}." >> $GITHUB_STEP_SUMMARY
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            tag-rc \
+            "${{needs.variables.outputs.milestone}}"
       - name: Create next milestone
         if: env.DRY_RUN == 'false'
         run: |
