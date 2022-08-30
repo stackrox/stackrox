@@ -330,6 +330,8 @@ check-expected-go-version:
 	actual=$$(grep '^FROM golang' Dockerfile | awk '{print $$2}' | cut -d: -f2); \
 	[ "$${expected}" = "$${actual}" ] || { echo "../EXPECTED_GO_VERSION $${expected}, Dockerfile $${actual}; please update to match"; exit 1; }
 
+# Force re-building the file to make sure the current environment is correctly reflected.
+.PHONY: build/Dockerfile.gen
 build/Dockerfile.gen: Dockerfile
 	mkdir -p build/
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g' < $< > $@
