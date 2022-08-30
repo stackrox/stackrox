@@ -28,18 +28,14 @@ var (
 	// Administration is the new resource grouping all administration-like resources.
 	Administration = newResourceMetadata("Administration", permissions.GlobalScope)
 	Alert          = newResourceMetadata("Alert", permissions.NamespaceScope)
-	// SAC check is not performed directly on CVE resource. It exists here for postgres sac generation to pass.
-	CVE     = newResourceMetadata("CVE", permissions.NamespaceScope)
-	Cluster = newResourceMetadata("Cluster", permissions.ClusterScope)
-	// SAC check is not performed directly on ClusterCVE resource. It exists here for postgres sac generation to pass.
-	ClusterCVE = newResourceMetadata("ClusterCVE", permissions.ClusterScope)
-	Compliance = newResourceMetadata("Compliance", permissions.ClusterScope)
-	Deployment = newResourceMetadata("Deployment", permissions.NamespaceScope)
+	CVE            = newResourceMetadata("CVE", permissions.NamespaceScope)
+	Cluster        = newResourceMetadata("Cluster", permissions.ClusterScope)
+	Compliance     = newResourceMetadata("Compliance", permissions.ClusterScope)
+	Deployment     = newResourceMetadata("Deployment", permissions.NamespaceScope)
 	// DeploymentExtension is the new resource grouping all deployment extending resources.
 	DeploymentExtension = newResourceMetadata("DeploymentExtension", permissions.NamespaceScope)
 	Detection           = newResourceMetadata("Detection", permissions.GlobalScope)
 	Image               = newResourceMetadata("Image", permissions.NamespaceScope)
-
 	// Integration is the new  resource grouping all integration resources.
 	Integration                      = newResourceMetadata("Integration", permissions.GlobalScope)
 	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
@@ -69,6 +65,7 @@ var (
 		Access)
 	BackupPlugins = newDeprecatedResourceMetadata("BackupPlugins", permissions.GlobalScope,
 		Integration)
+	ClusterCVE     = newDeprecatedResourceMetadata("ClusterCVE", permissions.ClusterScope, Cluster)
 	ComplianceRuns = newDeprecatedResourceMetadata("ComplianceRuns", permissions.ClusterScope,
 		Compliance)
 	ComplianceRunSchedule = newDeprecatedResourceMetadata("ComplianceRunSchedule",
