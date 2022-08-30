@@ -32,6 +32,7 @@ var (
 		GormModel: (*ImageCveEdges)(nil),
 		Indexes: []string{
 			"create index if not exists imageCveEdges_ImageId on image_cve_edges using hash(ImageId)",
+			"create index if not exists imageCveEdges_ImageCveId on image_cve_edges using hash(ImageCveId)",
 		},
 		Children: []*postgres.CreateStmts{},
 	}
@@ -78,7 +79,7 @@ type ImageCveEdges struct {
 	FirstImageOccurrence *time.Time                 `gorm:"column:firstimageoccurrence;type:timestamp"`
 	State                storage.VulnerabilityState `gorm:"column:state;type:integer"`
 	ImageId              string                     `gorm:"column:imageid;type:varchar;index:imagecveedges_imageid,type:hash"`
-	ImageCveId           string                     `gorm:"column:imagecveid;type:varchar"`
+	ImageCveId           string                     `gorm:"column:imagecveid;type:varchar;index:imagecveedges_imagecveid,type:hash"`
 	Serialized           []byte                     `gorm:"column:serialized;type:bytea"`
 	ImagesRef            Images                     `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
