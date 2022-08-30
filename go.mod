@@ -59,7 +59,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgtype v1.12.0
-	github.com/jackc/pgx/v4 v4.17.0
+	github.com/jackc/pgx/v4 v4.17.1
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
 	github.com/kisielk/sqlstruct v0.0.0-20210630145711-dae28ed37023 // indirect
@@ -249,7 +249,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.1 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
-	github.com/jackc/puddle v1.2.1 // indirect
+	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b // indirect
 	github.com/jhump/protoreflect v1.10.3 // indirect
