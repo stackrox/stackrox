@@ -5,6 +5,9 @@ run:
   build-tags:
   - sql_integration
 
+output:
+  format: "junit-xml:report.xml,colored-line-number"
+
 issues:
   exclude-use-default: false
 
