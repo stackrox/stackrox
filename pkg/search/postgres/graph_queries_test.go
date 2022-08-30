@@ -252,13 +252,13 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 }
 
 func (s *GraphQueriesTestSuite) mustRunQuery(typeName string, q *v1.Query) []search.Result {
-	res, err := postgres.RunSearchRequestForSchema(getTestSchema(s.T(), typeName), q, s.pool)
+	res, err := postgres.RunSearchRequestForSchema(testCtx, getTestSchema(s.T(), typeName), q, s.pool)
 	s.Require().NoError(err)
 	return res
 }
 
 func (s *GraphQueriesTestSuite) mustRunCountQuery(typeName string, q *v1.Query) int {
-	count, err := postgres.RunCountRequestForSchema(getTestSchema(s.T(), typeName), q, s.pool)
+	count, err := postgres.RunCountRequestForSchema(ctx, getTestSchema(s.T(), typeName), q, s.pool)
 	s.Require().NoError(err)
 	return count
 }

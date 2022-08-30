@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"context"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,8 +31,8 @@ func (w *indexWrapperImpl) AddListAlerts(_ []*storage.ListAlert) error {
 	return nil
 }
 
-func (w *indexWrapperImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
-	return w.indexer.Count(q, opts...)
+func (w *indexWrapperImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	return w.indexer.Count(ctx, q, opts...)
 }
 
 func (w *indexWrapperImpl) DeleteListAlert(_ string) error {
@@ -49,6 +51,6 @@ func (w *indexWrapperImpl) NeedsInitialIndexing() (bool, error) {
 	return false, nil
 }
 
-func (w *indexWrapperImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
-	return w.indexer.Search(q, opts...)
+func (w *indexWrapperImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+	return w.indexer.Search(ctx, q, opts...)
 }

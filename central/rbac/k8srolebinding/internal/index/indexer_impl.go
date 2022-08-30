@@ -4,6 +4,7 @@ package index
 
 import (
 	"bytes"
+	"context"
 	bleve "github.com/blevesearch/bleve"
 	metrics "github.com/stackrox/rox/central/metrics"
 	mappings "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
@@ -68,7 +69,7 @@ func (b *indexerImpl) processBatch(k8srolebindings []*storage.K8SRoleBinding) er
 	return b.index.Batch(batch)
 }
 
-func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "K8SRoleBinding")
 	return blevesearch.RunCountRequest(v1.SearchCategory_ROLEBINDINGS, q, b.index, mappings.OptionsMap, opts...)
 }
@@ -105,7 +106,7 @@ func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
 	return !bytes.Equal([]byte("old"), data), nil
 }
 
-func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "K8SRoleBinding")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_ROLEBINDINGS, q, b.index, mappings.OptionsMap, opts...)
 }

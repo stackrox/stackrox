@@ -1,6 +1,8 @@
 package index
 
 import (
+	"context"
+
 	bleve "github.com/blevesearch/bleve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -9,6 +11,7 @@ import (
 )
 
 // Indexer encapsulates the deployment indexer
+//go:generate mockgen-wrapper
 type Indexer interface {
 	AddDeployment(deployment *storage.Deployment) error
 	AddDeployments(deployments []*storage.Deployment) error
@@ -16,8 +19,8 @@ type Indexer interface {
 	DeleteDeployments(ids []string) error
 	MarkInitialIndexingComplete() error
 	NeedsInitialIndexing() (bool, error)
-	Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
-	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
+	Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 }
 
 // New creates a new deployment indexer

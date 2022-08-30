@@ -38,32 +38,32 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddImage mocks base method.
-func (m *MockIndexer) AddImage(image *storage.Image) error {
+// AddDeployment mocks base method.
+func (m *MockIndexer) AddDeployment(deployment *storage.Deployment) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddImage", image)
+	ret := m.ctrl.Call(m, "AddDeployment", deployment)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddImage indicates an expected call of AddImage.
-func (mr *MockIndexerMockRecorder) AddImage(image interface{}) *gomock.Call {
+// AddDeployment indicates an expected call of AddDeployment.
+func (mr *MockIndexerMockRecorder) AddDeployment(deployment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddImage", reflect.TypeOf((*MockIndexer)(nil).AddImage), image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddDeployment", reflect.TypeOf((*MockIndexer)(nil).AddDeployment), deployment)
 }
 
-// AddImages mocks base method.
-func (m *MockIndexer) AddImages(images []*storage.Image) error {
+// AddDeployments mocks base method.
+func (m *MockIndexer) AddDeployments(deployments []*storage.Deployment) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddImages", images)
+	ret := m.ctrl.Call(m, "AddDeployments", deployments)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddImages indicates an expected call of AddImages.
-func (mr *MockIndexerMockRecorder) AddImages(images interface{}) *gomock.Call {
+// AddDeployments indicates an expected call of AddDeployments.
+func (mr *MockIndexerMockRecorder) AddDeployments(deployments interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddImages", reflect.TypeOf((*MockIndexer)(nil).AddImages), images)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddDeployments", reflect.TypeOf((*MockIndexer)(nil).AddDeployments), deployments)
 }
 
 // Count mocks base method.
@@ -86,32 +86,32 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
 }
 
-// DeleteImage mocks base method.
-func (m *MockIndexer) DeleteImage(id string) error {
+// DeleteDeployment mocks base method.
+func (m *MockIndexer) DeleteDeployment(id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteImage", id)
+	ret := m.ctrl.Call(m, "DeleteDeployment", id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteImage indicates an expected call of DeleteImage.
-func (mr *MockIndexerMockRecorder) DeleteImage(id interface{}) *gomock.Call {
+// DeleteDeployment indicates an expected call of DeleteDeployment.
+func (mr *MockIndexerMockRecorder) DeleteDeployment(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImage", reflect.TypeOf((*MockIndexer)(nil).DeleteImage), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDeployment", reflect.TypeOf((*MockIndexer)(nil).DeleteDeployment), id)
 }
 
-// DeleteImages mocks base method.
-func (m *MockIndexer) DeleteImages(ids []string) error {
+// DeleteDeployments mocks base method.
+func (m *MockIndexer) DeleteDeployments(ids []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteImages", ids)
+	ret := m.ctrl.Call(m, "DeleteDeployments", ids)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteImages indicates an expected call of DeleteImages.
-func (mr *MockIndexerMockRecorder) DeleteImages(ids interface{}) *gomock.Call {
+// DeleteDeployments indicates an expected call of DeleteDeployments.
+func (mr *MockIndexerMockRecorder) DeleteDeployments(ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImages", reflect.TypeOf((*MockIndexer)(nil).DeleteImages), ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDeployments", reflect.TypeOf((*MockIndexer)(nil).DeleteDeployments), ids)
 }
 
 // MarkInitialIndexingComplete mocks base method.

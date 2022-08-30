@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -8,8 +9,13 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+)
+
+var (
+	ctx = sac.WithAllAccess(context.Background())
 )
 
 func TestClusterIndex(t *testing.T) {
@@ -44,7 +50,7 @@ func (suite *ClusterIndexTestSuite) TestIndexing() {
 	suite.NoError(suite.indexer.AddCluster(cluster))
 
 	q := search.NewQueryBuilder().AddStrings(search.Cluster, "cluster1").ProtoQuery()
-	results, err := suite.indexer.Search(q)
+	results, err := suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Len(results, 1)
 }
@@ -108,7 +114,7 @@ func (suite *ClusterIndexTestSuite) TestSearchByLastContact() {
 
 	q := search.NewQueryBuilder().AddDays(search.LastContactTime, int64(3)).ProtoQuery()
 
-	results, err := suite.indexer.Search(q)
+	results, err := suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 
 	actualIDs := search.ResultsToIDs(results)

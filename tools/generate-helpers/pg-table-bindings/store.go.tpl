@@ -444,7 +444,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
 
-    return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
+    return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
@@ -492,7 +492,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     {{- end}}
     )
 
-	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -714,7 +714,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 	}
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
-    result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+    result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}

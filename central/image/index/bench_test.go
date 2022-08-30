@@ -1,14 +1,20 @@
 package index
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	ctx = sac.WithAllAccess(context.Background())
 )
 
 func getImageIndex(b *testing.B) Indexer {
@@ -65,7 +71,7 @@ func BenchmarkSearchImage(b *testing.B) {
 	indexer := getImageIndex(b)
 	qb := search.NewQueryBuilder().AddStrings(search.ImageTag, "latest")
 	for i := 0; i < b.N; i++ {
-		_, err := indexer.Search(qb.ProtoQuery())
+		_, err := indexer.Search(ctx, qb.ProtoQuery())
 		require.NoError(b, err)
 	}
 }

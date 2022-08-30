@@ -2,6 +2,7 @@ package index
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -200,13 +201,13 @@ func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
 	return !bytes.Equal([]byte("old"), data), nil
 }
 
-func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Image")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_IMAGES, q, b.index, mappings.OptionsMap, opts...)
 }
 
 // Count returns the number of search results from the query
-func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Image")
 	return blevesearch.RunCountRequest(v1.SearchCategory_IMAGES, q, b.index, mappings.OptionsMap, opts...)
 }

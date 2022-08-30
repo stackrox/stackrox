@@ -521,7 +521,7 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID s
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	var sacQueryFilter *v1.Query
-	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
+	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Get returns the object, if it exists from the store

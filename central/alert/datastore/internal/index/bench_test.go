@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -8,9 +9,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	ctx = sac.WithAllAccess(context.Background())
 )
 
 func listAlertFixture() *storage.ListAlert {
@@ -71,7 +77,7 @@ func BenchmarkSearchAlert(b *testing.B) {
 	indexer := getAlertIndex()
 	qb := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster")
 	for i := 0; i < b.N; i++ {
-		_, err := indexer.Search(qb.ProtoQuery())
+		_, err := indexer.Search(ctx, qb.ProtoQuery())
 		require.NoError(b, err)
 	}
 }

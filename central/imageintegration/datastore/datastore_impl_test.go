@@ -386,7 +386,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIndexing() {
 	suite.NoError(suite.indexer2.AddImageIntegration(ii))
 
 	q := search.NewQueryBuilder().AddStrings(search.ClusterID, "cluster1").ProtoQuery()
-	results, err := suite.indexer2.Search(q)
+	results, err := suite.indexer2.Search(suite.hasWriteCtx, q)
 	suite.NoError(err)
 	suite.Len(results, 1)
 }

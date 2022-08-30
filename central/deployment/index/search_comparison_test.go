@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"sort"
 	"testing"
 
@@ -9,10 +10,15 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	ctx = sac.WithAllAccess(context.Background())
 )
 
 func compareResults(t *testing.T, matches bool, predResult *search.Result, searchResults []search.Result) {
@@ -65,7 +71,7 @@ func TestImageSearchResults(t *testing.T) {
 			predResult, matches := predicate.Evaluate(c.image)
 
 			require.NoError(t, index.AddImage(c.image))
-			searchResults, err := index.Search(c.query)
+			searchResults, err := index.Search(ctx, c.query)
 			require.NoError(t, err)
 
 			compareResults(t, matches, predResult, searchResults)
@@ -107,7 +113,7 @@ func TestDeploymentSearchResults(t *testing.T) {
 			predResult, matches := predicate.Evaluate(c.deployment)
 
 			require.NoError(t, index.AddDeployment(c.deployment))
-			searchResults, err := index.Search(c.query)
+			searchResults, err := index.Search(ctx, c.query)
 			require.NoError(t, err)
 
 			compareResults(t, matches, predResult, searchResults)

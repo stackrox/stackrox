@@ -1,19 +1,24 @@
 package index
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
-var fakeID = fixtures.GetProcessIndicator().GetId()
+var (
+	fakeID = fixtures.GetProcessIndicator().GetId()
+	ctx    = sac.WithAllAccess(context.Background())
+)
 
 func TestIndicatorIndex(t *testing.T) {
 	suite.Run(t, new(IndicatorIndexTestSuite))
@@ -76,7 +81,7 @@ func (suite *IndicatorIndexTestSuite) TestProcessIndicatorSearch() {
 
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			results, err := suite.indexer.Search(c.q)
+			results, err := suite.indexer.Search(ctx, c.q)
 			require.NoError(t, err)
 			resultIDs := make([]string, 0, len(results))
 			for _, r := range results {
