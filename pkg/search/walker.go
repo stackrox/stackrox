@@ -104,18 +104,24 @@ func (s *searchWalker) handleField(fp protowalk.FieldPath) bool {
 		return false
 	}
 
-	searchField.Type = s.handleLeafField(fullPath, field.ElemType())
+	searchField.Type = s.handleLeafField(fullPath, field)
 	s.fields[FieldLabel(fieldName)] = searchField
 	return true
 }
 
-func (s *searchWalker) handleLeafField(path string, ty reflect.Type) v1.SearchDataType {
+func (s *searchWalker) handleLeafField(path string, field protowalk.Field) v1.SearchDataType {
+	// Map is special, because here we need to look at the actual field type, not the element type.
+	if field.Type.Kind() == reflect.Map {
+		return v1.SearchDataType_SEARCH_MAP
+	}
+
+	ty := field.ElemType()
+	// For optional fields, there can be pointer-typed values
 	if ty.Kind() == reflect.Ptr {
 		ty = ty.Elem()
 	}
+
 	switch ty.Kind() {
-	case reflect.Map:
-		return v1.SearchDataType_SEARCH_MAP
 	case reflect.String:
 		return v1.SearchDataType_SEARCH_STRING
 	case reflect.Bool:
