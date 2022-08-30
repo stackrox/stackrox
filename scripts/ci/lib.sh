@@ -484,7 +484,9 @@ check_rhacs_eng_image_exists() {
     local tag="$2"
 
     if [[ "$name" =~ stackrox-operator-(bundle|index) ]]; then
-        tag="v$tag"
+        tag="$(echo "v${tag}" | sed 's,x,0,')"
+    elif [[ "$name" == "stackrox-operator" ]]; then
+        tag="$(echo "${tag}" | sed 's,x,0,')"
     elif [[ "$name" == "main-rcd" ]]; then
         name="main"
         tag="${tag}-rcd"
