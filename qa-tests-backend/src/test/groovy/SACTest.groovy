@@ -92,6 +92,18 @@ class SACTest extends BaseSpecification {
         def img = Services.scanImage(TEST_IMAGE)
         assert img.hasScan()
 
+        1..10.each { Integer number ->
+            log.info("Create deployment $number")
+            DEPLOYMENTS.add(new Deployment()
+                    .setName("sac-deploymentnginx-qa-$number")
+                    .setImage(TEST_IMAGE)
+                    .addPort(22, "TCP")
+                    .addAnnotation("test", "annotation")
+                    .setEnv(["CLUSTER_NAME": "main"])
+                    .setNamespace(NAMESPACE_QA1)
+                    .addLabel("app", "test")
+            )
+        }
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
@@ -237,7 +249,7 @@ class SACTest extends BaseSpecification {
         "Call API and verify data returned is within scoped access"
         def result = DeploymentService.listDeployments()
         log.info result.toString()
-        assert result.size() == 1
+        assert result.size() == 11
         assert DeploymentService.getDeploymentWithRisk(result.first().id).hasRisk()
         def resourceNotAllowed = result.find { it.namespace != sacResource }
         assert resourceNotAllowed == null
@@ -276,7 +288,7 @@ class SACTest extends BaseSpecification {
         def result = SummaryService.getCounts()
         then:
         "Verify correct counts are returned by GetSummaryCounts"
-        assert result.getNumDeployments() == 1
+        assert result.getNumDeployments() == 11
         assert result.getNumSecrets() == orchestrator.getSecretCount(DEPLOYMENT_QA1.namespace)
         assert result.getNumImages() == 1
         cleanup:
