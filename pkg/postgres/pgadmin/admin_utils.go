@@ -37,7 +37,7 @@ const (
 	terminateConnectionStmt = "SELECT pg_terminate_backend(pg_stat_activity.pid) " +
 		"FROM pg_stat_activity " +
 		"WHERE datname = $1 " +
-		" AND pid <> pg_backend_pid();"
+		"AND pid <> pg_backend_pid();"
 )
 
 // DropDB - drops a database.
