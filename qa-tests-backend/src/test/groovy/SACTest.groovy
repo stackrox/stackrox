@@ -92,7 +92,7 @@ class SACTest extends BaseSpecification {
         def img = Services.scanImage(TEST_IMAGE)
         assert img.hasScan()
 
-        1..10.each { Integer number ->
+        (1..10).each { Integer number ->
             log.info("Create deployment $number")
             DEPLOYMENTS.add(new Deployment()
                     .setName("sac-deploymentnginx-qa-$number")
@@ -100,7 +100,7 @@ class SACTest extends BaseSpecification {
                     .addPort(22, "TCP")
                     .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])
-                    .setNamespace(NAMESPACE_QA1)
+                    .setNamespace(NAMESPACE_QA2)
                     .addLabel("app", "test")
             )
         }
@@ -108,11 +108,12 @@ class SACTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
         }
-        // Make sure each deployment has caused at least one alert
-        assert waitForViolation(DEPLOYMENT_QA1.name, "Secure Shell (ssh) Port Exposed",
-                WAIT_FOR_VIOLATION_TIMEOUT)
-        assert waitForViolation(DEPLOYMENT_QA2.name, "Secure Shell (ssh) Port Exposed",
-                WAIT_FOR_VIOLATION_TIMEOUT)
+
+        listDeployments().each { DeploymentOuterClass.ListDeployment dep ->
+            // Make sure each deployment has caused at least one alert
+            assert waitForViolation(dep.name, "Secure Shell (ssh) Port Exposed",
+                    WAIT_FOR_VIOLATION_TIMEOUT)
+        }
 
         // Make sure each deployment has a risk score.
         listDeployments().each { DeploymentOuterClass.ListDeployment dep ->
@@ -249,7 +250,7 @@ class SACTest extends BaseSpecification {
         "Call API and verify data returned is within scoped access"
         def result = DeploymentService.listDeployments()
         log.info result.toString()
-        assert result.size() == 11
+        assert result.size() == 1
         assert DeploymentService.getDeploymentWithRisk(result.first().id).hasRisk()
         def resourceNotAllowed = result.find { it.namespace != sacResource }
         assert resourceNotAllowed == null
@@ -288,7 +289,7 @@ class SACTest extends BaseSpecification {
         def result = SummaryService.getCounts()
         then:
         "Verify correct counts are returned by GetSummaryCounts"
-        assert result.getNumDeployments() == 11
+        assert result.getNumDeployments() == 1
         assert result.getNumSecrets() == orchestrator.getSecretCount(DEPLOYMENT_QA1.namespace)
         assert result.getNumImages() == 1
         cleanup:
