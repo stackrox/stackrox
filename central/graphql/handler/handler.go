@@ -22,7 +22,8 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	queryTracerEnabled = features.PostgresDatastore.Enabled() && env.PostgresQueryTracer.BooleanSetting()
+	queryTracerEnabled    = features.PostgresDatastore.Enabled() && env.PostgresQueryTracer.BooleanSetting()
+	graphQLQueryThreshold = env.PostgresQueryTracerGraphQLThreshold.DurationSetting()
 )
 
 type logger struct {
@@ -83,7 +84,7 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if queryTracerEnabled {
+	if queryTracerEnabled && time.Since(startTime) > graphQLQueryThreshold {
 		postgres.LogTrace(log, ctx, fmt.Sprintf("GraphQL Op %s took %d ms: %s %+v", params.OperationName, time.Since(startTime).Milliseconds(), params.Query, params.Variables))
 	}
 	w.Header().Set("Content-Type", "application/json")

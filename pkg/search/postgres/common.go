@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -518,10 +519,6 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 }
 
 func tracedQuery(ctx context.Context, pool *pgxpool.Pool, sql string, args ...interface{}) (pgx.Rows, error) {
-	if strings.Contains(sql, "select distinct(deployments.Id)") {
-		debug.PrintStack()
-	}
-	log.Infof("SQL: %v", sql)
 	t := time.Now()
 	rows, err := pool.Query(ctx, sql, args...)
 	postgres.AddTracedQuery(ctx, t, sql, args)
@@ -685,7 +682,7 @@ func RunGetQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Quer
 	}
 
 	queryStr := query.AsSQL()
-	row := tracedQueryRow(db, ctx, queryStr, query.Data...)
+	row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 
 	var data []byte
 	err = row.Scan(&data)
@@ -703,7 +700,7 @@ func RunGetManyQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	}
 
 	queryStr := query.AsSQL()
-	rows, err := tracedQuery(db, ctx, queryStr, query.Data...)
+	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
 		return nil, err
 	}

@@ -5,9 +5,14 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+)
+
+var (
+	queryThreshold = env.PostgresQueryTracerQueryThreshold.DurationSetting()
 )
 
 type queryTracerKey struct{}
@@ -40,13 +45,15 @@ func (qt *queryTracer) AddEvent(start time.Time, query string, args ...interface
 func LogTrace(logger *logging.Logger, ctx context.Context, contextString string) {
 	tracer := ctx.Value(queryTracerKey{}).(*queryTracer)
 
-	logger.Infof("%s: %s", tracer.id, contextString)
+	logger.Infof("trace=%s: %s", tracer.id, contextString)
 	if len(tracer.events) == 0 {
-		logger.Infof("%s: no queries ran", tracer.id)
+		logger.Infof("trace=%s: no queries ran", tracer.id)
 		return
 	}
 	for _, e := range tracer.events {
-		logger.Infof("%s: took(%d ms): %s %+v", tracer.id, e.duration.Milliseconds(), e.query, e.args)
+		if e.duration > queryThreshold {
+			logger.Infof("trace=%s: took(%d ms): %s %+v", tracer.id, e.duration.Milliseconds(), e.query, e.args)
+		}
 	}
 }
 
