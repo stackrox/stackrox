@@ -24,7 +24,7 @@ func (t *ScopeTransform) NewCachedChecker(ctx context.Context, resourceHelper *s
 	lastBucket := t.Path.Elements[t.Path.Len()-1]
 	pred := func(key []byte) (bool, error) {
 		scopeKey := t.ScopeFunc(ctx, lastBucket.GetID(key))
-		return sc.Allowed(ctx, scopeKey...)
+		return sc.IsAllowed(scopeKey...), nil
 	}
 	searcher := dackbox.NewCachedSearcher(graph.GetGraph(ctx), pred, t.Path)
 	if t.EdgeIndex != nil {

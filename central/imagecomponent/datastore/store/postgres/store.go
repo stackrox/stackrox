@@ -243,9 +243,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ImageComponent) err
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "ImageComponent")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -256,9 +254,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ImageCompone
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ImageComponent")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 

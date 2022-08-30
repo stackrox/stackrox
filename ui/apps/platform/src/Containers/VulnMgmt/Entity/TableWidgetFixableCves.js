@@ -5,6 +5,7 @@ import { gql, useQuery } from '@apollo/client';
 import { Message } from '@stackrox/ui-components';
 
 import Loader from 'Components/Loader';
+import fixableVulnTypeContext from 'Containers/VulnMgmt/fixableVulnTypeContext';
 import { getCveTableColumns, defaultCveSort } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import {
     CLUSTER_CVE_LIST_FRAGMENT,
@@ -47,6 +48,7 @@ const TableWidgetFixableCves = ({
     const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const displayedEntityType = resourceLabels[entityType];
+    const displayedVulnType = resourceLabels[vulnType];
 
     const queryFieldName = queryFieldNames[entityType];
     let queryVulnCounterFieldName = showVMUpdates ? 'imageVulnerabilityCounter' : 'vulnCounter';
@@ -138,7 +140,7 @@ const TableWidgetFixableCves = ({
     }
 
     return (
-        <>
+        <fixableVulnTypeContext.Provider value={vulnType}>
             {cvesLoading && (
                 <div className="p-6">
                     <Loader transparent />
@@ -152,7 +154,7 @@ const TableWidgetFixableCves = ({
             {!cvesLoading && !cvesError && (
                 <TableWidget
                     header={`${fixableCount} fixable ${pluralize(
-                        vulnType,
+                        displayedVulnType,
                         fixableCount
                     )} found across this ${displayedEntityType}`}
                     headerActions={cveActions}
@@ -169,7 +171,7 @@ const TableWidgetFixableCves = ({
                     sortHandler={onSortedChange}
                 />
             )}
-        </>
+        </fixableVulnTypeContext.Provider>
     );
 };
 

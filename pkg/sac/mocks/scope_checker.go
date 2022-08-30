@@ -53,53 +53,17 @@ func (mr *MockScopeCheckerMockRecorder) AccessMode(am interface{}) *gomock.Call 
 }
 
 // AllAllowed mocks base method.
-func (m *MockScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]sac.ScopeKey) (bool, error) {
+func (m *MockScopeChecker) AllAllowed(subScopeKeyss [][]sac.ScopeKey) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AllAllowed", ctx, subScopeKeyss)
+	ret := m.ctrl.Call(m, "AllAllowed", subScopeKeyss)
 	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return ret0
 }
 
 // AllAllowed indicates an expected call of AllAllowed.
-func (mr *MockScopeCheckerMockRecorder) AllAllowed(ctx, subScopeKeyss interface{}) *gomock.Call {
+func (mr *MockScopeCheckerMockRecorder) AllAllowed(subScopeKeyss interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllAllowed", reflect.TypeOf((*MockScopeChecker)(nil).AllAllowed), ctx, subScopeKeyss)
-}
-
-// Allowed mocks base method.
-func (m *MockScopeChecker) Allowed(ctx context.Context, subScopeKeys ...sac.ScopeKey) (bool, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
-	for _, a := range subScopeKeys {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Allowed", varargs...)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Allowed indicates an expected call of Allowed.
-func (mr *MockScopeCheckerMockRecorder) Allowed(ctx interface{}, subScopeKeys ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, subScopeKeys...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Allowed", reflect.TypeOf((*MockScopeChecker)(nil).Allowed), varargs...)
-}
-
-// AnyAllowed mocks base method.
-func (m *MockScopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]sac.ScopeKey) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AnyAllowed", ctx, subScopeKeyss)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AnyAllowed indicates an expected call of AnyAllowed.
-func (mr *MockScopeCheckerMockRecorder) AnyAllowed(ctx, subScopeKeyss interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AnyAllowed", reflect.TypeOf((*MockScopeChecker)(nil).AnyAllowed), ctx, subScopeKeyss)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllAllowed", reflect.TypeOf((*MockScopeChecker)(nil).AllAllowed), subScopeKeyss)
 }
 
 // Check mocks base method.
@@ -172,6 +136,24 @@ func (m *MockScopeChecker) ForNamespaceScopedObject(obj sac.NamespaceScopedObjec
 func (mr *MockScopeCheckerMockRecorder) ForNamespaceScopedObject(obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForNamespaceScopedObject", reflect.TypeOf((*MockScopeChecker)(nil).ForNamespaceScopedObject), obj)
+}
+
+// IsAllowed mocks base method.
+func (m *MockScopeChecker) IsAllowed(subScopeKeys ...sac.ScopeKey) bool {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range subScopeKeys {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "IsAllowed", varargs...)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsAllowed indicates an expected call of IsAllowed.
+func (mr *MockScopeCheckerMockRecorder) IsAllowed(subScopeKeys ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAllowed", reflect.TypeOf((*MockScopeChecker)(nil).IsAllowed), subScopeKeys...)
 }
 
 // Namespace mocks base method.

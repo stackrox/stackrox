@@ -1164,5 +1164,5 @@ func checkAllNamespacesWriteAllowed(ctx context.Context, clusterID string, names
 	}
 	return sac.VerifyAuthzOK(
 		networkPolicySAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ClusterID(clusterID).AllAllowed(
-			ctx, nsScopeKeys))
+			nsScopeKeys), nil)
 }

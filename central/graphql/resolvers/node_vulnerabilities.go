@@ -108,7 +108,7 @@ func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, args Paginate
 	return ret, nil
 }
 
-// NodeVulnerabilityCount returns count of all clusters across infrastructure
+// NodeVulnerabilityCount returns count of node vulnerabilities based on a query
 func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCount")
 

@@ -105,9 +105,7 @@ func (h *searchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) sea
 
 func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, error) {
 	scopeChecker := h.scopeCheckerFactory(ctx, storage.Access_READ_ACCESS)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
+	if scopeChecker.IsAllowed() {
 		return searcher.Search(q)
 	}
 
@@ -137,9 +135,7 @@ func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher 
 
 func (h *searchHelper) executeCount(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) (int, error) {
 	scopeChecker := h.scopeCheckerFactory(ctx, storage.Access_READ_ACCESS)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return 0, err
-	} else if ok {
+	if scopeChecker.IsAllowed() {
 		return searcher.Count(q)
 	}
 
@@ -217,9 +213,7 @@ func (h *pgSearchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) s
 
 func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, error) {
 	scopeChecker := h.scopeCheckerFactory(ctx, storage.Access_READ_ACCESS)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
+	if scopeChecker.IsAllowed() {
 		return searcher.Search(q)
 	}
 
@@ -269,9 +263,7 @@ func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searche
 
 func (h *pgSearchHelper) executeCount(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) (int, error) {
 	scopeChecker := h.scopeCheckerFactory(ctx, storage.Access_READ_ACCESS)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return 0, err
-	} else if ok {
+	if scopeChecker.IsAllowed() {
 		return searcher.Count(q)
 	}
 
@@ -385,8 +377,7 @@ func (c *clusterNSFieldBasedResultsChecker) TryAllowed(resourceSC ScopeChecker, 
 		namespace, _ := resultFields[c.namespaceFieldPath].(string)
 		key = append(key, NamespaceScopeKey(namespace))
 	}
-	allowed, _ := resourceSC.Allowed(context.TODO(), key...)
-	return allowed
+	return resourceSC.IsAllowed(key...)
 }
 
 func (c *clusterNSFieldBasedResultsChecker) SearchFieldLabels() []search.FieldLabel {

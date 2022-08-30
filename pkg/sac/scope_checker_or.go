@@ -31,46 +31,24 @@ func (s orScopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	}
 }
 
-func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error) {
-	var allowedErrs *multierror.Error
+func (s orScopeChecker) IsAllowed(subScopeKeys ...ScopeKey) bool {
 	for _, checker := range s.scopeCheckers {
-		allowed, err := checker.Allowed(ctx, subScopeKeys...)
 		// Short-circuit on the first allowed check result.
-		if err != nil {
-			allowedErrs = multierror.Append(allowedErrs, err)
-		} else if allowed {
-			return allowed, nil
+		if checker.IsAllowed(subScopeKeys...) {
+			return true
 		}
 	}
-	return false, allowedErrs.ErrorOrNil()
+	return false
 }
 
-func (s orScopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
-	var anyAllowedErrs *multierror.Error
+func (s orScopeChecker) AllAllowed(subScopeKeyss [][]ScopeKey) bool {
 	for _, checker := range s.scopeCheckers {
-		allowed, err := checker.AnyAllowed(ctx, subScopeKeyss)
 		// Short-circuit on the first allowed check result.
-		if err != nil {
-			anyAllowedErrs = multierror.Append(anyAllowedErrs, err)
-		} else if allowed {
-			return allowed, nil
+		if checker.AllAllowed(subScopeKeyss) {
+			return true
 		}
 	}
-	return false, anyAllowedErrs.ErrorOrNil()
-}
-
-func (s orScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
-	var allAllowedErrs *multierror.Error
-	for _, checker := range s.scopeCheckers {
-		allowed, err := checker.AllAllowed(ctx, subScopeKeyss)
-		// Short-circuit on the first allowed check result.
-		if err != nil {
-			allAllowedErrs = multierror.Append(allAllowedErrs, err)
-		} else if allowed {
-			return allowed, nil
-		}
-	}
-	return false, allAllowedErrs.ErrorOrNil()
+	return false
 }
 
 func (s orScopeChecker) ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker {

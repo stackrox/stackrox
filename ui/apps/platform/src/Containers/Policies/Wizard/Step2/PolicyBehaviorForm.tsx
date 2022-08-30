@@ -195,6 +195,7 @@ function PolicyBehaviorForm() {
                     <FormGroup
                         fieldId="policy-event-source"
                         label="Event sources (Runtime lifecycle only)"
+                        isRequired={hasRuntime}
                     >
                         <Flex direction={{ default: 'row' }}>
                             <Radio

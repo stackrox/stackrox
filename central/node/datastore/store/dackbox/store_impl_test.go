@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	cveStore "github.com/stackrox/rox/central/cve/store"
 	cveDackBoxStore "github.com/stackrox/rox/central/cve/store/dackbox"
-	"github.com/stackrox/rox/central/node/datastore/internal/store"
+	"github.com/stackrox/rox/central/node/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
