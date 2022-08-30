@@ -7,8 +7,10 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/require"
 )
@@ -120,6 +122,196 @@ func testImages() []*storage.Image {
 					},
 				},
 				ScanTime: t2,
+			},
+		},
+	}
+}
+
+func testCluster() []*storage.Cluster {
+	mainImage := "docker.io/stackrox/rox:latest"
+	centralEndpoint := "central.stackrox:443"
+	return []*storage.Cluster{
+		{
+			Name:               "k8s_cluster1",
+			Type:               storage.ClusterType_KUBERNETES_CLUSTER,
+			MainImage:          mainImage,
+			CentralApiEndpoint: centralEndpoint,
+		},
+		{
+			Name:               "k8s_cluster2",
+			Type:               storage.ClusterType_KUBERNETES_CLUSTER,
+			MainImage:          mainImage,
+			CentralApiEndpoint: centralEndpoint,
+		},
+		{
+			Name:               "os_cluster1",
+			Type:               storage.ClusterType_OPENSHIFT_CLUSTER,
+			MainImage:          mainImage,
+			CentralApiEndpoint: centralEndpoint,
+		},
+		{
+			Name:               "os_cluster2",
+			Type:               storage.ClusterType_OPENSHIFT_CLUSTER,
+			MainImage:          mainImage,
+			CentralApiEndpoint: centralEndpoint,
+		},
+		{
+			Name:               "os4_cluster1",
+			Type:               storage.ClusterType_OPENSHIFT4_CLUSTER,
+			MainImage:          mainImage,
+			CentralApiEndpoint: centralEndpoint,
+		},
+		{
+			Name:               "os4_cluster2",
+			Type:               storage.ClusterType_OPENSHIFT4_CLUSTER,
+			MainImage:          mainImage,
+			CentralApiEndpoint: centralEndpoint,
+		},
+		{
+			Name:               "gen_cluster1",
+			Type:               storage.ClusterType_GENERIC_CLUSTER,
+			MainImage:          mainImage,
+			CentralApiEndpoint: centralEndpoint,
+		},
+		{
+			Name:               "gen_cluster2",
+			Type:               storage.ClusterType_GENERIC_CLUSTER,
+			MainImage:          mainImage,
+			CentralApiEndpoint: centralEndpoint,
+		},
+	}
+}
+
+func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
+	cveIds := []string{"clusterCve1", "clusterCve2", "clusterCve3", "clusterCve4", "clusterCve5"}
+	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
+	utils.CrashOnError(err)
+	t2, err := ptypes.TimestampProto(time.Unix(0, 2000))
+	utils.CrashOnError(err)
+	return []converter.ClusterCVEParts{
+		{
+			CVE: &storage.ClusterCVE{
+				Id:          cveIds[0],
+				Cvss:        4,
+				Severity:    storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+				Type:        storage.CVE_K8S_CVE,
+				CveBaseInfo: &storage.CVEInfo{CreatedAt: t1},
+			},
+			Children: []converter.EdgeParts{
+				{
+					Edge: &storage.ClusterCVEEdge{
+						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[0]}),
+						IsFixable:  true,
+						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.1"},
+						ClusterId:  clusterIDs[0],
+						CveId:      cveIds[0],
+					},
+					ClusterID: clusterIDs[0],
+				},
+			},
+		},
+		{
+			CVE: &storage.ClusterCVE{
+				Id:          cveIds[1],
+				Cvss:        5,
+				Severity:    storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+				Type:        storage.CVE_K8S_CVE,
+				CveBaseInfo: &storage.CVEInfo{CreatedAt: t1},
+			},
+			Children: []converter.EdgeParts{
+				{
+					Edge: &storage.ClusterCVEEdge{
+						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[1]}),
+						IsFixable:  false,
+						HasFixedBy: nil,
+						ClusterId:  clusterIDs[0],
+						CveId:      cveIds[1],
+					},
+					ClusterID: clusterIDs[0],
+				},
+				{
+					Edge: &storage.ClusterCVEEdge{
+						Id:         postgres.IDFromPks([]string{clusterIDs[1], cveIds[1]}),
+						IsFixable:  false,
+						HasFixedBy: nil,
+						ClusterId:  clusterIDs[1],
+						CveId:      cveIds[1],
+					},
+					ClusterID: clusterIDs[1],
+				},
+			},
+		},
+		{
+			CVE: &storage.ClusterCVE{
+				Id:          cveIds[2],
+				Cvss:        7,
+				Severity:    storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+				Type:        storage.CVE_K8S_CVE,
+				CveBaseInfo: &storage.CVEInfo{CreatedAt: t2},
+			},
+			Children: []converter.EdgeParts{
+				{
+					Edge: &storage.ClusterCVEEdge{
+						Id:         postgres.IDFromPks([]string{clusterIDs[1], cveIds[2]}),
+						IsFixable:  true,
+						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.2"},
+						ClusterId:  clusterIDs[1],
+						CveId:      cveIds[2],
+					},
+					ClusterID: clusterIDs[1],
+				},
+			},
+		},
+		{
+			CVE: &storage.ClusterCVE{
+				Id:          cveIds[3],
+				Cvss:        2,
+				Severity:    storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+				Type:        storage.CVE_K8S_CVE,
+				CveBaseInfo: &storage.CVEInfo{CreatedAt: t2},
+			},
+			Children: []converter.EdgeParts{
+				{
+					Edge: &storage.ClusterCVEEdge{
+						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[3]}),
+						IsFixable:  false,
+						HasFixedBy: nil,
+						ClusterId:  clusterIDs[0],
+						CveId:      cveIds[3],
+					},
+					ClusterID: clusterIDs[0],
+				},
+				{
+					Edge: &storage.ClusterCVEEdge{
+						Id:         postgres.IDFromPks([]string{clusterIDs[1], cveIds[3]}),
+						IsFixable:  true,
+						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.4"},
+						ClusterId:  clusterIDs[1],
+						CveId:      cveIds[3],
+					},
+					ClusterID: clusterIDs[1],
+				},
+			},
+		},
+		{
+			CVE: &storage.ClusterCVE{
+				Id:          cveIds[4],
+				Cvss:        2,
+				Severity:    storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+				Type:        storage.CVE_K8S_CVE,
+				CveBaseInfo: &storage.CVEInfo{CreatedAt: t1},
+			},
+			Children: []converter.EdgeParts{
+				{
+					Edge: &storage.ClusterCVEEdge{
+						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[4]}),
+						IsFixable:  false,
+						HasFixedBy: nil,
+						ClusterId:  clusterIDs[0],
+						CveId:      cveIds[4],
+					},
+					ClusterID: clusterIDs[0],
+				},
 			},
 		},
 	}
@@ -321,6 +513,10 @@ func getIDList(ctx context.Context, resolvers interface{}) []string {
 			list = append(list, string(r.Id(ctx)))
 		}
 	case []NodeComponentResolver:
+		for _, r := range res {
+			list = append(list, string(r.Id(ctx)))
+		}
+	case []ClusterVulnerabilityResolver:
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
