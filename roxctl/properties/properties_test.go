@@ -54,6 +54,14 @@ func (s *helpKeysTestSuite) TestNoDanglingHelpKeys() {
 
 	findDanglingHelpKeys(s.T(), c.Commands(), props)
 
+	// do not report dangling help-keys for disabled feature
+	if !features.RoxctlNetpolGenerate.Enabled() {
+		props.Delete("generate.short")
+		props.Delete("generate.long")
+		props.Delete("generate.netpol.short")
+		props.Delete("generate.netpol.long")
+	}
+
 	if len(props.Keys()) != 0 {
 		fmt.Println("Unused help keys: ")
 		for _, k := range props.Keys() {
