@@ -51,10 +51,6 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     });
     const [selectedComponents, setSelectedComponents] = useState([]);
     const { isModalOpen, openModal, closeModal } = useModal();
-    function showComponentDetails(components) {
-        setSelectedComponents(components);
-        openModal();
-    }
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
@@ -132,6 +128,37 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
             />
         );
     }
+
+    function showComponentDetails(components) {
+        const augmentedComponents = components.map((targetComponent) => {
+            console.log({ targetComponent });
+            console.log({ layers });
+            const line = layers.findIndex((layer) => {
+                return layer.components.some((layerComponent) => {
+                    return (
+                        layerComponent.name === targetComponent.name &&
+                        layerComponent.version === targetComponent.version
+                    );
+                });
+            });
+            console.log({ line });
+
+            if (line !== -1) {
+                console.log(`${line + 1} ${layers[line]?.instruction} ${layers[line]?.value}`);
+            }
+            return {
+                ...targetComponent,
+                dockerfileLine: {
+                    line: line + 1, // findIndex returns 0-based index number
+                    instruction: layers[line]?.instruction || '(no instruction)',
+                    value: layers[line]?.value || '',
+                },
+            };
+        });
+        setSelectedComponents(augmentedComponents);
+        openModal();
+    }
+
     const currentEntity = { [entityTypes.IMAGE]: data.id };
     const newEntityContext = { ...entityContext, ...currentEntity };
 
