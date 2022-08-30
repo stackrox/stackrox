@@ -198,6 +198,10 @@ func getTestImage(id string) *storage.Image {
 						{
 							Cve:               "cve1",
 							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 10,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
 						},
 						{
 							Cve:               "cve2",
@@ -205,6 +209,10 @@ func getTestImage(id string) *storage.Image {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "ver3",
 							},
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 1,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
 						},
 					},
 				},
@@ -218,10 +226,18 @@ func getTestImage(id string) *storage.Image {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "ver2",
 							},
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 10,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
 						},
 						{
 							Cve:               "cve2",
 							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 1,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
 						},
 					},
 				},

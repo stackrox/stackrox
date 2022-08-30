@@ -92,10 +92,11 @@ func insertIntoNodeComponents(ctx context.Context, batch *pgx.Batch, obj *storag
 		obj.GetPriority(),
 		obj.GetRiskScore(),
 		obj.GetTopCvss(),
+		obj.GetOperatingSystem(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO node_components (Id, Name, Version, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO node_components (Id, Name, Version, Priority, RiskScore, TopCvss, OperatingSystem, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -125,6 +126,8 @@ func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs 
 
 		"topcvss",
 
+		"operatingsystem",
+
 		"serialized",
 	}
 
@@ -150,6 +153,8 @@ func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs 
 			obj.GetRiskScore(),
 
 			obj.GetTopCvss(),
+
+			obj.GetOperatingSystem(),
 
 			serialized,
 		})

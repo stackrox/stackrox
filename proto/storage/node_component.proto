@@ -16,5 +16,5 @@ message NodeComponent {
   oneof set_top_cvss {
     float                        top_cvss         = 8 [(gogoproto.moretags) = 'search:"Component Top CVSS,store"'];
   }
-  string                         operating_system = 9;
+  string                         operating_system = 9 [(gogoproto.moretags) = 'search:"Operating System"'];
 }

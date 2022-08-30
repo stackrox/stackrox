@@ -93,10 +93,11 @@ func insertIntoImageComponents(ctx context.Context, batch *pgx.Batch, obj *stora
 		obj.GetSource(),
 		obj.GetRiskScore(),
 		obj.GetTopCvss(),
+		obj.GetOperatingSystem(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_components (Id, Name, Version, Priority, Source, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_components (Id, Name, Version, Priority, Source, RiskScore, TopCvss, OperatingSystem, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -128,6 +129,8 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs
 
 		"topcvss",
 
+		"operatingsystem",
+
 		"serialized",
 	}
 
@@ -155,6 +158,8 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs
 			obj.GetRiskScore(),
 
 			obj.GetTopCvss(),
+
+			obj.GetOperatingSystem(),
 
 			serialized,
 		})
