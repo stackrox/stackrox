@@ -68,9 +68,9 @@ export const selectors = {
                 tableModal: {
                     textInput: '[data-testid="table-modal-text-input"]',
                     openButton: '[data-testid="table-modal-open-button"]',
-                    firstRow: '[data-testid="table-modal-table"] tbody tr:nth(0)',
+                    firstRowName: '[data-testid="table-modal-table"] tbody tr:nth(0) a',
                     firstRowCheckbox:
-                        '[data-testid="table-modal-table"] .pf-c-table__check input[type="checkbox"]',
+                        '[data-testid="table-modal-table"] tbody .pf-c-table__check input[type="checkbox"]',
                     saveBtn: '[data-testid="table-modal-save-btn"]',
                     cancelBtn: '[data-testid="table-modal-cancel-btn"]',
                     emptyState: '[data-testid="table-modal-empty-state"]',
