@@ -1,8 +1,12 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 
-# Note: the following version needs to be in sync with the ../EXPECTED_GO_VERSION file.
+# NOTE 1: the following version needs to be in sync with the ../EXPECTED_GO_VERSION file.
 FROM golang:1.17.12 as builder
+# NOTE 2: Also, to keep CI from flakes, the above image needs to be mirrored into openshift CI registry
+# and the CI configured to use the mirrored image. See example PRs for how to achieve this:
+# - https://github.com/openshift/release/pull/31790/files
+# - https://github.com/openshift/release/pull/31791/files
 
 # Build the manager binary
 ARG roxpath
