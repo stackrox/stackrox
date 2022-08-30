@@ -314,7 +314,9 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, namespaceRanker *ranking.Ranker) search.Searcher {
 	scopedSearcher := pkgPostgres.WithScoping(namespaceSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher))
 	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.NamespacePriority, namespaceRanker)
-	return paginated.WithDefaultSortOption(prioritySortedSearcher, defaultSortOption)
+	// This is currently required due to the priority searcher
+	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
+	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 }
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider graph.Provider, namespaceRanker *ranking.Ranker) search.Searcher {
