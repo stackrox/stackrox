@@ -14,7 +14,9 @@ export GITHUB_SERVER_URL=https://github.com
 
 export main_branch=master
 
-export DRY_RUN=true
+if [ -z "$DRY_RUN" ]; then
+    export DRY_RUN=true
+fi
 
 SCRIPTS_ROOT="$(git rev-parse --show-toplevel)/.github/workflows/scripts"
 

@@ -3,6 +3,10 @@
 # Add an empty commit and delete the remote tag if the tag exists.
 # Tag and push the branch.
 #
+# Local wet run:
+#
+#   DRY_RUN=false bash local-env.sh tag-rc <tag>
+#
 set -euo pipefail
 
 TAG="$1"
