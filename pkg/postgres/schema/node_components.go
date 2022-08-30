@@ -23,6 +23,7 @@ var (
                    Priority integer,
                    RiskScore numeric,
                    TopCvss numeric,
+                   OperatingSystem varchar,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
@@ -59,11 +60,12 @@ const (
 
 // NodeComponents holds the Gorm model for Postgres table `node_components`.
 type NodeComponents struct {
-	Id         string  `gorm:"column:id;type:varchar;primaryKey"`
-	Name       string  `gorm:"column:name;type:varchar"`
-	Version    string  `gorm:"column:version;type:varchar"`
-	Priority   int64   `gorm:"column:priority;type:integer"`
-	RiskScore  float32 `gorm:"column:riskscore;type:numeric"`
-	TopCvss    float32 `gorm:"column:topcvss;type:numeric"`
-	Serialized []byte  `gorm:"column:serialized;type:bytea"`
+	Id              string  `gorm:"column:id;type:varchar;primaryKey"`
+	Name            string  `gorm:"column:name;type:varchar"`
+	Version         string  `gorm:"column:version;type:varchar"`
+	Priority        int64   `gorm:"column:priority;type:integer"`
+	RiskScore       float32 `gorm:"column:riskscore;type:numeric"`
+	TopCvss         float32 `gorm:"column:topcvss;type:numeric"`
+	OperatingSystem string  `gorm:"column:operatingsystem;type:varchar"`
+	Serialized      []byte  `gorm:"column:serialized;type:bytea"`
 }
