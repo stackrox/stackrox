@@ -34,7 +34,8 @@ func NewV2(storage store.Store, indexer index.Indexer, clusterRanker *ranking.Ra
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, clusterRanker *ranking.Ranker) search.Searcher {
 	scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(unsafeSearcher))
 	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.ClusterPriority, clusterRanker)
-	return paginated.WithDefaultSortOption(prioritySortedSearcher, defaultSortOption)
+	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
+	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 }
 
 type searcherImplV2 struct {
