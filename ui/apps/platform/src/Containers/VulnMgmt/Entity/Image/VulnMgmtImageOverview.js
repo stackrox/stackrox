@@ -49,6 +49,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: 'OBSERVED_CVES',
     });
+    const [selectedCveName, setSelectedCveName] = useState('');
     const [selectedComponents, setSelectedComponents] = useState([]);
     const { isModalOpen, openModal, closeModal } = useModal();
 
@@ -129,10 +130,8 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
         );
     }
 
-    function showComponentDetails(components) {
+    function showComponentDetails(components, cveName) {
         const augmentedComponents = components.map((targetComponent) => {
-            console.log({ targetComponent });
-            console.log({ layers });
             const line = layers.findIndex((layer) => {
                 return layer.components.some((layerComponent) => {
                     return (
@@ -141,11 +140,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     );
                 });
             });
-            console.log({ line });
 
-            if (line !== -1) {
-                console.log(`${line + 1} ${layers[line]?.instruction} ${layers[line]?.value}`);
-            }
             return {
                 ...targetComponent,
                 dockerfileLine: {
@@ -155,6 +150,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 },
             };
         });
+        setSelectedCveName(cveName);
         setSelectedComponents(augmentedComponents);
         openModal();
     }
@@ -209,6 +205,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                             Observed, Deferred, and False Postive CVEs tables */}
                         <div className="w-full">
                             <AffectedComponentsModal
+                                cveName={selectedCveName}
                                 isOpen={isModalOpen}
                                 components={selectedComponents}
                                 onClose={closeModal}

@@ -10,10 +10,11 @@ import useTableSort from 'hooks/patternfly/useTableSort';
 import { SortOption } from 'types/table';
 import ObservedCVEsTable from './ObservedCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
+import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 
 type ObservedCVEsProps = {
     imageId: string;
-    showComponentDetails: () => void;
+    showComponentDetails: (components: EmbeddedImageScanComponent[], cveName: string) => void;
 };
 
 const sortFields = ['Severity', 'CVSS', 'Discovered'];

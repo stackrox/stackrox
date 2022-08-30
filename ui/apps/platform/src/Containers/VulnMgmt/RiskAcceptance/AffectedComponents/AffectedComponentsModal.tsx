@@ -23,12 +23,14 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 
 export type AffectedComponentsModalProps = {
+    cveName: string;
     isOpen: boolean;
     components: EmbeddedImageScanComponent[];
     onClose: () => void;
 };
 
 function AffectedComponentsModal({
+    cveName = 'Unknown CVE',
     isOpen,
     components,
     onClose,
@@ -61,7 +63,7 @@ function AffectedComponentsModal({
     return (
         <Modal
             variant={ModalVariant.small}
-            title="Affected Components"
+            title={`Components affected by ${cveName}`}
             isOpen={isOpen}
             onClose={onCloseHandler}
         >
