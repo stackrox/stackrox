@@ -6,37 +6,60 @@ import (
 
 	"github.com/magiconair/properties"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/roxctl/help"
 	"github.com/stackrox/rox/roxctl/maincommand"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
+type helpKeysTestSuite struct {
+	suite.Suite
+	envIsolator *envisolator.EnvIsolator
+}
+
+func TestHelpKeys(t *testing.T) {
+	suite.Run(t, new(helpKeysTestSuite))
+}
+
+func (s *helpKeysTestSuite) SetupTest() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	s.envIsolator.Setenv(features.RoxctlNetpolGenerate.EnvVar(), "true")
+	testbuildinfo.SetForTest(s.T())
+}
+
+func (s *helpKeysTestSuite) TearDownTest() {
+	s.envIsolator.RestoreAll()
+}
+
 // TestHelpKeysExist tests that the short and long help key values exist for each command in the properties file
-func TestHelpKeysExist(t *testing.T) {
+func (s *helpKeysTestSuite) TestHelpKeysExist() {
 	c := maincommand.Command()
 
 	props, err := help.ReadProperties()
-	require.NoError(t, err)
+	require.NoError(s.T(), err)
 
-	checkHelp(t, c.Commands(), props)
+	checkHelp(s.T(), c.Commands(), props)
 }
 
 // TestNoDanglingHelpKeys tests that there are no unused key value pairs in the help properties file
-func TestNoDanglingHelpKeys(t *testing.T) {
+func (s *helpKeysTestSuite) TestNoDanglingHelpKeys() {
 	c := maincommand.Command()
 
 	props, err := help.ReadProperties()
-	require.NoError(t, err)
+	require.NoError(s.T(), err)
 
-	findDanglingHelpKeys(t, c.Commands(), props)
+	findDanglingHelpKeys(s.T(), c.Commands(), props)
 
 	if len(props.Keys()) != 0 {
 		fmt.Println("Unused help keys: ")
 		for _, k := range props.Keys() {
 			fmt.Println(k)
 		}
-		assert.Empty(t, props.Keys(), "found dangling property keys")
+		assert.Empty(s.T(), props.Keys(), "found dangling property keys")
 	}
 }
 
