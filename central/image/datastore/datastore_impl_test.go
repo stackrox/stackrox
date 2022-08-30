@@ -130,7 +130,8 @@ func (suite *ImageDataStoreTestSuite) TestSearch() {
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
 	}
-	suite.Equal(image, images[0])
+	expectedImage := cloneAndUpdateRiskPriority(image)
+	suite.Equal(expectedImage, images[0])
 
 	// Upsert new image.
 	newImage := getTestImage("id2")
@@ -246,4 +247,13 @@ func getTestImage(id string) *storage.Image {
 		RiskScore: 30,
 		Priority:  1,
 	}
+}
+
+func cloneAndUpdateRiskPriority(image *storage.Image) *storage.Image {
+	cloned := image.Clone()
+	cloned.Priority = 1
+	for _, component := range cloned.GetScan().GetComponents() {
+		component.Priority = 1
+	}
+	return cloned
 }
