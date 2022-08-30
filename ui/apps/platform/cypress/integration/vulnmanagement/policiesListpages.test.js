@@ -39,7 +39,8 @@ describe('Policies list Page and its entity detail page , related entities sub l
         it('should show Privileged criterion when present in the policy', () => {
             visitVulnerabilityManagementEntities('policies');
 
-            cy.get(`${selectors.tableRows}:contains('Privileged')`).click();
+            // Pulling policy "Fixable CVSS >= 6 and Privileged" and avoiding "Privileged Container(s) with Important and Critical CVE(s)"
+            cy.get(`${selectors.tableRows}:contains('and Privileged')`).click();
 
             cy.get(
                 `${policySelectors.step3.policyCriteria.groupCards}:contains("Privileged container status") ${policySelectors.step3.policyCriteria.value.radioGroupItem}:first button`
