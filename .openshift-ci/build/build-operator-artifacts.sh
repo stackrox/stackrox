@@ -25,7 +25,7 @@ build_operator_bundle_and_binary() {
     go mod download
 
     info "Preparing bundle sources and smuggled status.sh file"
-    # TODO(ROX-11889): get rid of the SILENT= once we gain some confidence (after release 3.72?)
+    # TODO(ROX-12346): get rid of the SILENT= once we gain some confidence (after release 3.72?)
     make -C operator bundle bundle-post-process smuggled-status-sh SILENT=
 
     info "Making a copy of the built bundle sources in a magically named directory that will be used instead of the bundle image."
@@ -38,7 +38,7 @@ build_operator_bundle_and_binary() {
     cp -a operator/build/bundle "${bundle_source_parent}/stackrox-operator-bundle:v$(make --quiet --no-print-directory -C operator tag)"
 
     info "Preparing bundle index sources"
-    # TODO(ROX-11889): get rid of the SILENT= once we gain some confidence (after release 3.72?)
+    # TODO(ROX-12346): get rid of the SILENT= once we gain some confidence (after release 3.72?)
     make -C operator index-build SKIP_INDEX_DOCKER_BUILD=--skip-build SILENT=
 }
 

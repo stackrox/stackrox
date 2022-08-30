@@ -2,7 +2,7 @@
 # Builds operator index image.
 
 set -eou pipefail
-# TODO(ROX-11889): Remove the -x once we gain some confidence (after 3.72 release?)
+# TODO(ROX-12346): Remove the -x once we gain some confidence (after 3.72 release?)
 set -x
 
 # Global script variables
