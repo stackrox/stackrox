@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -66,9 +67,9 @@ func (mr *MockIndexerMockRecorder) AddServiceAccounts(serviceaccounts interface{
 }
 
 // Count mocks base method.
-func (m *MockIndexer) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{q}
+	varargs := []interface{}{ctx, q}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
@@ -79,9 +80,9 @@ func (m *MockIndexer) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int,
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockIndexerMockRecorder) Count(q interface{}, opts ...interface{}) *gomock.Call {
+func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{q}, opts...)
+	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
 }
 
@@ -143,9 +144,9 @@ func (mr *MockIndexerMockRecorder) NeedsInitialIndexing() *gomock.Call {
 }
 
 // Search mocks base method.
-func (m *MockIndexer) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (m *MockIndexer) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{q}
+	varargs := []interface{}{ctx, q}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
@@ -156,8 +157,8 @@ func (m *MockIndexer) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]s
 }
 
 // Search indicates an expected call of Search.
-func (mr *MockIndexerMockRecorder) Search(q interface{}, opts ...interface{}) *gomock.Call {
+func (mr *MockIndexerMockRecorder) Search(ctx, q interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{q}, opts...)
+	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), varargs...)
 }

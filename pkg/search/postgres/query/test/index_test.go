@@ -33,7 +33,7 @@ type SingleIndexSuite struct {
 	pool    *pgxpool.Pool
 	store   postgres.Store
 	indexer interface {
-		Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+		Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
 	}
 }
 
@@ -105,12 +105,12 @@ func (s *SingleIndexSuite) TestDocIDs() {
 		s.Run(testCase.desc, func() {
 			so := search.NewSortOption(search.DocID)
 			q := search.NewQueryBuilder().AddDocIDs(testCase.docIDs...).WithPagination(search.NewPagination().AddSortOption(so)).ProtoQuery()
-			results, err := s.indexer.Search(q)
+			results, err := s.indexer.Search(ctx, q)
 			s.Require().NoError(err)
 			s.Equal(testCase.docIDs, search.ResultsToIDs(results))
 
 			q = search.NewQueryBuilder().AddDocIDs(testCase.docIDs...).WithPagination(search.NewPagination().AddSortOption(so.Reversed(true))).ProtoQuery()
-			results, err = s.indexer.Search(q)
+			results, err = s.indexer.Search(ctx, q)
 			s.Require().NoError(err)
 
 			sort.Sort(sort.Reverse(sort.StringSlice(testCase.docIDs)))
@@ -176,7 +176,7 @@ func (s *SingleIndexSuite) TestSearchAfter() {
 	} {
 		s.Run(testCase.desc, func() {
 			q := search.NewQueryBuilder().WithPagination(testCase.pagination).ProtoQuery()
-			results, err := s.indexer.Search(q)
+			results, err := s.indexer.Search(ctx, q)
 			s.Equal(testCase.valid, err == nil)
 			s.Equal(testCase.results, search.ResultsToIDs(results))
 		})

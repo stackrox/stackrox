@@ -79,7 +79,7 @@ func (s *AlertsIndexSuite) TestIndex() {
 	s.Equal(alert, foundAlert)
 
 	// Common alert searches
-	results, err := s.indexer.Search(search.NewQueryBuilder().AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).ProtoQuery())
+	results, err := s.indexer.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).ProtoQuery())
 	s.NoError(err)
 	s.Len(results, 1)
 
@@ -88,7 +88,7 @@ func (s *AlertsIndexSuite) TestIndex() {
 		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
 		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
 		ProtoQuery()
-	results, err = s.indexer.Search(q)
+	results, err = s.indexer.Search(ctx, q)
 	s.NoError(err)
 	s.Len(results, 1)
 }

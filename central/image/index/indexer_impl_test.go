@@ -74,28 +74,28 @@ func (suite *ImageIndexTestSuite) TearDownSuite() {
 
 func (suite *ImageIndexTestSuite) TestSearchImages() {
 	// No filter on either => should return everything.
-	results, err := suite.indexer.Search(search.EmptyQuery())
+	results, err := suite.indexer.Search(ctx, search.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(results, 4)
 
 	// Filter on only image properties => should work as expected.
 	q := search.NewQueryBuilder().AddStrings(search.ImageRegistry, "docker.io").ProtoQuery()
-	results, err = suite.indexer.Search(q)
+	results, err = suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Len(results, 3)
 
 	q = search.NewQueryBuilder().AddStrings(search.ImageLabel, "r/required-label.*=").ProtoQuery()
-	results, err = suite.indexer.Search(q)
+	results, err = suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
 	q = search.NewQueryBuilder().AddStrings(search.ImageLabel, "r/required-label.*=!r/required-value.*").ProtoQuery()
-	results, err = suite.indexer.Search(q)
+	results, err = suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Len(results, 0)
 
 	q = search.NewQueryBuilder().AddStrings(search.ImageLabel, "!required-label=").ProtoQuery()
-	results, err = suite.indexer.Search(q)
+	results, err = suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Len(results, 3)
 }

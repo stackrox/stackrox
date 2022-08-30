@@ -517,13 +517,13 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 }
 
 // RunSearchRequest executes a request against the database for given category
-func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) ([]searchPkg.Result, error) {
+func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) ([]searchPkg.Result, error) {
 	schema := mapping.GetTableFromCategory(category)
-	return RunSearchRequestForSchema(schema, q, db)
+	return RunSearchRequestForSchema(ctx, schema, q, db)
 }
 
 // RunSearchRequestForSchema executes a request against the database for given schema
-func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (searchResults []searchPkg.Result, err error) {
+func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (searchResults []searchPkg.Result, err error) {
 	var query *query
 	// Add this to be safe and convert panics to errors,
 	// since we do a lot of casting and other operations that could potentially panic in this code.
@@ -551,7 +551,7 @@ func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 	}
 
 	queryStr := query.AsSQL()
-	rows, err := db.Query(context.Background(), queryStr, query.Data...)
+	rows, err := db.Query(ctx, queryStr, query.Data...)
 	if err != nil {
 		debug.PrintStack()
 		log.Errorf("Query issue: %s %+v: %v", queryStr, query.Data, err)
@@ -632,13 +632,13 @@ func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 }
 
 // RunCountRequest executes a request for just the count against the database
-func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) (int, error) {
+func RunCountRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) (int, error) {
 	schema := mapping.GetTableFromCategory(category)
-	return RunCountRequestForSchema(schema, q, db)
+	return RunCountRequestForSchema(ctx, schema, q, db)
 }
 
 // RunCountRequestForSchema executes a request for just the count against the database
-func RunCountRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (int, error) {
+func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (int, error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, COUNT)
 	if err != nil || query == nil {
 		return 0, err
@@ -646,7 +646,7 @@ func RunCountRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.Po
 
 	queryStr := query.AsSQL()
 	var count int
-	row := db.QueryRow(context.Background(), queryStr, query.Data...)
+	row := db.QueryRow(ctx, queryStr, query.Data...)
 	if err := row.Scan(&count); err != nil {
 		debug.PrintStack()
 		log.Errorf("Query issue: %s %+v: %v", queryStr, query.Data, err)

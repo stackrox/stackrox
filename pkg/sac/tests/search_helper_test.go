@@ -49,7 +49,7 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 		},
 	})
 
-	mockSearchFunc := func(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+	mockSearchFunc := func(_ context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 		return []search.Result{
 			fakeResult("1", "cluster1", "nsA"),
 			fakeResult("2", "cluster1", "nsB"),
@@ -98,7 +98,7 @@ func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
 		},
 	})
 
-	mockSearchFunc := func(q *v1.Query, options ...blevesearch.SearchOption) ([]search.Result, error) {
+	mockSearchFunc := func(_ context.Context, q *v1.Query, options ...blevesearch.SearchOption) ([]search.Result, error) {
 		return []search.Result{
 			fakeResult("1", "cluster1", "nsA"),
 			fakeResult("2", "cluster1", "nsB"),
