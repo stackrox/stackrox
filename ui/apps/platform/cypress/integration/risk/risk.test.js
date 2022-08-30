@@ -22,7 +22,8 @@ describe('Risk page', () => {
 
             const priorityColumnHeadingSelector = `${RiskPageSelectors.table.columnHeaders}:contains("Priority")`;
 
-            // Initial table state is not sorted by priority.
+            // Initial table state does not indicate that it is sorted ascending by priority.
+            // TODO If possible, replace TableV2 with Table element in RiskTable component.
             cy.get(priorityColumnHeadingSelector)
                 .should('not.have.class', '-sort-asc')
                 .should('not.have.class', '-sort-desc');
@@ -34,7 +35,6 @@ describe('Risk page', () => {
                 '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=false'
             );
             // There is no request because response is sorted ascending.
-            // TODO If possible, replace TableV2 with Table element in RiskTable component.
 
             // Sort descending by priority.
             cy.get(priorityColumnHeadingSelector).click();
