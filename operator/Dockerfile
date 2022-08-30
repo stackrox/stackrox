@@ -6,7 +6,7 @@ FROM golang:1.17.12 as builder
 # NOTE 2: Also, to keep CI from flakes, the above image needs to be mirrored into openshift CI registry and the CI
 # configured to use the mirrored image instead of the specification above.
 # This is because pulling from docker.io/library/... (which is what happens with a bare image specification above) is
-# subject to rate limits that our CI tends to hit, causing intermittent build failres.
+# subject to rate limits that our CI tends to hit, causing intermittent build failures.
 #
 # Ideally, the mirroring and overrides for new image should be put in place first, and then once the above line is
 # updated, the old ones removed. But with some luck, doing it post-facto might also be possible without causing too
