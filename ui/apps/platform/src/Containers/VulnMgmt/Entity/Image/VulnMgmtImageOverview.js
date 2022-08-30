@@ -150,8 +150,8 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 ...targetComponent,
                 dockerfileLine: {
                     line: line + 1, // findIndex returns 0-based index number
-                    instruction: layers[line]?.instruction || '(no instruction)',
-                    value: layers[line]?.value || '',
+                    instruction: layers[line]?.instruction || '-',
+                    value: layers[line]?.value || '-',
                 },
             };
         });
