@@ -63,9 +63,9 @@ func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
 	case storage.VulnerabilityReportFilters_BOTH:
 		break
 	case storage.VulnerabilityReportFilters_FIXABLE:
-		conjuncts = append(conjuncts, search.NewQueryBuilder().AddExactMatches(search.Fixable, "true").Query())
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddBools(search.Fixable, true).Query())
 	case storage.VulnerabilityReportFilters_NOT_FIXABLE:
-		conjuncts = append(conjuncts, search.NewQueryBuilder().AddExactMatches(search.Fixable, "false").Query())
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddBools(search.Fixable, false).Query())
 	}
 
 	severities := make([]string, 0, len(vulnReportFilters.GetSeverities()))
