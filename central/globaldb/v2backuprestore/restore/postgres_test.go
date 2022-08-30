@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -15,7 +16,7 @@ import (
 )
 
 const (
-	restoreDB = "central_restore"
+	restoreDB = migrations.RestoreDatabase
 
 	// Database with no typical connections that will be used as a template in a create
 	adminDB = "template1"

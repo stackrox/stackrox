@@ -91,10 +91,9 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 		suite.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
 	}
 
-	config := suite.getTestSystemConfig()
-
 	cases := map[string]struct {
 		cluster  *storage.Cluster
+		config   *storage.Config
 		expected string
 	}{
 		"HEALTHY cluster": {
@@ -104,6 +103,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 					SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				},
 			},
+			config:   suite.getTestSystemConfig(60, 30, 7),
 			expected: "<nil>",
 		},
 		"UNHEALTHY cluster with label matching ignored labels": {
@@ -114,6 +114,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 				},
 			},
+			config:   suite.getTestSystemConfig(60, 30, 7),
 			expected: "is_excluded:true",
 		},
 		"UNHEALTHY cluster with last contact time after config creation time": {
@@ -125,6 +126,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 					LastContact:        suite.timeBeforeDays(10),
 				},
 			},
+			config:   suite.getTestSystemConfig(60, 30, 7),
 			expected: "days_until_deletion:50",
 		},
 		"UNHEALTHY cluster with last contact time before config creation time": {
@@ -136,7 +138,19 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 					LastContact:        suite.timeBeforeDays(80),
 				},
 			},
+			config:   suite.getTestSystemConfig(60, 30, 7),
 			expected: "days_until_deletion:30",
+		},
+		"UNHEALTHY cluster, cluster removal disabled": {
+			cluster: &storage.Cluster{
+				Id: "UNHEALTHY CLUSTER",
+				HealthStatus: &storage.ClusterHealthStatus{
+					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+					LastContact:        suite.timeBeforeDays(10),
+				},
+			},
+			config:   suite.getTestSystemConfig(0, 30, 7),
+			expected: "<nil>",
 		},
 	}
 
@@ -144,7 +158,9 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 		suite.Run(name, func() {
 			ps := probeSourcesMocks.NewMockProbeSources(suite.mockCtrl)
 			suite.dataStore.EXPECT().GetCluster(gomock.Any(), gomock.Any()).Times(1).Return(testCase.cluster, true, nil)
-			suite.sysConfigDatastore.EXPECT().GetConfig(gomock.Any()).AnyTimes().Return(config, nil)
+			if testCase.cluster.GetHealthStatus().GetSensorHealthStatus() == storage.ClusterHealthStatus_UNHEALTHY {
+				suite.sysConfigDatastore.EXPECT().GetConfig(gomock.Any()).Times(1).Return(testCase.config, nil)
+			}
 			clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
 
 			clusterID := &v1.ResourceByID{
@@ -152,7 +168,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 			}
 			result, err := clusterService.GetCluster(context.Background(), clusterID)
 			suite.NoError(err)
-			suite.Equal(strings.TrimSpace(result.GetClusterRetentionInfo().String()), testCase.expected)
+			suite.Equal(testCase.expected, strings.TrimSpace(result.GetClusterRetentionInfo().String()))
 		})
 	}
 }
@@ -167,7 +183,7 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 		suite.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
 	}
 
-	config := suite.getTestSystemConfig()
+	config := suite.getTestSystemConfig(60, 30, 7)
 
 	clusters := []*storage.Cluster{
 		{
@@ -230,18 +246,18 @@ func (suite *ClusterServiceTestSuite) timeBeforeDays(days int) *types.Timestamp 
 	return result
 }
 
-func (suite *ClusterServiceTestSuite) getTestSystemConfig() *storage.Config {
+func (suite *ClusterServiceTestSuite) getTestSystemConfig(retentionDays, createdBeforeDays, lastUpdatedBeforeDays int) *storage.Config {
 	return &storage.Config{
 		PrivateConfig: &storage.PrivateConfig{
 			DecommissionedClusterRetention: &storage.DecommissionedClusterRetentionConfig{
-				RetentionDurationDays: 60,
+				RetentionDurationDays: int32(retentionDays),
 				IgnoreClusterLabels: map[string]string{
 					"k1": "v1",
 					"k2": "v2",
 					"k3": "v3",
 				},
-				LastUpdated: suite.timeBeforeDays(7),
-				CreatedAt:   suite.timeBeforeDays(30),
+				LastUpdated: suite.timeBeforeDays(lastUpdatedBeforeDays),
+				CreatedAt:   suite.timeBeforeDays(createdBeforeDays),
 			},
 		},
 	}

@@ -268,3 +268,14 @@ func MetadataForResource(res permissions.Resource) (permissions.ResourceMetadata
 	}
 	return md, found
 }
+
+// MetadataForInternalResource returns the internal metadata for the given resource.
+// If the resource is unknown, metadata for this resource with global scope is returned.
+func MetadataForInternalResource(res permissions.Resource) (permissions.ResourceMetadata, bool) {
+	md, found := internalResourceToMetadata[res]
+	if !found {
+		md.Resource = res
+		md.Scope = permissions.GlobalScope
+	}
+	return md, found
+}

@@ -31,29 +31,6 @@ func (s orScopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	}
 }
 
-func (s orScopeChecker) PerformChecks(ctx context.Context) error {
-	var performChecksErrs *multierror.Error
-	for _, checker := range s.scopeCheckers {
-		err := checker.PerformChecks(ctx)
-		if err != nil {
-			performChecksErrs = multierror.Append(performChecksErrs, err)
-		}
-	}
-	return performChecksErrs.ErrorOrNil()
-}
-
-func (s orScopeChecker) TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult {
-	result := Deny
-	for _, checker := range s.scopeCheckers {
-		if res := checker.TryAllowed(subScopeKeys...); res == Allow {
-			return res
-		} else if res == Unknown {
-			result = Unknown
-		}
-	}
-	return result
-}
-
 func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error) {
 	var allowedErrs *multierror.Error
 	for _, checker := range s.scopeCheckers {
@@ -68,18 +45,6 @@ func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (
 	return false, allowedErrs.ErrorOrNil()
 }
 
-func (s orScopeChecker) TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult {
-	result := Deny
-	for _, checker := range s.scopeCheckers {
-		if res := checker.TryAnyAllowed(subScopeKeyss); res == Allow {
-			return res
-		} else if res == Unknown {
-			result = Unknown
-		}
-	}
-	return result
-}
-
 func (s orScopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
 	var anyAllowedErrs *multierror.Error
 	for _, checker := range s.scopeCheckers {
@@ -92,18 +57,6 @@ func (s orScopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeK
 		}
 	}
 	return false, anyAllowedErrs.ErrorOrNil()
-}
-
-func (s orScopeChecker) TryAllAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult {
-	result := Deny
-	for _, checker := range s.scopeCheckers {
-		if res := checker.TryAllAllowed(subScopeKeyss); res == Allow {
-			return res
-		} else if res == Unknown {
-			result = Unknown
-		}
-	}
-	return result
 }
 
 func (s orScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {

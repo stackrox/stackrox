@@ -24,12 +24,14 @@ func MoveNodeVulnsToNewField(node *storage.Node) {
 
 // EmbeddedVulnerabilityToNodeVulnerability converts a *storage.EmbeddedVulnerability object to a *storage.NodeVulnerability one.
 func EmbeddedVulnerabilityToNodeVulnerability(vuln *storage.EmbeddedVulnerability) *storage.NodeVulnerability {
-	return &storage.NodeVulnerability{
+	ret := &storage.NodeVulnerability{
 		CveBaseInfo: &storage.CVEInfo{
 			Cve:          vuln.GetCve(),
 			Summary:      vuln.GetSummary(),
 			Link:         vuln.GetLink(),
 			PublishedOn:  vuln.GetPublishedOn(),
+			CreatedAt:    vuln.GetFirstSystemOccurrence(),
+			LastModified: vuln.GetLastModified(),
 			CvssV3:       vuln.GetCvssV3(),
 			CvssV2:       vuln.GetCvssV2(),
 			ScoreVersion: cveInfoScoreVersion(vuln.GetScoreVersion()),
@@ -40,6 +42,12 @@ func EmbeddedVulnerabilityToNodeVulnerability(vuln *storage.EmbeddedVulnerabilit
 		SnoozeStart:  vuln.GetSuppressActivation(),
 		SnoozeExpiry: vuln.GetSuppressExpiry(),
 	}
+	if vuln.GetSetFixedBy() != nil {
+		ret.SetFixedBy = &storage.NodeVulnerability_FixedBy{
+			FixedBy: vuln.GetFixedBy(),
+		}
+	}
+	return ret
 }
 
 func cveInfoScoreVersion(scoreVersion storage.EmbeddedVulnerability_ScoreVersion) storage.CVEInfo_ScoreVersion {

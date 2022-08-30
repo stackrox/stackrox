@@ -1,7 +1,6 @@
 package authorizer
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
@@ -59,49 +58,49 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		name      string
 		roles     []permissions.ResolvedRole
 		scopeKeys []sac.ScopeKey
-		results   []sac.TryAllowedResult
+		results   []bool
 	}{
 		{
 			name:      "allow read from cluster with permissions",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
 			scopeKeys: readCluster(firstCluster.ID, resources.Cluster.Resource),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
+			results:   []bool{false, false, true},
 		},
 		{
 			name:      "allow cluster modification (e.g., creation) with permissions even if it does not exist yet",
 			roles:     []permissions.ResolvedRole{role(clusterEdit, rolePkg.AccessScopeIncludeAll)},
 			scopeKeys: scopeKeys(storage.Access_READ_WRITE_ACCESS, resources.Cluster.Resource, "unknown ID", ""),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Allow, sac.Allow, sac.Allow},
+			results:   []bool{false, true, true, true},
 		},
 		{
 			name:      "deny cluster view with permissions but no access scope if id does not exist",
 			roles:     []permissions.ResolvedRole{role(clusterEdit, withAccessTo1Cluster())},
 			scopeKeys: readCluster("unknown ID", resources.Cluster.Resource),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
+			results:   []bool{false, false, false},
 		},
 		{
 			name:      "deny cluster modification with permission to view",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
 			scopeKeys: scopeKeys(storage.Access_READ_WRITE_ACCESS, resources.Cluster.Resource, firstCluster.ID, ""),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+			results:   []bool{false, false, false, false},
 		},
 		{
 			name:      "deny read from cluster with no scope access",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
 			scopeKeys: readCluster(secondCluster.ID, resources.Cluster.Resource),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
+			results:   []bool{false, false, false},
 		},
 		{
 			name:      "allow read from compliance with permissions",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Cluster())},
 			scopeKeys: readCluster(firstCluster.ID, resources.Compliance.Resource),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
+			results:   []bool{false, false, true},
 		},
 		{
 			name:      "allow read from compliance with replacing resource permissions",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Cluster())},
 			scopeKeys: readCluster(firstCluster.ID, resources.ComplianceRuns.Resource),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
+			results:   []bool{false, false, true},
 		},
 		{
 			name: "allow read from namespace with multiple roles",
@@ -109,31 +108,37 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 				role(allResourcesView, withAccessTo1Namespace()),
 				role(allResourcesView, withAccessTo1Cluster())},
 			scopeKeys: readNamespace(firstCluster.ID, secondNamespaceName),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow, sac.Allow},
+			results:   []bool{false, false, true, true},
 		},
 		{
 			name:      "allow read from anything when scope unrestricted",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeIncludeAll)},
 			scopeKeys: readCluster("unknown ID", resources.Cluster.Resource),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Allow, sac.Allow},
+			results:   []bool{false, true, true},
 		},
 		{
 			name:      "deny read from anything when scope is nil",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, nil)},
 			scopeKeys: readCluster("unknown ID", resources.Cluster.Resource),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
+			results:   []bool{false, false, false},
 		},
 		{
 			name:      "deny read from anything when scope is empty",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{Id: "empty"})},
 			scopeKeys: readCluster(firstCluster.ID, resources.Cluster.Resource),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
+			results:   []bool{false, false, false},
 		},
 		{
 			name:      "deny read from anything when scope deny all",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeExcludeAll)},
 			scopeKeys: readCluster(firstCluster.ID, resources.Cluster.Resource),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
+			results:   []bool{false, false, false},
+		},
+		{
+			name:      "deny read from anything when scope deny all",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeExcludeAll)},
+			scopeKeys: []sac.ScopeKey{sac.AccessModeScopeKey(storage.Access_READ_ACCESS), sac.ResourceScopeKey(resources.InstallationInfo.Resource)},
+			results:   []bool{false, false},
 		},
 	}
 	for _, tc := range tests {
@@ -145,11 +150,8 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 			for i, scopeKey := range tc.scopeKeys {
 				scc = scc.SubScopeChecker(scopeKey)
 				expected := tc.results[i]
-				got := scc.TryAllowed()
+				got := scc.Allowed()
 				assert.Equalf(t, expected, got, "expected %d, got %d for scope %s, level [%d]", expected, got, scopeKey, i)
-				err := scc.PerformChecks(context.Background())
-				wantErr := expected == sac.Unknown
-				assert.Truef(t, (err != nil) == wantErr, "got %+v", err)
 			}
 			// The amount of "allowed" traces should equal the amount of
 			// expected Allow responses.
@@ -167,29 +169,29 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 	tests := []struct {
 		name      string
 		scopeKeys []sac.ScopeKey
-		results   []sac.TryAllowedResult
+		results   []bool
 	}{
 		{
 			name:      "allow read from cluster with partial access",
 			scopeKeys: readCluster(firstCluster.ID, resources.Cluster.Resource),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
+			results:   []bool{false, false, true},
 		},
 		{
 			name:      "allow read from namespace with direct access",
 			scopeKeys: readNamespace(firstCluster.ID, firstNamespaceName),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Allow},
+			results:   []bool{false, false, false, true},
 		},
 		{
 			name: "deny read from global",
 			scopeKeys: []sac.ScopeKey{
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 			},
-			results: []sac.TryAllowedResult{sac.Deny},
+			results: []bool{false},
 		},
 		{
 			name:      "error when wrong sub scope",
 			scopeKeys: sac.ClusterScopeKeys(firstCluster.ID),
-			results:   []sac.TryAllowedResult{sac.Unknown},
+			results:   []bool{},
 		},
 		{
 			name: "error when wrong sub scope",
@@ -197,7 +199,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKey("unknown resource"),
 			},
-			results: []sac.TryAllowedResult{sac.Deny, sac.Unknown},
+			results: []bool{false},
 		},
 		{
 			name: "error when wrong sub scope",
@@ -205,7 +207,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 				sac.ClusterScopeKey(firstCluster.ID),
 			},
-			results: []sac.TryAllowedResult{sac.Deny, sac.Unknown},
+			results: []bool{false},
 		},
 		{
 			name: "error when wrong sub scope",
@@ -214,7 +216,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 				sac.ResourceScopeKey(resources.Cluster.Resource),
 				sac.NamespaceScopeKey(firstNamespaceName),
 			},
-			results: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Unknown},
+			results: []bool{false, false},
 		},
 		{
 			name: "error when wrong sub scope",
@@ -224,17 +226,17 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 				sac.ClusterScopeKey(firstCluster.ID),
 				sac.ClusterScopeKey(secondCluster.ID),
 			},
-			results: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow, sac.Unknown},
+			results: []bool{false, false, true},
 		},
 		{
 			name:      "deny when unknown namespace",
 			scopeKeys: readNamespace(firstCluster.ID, "unknown ID"),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+			results:   []bool{false, false, false, false},
 		},
 		{
 			name:      "deny when empty namespace",
 			scopeKeys: readNamespace(firstCluster.ID, ""),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+			results:   []bool{false, false, false, false},
 		},
 		{
 			name: "allow when global scope resource",
@@ -242,7 +244,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKey(resources.APIToken.Resource),
 			},
-			results: []sac.TryAllowedResult{sac.Deny, sac.Allow},
+			results: []bool{false, true},
 		},
 	}
 	for _, tc := range tests {
@@ -250,14 +252,14 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			scc := subScopeChecker
-			assert.Len(t, tc.results, len(tc.scopeKeys), "results and scope keys must have same length")
 			for i, scopeKey := range tc.scopeKeys {
-				scc = scc.SubScopeChecker(scopeKey)
-				expected := tc.results[i]
-				assert.Equalf(t, expected, scc.TryAllowed(), "scope %s, level [%d]", scopeKey, i)
-				err := scc.PerformChecks(context.Background())
-				wantErr := expected == sac.Unknown
-				assert.Truef(t, (err != nil) == wantErr, "got %+v", err)
+				if i >= len(tc.results) {
+					assert.Panics(t, func() { scc.SubScopeChecker(scopeKey) })
+				} else {
+					scc = scc.SubScopeChecker(scopeKey)
+					expected := tc.results[i]
+					assert.Equalf(t, expected, scc.Allowed(), "scope %s, level [%d]", scopeKey, i)
+				}
 			}
 		})
 	}
@@ -651,8 +653,7 @@ func checkEffectiveAccessScope(t *testing.T, scc sac.ScopeCheckerCore, resource 
 func TestGlobalScopeCheckerCore(t *testing.T) {
 	t.Parallel()
 	scc := newGlobalScopeCheckerCore(nil, nil, nil, nil)
-	assert.Equal(t, nil, scc.PerformChecks(context.Background()))
-	assert.Equal(t, sac.Deny, scc.TryAllowed())
+	assert.Equal(t, false, scc.Allowed())
 }
 
 func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T) {
@@ -661,7 +662,7 @@ func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T)
 		name      string
 		roles     []permissions.ResolvedRole
 		scopeKeys []sac.ScopeKey
-		results   []sac.TryAllowedResult
+		results   []bool
 	}{
 		{
 			name: "error when could not compute effective access scope",
@@ -673,7 +674,7 @@ func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T)
 							{Key: "invalid key"},
 						}}}}})},
 			scopeKeys: readCluster(firstCluster.ID, resources.Cluster.Resource),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Unknown, sac.Unknown, sac.Unknown},
+			results:   []bool{false},
 		},
 	}
 	for _, tc := range tests {
@@ -683,14 +684,16 @@ func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T)
 			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, nil)
 			for i, scopeKey := range tc.scopeKeys {
 				scc = scc.SubScopeChecker(scopeKey)
-				expected := tc.results[i]
-				if expected == sac.Unknown && !buildinfo.ReleaseBuild {
-					assert.Panics(t, func() { scc.TryAllowed() })
+				if i >= len(tc.results) {
+					if !buildinfo.ReleaseBuild {
+						assert.Panics(t, func() { scc.Allowed() })
+					} else {
+						assert.Equal(t, false, scc.Allowed())
+					}
 				} else {
-					assert.Equal(t, expected, scc.TryAllowed())
+					expected := tc.results[i]
+					assert.Equal(t, expected, scc.Allowed())
 				}
-				err := scc.PerformChecks(context.Background())
-				assert.NoError(t, err)
 			}
 		})
 	}
@@ -766,10 +769,10 @@ func mapResourcesToAccess(res []permissions.ResourceWithAccess) map[string]stora
 	return idToAccess
 }
 
-func countAllowedResults(xs []sac.TryAllowedResult) int {
+func countAllowedResults(xs []bool) int {
 	result := 0
 	for _, x := range xs {
-		if x == sac.Allow {
+		if x == true {
 			result++
 		}
 	}

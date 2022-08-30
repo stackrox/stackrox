@@ -71,11 +71,11 @@ func (resolver *Resolver) SecretCount(ctx context.Context, args RawQuery) (int32
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.SecretsDataStore.Search(ctx, q)
+	count, err := resolver.SecretsDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 func (resolver *secretResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
@@ -119,11 +119,11 @@ func (resolver *secretResolver) DeploymentCount(ctx context.Context, args RawQue
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.root.DeploymentDataStore.Search(ctx, deploymentQuery)
+	count, err := resolver.root.DeploymentDataStore.Count(ctx, deploymentQuery)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 func (resolver *secretResolver) getDeploymentQuery(query *v1.Query) (*v1.Query, error) {

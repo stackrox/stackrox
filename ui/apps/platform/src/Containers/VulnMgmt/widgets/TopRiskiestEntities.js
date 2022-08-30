@@ -323,27 +323,40 @@ const getEntitiesByContext = (entityContext, showVmUpdates) => {
             });
         }
     } else {
-        if (entityContext === {} || !entityContext[entityTypes.NODE_COMPONENT]) {
+        if (
+            entityContext === {} ||
+            (!entityContext[entityTypes.NODE_COMPONENT] && !entityContext[entityTypes.IMAGE])
+        ) {
             entities.push({
                 label: 'Top Riskiest Node Components',
                 value: entityTypes.NODE_COMPONENT,
             });
         }
-        if (entityContext === {} || !entityContext[entityTypes.IMAGE_COMPONENT]) {
+        if (
+            entityContext === {} ||
+            (!entityContext[entityTypes.IMAGE_COMPONENT] && !entityContext[entityTypes.NODE])
+        ) {
             entities.push({
                 label: 'Top Riskiest Image Components',
                 value: entityTypes.IMAGE_COMPONENT,
             });
         }
     }
-    if (entityContext === {} || !entityContext[entityTypes.IMAGE] || entities.length === 0) {
+    if (
+        entityContext === {} ||
+        (!entityContext[entityTypes.IMAGE] && !entityContext[entityTypes.NODE]) ||
+        entities.length === 0
+    ) {
         // unshift so it sits at the front of the list (in case both entity types are added, image should come first)
         entities.unshift({
             label: 'Top Riskiest Images',
             value: entityTypes.IMAGE,
         });
     }
-    if (entityContext === {} || !entityContext[entityTypes.NODE]) {
+    if (
+        entityContext === {} ||
+        (!entityContext[entityTypes.NODE] && !entityContext[entityTypes.IMAGE])
+    ) {
         entities.push({
             label: 'Top Riskiest Nodes',
             value: entityTypes.NODE,

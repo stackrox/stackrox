@@ -59,7 +59,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	dbAuthz "github.com/stackrox/rox/central/globaldb/authz"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
-	"github.com/stackrox/rox/central/globaldb/v2backuprestore/restore"
 	backupRestoreService "github.com/stackrox/rox/central/globaldb/v2backuprestore/service"
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
@@ -170,6 +169,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/osutils"
+	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/sac"
@@ -242,32 +242,32 @@ func main() {
 
 	devmode.StartOnDevBuilds("central")
 
+	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
+	ensureDB()
+
+	// Need to remove the backup clone and set the current version
 	if features.PostgresDatastore.Enabled() {
 		sourceMap, config, err := pgconfig.GetPostgresConfig()
 		if err != nil {
 			log.Errorf("Unable to get Postgres DB config: %v", err)
-			return
 		}
-		// Check to see if a restore DB exists, if so use it.
-		if restore.CheckIfRestoreDBExists(config) {
-			// Now flip the restore DB to be the primary DB
-			err := restore.SwitchToRestoredDB(sourceMap, config)
-			if err != nil {
-				log.Errorf("Unable to switch to restored DB: %v", err)
-			}
+
+		err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
+		if err != nil {
+			log.Errorf("Failed to remove backup DB: %v", err)
 		}
+
+		migrations.SetCurrentVersionPostgres(globaldb.GetPostgres())
+
+	} else {
+		// Now that we verified that the DB can be loaded, remove the .backup directory
+		if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupClone())); err != nil {
+			log.Errorf("Failed to remove backup DB: %v", err)
+		}
+
+		// Update last associated software version on DBs.
+		migrations.SetCurrent(option.CentralOptions.DBPathBase)
 	}
-
-	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
-	ensureDB()
-
-	// Now that we verified that the DB can be loaded, remove the .backup directory
-	if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), ".backup")); err != nil {
-		log.Errorf("Failed to remove backup DB: %v", err)
-	}
-
-	// Update last associated software version on DBs.
-	migrations.SetCurrent(option.CentralOptions.DBPathBase)
 
 	// Start the prometheus metrics server
 	pkgMetrics.NewDefaultHTTPServer().RunForever()
@@ -672,13 +672,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/db/backup",
 			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), false),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), false)),
 			Compression:   true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/extensions/backup",
 			Authorizer:    user.WithRole(role.Admin),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), true),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), true)),
 			Compression:   true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
@@ -703,13 +703,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/db/backup",
 			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, false),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, false)),
 			Compression:   true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/extensions/backup",
 			Authorizer:    user.WithRole(role.Admin),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, true),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, true)),
 			Compression:   true,
 		})
 	}
@@ -750,6 +750,17 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 
 	customRoutes = append(customRoutes, debugRoutes()...)
 	return
+}
+
+func notImplementedOnManagedServices(fn http.Handler) http.Handler {
+	if !env.ManagedCentral.BooleanSetting() {
+		return fn
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		errMsg := "api is not supported in a managed central environment."
+		log.Error(errMsg)
+		http.Error(w, errMsg, http.StatusNotImplemented)
+	})
 }
 
 func debugRoutes() []routes.CustomRoute {

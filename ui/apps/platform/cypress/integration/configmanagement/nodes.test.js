@@ -11,6 +11,7 @@ import {
     sidePanelEntityCountMatchesTableRows,
 } from '../../helpers/configWorkflowUtils';
 import withAuth from '../../helpers/basicAuth';
+import { triggerScan } from '../../helpers/compliance';
 
 describe('Config Management Entities (Nodes)', () => {
     withAuth();
@@ -52,6 +53,8 @@ describe('Config Management Entities (Nodes)', () => {
     });
 
     it('should click on the controls count widget in the entity page and show the controls tab', () => {
+        triggerScan(); // because test assumes that scan results are available
+
         renderListAndSidePanel('nodes');
         navigateToSingleEntityPage('node');
         clickOnCountWidget('controls', 'entityList');

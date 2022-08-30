@@ -97,7 +97,7 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkEntity)
-	s.NoError(store.Delete(withNoAccessCtx, networkEntity.GetInfo().GetId()))
+	s.ErrorIs(store.Delete(withNoAccessCtx, networkEntity.GetInfo().GetId()), sac.ErrResourceAccessDenied)
 
 	var networkEntitys []*storage.NetworkEntity
 	for i := 0; i < 200; i++ {

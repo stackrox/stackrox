@@ -12,6 +12,11 @@ import (
 
 // Run runs the migrator.
 func Run(databases *types.Databases) error {
+	log.WriteToStderrf("In runner.Run")
+
+	// If Rocks and Bolt are passed into this function when Postgres is enabled, that means
+	// we are in a state where we need to migrate Rocks to Postgres.  In this case the Rocks
+	// sequence number will be returned and used to drive the migrations
 	dbSeqNum, err := getCurrentSeqNum(databases)
 	if err != nil {
 		return errors.Wrap(err, "getting current seq num")
@@ -39,10 +44,12 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 		if !ok {
 			return fmt.Errorf("no migration found starting at %d", seqNum)
 		}
+
 		err := migration.Run(databases)
 		if err != nil {
 			return errors.Wrapf(err, "error running migration starting at %d", seqNum)
 		}
+
 		err = updateVersion(databases, &migration.VersionAfter)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update version after migration %d", seqNum)

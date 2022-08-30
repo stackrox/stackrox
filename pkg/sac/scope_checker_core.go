@@ -1,24 +1,8 @@
 package sac
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
-)
-
-// TryAllowedResult represents the possible values of a `TryAllowed` call on an access scope checker.
-//
-//go:generate stringer -type=TryAllowedResult
-type TryAllowedResult int32
-
-const (
-	// Unknown indicates that the value is not known and must be resolved via a call to `PerformChecks`.
-	Unknown TryAllowedResult = iota
-	// Deny indicates that access to the given scope is not allowed.
-	Deny
-	// Allow indicates that access to the given scope is allowed.
-	Allow
 )
 
 // ScopeCheckerCore represents an interface for querying access to given scopes.
@@ -34,14 +18,8 @@ type ScopeCheckerCore interface {
 	// SubScopeChecker obtains an access scope checker for the access scope directly underneath
 	// this scope, keyed by the given key.
 	SubScopeChecker(scopeKey ScopeKey) ScopeCheckerCore
-	// TryAllowed checks if access to the scope being checked is allowed. If the result is `Unknown`, the
-	// attempt is recorded and the corresponding data will be queried in the next call to `PerformChecks`.
-	TryAllowed() TryAllowedResult
-	// PerformChecks queries the Authorization Plugin for the set of access scopes underneath (and including)
-	// this scope for which `TryAllowed` calls have returned `Unknown` previously.
-	// Note: Only scopes that have been obtained from this scope via a call to `SubScopeChecker` are guaranteed
-	// to be considered. Similarly, only requests made in the current goroutine are guaranteed to be considered.
-	PerformChecks(ctx context.Context) error
+	// Allowed checks if access to the scope being checked is allowed.
+	Allowed() bool
 	// EffectiveAccessScope returns effective access scope for given principal stored in context.
 	// If checker is not at resource level then it returns an error.
 	EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error)

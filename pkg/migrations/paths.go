@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/migrations/internal"
 	"github.com/stackrox/rox/pkg/utils"
@@ -13,8 +14,21 @@ import (
 const (
 	// Current is the current database in use.
 	Current = "current"
-	// PreviousReplica is the symbolic link pointing to the previous databases.
-	PreviousReplica = ".previous"
+	// PreviousClone is the symbolic link pointing to the previous databases.
+	PreviousClone = ".previous"
+	// BackupClone is the symbolic link pointing to the previous databases.
+	BackupClone = ".backup"
+	// RestoreClone is the symbolic link pointing to the restored database
+	RestoreClone = ".restore"
+
+	// CurrentDatabase - current database
+	CurrentDatabase = "central_active"
+	// PreviousDatabase - previous database
+	PreviousDatabase = "central_previous"
+	// BackupDatabase - backup database
+	BackupDatabase = "central_backup"
+	// RestoreDatabase - restore database
+	RestoreDatabase = "central_restore"
 )
 
 // DBMountPath is the directory path (within a container) where database storage device is mounted.
@@ -26,6 +40,38 @@ func DBMountPath() string {
 // databases and other migration related contents.
 func CurrentPath() string {
 	return filepath.Join(internal.DBMountPath, Current)
+}
+
+// GetCurrentClone - returns the current clone
+func GetCurrentClone() string {
+	if features.PostgresDatastore.Enabled() {
+		return CurrentDatabase
+	}
+	return Current
+}
+
+// GetBackupClone - returns the backup clone
+func GetBackupClone() string {
+	if features.PostgresDatastore.Enabled() {
+		return BackupDatabase
+	}
+	return BackupClone
+}
+
+// GetPreviousClone - returns the previous clone
+func GetPreviousClone() string {
+	if features.PostgresDatastore.Enabled() {
+		return PreviousDatabase
+	}
+	return PreviousClone
+}
+
+// GetRestoreClone - returns the restore clone
+func GetRestoreClone() string {
+	if features.PostgresDatastore.Enabled() {
+		return RestoreDatabase
+	}
+	return RestoreClone
 }
 
 // SafeRemoveDBWithSymbolicLink removes databases in path if it exists, it protects current database and remove only the databases that is not in use.

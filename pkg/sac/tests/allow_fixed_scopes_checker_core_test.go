@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -33,61 +34,61 @@ func TestAllowFixedScopes(t *testing.T) {
 
 	cases := []struct {
 		scope    []ScopeKey
-		expected TryAllowedResult
+		expected bool
 	}{
 		{
 			scope: []ScopeKey{
 				AccessModeScopeKey(storage.Access_READ_ACCESS),
 			},
-			expected: Deny,
+			expected: false,
 		},
 		{
 			scope: []ScopeKey{
 				AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS),
 			},
-			expected: Deny,
+			expected: false,
 		},
 		{
 			scope: []ScopeKey{
 				AccessModeScopeKey(storage.Access_READ_ACCESS),
 				ResourceScopeKey(resC.GetResource()),
 			},
-			expected: Deny,
+			expected: false,
 		},
 		{
 			scope: []ScopeKey{
 				AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS),
 				ResourceScopeKey(resC.GetResource()),
 			},
-			expected: Deny,
+			expected: false,
 		},
 		{
 			scope: []ScopeKey{
 				AccessModeScopeKey(storage.Access_READ_ACCESS),
 				ResourceScopeKey(resA.GetResource()),
 			},
-			expected: Allow,
+			expected: true,
 		},
 		{
 			scope: []ScopeKey{
 				AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS),
 				ResourceScopeKey(resA.GetResource()),
 			},
-			expected: Allow,
+			expected: true,
 		},
 		{
 			scope: []ScopeKey{
 				AccessModeScopeKey(storage.Access_READ_ACCESS),
 				ResourceScopeKey(resB.GetResource()),
 			},
-			expected: Allow,
+			expected: true,
 		},
 		{
 			scope: []ScopeKey{
 				AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS),
 				ResourceScopeKey(resB.GetResource()),
 			},
-			expected: Allow,
+			expected: true,
 		},
 		{
 			scope: []ScopeKey{
@@ -95,7 +96,7 @@ func TestAllowFixedScopes(t *testing.T) {
 				ResourceScopeKey(resC.GetResource()),
 				ClusterScopeKey("someCluster"),
 			},
-			expected: Deny,
+			expected: false,
 		},
 		{
 			scope: []ScopeKey{
@@ -103,7 +104,7 @@ func TestAllowFixedScopes(t *testing.T) {
 				ResourceScopeKey(resC.GetResource()),
 				ClusterScopeKey("someCluster"),
 			},
-			expected: Deny,
+			expected: false,
 		},
 		{
 			scope: []ScopeKey{
@@ -111,7 +112,7 @@ func TestAllowFixedScopes(t *testing.T) {
 				ResourceScopeKey(resA.GetResource()),
 				ClusterScopeKey("someCluster"),
 			},
-			expected: Allow,
+			expected: true,
 		},
 		{
 			scope: []ScopeKey{
@@ -119,7 +120,7 @@ func TestAllowFixedScopes(t *testing.T) {
 				ResourceScopeKey(resA.GetResource()),
 				ClusterScopeKey("someCluster"),
 			},
-			expected: Allow,
+			expected: true,
 		},
 		{
 			scope: []ScopeKey{
@@ -127,7 +128,7 @@ func TestAllowFixedScopes(t *testing.T) {
 				ResourceScopeKey(resB.GetResource()),
 				ClusterScopeKey("someCluster"),
 			},
-			expected: Allow,
+			expected: true,
 		},
 		{
 			scope: []ScopeKey{
@@ -135,21 +136,21 @@ func TestAllowFixedScopes(t *testing.T) {
 				ResourceScopeKey(resB.GetResource()),
 				ClusterScopeKey("someCluster"),
 			},
-			expected: Allow,
+			expected: true,
 		},
 		{
 			scope: []ScopeKey{
 				AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS),
 				ResourceScopeKey(*resB.GetReplacingResource()),
 			},
-			expected: Allow,
+			expected: true,
 		},
 		{
 			scope: []ScopeKey{
 				AccessModeScopeKey(storage.Access_READ_ACCESS),
 				ResourceScopeKey(*resB.GetReplacingResource()),
 			},
-			expected: Allow,
+			expected: true,
 		},
 		{
 			scope: []ScopeKey{
@@ -157,7 +158,7 @@ func TestAllowFixedScopes(t *testing.T) {
 				ResourceScopeKey(*resB.GetReplacingResource()),
 				ClusterScopeKey("someCluster"),
 			},
-			expected: Allow,
+			expected: true,
 		},
 		{
 			scope: []ScopeKey{
@@ -165,12 +166,14 @@ func TestAllowFixedScopes(t *testing.T) {
 				ResourceScopeKey(*resB.GetReplacingResource()),
 				ClusterScopeKey("someCluster"),
 			},
-			expected: Allow,
+			expected: true,
 		},
 	}
 
 	for _, c := range cases {
-		assert.Equal(t, c.expected, sc.TryAllowed(c.scope...), "expected result for scope %v to be %s", c.scope, c.expected)
+		allowed, err := sc.Allowed(context.Background(), c.scope...)
+		assert.NoError(t, err)
+		assert.Equal(t, c.expected, allowed, "expected result for scope %v to be %s", c.scope, c.expected)
 	}
 }
 

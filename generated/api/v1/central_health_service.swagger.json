@@ -80,7 +80,7 @@
         },
         "forceRollbackTo": {
           "type": "string",
-          "description": "The version of previous replica in Central. This is the version we can force rollback to."
+          "description": "The version of previous clone in Central. This is the version we can force rollback to."
         },
         "canRollbackAfterUpgrade": {
           "type": "boolean",

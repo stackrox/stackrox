@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type globalAccessScopeContextKey struct{}
@@ -13,7 +14,8 @@ type globalAccessScopeContextKey struct{}
 func GlobalAccessScopeChecker(ctx context.Context) ScopeChecker {
 	core, _ := ctx.Value(globalAccessScopeContextKey{}).(ScopeCheckerCore)
 	if core == nil {
-		core = ErrorAccessScopeCheckerCore(errors.New("global access scope was not found in context"))
+		utils.Must(errors.New("global access scope was not found in context"))
+		core = DenyAllAccessScopeChecker()
 	}
 	return NewScopeChecker(core)
 }

@@ -13,7 +13,7 @@ export const selectors = {
     resultsFoundHeader: (number) =>
         `h2:contains("${number} result${number === 1 ? '' : 's'} found")`,
     actions: {
-        btn: 'td.pf-c-table__action button',
+        btn: 'td.pf-c-table__action button[aria-label="Actions"]',
         excludeDeploymentBtn: 'button:contains("Exclude deployment")',
         resolveBtn: 'button:contains("Mark as resolved")',
         resolveAndAddToBaselineBtn: 'button:contains("Resolve and add to process baseline")',

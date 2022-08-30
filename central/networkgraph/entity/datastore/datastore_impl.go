@@ -59,7 +59,7 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 		sensorConnMgr: sensorConnMgr,
 	}
 
-	go ds.initNetworkTrees(context.TODO())
+	go ds.initNetworkTrees(sac.WithNoAccess(context.TODO()))
 	return ds
 }
 

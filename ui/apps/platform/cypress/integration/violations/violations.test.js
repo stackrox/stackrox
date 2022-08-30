@@ -1,5 +1,4 @@
 import { selectors } from '../../constants/ViolationsPage';
-import { selectors as PoliciesPageSelectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     clickDeploymentTabWithFixture,
@@ -88,7 +87,7 @@ describe('Violations page', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
         // Lifecycle: Runtime
-        cy.get(`${selectors.firstTableRow} ${selectors.actions.btn}`).click();
+        cy.get(`${selectors.firstTableRow} ${selectors.actions.btn}`).click(); // click kabob to open actions menu
         cy.get(selectors.firstTableRow)
             .get(selectors.actions.excludeDeploymentBtn)
             .should('exist')
@@ -96,12 +95,10 @@ describe('Violations page', () => {
             .should('exist')
             .get(selectors.actions.resolveAndAddToBaselineBtn)
             .should('exist');
-
-        // to click out and reset the actions dropdown
-        cy.get('body').type('{esc}');
+        cy.get(`${selectors.firstTableRow} ${selectors.actions.btn}`).click(); // click kabob to close actions menu
 
         // Lifecycle: Deploy
-        cy.get(`${selectors.lastTableRow} ${selectors.actions.btn}`).click();
+        cy.get(`${selectors.lastTableRow} ${selectors.actions.btn}`).click(); // click kabob to open actions menu
         cy.get(selectors.lastTableRow)
             .get(selectors.actions.resolveBtn)
             .should('not.exist')
@@ -109,6 +106,7 @@ describe('Violations page', () => {
             .should('not.exist')
             .get(selectors.actions.excludeDeploymentBtn)
             .should('exist');
+        cy.get(`${selectors.lastTableRow} ${selectors.actions.btn}`).click(); // click kabob to close actions menu
     });
 
     // TODO test of bulk actions
@@ -154,7 +152,10 @@ describe('Violations page', () => {
         visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
         cy.get(selectors.details.policyTab).click();
-        cy.get(PoliciesPageSelectors.policyDetailsPanel.detailsSection);
+        cy.get('h3:contains("Policy overview")');
+        cy.get('h3:contains("Policy behavior")');
+        cy.get('h3:contains("Policy criteria")');
+        // Conditionally rendered: Policy scope
     });
 
     it('should sort violations when clicking on a table header', () => {

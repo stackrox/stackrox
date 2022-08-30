@@ -65,5 +65,6 @@ if ! git diff-index --quiet HEAD; then
     fi
     # TODO: Add labels to skip CI runs
 
-    gh_log notice "Review and merge the [PR]($PR_URL) that has been created for the \`$main_branch\` branch with advanced \`CHANGELOG.md\`."
+    gh_summary ":arrow_right: Review and merge the [PR]($PR_URL)" \
+        "that has been created for the \`$main_branch\` branch with advanced \`CHANGELOG.md\`."
 fi
