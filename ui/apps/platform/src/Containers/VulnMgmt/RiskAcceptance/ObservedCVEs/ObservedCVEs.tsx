@@ -13,6 +13,7 @@ import useImageVulnerabilities from '../useImageVulnerabilities';
 
 type ObservedCVEsProps = {
     imageId: string;
+    showComponentDetails: () => void;
 };
 
 const sortFields = ['Severity', 'CVSS', 'Discovered'];
@@ -21,7 +22,7 @@ const defaultSortOption: SortOption = {
     direction: 'desc',
 };
 
-function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
+function ObservedCVEs({ imageId, showComponentDetails }: ObservedCVEsProps): ReactElement {
     const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
     const { sortOption, getSortParams } = useTableSort({
@@ -70,6 +71,7 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
             searchFilter={searchFilter}
             setSearchFilter={setSearchFilter}
             getSortParams={getSortParams}
+            showComponentDetails={showComponentDetails}
         />
     );
 }

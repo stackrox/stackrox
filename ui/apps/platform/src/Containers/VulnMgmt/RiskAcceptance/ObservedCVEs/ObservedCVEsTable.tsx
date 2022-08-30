@@ -4,6 +4,8 @@ import React, { ReactElement, useState } from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
 import {
     Bullseye,
+    Button,
+    ButtonVariant,
     Divider,
     DropdownItem,
     Flex,
@@ -30,10 +32,9 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { GetSortParams } from 'hooks/patternfly/useTableSort';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
-import { Vulnerability } from '../imageVulnerabilities.graphql';
+import { Vulnerability, EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 import useDeferVulnerability from './useDeferVulnerability';
 import useMarkFalsePositive from './useMarkFalsePositive';
-import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import PendingApprovalPopover from './PendingApprovalPopover';
 import CVESummaryLink from '../CVESummaryLink';
 import ImageVulnsSearchFilter from '../ImageVulnsSearchFilter';
@@ -55,6 +56,7 @@ export type ObservedCVEsTableProps = {
     searchFilter: SearchFilter;
     setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
     getSortParams: GetSortParams;
+    showComponentDetails: (components: EmbeddedImageScanComponent[]) => void;
 } & UsePaginationResult;
 
 function ObservedCVEsTable({
@@ -72,6 +74,7 @@ function ObservedCVEsTable({
     setSearchFilter,
     isLoading,
     getSortParams,
+    showComponentDetails,
 }: ObservedCVEsTableProps): ReactElement {
     const {
         selected,
@@ -279,7 +282,15 @@ function ObservedCVEsTable({
                                         <CVSSScoreLabel cvss={row.cvss} />
                                     </Td>
                                     <Td dataLabel="Affected components">
-                                        <AffectedComponentsButton components={row.components} />
+                                        <Button
+                                            variant={ButtonVariant.link}
+                                            isInline
+                                            onClick={() => {
+                                                showComponentDetails(row.components);
+                                            }}
+                                        >
+                                            {row.components.length} components
+                                        </Button>
                                     </Td>
                                     <Td dataLabel="Discovered">
                                         <DateTimeFormat time={row.discoveredAtImage} />

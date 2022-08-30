@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
 import { Card, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
@@ -17,7 +17,9 @@ import entityTypes from 'constants/entityTypes';
 import DateTimeField from 'Components/DateTimeField';
 import { entityToColumns } from 'constants/listColumns';
 import useTabs from 'hooks/patternfly/useTabs';
+import useModal from 'hooks/useModal';
 
+import AffectedComponentsModal from 'Containers/VulnMgmt/RiskAcceptance/AffectedComponents/AffectedComponentsModal';
 import DeferredCVEs from 'Containers/VulnMgmt/RiskAcceptance/DeferredCVEs';
 import ObservedCVEs from 'Containers/VulnMgmt/RiskAcceptance/ObservedCVEs';
 import FalsePositiveCVEs from 'Containers/VulnMgmt/RiskAcceptance/FalsePositiveCVEs';
@@ -47,6 +49,12 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: 'OBSERVED_CVES',
     });
+    const [selectedComponents, setSelectedComponents] = useState([]);
+    const { isModalOpen, openModal, closeModal } = useModal();
+    function showComponentDetails(components) {
+        setSelectedComponents(components);
+        openModal();
+    }
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
@@ -173,6 +181,11 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                         {/* TODO: replace these 3 repeated Fixable CVEs tabs with tabs for
                             Observed, Deferred, and False Postive CVEs tables */}
                         <div className="w-full">
+                            <AffectedComponentsModal
+                                isOpen={isModalOpen}
+                                components={selectedComponents}
+                                onClose={closeModal}
+                            />
                             <Card isFlat>
                                 <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
                                     <Tab
@@ -196,21 +209,30 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                     id="OBSERVED_CVES"
                                     hidden={activeKeyTab !== 'OBSERVED_CVES'}
                                 >
-                                    <ObservedCVEs imageId={data.id} />
+                                    <ObservedCVEs
+                                        imageId={data.id}
+                                        showComponentDetails={showComponentDetails}
+                                    />
                                 </TabContent>
                                 <TabContent
                                     eventKey="DEFERRED_CVES"
                                     id="DEFERRED_CVES"
                                     hidden={activeKeyTab !== 'DEFERRED_CVES'}
                                 >
-                                    <DeferredCVEs imageId={data.id} />
+                                    <DeferredCVEs
+                                        imageId={data.id}
+                                        showComponentDetails={showComponentDetails}
+                                    />
                                 </TabContent>
                                 <TabContent
                                     eventKey="FALSE_POSITIVE_CVES"
                                     id="FALSE_POSITIVE_CVES"
                                     hidden={activeKeyTab !== 'FALSE_POSITIVE_CVES'}
                                 >
-                                    <FalsePositiveCVEs imageId={data.id} />
+                                    <FalsePositiveCVEs
+                                        imageId={data.id}
+                                        showComponentDetails={showComponentDetails}
+                                    />
                                 </TabContent>
                             </Card>
                         </div>
