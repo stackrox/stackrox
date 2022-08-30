@@ -123,6 +123,33 @@ func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(err)
 	s.Len(results, 1)
 
+	// Sort by impact score
+	q = pkgSearch.EmptyQuery()
+	q.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field: pkgSearch.ImpactScore.String(),
+			},
+		},
+	}
+	results, err = s.cveDataStore.Search(ctx, q)
+	s.NoError(err)
+	s.Equal([]string{"cve2#blah", "cve1#blah"}, pkgSearch.ResultsToIDs(results))
+
+	// Sort by impact score: reversed
+	q = pkgSearch.EmptyQuery()
+	q.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    pkgSearch.ImpactScore.String(),
+				Reversed: true,
+			},
+		},
+	}
+	results, err = s.cveDataStore.Search(ctx, q)
+	s.NoError(err)
+	s.Equal([]string{"cve1#blah", "cve2#blah"}, pkgSearch.ResultsToIDs(results))
+
 	// Upsert new image.
 	newImage := getTestImage("id2")
 	newImage.GetScan().Components = append(newImage.GetScan().GetComponents(), &storage.EmbeddedImageScanComponent{
