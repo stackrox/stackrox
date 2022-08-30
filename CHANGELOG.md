@@ -36,8 +36,8 @@ authentication is still required for an email notifier, but the user can now cho
 - ROX-9614: Add `file` query parameter to Central's `/api/extensions/scannerdefinitions`, allowing retrieval of individual files (not directories) from Scanner's Definition bundle using their full path within the archive. Add `sensorEndpoint` to Scanner's configmap, so Scanner in slim mode knows how to reach Sensor from its cluster.
 - ROX-9928: Policy "OpenShift: Advanced Cluster Security Central Admin Secret Accessed" renamed to "OpenShift: Central Admin Secret Accessed"
 - ROX-8277: changed UserAgent Header for all requests from stackrox operator to kubernetes API server to show appropriate version of the operator, for example: `rhacs-operator/v3.70.0 opensource (linux/amd64)`
-- `ids` field in `/v1/cves/suppress` and `/v1/cves/unsuppress` API payload will be renamed to `cves` in 72.0 release.
-- `cves.ids` field of `storage.VulnerabilityRequest` object, which is in the response of `VulnerabilityRequestService` endpoints, will be renamed to `cves.cves` in 72.0 release.
+- `ids` field in `/v1/cves/suppress` and `/v1/cves/unsuppress` API payload will be renamed to `cves` in 73.0 release.
+- `cves.ids` field of `storage.VulnerabilityRequest` object, which is in the response of `VulnerabilityRequestService` endpoints, will be renamed to `cves.cves` in 73.0 release.
 - ROX-8520: Permissions for permission sets will be grouped for simplification. As a result, the following permissions will be deprecated in favor of a new permission:
   - New permission `Access` will deprecate the permissions `AuthPlugin, AuthProvider, Group, Licenses, Role, User`.
   - New permission `DeploymentExtension` will deprecate the permissions `Indicator, NetworkBaseline, ProcessWhitelist, Risk`.
