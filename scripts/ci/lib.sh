@@ -437,7 +437,7 @@ poll_for_system_test_images() {
     # Require images based on the job
     case "$CI_JOB_NAME" in
         *-operator-e2e-tests)
-            reqd_images=("stackrox-operator-controller" "stackrox-operator-bundle" "stackrox-operator-bundle-index" "main")
+            reqd_images=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index" "main")
             ;;
         *-race-condition-qa-e2e-tests)
             reqd_images=("main-rcd" "roxctl")
@@ -483,7 +483,7 @@ check_rhacs_eng_image_exists() {
     local name="$1"
     local tag="$2"
 
-    if [[ "$name" =~ stackrox-operator-bundle ]]; then
+    if [[ "$name" =~ stackrox-operator-(bundle|index) ]]; then
         tag="v$tag"
     elif [[ "$name" == "main-rcd" ]]; then
         name="main"
