@@ -56,7 +56,7 @@ push_images() {
     if [[ -n "${MAIN_RCD_IMAGE:-}" ]]; then
         push_race_condition_debug_image
     fi
-    # TODO(ROX-11889): make this unconditional once the openshift/release side is ready
+    # TODO(ROX-12041): make this unconditional once the openshift/release side is ready
     if [[ -n "${OPERATOR_IMAGE:-}" ]]; then
         if is_OPENSHIFT_CI && is_in_PR_context && pr_has_label "turbo-build"; then
             info "Operator images were built and pushed elsewhere, skipping it here."
