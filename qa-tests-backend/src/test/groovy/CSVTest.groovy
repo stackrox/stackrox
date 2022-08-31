@@ -152,10 +152,6 @@ class CSVTest extends BaseSpecification {
         }
     }
 
-    def isPostgresRun() {
-        return Env.CI_JOBNAME.contains("postgres")
-    }
-
     // Non-postgres runs
     // "CVE", "CVE Type(s)", "Fixable", "CVSS Score (version)", "Env Impact (%)", "Impact Score", "Deployments",
     // "Images", "Nodes", "Components", "Scanned", "Published", "Summary"
