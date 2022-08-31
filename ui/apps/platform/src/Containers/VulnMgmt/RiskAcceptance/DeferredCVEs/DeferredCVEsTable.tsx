@@ -44,7 +44,7 @@ export type DeferredCVEsTableProps = {
     searchFilter: SearchFilter;
     setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
     getSortParams: GetSortParams;
-    showComponentDetails: (components: EmbeddedImageScanComponent[]) => void;
+    showComponentDetails: (components: EmbeddedImageScanComponent[], cveName: string) => void;
 } & UsePaginationResult;
 
 function DeferredCVEsTable({
@@ -245,7 +245,7 @@ function DeferredCVEsTable({
                                             variant={ButtonVariant.link}
                                             isInline
                                             onClick={() => {
-                                                showComponentDetails(row.components);
+                                                showComponentDetails(row.components, row.cve);
                                             }}
                                         >
                                             {row.components.length} components

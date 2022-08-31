@@ -56,7 +56,7 @@ export type ObservedCVEsTableProps = {
     searchFilter: SearchFilter;
     setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
     getSortParams: GetSortParams;
-    showComponentDetails: (components: EmbeddedImageScanComponent[]) => void;
+    showComponentDetails: (components: EmbeddedImageScanComponent[], cveName: string) => void;
 } & UsePaginationResult;
 
 function ObservedCVEsTable({
@@ -286,7 +286,7 @@ function ObservedCVEsTable({
                                             variant={ButtonVariant.link}
                                             isInline
                                             onClick={() => {
-                                                showComponentDetails(row.components);
+                                                showComponentDetails(row.components, row.cve);
                                             }}
                                         >
                                             {row.components.length} components

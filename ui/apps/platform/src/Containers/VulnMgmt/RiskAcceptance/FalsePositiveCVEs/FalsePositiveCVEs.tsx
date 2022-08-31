@@ -14,7 +14,7 @@ import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 
 type FalsePositiveCVEsProps = {
     imageId: string;
-    showComponentDetails: (components: EmbeddedImageScanComponent[]) => void;
+    showComponentDetails: (components: EmbeddedImageScanComponent[], cveName: string) => void;
 };
 
 const sortFields = ['Severity'];
