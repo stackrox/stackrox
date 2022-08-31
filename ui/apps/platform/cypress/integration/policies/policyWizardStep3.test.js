@@ -1,4 +1,5 @@
 import { selectors } from '../../constants/PoliciesPagePatternFly';
+import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
 import {
@@ -382,6 +383,51 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                     });
                 cy.get(selectors.step3.policyCriteria.value.numberInput).type('10');
                 cy.get(selectors.step3.policyCriteria.value.numberInput).should('have.value', '10');
+            });
+        });
+
+        describe('table modal', () => {
+            beforeEach(() => {
+                cy.intercept('GET', api.integrations.signatureIntegrations, {
+                    fixture: 'integrations/signatureIntegrations.json',
+                }).as('getSignatureIntegrations');
+
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('trusted image signers')`
+                );
+                cy.wait('@getSignatureIntegrations');
+            });
+
+            it('should populate table modal select and respect changed values on save', () => {
+                cy.get(selectors.step3.policyCriteria.value.tableModal.textInput).should(
+                    'have.value',
+                    'Add trusted image signers'
+                );
+                cy.get(selectors.step3.policyCriteria.value.tableModal.openButton).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.firstRowCheckbox).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.saveBtn).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.textInput).should(
+                    'have.value',
+                    'Selected 1 trusted image signer'
+                );
+            });
+
+            it('should populate table modal select and not change values on cancel', () => {
+                cy.get(selectors.step3.policyCriteria.value.tableModal.openButton).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.firstRowCheckbox).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.cancelBtn).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.textInput).should(
+                    'have.value',
+                    'Add trusted image signers'
+                );
+            });
+
+            it('should go to link when table row is clicked', () => {
+                cy.get(selectors.step3.policyCriteria.value.tableModal.openButton).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.firstRowName).click();
+                cy.location('pathname').should('contain', 'signatureIntegrations');
             });
         });
     });

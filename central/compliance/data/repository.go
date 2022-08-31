@@ -288,7 +288,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 
 	alertQuery := search.ConjunctionQuery(
 		clusterQuery,
-		search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String(), storage.ViolationState_SNOOZED.String()).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String(), storage.ViolationState_SNOOZED.String()).ProtoQuery(),
 	)
 	alertQuery.Pagination = infPagination
 	r.unresolvedAlerts, err = f.alertStore.SearchListAlerts(ctx, alertQuery)

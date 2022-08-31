@@ -49,12 +49,9 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: 'OBSERVED_CVES',
     });
+    const [selectedCveName, setSelectedCveName] = useState('');
     const [selectedComponents, setSelectedComponents] = useState([]);
     const { isModalOpen, openModal, closeModal } = useModal();
-    function showComponentDetails(components) {
-        setSelectedComponents(components);
-        openModal();
-    }
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
@@ -132,6 +129,32 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
             />
         );
     }
+
+    function showComponentDetails(components, cveName) {
+        const augmentedComponents = components.map((targetComponent) => {
+            const line = layers.findIndex((layer) => {
+                return layer.components.some((layerComponent) => {
+                    return (
+                        layerComponent.name === targetComponent.name &&
+                        layerComponent.version === targetComponent.version
+                    );
+                });
+            });
+
+            return {
+                ...targetComponent,
+                dockerfileLine: {
+                    line: line + 1, // findIndex returns 0-based index number
+                    instruction: layers[line]?.instruction || '-',
+                    value: layers[line]?.value || '-',
+                },
+            };
+        });
+        setSelectedCveName(cveName);
+        setSelectedComponents(augmentedComponents);
+        openModal();
+    }
+
     const currentEntity = { [entityTypes.IMAGE]: data.id };
     const newEntityContext = { ...entityContext, ...currentEntity };
 
@@ -182,6 +205,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                             Observed, Deferred, and False Postive CVEs tables */}
                         <div className="w-full">
                             <AffectedComponentsModal
+                                cveName={selectedCveName}
                                 isOpen={isModalOpen}
                                 components={selectedComponents}
                                 onClose={closeModal}
