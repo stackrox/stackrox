@@ -43,6 +43,13 @@ func TestGraphQLClusterVulnerabilityEndpoints(t *testing.T) {
 
 /*
 Remaining TODO tasks:
+- SubResolvers:
+  - VulnerabilityType
+  - VulnerabilityTypes
+  - EnvImpact
+  - LastScanned
+  - Vectors
+- Double Nested SubResolver
 */
 
 type GraphQLClusterVulnerabilityTestSuite struct {
