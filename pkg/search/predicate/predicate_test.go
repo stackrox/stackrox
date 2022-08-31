@@ -352,7 +352,7 @@ func TestSearchPredicate(t *testing.T) {
 		{
 			name: "map query returns false for an empty map",
 			query: search.NewQueryBuilder().
-				AddMapQuery(search.Label, search.ExactMatchString("key"), search.ExactMatchString("value")).
+				AddMapQuery(search.DeploymentLabel, search.ExactMatchString("key"), search.ExactMatchString("value")).
 				ProtoQuery(),
 			factory:     deploymentFactory,
 			object:      deployment,

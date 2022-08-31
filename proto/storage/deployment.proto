@@ -24,8 +24,7 @@ message Deployment {
     string namespace_id                        = 23 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint"'];
     bool orchestrator_component                = 33 [(gogoproto.moretags) = 'search:"Orchestrator Component"'];
     int64 replicas                             = 6 [(gogoproto.moretags) = 'policy:"Replicas"'];
-    // TODO(ROX-6895): "Label" search term is ambiguous.
-    map<string, string> labels                 = 7 [(gogoproto.moretags) = 'search:"Label,store"'];
+    map<string, string> labels                 = 7 [(gogoproto.moretags) = 'search:"Deployment Label,store"'];
     map<string, string> pod_labels             = 19 [(gogoproto.moretags) = 'search:"Pod Label,store"'];
     LabelSelector label_selector               = 20;
     google.protobuf.Timestamp created          = 8 [(gogoproto.moretags) = 'search:"Created,store,hidden" hash:"ignore"'];

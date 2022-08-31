@@ -893,7 +893,7 @@ func (s *serviceImpl) makePolicyFromFieldMap(ctx context.Context, fieldMap map[s
 	var unconvertableFields []search.FieldLabel
 	policyGroupMap := make(map[string][]*storage.PolicyGroup)
 	for _, field := range sortedFieldLabels {
-		if field == search.Cluster || field == search.Namespace || field == search.Label {
+		if field == search.Cluster || field == search.Namespace || field == search.DeploymentLabel {
 			continue
 		}
 		searchTermPolicyGroup, fieldsDropped, converterExists := booleanpolicy.GetPolicyGroupFromSearchTerms(field, fieldMap[field])
@@ -959,7 +959,7 @@ func (s *serviceImpl) makeScopes(ctx context.Context, fieldMap map[search.FieldL
 	if !namespacesOk {
 		namespaces = []string{""}
 	}
-	labels, labelsOk := fieldMap[search.Label]
+	labels, labelsOk := fieldMap[search.DeploymentLabel]
 	if !labelsOk {
 		labels = []string{""}
 	}

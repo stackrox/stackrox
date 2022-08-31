@@ -14,8 +14,7 @@ message NamespaceMetadata {
     string                    name          = 2 [(gogoproto.moretags) = 'search:"Namespace,store"'];
     string                    cluster_id    = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint"'];
     string                    cluster_name  = 4 [(gogoproto.moretags) = 'search:"Cluster"'];
-    // TODO(ROX-6895): "Label" search term is ambiguous.
-    map<string, string>       labels        = 5 [(gogoproto.moretags) = 'search:"Label"'];
+    map<string, string>       labels        = 5 [(gogoproto.moretags) = 'search:"Namespace Label"'];
     google.protobuf.Timestamp creation_time = 6;
     int64                     priority      = 7;
     map<string, string>       annotations   = 8 [(gogoproto.moretags) = 'search:"Namespace Annotation"'];

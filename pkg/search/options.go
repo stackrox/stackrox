@@ -24,8 +24,6 @@ var (
 	ClusterID    = newFieldLabel("Cluster ID")
 	ClusterLabel = newFieldLabel("Cluster Label")
 	ClusterScope = newFieldLabel("Cluster Scope")
-	Label        = newFieldLabel("Label")
-	PodLabel     = newFieldLabel("Pod Label")
 
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")
@@ -107,6 +105,7 @@ var (
 	ContainerName                = newFieldLabel("Container Name")
 	DeploymentID                 = newFieldLabel("Deployment ID")
 	DeploymentName               = newFieldLabel("Deployment")
+	DeploymentLabel              = newFieldLabel("Deployment Label")
 	DeploymentType               = newFieldLabel("Deployment Type")
 	DropCapabilities             = newFieldLabel("Drop Capabilities")
 	EnvironmentKey               = newFieldLabel("Environment Key")
@@ -164,9 +163,10 @@ var (
 	Tag            = newFieldLabel("Tag")
 
 	// Pod Search fields
-	PodUID  = newFieldLabel("Pod UID")
-	PodID   = newFieldLabel("Pod ID")
-	PodName = newFieldLabel("Pod Name")
+	PodUID   = newFieldLabel("Pod UID")
+	PodID    = newFieldLabel("Pod ID")
+	PodName  = newFieldLabel("Pod Name")
+	PodLabel = newFieldLabel("Pod Label")
 
 	// ProcessIndicator Search fields
 	ProcessID        = newFieldLabel("Process ID")
@@ -202,6 +202,7 @@ var (
 	NamespaceID         = newFieldLabel("Namespace ID")
 	Namespace           = newFieldLabel("Namespace")
 	NamespaceAnnotation = newFieldLabel("Namespace Annotation")
+	NamespaceLabel      = newFieldLabel("Namespace Label")
 
 	// Role Search Fields
 	RoleID      = newFieldLabel("Role ID")
