@@ -32,6 +32,12 @@ const (
 	postgresTimeBetweenRetries = 10 * time.Second
 
 	getCloneStmt = "SELECT datname FROM pg_catalog.pg_database WHERE datname ~ '^%s_.*'"
+
+	// terminateConnectionStmt - terminates connections to the specified database
+	terminateConnectionStmt = "SELECT pg_terminate_backend(pg_stat_activity.pid) " +
+		"FROM pg_stat_activity " +
+		"WHERE datname = $1 " +
+		"AND pid <> pg_backend_pid();"
 )
 
 // DropDB - drops a database.
@@ -76,6 +82,13 @@ func CreateDB(sourceMap map[string]string, adminConfig *pgxpool.Config, dbTempla
 
 	SetPostgresCmdEnv(cmd, sourceMap, adminConfig)
 
+	// terminate connections to the source database.  You cannot copy from a database if
+	// there are open connections to it.
+	err := terminateConnection(adminConfig, dbTemplate)
+	if err != nil {
+		return err
+	}
+
 	log.Infof("%q has been created", dbName)
 	return ExecutePostgresCmd(cmd)
 }
@@ -86,9 +99,16 @@ func RenameDB(adminPool *pgxpool.Pool, originalDB, newDB string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), postgresQueryTimeout)
 	defer cancel()
 
+	// terminate connections to the source database.  You cannot move a database if
+	// there are open connections to it.
+	err := terminateConnection(adminPool.Config(), originalDB)
+	if err != nil {
+		return err
+	}
+
 	sqlStmt := fmt.Sprintf("ALTER DATABASE %s RENAME TO %s", originalDB, newDB)
 
-	_, err := adminPool.Exec(ctx, sqlStmt)
+	_, err = adminPool.Exec(ctx, sqlStmt)
 
 	return err
 }
@@ -165,6 +185,21 @@ func AnalyzeDatabase(config *pgxpool.Config, dbName string) error {
 	_, err := connectPool.Exec(context.Background(), "ANALYZE")
 
 	log.Debug("Anaylze done")
+	return err
+}
+
+// terminateConnection - terminates connections to the specified database
+func terminateConnection(config *pgxpool.Config, dbName string) error {
+	log.Debugf("terminateConnection - %q", dbName)
+
+	// Connect to different database for admin functions
+	connectPool := GetAdminPool(config)
+	// Close the admin connection pool
+	defer connectPool.Close()
+
+	_, err := connectPool.Exec(context.Background(), terminateConnectionStmt, dbName)
+
+	log.Debug("terminateConnection done")
 	return err
 }
 
