@@ -1,6 +1,7 @@
 package syslog
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 )
 
 const (
@@ -85,15 +87,13 @@ func validateRemoteConfig(endpointConfig *storage.Syslog_TCPConfig) (string, err
 
 func (s *tcpSender) dialWithRetry() (net.Conn, error) {
 	// Get a non-tls dialFunc
-	dialer := &net.Dialer{
-		Timeout: timeout,
-	}
-	dialFunc := dialer.DialContext
+	tcpDialFunc := proxy.AwareDialContext
 	// If we're using TLS upgrade to a TLS dialFunc
 	if s.useTLS {
 		tlsConfig := &tls.Config{InsecureSkipVerify: s.skipTLSVerify}
-		tlsDialer := &tls.Dialer{NetDialer: dialer, Config: tlsConfig}
-		dialFunc = tlsDialer.DialContext
+		tcpDialFunc = func(ctx context.Context, addr string) (net.Conn, error) {
+			return proxy.AwareDialContextTLS(ctx, addr, tlsConfig)
+		}
 	}
 
 	// Create a retryable dial func, returning a permanent error if the stop signal has signaled.
@@ -101,7 +101,9 @@ func (s *tcpSender) dialWithRetry() (net.Conn, error) {
 	var conn net.Conn
 	dial := func() error {
 		var err error
-		conn, err = dialFunc(ctx, "tcp", s.fullHostname)
+		dialCtx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+		conn, err = tcpDialFunc(dialCtx, s.fullHostname)
 		return err
 	}
 

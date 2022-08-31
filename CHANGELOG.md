@@ -7,6 +7,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 - ROX-11348: The email notifier now allows for unauthenticated SMTP. By default, 
 authentication is still required for an email notifier, but the user can now choose to turn it off.
+- Previously, the syslog integration did not respect a configured TCP proxy. This is now fixed.
 
 ### Removed Features
 - ROX-11784: The `RenamePolicyCategory` and `DeletePolicyCategory` methods in the
