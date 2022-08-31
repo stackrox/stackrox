@@ -50,6 +50,8 @@ func Sync(t *testing.T, mgr manager.Manager) {
 	}
 	require.True(t, mgr.IsReady())
 
+	mgr.InitialResourceSyncSig().Reset()
+
 	mgr.ResourceUpdatesC() <- &sensor.AdmCtrlUpdateResourceRequest{
 		Resource: &sensor.AdmCtrlUpdateResourceRequest_Synced{
 			Synced: &sensor.AdmCtrlUpdateResourceRequest_ResourcesSynced{},
