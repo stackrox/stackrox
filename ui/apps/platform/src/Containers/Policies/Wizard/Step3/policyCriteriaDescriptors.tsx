@@ -10,6 +10,7 @@ import {
     severityRatings,
 } from 'messages/common';
 import { FeatureFlagEnvVar } from 'types/featureFlag';
+import ImageSigningTableModal from 'Containers/Policies/Wizard/Step3/ImageSigningTableModal';
 
 const equalityOptions: DescriptorOption[] = [
     { label: 'Is greater than', value: '>' },
@@ -189,7 +190,7 @@ export type DescriptorType =
     | 'radioGroupString'
     | 'select'
     | 'text'
-    | 'signaturePolicyCriteria';
+    | 'tableModal';
 
 export type Descriptor =
     | GroupDescriptor
@@ -197,10 +198,12 @@ export type Descriptor =
     | RadioGroupDescriptor
     | SelectDescriptor
     | TextDescriptor
-    | SignatureDescriptor;
+    | TableModalDescriptor;
 
-export type SignatureDescriptor = {
-    type: 'signaturePolicyCriteria';
+export type TableModalDescriptor = {
+    type: 'tableModal';
+    component: React.ReactNode;
+    tableType: string;
 } & BaseDescriptor;
 
 export type GroupDescriptor = {
@@ -272,7 +275,9 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         shortName: 'Not verified by trusted image signers',
         longName: 'Not verified by trusted image signers',
         category: policyCriteriaCategories.IMAGE_REGISTRY,
-        type: 'signaturePolicyCriteria',
+        type: 'tableModal',
+        tableType: 'imageSigning',
+        component: ImageSigningTableModal,
         canBooleanLogic: true,
     },
     {

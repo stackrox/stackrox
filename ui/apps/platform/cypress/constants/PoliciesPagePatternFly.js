@@ -65,6 +65,16 @@ export const selectors = {
                 negateCheckbox: '[data-testid="policy-criteria-value-negate-checkbox"]',
                 multiselect: '[data-testid="policy-criteria-value-multiselect"]',
                 multiselectOption: '[data-testid="policy-criteria-value-multiselect-option"]',
+                tableModal: {
+                    textInput: '[data-testid="table-modal-text-input"]',
+                    openButton: '[data-testid="table-modal-open-button"]',
+                    firstRowName: '[data-testid="table-modal-table"] tbody tr:nth(0) a',
+                    firstRowCheckbox:
+                        '[data-testid="table-modal-table"] tbody .pf-c-table__check input[type="checkbox"]',
+                    saveBtn: '[data-testid="table-modal-save-btn"]',
+                    cancelBtn: '[data-testid="table-modal-cancel-btn"]',
+                    emptyState: '[data-testid="table-modal-empty-state"]',
+                },
                 addBtn: '[data-testid="add-policy-criteria-value-btn"]',
                 deleteBtn: '[data-testid="delete-policy-criteria-value-btn"]',
             },
