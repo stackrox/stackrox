@@ -17,6 +17,7 @@ var log = logging.LoggerForModule()
 //////////////////////////////////////////////////////////////////////////////////////
 
 // MetricsStore persists a measurement of ClusterMetrics.
+//
 //go:generate mockgen-wrapper
 type MetricsStore interface {
 	Set(string, *central.ClusterMetrics)

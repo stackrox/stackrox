@@ -7,6 +7,7 @@ import (
 )
 
 // AlertNotifier is a notifier for active alerts
+//
 //go:generate mockgen-wrapper AlertNotifier
 type AlertNotifier interface {
 	Notifier

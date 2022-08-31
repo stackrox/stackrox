@@ -9,9 +9,11 @@ import (
 // func(elemType) returnElemType OR a func(*elemType) returnElemType.
 // It returns a []returnElemType.
 // Example usage:
-// Map([]string{"a", "b", "cd"}, func(s string) int {
-//   return len(s)
-// })
+//
+//	Map([]string{"a", "b", "cd"}, func(s string) int {
+//	  return len(s)
+//	})
+//
 // will return []int{1, 1, 2}.
 // Note that the predicate could also be a func(s *string) int if you want to avoid copying.
 // This function will automatically pass pointers to each slice element if you pass such a function.

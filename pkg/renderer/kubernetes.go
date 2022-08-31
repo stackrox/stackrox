@@ -22,6 +22,7 @@ func init() {
 }
 
 // mode is the mode we want the renderer to function in.
+//
 //go:generate stringer -type=mode
 type mode int
 

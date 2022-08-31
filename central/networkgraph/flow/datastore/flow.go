@@ -9,6 +9,7 @@ import (
 )
 
 // FlowDataStore stores all of the flows for a single cluster.
+//
 //go:generate mockgen-wrapper
 type FlowDataStore interface {
 	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)

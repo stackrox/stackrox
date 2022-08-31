@@ -255,8 +255,8 @@ func (root *ScopeTree) populateStateForCluster(cluster *storage.Cluster, cluster
 // included directly.
 //
 // For MINIMAL level of detail, delete from the tree:
-//   * subtrees *with roots* in the Excluded state,
-//   * subtrees *of nodes* in the Included state.
+//   - subtrees *with roots* in the Excluded state,
+//   - subtrees *of nodes* in the Included state.
 func (root *ScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	deleteUnnecessaryNodes := detail == v1.ComputeEffectiveAccessScopeRequest_MINIMAL
 	for clusterName, cluster := range root.Clusters {

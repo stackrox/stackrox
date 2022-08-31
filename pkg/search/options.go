@@ -405,6 +405,7 @@ type DerivedFieldLabelMetadata struct {
 }
 
 // DerivationType represents a type of derivation.
+//
 //go:generate stringer -type=DerivationType
 type DerivationType int
 

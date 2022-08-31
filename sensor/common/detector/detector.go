@@ -41,6 +41,7 @@ var (
 )
 
 // Detector is the sensor component that syncs policies from Central and runs detection
+//
 //go:generate mockgen-wrapper
 type Detector interface {
 	common.SensorComponent

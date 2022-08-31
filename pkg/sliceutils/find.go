@@ -23,9 +23,11 @@ func Find(slice interface{}, elem interface{}) int {
 // FindMatching returns the first index of slice where the passed predicate -- which must be a
 // func(elemType) bool OR a func(*elemType) bool -- returns true, or -1 if it doesn't return true for any element.
 // Example usage:
-// FindMatching([]string{"a", "b", "cd"}, func(s string) bool {
-//   return len(s) > 1
-// })
+//
+//	FindMatching([]string{"a", "b", "cd"}, func(s string) bool {
+//	  return len(s) > 1
+//	})
+//
 // will return 2.
 // Note that the predicate could also be a func(s *string) bool if you want to avoid copying.
 // This function will automatically pass pointers to each slice element if you pass such a predicate.

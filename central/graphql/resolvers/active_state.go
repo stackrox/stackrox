@@ -7,6 +7,7 @@ import (
 )
 
 // ActiveStateEnum represents the active state of a vuln or component in a deployment.
+//
 //go:generate stringer -type=ActiveStateEnum
 type ActiveStateEnum int32
 

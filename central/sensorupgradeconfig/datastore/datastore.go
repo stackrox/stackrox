@@ -9,6 +9,7 @@ import (
 )
 
 // DataStore is the datastore for the sensor upgrade config.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetSensorUpgradeConfig(context.Context) (*storage.SensorUpgradeConfig, error)

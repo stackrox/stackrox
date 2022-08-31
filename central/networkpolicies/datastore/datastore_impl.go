@@ -160,7 +160,7 @@ func (ds *datastoreImpl) UpsertUndoRecord(ctx context.Context, undoRecord *stora
 }
 
 // UndoDeploymentDataStore functionality.
-///////////////////////////////
+// /////////////////////////////
 func (ds *datastoreImpl) GetUndoDeploymentRecord(ctx context.Context, deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error) {
 	undoRecord, found, err := ds.undoDeploymentStorage.Get(ctx, deploymentID)
 	if err != nil || !found {

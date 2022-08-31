@@ -29,10 +29,13 @@ func Timeout(duration time.Duration) WaitableChan {
 //
 // select {
 // case <-sig.Done():
-//   ... happy path ...
+//
+//	... happy path ...
+//
 // case <-TimeoutOr(timeoutDuration, &sig):
-//   ... oh no, a timeout ...
-// }
+//
+//	  ... oh no, a timeout ...
+//	}
 //
 // Due to the non-deterministic nature of select, a trigger might otherwise show up as a timeout, and only checking
 // `sig.Done()` would allow a user to distinguish the two.

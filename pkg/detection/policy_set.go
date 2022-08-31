@@ -10,6 +10,7 @@ var (
 )
 
 // PolicySet is a set of policies.
+//
 //go:generate mockgen-wrapper
 type PolicySet interface {
 	ForOne(policyID string, f func(CompiledPolicy) error) error

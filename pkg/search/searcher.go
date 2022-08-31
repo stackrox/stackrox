@@ -7,6 +7,7 @@ import (
 )
 
 // Searcher allows you to search objects.
+//
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]Result, error)

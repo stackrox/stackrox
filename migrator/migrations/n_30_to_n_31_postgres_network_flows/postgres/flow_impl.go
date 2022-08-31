@@ -70,12 +70,12 @@ var (
 )
 
 /*
-type FlowStore interface {
-	// GetAllFlows The methods below are the ones that match the flow interface which is what we probably have to match.
-	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
-	// UpsertFlows Same as other Upserts but it takes in a time
-	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
-}
+	type FlowStore interface {
+		// GetAllFlows The methods below are the ones that match the flow interface which is what we probably have to match.
+		GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
+		// UpsertFlows Same as other Upserts but it takes in a time
+		UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
+	}
 */
 type flowStoreImpl struct {
 	db        *pgxpool.Pool

@@ -7,6 +7,7 @@ import (
 )
 
 // Store provides storage functionality for network baselines.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	Exists(ctx context.Context, id string) (bool, error)

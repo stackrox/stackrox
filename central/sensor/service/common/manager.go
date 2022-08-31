@@ -31,6 +31,7 @@ type NetworkBaselineManager interface {
 }
 
 // NetworkEntityManager implements an interface to retrieve network entities.
+//
 //go:generate mockgen-wrapper
 type NetworkEntityManager interface {
 	GetAllEntitiesForCluster(ctx context.Context, clusterID string) ([]*storage.NetworkEntity, error)

@@ -60,42 +60,49 @@ func (j *JUnitPrinterFactory) SupportedFormats() []string {
 // GJSON's syntax expression to read more about modifiers.
 // The following example illustrates a JSON compatible structure and an example for the map of JSON Path expressions
 // JSON structure:
-// type data struct {
-//		Policies []policy `json:"policies"`
-//		FailedPolicies []failedPolicy `json:"failedPolicies"`
-// }
-// type policy struct {
-//		name string `json:"name"`
-//		severity string `json:"severity"`
-// }
-// type failedPolicy struct {
-//		name string `json:"name"`
-//		error string `json:"error"`
-// }
+//
+//	type data struct {
+//			Policies []policy `json:"policies"`
+//			FailedPolicies []failedPolicy `json:"failedPolicies"`
+//	}
+//
+//	type policy struct {
+//			name string `json:"name"`
+//			severity string `json:"severity"`
+//	}
+//
+//	type failedPolicy struct {
+//			name string `json:"name"`
+//			error string `json:"error"`
+//	}
+//
 // Data:
-// data := &data{Policies: []policy{
-//								{name: "policy1", severity: "HIGH"},
-//								{name: "policy2", severity: "LOW"},
-//								{name: "policy3", severity: "MEDIUM"}
-//								},
-//				 FailedPolicies: []failedPolicy{
-//								{name: "policy1", error: "error msg1"}},
-//				}
+//
+//	data := &data{Policies: []policy{
+//									{name: "policy1", severity: "HIGH"},
+//									{name: "policy2", severity: "LOW"},
+//									{name: "policy3", severity: "MEDIUM"}
+//									},
+//					 FailedPolicies: []failedPolicy{
+//									{name: "policy1", error: "error msg1"}},
+//					}
+//
 // Map of GJSON expressions:
-//	- specify "#" to visit each element of an array
-//	- the expressions for failed test cases and error messages MUST be equal and correlated
-// expressions := map[string]{
-//					JUnitFailedTestCasesExpressionKey: "data.failedPolicies.#.name",
-//					JUnitFailedTestCaseErrMsgExpressionKey: "data.failedPolicies.#.error",
-//					JUnitTestCasesExpressionKey: "data.policies.#.name",
-//				}
+//   - specify "#" to visit each element of an array
+//   - the expressions for failed test cases and error messages MUST be equal and correlated
+//
+//	expressions := map[string]{
+//						JUnitFailedTestCasesExpressionKey: "data.failedPolicies.#.name",
+//						JUnitFailedTestCaseErrMsgExpressionKey: "data.failedPolicies.#.error",
+//						JUnitTestCasesExpressionKey: "data.policies.#.name",
+//					}
 //
 // This would result in the following test cases and failed test cases:
 // Amount of test cases: 3
 // Testcases:
-//		- Name: policy1, Failed: "error msg1"
-//		- Name: policy2, Successful
-//		- Name: policy3, Successful
+//   - Name: policy1, Failed: "error msg1"
+//   - Name: policy2, Successful
+//   - Name: policy3, Successful
 func (j *JUnitPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error) {
 	if err := j.validate(); err != nil {
 		return nil, err

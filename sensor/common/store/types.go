@@ -3,6 +3,7 @@ package store
 import "github.com/stackrox/rox/generated/storage"
 
 // DeploymentStore provides functionality to fetch all deployments from underlying store.
+//
 //go:generate mockgen-wrapper
 type DeploymentStore interface {
 	GetAll() []*storage.Deployment
@@ -10,6 +11,7 @@ type DeploymentStore interface {
 }
 
 // PodStore provides functionality to fetch all pods from underlying store.
+//
 //go:generate mockgen-wrapper
 type PodStore interface {
 	GetAll() []*storage.Pod
@@ -18,6 +20,7 @@ type PodStore interface {
 
 // NetworkPolicyStore provides functionality to find matching Network Policies given a deployment
 // object.
+//
 //go:generate mockgen-wrapper
 type NetworkPolicyStore interface {
 	Size() int

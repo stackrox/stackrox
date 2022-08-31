@@ -193,7 +193,6 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 // The method doesn't process REMOVE_RESOURCE actions. Notice that this means
 // integrations are only recreated if the deployment exists, so it can be
 // permanently deleted in Central.
-//
 func (d *deploymentHandler) appendIntegrationsOnCredentials(
 	action central.ResourceAction,
 	containers []*storage.Container,

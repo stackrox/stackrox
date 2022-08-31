@@ -10,9 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
-//go:generate mockgen-wrapper
 // The Manager manages network baselines.
 // ALL writes to network baselines MUST go through the manager.
+//
+//go:generate mockgen-wrapper
 type Manager interface {
 	// CreateNetworkBaseline creates a network baseline if one does not exit
 	// The baseline manager then creates a baseline for this deployment if it does not already exist.

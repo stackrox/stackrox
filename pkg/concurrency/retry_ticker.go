@@ -35,6 +35,7 @@ type tickFunc func(ctx context.Context) (timeToNextTick time.Duration, err error
 // then:
 //   - If that error is ErrNonRecoverable (according to `errors.Is`) then the RetryTicker stops.
 //   - Otherwise the RetryTicker will wait the time returned by `backoff.Step` before calling `doFunc` again.
+//
 // - `doFunc` should return an error if ctx is cancelled. RetryTicker always calls `doFunc` with a context
 // with a timeout of `timeout`.
 // - On success `RetryTicker` will reset `backoff`, and wait the amount of time returned by `doFunc` before

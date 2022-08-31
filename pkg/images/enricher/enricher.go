@@ -75,6 +75,7 @@ type EnrichmentResult struct {
 }
 
 // A ScanResult denotes the result of an attempt to scan an image.
+//
 //go:generate stringer -type=ScanResult
 type ScanResult int
 
@@ -89,6 +90,7 @@ const (
 )
 
 // ImageEnricher provides functions for enriching images with integrations.
+//
 //go:generate mockgen-wrapper
 type ImageEnricher interface {
 	// EnrichImage will enrich an image with its metadata, scan results, signatures and signature verification results.

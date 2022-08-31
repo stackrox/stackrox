@@ -60,6 +60,7 @@ var (
 )
 
 // DataStore is the entry point for modifying Cluster data.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)

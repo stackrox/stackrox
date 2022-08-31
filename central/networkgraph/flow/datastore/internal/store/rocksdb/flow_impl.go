@@ -243,7 +243,7 @@ func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool
 }
 
 // Static helper functions.
-/////////////////////////
+// ///////////////////////
 func (s *flowStoreImpl) readFlow(id []byte) (flow *storage.NetworkFlow, err error) {
 	slice, err := s.db.Get(readOptions, id)
 	if err != nil {

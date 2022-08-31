@@ -16,6 +16,7 @@ var (
 )
 
 // Searcher provides search functionality on existing k8s roles.
+//
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)

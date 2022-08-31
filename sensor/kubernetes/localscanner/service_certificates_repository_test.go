@@ -273,9 +273,9 @@ type certSecretsRepoFixture struct {
 //   - It is initialized to represent a cluster with sensorDeployment and a secret that contains certificates
 //     on its data, or partial data according to spec.
 //   - The client set will fail all operations on the HTTP verb indicated in spec.
-// - The certificates used to initialize the data of the aforementioned secret.
-// - A repository that uses that secrets client, sensorDeployment as owner, and with a single serviceCertSecretSpec
-//   for the aforementioned secret in its secrets.
+//   - The certificates used to initialize the data of the aforementioned secret.
+//   - A repository that uses that secrets client, sensorDeployment as owner, and with a single serviceCertSecretSpec
+//     for the aforementioned secret in its secrets.
 func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(config certSecretsRepoFixtureConfig) *certSecretsRepoFixture {
 	certificates := certificates.Clone()
 	ownerRef := sensorOwnerReference()

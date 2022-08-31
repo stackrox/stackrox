@@ -7,6 +7,7 @@ import (
 )
 
 // Store provides storage functionality for pods.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)

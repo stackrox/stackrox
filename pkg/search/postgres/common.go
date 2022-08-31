@@ -31,6 +31,7 @@ var (
 )
 
 // QueryType describe what type of query to execute
+//
 //go:generate stringer -type=QueryType
 type QueryType int
 

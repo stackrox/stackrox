@@ -9,13 +9,14 @@ import (
 
 // groupIDPrefix should be prepended to every human-hostile ID of a
 // group for readability, e.g.,
-//     "io.stackrox.authz.group.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
+//
+//	"io.stackrox.authz.group.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
 const groupIDPrefix = "io.stackrox.authz.group."
 
 // ValidateGroup validates the given group for conformity.
 // A group must fulfill the following:
-//	- have valid properties (validated via ValidateProps).
-//	- have a role name set.
+//   - have valid properties (validated via ValidateProps).
+//   - have a role name set.
 func ValidateGroup(group *storage.Group) error {
 	if group.GetProps() == nil {
 		return errors.New("group properties must be set")
@@ -31,8 +32,8 @@ func ValidateGroup(group *storage.Group) error {
 
 // ValidateProps validates the given properties for conformity.
 // A property must fulfill the following:
-//	- have an auth provider ID.
-// 	- if no key is given, no value shall be given.
+//   - have an auth provider ID.
+//   - if no key is given, no value shall be given.
 func ValidateProps(props *storage.GroupProperties) error {
 	// TODO(ROX-11592): Once retrieving properties by their ID is fully deprecated, require IDs and validate this here.
 	if props.GetAuthProviderId() == "" {

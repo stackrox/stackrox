@@ -22,6 +22,7 @@ var (
 )
 
 // Searcher provides search functionality on existing node component edges.
+//
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)

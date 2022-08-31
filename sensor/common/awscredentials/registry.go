@@ -37,6 +37,7 @@ type RegistryCredentials struct {
 
 // RegistryCredentialsManager is a sensor component that manages
 // credentials for docker registries.
+//
 //go:generate mockgen-wrapper
 type RegistryCredentialsManager interface {
 	// GetRegistryCredentials returns the most recent registry credential for the given

@@ -58,10 +58,10 @@ type HTTPRequest struct {
 // RequestInfo provides a unified view of a GRPC request, regardless of whether it came through the HTTP/1.1 gateway
 // or directly via GRPC.
 // When forwarding requests in the HTTP/1.1 gateway, there are two independent mechanisms to defend against spoofing:
-// - Only requests originating from a local loopback address are permitted to carry a RequestInfo in their metadata.
-// - RequestInfos are timestamped, and expire after 200ms. The timestamp is derived from a monotonic clock reading;
-//   to prevent attackers from fabricating a RequestInfo with timestamp (in case a monotonic clock reading should ever
-//   leak), the entire RequestInfo (with timestamp) is signed with a cryptographic signature.
+//   - Only requests originating from a local loopback address are permitted to carry a RequestInfo in their metadata.
+//   - RequestInfos are timestamped, and expire after 200ms. The timestamp is derived from a monotonic clock reading;
+//     to prevent attackers from fabricating a RequestInfo with timestamp (in case a monotonic clock reading should ever
+//     leak), the entire RequestInfo (with timestamp) is signed with a cryptographic signature.
 type RequestInfo struct {
 	// Hostname is the hostname specified in a request, as intended by the client. This is derived from the
 	// `X-Forwarded-Host` (if present) or the `Hostname` header for a HTTP/1.1 request, and from the TLS ServerName

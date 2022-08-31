@@ -13,10 +13,12 @@ import (
 //
 // Description for each type and the meaning of the respective Read and Write
 // operations is available in
-//     "ui/apps/platform/src/Containers/AccessControl/PermissionSets/ResourceDescription.tsx"
+//
+//	"ui/apps/platform/src/Containers/AccessControl/PermissionSets/ResourceDescription.tsx"
 //
 // UI defines possible values for resource type in
-//     "ui/apps/platform/src/types/roleResources.ts"
+//
+//	"ui/apps/platform/src/types/roleResources.ts"
 //
 // Each time you touch the list below, you likely need to update both
 // aforementioned files.

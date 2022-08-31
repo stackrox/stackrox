@@ -13,6 +13,7 @@ var (
 )
 
 // DataStore is the entry point for modifying integration health data.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetRegistriesAndScanners(ctx context.Context) ([]*storage.IntegrationHealth, error)

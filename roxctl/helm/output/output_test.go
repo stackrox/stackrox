@@ -108,23 +108,23 @@ func (suite *helmOutputTestSuite) TestValidate() {
 			outputDir: "test_output_dir",
 		},
 		"should not fail for valid chartName and non provided outputDir": {
-			chartName: common.ChartCentralServices,
+			chartName:    common.ChartCentralServices,
 			errOutRegexp: `WARN:	No output directory specified, using default directory "./stackrox-central-services-chart"`,
 		},
 		"should not fail for valid chartName and existed outputDir": {
 			chartName:       common.ChartCentralServices,
 			createOutputDir: true,
 			removeOutputDir: true,
-			errOutRegexp: "WARN:	Removed output directory .*",
+			errOutRegexp:    "WARN:	Removed output directory .*",
 		},
 		"should fail for already existed output directory": {
 			chartName:       common.ChartCentralServices,
 			createOutputDir: true,
 			removeOutputDir: false,
-			errOutRegexp: "ERROR:	Directory .* already exists, use --remove or select a different directory with --output-dir.",
-			shouldFail:  true,
-			error:       errox.AlreadyExists,
-			errorRegexp: `directory ".*" already exists`,
+			errOutRegexp:    "ERROR:	Directory .* already exists, use --remove or select a different directory with --output-dir.",
+			shouldFail:      true,
+			error:           errox.AlreadyExists,
+			errorRegexp:     `directory ".*" already exists`,
 		},
 	}
 

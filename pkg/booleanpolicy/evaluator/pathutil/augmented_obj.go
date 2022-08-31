@@ -54,9 +54,11 @@ func addAugmentedObjToTreeAtPath(rootTree *augmentTree, path *Path, subObj *Augm
 // -> the core object itself
 // -> a mapping of Paths to other (possibly augmented) objects.
 // For example, given a struct like
-// type A struct {
-//    IntVal int
-// }
+//
+//	type A struct {
+//	   IntVal int
+//	}
+//
 // and an object like A{IntVal: 1},
 // you could augment it with "StringVal": "string".
 // This makes it possible to treat the Augmented object _as if_

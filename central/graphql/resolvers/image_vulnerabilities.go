@@ -44,7 +44,8 @@ func init() {
 }
 
 // ImageVulnerabilityResolver represents the supported API on image vulnerabilities
-//  NOTE: This list is and should remain alphabetically ordered
+//
+//	NOTE: This list is and should remain alphabetically ordered
 type ImageVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 

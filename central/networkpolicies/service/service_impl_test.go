@@ -755,6 +755,7 @@ func depToInfo(dep *storage.Deployment) *storage.NetworkEntityInfo {
 // getSampleNetworkGraph requires at least 4 deployments
 // This function configures a graph which has explicit edges like this:
 //   - deployment001 -> deployment000 -> deployment002
+//
 // deployment003 is an "island" in this graph
 // deployment001 has non-isolated ingress, and deployment002 has non-isolated egress. Thus
 // there should be an implicit edge from deployment002 -> deployment001

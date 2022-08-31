@@ -12,8 +12,10 @@ type allowFixedScopesCheckerCore []scopeKeySet
 // AllowFixedScopes returns a scope checker core that allows those scopes that
 // are in the cross product of all individual scope key lists. I.e.,
 // AllowFixedScopes(
-//   AccessModeScopeKeys(storage.Access_READ, storage.Access_READ_WRITE),
-//   ResourceScopeKeys(resources.CLUSTER),
+//
+//	AccessModeScopeKeys(storage.Access_READ, storage.Access_READ_WRITE),
+//	ResourceScopeKeys(resources.CLUSTER),
+//
 // )
 // returns a scope checker core that allows read and write access to all cluster resources.
 func AllowFixedScopes(keyLists ...[]ScopeKey) ScopeCheckerCore {

@@ -1,27 +1,32 @@
 // Package errox implements tooling and an interface for project errors
 // handling, and a list of base sentinel errors.
 //
-// Usage
+// # Usage
 //
 // Base new errors on one of the existing sentinel errors:
-//     ObjectNotFound := errox.NotFound.New("object not found")
+//
+//	ObjectNotFound := errox.NotFound.New("object not found")
 //
 // Classify encountered errors by making them a cause:
-//     err := parse(args)
-//     return errox.InvalidArgs.CausedBy(err)
+//
+//	err := parse(args)
+//	return errox.InvalidArgs.CausedBy(err)
 //
 // Check error class:
-//     if errors.Is(err, errox.InvalidArgs) ...
+//
+//	if errors.Is(err, errox.InvalidArgs) ...
 //
 // Format error messages:
-//     return errox.NotFound.Newf("file %q not found", filename)
+//
+//	return errox.NotFound.Newf("file %q not found", filename)
 //
 // Create error factories for generic errors:
-//     ErrInvalidAlgorithmF := func(alg string) errox.Error {
-//         return errox.InvalidArgs.Newf("invalid algorithm %q used", alg)
-//     }
-//     ...
-//     return ErrInvalidAlgorithmF("256")
+//
+//	ErrInvalidAlgorithmF := func(alg string) errox.Error {
+//	    return errox.InvalidArgs.Newf("invalid algorithm %q used", alg)
+//	}
+//	...
+//	return ErrInvalidAlgorithmF("256")
 package errox
 
 import "fmt"
@@ -67,9 +72,10 @@ func (e *RoxError) Unwrap() error {
 // error's base error in the chain but hide its message.
 //
 // Example:
-//     ErrRecordNotFound := errox.NotFound.New("record not found")
-//     ErrRecordNotFound.Error() == "record not found" // true
-//     errors.Is(ErrRecordNotFound, errox.NotFound)    // true
+//
+//	ErrRecordNotFound := errox.NotFound.New("record not found")
+//	ErrRecordNotFound.Error() == "record not found" // true
+//	errors.Is(ErrRecordNotFound, errox.NotFound)    // true
 func (e *RoxError) New(message string) *RoxError {
 	// Return *RoxError instead of errox.Error to enable `go vet` checks.
 	return &RoxError{message, e}
@@ -80,9 +86,10 @@ func (e *RoxError) New(message string) *RoxError {
 // the error's base error in the chain but hide its message.
 //
 // Example:
-//     ErrRecordNotFound := errox.NotFound.Newf("record <%d> not found", recordIndex)
-//     ErrRecordNotFound.Error() == "record <5> not found" // true
-//     errors.Is(ErrRecordNotFound, errox.NotFound)        // true
+//
+//	ErrRecordNotFound := errox.NotFound.Newf("record <%d> not found", recordIndex)
+//	ErrRecordNotFound.Error() == "record <5> not found" // true
+//	errors.Is(ErrRecordNotFound, errox.NotFound)        // true
 func (e *RoxError) Newf(format string, args ...interface{}) *RoxError {
 	// Return *RoxError instead of errox.Error to enable `go vet` checks.
 	return e.New(fmt.Sprintf(format, args...))
@@ -93,12 +100,16 @@ func (e *RoxError) Newf(format string, args ...interface{}) *RoxError {
 //
 // Note, that if cause is an error chain, the chain is collapsed to the message
 // and the cause class is dropped, i.e.:
-//     errors.Is(err.CausedBy(cause), cause) == false
+//
+//	errors.Is(err.CausedBy(cause), cause) == false
 //
 // Example:
-//     return errox.InvalidArgument.CausedBy(err)
+//
+//	return errox.InvalidArgument.CausedBy(err)
+//
 // or
-//     return errox.InvalidArgument.CausedBy("unknown parameter")
+//
+//	return errox.InvalidArgument.CausedBy("unknown parameter")
 func (e *RoxError) CausedBy(cause interface{}) error {
 	return fmt.Errorf("%w: %v", e, cause)
 }
@@ -108,7 +119,8 @@ func (e *RoxError) CausedBy(cause interface{}) error {
 // provided format specifier and arguments, following a colon.
 //
 // Example:
-//     return errox.InvalidArgument.CausedByf("unknown parameter %v", p)
+//
+//	return errox.InvalidArgument.CausedByf("unknown parameter %v", p)
 func (e *RoxError) CausedByf(format string, args ...interface{}) error {
 	return e.CausedBy(fmt.Sprintf(format, args...))
 }

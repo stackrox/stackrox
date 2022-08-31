@@ -17,6 +17,7 @@ import (
 // You can also specify the -imp command to specify additional imports in your generated file, if required.
 
 // KeyType represents a generic type that we want to have a set of.
+//
 //go:generate genny -in=$GOFILE -out=gen-string-$GOFILE gen "KeyType=string"
 //go:generate genny -in=$GOFILE -out=gen-int-$GOFILE gen "KeyType=int"
 //go:generate genny -in=$GOFILE -out=gen-uint32-$GOFILE gen "KeyType=uint32"

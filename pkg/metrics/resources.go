@@ -1,6 +1,7 @@
 package metrics
 
 // Resource represents the resource that we want to time.
+//
 //go:generate stringer -type=Resource
 type Resource int
 
