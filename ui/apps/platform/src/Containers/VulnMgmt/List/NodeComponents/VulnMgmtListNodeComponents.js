@@ -119,18 +119,6 @@ export function getComponentTableColumns(showVMUpdates) {
                 sortable: false,
             },
             {
-                Header: `Fixed In`,
-                headerClassName: `w-1/12 ${defaultHeaderClassName}`,
-                className: `w-1/12 word-break-all ${defaultColumnClassName}`,
-                Cell: ({ original }) =>
-                    original.fixedIn ||
-                    (original.vulnCounter.all.total === 0 ? 'N/A' : 'Not Fixable'),
-                id: componentSortFields.FIXEDIN,
-                accessor: 'fixedIn',
-                sortField: componentSortFields.FIXEDIN,
-                sortable: false,
-            },
-            {
                 Header: `Top CVSS`,
                 headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
@@ -208,7 +196,7 @@ const VulnMgmtNodeComponents = ({ selectedRowId, search, sort, page, data, total
     const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const query = gql`
-        query getComponents($query: String, $pagination: Pagination) {
+        query getNodeComponents($query: String, $pagination: Pagination) {
             results: nodeComponents(query: $query, pagination: $pagination) {
                 ...nodeComponentFields
             }
