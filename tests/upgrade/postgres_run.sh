@@ -102,6 +102,8 @@ test_upgrade_paths() {
     deploy_earlier_central
     wait_for_api
 
+    export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
+
     cd "$TEST_ROOT"
     helm_upgrade_to_current_with_postgres
     wait_for_api

@@ -60,6 +60,11 @@ validate_upgrade() {
     local upgrade_cluster_id="$3"
     local policies_dir="../pkg/defaults/policies/files"
 
+    if [ -n $API_TOKEN ]; then
+        info "Verifying API token generated can access the central"
+        echo $API_TOKEN | $TEST_ROOT/bin/$TEST_HOST_OS/roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" --token-file /dev/stdin central whoami > /dev/null
+    fi
+
     info "Validating the upgrade with upgrade tests: $stage_description"
 
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" \
@@ -68,4 +73,10 @@ validate_upgrade() {
         make -C qa-tests-backend upgrade-test || touch FAIL
     store_qa_test_results "validate-upgrade-tests-${stage_name}"
     [[ ! -f FAIL ]] || die "Upgrade tests failed"
+}
+
+function roxcurl() {
+  local url="$1"
+  shift
+  curl -u "admin:${ROX_PASSWORD}" -k "https://${API_ENDPOINT}${url}" "$@"
 }
