@@ -77,3 +77,4 @@ COPY --from=builder ${roxpath}/stackrox-operator /usr/local/bin/
 USER 65534:65534
 
 ENTRYPOINT ["/usr/local/bin/stackrox-operator"]
+
