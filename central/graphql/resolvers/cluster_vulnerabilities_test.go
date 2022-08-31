@@ -44,11 +44,7 @@ func TestGraphQLClusterVulnerabilityEndpoints(t *testing.T) {
 /*
 Remaining TODO tasks:
 - SubResolvers:
-  - VulnerabilityType
-  - VulnerabilityTypes
-  - EnvImpact
   - LastScanned
-  - Vectors
 - Double Nested SubResolver
 */
 
@@ -90,6 +86,7 @@ func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
 	clusterCVEPostgres.Destroy(s.ctx, s.db)
 	clusterCVEEdgePostgres.Destroy(s.ctx, s.db)
 	clusterPostgres.Destroy(s.ctx, s.db)
+	namespacePostgres.Destroy(s.ctx, s.db)
 
 	// create mock resolvers, set relevant ones
 	s.resolver = NewMock()
@@ -165,6 +162,7 @@ func (s *GraphQLClusterVulnerabilityTestSuite) TearDownSuite() {
 	clusterCVEPostgres.Destroy(s.ctx, s.db)
 	clusterCVEEdgePostgres.Destroy(s.ctx, s.db)
 	clusterPostgres.Destroy(s.ctx, s.db)
+	namespacePostgres.Destroy(s.ctx, s.db)
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.db.Close()
 }
@@ -417,6 +415,7 @@ func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesFixedBy
 	cluster := s.getClusterResolver(ctx, s.clusterIDs[0])
 
 	vulns, err := cluster.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query})
+	s.NoError(err)
 	s.Equal(expectedCount, int32(len(vulns)))
 	idList := getIDList(ctx, vulns)
 	s.ElementsMatch(expectedIDs, idList)
@@ -438,6 +437,7 @@ func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesFixedBy
 	cluster = s.getClusterResolver(ctx, s.clusterIDs[1])
 
 	vulns, err = cluster.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query})
+	s.NoError(err)
 	s.Equal(expectedCount, int32(len(vulns)))
 	idList = getIDList(ctx, vulns)
 	s.ElementsMatch(expectedIDs, idList)
@@ -522,6 +522,66 @@ func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilityClusters(
 	count, err = vuln.ClusterCount(ctx, RawQuery{})
 	s.NoError(err)
 	s.Equal(expectedCount, count)
+}
+
+func (s *GraphQLClusterVulnerabilityTestSuite) TestVulnerabilityType() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	vuln := s.getClusterVulnerabilityResolver(ctx, "clusterCve2")
+
+	expectedTypes := []string{storage.CVE_CVEType_name[int32(storage.CVE_K8S_CVE)]}
+	expectedType := storage.CVE_CVEType_name[int32(storage.CVE_K8S_CVE)]
+
+	vulnTypes := vuln.VulnerabilityTypes()
+	s.ElementsMatch(expectedTypes, vulnTypes)
+
+	vulnType := vuln.VulnerabilityType()
+	s.Equal(expectedType, vulnType)
+}
+
+func (s *GraphQLClusterVulnerabilityTestSuite) TestVectors() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	vuln := s.getClusterVulnerabilityResolver(ctx, "clusterCve1")
+
+	_, ok := vuln.Vectors().ToCVSSV2()
+	s.True(ok)
+	_, ok = vuln.Vectors().ToCVSSV3()
+	s.False(ok)
+
+	vuln = s.getClusterVulnerabilityResolver(ctx, "clusterCve2")
+
+	_, ok = vuln.Vectors().ToCVSSV2()
+	s.False(ok)
+	_, ok = vuln.Vectors().ToCVSSV3()
+	s.True(ok)
+
+	vuln = s.getClusterVulnerabilityResolver(ctx, "clusterCve3")
+
+	_, ok = vuln.Vectors().ToCVSSV2()
+	s.False(ok)
+	_, ok = vuln.Vectors().ToCVSSV3()
+	s.True(ok)
+
+	vuln = s.getClusterVulnerabilityResolver(ctx, "clusterCve4")
+
+	s.Nil(vuln.Vectors())
+}
+
+func (s *GraphQLClusterVulnerabilityTestSuite) TestEnvImpact() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	vuln := s.getClusterVulnerabilityResolver(ctx, "clusterCve1")
+
+	impact, err := vuln.EnvImpact(ctx)
+	s.NoError(err)
+	s.Equal(float64(1)/8, impact)
+
+	vuln = s.getClusterVulnerabilityResolver(ctx, "clusterCve2")
+
+	impact, err = vuln.EnvImpact(ctx)
+	s.NoError(err)
+	s.Equal(float64(2)/8, impact)
 }
 
 func (s *GraphQLClusterVulnerabilityTestSuite) getClusterResolver(ctx context.Context, id string) *clusterResolver {

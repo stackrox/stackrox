@@ -191,11 +191,14 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 	return []converter.ClusterCVEParts{
 		{
 			CVE: &storage.ClusterCVE{
-				Id:          cveIds[0],
-				Cvss:        4,
-				Severity:    storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-				Type:        storage.CVE_K8S_CVE,
-				CveBaseInfo: &storage.CVEInfo{CreatedAt: t1},
+				Id:       cveIds[0],
+				Cvss:     4,
+				Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+				Type:     storage.CVE_K8S_CVE,
+				CveBaseInfo: &storage.CVEInfo{
+					CreatedAt: t1,
+					CvssV2:    &storage.CVSSV2{},
+				},
 			},
 			Children: []converter.EdgeParts{
 				{
@@ -212,11 +215,14 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 		},
 		{
 			CVE: &storage.ClusterCVE{
-				Id:          cveIds[1],
-				Cvss:        5,
-				Severity:    storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-				Type:        storage.CVE_K8S_CVE,
-				CveBaseInfo: &storage.CVEInfo{CreatedAt: t1},
+				Id:       cveIds[1],
+				Cvss:     5,
+				Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+				Type:     storage.CVE_K8S_CVE,
+				CveBaseInfo: &storage.CVEInfo{
+					CreatedAt: t1,
+					CvssV3:    &storage.CVSSV3{},
+				},
 			},
 			Children: []converter.EdgeParts{
 				{
@@ -243,11 +249,15 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 		},
 		{
 			CVE: &storage.ClusterCVE{
-				Id:          cveIds[2],
-				Cvss:        7,
-				Severity:    storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-				Type:        storage.CVE_K8S_CVE,
-				CveBaseInfo: &storage.CVEInfo{CreatedAt: t2},
+				Id:       cveIds[2],
+				Cvss:     7,
+				Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+				Type:     storage.CVE_K8S_CVE,
+				CveBaseInfo: &storage.CVEInfo{
+					CreatedAt: t2,
+					CvssV2:    &storage.CVSSV2{},
+					CvssV3:    &storage.CVSSV3{},
+				},
 			},
 			Children: []converter.EdgeParts{
 				{
