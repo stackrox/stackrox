@@ -39,6 +39,11 @@ export type EmbeddedImageScanComponent = {
     name: string;
     version: string;
     fixedIn: string;
+    dockerfileLine?: {
+        line: number;
+        instruction: string;
+        value: string;
+    };
 };
 
 export type GetImageVulnerabilitiesData = {
