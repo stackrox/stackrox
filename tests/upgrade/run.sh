@@ -12,6 +12,7 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
 source "$TEST_ROOT/tests/scripts/setup-certs.sh"
 source "$TEST_ROOT/tests/e2e/lib.sh"
+source "$TEST_ROOT/tests/upgrade/lib.sh"
 
 test_upgrade() {
     info "Starting upgrade test"
@@ -420,26 +421,6 @@ restore_backup_test() {
     restore_56_1_backup
 }
 
-validate_upgrade() {
-    if [[ "$#" -ne 3 ]]; then
-        die "missing args. usage: validate_upgrade <stage name> <stage description> <upgrade_cluster_id>"
-    fi
-
-    local stage_name="$1"
-    local stage_description="$2"
-    local upgrade_cluster_id="$3"
-    local policies_dir="../pkg/defaults/policies/files"
-
-    info "Validating the upgrade with upgrade tests: $stage_description"
-
-    CLUSTER="$CLUSTER_TYPE_FOR_TEST" \
-        UPGRADE_CLUSTER_ID="$upgrade_cluster_id" \
-        POLICIES_JSON_RELATIVE_PATH="$policies_dir" \
-        make -C qa-tests-backend upgrade-test || touch FAIL
-    store_qa_test_results "validate-upgrade-tests-${stage_name}"
-    [[ ! -f FAIL ]] || die "Upgrade tests failed"
-}
-
 force_rollback() {
     info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
 
@@ -482,51 +463,6 @@ validate_db_backup_and_restore() {
     rm -f "$db_backup"
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" central db backup --output "$db_backup"
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" central db restore "$db_backup"
-}
-
-wait_for_central_reconciliation() {
-    info "Waiting for central reconciliation"
-
-    # Reconciliation is rather slow in this case, since the central has a DB with a bunch of deployments,
-    # none of which exist. So when sensor connects, the reconciliation deletion takes a while to flush.
-    # This causes flakiness with the smoke tests.
-    # To mitigate this, wait for the deployments to get deleted before running the tests.
-    local success=0
-    for i in $(seq 1 90); do
-        local numDeployments
-        numDeployments="$(curl -sSk -u "admin:$ROX_PASSWORD" "https://$API_ENDPOINT/v1/summary/counts" | jq '.numDeployments' -r)"
-        echo "Try number ${i}. Number of deployments in Central: $numDeployments"
-        [[ -n "$numDeployments" ]]
-        if [[ "$numDeployments" -lt 100 ]]; then
-            success=1
-            break
-        fi
-        sleep 10
-    done
-    [[ "$success" == 1 ]]
-}
-
-wait_for_scanner_to_be_ready() {
-    echo "Waiting for scanner to be ready"
-    start_time="$(date '+%s')"
-    while true; do
-      scanner_json="$(kubectl -n stackrox get deploy/scanner -o json)"
-      replicas="$(jq '.status.replicas' <<<"${scanner_json}")"
-      readyReplicas="$(jq '.status.readyReplicas' <<<"${scanner_json}")"
-      echo "scanner replicas: $replicas"
-      echo "scanner readyReplicas: $readyReplicas"
-      if [[  "$replicas" == "$readyReplicas" ]]; then
-        break
-      fi
-      if (( $(date '+%s') - start_time > 300 )); then
-        kubectl -n stackrox get pod -o wide
-        kubectl -n stackrox get deploy -o wide
-        echo >&2 "Timed out after 5m"
-        exit 1
-      fi
-      sleep 5
-    done
-    echo "Scanner is ready"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
