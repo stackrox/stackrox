@@ -69,7 +69,7 @@ func populateFromMetadataSlice(ctx context.Context, metadataSlice []*storage.Nam
 // ResolveByClusterIDAndName resolves a namespace given its cluster ID and its name.
 func ResolveByClusterIDAndName(ctx context.Context, clusterID string, name string, dataStore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
 	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) (*v1.Namespace, bool, error) {
-	q := search.NewQueryBuilder().AddExactMatches(search.Namespace, name).AddStrings(search.ClusterID, clusterID).ProtoQuery()
+	q := search.NewQueryBuilder().AddExactMatches(search.Namespace, name).AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	namespaces, err := dataStore.SearchNamespaces(ctx, q)
 	if err != nil {
 		return nil, false, err

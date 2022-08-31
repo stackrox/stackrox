@@ -210,7 +210,7 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*
 			return nil, err
 		}
 	} else {
-		shasQuery := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ImageSHA, shas...).ProtoQuery()
+		shasQuery := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageSHA, shas...).ProtoQuery()
 		imgs, err = ds.SearchRawImages(ctx, shasQuery)
 		if err != nil {
 			return nil, err
