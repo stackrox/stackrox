@@ -24,9 +24,9 @@ build_operator_bundle_and_binary() {
     # Otherwise we get the cryptic "Missing value for flag: -I" error when running protoc.
     go mod download
 
-    info "Preparing bundle sources and smuggled status.sh file"
+    info "Preparing build/Dockerfile.gen, bundle sources and smuggled status.sh file"
     # TODO(ROX-11889): get rid of the SILENT= once we gain some confidence (after release 3.72?)
-    make -C operator bundle bundle-post-process smuggled-status-sh SILENT=
+    make -C operator build/Dockerfile.gen bundle bundle-post-process smuggled-status-sh SILENT=
 
     info "Making a copy of the built bundle sources in a magically named directory that will be used instead of the bundle image."
     # The hacked opm tool will first see if a directory named as the reference exists, and if so, use its content as if it's an unpacked image of that name.
