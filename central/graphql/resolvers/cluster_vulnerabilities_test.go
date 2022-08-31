@@ -185,34 +185,78 @@ func (s *GraphQLClusterVulnerabilityTestSuite) TestUnauthorizedClusterVulnerabil
 func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilities() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	expected := int32(5)
+	expectedIDs := []string{"clusterCve1", "clusterCve2", "clusterCve3", "clusterCve4", "clusterCve5"}
+	expectedCount := int32(len(expectedIDs))
 
 	vulns, err := s.resolver.ClusterVulnerabilities(ctx, PaginatedQuery{})
 	s.NoError(err)
-	s.Equal(expected, int32(len(vulns)))
+	s.Equal(expectedCount, int32(len(vulns)))
 	idList := getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"clusterCve1", "clusterCve2", "clusterCve3", "clusterCve4", "clusterCve5"}, idList)
+	s.ElementsMatch(expectedIDs, idList)
 
 	count, err := s.resolver.ClusterVulnerabilityCount(ctx, RawQuery{})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(expectedCount, count)
 
 	counter, err := s.resolver.ClusterVulnerabilityCounter(ctx, RawQuery{})
 	s.NoError(err)
-	checkVulnerabilityCounter(s.T(), counter, expected, 3, 1, 2, 1, 1)
+	checkVulnerabilityCounter(s.T(), counter, expectedCount, 3, 1, 2, 1, 1)
+}
+
+func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesScoped() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	expectedIDs := []string{"clusterCve1", "clusterCve2", "clusterCve4", "clusterCve5"}
+	expectedCount := int32(len(expectedIDs))
+
+	cluster := s.getClusterResolver(ctx, s.clusterIDs[0])
+
+	vulns, err := cluster.ClusterVulnerabilities(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.Equal(expectedCount, int32(len(vulns)))
+	idList := getIDList(ctx, vulns)
+	s.ElementsMatch(expectedIDs, idList)
+
+	count, err := cluster.ClusterVulnerabilityCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.Equal(expectedCount, count)
+
+	counter, err := cluster.ClusterVulnerabilityCounter(ctx, RawQuery{})
+	s.NoError(err)
+	checkVulnerabilityCounter(s.T(), counter, expectedCount, 1, 1, 2, 0, 1)
+
+	expectedIDs = []string{"clusterCve2", "clusterCve3", "clusterCve4"}
+	expectedCount = int32(len(expectedIDs))
+
+	cluster = s.getClusterResolver(ctx, s.clusterIDs[1])
+
+	vulns, err = cluster.ClusterVulnerabilities(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.Equal(expectedCount, int32(len(vulns)))
+	idList = getIDList(ctx, vulns)
+	s.ElementsMatch(expectedIDs, idList)
+
+	count, err = cluster.ClusterVulnerabilityCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.Equal(expectedCount, count)
+
+	counter, err = cluster.ClusterVulnerabilityCounter(ctx, RawQuery{})
+	s.NoError(err)
+	checkVulnerabilityCounter(s.T(), counter, expectedCount, 2, 1, 1, 1, 0)
 }
 
 func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesFixable() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	expected := int32(3)
+	expectedIDs := []string{"clusterCve1", "clusterCve3", "clusterCve4"}
+	expectedCount := int32(len(expectedIDs))
 
 	query, err := getFixableRawQuery(true)
 	s.NoError(err)
 
 	vulns, err := s.resolver.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, int32(len(vulns)))
+	s.Equal(expectedCount, int32(len(vulns)))
 	for _, vuln := range vulns {
 		fixable, err := vuln.IsFixable(ctx, RawQuery{})
 		s.NoError(err)
@@ -223,17 +267,18 @@ func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesFixable
 		s.Equal("", fixedBy)
 	}
 	idList := getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"clusterCve1", "clusterCve3", "clusterCve4"}, idList)
+	s.ElementsMatch(expectedIDs, idList)
 
 	count, err := s.resolver.ClusterVulnerabilityCount(ctx, RawQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(expectedCount, count)
 }
 
 func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesFixableScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	expected := int32(1)
+	expectedIDs := []string{"clusterCve1"}
+	expectedCount := int32(len(expectedIDs))
 
 	query, err := getFixableRawQuery(true)
 	s.NoError(err)
@@ -242,37 +287,38 @@ func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesFixable
 
 	vulns, err := cluster.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, int32(len(vulns)))
+	s.Equal(expectedCount, int32(len(vulns)))
 	for _, vuln := range vulns {
 		fixable, err := vuln.IsFixable(ctx, RawQuery{})
 		s.NoError(err)
 		s.Equal(true, fixable)
 	}
 	idList := getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"clusterCve1"}, idList)
+	s.ElementsMatch(expectedIDs, idList)
 
 	count, err := cluster.ClusterVulnerabilityCount(ctx, RawQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(expectedCount, count)
 
-	expected = int32(2)
+	expectedIDs = []string{"clusterCve3", "clusterCve4"}
+	expectedCount = int32(len(expectedIDs))
 
 	cluster = s.getClusterResolver(ctx, s.clusterIDs[1])
 
 	vulns, err = cluster.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, int32(len(vulns)))
+	s.Equal(expectedCount, int32(len(vulns)))
 	for _, vuln := range vulns {
 		fixable, err := vuln.IsFixable(ctx, RawQuery{})
 		s.NoError(err)
 		s.Equal(true, fixable)
 	}
 	idList = getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"clusterCve3", "clusterCve4"}, idList)
+	s.ElementsMatch(expectedIDs, idList)
 
 	count, err = cluster.ClusterVulnerabilityCount(ctx, RawQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(expectedCount, count)
 }
 
 func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesNonFixable() {
@@ -283,31 +329,33 @@ func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesNonFixa
 
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	expected := int32(2)
+	expectedIDs := []string{"clusterCve2", "clusterCve5"}
+	expectedCount := int32(len(expectedIDs))
 
 	query, err := getFixableRawQuery(false)
 	s.NoError(err)
 
 	vulns, err := s.resolver.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, int32(len(vulns)))
+	s.Equal(expectedCount, int32(len(vulns)))
 	for _, vuln := range vulns {
 		fixable, err := vuln.IsFixable(ctx, RawQuery{})
 		s.NoError(err)
 		s.Equal(false, fixable)
 	}
 	idList := getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"clusterCve2", "clusterCve5"}, idList)
+	s.ElementsMatch(expectedIDs, idList)
 
 	count, err := s.resolver.ClusterVulnerabilityCount(ctx, RawQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(expectedCount, count)
 }
 
 func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesNonFixableScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	expected := int32(3)
+	expectedIDs := []string{"clusterCve2", "clusterCve4", "clusterCve5"}
+	expectedCount := int32(len(expectedIDs))
 
 	query, err := getFixableRawQuery(false)
 	s.NoError(err)
@@ -316,204 +364,158 @@ func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesNonFixa
 
 	vulns, err := cluster.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, int32(len(vulns)))
+	s.Equal(expectedCount, int32(len(vulns)))
 	for _, vuln := range vulns {
 		fixable, err := vuln.IsFixable(ctx, RawQuery{})
 		s.NoError(err)
 		s.Equal(false, fixable)
 	}
 	idList := getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"clusterCve2", "clusterCve4", "clusterCve5"}, idList)
+	s.ElementsMatch(expectedIDs, idList)
 
 	count, err := cluster.ClusterVulnerabilityCount(ctx, RawQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(expectedCount, count)
 
-	expected = int32(1)
+	expectedIDs = []string{"clusterCve2"}
+	expectedCount = int32(len(expectedIDs))
 
 	cluster = s.getClusterResolver(ctx, s.clusterIDs[1])
 
 	vulns, err = cluster.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, int32(len(vulns)))
+	s.Equal(expectedCount, int32(len(vulns)))
 	for _, vuln := range vulns {
 		fixable, err := vuln.IsFixable(ctx, RawQuery{})
 		s.NoError(err)
 		s.Equal(false, fixable)
 	}
 	idList = getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"clusterCve2"}, idList)
+	s.ElementsMatch(expectedIDs, idList)
 
 	count, err = cluster.ClusterVulnerabilityCount(ctx, RawQuery{Query: &query})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(expectedCount, count)
 }
 
-//func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesFixedByVersion() {
-//	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-//
-//	vuln := s.getClusterVulnerabilityResolver(ctx, "cve-2018-1#")
-//
-//	scopedCtx := scoped.Context(ctx, scoped.Scope{
-//		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-//		ID:    "comp1#0.9#",
-//	})
-//
-//	fixedBy, err := vuln.FixedByVersion(scopedCtx)
-//	s.NoError(err)
-//	s.Equal("1.1", fixedBy)
-//
-//	scopedCtx = scoped.Context(ctx, scoped.Scope{
-//		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-//		ID:    "comp2#1.1#",
-//	})
-//
-//	fixedBy, err = vuln.FixedByVersion(scopedCtx)
-//	s.NoError(err)
-//	s.Equal("1.5", fixedBy)
-//
-//	vuln = s.getClusterVulnerabilityResolver(ctx, "cve-2017-1#")
-//
-//	scopedCtx = scoped.Context(ctx, scoped.Scope{
-//		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-//		ID:    "comp2#1.1#",
-//	})
-//
-//	fixedBy, err = vuln.FixedByVersion(scopedCtx)
-//	s.NoError(err)
-//	s.Equal("", fixedBy)
-//}
-//
-//func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesScoped() {
-//	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-//
-//	image := s.getClusterResolver(ctx, "sha1")
-//	expected := int32(3)
-//
-//	vulns, err := image.ClusterVulnerabilities(ctx, PaginatedQuery{})
-//	s.NoError(err)
-//	s.Equal(expected, int32(len(vulns)))
-//	idList := getIDList(ctx, vulns)
-//	s.ElementsMatch(idList, []string{"cve-2018-1#", "cve-2019-1#", "cve-2019-2#"})
-//
-//	count, err := image.ClusterVulnerabilityCount(ctx, RawQuery{})
-//	s.NoError(err)
-//	s.Equal(expected, count)
-//
-//	counter, err := image.ClusterVulnerabilityCounter(ctx, RawQuery{})
-//	s.NoError(err)
-//	checkVulnerabilityCounter(s.T(), counter, expected, 1, 1, 0, 1, 1)
-//
-//	image = s.getClusterResolver(ctx, "sha2")
-//	expected = int32(5)
-//
-//	vulns, err = image.ClusterVulnerabilities(ctx, PaginatedQuery{})
-//	s.NoError(err)
-//	s.Equal(expected, int32(len(vulns)))
-//	idList = getIDList(ctx, vulns)
-//	s.ElementsMatch(idList, []string{"cve-2018-1#", "cve-2019-1#", "cve-2019-2#", "cve-2017-1#", "cve-2017-2#"})
-//
-//	count, err = image.ClusterVulnerabilityCount(ctx, RawQuery{})
-//	s.NoError(err)
-//	s.Equal(expected, count)
-//
-//	counter, err = image.ClusterVulnerabilityCounter(ctx, RawQuery{})
-//	s.NoError(err)
-//	checkVulnerabilityCounter(s.T(), counter, expected, 1, 1, 2, 1, 1)
-//}
-//
-//func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilityMiss() {
-//	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-//
-//	vulnID := graphql.ID("invalid")
-//
-//	_, err := s.resolver.ClusterVulnerability(ctx, IDQuery{ID: &vulnID})
-//	s.Error(err)
-//}
-//
-//func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilityHit() {
-//	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-//
-//	vulnID := graphql.ID("cve-2018-1#")
-//
-//	vuln, err := s.resolver.ClusterVulnerability(ctx, IDQuery{ID: &vulnID})
-//	s.NoError(err)
-//	s.Equal(vulnID, vuln.Id(ctx))
-//}
-//
-//func (s *GraphQLClusterVulnerabilityTestSuite) TestTopClusterVulnerabilityUnscoped() {
-//	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-//
-//	_, err := s.resolver.TopClusterVulnerability(ctx, RawQuery{})
-//	s.Error(err)
-//}
-//
-//func (s *GraphQLClusterVulnerabilityTestSuite) TestTopClusterVulnerability() {
-//	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-//
-//	image := s.getClusterResolver(ctx, "sha1")
-//
-//	_, err := image.TopClusterVulnerability(ctx, RawQuery{})
-//	s.NoError(err)
-//
-//	// TODO figure out how to test this
-//}
-//
-//func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilityClusters() {
-//	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-//
-//	vuln := s.getClusterVulnerabilityResolver(ctx, "cve-2018-1#")
-//
-//	images, err := vuln.Clusters(ctx, PaginatedQuery{})
-//	s.NoError(err)
-//	s.Equal(2, len(images))
-//	idList := getIDList(ctx, images)
-//	s.ElementsMatch(idList, []string{"sha1", "sha2"})
-//
-//	count, err := vuln.ClusterCount(ctx, RawQuery{})
-//	s.NoError(err)
-//	s.Equal(int32(len(images)), count)
-//
-//	vuln = s.getClusterVulnerabilityResolver(ctx, "cve-2017-1#")
-//
-//	images, err = vuln.Clusters(ctx, PaginatedQuery{})
-//	s.NoError(err)
-//	s.Equal(1, len(images))
-//	idList = getIDList(ctx, images)
-//	s.ElementsMatch(idList, []string{"sha2"})
-//
-//	count, err = vuln.ClusterCount(ctx, RawQuery{})
-//	s.NoError(err)
-//	s.Equal(int32(len(images)), count)
-//}
-//
-//func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilityClusterComponents() {
-//	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-//
-//	vuln := s.getClusterVulnerabilityResolver(ctx, "cve-2018-1#")
-//
-//	comps, err := vuln.ClusterComponents(ctx, PaginatedQuery{})
-//	s.NoError(err)
-//	s.Equal(2, len(comps))
-//	idList := getIDList(ctx, comps)
-//	s.ElementsMatch(idList, []string{"comp1#0.9#", "comp2#1.1#"})
-//
-//	count, err := vuln.ClusterComponentCount(ctx, RawQuery{})
-//	s.NoError(err)
-//	s.Equal(int32(len(comps)), count)
-//
-//	vuln = s.getClusterVulnerabilityResolver(ctx, "cve-2017-1#")
-//
-//	comps, err = vuln.ClusterComponents(ctx, PaginatedQuery{})
-//	s.NoError(err)
-//	s.Equal(1, len(comps))
-//	idList = getIDList(ctx, comps)
-//	s.ElementsMatch(idList, []string{"comp4#1.0#"})
-//
-//	count, err = vuln.ClusterComponentCount(ctx, RawQuery{})
-//	s.NoError(err)
-//	s.Equal(int32(len(comps)), count)
-//}
+func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilitiesFixedByVersion() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	query, err := getFixableRawQuery(true)
+	s.NoError(err)
+
+	expectedIDs := []string{"clusterCve1"}
+	expectedCount := int32(len(expectedIDs))
+
+	cluster := s.getClusterResolver(ctx, s.clusterIDs[0])
+
+	vulns, err := cluster.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query})
+	s.Equal(expectedCount, int32(len(vulns)))
+	idList := getIDList(ctx, vulns)
+	s.ElementsMatch(expectedIDs, idList)
+	for _, vuln := range vulns {
+		id := string(vuln.Id(ctx))
+		fixedBy, err := vuln.FixedByVersion(ctx)
+		s.NoError(err)
+		switch id {
+		case "clusterCve1":
+			s.Equal("1.1", fixedBy)
+		default:
+			s.Failf("unexpected cluster cve: %s", id)
+		}
+	}
+
+	expectedIDs = []string{"clusterCve3", "clusterCve4"}
+	expectedCount = int32(len(expectedIDs))
+
+	cluster = s.getClusterResolver(ctx, s.clusterIDs[1])
+
+	vulns, err = cluster.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query})
+	s.Equal(expectedCount, int32(len(vulns)))
+	idList = getIDList(ctx, vulns)
+	s.ElementsMatch(expectedIDs, idList)
+	for _, vuln := range vulns {
+		id := string(vuln.Id(ctx))
+		fixedBy, err := vuln.FixedByVersion(ctx)
+		s.NoError(err)
+		switch id {
+		case "clusterCve3":
+			s.Equal("1.2", fixedBy)
+		case "clusterCve4":
+			s.Equal("1.4", fixedBy)
+		default:
+			s.Failf("unexpected cluster cve: %s", id)
+		}
+	}
+}
+
+func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilityMiss() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	vulnID := graphql.ID("invalid")
+
+	_, err := s.resolver.ClusterVulnerability(ctx, IDQuery{ID: &vulnID})
+	s.Error(err)
+}
+
+func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilityHit() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	vulnID := graphql.ID("clusterCve2")
+
+	vuln, err := s.resolver.ClusterVulnerability(ctx, IDQuery{ID: &vulnID})
+	s.NoError(err)
+	s.Equal(vulnID, vuln.Id(ctx))
+}
+
+func (s *GraphQLClusterVulnerabilityTestSuite) TestClusterVulnerabilityClusters() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	expectedIDs := []string{s.clusterIDs[0]}
+	expectedCount := int32(len(expectedIDs))
+
+	vuln := s.getClusterVulnerabilityResolver(ctx, "clusterCve1")
+
+	clusters, err := vuln.Clusters(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.Equal(expectedCount, int32(len(clusters)))
+	idList := getIDList(ctx, clusters)
+	s.ElementsMatch(expectedIDs, idList)
+
+	count, err := vuln.ClusterCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.Equal(expectedCount, count)
+
+	expectedIDs = []string{s.clusterIDs[0], s.clusterIDs[1]}
+	expectedCount = int32(len(expectedIDs))
+
+	vuln = s.getClusterVulnerabilityResolver(ctx, "clusterCve2")
+
+	clusters, err = vuln.Clusters(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.Equal(expectedCount, int32(len(clusters)))
+	idList = getIDList(ctx, clusters)
+	s.ElementsMatch(expectedIDs, idList)
+
+	count, err = vuln.ClusterCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.Equal(expectedCount, count)
+
+	expectedIDs = []string{s.clusterIDs[1]}
+	expectedCount = int32(len(expectedIDs))
+
+	vuln = s.getClusterVulnerabilityResolver(ctx, "clusterCve3")
+
+	clusters, err = vuln.Clusters(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.Equal(expectedCount, int32(len(clusters)))
+	idList = getIDList(ctx, clusters)
+	s.ElementsMatch(expectedIDs, idList)
+
+	count, err = vuln.ClusterCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.Equal(expectedCount, count)
+}
 
 func (s *GraphQLClusterVulnerabilityTestSuite) getClusterResolver(ctx context.Context, id string) *clusterResolver {
 	clusterID := graphql.ID(id)
@@ -524,20 +526,11 @@ func (s *GraphQLClusterVulnerabilityTestSuite) getClusterResolver(ctx context.Co
 	return cluster
 }
 
-//func (s *GraphQLClusterVulnerabilityTestSuite) getClusterComponentResolver(ctx context.Context, id string) ClusterComponentResolver {
-//	compID := graphql.ID(id)
-//
-//	comp, err := s.resolver.ClusterComponent(ctx, IDQuery{ID: &compID})
-//	s.NoError(err)
-//	s.Equal(compID, comp.Id(ctx))
-//	return comp
-//}
-//
-//func (s *GraphQLClusterVulnerabilityTestSuite) getClusterVulnerabilityResolver(ctx context.Context, id string) ClusterVulnerabilityResolver {
-//	vulnID := graphql.ID(id)
-//
-//	vuln, err := s.resolver.ClusterVulnerability(ctx, IDQuery{ID: &vulnID})
-//	s.NoError(err)
-//	s.Equal(vulnID, vuln.Id(ctx))
-//	return vuln
-//}
+func (s *GraphQLClusterVulnerabilityTestSuite) getClusterVulnerabilityResolver(ctx context.Context, id string) ClusterVulnerabilityResolver {
+	vulnID := graphql.ID(id)
+
+	vuln, err := s.resolver.ClusterVulnerability(ctx, IDQuery{ID: &vulnID})
+	s.NoError(err)
+	s.Equal(vulnID, vuln.Id(ctx))
+	return vuln
+}

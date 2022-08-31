@@ -43,7 +43,8 @@ func init() {
 }
 
 // ClusterVulnerabilityResolver represents the supported API on image vulnerabilities
-//  NOTE: This list is and should remain alphabetically ordered
+//
+//	NOTE: This list is and should remain alphabetically ordered
 type ClusterVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
