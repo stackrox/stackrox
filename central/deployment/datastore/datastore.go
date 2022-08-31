@@ -33,7 +33,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -101,7 +100,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Po
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	var storage store.Store
 	if features.PostgresDatastore.Enabled() {
-		storage = postgres.NewFullStore(sac.WithNoAccess(context.Background()), pool)
+		storage = postgres.NewFullStore(pool)
 	} else {
 		storage = dackBoxStore.New(dacky, keyFence)
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 // NewFullStore augments the generated store with ListDeployment functions.
-func NewFullStore(ctx context.Context, db *pgxpool.Pool) store.Store {
+func NewFullStore(db *pgxpool.Pool) store.Store {
 	return &fullStoreImpl{
 		Store: New(db),
 	}

@@ -46,7 +46,7 @@ func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS
 	}
 	indexer := index.New(bleveIndex)
 	searcher := search.New(store, indexer)
-	return newDatastoreImpl(sac.WithNoAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
+	return newDatastoreImpl(sac.WithAllAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
 }
 
 // NewPostgresDB creates a pod datastore based on Postgres
@@ -57,7 +57,7 @@ func NewPostgresDB(db *pgxpool.Pool, indicators piDS.DataStore, processFilter fi
 	}
 	indexer := postgres.NewIndexer(db)
 	searcher := search.New(store, indexer)
-	return newDatastoreImpl(sac.WithNoAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
+	return newDatastoreImpl(sac.WithAllAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
