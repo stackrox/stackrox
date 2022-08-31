@@ -168,6 +168,9 @@ func (r serviceTestRun) execute() {
 	require.NotNil(r.t, r.mgr)
 	require.NotNil(r.t, r.handlerFunc)
 	require.True(r.t, r.mgr.IsReady(), "Manager is stopped or was not started")
+	// Wait for any events delivered to manager prior to this call to be processed.
+	// TODO(porridge): come up with a less hacky way to synchronize
+	time.Sleep(2 * time.Second)
 
 	s := service{
 		mgr: r.mgr,
@@ -186,7 +189,7 @@ func (r serviceTestRun) execute() {
 	assert.Equal(r.t, http.StatusOK, resp.Code)
 
 	select {
-	case <-time.After(30 * time.Second):
+	case <-time.After(3 * time.Second):
 		assert.Fail(r.t, "Did not receive any alerts before timeout expired, but expected some")
 	case alerts := <-r.mgr.Alerts():
 		r.assertionFunc(r.t, resp.Result(), alerts)
