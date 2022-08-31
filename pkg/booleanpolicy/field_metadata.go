@@ -579,7 +579,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, negationForbidden)
 
 	f.registerFieldMetadata(fieldnames.RequiredLabel,
-		querybuilders.ForFieldLabelMap(search.Label, query.MapShouldNotContain),
+		querybuilders.ForFieldLabelMap(search.DeploymentLabel, query.MapShouldNotContain),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
 			return keyValueValueRegex

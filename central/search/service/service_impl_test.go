@@ -217,17 +217,17 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 			expectedResults: []string{"name12", "nginx_server", "name1"},
 		},
 		{
-			query:           fmt.Sprintf("%s:he=h", search.Label),
+			query:           fmt.Sprintf("%s:he=h", search.DeploymentLabel),
 			expectedResults: []string{"hello=hi", "hey=ho"},
 			ignoreOrder:     true,
 		},
 		{
-			query:           fmt.Sprintf("%s:hey=", search.Label),
+			query:           fmt.Sprintf("%s:hey=", search.DeploymentLabel),
 			expectedResults: []string{"hey=ho"},
 			ignoreOrder:     true,
 		},
 		{
-			query:           fmt.Sprintf("%s:%s+%s:", search.DeploymentName, deploymentName2.Name, search.Label),
+			query:           fmt.Sprintf("%s:%s+%s:", search.DeploymentName, deploymentName2.Name, search.DeploymentLabel),
 			expectedResults: []string{"hello=hi", "hey=ho"},
 			ignoreOrder:     true,
 		},

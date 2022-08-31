@@ -14,7 +14,7 @@ const (
 )
 
 func requiredLabelPrinter(fieldMap map[string][]string) ([]string, error) {
-	return getMapPrinterFor(search.Label, false)(fieldMap)
+	return getMapPrinterFor(search.DeploymentLabel, false)(fieldMap)
 }
 
 func requiredAnnotationPrinter(fieldMap map[string][]string) ([]string, error) {
@@ -38,7 +38,7 @@ func getMapPrinterFor(fieldLabel search.FieldLabel, disallowed bool) func(map[st
 	switch fieldLabel {
 	case search.Annotation:
 		baseResourceName = "annotation"
-	case search.Label:
+	case search.DeploymentLabel:
 		baseResourceName = "label"
 	case search.ImageLabel:
 		baseResourceName = "label"

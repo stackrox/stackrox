@@ -12,36 +12,36 @@ func TestSplitQuery(t *testing.T) {
 		pairs []string
 	}{
 		{
-			query: NewQueryBuilder().AddStrings(Label, "label").Query(),
-			pairs: []string{"Label:label"},
+			query: NewQueryBuilder().AddStrings(DeploymentLabel, "label").Query(),
+			pairs: []string{"Deployment Label:label"},
 		},
 		{
-			query: NewQueryBuilder().AddStrings(Label, "label,label").Query(),
-			pairs: []string{"Label:label,label"},
+			query: NewQueryBuilder().AddStrings(DeploymentLabel, "label,label").Query(),
+			pairs: []string{"Deployment Label:label,label"},
 		},
 		{
-			query: NewQueryBuilder().AddStrings(Label, "label+label").Query(),
-			pairs: []string{"Label:label+label"},
+			query: NewQueryBuilder().AddStrings(DeploymentLabel, "label+label").Query(),
+			pairs: []string{"Deployment Label:label+label"},
 		},
 		{
-			query: NewQueryBuilder().AddStrings(Label, "label+label").AddStrings(Annotation, "annotation").Query(),
-			pairs: []string{"Label:label+label", "Annotation:annotation"},
+			query: NewQueryBuilder().AddStrings(DeploymentLabel, "label+label").AddStrings(Annotation, "annotation").Query(),
+			pairs: []string{"Deployment Label:label+label", "Annotation:annotation"},
 		},
 		{
-			query: NewQueryBuilder().AddStrings(Label, "label+").Query(),
-			pairs: []string{"Label:label+"},
+			query: NewQueryBuilder().AddStrings(DeploymentLabel, "label+").Query(),
+			pairs: []string{"Deployment Label:label+"},
 		},
 		{
-			query: Label.String(),
-			pairs: []string{Label.String()},
+			query: DeploymentLabel.String(),
+			pairs: []string{DeploymentLabel.String()},
 		},
 		{
 			query: "Deployment:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod",
 			pairs: []string{"Deployment:attempted-alerts-dep-6", "Policy:Kubernetes Actions: Exec into Pod"},
 		},
 		{
-			query: "Deployment:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod,hello+hi+New Label:value",
-			pairs: []string{"Deployment:attempted-alerts-dep-6", "Policy:Kubernetes Actions: Exec into Pod,hello+hi", "New Label:value"},
+			query: "Deployment:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod,hello+hi+New Deployment Label:value",
+			pairs: []string{"Deployment:attempted-alerts-dep-6", "Policy:Kubernetes Actions: Exec into Pod,hello+hi", "New Deployment Label:value"},
 		},
 	}
 
