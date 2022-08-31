@@ -162,6 +162,8 @@ type serviceTestRun struct {
 	t           *testing.T
 }
 
+// execute runs the review request through the handler and then
+// runs alerts from manager through the assertion function.
 func (r serviceTestRun) execute() {
 	require.NotNil(r.t, r.mgr)
 	require.NotNil(r.t, r.handlerFunc)
