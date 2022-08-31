@@ -332,7 +332,7 @@ func getIDList(ctx context.Context, resolvers interface{}) []string {
 	return list
 }
 
-func getClusterResolver(t *testing.T, resolver *Resolver, ctx context.Context, id string) *clusterResolver {
+func getClusterResolver(ctx context.Context, t *testing.T, resolver *Resolver, id string) *clusterResolver {
 	clusterID := graphql.ID(id)
 
 	cluster, err := resolver.Cluster(ctx, struct{ graphql.ID }{clusterID})
@@ -341,7 +341,7 @@ func getClusterResolver(t *testing.T, resolver *Resolver, ctx context.Context, i
 	return cluster
 }
 
-func getNodeResolver(t *testing.T, resolver *Resolver, ctx context.Context, id string) *nodeResolver {
+func getNodeResolver(ctx context.Context, t *testing.T, resolver *Resolver, id string) *nodeResolver {
 	nodeID := graphql.ID(id)
 
 	node, err := resolver.Node(ctx, struct{ graphql.ID }{nodeID})
@@ -350,7 +350,7 @@ func getNodeResolver(t *testing.T, resolver *Resolver, ctx context.Context, id s
 	return node
 }
 
-func getNodeComponentResolver(t *testing.T, resolver *Resolver, ctx context.Context, id string) NodeComponentResolver {
+func getNodeComponentResolver(ctx context.Context, t *testing.T, resolver *Resolver, id string) NodeComponentResolver {
 	compID := graphql.ID(id)
 
 	comp, err := resolver.NodeComponent(ctx, IDQuery{ID: &compID})
@@ -359,7 +359,7 @@ func getNodeComponentResolver(t *testing.T, resolver *Resolver, ctx context.Cont
 	return comp
 }
 
-func getNodeVulnerabilityResolver(t *testing.T, resolver *Resolver, ctx context.Context, id string) NodeVulnerabilityResolver {
+func getNodeVulnerabilityResolver(ctx context.Context, t *testing.T, resolver *Resolver, id string) NodeVulnerabilityResolver {
 	vulnID := graphql.ID(id)
 
 	vuln, err := resolver.NodeVulnerability(ctx, IDQuery{ID: &vulnID})

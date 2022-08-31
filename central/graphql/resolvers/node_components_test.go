@@ -150,6 +150,7 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 	testClusters, testNodes := testClustersWithNodes()
 	for _, cluster := range testClusters {
 		err = clusterDatastore.UpdateCluster(s.ctx, cluster)
+		s.NoError(err)
 	}
 	for _, node := range testNodes {
 		err = nodePostgresDataStore.UpsertNode(s.ctx, node)
@@ -204,13 +205,13 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponents() {
 
 	count, err := s.resolver.NodeComponentCount(ctx, RawQuery{})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(int32(len(comps)), count)
 }
 
 func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsNodeScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	node := getNodeResolver(s.T(), s.resolver, ctx, "nodeID1")
+	node := getNodeResolver(ctx, s.T(), s.resolver, "nodeID1")
 	expected := int32(3)
 
 	comps, err := node.NodeComponents(ctx, PaginatedQuery{})
@@ -225,9 +226,9 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsNodeScoped() {
 
 	count, err := node.NodeComponentCount(ctx, RawQuery{})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(int32(len(comps)), count)
 
-	node = getNodeResolver(s.T(), s.resolver, ctx, "nodeID2")
+	node = getNodeResolver(ctx, s.T(), s.resolver, "nodeID2")
 	expected = int32(3)
 
 	comps, err = node.NodeComponents(ctx, PaginatedQuery{})
@@ -242,13 +243,13 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsNodeScoped() {
 
 	count, err = node.NodeComponentCount(ctx, RawQuery{})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(int32(len(comps)), count)
 }
 
 func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsFromNodeScan() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	node := getNodeResolver(s.T(), s.resolver, ctx, "nodeID1")
+	node := getNodeResolver(ctx, s.T(), s.resolver, "nodeID1")
 	nodeScan, err := node.Scan(ctx)
 	s.NoError(err)
 
@@ -265,9 +266,9 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsFromNodeScan() {
 
 	count, err := nodeScan.NodeComponentCount(ctx, RawQuery{})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(int32(len(comps)), count)
 
-	node = getNodeResolver(s.T(), s.resolver, ctx, "nodeID2")
+	node = getNodeResolver(ctx, s.T(), s.resolver, "nodeID2")
 	nodeScan, err = node.Scan(ctx)
 	s.NoError(err)
 
@@ -284,13 +285,13 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsFromNodeScan() {
 
 	count, err = nodeScan.NodeComponentCount(ctx, RawQuery{})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(int32(len(comps)), count)
 }
 
 func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsClusterScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	cluster := getClusterResolver(s.T(), s.resolver, ctx, "clusterID1")
+	cluster := getClusterResolver(ctx, s.T(), s.resolver, "clusterID1")
 	expected := int32(3)
 
 	comps, err := cluster.NodeComponents(ctx, PaginatedQuery{})
@@ -305,9 +306,9 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsClusterScoped() {
 
 	count, err := cluster.NodeComponentCount(ctx, RawQuery{})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(int32(len(comps)), count)
 
-	cluster = getClusterResolver(s.T(), s.resolver, ctx, "clusterID2")
+	cluster = getClusterResolver(ctx, s.T(), s.resolver, "clusterID2")
 	expected = int32(3)
 
 	comps, err = cluster.NodeComponents(ctx, PaginatedQuery{})
@@ -322,7 +323,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsClusterScoped() {
 
 	count, err = cluster.NodeComponentCount(ctx, RawQuery{})
 	s.NoError(err)
-	s.Equal(expected, count)
+	s.Equal(int32(len(comps)), count)
 }
 
 func (s *GraphQLNodeComponentTestSuite) TestNodeComponentMiss() {
@@ -350,8 +351,8 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 	componentID := scancomponent.ComponentID("comp1", "0.9", "")
 
 	// Component queried unscoped
-	comp := getNodeComponentResolver(s.T(), s.resolver, ctx, componentID)
-	node := getNodeResolver(s.T(), s.resolver, ctx, "nodeID2")
+	comp := getNodeComponentResolver(ctx, s.T(), s.resolver, componentID)
+	node := getNodeResolver(ctx, s.T(), s.resolver, "nodeID2")
 	lastScanned, err := comp.LastScanned(ctx)
 	s.NoError(err)
 	expected, err := timestamp(node.data.GetScan().GetScanTime())
@@ -363,8 +364,8 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 		Level: v1.SearchCategory_NODES,
 		ID:    "nodeID1",
 	})
-	comp = getNodeComponentResolver(s.T(), s.resolver, scopedCtx, componentID)
-	node = getNodeResolver(s.T(), s.resolver, ctx, "nodeID1")
+	comp = getNodeComponentResolver(scopedCtx, s.T(), s.resolver, componentID)
+	node = getNodeResolver(ctx, s.T(), s.resolver, "nodeID1")
 	lastScanned, err = comp.LastScanned(ctx)
 	s.NoError(err)
 	expected, err = timestamp(node.data.GetScan().GetScanTime())
@@ -375,7 +376,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 func (s *GraphQLNodeComponentTestSuite) TestNodeComponentNodes() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	comp := getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp1", "0.9", ""))
+	comp := getNodeComponentResolver(ctx, s.T(), s.resolver, scancomponent.ComponentID("comp1", "0.9", ""))
 
 	nodes, err := comp.Nodes(ctx, PaginatedQuery{})
 	s.NoError(err)
@@ -387,7 +388,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentNodes() {
 	s.NoError(err)
 	s.Equal(int32(len(nodes)), count)
 
-	comp = getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp4", "1.0", ""))
+	comp = getNodeComponentResolver(ctx, s.T(), s.resolver, scancomponent.ComponentID("comp4", "1.0", ""))
 
 	nodes, err = comp.Nodes(ctx, PaginatedQuery{})
 	s.NoError(err)
@@ -403,7 +404,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentNodes() {
 func (s *GraphQLNodeComponentTestSuite) TestNodeComponentNodeVulnerabilities() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	comp := getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp3", "1.0", ""))
+	comp := getNodeComponentResolver(ctx, s.T(), s.resolver, scancomponent.ComponentID("comp3", "1.0", ""))
 	vulns, err := comp.NodeVulnerabilities(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(2, len(vulns))
@@ -416,9 +417,9 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentNodeVulnerabilities() {
 
 	counter, err := comp.NodeVulnerabilityCounter(ctx, RawQuery{})
 	s.NoError(err)
-	checkVulnerabilityCounter(s.T(), counter, int32(len(vulns)), 0, 0, 0, 1, 1)
+	checkVulnerabilityCounter(s.T(), counter, count, 0, 0, 0, 1, 1)
 
-	comp = getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp1", "0.9", ""))
+	comp = getNodeComponentResolver(ctx, s.T(), s.resolver, scancomponent.ComponentID("comp1", "0.9", ""))
 	vulns, err = comp.NodeVulnerabilities(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(1, len(vulns))
@@ -431,13 +432,13 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentNodeVulnerabilities() {
 
 	counter, err = comp.NodeVulnerabilityCounter(ctx, RawQuery{})
 	s.NoError(err)
-	checkVulnerabilityCounter(s.T(), counter, int32(len(vulns)), 1, 1, 0, 0, 0)
+	checkVulnerabilityCounter(s.T(), counter, count, 1, 1, 0, 0, 0)
 }
 
 func (s *GraphQLNodeComponentTestSuite) TestNodeComponentPlottedNodeVulnerabilities() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	comp := getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp3", "1.0", ""))
+	comp := getNodeComponentResolver(ctx, s.T(), s.resolver, scancomponent.ComponentID("comp3", "1.0", ""))
 	plottedVulnRes, err := comp.PlottedNodeVulnerabilities(ctx, RawQuery{})
 	s.NoError(err)
 
@@ -452,7 +453,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentPlottedNodeVulnerabilit
 	s.Equal(int32(2), basicCounter.All(ctx).Total(ctx))
 	s.Equal(int32(0), basicCounter.All(ctx).Fixable(ctx))
 
-	comp = getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp1", "0.9", ""))
+	comp = getNodeComponentResolver(ctx, s.T(), s.resolver, scancomponent.ComponentID("comp1", "0.9", ""))
 	plottedVulnRes, err = comp.PlottedNodeVulnerabilities(ctx, RawQuery{})
 	s.NoError(err)
 
@@ -471,7 +472,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentPlottedNodeVulnerabilit
 func (s *GraphQLNodeComponentTestSuite) NodeComponentTopNodeVulnerability() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	comp := getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp3", "1.0", ""))
+	comp := getNodeComponentResolver(ctx, s.T(), s.resolver, scancomponent.ComponentID("comp3", "1.0", ""))
 
 	expected := graphql.ID("cve-2019-1#")
 	topVuln, err := comp.TopNodeVulnerability(ctx)
