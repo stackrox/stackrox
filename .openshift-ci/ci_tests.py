@@ -50,7 +50,7 @@ class UpgradeTest(BaseTest):
 
 
 class OperatorE2eTest(BaseTest):
-    # TODO(ROX-11889): adjust these timeouts once we know average run times
+    # TODO(ROX-12348): adjust these timeouts once we know average run times
     DEPLOY_TIMEOUT_SEC = 40 * 60
     UPGRADE_TEST_TIMEOUT_SEC = 50 * 60
     E2E_TEST_TIMEOUT_SEC = 50 * 60
