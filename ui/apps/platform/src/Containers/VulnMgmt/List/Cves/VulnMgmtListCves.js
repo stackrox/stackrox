@@ -43,6 +43,7 @@ import CveType from 'Components/CveType';
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 import { getFilteredCVEColumns } from './ListCVEs.utils';
+import { resourceLabels } from '../../../../messages/common';
 
 export const defaultCveSort = [
     {
@@ -371,10 +372,10 @@ const VulnMgmtCves = ({
         },
     };
 
-    const addToPolicy = (cveId) => (e) => {
+    const addToPolicy = (cve) => (e) => {
         e.stopPropagation();
 
-        const cveIdsToAdd = cveId ? [cveId] : selectedCveIds;
+        const cveIdsToAdd = cve ? [cve] : selectedCveIds;
 
         if (cveIdsToAdd.length) {
             setBulkActionCveIds(cveIdsToAdd);
@@ -385,11 +386,13 @@ const VulnMgmtCves = ({
         }
     };
 
-    const suppressCves = (cveId, duration) => (e) => {
+    const suppressCves = (cve, duration) => (e) => {
         e.stopPropagation();
 
-        const cveIdsToToggle = cveId ? [cveId] : selectedCveIds;
-        suppressVulns(cveType, cveIdsToToggle, duration)
+        const currentEntityType = workflowState.getCurrentEntity().entityType;
+        const entityTypeDisplayName = resourceLabels[currentEntityType];
+        const cvesToToggle = cve ? [cve] : selectedCveIds;
+        suppressVulns(cveType, cvesToToggle, duration)
             .then(() => {
                 setSelectedCveIds([]);
 
@@ -397,10 +400,11 @@ const VulnMgmtCves = ({
                 setRefreshTrigger(Math.random());
 
                 // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
-                const pluralizedCVEs = cveIdsToToggle.length === 1 ? 'CVE' : 'CVEs';
+                const pluralizedCVEs =
+                    cvesToToggle.length === 1 ? entityTypeDisplayName : `${entityTypeDisplayName}s`;
 
                 addToast(
-                    `Successfully deferred and approved ${cveIdsToToggle.length} ${pluralizedCVEs}`
+                    `Successfully deferred and approved ${cvesToToggle.length} ${pluralizedCVEs} globally`
                 );
                 setTimeout(removeToast, 2000);
             })
@@ -410,10 +414,12 @@ const VulnMgmtCves = ({
             });
     };
 
-    const unsuppressCves = (cveId) => (e) => {
+    const unsuppressCves = (cve) => (e) => {
         e.stopPropagation();
 
-        const cveIdsToToggle = cveId ? [cveId] : selectedCveIds;
+        const currentEntityType = workflowState.getCurrentEntity().entityType;
+        const entityTypeDisplayName = resourceLabels[currentEntityType];
+        const cveIdsToToggle = cve ? [cve] : selectedCveIds;
         unsuppressVulns(cveType, cveIdsToToggle)
             .then(() => {
                 setSelectedCveIds([]);
@@ -422,9 +428,14 @@ const VulnMgmtCves = ({
                 setRefreshTrigger(Math.random());
 
                 // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
-                const pluralizedCVEs = cveIdsToToggle.length === 1 ? 'CVE' : 'CVEs';
+                const pluralizedCVEs =
+                    cveIdsToToggle.length === 1
+                        ? entityTypeDisplayName
+                        : `${entityTypeDisplayName}s`;
 
-                addToast(`Successfully reobserved ${cveIdsToToggle.length} ${pluralizedCVEs}`);
+                addToast(
+                    `Successfully reobserved ${cveIdsToToggle.length} ${pluralizedCVEs} globally`
+                );
                 setTimeout(removeToast, 2000);
             })
             .catch((evt) => {
@@ -453,17 +464,17 @@ const VulnMgmtCves = ({
         setSelectedCveIds(idsToStaySelected);
     }
 
-    const snoozeOptions = (cveId) => {
+    const snoozeOptions = (cve) => {
         return Object.keys(snoozeDurations).map((d) => {
-            return { label: snoozeDurations[d], onClick: suppressCves(cveId, durations[d]) };
+            return { label: snoozeDurations[d], onClick: suppressCves(cve, durations[d]) };
         });
     };
 
-    const renderRowActionButtons = ({ id }) => (
+    const renderRowActionButtons = ({ cve }) => (
         <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
             <RowActionButton
                 text="Add to Policy"
-                onClick={addToPolicy(id)}
+                onClick={addToPolicy(cve)}
                 date-testid="row-action-add-to-policy"
                 icon={<Icon.Plus className="my-1 h-4 w-4" />}
             />
@@ -472,7 +483,7 @@ const VulnMgmtCves = ({
                     className="h-full min-w-30"
                     border="border-l-2 border-base-400"
                     icon={<Icon.BellOff className="h-4 w-4" />}
-                    options={snoozeOptions(id)}
+                    options={snoozeOptions(cve)}
                     text="Defer and Approve CVE"
                     dataTestId="row-action-suppress"
                 />
@@ -481,7 +492,7 @@ const VulnMgmtCves = ({
                 <RowActionButton
                     text="Reobserve CVE"
                     border="border-l-2 border-base-400"
-                    onClick={unsuppressCves(id)}
+                    onClick={unsuppressCves(cve)}
                     date-testid="row-action-unsuppress"
                     icon={<Icon.Bell className="my-1 h-4 w-4" />}
                     dataTestId="row-action-unsuppress"
