@@ -6,6 +6,7 @@ import (
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -131,8 +132,8 @@ func testNodes() []*storage.Node {
 	utils.CrashOnError(err)
 	return []*storage.Node{
 		{
-			Id:   "id1",
-			Name: "name1",
+			Id:   "nodeID1",
+			Name: "node1",
 			SetCves: &storage.Node_Cves{
 				Cves: 3,
 			},
@@ -189,8 +190,8 @@ func testNodes() []*storage.Node {
 			},
 		},
 		{
-			Id:   "id2",
-			Name: "name2",
+			Id:   "nodeID2",
+			Name: "node2",
 			SetCves: &storage.Node_Cves{
 				Cves: 5,
 			},
@@ -256,6 +257,31 @@ func testNodes() []*storage.Node {
 	}
 }
 
+// returns clusters and associated nodes for testing
+func testClustersWithNodes() ([]*storage.Cluster, []*storage.Node) {
+	clusters := []*storage.Cluster{
+		{
+			Id:        "clusterID1",
+			Name:      "cluster1",
+			MainImage: "quay.io/stackrox-io/main",
+		},
+		{
+			Id:        "clusterID2",
+			Name:      "cluster2",
+			MainImage: "quay.io/stackrox-io/main",
+		},
+	}
+
+	nodes := testNodes()
+	nodes[0].ClusterId = clusters[0].Id
+	nodes[0].ClusterName = clusters[0].Name
+
+	nodes[1].ClusterId = clusters[1].Id
+	nodes[1].ClusterName = clusters[1].Name
+
+	return clusters, nodes
+}
+
 func checkVulnerabilityCounter(t *testing.T, resolver *VulnerabilityCounterResolver, total, fixable, critical, important, moderate, low int32) {
 	// we have to pass a context to the resolver functions because style checks don't like when we pass nil, this value isn't used though
 	ctx := context.Background()
@@ -298,6 +324,46 @@ func getIDList(ctx context.Context, resolvers interface{}) []string {
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
+	case []*clusterResolver:
+		for _, r := range res {
+			list = append(list, string(r.Id(ctx)))
+		}
 	}
 	return list
+}
+
+func getClusterResolver(t *testing.T, resolver *Resolver, ctx context.Context, id string) *clusterResolver {
+	clusterID := graphql.ID(id)
+
+	cluster, err := resolver.Cluster(ctx, struct{ graphql.ID }{clusterID})
+	require.NoError(t, err)
+	require.Equal(t, clusterID, cluster.Id(ctx))
+	return cluster
+}
+
+func getNodeResolver(t *testing.T, resolver *Resolver, ctx context.Context, id string) *nodeResolver {
+	nodeID := graphql.ID(id)
+
+	node, err := resolver.Node(ctx, struct{ graphql.ID }{nodeID})
+	require.NoError(t, err)
+	require.Equal(t, nodeID, node.Id(ctx))
+	return node
+}
+
+func getNodeComponentResolver(t *testing.T, resolver *Resolver, ctx context.Context, id string) NodeComponentResolver {
+	compID := graphql.ID(id)
+
+	comp, err := resolver.NodeComponent(ctx, IDQuery{ID: &compID})
+	require.NoError(t, err)
+	require.Equal(t, compID, comp.Id(ctx))
+	return comp
+}
+
+func getNodeVulnerabilityResolver(t *testing.T, resolver *Resolver, ctx context.Context, id string) NodeVulnerabilityResolver {
+	vulnID := graphql.ID(id)
+
+	vuln, err := resolver.NodeVulnerability(ctx, IDQuery{ID: &vulnID})
+	require.NoError(t, err)
+	require.Equal(t, vulnID, vuln.Id(ctx))
+	return vuln
 }

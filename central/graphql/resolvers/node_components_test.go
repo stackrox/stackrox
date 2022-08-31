@@ -1,3 +1,6 @@
+//go:build sql_integration
+// +build sql_integration
+
 package resolvers
 
 import (
@@ -8,6 +11,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/jackc/pgx/v4/pgxpool"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
+	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
@@ -24,6 +30,8 @@ import (
 	nodeComponentCVEEdgePostgres "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/features"
@@ -31,7 +39,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -77,6 +85,7 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 	nodeComponentPostgres.Destroy(s.ctx, s.db)
 	nodeCVEPostgres.Destroy(s.ctx, s.db)
 	nodeComponentCVEEdgePostgres.Destroy(s.ctx, s.db)
+	clusterPostgres.Destroy(s.ctx, s.db)
 
 	// create mock resolvers, set relevant ones
 	s.resolver = NewMock()
@@ -113,6 +122,15 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 	s.NoError(err)
 	s.resolver.NodeComponentCVEEdgeDataStore = nodeComponentCveEdgeDatastore
 
+	// cluster datastore
+	clusterStore := clusterPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	clusterHealthStore := clusterHealthPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	clusterIndexer := clusterPostgres.NewIndexer(s.db)
+	connMgr := connection.ManagerSingleton()
+	clusterDatastore, err := clusterDataStore.New(clusterStore, clusterHealthStore, nil, nil, nil, nil, nil, nodeGlobalDatastore, nil, nil, nil, nil, nil, nil, nil, connMgr, nil, nil, ranking.NewRanker(), clusterIndexer, nil)
+	s.NoError(err)
+	s.resolver.ClusterDataStore = clusterDatastore
+
 	// Sac permissions
 	s.ctx = sac.WithAllAccess(s.ctx)
 
@@ -128,8 +146,11 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 	})
 	s.ctx = loaders.WithLoaderContext(s.ctx)
 
-	// Add Test Data to DataStores
-	testNodes := testNodes()
+	// Add test data to DataStores
+	testClusters, testNodes := testClustersWithNodes()
+	for _, cluster := range testClusters {
+		err = clusterDatastore.UpdateCluster(s.ctx, cluster)
+	}
 	for _, node := range testNodes {
 		err = nodePostgresDataStore.UpsertNode(s.ctx, node)
 		s.NoError(err)
@@ -143,6 +164,7 @@ func (s *GraphQLNodeComponentTestSuite) TearDownSuite() {
 	nodeComponentPostgres.Destroy(s.ctx, s.db)
 	nodeCVEPostgres.Destroy(s.ctx, s.db)
 	nodeComponentCVEEdgePostgres.Destroy(s.ctx, s.db)
+	clusterPostgres.Destroy(s.ctx, s.db)
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.db.Close()
 }
@@ -185,10 +207,10 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponents() {
 	s.Equal(expected, count)
 }
 
-func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsScoped() {
+func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsNodeScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	node := s.getNodeResolver(ctx, "id1")
+	node := getNodeResolver(s.T(), s.resolver, ctx, "nodeID1")
 	expected := int32(3)
 
 	comps, err := node.NodeComponents(ctx, PaginatedQuery{})
@@ -205,7 +227,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsScoped() {
 	s.NoError(err)
 	s.Equal(expected, count)
 
-	node = s.getNodeResolver(ctx, "id2")
+	node = getNodeResolver(s.T(), s.resolver, ctx, "nodeID2")
 	expected = int32(3)
 
 	comps, err = node.NodeComponents(ctx, PaginatedQuery{})
@@ -223,7 +245,87 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsScoped() {
 	s.Equal(expected, count)
 }
 
-func (s *GraphQLNodeComponentTestSuite) TestNodeVulnerabilityMiss() {
+func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsFromNodeScan() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	node := getNodeResolver(s.T(), s.resolver, ctx, "nodeID1")
+	nodeScan, err := node.Scan(ctx)
+	s.NoError(err)
+
+	expected := int32(3)
+	comps, err := nodeScan.NodeComponents(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.Equal(expected, int32(len(comps)))
+	idList := getIDList(ctx, comps)
+	s.ElementsMatch(idList, []string{
+		scancomponent.ComponentID("comp1", "0.9", ""),
+		scancomponent.ComponentID("comp2", "1.1", ""),
+		scancomponent.ComponentID("comp3", "1.0", ""),
+	})
+
+	count, err := nodeScan.NodeComponentCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.Equal(expected, count)
+
+	node = getNodeResolver(s.T(), s.resolver, ctx, "nodeID2")
+	nodeScan, err = node.Scan(ctx)
+	s.NoError(err)
+
+	expected = int32(3)
+	comps, err = nodeScan.NodeComponents(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.Equal(expected, int32(len(comps)))
+	idList = getIDList(ctx, comps)
+	s.ElementsMatch(idList, []string{
+		scancomponent.ComponentID("comp1", "0.9", ""),
+		scancomponent.ComponentID("comp3", "1.0", ""),
+		scancomponent.ComponentID("comp4", "1.0", ""),
+	})
+
+	count, err = nodeScan.NodeComponentCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.Equal(expected, count)
+}
+
+func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsClusterScoped() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	cluster := getClusterResolver(s.T(), s.resolver, ctx, "clusterID1")
+	expected := int32(3)
+
+	comps, err := cluster.NodeComponents(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.Equal(expected, int32(len(comps)))
+	idList := getIDList(ctx, comps)
+	s.ElementsMatch(idList, []string{
+		scancomponent.ComponentID("comp1", "0.9", ""),
+		scancomponent.ComponentID("comp2", "1.1", ""),
+		scancomponent.ComponentID("comp3", "1.0", ""),
+	})
+
+	count, err := cluster.NodeComponentCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.Equal(expected, count)
+
+	cluster = getClusterResolver(s.T(), s.resolver, ctx, "clusterID2")
+	expected = int32(3)
+
+	comps, err = cluster.NodeComponents(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.Equal(expected, int32(len(comps)))
+	idList = getIDList(ctx, comps)
+	s.ElementsMatch(idList, []string{
+		scancomponent.ComponentID("comp1", "0.9", ""),
+		scancomponent.ComponentID("comp3", "1.0", ""),
+		scancomponent.ComponentID("comp4", "1.0", ""),
+	})
+
+	count, err = cluster.NodeComponentCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.Equal(expected, count)
+}
+
+func (s *GraphQLNodeComponentTestSuite) TestNodeComponentMiss() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	compID := graphql.ID("invalid")
@@ -232,7 +334,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeVulnerabilityMiss() {
 	s.Error(err)
 }
 
-func (s *GraphQLNodeComponentTestSuite) TestNodeVulnerabilityHit() {
+func (s *GraphQLNodeComponentTestSuite) TestNodeComponentHit() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	compID := graphql.ID(scancomponent.ComponentID("comp1", "0.9", ""))
@@ -248,8 +350,8 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 	componentID := scancomponent.ComponentID("comp1", "0.9", "")
 
 	// Component queried unscoped
-	comp := s.getNodeComponentResolver(ctx, componentID)
-	node := s.getNodeResolver(ctx, "id2")
+	comp := getNodeComponentResolver(s.T(), s.resolver, ctx, componentID)
+	node := getNodeResolver(s.T(), s.resolver, ctx, "nodeID2")
 	lastScanned, err := comp.LastScanned(ctx)
 	s.NoError(err)
 	expected, err := timestamp(node.data.GetScan().GetScanTime())
@@ -257,12 +359,13 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 	s.Equal(expected, lastScanned)
 
 	// Component queried with node scope
-	node = s.getNodeResolver(ctx, "id1")
-	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, componentID).Query()
-	comps, err := node.NodeComponents(ctx, PaginatedQuery{Query: &query})
-	s.NoError(err)
-	s.Equal(1, len(comps))
-	lastScanned, err = comps[0].LastScanned(ctx)
+	scopedCtx := scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NODES,
+		ID:    "nodeID1",
+	})
+	comp = getNodeComponentResolver(s.T(), s.resolver, scopedCtx, componentID)
+	node = getNodeResolver(s.T(), s.resolver, ctx, "nodeID1")
+	lastScanned, err = comp.LastScanned(ctx)
 	s.NoError(err)
 	expected, err = timestamp(node.data.GetScan().GetScanTime())
 	s.NoError(err)
@@ -272,45 +375,106 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 func (s *GraphQLNodeComponentTestSuite) TestNodeComponentNodes() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	comp := s.getNodeComponentResolver(ctx, scancomponent.ComponentID("comp1", "0.9", ""))
+	comp := getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp1", "0.9", ""))
 
 	nodes, err := comp.Nodes(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(2, len(nodes))
 	idList := getIDList(ctx, nodes)
-	s.ElementsMatch(idList, []string{"id1", "id2"})
+	s.ElementsMatch(idList, []string{"nodeID1", "nodeID2"})
 
 	count, err := comp.NodeCount(ctx, RawQuery{})
 	s.NoError(err)
 	s.Equal(int32(len(nodes)), count)
 
-	comp = s.getNodeComponentResolver(ctx, scancomponent.ComponentID("comp4", "1.0", ""))
+	comp = getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp4", "1.0", ""))
 
 	nodes, err = comp.Nodes(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(1, len(nodes))
 	idList = getIDList(ctx, nodes)
-	s.ElementsMatch(idList, []string{"id2"})
+	s.ElementsMatch(idList, []string{"nodeID2"})
 
 	count, err = comp.NodeCount(ctx, RawQuery{})
 	s.NoError(err)
 	s.Equal(int32(len(nodes)), count)
 }
 
-func (s *GraphQLNodeComponentTestSuite) getNodeResolver(ctx context.Context, id string) *nodeResolver {
-	nodeID := graphql.ID(id)
+func (s *GraphQLNodeComponentTestSuite) TestNodeComponentNodeVulnerabilities() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	node, err := s.resolver.Node(ctx, struct{ graphql.ID }{nodeID})
+	comp := getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp3", "1.0", ""))
+	vulns, err := comp.NodeVulnerabilities(ctx, PaginatedQuery{})
 	s.NoError(err)
-	s.Equal(nodeID, node.Id(ctx))
-	return node
+	s.Equal(2, len(vulns))
+	idList := getIDList(ctx, vulns)
+	s.ElementsMatch(idList, []string{"cve-2019-1#", "cve-2019-2#"})
+
+	count, err := comp.NodeVulnerabilityCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.Equal(int32(len(vulns)), count)
+
+	counter, err := comp.NodeVulnerabilityCounter(ctx, RawQuery{})
+	s.NoError(err)
+	checkVulnerabilityCounter(s.T(), counter, int32(len(vulns)), 0, 0, 0, 1, 1)
+
+	comp = getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp1", "0.9", ""))
+	vulns, err = comp.NodeVulnerabilities(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.Equal(1, len(vulns))
+	idList = getIDList(ctx, vulns)
+	s.ElementsMatch(idList, []string{"cve-2018-1#"})
+
+	count, err = comp.NodeVulnerabilityCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.Equal(int32(len(vulns)), count)
+
+	counter, err = comp.NodeVulnerabilityCounter(ctx, RawQuery{})
+	s.NoError(err)
+	checkVulnerabilityCounter(s.T(), counter, int32(len(vulns)), 1, 1, 0, 0, 0)
 }
 
-func (s *GraphQLNodeComponentTestSuite) getNodeComponentResolver(ctx context.Context, id string) NodeComponentResolver {
-	compID := graphql.ID(id)
+func (s *GraphQLNodeComponentTestSuite) TestNodeComponentPlottedNodeVulnerabilities() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	comp, err := s.resolver.NodeComponent(ctx, IDQuery{ID: &compID})
+	comp := getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp3", "1.0", ""))
+	plottedVulnRes, err := comp.PlottedNodeVulnerabilities(ctx, RawQuery{})
 	s.NoError(err)
-	s.Equal(compID, comp.Id(ctx))
-	return comp
+
+	vulns, err := plottedVulnRes.NodeVulnerabilities(ctx, PaginationWrapper{})
+	s.NoError(err)
+	s.Equal(2, len(vulns))
+	idList := getIDList(ctx, vulns)
+	s.ElementsMatch(idList, []string{"cve-2019-1#", "cve-2019-2#"})
+
+	basicCounter, err := plottedVulnRes.BasicNodeVulnerabilityCounter(ctx)
+	s.NoError(err)
+	s.Equal(int32(2), basicCounter.All(ctx).Total(ctx))
+	s.Equal(int32(0), basicCounter.All(ctx).Fixable(ctx))
+
+	comp = getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp1", "0.9", ""))
+	plottedVulnRes, err = comp.PlottedNodeVulnerabilities(ctx, RawQuery{})
+	s.NoError(err)
+
+	vulns, err = plottedVulnRes.NodeVulnerabilities(ctx, PaginationWrapper{})
+	s.NoError(err)
+	s.Equal(1, len(vulns))
+	idList = getIDList(ctx, vulns)
+	s.ElementsMatch(idList, []string{"cve-2018-1#"})
+
+	basicCounter, err = plottedVulnRes.BasicNodeVulnerabilityCounter(ctx)
+	s.NoError(err)
+	s.Equal(int32(1), basicCounter.All(ctx).Total(ctx))
+	s.Equal(int32(1), basicCounter.All(ctx).Fixable(ctx))
+}
+
+func (s *GraphQLNodeComponentTestSuite) NodeComponentTopNodeVulnerability() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	comp := getNodeComponentResolver(s.T(), s.resolver, ctx, scancomponent.ComponentID("comp3", "1.0", ""))
+
+	expected := graphql.ID("cve-2019-1#")
+	topVuln, err := comp.TopNodeVulnerability(ctx)
+	s.NoError(err)
+	s.Equal(expected, topVuln.Id(ctx))
 }
