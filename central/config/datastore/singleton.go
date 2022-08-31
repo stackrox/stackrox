@@ -57,7 +57,7 @@ var (
 func initialize() {
 	var store configStore.Store
 	if features.PostgresDatastore.Enabled() {
-		store = postgres.New(context.TODO(), globaldb.GetPostgres())
+		store = postgres.New(sac.WithNoAccess(context.Background()), globaldb.GetPostgres())
 	} else {
 		store = bolt.New(globaldb.GetGlobalDB())
 	}

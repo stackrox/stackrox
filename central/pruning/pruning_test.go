@@ -237,7 +237,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 	var pool *pgxpool.Pool
 	if features.PostgresDatastore.Enabled() {
-		pool = globaldb.GetPostgres()
+		pool = globaldb.GetPostgresTest(t)
 	}
 	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
@@ -285,7 +285,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 	var pool *pgxpool.Pool
 	if features.PostgresDatastore.Enabled() {
-		pool = globaldb.GetPostgres()
+		pool = globaldb.GetPostgresTest(t)
 	}
 	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
