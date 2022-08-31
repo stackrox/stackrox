@@ -44,7 +44,7 @@ function CredentialExpiryBanner({
                 // eslint-disable-next-line no-console
                 console.warn(`Failed to fetch certification expiration for ${component}`, e);
             });
-    });
+    }, [component]);
 
     if (!expirationDate) {
         return null;
