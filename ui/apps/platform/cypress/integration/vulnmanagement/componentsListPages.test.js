@@ -57,7 +57,7 @@ describe('Components list Page and its entity detail page, (related entities) su
             }
         });
 
-        it('should display all the columns expected in components list page', () => {
+        it('should display all the columns expected in image components list page', () => {
             visitVulnerabilityManagementEntities('image-components');
             hasExpectedHeaderColumns([
                 'Component',
@@ -82,6 +82,36 @@ describe('Components list Page and its entity detail page, (related entities) su
                     allFixableCheck(url.list.components); */
                 if (columnValue !== 'no cves' && columnValue.includes('cve')) {
                     allCVECheck(url.list['image-components']);
+                }
+            });
+            //  TBD to be fixed after back end sorting is fixed
+            //  validateSort(selectors.componentsRiskScoreCol);
+        });
+
+        it('should display all the columns expected in node components list page', () => {
+            visitVulnerabilityManagementEntities('node-components');
+            hasExpectedHeaderColumns([
+                'Component',
+                'Operating System',
+                'CVEs',
+                'Top CVSS',
+                'Images',
+                'Deployments',
+                'Risk Priority',
+            ]);
+            cy.get(selectors.tableBodyColumn).each(($el) => {
+                const columnValue = $el.text().toLowerCase();
+                // TODO: uncomment after API fixes deploymentCount return value in this context
+                // if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
+                //     allChecksForEntities(url.list['node-components'], 'Deployment');
+                // }
+                if (columnValue !== 'no nodes' && columnValue.includes('node')) {
+                    allChecksForEntities(url.list['node-components'], 'Node');
+                }
+                /* TBD - uncomment later - if (columnValue !== 'no cves' && columnValue.includes('fixable'))
+                    allFixableCheck(url.list.components); */
+                if (columnValue !== 'no cves' && columnValue.includes('cve')) {
+                    allCVECheck(url.list['node-components']);
                 }
             });
             //  TBD to be fixed after back end sorting is fixed
