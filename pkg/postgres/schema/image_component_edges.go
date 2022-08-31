@@ -30,6 +30,7 @@ var (
 		GormModel: (*ImageComponentEdges)(nil),
 		Indexes: []string{
 			"create index if not exists imageComponentEdges_ImageId on image_component_edges using hash(ImageId)",
+			"create index if not exists imageComponentEdges_ImageComponentId on image_component_edges using hash(ImageComponentId)",
 		},
 		Children: []*postgres.CreateStmts{},
 	}
@@ -75,7 +76,7 @@ type ImageComponentEdges struct {
 	Id               string `gorm:"column:id;type:varchar;primaryKey"`
 	Location         string `gorm:"column:location;type:varchar"`
 	ImageId          string `gorm:"column:imageid;type:varchar;index:imagecomponentedges_imageid,type:hash"`
-	ImageComponentId string `gorm:"column:imagecomponentid;type:varchar"`
+	ImageComponentId string `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentedges_imagecomponentid,type:hash"`
 	Serialized       []byte `gorm:"column:serialized;type:bytea"`
 	ImagesRef        Images `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

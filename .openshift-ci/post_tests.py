@@ -276,6 +276,7 @@ class FinalPost(StoreArtifacts):
         store_qa_test_debug_logs=False,
         store_qa_spock_results=False,
         artifact_destination_prefix="final",
+        handle_e2e_progress_failures=True,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._store_qa_test_debug_logs = store_qa_test_debug_logs
@@ -284,13 +285,15 @@ class FinalPost(StoreArtifacts):
             self.data_to_store.append(PostTestsConstants.QA_TEST_DEBUG_LOGS)
         if self._store_qa_spock_results:
             self.data_to_store.append(PostTestsConstants.QA_SPOCK_RESULTS)
+        self._handle_e2e_progress_failures = handle_e2e_progress_failures
 
     def run(self, test_outputs=None):
         self.store_artifacts()
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()
         self.handle_run_failure()
-        self.handle_e2e_progress_failures()
+        if self._handle_e2e_progress_failures:
+            self.handle_e2e_progress_failures()
 
     def fixup_artifacts_content_type(self):
         self.run_with_best_effort(

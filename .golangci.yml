@@ -1,9 +1,12 @@
 run:
-  timeout: 5m
+  timeout: 16m
   skip-dirs:
   - pkg/complianceoperator/api
   build-tags:
   - sql_integration
+
+output:
+  format: "junit-xml:report.xml,colored-line-number"
 
 issues:
   exclude-use-default: false

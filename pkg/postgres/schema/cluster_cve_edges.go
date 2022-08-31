@@ -29,8 +29,10 @@ var (
                )
                `,
 		GormModel: (*ClusterCveEdges)(nil),
-		Indexes:   []string{},
-		Children:  []*postgres.CreateStmts{},
+		Indexes: []string{
+			"create index if not exists clusterCveEdges_CveId on cluster_cve_edges using hash(CveId)",
+		},
+		Children: []*postgres.CreateStmts{},
 	}
 
 	// ClusterCveEdgesSchema is the go schema for table `cluster_cve_edges`.
@@ -69,7 +71,7 @@ type ClusterCveEdges struct {
 	IsFixable   bool     `gorm:"column:isfixable;type:bool"`
 	FixedBy     string   `gorm:"column:fixedby;type:varchar"`
 	ClusterId   string   `gorm:"column:clusterid;type:varchar"`
-	CveId       string   `gorm:"column:cveid;type:varchar"`
+	CveId       string   `gorm:"column:cveid;type:varchar;index:clustercveedges_cveid,type:hash"`
 	Serialized  []byte   `gorm:"column:serialized;type:bytea"`
 	ClustersRef Clusters `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

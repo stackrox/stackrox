@@ -16,7 +16,6 @@ type TableCountLinksProps = {
         id: string;
     };
     textOnly: boolean;
-    // fixableVulnType?: typeof entityTypes[keyof typeof entityTypes] | '' | null | undefined;
 };
 
 function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement {
