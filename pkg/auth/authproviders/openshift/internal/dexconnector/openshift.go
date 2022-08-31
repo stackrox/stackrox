@@ -41,6 +41,7 @@ import (
 //   * add validation for connectivity to OAuth2 endpoints                    //
 //   * extract fetching user info into identity() function                    //
 //   * deduce redirect URI's host and scheme via MakeRedirectURI() function   //
+//   * use our custom proxy configuration mechanism                           //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -333,7 +334,7 @@ func newHTTPClient(certPool *x509.CertPool) (*http.Client, error) {
 	return &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{RootCAs: certPool},
-			Proxy:           http.ProxyFromEnvironment,
+			Proxy:           proxy.FromConfig(),
 			DialContext: (&net.Dialer{
 				Timeout:   30 * time.Second,
 				KeepAlive: 30 * time.Second,
