@@ -1,0 +1,16 @@
+{
+    "integrations": [
+        {
+            "id":"io.stackrox.signatureintegration.ac53725f-d5b3-43d6-a473-af4998d2bfc0",
+            "name":"Distroless",
+            "cosign":{
+                "publicKeys":[
+                    {
+                        "name":"Distroless",
+                        "publicKeyPemEnc":"-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZzVzkb8A+DbgDpaJId/bOmV8n7Q\nOqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==\n-----END PUBLIC KEY-----"
+                    }
+                ]
+            }
+        }
+    ]
+}
