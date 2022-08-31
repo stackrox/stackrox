@@ -1,0 +1,53 @@
+name: Style
+on:
+  pull_request:
+    types:
+    - opened
+    - synchronize
+    - labeled
+
+env:
+  ROX_PRODUCT_BRANDING: RHACS_BRANDING
+
+jobs:
+
+  style-check:
+    if: |
+      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.49
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
+
+      - name: Cache UI dependencies
+        uses: ./.github/actions/cache-ui-dependencies
+
+      - name: Cache QA Test dependencies
+        uses: ./.github/actions/cache-gradle-dependencies
+
+      - name: PR labels
+        uses: joerick/pr-labels-action@v1.0.6
+
+      - name: Setup Go build environment
+        run: |
+          if [[ -n "$GITHUB_PR_LABEL_CI_RELEASE_BUILD" ]]; then
+            cci-export GOTAGS release
+          fi
+          echo "GOTAGS: ${GOTAGS:-}"
+
+      - name: Fetch UI deps
+        run: make -C ui deps
+
+      - name: make style
+        run: make style
