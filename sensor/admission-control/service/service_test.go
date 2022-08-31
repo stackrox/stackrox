@@ -172,6 +172,8 @@ func (r serviceTestRun) execute() {
 	// TODO(porridge): come up with a less hacky way to synchronize
 	time.Sleep(2 * time.Second)
 
+	managerTesting.Sync(r.t, r.mgr)
+
 	s := service{
 		mgr: r.mgr,
 	}

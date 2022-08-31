@@ -3,10 +3,12 @@ package testing
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/sensor/admission-control/manager"
@@ -40,6 +42,21 @@ func ProcessDeploymentEvent(t *testing.T, mgr manager.Manager, deployment *stora
 		Resource: &sensor.AdmCtrlUpdateResourceRequest_Deployment{Deployment: deployment},
 		Action:   central.ResourceAction_CREATE_RESOURCE,
 	}
+}
+
+func Sync(t *testing.T, mgr manager.Manager) {
+	if t == nil {
+		panic("This function must be called from a test.")
+	}
+	require.True(t, mgr.IsReady())
+
+	mgr.ResourceUpdatesC() <- &sensor.AdmCtrlUpdateResourceRequest{
+		Resource: &sensor.AdmCtrlUpdateResourceRequest_Synced{
+			Synced: &sensor.AdmCtrlUpdateResourceRequest_ResourcesSynced{},
+		},
+	}
+
+	require.True(t, concurrency.WaitWithTimeout(mgr.InitialResourceSyncSig(), 5*time.Second), "manager did not process sync event in time")
 }
 
 func addPolicyToSettings(t *testing.T, settings *sensor.AdmissionControlSettings, policy *storage.Policy) {
