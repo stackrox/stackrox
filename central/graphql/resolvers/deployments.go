@@ -167,7 +167,7 @@ func (resolver *deploymentResolver) GroupedProcesses(ctx context.Context) ([]*pr
 	if err := readIndicators(ctx); err != nil {
 		return nil, err
 	}
-	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
 	indicators, err := resolver.root.ProcessIndicatorStore.SearchRawProcessIndicators(ctx, query)
 	return resolver.root.wrapProcessNameGroups(service.IndicatorsToGroupedResponses(indicators), err)
 }
@@ -468,7 +468,7 @@ func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, q 
 	psr := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 		AddExactMatches(search.Namespace, deployment.GetNamespace()).
-		AddStrings(search.SecretName, secretSet.AsSlice()...).
+		AddExactMatches(search.SecretName, secretSet.AsSlice()...).
 		ProtoQuery()
 	secrets, err := resolver.root.SecretsDataStore.SearchRawSecrets(ctx, psr)
 	if err != nil {
@@ -674,7 +674,7 @@ func (resolver *deploymentResolver) ProcessActivityCount(ctx context.Context) (i
 	if err := readIndicators(ctx); err != nil {
 		return 0, err
 	}
-	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
 	indicators, err := resolver.root.ProcessIndicatorStore.Search(ctx, query)
 	if err != nil {
 		return 0, err

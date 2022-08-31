@@ -722,7 +722,7 @@ func (ds *datastoreImpl) getSecrets(ctx context.Context, cluster *storage.Cluste
 
 func (ds *datastoreImpl) getAlerts(ctx context.Context, deploymentID string) ([]*storage.Alert, error) {
 	q := pkgSearch.NewQueryBuilder().
-		AddStrings(pkgSearch.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddExactMatches(pkgSearch.ViolationState, storage.ViolationState_ACTIVE.String()).
 		AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
 	return ds.alertDataStore.SearchRawAlerts(ctx, q)
 }
