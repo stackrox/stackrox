@@ -1,13 +1,19 @@
 package index
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+)
+
+var (
+	ctx = sac.WithAllAccess(context.Background())
 )
 
 func TestNamespaceIndex(t *testing.T) {
@@ -42,7 +48,7 @@ func (suite *NamespaceIndexTestSuite) TestIndexing() {
 	suite.NoError(suite.indexer.AddNamespaceMetadata(ns))
 
 	q := search.NewQueryBuilder().AddStrings(search.Namespace, "namespace1").ProtoQuery()
-	results, err := suite.indexer.Search(q)
+	results, err := suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Len(results, 1)
 }

@@ -178,6 +178,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 		"id",
 		"name",
 		"version",
+		"operatingsystem",
 		"riskscore",
 		"topcvss",
 		"serialized",
@@ -193,6 +194,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetVersion(),
+			obj.GetOperatingSystem(),
 			obj.GetRiskScore(),
 			obj.GetTopCvss(),
 			serialized,
@@ -284,6 +286,7 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 		"cvebaseinfo_cve",
 		"cvebaseinfo_publishedon",
 		"cvebaseinfo_createdat",
+		"operatingsystem",
 		"cvss",
 		"severity",
 		"impactscore",
@@ -318,6 +321,7 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 			obj.GetCveBaseInfo().GetCve(),
 			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 			pgutils.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+			obj.GetOperatingSystem(),
 			obj.GetCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),
@@ -521,7 +525,7 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID s
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	var sacQueryFilter *v1.Query
-	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
+	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Get returns the object, if it exists from the store

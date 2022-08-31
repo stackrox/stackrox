@@ -27,8 +27,11 @@ var (
                )
                `,
 		GormModel: (*NodeComponentEdges)(nil),
-		Indexes:   []string{},
-		Children:  []*postgres.CreateStmts{},
+		Indexes: []string{
+			"create index if not exists nodeComponentEdges_NodeId on node_component_edges using hash(NodeId)",
+			"create index if not exists nodeComponentEdges_NodeComponentId on node_component_edges using hash(NodeComponentId)",
+		},
+		Children: []*postgres.CreateStmts{},
 	}
 
 	// NodeComponentEdgesSchema is the go schema for table `node_component_edges`.
@@ -67,8 +70,8 @@ const (
 // NodeComponentEdges holds the Gorm model for Postgres table `node_component_edges`.
 type NodeComponentEdges struct {
 	Id              string `gorm:"column:id;type:varchar;primaryKey"`
-	NodeId          string `gorm:"column:nodeid;type:varchar"`
-	NodeComponentId string `gorm:"column:nodecomponentid;type:varchar"`
+	NodeId          string `gorm:"column:nodeid;type:varchar;index:nodecomponentedges_nodeid,type:hash"`
+	NodeComponentId string `gorm:"column:nodecomponentid;type:varchar;index:nodecomponentedges_nodecomponentid,type:hash"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 	NodesRef        Nodes  `gorm:"foreignKey:nodeid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

@@ -228,9 +228,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestGrandChild1) er
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "TestGrandChild1")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -241,9 +239,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestGrandChi
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TestGrandChild1")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -277,7 +273,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
+	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
@@ -300,7 +296,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -408,7 +404,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}

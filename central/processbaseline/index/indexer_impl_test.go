@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -8,8 +9,13 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+)
+
+var (
+	ctx = sac.WithAllAccess(context.Background())
 )
 
 func TestProcessBaselineIndex(t *testing.T) {
@@ -45,7 +51,7 @@ func (suite *ProcessBaselineIndexTestSuite) getAndStoreBaseline() *storage.Proce
 }
 
 func (suite *ProcessBaselineIndexTestSuite) search(q *v1.Query, expectedResultSize int) ([]search.Result, error) {
-	results, err := suite.indexer.Search(q)
+	results, err := suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Equal(expectedResultSize, len(results))
 	return results, err
@@ -87,7 +93,7 @@ func (suite *ProcessBaselineIndexTestSuite) TestAddSearchDeleteBaseline() {
 
 	err = suite.indexer.DeleteProcessBaseline(baseline.GetId())
 	suite.NoError(err)
-	results, err = suite.indexer.Search(q)
+	results, err = suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Equal(0, len(results))
 }

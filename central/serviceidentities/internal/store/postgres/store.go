@@ -212,9 +212,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ServiceIdentity) er
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "ServiceIdentity")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -225,9 +223,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ServiceIdent
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ServiceIdentity")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -251,11 +247,11 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
-		return 0, err
+	if !scopeChecker.IsAllowed() {
+		return 0, nil
 	}
 
-	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
+	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
@@ -264,9 +260,7 @@ func (s *storeImpl) Exists(ctx context.Context, serialStr string) (bool, error) 
 
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return false, err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return false, nil
 	}
 
@@ -275,7 +269,7 @@ func (s *storeImpl) Exists(ctx context.Context, serialStr string) (bool, error) 
 		search.NewQueryBuilder().AddDocIDs(serialStr).ProtoQuery(),
 	)
 
-	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -288,9 +282,7 @@ func (s *storeImpl) Get(ctx context.Context, serialStr string) (*storage.Service
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return nil, false, err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return nil, false, nil
 	}
 
@@ -336,9 +328,7 @@ func (s *storeImpl) Delete(ctx context.Context, serialStr string) error {
 
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -356,9 +346,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -376,12 +364,10 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return nil, nil
 	}
-	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -405,9 +391,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Servi
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return nil, nil, err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return nil, nil, nil
 	}
 	q := search.ConjunctionQuery(
@@ -455,9 +439,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -473,9 +455,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ServiceIdentity) error) error {
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return nil
 	}
 	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)

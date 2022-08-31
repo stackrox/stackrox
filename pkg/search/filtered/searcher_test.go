@@ -80,7 +80,7 @@ func (s *filteredSearcherTestSuite) TearDownTest() {
 }
 
 func (s *filteredSearcherTestSuite) TestGlobalAllowed() {
-	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
+	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{
 		{
 			ID: id1,
 		},
@@ -125,7 +125,7 @@ func (s *filteredSearcherTestSuite) TestGlobalAllowed() {
 }
 
 func (s *filteredSearcherTestSuite) TestGlobalDenied() {
-	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
+	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{
 		{
 			ID: id1,
 		},
@@ -157,7 +157,7 @@ func (s *filteredSearcherTestSuite) TestGlobalDenied() {
 }
 
 func (s *filteredSearcherTestSuite) TestScoped() {
-	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
+	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{
 		{
 			ID: id1,
 		},
@@ -201,7 +201,7 @@ func (s *filteredSearcherTestSuite) TestScoped() {
 }
 
 func (s *filteredSearcherTestSuite) TestMultiScoped() {
-	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
+	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{
 		{
 			ID: id1,
 		},

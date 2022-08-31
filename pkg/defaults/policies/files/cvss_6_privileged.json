@@ -4,6 +4,7 @@
   "description": "Alert on deployments running in privileged mode with fixable vulnerabilities with a CVSS of at least 6",
   "rationale": "Known vulnerabilities make it easier for adversaries to exploit your application, and highly privileged containers pose greater risk. You can fix these high-severity vulnerabilities by updating to a newer version of the affected component(s).",
   "remediation": "Use your package manager to update to a fixed version in future builds, run your container with lower privileges, or speak with your security team to mitigate the vulnerabilities.",
+  "disabled": true,
   "categories": [
     "Vulnerability Management",
     "Privileges"

@@ -119,7 +119,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	}
 	img3 := fixtures.GetImageWithUniqueComponents(5)
 	img3.Id = uuid.NewV4().String()
-
+	img3.Scan.OperatingSystem = "saturn"
 	dep1 := fixtures.GetDeploymentWithImage("c1", "n1", img1)
 	dep2 := fixtures.GetDeploymentWithImage("c1", "n2", img2)
 	dep3 := fixtures.GetDeploymentWithImage("c2", "n1", img3)
@@ -255,7 +255,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			}),
 			query:        pkgSearch.EmptyQuery(),
 			orderMatters: false,
-			expectedIDs:  []string{dep1.Id, dep3.Id},
+			expectedIDs:  []string{dep1.Id},
 		},
 		{
 			desc:         "Search images with empty query",
@@ -327,6 +327,30 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n2").ProtoQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{},
+			queryImages:  true,
+		},
+		{
+			desc:         "Search images by operating system",
+			ctx:          ctx,
+			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.OperatingSystem, "pluto").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{img2.GetId()},
+			queryImages:  true,
+		},
+		{
+			desc: "Sort images by operating system",
+			ctx:  ctx,
+			query: &v1.Query{
+				Pagination: &v1.QueryPagination{
+					SortOptions: []*v1.QuerySortOption{
+						{
+							Field: pkgSearch.OperatingSystem.String(),
+						},
+					},
+				},
+			},
+			orderMatters: true,
+			expectedIDs:  []string{img1.GetId(), img2.GetId(), img3.GetId()},
 			queryImages:  true,
 		},
 	} {

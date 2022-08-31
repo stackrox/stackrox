@@ -93,10 +93,11 @@ func insertIntoImageComponents(ctx context.Context, batch *pgx.Batch, obj *stora
 		obj.GetSource(),
 		obj.GetRiskScore(),
 		obj.GetTopCvss(),
+		obj.GetOperatingSystem(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_components (Id, Name, Version, Priority, Source, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_components (Id, Name, Version, Priority, Source, RiskScore, TopCvss, OperatingSystem, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -128,6 +129,8 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs
 
 		"topcvss",
 
+		"operatingsystem",
+
 		"serialized",
 	}
 
@@ -155,6 +158,8 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs
 			obj.GetRiskScore(),
 
 			obj.GetTopCvss(),
+
+			obj.GetOperatingSystem(),
 
 			serialized,
 		})
@@ -243,9 +248,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ImageComponent) err
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "ImageComponent")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -256,9 +259,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ImageCompone
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ImageComponent")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -292,7 +293,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
+	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
@@ -315,7 +316,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -423,7 +424,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}

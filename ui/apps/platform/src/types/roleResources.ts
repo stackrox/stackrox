@@ -1,54 +1,64 @@
-// central/role/resources/list.go
+// Source of truth: central/role/resources/list.go
 
+/*
+ * Whenever you edit this file, make corresponding changes:
+ * ui/apps/platform/cypress/fixtures/auth/mypermissions*.json
+ * ui/apps/platform/src/Containers/AccessControl/PermissionSets/ResourceDescription.tsx
+ */
+
+// Semicolon on separate line following the strings prevents an extra changed line to add a string at the end.
+// prettier-ignore
 export type ResourceName =
-    | 'Access'
-    | 'Administration'
-    | 'APIToken'
+    | 'Access' // Access is the new resource grouping all access related resources.
+    | 'Administration' // Administration is the new resource grouping all administration-like resources.
     | 'Alert'
-    | 'AllComments'
-    | 'AuthProvider'
-    | 'BackupPlugins'
-    | 'CVE'
+    | 'CVE' // SAC check is not performed directly on CVE resource. It exists here for postgres sac generation to pass.
     | 'Cluster'
     | 'Compliance'
-    | 'ComplianceRunSchedule'
-    | 'ComplianceRuns'
-    | 'Config'
-    | 'DebugLogs'
     | 'Deployment'
-    | 'DeploymentExtension'
+    | 'DeploymentExtension' // DeploymentExtension is the new resource grouping all deployment extending resources.
     | 'Detection'
-    | 'Group'
     | 'Image'
-    | 'ImageComponent'
-    | 'ImageIntegration'
-    | 'Indicator'
-    | 'Integration'
+    | 'Integration' // Integration is the new resource grouping all integration resources.
     | 'K8sRole'
     | 'K8sRoleBinding'
     | 'K8sSubject'
-    | 'Licenses'
     | 'Namespace'
-    | 'NetworkBaseline'
     | 'NetworkGraph'
-    | 'NetworkGraphConfig'
     | 'NetworkPolicy'
     | 'Node'
-    | 'Notifier'
     | 'Policy'
+    | 'Secret'
+    | 'ServiceAccount'
+    | 'VulnerabilityManagementApprovals'
+    | 'VulnerabilityManagementRequests'
+    | 'VulnerabilityReports'
+    | 'WatchedImage'
+    // To-be-deprecated resources.
+    | 'AllComments'
+    | 'APIToken'
+    | 'AuthProvider'
+    | 'BackupPlugins'
+    | 'ComplianceRuns'
+    | 'ComplianceRunSchedule'
+    | 'Config'
+    | 'DebugLogs'
+    | 'Group'
+    | 'ImageComponent'
+    | 'ImageIntegration'
+    | 'Indicator'
+    | 'Licenses'
+    | 'NetworkBaseline'
+    | 'NetworkGraphConfig'
+    | 'Notifier'
     | 'ProbeUpload'
     | 'ProcessWhitelist'
     | 'Risk'
     | 'Role'
     | 'ScannerBundle'
     | 'ScannerDefinitions'
-    | 'Secret'
     | 'SensorUpgradeConfig'
-    | 'ServiceAccount'
     | 'ServiceIdentity'
     | 'SignatureIntegration'
     | 'User'
-    | 'VulnerabilityManagementApprovals'
-    | 'VulnerabilityManagementRequests'
-    | 'VulnerabilityReports'
-    | 'WatchedImage';
+    ;

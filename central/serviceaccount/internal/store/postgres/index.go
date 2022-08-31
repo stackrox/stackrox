@@ -2,6 +2,7 @@
 package postgres
 
 import (
+	"context"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -30,16 +31,16 @@ type indexerImpl struct {
 	db *pgxpool.Pool
 }
 
-func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ServiceAccount")
 
-	return postgres.RunCountRequest(v1.SearchCategory_SERVICE_ACCOUNTS, q, b.db)
+	return postgres.RunCountRequest(ctx, v1.SearchCategory_SERVICE_ACCOUNTS, q, b.db)
 }
 
-func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ServiceAccount")
 
-	return postgres.RunSearchRequest(v1.SearchCategory_SERVICE_ACCOUNTS, q, b.db)
+	return postgres.RunSearchRequest(ctx, v1.SearchCategory_SERVICE_ACCOUNTS, q, b.db)
 }
 
 //// Stubs for satisfying interfaces

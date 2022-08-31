@@ -102,4 +102,4 @@ export default {
     ...standardTypes,
     ...standardEntityTypes,
     ...rbacConfigTypes,
-};
+} as const;

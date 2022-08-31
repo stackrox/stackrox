@@ -14,9 +14,8 @@ import (
 //go:generate mockgen-wrapper
 type ScopeChecker interface {
 	SubScopeChecker(keys ...ScopeKey) ScopeChecker
-	Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error)
-	AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error)
-	AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error)
+	IsAllowed(subScopeKeys ...ScopeKey) bool
+	AllAllowed(subScopeKeyss [][]ScopeKey) bool
 	ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker
 	ForNamespaceScopedObject(obj NamespaceScopedObject) ScopeChecker
 	AccessMode(am storage.Access) ScopeChecker
@@ -55,8 +54,8 @@ func (c scopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	}
 }
 
-// TryAllowed checks (in a non-blocking way) if access to the given (sub-)scope is allowed.
-func (c scopeChecker) TryAllowed(subScopeKeys ...ScopeKey) bool {
+// IsAllowed checks (in a blocking way) if access to the given (sub-)scope is allowed.
+func (c scopeChecker) IsAllowed(subScopeKeys ...ScopeKey) bool {
 	curr := c.core
 	for _, key := range subScopeKeys {
 		curr = curr.SubScopeChecker(key)
@@ -64,35 +63,15 @@ func (c scopeChecker) TryAllowed(subScopeKeys ...ScopeKey) bool {
 	return curr.Allowed()
 }
 
-// Allowed checks (in a blocking way) if access to the given (sub-)scope is allowed.
-func (c scopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error) {
-	curr := c.core
-	for _, key := range subScopeKeys {
-		curr = curr.SubScopeChecker(key)
-	}
-	return curr.Allowed(), nil
-}
-
-// AnyAllowed checks if access to any of the given subscopes is allowed.
-func (c scopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
-	for _, subScopeKeys := range subScopeKeyss {
-		if c.TryAllowed(subScopeKeys...) {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
 // AllAllowed checks if access to all of the given subscopes is allowed.
-func (c scopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
+func (c scopeChecker) AllAllowed(subScopeKeyss [][]ScopeKey) bool {
 	for _, subScopeKeys := range subScopeKeyss {
-		if !c.TryAllowed(subScopeKeys...) {
-			return false, nil
+		if !c.IsAllowed(subScopeKeys...) {
+			return false
 		}
 	}
 
-	return true, nil
+	return true
 }
 
 // ForClusterScopedObject returns a scope checker for the subscope corresponding to the given
@@ -129,7 +108,7 @@ func (c scopeChecker) Namespace(namespace string) ScopeChecker {
 
 // Check checks the given predicate in this scope.
 func (c scopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, error) {
-	return pred.TryAllowed(c), nil
+	return pred.Allowed(c), nil
 }
 
 // EffectiveAccessScope returns underlying effective access scope.

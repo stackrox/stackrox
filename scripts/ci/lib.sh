@@ -434,31 +434,70 @@ poll_for_system_test_images() {
 
     require_environment "QUAY_RHACS_ENG_BEARER_TOKEN"
 
+    # Require images based on the job
+    case "$CI_JOB_NAME" in
+        *-operator-e2e-tests)
+            reqd_images=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index" "main")
+            ;;
+        *-race-condition-qa-e2e-tests)
+            reqd_images=("main-rcd" "roxctl")
+            ;;
+        *-postgres-*)
+            reqd_images=("main" "roxctl" "central-db")
+            ;;
+        *)
+            reqd_images=("main" "roxctl")
+            ;;
+    esac
+
+    info "Will poll for: ${reqd_images[*]}"
+
     local tag
     tag="$(make --quiet tag)"
     local start_time
     start_time="$(date '+%s')"
 
-    _image_exists() {
-        local name="$1"
-        local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
-        info "Checking for $name using $url"
-        local check
-        check=$(curl --location -sS -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" "$url")
-        echo "$check"
-        [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
-    }
-
     while true; do
-        if _image_exists "main" && _image_exists "roxctl" && _image_exists "central-db"; then
+        local all_exist=true
+        for image in "${reqd_images[@]}"
+        do
+            if ! check_rhacs_eng_image_exists "$image" "$tag"; then
+                info "$image does not exist"
+                all_exist=false
+                break
+            fi
+        done
+
+        if $all_exist; then
             info "All images exist"
             break
         fi
         if (( $(date '+%s') - start_time > time_limit )); then
-           die "Timed out waiting for images after ${time_limit} seconds"
+           die "ERROR: Timed out waiting for images after ${time_limit} seconds"
         fi
         sleep 60
     done
+}
+
+check_rhacs_eng_image_exists() {
+    local name="$1"
+    local tag="$2"
+
+    if [[ "$name" =~ stackrox-operator-(bundle|index) ]]; then
+        tag="$(echo "v${tag}" | sed 's,x,0,')"
+    elif [[ "$name" == "stackrox-operator" ]]; then
+        tag="$(echo "${tag}" | sed 's,x,0,')"
+    elif [[ "$name" == "main-rcd" ]]; then
+        name="main"
+        tag="${tag}-rcd"
+    fi
+
+    local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
+    info "Checking for $name using $url"
+    local check
+    check=$(curl --location -sS -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" "$url")
+    echo "$check"
+    [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
 }
 
 check_docs() {

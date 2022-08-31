@@ -1,7 +1,6 @@
 package sac
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -152,25 +151,24 @@ func NamespaceScopeKeys(namespaces ...string) []ScopeKey {
 
 // ScopePredicate is a common interface for all objects that can be interpreted as an expression over scopes.
 type ScopePredicate interface {
-	TryAllowed(sc ScopeChecker) bool
+	Allowed(sc ScopeChecker) bool
 }
 
 // ScopeSuffix is a predicate that checks if the given scope suffix (relative to the checker) is allowed.
 type ScopeSuffix []ScopeKey
 
-// TryAllowed implements the ScopePredicate interface.
-func (i ScopeSuffix) TryAllowed(sc ScopeChecker) bool {
-	allowed, _ := sc.Allowed(context.TODO(), i...)
-	return allowed
+// Allowed implements the ScopePredicate interface.
+func (i ScopeSuffix) Allowed(sc ScopeChecker) bool {
+	return sc.IsAllowed(i...)
 }
 
 // AnyScope is a scope predicate that evaluates to Allowed if any of the given scopes is allowed.
 type AnyScope []ScopePredicate
 
-// TryAllowed implements the ScopePredicate interface.
-func (p AnyScope) TryAllowed(sc ScopeChecker) bool {
+// Allowed implements the ScopePredicate interface.
+func (p AnyScope) Allowed(sc ScopeChecker) bool {
 	for _, pred := range p {
-		if pred.TryAllowed(sc) {
+		if pred.Allowed(sc) {
 			return true
 		}
 	}
@@ -180,10 +178,10 @@ func (p AnyScope) TryAllowed(sc ScopeChecker) bool {
 // AllScopes is a scope predicate that evaluates to Allowed if all of the given scopes are allowed.
 type AllScopes []ScopePredicate
 
-// TryAllowed implements the ScopePredicate interface.
-func (p AllScopes) TryAllowed(sc ScopeChecker) bool {
+// Allowed implements the ScopePredicate interface.
+func (p AllScopes) Allowed(sc ScopeChecker) bool {
 	for _, pred := range p {
-		if !pred.TryAllowed(sc) {
+		if !pred.Allowed(sc) {
 			return false
 		}
 	}

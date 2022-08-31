@@ -104,8 +104,7 @@
         "clean": "rm -rf ./cypress/test-results",
         "start": "DISABLE_ESLINT_PLUGIN=true HTTPS=true react-scripts start",
         "build": "DISABLE_ESLINT_PLUGIN=true CI=false GENERATE_SOURCEMAP=false react-scripts build",
-        "test": "react-scripts test --verbose=true --slowTestThreshold=1",
-        "test:coverage": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports react-scripts test --coverage --reporters=default --reporters=jest-junit",
+        "test": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports react-scripts test --verbose=true --slowTestThreshold=1  --coverage --reporters=default --reporters=jest-junit",
         "test-watch": "react-scripts test",
         "lint": "NODE_PATH=src eslint --quiet --ext .js,.ts,.tsx src cypress tailwind.config.js .prettierrc.js .eslintrc.js",
         "cypress-open": "./scripts/cypress.sh open --config defaultCommandTimeout=8000",
@@ -164,7 +163,7 @@
         "redux-immutable-state-invariant": "^2.1.0",
         "redux-saga-test-plan": "^3.7.0",
         "tailwindcss": "^2.0.3",
-        "typescript": "^4.7.4"
+        "typescript": "^4.8.2"
     },
     "browserslist": [
         ">0.2%",

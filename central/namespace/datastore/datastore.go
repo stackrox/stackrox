@@ -161,10 +161,10 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 		return nil, false, err
 	}
 
-	if ok, err := namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS,
+	if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS,
 		sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())).
-		Allowed(ctx); err != nil || !ok {
-		return nil, false, err
+		IsAllowed() {
+		return nil, false, nil
 	}
 	b.updateNamespacePriority(namespace)
 	return namespace, true, err
@@ -175,9 +175,9 @@ func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.Namespace
 	var allowedNamespaces []*storage.NamespaceMetadata
 	err := b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
 		scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
-		if ok, err := namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
-			Allowed(ctx); err != nil || !ok {
-			return err
+		if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
+			IsAllowed() {
+			return nil
 		}
 		allowedNamespaces = append(allowedNamespaces, namespace)
 		return nil
@@ -314,7 +314,9 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, namespaceRanker *ranking.Ranker) search.Searcher {
 	scopedSearcher := pkgPostgres.WithScoping(namespaceSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher))
 	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.NamespacePriority, namespaceRanker)
-	return paginated.WithDefaultSortOption(prioritySortedSearcher, defaultSortOption)
+	// This is currently required due to the priority searcher
+	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
+	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 }
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider graph.Provider, namespaceRanker *ranking.Ranker) search.Searcher {

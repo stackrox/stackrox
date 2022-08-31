@@ -109,20 +109,15 @@ class ProcessBaselinesTest extends BaseSpecification {
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
         orchestrator.createDeployment(deployment)
+        assert Services.waitForDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
         assert deploymentId != null
         orchestrator.execInContainer(deployment, "ls")
 
         String containerName = deployment.getName()
-        ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
-                    getProcessBaseline(clusterId, deployment, containerName)
-        assert (baseline != null)
-        assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
-                    (baseline.key.containerName.equalsIgnoreCase(containerName)))
-        assert baseline.elementsList.find { it.element.processName == processName } != null
 
         // wait for baseline to come out of observation
-        baseline = evaluateWithRetry(10, 10) {
+        ProcessBaselineOuterClass.ProcessBaseline baseline = evaluateWithRetry(10, 10) {
             def tmpBaseline = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
             def now = System.currentTimeSeconds()
             if (tmpBaseline.getStackRoxLockedTimestamp().getSeconds() > now) {
@@ -133,6 +128,9 @@ class ProcessBaselinesTest extends BaseSpecification {
             return tmpBaseline
         }
         assert baseline
+        assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
+                    (baseline.key.containerName.equalsIgnoreCase(containerName)))
+        assert baseline.elementsList.find { it.element.processName == processName } != null
 
         log.info "Baseline Before after observation: ${baseline}"
 

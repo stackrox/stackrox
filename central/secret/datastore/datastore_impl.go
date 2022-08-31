@@ -53,8 +53,8 @@ func (d *datastoreImpl) GetSecret(ctx context.Context, id string) (*storage.Secr
 		return nil, false, err
 	}
 
-	if ok, err := secretSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(secret).Allowed(ctx); err != nil || !ok {
-		return nil, false, err
+	if !secretSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(secret).IsAllowed() {
+		return nil, false, nil
 	}
 
 	return secret, true, nil

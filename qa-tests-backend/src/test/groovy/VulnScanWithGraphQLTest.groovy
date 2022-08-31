@@ -21,6 +21,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
     STRUTS_DEP,
     ]
+
     private static final String GET_CVES_INFO_WITH_IMAGE_QUERY = """
     query image(\$id: ID!) {
         image:
@@ -84,6 +85,39 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         isFixable
         lastScanned
         componentCount
+        imageCount
+        deploymentCount
+        images {
+            id  name {fullName} scan {
+                scanTime
+            }}}
+    }"""
+
+    private static final String GET_POSTGRES_IMAGE_INFO_FROM_VULN_QUERY = """
+    query getCve(\$id: ID!) {
+        result: imageVulnerability(id: \$id) {
+        cve
+        cvss
+        scoreVersion
+        link
+        vectors {
+          __typename
+          ... on CVSSV2 {
+            impactScore
+            exploitabilityScore
+            vector
+          }
+          ... on CVSSV3 {
+            impactScore
+            exploitabilityScore
+            vector
+          }
+        }
+        summary
+        fixedByVersion
+        isFixable
+        lastScanned
+        imageComponentCount
         imageCount
         deploymentCount
         images {
@@ -163,19 +197,17 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         assert !(StringUtils.isEmpty(imgName))
         where:
         "Data inputs are :"
-        CVEID            | OS      | imageToBeVerified
-        "CVE-2017-18190" | "Linux" | STRUTS_DEP.getImage()
+        CVEID            | OS         | imageToBeVerified
+        "CVE-2017-18190" | "debian:8" | STRUTS_DEP.getImage()
     }
 
     private GraphQLService.Response waitForImagesTobeFetched(String cveId, String os,
      int retries = 30, int interval = 4) {
         Timer t = new Timer(retries, interval)
-        def objId = cveId
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            objId = cveId + "#" + os
-        }
+        def objId = isPostgresRun() ? cveId + "#" + os : cveId
+        def graphQLQuery = isPostgresRun() ? GET_POSTGRES_IMAGE_INFO_FROM_VULN_QUERY : GET_IMAGE_INFO_FROM_VULN_QUERY
         while (t.IsValid()) {
-            def result2Ret = gqlService.Call(GET_IMAGE_INFO_FROM_VULN_QUERY, [id: objId])
+            def result2Ret = gqlService.Call(graphQLQuery, [id: objId])
             assert result2Ret.getCode() == 200
             if (result2Ret.getValue().result != null) {
                 log.info "images fetched from cve"

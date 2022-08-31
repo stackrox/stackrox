@@ -22,6 +22,7 @@ var (
                    CveBaseInfo_Cve varchar,
                    CveBaseInfo_PublishedOn timestamp,
                    CveBaseInfo_CreatedAt timestamp,
+                   OperatingSystem varchar,
                    Cvss numeric,
                    Severity integer,
                    ImpactScore numeric,
@@ -67,6 +68,7 @@ type NodeCves struct {
 	CveBaseInfoCve         string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
 	CveBaseInfoPublishedOn *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt   *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
+	OperatingSystem        string                        `gorm:"column:operatingsystem;type:varchar"`
 	Cvss                   float32                       `gorm:"column:cvss;type:numeric"`
 	Severity               storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
 	ImpactScore            float32                       `gorm:"column:impactscore;type:numeric"`

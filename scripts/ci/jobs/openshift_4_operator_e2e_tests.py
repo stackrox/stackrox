@@ -13,4 +13,5 @@ ClusterTestRunner(
     pre_test=PreSystemTests(),
     test=OperatorE2eTest(),
     post_test=PostClusterTest(collect_central_artifacts=False),
-    final_post=FinalPost()).run()
+    final_post=FinalPost(),
+).run()

@@ -120,7 +120,7 @@ message CVEInfo {
 message ImageCVE {
     string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE ID,hidden" sql:"pk,id"'];  // This field is composite of cve and operating system.
     CVEInfo                   cve_base_info         = 2;
-    string                    operating_system      = 3;
+    string                    operating_system      = 3 [(gogoproto.moretags) = 'search:"Operating System"'];
 
     float                     cvss                  = 4 [(gogoproto.moretags) = 'search:"CVSS,store"'];
     VulnerabilitySeverity     severity              = 5 [(gogoproto.moretags) = 'search:"Severity"'];
@@ -134,7 +134,7 @@ message ImageCVE {
 message NodeCVE {
     string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE ID,hidden" sql:"pk,id"'];  // This field is composite of cve and operating system.
     CVEInfo                   cve_base_info         = 2;
-    string                    operating_system      = 3;
+    string                    operating_system      = 3 [(gogoproto.moretags) = 'search:"Operating System"'];
 
     float                     cvss                  = 4 [(gogoproto.moretags) = 'search:"CVSS,store"'];
     VulnerabilitySeverity     severity              = 5 [(gogoproto.moretags) = 'search:"Severity"'];

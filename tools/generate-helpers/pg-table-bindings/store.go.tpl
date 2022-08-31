@@ -344,9 +344,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
         ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
     {{- end }}
     {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped)  }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         return sac.ErrResourceAccessDenied
     }
     {{- end }}
@@ -367,16 +365,12 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     }
     {{- else if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         return sac.ErrResourceAccessDenied
     }
     {{- else if .Obj.IsDirectlyScoped -}}
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         var deniedIds []string
         for _, obj := range objs {
             {{- if .Obj.IsClusterScope }}
@@ -384,9 +378,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
             {{- else if .Obj.IsNamespaceScope }}
             subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
             {{- end }}
-            if ok, err := subScopeChecker.Allowed(ctx); err != nil {
-                return err
-            } else if !ok {
+            if !subScopeChecker.IsAllowed() {
                 deniedIds = append(deniedIds, {{ "obj" | .Obj.GetID }})
             }
         }
@@ -431,8 +423,8 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
-        return 0, err
+    if !scopeChecker.IsAllowed() {
+        return 0, nil
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
@@ -452,7 +444,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
 
-    return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
+    return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
@@ -469,9 +461,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return false, err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         return false, nil
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
@@ -502,7 +492,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     {{- end}}
     )
 
-	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -522,9 +512,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return nil, false, err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         return nil, false, nil
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
@@ -610,9 +598,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         return sac.ErrResourceAccessDenied
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
@@ -665,9 +651,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         return sac.ErrResourceAccessDenied
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
@@ -711,9 +695,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return nil, err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         return nil, nil
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
@@ -732,7 +714,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 	}
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
-    result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+    result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -765,9 +747,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return nil, nil, err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         return nil, nil, nil
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
@@ -843,9 +823,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return nil, err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         return nil, nil
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
@@ -908,9 +886,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         return sac.ErrResourceAccessDenied
     }
     {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
@@ -950,9 +926,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
     }
 {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ" }}
-    if ok, err := scopeChecker.Allowed(ctx); err != nil {
-        return err
-    } else if !ok {
+    if !scopeChecker.IsAllowed() {
         return nil
     }
 {{- else if .Obj.IsDirectlyScoped }}

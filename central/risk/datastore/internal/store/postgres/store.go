@@ -235,9 +235,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Risk) error {
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
 		ClusterID(obj.GetSubject().GetClusterId()).Namespace(obj.GetSubject().GetNamespace())
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -248,15 +246,11 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Risk) error 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Risk")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	if !scopeChecker.IsAllowed() {
 		var deniedIds []string
 		for _, obj := range objs {
 			subScopeChecker := scopeChecker.ClusterID(obj.GetSubject().GetClusterId()).Namespace(obj.GetSubject().GetNamespace())
-			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
-				return err
-			} else if !ok {
+			if !subScopeChecker.IsAllowed() {
 				deniedIds = append(deniedIds, obj.GetId())
 			}
 		}
@@ -295,7 +289,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
+	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
@@ -318,7 +312,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -426,7 +420,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}

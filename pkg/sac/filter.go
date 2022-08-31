@@ -23,7 +23,7 @@ func NewObjectFilter(checker ScopeChecker) *ObjectFilter {
 
 // Add adds an object to the filter, using the given predicate to determine whether it is allowed.
 func (f *ObjectFilter) Add(obj interface{}, pred ScopePredicate) {
-	if pred.TryAllowed(f.checker) {
+	if pred.Allowed(f.checker) {
 		f.allowed = append(f.allowed, obj)
 	}
 }
@@ -36,22 +36,6 @@ func (f *ObjectFilter) GetAllowed(ctx context.Context) ([]interface{}, error) {
 	return allowed, nil
 }
 
-// FilterSlice filters the given slice of objects, using scopePredFunc to determine the scope predicate for each object.
-func FilterSlice(ctx context.Context, sc ScopeChecker, objs []interface{}, scopePredFunc func(interface{}) ScopePredicate) ([]interface{}, error) {
-	if ok, err := sc.Allowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
-		return objs, nil
-	}
-
-	f := NewObjectFilter(sc)
-	for i := range objs {
-		obj := objs[i]
-		f.Add(obj, scopePredFunc(obj))
-	}
-	return f.GetAllowed(ctx)
-}
-
 var (
 	scopePredTy = reflect.TypeOf((*ScopePredicate)(nil)).Elem()
 )
@@ -59,9 +43,7 @@ var (
 // FilterSliceReflect uses reflection to filter the given typed slice, applying a typed predicate function to obtain
 // scope keys.
 func FilterSliceReflect(ctx context.Context, sc ScopeChecker, objSlice interface{}, scopePredFunc interface{}) (interface{}, error) {
-	if ok, err := sc.Allowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
+	if sc.IsAllowed() {
 		return objSlice, nil
 	}
 
@@ -98,9 +80,7 @@ func FilterSliceReflect(ctx context.Context, sc ScopeChecker, objSlice interface
 // If the scopePredFunc takes in two arguments, the arguments are the key and the value. Otherwise, just the value is
 // passed.
 func FilterMapReflect(ctx context.Context, sc ScopeChecker, objMap interface{}, scopePredFunc interface{}) (interface{}, error) {
-	if ok, err := sc.Allowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
+	if sc.IsAllowed() {
 		return objMap, nil
 	}
 

@@ -3,6 +3,7 @@ import React, { ReactElement, useContext } from 'react';
 import entityTypes, { ResourceType, resourceTypes } from 'constants/entityTypes';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import workflowStateContext from 'Containers/workflowStateContext';
+import fixableVulnTypeContext from 'Containers/VulnMgmt/fixableVulnTypeContext';
 
 type TableCountLinksProps = {
     row: {
@@ -18,6 +19,8 @@ type TableCountLinksProps = {
 };
 
 function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement {
+    const fixableVulnType: typeof entityTypes[keyof typeof entityTypes] | '' | null | undefined =
+        useContext(fixableVulnTypeContext);
     const workflowState = useContext(workflowStateContext);
     const entityType = workflowState.getCurrentEntityType();
     const entityContext = workflowState.getEntityContext() as Record<ResourceType, string>;
@@ -32,9 +35,12 @@ function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement 
 
     // TODO: refactor check for vulnerability types in follow-up PR
     const isLegacyVuln = entityType === entityTypes.CVE;
-    const isImageVuln = entityType === entityTypes.IMAGE_CVE;
-    const isNodeVuln = entityType === entityTypes.NODE_CVE;
-    const isClusterVuln = entityType === entityTypes.CLUSTER_CVE;
+    const isImageVuln =
+        entityType === entityTypes.IMAGE_CVE || fixableVulnType === entityTypes.IMAGE_CVE;
+    const isNodeVuln =
+        entityType === entityTypes.NODE_CVE || fixableVulnType === entityTypes.NODE_CVE;
+    const isClusterVuln =
+        entityType === entityTypes.CLUSTER_CVE || fixableVulnType === entityTypes.CLUSTER_CVE;
 
     // Only show entity counts on relevant pages. Node count is not currently supported.
     return (

@@ -70,8 +70,7 @@ describe('queryService.', () => {
             const queryObject = queryService.entityContextToQueryObject(entityContext);
 
             expect(queryObject).toEqual({
-                COMPONENT: 'openssl',
-                'COMPONENT VERSION': '1.1.1d-0+deb10u7#debian:10',
+                'COMPONENT ID': 'openssl#1.1.1d-0+deb10u7#debian:10',
             });
         });
 
@@ -83,8 +82,7 @@ describe('queryService.', () => {
             const queryObject = queryService.entityContextToQueryObject(entityContext);
 
             expect(queryObject).toEqual({
-                COMPONENT: 'linux-gke',
-                'COMPONENT VERSION': '5.4.0-1068#ubuntu:20.04',
+                'COMPONENT ID': 'linux-gke#5.4.0-1068#ubuntu:20.04',
             });
         });
 
@@ -102,37 +100,37 @@ describe('queryService.', () => {
 
         it('returns the query object for an IMAGE CVE', () => {
             const entityContext = {
-                CVE: 'CVE-2005-2541#debian:10',
+                IMAGE_CVE: 'CVE-2005-2541#debian:10',
             };
 
             const queryObject = queryService.entityContextToQueryObject(entityContext);
 
             expect(queryObject).toEqual({
-                CVE: 'CVE-2005-2541#debian:10',
+                'CVE ID': 'CVE-2005-2541#debian:10',
             });
         });
 
         it('returns the query object for a NODE CVE', () => {
             const entityContext = {
-                CVE: 'CVE-2022-27223#ubuntu:20.04',
+                NODE_CVE: 'CVE-2022-27223#ubuntu:20.04',
             };
 
             const queryObject = queryService.entityContextToQueryObject(entityContext);
 
             expect(queryObject).toEqual({
-                CVE: 'CVE-2022-27223#ubuntu:20.04',
+                'CVE ID': 'CVE-2022-27223#ubuntu:20.04',
             });
         });
 
         it('returns the query object for a CLUSTER CVE', () => {
             const entityContext = {
-                CVE: 'CVE-2020-8554#K8S_CVE',
+                CLUSTER_CVE: 'CVE-2020-8554#K8S_CVE',
             };
 
             const queryObject = queryService.entityContextToQueryObject(entityContext);
 
             expect(queryObject).toEqual({
-                CVE: 'CVE-2020-8554#K8S_CVE',
+                'CVE ID': 'CVE-2020-8554#K8S_CVE',
             });
         });
     });
