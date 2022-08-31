@@ -57,6 +57,7 @@ type DataStore interface {
 
 // New returns a new DataStore instance using the provided store and indexer
 func New(nsStore store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker, idMapStorage idmap.Storage) (DataStore, error) {
+
 	ds := &datastoreImpl{
 		store:           nsStore,
 		indexer:         indexer,
