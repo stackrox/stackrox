@@ -212,6 +212,10 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 			opts.Reference.Directional = true
 		case field == "ignore-fks":
 			opts.IgnoreChildFKs = true
+		case strings.HasPrefix(field, "type"):
+			typeName := field[strings.Index(field, "(")+1 : strings.Index(field, ")")]
+			opts.ColumnType = typeName
+
 		case field == "":
 		default:
 			// ignore for just right now
@@ -310,14 +314,14 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		}
 
 		if dt, ok := simpleFieldsMap[structField.Type.Kind()]; ok {
-			schema.AddFieldWithType(field, dt)
+			schema.AddFieldWithType(field, dt, opts)
 			continue
 		}
 
 		switch structField.Type.Kind() {
 		case reflect.Ptr:
 			if structField.Type == timestampType {
-				schema.AddFieldWithType(field, DateTime)
+				schema.AddFieldWithType(field, DateTime, opts)
 				continue
 			}
 
@@ -327,16 +331,16 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 
 			switch elemType.Kind() {
 			case reflect.String:
-				schema.AddFieldWithType(field, StringArray)
+				schema.AddFieldWithType(field, StringArray, opts)
 				continue
 			case reflect.Uint8:
-				schema.AddFieldWithType(field, Bytes)
+				schema.AddFieldWithType(field, Bytes, opts)
 				continue
 			case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
 				if typeIsEnum(elemType) {
-					schema.AddFieldWithType(field, EnumArray)
+					schema.AddFieldWithType(field, EnumArray, opts)
 				} else {
-					schema.AddFieldWithType(field, IntArray)
+					schema.AddFieldWithType(field, IntArray, opts)
 				}
 				continue
 			}
@@ -356,15 +360,15 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		case reflect.Struct:
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type)
 		case reflect.Uint8:
-			schema.AddFieldWithType(field, Bytes)
+			schema.AddFieldWithType(field, Bytes, opts)
 		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
 			if typeIsEnum(structField.Type) {
-				schema.AddFieldWithType(field, Enum)
+				schema.AddFieldWithType(field, Enum, opts)
 			} else {
-				schema.AddFieldWithType(field, Integer)
+				schema.AddFieldWithType(field, Integer, opts)
 			}
 		case reflect.Float32, reflect.Float64:
-			schema.AddFieldWithType(field, Numeric)
+			schema.AddFieldWithType(field, Numeric, opts)
 		case reflect.Interface:
 			// If it is a oneof then call XXX_OneofWrappers to get the types.
 			// The return values is a slice of interfaces that are nil type pointers
