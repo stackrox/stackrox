@@ -1,13 +1,17 @@
-import common.Constants
-import groups.BAT
-import groups.Integration
-import groups.Notifiers
+import java.util.concurrent.TimeUnit
+
 import io.grpc.StatusRuntimeException
+import org.apache.commons.lang3.RandomStringUtils
+
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
-import java.util.concurrent.TimeUnit
+
+import common.Constants
+import groups.BAT
+import groups.Integration
+import groups.Notifiers
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
@@ -22,22 +26,22 @@ import objects.QuayImageIntegration
 import objects.SlackNotifier
 import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
-import org.apache.commons.lang3.RandomStringUtils
-import org.junit.Assume
-import org.junit.AssumptionViolatedException
-import org.junit.Rule
-import org.junit.experimental.categories.Category
-import org.junit.rules.Timeout
 import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
 import services.NotifierService
 import services.PolicyService
-import spock.lang.Ignore
-import spock.lang.Unroll
 import util.Env
+import util.MailServer
 import util.SplunkUtil
+
+import org.junit.Assume
+import org.junit.AssumptionViolatedException
+import org.junit.Rule
+import org.junit.experimental.categories.Category
+import org.junit.rules.Timeout
+import spock.lang.Unroll
 
 class IntegrationsTest extends BaseSpecification {
     static final private String NOTIFIERDEPLOYMENT = "netpol-notification-test-deployment"
@@ -68,54 +72,85 @@ class IntegrationsTest extends BaseSpecification {
         DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
     }
 
+    @SuppressWarnings('LineLength')
     @Unroll
     @Category([BAT])
-    @Ignore("ROX-8113 - email tests are broken")
-    def "Verify create Email Integration (port #port, disable TLS=#disableTLS, startTLS=#startTLS)"() {
+    def "Verify create Email Integration (disableTLS=#disableTLS, startTLS=#startTLS, authenticated=#authenticated, sendCreds=#sendCreds)"() {
         given:
+        "mailserver is running"
+        def mailServer = MailServer.createMailServer(orchestrator, authenticated, !disableTLS)
+        sleep 15 * 1000 // wait 15s for service to start
+
+        and:
         "a configuration that is expected to work"
-        EmailNotifier notifier = new EmailNotifier("Email Test", disableTLS, startTLS, port)
+        EmailNotifier notifier = new EmailNotifier("Email Test",
+                mailServer.smtpUrl(),
+                sendCreds, disableTLS, startTLS)
 
         when:
         "the integration is tested"
-        Boolean response = notifier.testNotifier()
+        assert notifier.testNotifier() == shouldSucceed
 
         then:
-        "the API should return an empty message or an error, depending on the config"
-        assert response == shouldSucceed
+        "Can get the email contents from the mail server, depending on the config"
+
+        if (shouldSucceed) {
+            def emails = mailServer.findEmails(Constants.EMAIL_NOTIFER_SENDER)
+            assert emails.size() == 1
+
+            def email = emails[0]
+            assert email["subject"] == "StackRox Test Email"
+            assert email["from"][0]["address"] == Constants.EMAIL_NOTIFER_SENDER
+            assert email["to"][0]["address"] == Constants.EMAIL_NOTIFIER_RECIPIENT
+            assert email["text"] == "This is a test email created to test integration with StackRox.\n\n"
+
+            log.info "Found email with body:\n${email["text"]}"
+        }
+
+        cleanup:
+        "Remove mailserver"
+        if (mailServer) {
+            mailServer.teardown(orchestrator)
+        }
 
         where:
         "data"
 
-        port | disableTLS | startTLS | shouldSucceed
+        disableTLS | startTLS | authenticated | sendCreds | shouldSucceed
 
-        // Port 465 tests
-        // This port speaks TLS from the start.
-        // (Also test null, since 465 is the default.)
-        /////////////////
-        // Speaking TLS should work
-        465  | false      | NotifierOuterClass.Email.AuthMethod.DISABLED   | true
-        null | false      | NotifierOuterClass.Email.AuthMethod.DISABLED   | true
+        // No TLS && authenticated
+        true       | NotifierOuterClass.Email.AuthMethod.DISABLED | true | true | true
+        true       | NotifierOuterClass.Email.AuthMethod.DISABLED | true | false | false
 
-        // Speaking non-TLS to a TLS port should fail and not time out, regardless of STARTTLS (see ROX-366)
-        465  | true       | NotifierOuterClass.Email.AuthMethod.DISABLED   | false
-        465  | true       | NotifierOuterClass.Email.AuthMethod.PLAIN      | false
-        null | true       | NotifierOuterClass.Email.AuthMethod.DISABLED   | false
-        null | true       | NotifierOuterClass.Email.AuthMethod.PLAIN      | false
+        // No TLS && unauthenticated
+        true       | NotifierOuterClass.Email.AuthMethod.DISABLED | false | false | true
+        true       | NotifierOuterClass.Email.AuthMethod.DISABLED | false | true | false
 
-        // Port 587 tests
-        // At MailGun, this port begins unencrypted and supports STARTTLS.
-        /////////////////
-        // Starting unencrypted and _not_ using STARTTLS should work
-        587  | true       | NotifierOuterClass.Email.AuthMethod.DISABLED | true
-        // Starting unencrypted and using STARTTLS should work
-        587  | true       | NotifierOuterClass.Email.AuthMethod.PLAIN    | true
-        587  | true       | NotifierOuterClass.Email.AuthMethod.LOGIN    | true
-        // Speaking TLS to a non-TLS port should fail whether you use STARTTLS or not.
-        587  | false      | NotifierOuterClass.Email.AuthMethod.DISABLED | false
+        // At the moment maildev doesn't support tLS. Will need to do a tunnel or use a different server.
+        // TODO: Enable TLS tests https://issues.redhat.com/browse/ROX-12417
 
-        // Cannot add port 25 tests since GCP blocks outgoing
-        // connections to port 25
+//        // TLS && authenticated
+//        false      | NotifierOuterClass.Email.AuthMethod.DISABLED | true | true | true
+//        true       | NotifierOuterClass.Email.AuthMethod.DISABLED | true | false | false
+//
+//        // Starting unencrypted and using STARTTLS should work
+//        true       | NotifierOuterClass.Email.AuthMethod.PLAIN    | true | true | true
+//        true       | NotifierOuterClass.Email.AuthMethod.LOGIN    | true | true | true
+//        true       | NotifierOuterClass.Email.AuthMethod.PLAIN    | true | false | true
+//        true       | NotifierOuterClass.Email.AuthMethod.LOGIN    | true | false | true
+//
+//        // Starting unencrypted and _not_ using STARTTLS should work
+//        587  | true       | NotifierOuterClass.Email.AuthMethod.PLAIN    | true
+//        587  | true       | NotifierOuterClass.Email.AuthMethod.LOGIN    | true
+//
+//        // Speaking non-TLS to a TLS port should fail and not time out, regardless of STARTTLS (see ROX-366)
+//        465  | true       | NotifierOuterClass.Email.AuthMethod.DISABLED   | false
+//        465  | true       | NotifierOuterClass.Email.AuthMethod.PLAIN      | false
+//        null | true       | NotifierOuterClass.Email.AuthMethod.DISABLED   | false
+//        null | true       | NotifierOuterClass.Email.AuthMethod.PLAIN      | false
+//
+//        // Speaking TLS to a non-TLS port should fail whether you use STARTTLS or not.
+//        587  | false      | NotifierOuterClass.Email.AuthMethod.DISABLED | false
     }
 
     @Unroll
@@ -255,7 +290,7 @@ class IntegrationsTest extends BaseSpecification {
 
         type                    | notifierTypes
         "SLACK"                 | [new SlackNotifier()]
-        // ROX-8113 - Email tests are broken
+        // ROX-12418 - Email tests are broken
         // "EMAIL"                 | [new EmailNotifier()]
         // "JIRA"                  | [new JiraNotifier()] TODO(ROX-7460)
         // ROX-8145 - Teams tests are broken
@@ -263,7 +298,7 @@ class IntegrationsTest extends BaseSpecification {
         "GENERIC"               | [new GenericNotifier()]
 
         // Adding a SLACK, TEAMS, EMAIL notifier test so we still verify multiple notifiers
-        // ROX-8113, ROX-8145 - Email and teams tests are broken
+        // ROX-12418, ROX-8145 - Email and teams tests are broken
         // "SLACK, EMAIL, TEAMS"   | [new SlackNotifier(), new EmailNotifier(), new TeamsNotifier()]
 
         // Using Slack and Generic to verify multiple notifiers
@@ -330,7 +365,7 @@ class IntegrationsTest extends BaseSpecification {
                 deployment
 
         /*
-        // ROX-8113 - Email tests are broken
+        // ROX-12418 - Email tests are broken
         "EMAIL"     | [new EmailNotifier()]       |
                 new Deployment()
                         // add random id to name to make it easier to search for when validating
@@ -441,7 +476,7 @@ class IntegrationsTest extends BaseSpecification {
                 deployment
 
         /*
-        ROX-8113 - Email tests are broken
+        ROX-12418 - Email tests are broken
         "EMAIL"     | [new EmailNotifier()]       |
                 new Deployment()
                         // add random id to name to make it easier to search for when validating
@@ -566,7 +601,7 @@ class IntegrationsTest extends BaseSpecification {
                 deployment
 
         /*
-        // ROX-8113 - Email tests are broken
+        // ROX-12418 - Email tests are broken
         "Email deploy override"     |
                 new EmailNotifier("Email Test", false,
                         NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt1@gmail.com")   |

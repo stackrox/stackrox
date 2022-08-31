@@ -7,6 +7,7 @@ import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.NotifierOuterClass
 import util.Env
+import util.MailServer
 
 @Slf4j
 class NotifierService extends BaseService {
@@ -52,29 +53,34 @@ class NotifierService extends BaseService {
 
     static NotifierOuterClass.Notifier getEmailIntegrationConfig(
             String name,
-            disableTLS = false,
-            startTLS = NotifierOuterClass.Email.AuthMethod.DISABLED,
-            Integer port = null) {
+            String server,
+            boolean sendAuthCreds = true,
+            boolean disableTLS = false,
+            NotifierOuterClass.Email.AuthMethod startTLS = NotifierOuterClass.Email.AuthMethod.DISABLED) {
         NotifierOuterClass.Notifier.Builder builder =
                 NotifierOuterClass.Notifier.newBuilder()
                         .setEmail(NotifierOuterClass.Email.newBuilder())
+
+        def emailBuilder = builder.getEmailBuilder()
+                .setSender(Constants.EMAIL_NOTIFER_SENDER)
+                .setFrom(Constants.EMAIL_NOTIFER_FROM)
+                .setDisableTLS(disableTLS)
+                .setStartTLSAuthMethod(startTLS)
+
+        if (sendAuthCreds) {
+            emailBuilder.setUsername(MailServer.MAILSERVER_USER).setPassword(MailServer.MAILSERVER_PASS)
+        } else {
+            emailBuilder.setAllowUnauthenticatedSmtp(!sendAuthCreds)
+        }
+
         builder
                 .setType("email")
                 .setName(name)
-                .setLabelKey("mailgun")
-                .setLabelDefault("stackrox.qa@gmail.com")
+                .setLabelKey("email_label")
+                .setLabelDefault(Constants.EMAIL_NOTIFIER_RECIPIENT)
                 .setUiEndpoint(getStackRoxEndpoint())
-                .setEmail(builder.getEmailBuilder()
-                        .setUsername("automation@mailgun.rox.systems")
-                        .setPassword(Env.mustGet("MAILGUN_PASSWORD"))
-                        .setSender(Constants.EMAIL_NOTIFER_SENDER)
-                        .setFrom(Constants.EMAIL_NOTIFER_FROM)
-                        .setDisableTLS(disableTLS)
-                        .setStartTLSAuthMethod(startTLS)
-                )
-        port == null ?
-                builder.getEmailBuilder().setServer("smtp.mailgun.org") :
-                builder.getEmailBuilder().setServer("smtp.mailgun.org:" + port)
+                .setEmail(emailBuilder)
+        builder.getEmailBuilder().setServer(server)
         return builder.build()
     }
 
