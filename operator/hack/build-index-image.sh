@@ -2,16 +2,16 @@
 # Builds operator index image.
 
 set -eou pipefail
-# TODO(ROX-11889): Remove the -x once we gain some confidence (after 3.72 release?)
+# TODO(ROX-12346): Remove the -x once we gain some confidence (after 3.72 release?)
 set -x
 
 # Global script variables
-# TODO(ROX-11889): This is a hacked version whose `render` subcommand can read contents of a bundle from a directory
-# TODO(ROX-11889): named like an image specification. This way we can build the bundle and index sources in the same step
-# TODO(ROX-11889): followed by a parallel build of the bundle and index images, without the need for an intermediate bundle
-# TODO(ROX-11889): image push. This is important in OpenShift CI, where the flow is "all images built first,
-# TODO(ROX-11889): followed by all images pushed together".
-# TODO(ROX-11889): Either upstream the hack or change the flow.
+# TODO(ROX-12347): This is a hacked version whose `render` subcommand can read contents of a bundle from a directory
+# TODO(ROX-12347): named like an image specification. This way we can build the bundle and index sources in the same step
+# TODO(ROX-12347): followed by a parallel build of the bundle and index images, without the need for an intermediate bundle
+# TODO(ROX-12347): image push. This is important in OpenShift CI, where the flow is "all images built first,
+# TODO(ROX-12347): followed by all images pushed together".
+# TODO(ROX-12347): Either upstream the hack or change the flow.
 OPM_VERSION="1.21.0-render-dir"
 # Normally the same as OPM_VERSION. Here we use the upstream version for serving the index,
 # since the render-dir hack only affects the build. This helps us avoid the hassle of hosting the OPM image.
