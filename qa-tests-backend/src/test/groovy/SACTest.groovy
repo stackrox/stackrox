@@ -31,7 +31,6 @@ import util.NetworkGraphUtil
 
 import org.junit.AssumptionViolatedException
 import org.junit.experimental.categories.Category
-import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Unroll
 
