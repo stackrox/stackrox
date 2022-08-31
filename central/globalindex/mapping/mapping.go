@@ -108,9 +108,9 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	// 	schema.DeploymentsSchema.OptionsMap,
 	// )
 	clusterToVulnerabilitySearchOptions := search.CombineOptionsMaps(
-		schema.ClusterCvesSchema.OptionsMaps,
-		schema.ClusterCveEdgesSchema.OptionsMaps,
-		schema.ClustersSchema.OptionsMaps,
+		schema.ClusterCvesSchema.OptionsMap,
+		schema.ClusterCveEdgesSchema.OptionsMap,
+		schema.ClustersSchema.OptionsMap,
 	)
 
 	// Note: with the dackbox graph split brought with the postgres migration, the concept
