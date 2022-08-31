@@ -44,6 +44,7 @@ func ProcessDeploymentEvent(t *testing.T, mgr manager.Manager, deployment *stora
 	}
 }
 
+// Sync ensures that the manager has processed all pending resource updates before returning.
 func Sync(t *testing.T, mgr manager.Manager) {
 	if t == nil {
 		panic("This function must be called from a test.")
