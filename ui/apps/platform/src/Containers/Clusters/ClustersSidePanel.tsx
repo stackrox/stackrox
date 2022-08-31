@@ -171,7 +171,8 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                                                     This is an operator-managed cluster. The
                                                     settings of operator-managed clusters cannot be
                                                     changed here and must instead be changed by
-                                                    updating its custom resource definition (CRD).
+                                                    updating its SecuredCluster custom resource
+                                                    (CR).
                                                 </p>
                                             </>
                                         ),
