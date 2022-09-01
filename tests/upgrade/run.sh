@@ -71,16 +71,25 @@ test_upgrade() {
 preamble() {
     info "Starting test preamble"
 
+    local host_os
     if is_darwin; then
-        TEST_HOST_OS="darwin"
+        host_os="darwin"
     elif is_linux; then
-        TEST_HOST_OS="linux"
+        host_os="linux"
     else
         die "Only linux or darwin are supported for this test"
     fi
 
-    require_executable "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl"
-    require_executable "$TEST_ROOT/bin/$TEST_HOST_OS/upgrader"
+    case "$(uname -m)" in
+        x86_64) TEST_HOST_PLATFORM="${host_os}_amd64" ;;
+        aarch64) TEST_HOST_PLATFORM="${host_os}_arm64" ;;
+        ppc64le) TEST_HOST_PLATFORM="${host_os}_ppc64le" ;;
+        s390x) TEST_HOST_PLATFORM="${host_os}_s390x" ;;
+        *) die "Unknown architecture" ;;
+    esac
+
+    require_executable "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl"
+    require_executable "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader"
 
     info "Will clone or update a clean copy of the rox repo for test at $REPO_FOR_TIME_TRAVEL"
     if [[ -d "$REPO_FOR_TIME_TRAVEL" ]]; then
@@ -116,7 +125,7 @@ validate_sensor_bundle_via_upgrader() {
     sleep 5
 
     KUBECONFIG="$TEST_ROOT/scripts/ci/kube-api-proxy/config.yml" \
-        "$TEST_ROOT/bin/$TEST_HOST_OS/upgrader" \
+        "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" \
         -kube-config kubectl \
         -local-bundle "$deploy_dir/sensor-deploy" \
         -workflow validate-bundle
@@ -128,7 +137,7 @@ test_sensor_bundle() {
     info "Testing the sensor bundle"
 
     rm -rf sensor-remote
-    "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
+    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
     [[ -d sensor-remote ]]
 
     ./sensor-remote/sensor.sh
@@ -149,7 +158,7 @@ test_upgrader() {
     info "Creating a 'sensor-remote-new' cluster"
 
     rm -rf sensor-remote-new
-    "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor generate k8s \
+    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor generate k8s \
         --main-image-repository "${MAIN_IMAGE_REPO:-$REGISTRY/main}" \
         --collector-image-repository "${COLLECTOR_IMAGE_REPO:-$REGISTRY/collector}" \
         --name remote-new \
@@ -281,7 +290,7 @@ deploy_sensor_via_upgrader() {
         ROX_MTLS_CERT_FILE="$TEST_ROOT/sensor-remote-new/sensor-cert.pem" \
         ROX_MTLS_KEY_FILE="$TEST_ROOT/sensor-remote-new/sensor-key.pem" \
         KUBECONFIG="$TEST_ROOT/scripts/ci/kube-api-proxy/config.yml" \
-        "$TEST_ROOT/bin/$TEST_HOST_OS/upgrader" -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
+        "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
 
     kill "$proxy_pid"
 
@@ -307,7 +316,7 @@ rollback_sensor_via_upgrader() {
         ROX_MTLS_CERT_FILE="$TEST_ROOT/sensor-remote-new/sensor-cert.pem" \
         ROX_MTLS_KEY_FILE="$TEST_ROOT/sensor-remote-new/sensor-key.pem" \
         KUBECONFIG="$TEST_ROOT/scripts/ci/kube-api-proxy/config.yml" \
-        "$TEST_ROOT/bin/$TEST_HOST_OS/upgrader" -workflow roll-back -kube-config kubectl
+        "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" -workflow roll-back -kube-config kubectl
 
     kill "$proxy_pid"
 }
@@ -375,7 +384,7 @@ test_upgrade_paths() {
 
     info "Fetching a sensor bundle for cluster 'remote'"
     rm -rf sensor-remote
-    "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
+    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
     [[ -d sensor-remote ]]
 
     info "Installing sensor"
@@ -400,12 +409,12 @@ test_upgrade_paths() {
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    mkdir -p "bin/$TEST_HOST_OS"
-    gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_OS/roxctl"
-    chmod +x "bin/$TEST_HOST_OS/roxctl"
-    PATH="bin/$TEST_HOST_OS:$PATH" command -v roxctl
-    PATH="bin/$TEST_HOST_OS:$PATH" roxctl version
-    PATH="bin/$TEST_HOST_OS:$PATH" \
+    mkdir -p "bin/${TEST_HOST_PLATFORM}"
+    gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/${TEST_HOST_PLATFORM}/roxctl"
+    chmod +x "bin/${TEST_HOST_PLATFORM}/roxctl"
+    PATH="bin/${TEST_HOST_PLATFORM}:$PATH" command -v roxctl
+    PATH="bin/${TEST_HOST_PLATFORM}:$PATH" roxctl version
+    PATH="bin/${TEST_HOST_PLATFORM}:$PATH" \
     MAIN_IMAGE_TAG="$EARLIER_TAG" \
     SCANNER_IMAGE="$REGISTRY/scanner:$(cat SCANNER_VERSION)" \
     SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
