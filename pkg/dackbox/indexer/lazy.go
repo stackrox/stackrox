@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/document"
 	"github.com/gogo/protobuf/proto"
 	"github.com/mitchellh/hashstructure"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -90,24 +91,41 @@ func (li *lazyImpl) runIndexing() {
 	}
 }
 
-func (li *lazyImpl) evaluateDeduping(key string, value proto.Message) bool {
-	if value == nil {
-		delete(li.deduper, key)
-		return false
+type hashableField struct {
+	name           string
+	value          []byte
+	arrayPositions []uint64
+}
+
+type hashableDoc struct {
+	id     string
+	fields []hashableField
+}
+
+func (li *lazyImpl) evaluateDeduping(doc *document.Document) bool {
+	hashableDoc := hashableDoc{
+		id:     doc.ID,
+		fields: make([]hashableField, 0, len(doc.Fields)),
 	}
-	hashValue, err := hashstructure.Hash(value, &hashstructure.HashOptions{
-		Hasher:  li.hasher,
-		TagName: "search",
+	for _, f := range doc.Fields {
+		hashableDoc.fields = append(hashableDoc.fields, hashableField{
+			name:           f.Name(),
+			value:          f.Value(),
+			arrayPositions: f.ArrayPositions(),
+		})
+	}
+	hashValue, err := hashstructure.Hash(hashableDoc, &hashstructure.HashOptions{
+		Hasher: li.hasher,
 	})
 	if err != nil {
 		log.Errorf("error calculating hash: %v", err)
 		return false
 	}
-	val, ok := li.deduper[key]
+	val, ok := li.deduper[doc.ID]
 	if ok && val == hashValue {
 		return true
 	}
-	li.deduper[key] = hashValue
+	li.deduper[doc.ID] = hashValue
 	return false
 }
 
@@ -119,11 +137,6 @@ func (li *lazyImpl) consumeFromQueue() {
 		}
 
 		if key != nil {
-			if li.evaluateDeduping(string(key), value) {
-				indexObjectsDeduped.Inc()
-				continue
-			}
-			indexObjectsIndexed.Inc()
 			li.handleKeyValue(key, value)
 		} else {
 			li.buff.AddSignalToSend(signal)
@@ -163,10 +176,21 @@ func (li *lazyImpl) indexItems(itemsToIndex map[string]interface{}) {
 	batch := li.index.NewBatch()
 	for key, value := range itemsToIndex {
 		if value != nil {
-			if err := batch.Index(key, value); err != nil {
+			var doc document.Document
+			if err := li.index.Mapping().MapDocument(&doc, value); err != nil {
+				log.Errorf("unable to map document: %v", err)
+				continue
+			}
+			if li.evaluateDeduping(&doc) {
+				indexObjectsDeduped.Inc()
+				continue
+			}
+			indexObjectsIndexed.Inc()
+			if err := batch.IndexAdvanced(&doc); err != nil {
 				log.Errorf("unable to index item: %q, %v", key, err)
 			}
 		} else {
+			delete(li.deduper, key)
 			batch.Delete(key)
 		}
 	}
