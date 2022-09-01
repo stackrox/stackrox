@@ -214,7 +214,10 @@ push_operator_image_set() {
 
     local operator_image_set=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index")
     if is_OPENSHIFT_CI; then
-        local operator_image_srcs=("$OPERATOR_IMAGE" "$OPERATOR_BUNDLE_IMAGE" "$OPERATOR_BUNDLE_INDEX_MAGE")
+        if [[ -n "${OPERATOR_BUNDLE_INDEX_MAGE:-}" ]]; then
+            OPERATOR_BUNDLE_INDEX_IMAGE="${OPERATOR_BUNDLE_INDEX_MAGE}"
+        fi
+        local operator_image_srcs=("$OPERATOR_IMAGE" "$OPERATOR_BUNDLE_IMAGE" "$OPERATOR_BUNDLE_INDEX_IMAGE")
         oc registry login
     fi
 
