@@ -262,6 +262,9 @@ func (ds *datastoreImpl) initializeRankers() {
 func (ds *datastoreImpl) updateNodePriority(nodes ...*storage.Node) {
 	for _, node := range nodes {
 		node.Priority = ds.nodeRanker.GetRankForID(node.GetId())
+		for _, component := range node.GetScan().GetComponents() {
+			component.Priority = ds.nodeComponentRanker.GetRankForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), node.GetScan().GetOperatingSystem()))
+		}
 	}
 }
 

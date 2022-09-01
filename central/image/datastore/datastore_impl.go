@@ -331,6 +331,9 @@ func (ds *datastoreImpl) updateListImagePriority(images ...*storage.ListImage) {
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 	for _, image := range images {
 		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
+		for _, component := range image.GetScan().GetComponents() {
+			component.Priority = ds.imageComponentRanker.GetRankForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
+		}
 	}
 }
 

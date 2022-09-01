@@ -131,7 +131,8 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 		}
 	}
-	suite.Equal(node, storedNode)
+	expectedNode := cloneAndUpdateRiskPriority(node)
+	suite.Equal(expectedNode, storedNode)
 
 	// Exists tests.
 	exists, err = suite.datastore.Exists(ctx, "id1")
@@ -151,8 +152,9 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 	suite.NoError(err)
 	// Node is updated.
 	node.LastUpdated = storedNode.GetLastUpdated()
+	expectedNode = cloneAndUpdateRiskPriority(node)
 	// Scan data is unchanged.
-	suite.Equal(node, storedNode)
+	suite.Equal(expectedNode, storedNode)
 
 	newNode := node.Clone()
 	newNode.Id = "id2"
@@ -170,7 +172,8 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 	suite.True(exists)
 	suite.NoError(err)
 	suite.NotNil(storedNode)
-	suite.Equal(newNode, storedNode)
+	expectedNode = cloneAndUpdateRiskPriority(newNode)
+	suite.Equal(expectedNode, storedNode)
 
 	// Count nodes.
 	count, err := suite.datastore.CountNodes(ctx)
@@ -181,7 +184,7 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 	nodes, err := suite.datastore.GetNodesBatch(ctx, []string{"id1", "id2"})
 	suite.NoError(err)
 	suite.Len(nodes, 2)
-	suite.ElementsMatch([]*storage.Node{node, newNode}, nodes)
+	suite.ElementsMatch([]*storage.Node{cloneAndUpdateRiskPriority(node), cloneAndUpdateRiskPriority(newNode)}, nodes)
 
 	// Delete both nodes.
 	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), "id1", storage.RiskSubjectType_NODE).Return(nil)
@@ -245,7 +248,8 @@ func (suite *NodeDataStoreTestSuite) TestBasicSearch() {
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 		}
 	}
-	suite.Equal(node, nodes[0])
+	expectedNode := cloneAndUpdateRiskPriority(node)
+	suite.Equal(expectedNode, nodes[0])
 
 	// Upsert new node.
 	newNode := getTestNode("id2", "name2")
@@ -275,7 +279,8 @@ func (suite *NodeDataStoreTestSuite) TestBasicSearch() {
 	nodes, err = suite.datastore.SearchRawNodes(scopedCtx, pkgSearch.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(nodes, 1)
-	suite.Equal(node, nodes[0])
+	expectedNode = cloneAndUpdateRiskPriority(node)
+	suite.Equal(expectedNode, nodes[0])
 
 	suite.deleteTestNodes(ctx)
 
@@ -583,4 +588,13 @@ func (suite *NodeDataStoreTestSuite) deleteTestNodes(ctx context.Context) {
 	indexingDone := concurrency.NewSignal()
 	suite.indexQ.PushSignal(&indexingDone)
 	indexingDone.Wait()
+}
+
+func cloneAndUpdateRiskPriority(node *storage.Node) *storage.Node {
+	cloned := node.Clone()
+	cloned.Priority = 1
+	for _, component := range cloned.GetScan().GetComponents() {
+		component.Priority = 1
+	}
+	return cloned
 }
