@@ -25,7 +25,7 @@ roxctl-development-cmd() {
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
     make -s "cli-${_uname}" GOTAGS='' 2>&3
-    mv "bin/${_uname}_amd64/roxctl" "${tmp_roxctl}/roxctl-dev"
+    mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
   echo "${tmp_roxctl}/roxctl-dev"
 }
@@ -41,7 +41,7 @@ roxctl-release-cmd() {
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
     make -s "cli-${_uname}" GOTAGS='release' 2>&3
-    mv "bin/${_uname}_amd64/roxctl" "${tmp_roxctl}/roxctl-release"
+    mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
   echo "${tmp_roxctl}/roxctl-release"
 }

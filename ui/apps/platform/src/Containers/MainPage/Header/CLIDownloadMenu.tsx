@@ -37,25 +37,25 @@ function CLIDownloadMenu({ addToast, removeToast }: CLIDownloadMenuProps): React
 
     const appLauncherItems = [
         <ApplicationLauncherItem
-            key="app-launcher-item-cli-mac-amd64"
+            key="app-launcher-item-cli-mac"
             component="button"
-            onClick={handleDownloadCLI('darwin-amd64')}
+            onClick={handleDownloadCLI('darwin')}
         >
-            Mac x86_64
+            Mac 64-bit
         </ApplicationLauncherItem>,
         <ApplicationLauncherItem
-            key="app-launcher-item-cli-linux-amd64"
+            key="app-launcher-item-cli-linux"
             component="button"
-            onClick={handleDownloadCLI('linux-amd64')}
+            onClick={handleDownloadCLI('linux')}
         >
-            Linux x86_64
+            Linux 64-bit
         </ApplicationLauncherItem>,
         <ApplicationLauncherItem
-            key="app-launcher-item-cli-windows-amd64"
+            key="app-launcher-item-cli-windows"
             component="button"
-            onClick={handleDownloadCLI('windows-amd64')}
+            onClick={handleDownloadCLI('windows')}
         >
-            Windows x86_64
+            Windows 64-bit
         </ApplicationLauncherItem>,
     ];
 
