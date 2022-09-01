@@ -1,7 +1,16 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
+import {
+    TableComposable,
+    Thead,
+    ThProps,
+    Tbody,
+    Tr,
+    Th,
+    Td,
+    IActions,
+} from '@patternfly/react-table';
 import {
     Bullseye,
     Button,
@@ -112,6 +121,36 @@ function ObservedCVEsTable({
 
     const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
 
+    function clearedSetSearchFilter(newFilters) {
+        onClearAll();
+        setSearchFilter(newFilters);
+    }
+
+    function clearedOnSetPage(e, newPage) {
+        onClearAll();
+        onSetPage(e, newPage);
+    }
+
+    function clearedOnPerPageSelect(e, newPerPage) {
+        onClearAll();
+        onPerPageSelect(e, newPerPage);
+    }
+
+    function clearedGetSortParams(newSortParam): ThProps['sort'] {
+        const baseSortResponse: ThProps['sort'] = getSortParams(newSortParam);
+
+        return {
+            sortBy: baseSortResponse?.sortBy || {},
+            onSort: (_event, _index, direction, extraData) => {
+                onClearAll();
+                if (baseSortResponse?.onSort) {
+                    baseSortResponse.onSort(_event, _index, direction, extraData);
+                }
+            },
+            columnIndex: baseSortResponse?.columnIndex || 0,
+        };
+    }
+
     const selectedIds = getSelectedIds();
     const selectedVulnsToDeferOrMarkFalsePositive = canCreateRequests
         ? rows
@@ -128,7 +167,7 @@ function ObservedCVEsTable({
                     <ToolbarItem>
                         <ImageVulnsSearchFilter
                             searchFilter={searchFilter}
-                            setSearchFilter={setSearchFilter}
+                            setSearchFilter={clearedSetSearchFilter}
                         />
                     </ToolbarItem>
                     <ToolbarItem variant="separator" />
@@ -167,9 +206,9 @@ function ObservedCVEsTable({
                         <Pagination
                             itemCount={itemCount}
                             page={page}
-                            onSetPage={onSetPage}
+                            onSetPage={clearedOnSetPage}
                             perPage={perPage}
-                            onPerPageSelect={onPerPageSelect}
+                            onPerPageSelect={clearedOnPerPageSelect}
                         />
                     </ToolbarItem>
                 </ToolbarContent>
@@ -198,10 +237,10 @@ function ObservedCVEsTable({
                         />
                         <Th>CVE</Th>
                         <Th>Fixable</Th>
-                        <Th sort={getSortParams('Severity')}>Severity</Th>
-                        <Th sort={getSortParams('CVSS')}>CVSS score</Th>
+                        <Th sort={clearedGetSortParams('Severity')}>Severity</Th>
+                        <Th sort={clearedGetSortParams('CVSS')}>CVSS score</Th>
                         <Th>Affected components</Th>
-                        <Th sort={getSortParams('Discovered')}>Discovered</Th>
+                        <Th sort={clearedGetSortParams('Discovered')}>Discovered</Th>
                     </Tr>
                 </Thead>
                 <Tbody>

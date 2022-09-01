@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { TableComposable, Thead, ThProps, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
     Bullseye,
     Button,
@@ -90,6 +90,36 @@ function DeferredCVEsTable({
     const canApproveRequests = hasReadWriteAccess('VulnerabilityManagementApprovals');
     const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
 
+    function clearedSetSearchFilter(newFilters) {
+        onClearAll();
+        setSearchFilter(newFilters);
+    }
+
+    function clearedOnSetPage(e, newPage) {
+        onClearAll();
+        onSetPage(e, newPage);
+    }
+
+    function clearedOnPerPageSelect(e, newPerPage) {
+        onClearAll();
+        onPerPageSelect(e, newPerPage);
+    }
+
+    function clearedGetSortParams(newSortParam): ThProps['sort'] {
+        const baseSortResponse: ThProps['sort'] = getSortParams(newSortParam);
+
+        return {
+            sortBy: baseSortResponse?.sortBy || {},
+            onSort: (_event, _index, direction, extraData) => {
+                onClearAll();
+                if (baseSortResponse?.onSort) {
+                    baseSortResponse.onSort(_event, _index, direction, extraData);
+                }
+            },
+            columnIndex: baseSortResponse?.columnIndex || 0,
+        };
+    }
+
     const selectedIds = getSelectedIds();
     const selectedDeferralsToReobserve = rows
         .filter((row) => {
@@ -111,7 +141,7 @@ function DeferredCVEsTable({
                     <ToolbarItem>
                         <ImageVulnsSearchFilter
                             searchFilter={searchFilter}
-                            setSearchFilter={setSearchFilter}
+                            setSearchFilter={clearedSetSearchFilter}
                         />
                     </ToolbarItem>
                     <ToolbarItem variant="separator" />
@@ -137,9 +167,9 @@ function DeferredCVEsTable({
                         <Pagination
                             itemCount={itemCount}
                             page={page}
-                            onSetPage={onSetPage}
+                            onSetPage={clearedOnSetPage}
                             perPage={perPage}
-                            onPerPageSelect={onPerPageSelect}
+                            onPerPageSelect={clearedOnPerPageSelect}
                         />
                     </ToolbarItem>
                 </ToolbarContent>
@@ -168,7 +198,7 @@ function DeferredCVEsTable({
                         />
                         <Th>CVE</Th>
                         <Th>Fixable</Th>
-                        <Th sort={getSortParams('Severity')}>Severity</Th>
+                        <Th sort={clearedGetSortParams('Severity')}>Severity</Th>
                         <Th>Expires</Th>
                         <Th modifier="fitContent">Scope</Th>
                         <Th>Affected Components</Th>
