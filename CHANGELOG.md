@@ -8,6 +8,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-11348: The email notifier now allows for unauthenticated SMTP. By default, 
 authentication is still required for an email notifier, but the user can now choose to turn it off.
 - Previously, the syslog integration did not respect a configured TCP proxy. This is now fixed.
+- ROX-9484: When integrating Quay registry you can now optionally use robot account instead of just OAuth tokens. In fact this is Quay's recommended integration credentials. However, integration with Quay scanner still requires an OAuth token.
 
 ### Removed Features
 - ROX-11784: The `RenamePolicyCategory` and `DeletePolicyCategory` methods in the
