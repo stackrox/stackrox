@@ -1,6 +1,7 @@
 import * as api from '../constants/apiEndpoints';
 import { selectors as networkGraphSelectors, url as networkUrl } from '../constants/NetworkPage';
 import { visitFromLeftNav } from './nav';
+import { interactAndWaitForResponses } from './request';
 import { visit } from './visit';
 import selectSelectors from '../selectors/select';
 
@@ -126,25 +127,39 @@ export function filterBySourceTarget(sourceNode, targetNode) {
 
 // search filters
 
+const networkGraphClusterAlias = 'networkgraph/cluster/id';
+const networkPoliciesClusterAlias = 'networkpolicies/cluster/id';
+
+const requestConfigToFilterGraph = {
+    routeMatcherMap: {
+        [networkGraphClusterAlias]: {
+            method: 'GET',
+            url: api.network.networkGraph,
+        },
+        [networkPoliciesClusterAlias]: {
+            method: 'GET',
+            url: api.network.networkPoliciesGraph,
+        },
+    },
+};
+
 export function selectDeploymentFilter(deploymentName) {
-    cy.intercept('GET', api.network.networkGraph).as('networkGraph');
-    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
-    cy.get(networkGraphSelectors.toolbar.filterSelect).type('Deployment{enter}');
-    cy.get(networkGraphSelectors.toolbar.filterSelect).type(`${deploymentName}{enter}{esc}`);
-    cy.wait(['@networkGraph', '@networkPolicies']);
+    interactAndWaitForResponses(() => {
+        cy.get(networkGraphSelectors.toolbar.filterSelect).type('Deployment{enter}');
+        cy.get(networkGraphSelectors.toolbar.filterSelect).type(`${deploymentName}{enter}{esc}`);
+    }, requestConfigToFilterGraph);
 }
 
 // Additional calls in a test can select additional namespaces.
 
 export function selectNamespaceFilter(namespace) {
-    cy.intercept('GET', api.network.networkGraph).as('networkGraph');
-    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
-
-    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-    cy.get(`${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`).click();
-    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-
-    cy.wait(['@networkGraph', '@networkPolicies']);
+    interactAndWaitForResponses(() => {
+        cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+        cy.get(
+            `${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`
+        ).click();
+        cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+    }, requestConfigToFilterGraph);
 }
 
 export function selectNamespaceFilterWithGraphAndPoliciesFixtures(
@@ -152,43 +167,72 @@ export function selectNamespaceFilterWithGraphAndPoliciesFixtures(
     fixturePathGraph,
     fixturePathPolicies
 ) {
-    cy.intercept('GET', api.network.networkGraph, { fixture: fixturePathGraph }).as('networkGraph');
-    cy.intercept('GET', api.network.networkPoliciesGraph, {
-        fixture: fixturePathPolicies,
-    }).as('networkPolicies');
-
-    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-    cy.get(`${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`).click();
-    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-
-    cy.wait(['@networkGraph', '@networkPolicies']);
+    interactAndWaitForResponses(
+        () => {
+            cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+            cy.get(
+                `${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`
+            ).click();
+            cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+        },
+        requestConfigToFilterGraph,
+        {
+            [networkGraphClusterAlias]: { fixture: fixturePathGraph },
+            [networkPoliciesClusterAlias]: { fixture: fixturePathPolicies },
+        }
+    );
 }
 
 export function selectNamespaceFilterWithNetworkGraphResponse(namespace, response) {
     cy.intercept('GET', api.network.networkGraph, response).as('networkGraph');
     cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
 
-    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-    cy.get(`${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`).click();
-    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-
-    cy.wait(['@networkGraph', '@networkPolicies']);
+    interactAndWaitForResponses(
+        () => {
+            cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+            cy.get(
+                `${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`
+            ).click();
+            cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+        },
+        requestConfigToFilterGraph,
+        {
+            [networkGraphClusterAlias]: response,
+        }
+    );
 }
 
 // visit helpers
 
+const requestConfigToVisitGraph = {
+    routeMatcherMap: {
+        clusters: {
+            method: 'GET',
+            url: api.clusters.list,
+        },
+        // Network Graph makes the following query on the first visit, but not subsequent visit via browser Back button.
+        // Include it because each cypress test has a new connection, therefore behaves as a first visit.
+        getClusterNamespaceNames: {
+            method: 'POST',
+            url: api.graphql('getClusterNamespaceNames'),
+        },
+        'search/metadata/options': {
+            method: 'GET',
+            url: `/v1/search/metadata/options?categories=DEPLOYMENTS`,
+        },
+    },
+};
+
 export function visitNetworkGraphFromLeftNav() {
-    cy.intercept('GET', api.clusters.list).as('clusters');
-    visitFromLeftNav('Network');
-    cy.wait('@clusters');
+    visitFromLeftNav('Network', requestConfigToVisitGraph);
+
     cy.get(networkGraphSelectors.networkGraphHeading);
     cy.get(networkGraphSelectors.emptyStateSubheading);
 }
 
-export function visitNetworkGraph() {
-    cy.intercept('GET', api.clusters.list).as('clusters');
-    visit(networkUrl);
-    cy.wait('@clusters');
+export function visitNetworkGraph(staticResponseMap) {
+    visit(networkUrl, requestConfigToVisitGraph, staticResponseMap);
+
     cy.get(networkGraphSelectors.networkGraphHeading);
     cy.get(networkGraphSelectors.emptyStateSubheading);
 }
