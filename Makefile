@@ -576,7 +576,7 @@ docker-build-data-image: docs-image
 
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
-	cp -f bin/linux_$(GOARCH)/roxctl image/roxctl/roxctl
+	cp -f bin/linux_$(GOARCH)/roxctl image/roxctl/roxctl-linux
 	docker build \
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \

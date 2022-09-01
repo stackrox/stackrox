@@ -135,7 +135,7 @@ build_main_and_bundles() {
     info "Copying binaries for image/"
     mkdir -p image/bin
     make copy-binaries-to-image-dir
-    cp bin/linux_amd64/roxctl image/roxctl/roxctl
+    cp bin/linux_amd64/roxctl image/roxctl/roxctl-linux
 
     info "Building docs"
     make -C docs
