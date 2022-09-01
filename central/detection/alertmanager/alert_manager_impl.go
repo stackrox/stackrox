@@ -133,7 +133,7 @@ func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).
 		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
-		AddExactMatches(search.ViolationState, storage.ViolationState_RESOLVED.String()).
+		AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).
 		ProtoQuery()
 	resolvedAlerts, err := d.alerts.SearchRawAlerts(ctx, q)
 	if err != nil {
@@ -291,7 +291,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	incomingAlerts []*storage.Alert,
 	oldAlertFilters ...AlertFilterOption,
 ) (newAlerts, updatedAlerts, staleAlerts []*storage.Alert, err error) {
-	qb := search.NewQueryBuilder().AddExactMatches(
+	qb := search.NewQueryBuilder().AddStrings(
 		search.ViolationState,
 		storage.ViolationState_ACTIVE.String(),
 		storage.ViolationState_ATTEMPTED.String())

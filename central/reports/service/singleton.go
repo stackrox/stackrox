@@ -31,7 +31,7 @@ func initializeManager() manager.Manager {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.VulnerabilityReports)))
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery()
+	query := search.NewQueryBuilder().AddStrings(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery()
 	reportConfigs, err := datastore.Singleton().GetReportConfigurations(ctx, query)
 	if err != nil {
 		panic(err)

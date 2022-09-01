@@ -473,7 +473,7 @@ func (resolver *namespaceResolver) PolicyStatusOnly(ctx context.Context, args Ra
 		search.ConjunctionQuery(q,
 			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 				AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
-				AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()))
+				AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()))
 	if err != nil {
 		return "", err
 	}
@@ -495,8 +495,8 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 		search.ConjunctionQuery(q,
 			search.NewQueryBuilder().AddExactMatches(search.ClusterID, namespace.GetMetadata().GetClusterId()).
 				AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
-				AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-				AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
+				AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+				AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
 }
 
 func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {

@@ -155,13 +155,13 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "listing nodes for cluster %s", clusterID)
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
 	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, query)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
 	}
 
-	query = search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	query = search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
 	pods, err := m.podStore.SearchRawPods(ctx, query)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get pods for cluster %s", clusterID)
