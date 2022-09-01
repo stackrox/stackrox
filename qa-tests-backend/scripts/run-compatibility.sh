@@ -52,8 +52,6 @@ compatibility_test() {
 
     store_qa_test_results "compatibility-test-sensor-$SENSOR_IMAGE_TAG"
     [[ ! -f FAIL ]] || die "compatibility-test-sensor-$SENSOR_IMAGE_TAG"
-
-	run_compatibility_test
 }
 
 

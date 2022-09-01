@@ -1,3 +1,9 @@
+#!/usr/bin/env bash
+
+# Common functions for deploying a cluster for QA tests
+
+set -euo pipefail
+
 deploy_default_psp() {
     info "Deploy Default PSP for stackrox namespace"
     "${ROOT}/scripts/ci/create-default-psp.sh"

@@ -8,6 +8,7 @@ source "$ROOT/scripts/ci/lib.sh"
 source "$ROOT/scripts/ci/sensor-wait.sh"
 source "$ROOT/tests/e2e/lib.sh"
 source "$ROOT/tests/scripts/setup-certs.sh"
+source "$ROOT/qa-tests-backend/scripts/lib.sh"
 
 set -euo pipefail
 
