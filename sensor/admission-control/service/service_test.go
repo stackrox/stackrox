@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -169,10 +170,9 @@ func (r serviceTestRun) execute() {
 	require.NotNil(r.t, r.handlerFunc)
 	require.True(r.t, r.mgr.IsReady(), "Manager is stopped or was not started")
 	// Wait for any events delivered to manager prior to this call to be processed.
-	// TODO(porridge): come up with a less hacky way to synchronize
-	time.Sleep(2 * time.Second)
-
-	managerTesting.Sync(r.t, r.mgr)
+	syncCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	require.NoError(r.t, r.mgr.Sync(syncCtx))
 
 	s := service{
 		mgr: r.mgr,
