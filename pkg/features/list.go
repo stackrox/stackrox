@@ -48,4 +48,7 @@ var (
 
 	// QuayRobotAccounts enables Robot accounts as credentials in Quay Image Integration.
 	QuayRobotAccounts = registerFeature("Enable Robot accounts in Quay Image Integration", "ROX_QUAY_ROBOT_ACCOUNTS", false)
+
+	// RoxctlNetpolGenerate enables 'roxctl netpol generate' command which integrates with NP-Guard
+	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl netpol generate' command", "ROX_ROXCTL_NETPOL_GENERATE", false)
 )
