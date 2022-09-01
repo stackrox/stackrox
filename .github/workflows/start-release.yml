@@ -109,9 +109,61 @@ jobs:
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}
 
+  branch:
+    name: Prepare release branch
+    needs: [variables, check-docs-branch]
+    if: needs.variables.outputs.patch == 0
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{inputs.ref}}
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+      - name: Check remote branch exists
+        id: check-existing
+        run: |
+          if git ls-remote --quiet --exit-code origin "${{needs.variables.outputs.branch}}"; then
+            echo "::set-output name=branch-exists::true"
+          else
+            echo "::set-output name=branch-exists::false"
+          fi
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "${{github.event.sender.login}}"
+          git config user.email noreply@github.com
+      - name: Switch to ${{needs.variables.outputs.branch}} branch
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          git switch --create "${{needs.variables.outputs.branch}}"
+      - name: Update docs submodule
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          git submodule set-branch --branch "${{needs.variables.outputs.docs-branch}}" -- docs/content
+          # This takes a bit long:
+          git submodule update --init --remote -- docs/content
+          git add .gitmodules docs/content
+          if ! git diff-index --quiet HEAD; then
+            git commit -am "Docs update for release ${{needs.variables.outputs.milestone}}"
+            echo "Documents submodule has been updated on the release branch." >> $GITHUB_STEP_SUMMARY
+          fi
+      - name: Update the changelog
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          sed -i "s/## \[NEXT RELEASE\]/## [${{inputs.version}}]/" CHANGELOG.md
+          git add CHANGELOG.md
+          if ! git diff-index --quiet HEAD; then
+            git commit --message "Changelog for ${{inputs.version}}"
+            echo "\`CHANGELOG.md\` has been updated on the release branch." >> $GITHUB_STEP_SUMMARY
+          fi
+      - name: Push changes
+        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          git push --set-upstream origin ${{needs.variables.outputs.branch}}
+
   ci:
     name: Configure OpenShift CI jobs
-    needs: [variables]
+    needs: [variables, branch]
     runs-on: ubuntu-latest
     steps:
       - name: Check out stackrox/openshift-release
@@ -179,58 +231,6 @@ jobs:
             --assignee "$GITHUB_ACTOR")
 
           echo ":arrow_right: Review and merge the [PR]($PR_URL) that has been created for the \`openshift/release\` repository." >> $GITHUB_STEP_SUMMARY
-
-  branch:
-    name: Prepare release branch
-    needs: [variables, check-docs-branch]
-    if: needs.variables.outputs.patch == 0
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{inputs.ref}}
-          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
-      - name: Check remote branch exists
-        id: check-existing
-        run: |
-          if git ls-remote --quiet --exit-code origin "${{needs.variables.outputs.branch}}"; then
-            echo "::set-output name=branch-exists::true"
-          else
-            echo "::set-output name=branch-exists::false"
-          fi
-      - name: Initialize mandatory git config
-        run: |
-          git config user.name "${{github.event.sender.login}}"
-          git config user.email noreply@github.com
-      - name: Switch to ${{needs.variables.outputs.branch}} branch
-        if: steps.check-existing.outputs.branch-exists == 'false'
-        run: |
-          git switch --create "${{needs.variables.outputs.branch}}"
-      - name: Update docs submodule
-        if: steps.check-existing.outputs.branch-exists == 'false'
-        run: |
-          git submodule set-branch --branch "${{needs.variables.outputs.docs-branch}}" -- docs/content
-          # This takes a bit long:
-          git submodule update --init --remote -- docs/content
-          git add .gitmodules docs/content
-          if ! git diff-index --quiet HEAD; then
-            git commit -am "Docs update for release ${{needs.variables.outputs.milestone}}"
-            echo "Documents submodule has been updated on the release branch." >> $GITHUB_STEP_SUMMARY
-          fi
-      - name: Update the changelog
-        if: steps.check-existing.outputs.branch-exists == 'false'
-        run: |
-          sed -i "s/## \[NEXT RELEASE\]/## [${{inputs.version}}]/" CHANGELOG.md
-          git add CHANGELOG.md
-          if ! git diff-index --quiet HEAD; then
-            git commit --message "Changelog for ${{inputs.version}}"
-            echo "\`CHANGELOG.md\` has been updated on the release branch." >> $GITHUB_STEP_SUMMARY
-          fi
-      - name: Push changes
-        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
-        run: |
-          git push --set-upstream origin ${{needs.variables.outputs.branch}}
 
   patch-changelog:
     name: Patch CHANGELOG.md
