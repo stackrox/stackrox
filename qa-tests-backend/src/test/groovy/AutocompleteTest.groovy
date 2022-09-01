@@ -26,7 +26,7 @@ class AutocompleteTest extends BaseSpecification {
         "Subject:system:auth" | []                         | "system:authenticated"
         "Subject:system:auth" | [SearchCategory.SUBJECTS]  | "system:authenticated"
 
-        "Subject Kind:GROUP"  | []                         | "group"
+        "Subject Kind:GROUP"  | []                         | isPostgresRun() ? "GROUP" : "group"
         "Subject Kind:group"  | []                         | "group"
         "Subject Kind:gr"     | []                         | "group"
     }
@@ -49,7 +49,9 @@ class AutocompleteTest extends BaseSpecification {
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.IMAGES                | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
-        SearchCategory.VULNERABILITIES       | ["Cluster", "Deployment",
+        isPostgresRun() ?
+            SearchCategory.IMAGE_VULNERABILITIES :
+            SearchCategory.VULNERABILITIES   | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.IMAGE_COMPONENTS      | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]

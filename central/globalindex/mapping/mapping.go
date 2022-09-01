@@ -99,39 +99,21 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	// Note: with the dackbox graph split brought with the postgres migration, the concept
 	// of CVE was split into ClusterCVE, ImageCVE and NodeCVE. The old content seems to focus
 	// mostly on image CVEs.
-	// cveSearchOptions := search.CombineOptionsMaps(
-	// 	schema.ImageCvesSchema.OptionsMap,
-	// 	schema.ImageComponentCveEdgesSchema.OptionsMap,
-	// 	schema.ImageComponentsSchema.OptionsMap,
-	// 	schema.ImageComponentEdgesSchema.OptionsMap,
-	// 	schema.ImagesSchema.OptionsMap,
-	// 	schema.DeploymentsSchema.OptionsMap,
-	// )
+	// Note: with the dackbox graph split brought with the postgres migration, the concept
+	// of Component (ImageComponent) was split into ImageComponent and NodeComponent.
+	// The old content seems to focus mostly on image Components.
 	clusterToVulnerabilitySearchOptions := search.CombineOptionsMaps(
 		schema.ClusterCvesSchema.OptionsMap,
 		schema.ClusterCveEdgesSchema.OptionsMap,
 		schema.ClustersSchema.OptionsMap,
 	)
 
-	// Note: with the dackbox graph split brought with the postgres migration, the concept
-	// of Component (ImageComponent) was split into ImageComponent and NodeComponent.
-	// The old content seems to focus mostly on image Components.
-	// imageComponentSearchOptions := search.CombineOptionsMaps(
-	// 	schema.ImageComponentsSchema.OptionsMap,
-	// 	schema.ImageComponentEdgesSchema.OptionsMap,
-	// 	schema.ImageComponentCveEdgesSchema.OptionsMap,
-	// 	schema.ImagesSchema.OptionsMap,
-	// 	schema.ImageCvesSchema.OptionsMap,
-	// )
+	deploymentsCustomSearchOptions := search.CombineOptionsMaps(
+		schema.ImagesSchema.OptionsMap,
+		schema.ProcessIndicatorsSchema.OptionsMap,
+		schema.DeploymentsSchema.OptionsMap,
+	)
 
-	// Images in dackbox support an expanded set of search options
-	// imageSearchOptions := search.CombineOptionsMaps(
-	// 	schema.ImagesSchema.OptionsMap,
-	// 	schema.ImageComponentEdgesSchema.OptionsMap,
-	// 	schema.ImageComponentsSchema.OptionsMap,
-	// 	schema.ImageComponentCveEdgesSchema.OptionsMap,
-	// 	schema.ImageCvesSchema.OptionsMap,
-	// )
 	imageToVulnerabilitySearchOptions := search.CombineOptionsMaps(
 		schema.ImageCvesSchema.OptionsMap,
 		schema.ImageCveEdgesSchema.OptionsMap,
@@ -144,13 +126,6 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.ClustersSchema.OptionsMap,
 	)
 
-	// nodeSearchOptions := search.CombineOptionsMaps(
-	// 	schema.NodesSchema.OptionsMap,
-	// 	schema.NodeComponentEdgesSchema.OptionsMap,
-	// 	schema.NodeComponentsSchema.OptionsMap,
-	// 	schema.NodeComponentsCvesEdgesSchema.OptionsMap,
-	// 	schema.NodeCvesSchema.OptionsMap,
-	// )
 	nodeToVulnerabilitySearchOptions := search.CombineOptionsMaps(
 		schema.NodeCvesSchema.OptionsMap,
 		schema.NodeComponentsCvesEdgesSchema.OptionsMap,
@@ -171,7 +146,7 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_COMPLIANCE_STANDARD:     index.StandardOptions,
 		v1.SearchCategory_COMPLIANCE_CONTROL:      index.ControlOptions,
 		v1.SearchCategory_COMPONENT_VULN_EDGE:     schema.ImageComponentCveEdgesSchema.OptionsMap,
-		v1.SearchCategory_DEPLOYMENTS:             schema.DeploymentsSchema.OptionsMap,
+		v1.SearchCategory_DEPLOYMENTS:             deploymentsCustomSearchOptions,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE:    imageToVulnerabilitySearchOptions,
 		v1.SearchCategory_IMAGE_COMPONENTS:        imageToVulnerabilitySearchOptions,
 		v1.SearchCategory_IMAGE_INTEGRATIONS:      schema.ImageIntegrationsSchema.OptionsMap,
