@@ -59,6 +59,22 @@ spec:
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
+  name: allow-only-egress-to-public-ipblock
+  namespace: default
+spec:
+  policyTypes:
+  - Egress
+  - Ingress
+  podSelector: {}
+  egress:
+  - to:
+    - ipblock:
+        cidr: 142.20.0.0/16
+`,
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
   name: allow-traffic-from-apps-using-multiple-selectors
   namespace: default
 spec:
@@ -1267,7 +1283,7 @@ func TestEvaluateClusters(t *testing.T) {
 			),
 		},
 		{
-			name: "test customer issue",
+			name: "public egress cidr block shouldn't show edges to other deployments in cluster",
 			deployments: []*storage.Deployment{
 				{
 					Id:          "d1",
@@ -1279,19 +1295,25 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace:   "qa",
 					NamespaceId: "qa",
 				},
+				{
+					Id:          "d3",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+				},
+
 			},
 			networkTree: t1,
 			nps: []*storage.NetworkPolicy{
-				getExamplePolicy("allow-only-egress-to-ipblock"),
+				getExamplePolicy("allow-only-egress-to-public-ipblock"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", true, false, false, true, "allow-only-egress-to-ipblock"),
+				mockNode("d1", "default", true, false, false, true, "allow-only-egress-to-public-ipblock"),
 				mockNode("d2", "qa", true, true, true, true),
+				mockNode("d3", "qa", true, true, true, true),
 				mockInternetNode(),
-				mockExternalNode("es1", "172.17.0.0/24"),
 			},
 			edges: flattenEdges(
-				egressEdges("d1", "es1", networkgraph.InternetExternalSourceID),
+				egressEdges("d1", networkgraph.InternetExternalSourceID),
 			),
 		},
 		{
@@ -1339,7 +1361,7 @@ func TestEvaluateClusters(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			graph := g.GetGraph("", nil, testCase.deployments, testCase.networkTree, testCase.nps, false)
 			nodes := graph.GetNodes()
-			assert.Len(t, nodes, len(testCase.nodes))
+			require.Len(t, nodes, len(testCase.nodes))
 			for idx, expected := range testCase.nodes {
 				assert.Equalf(t, expected, nodes[idx], "node in pos %d and ID %d doesn't match expected", idx, expected.Entity.Id)
 			}
