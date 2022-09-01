@@ -302,7 +302,7 @@ function launch_central {
         )
       fi
 
-      if [["$ROX_MANAGED_CENTRAL" == "true" ]]; then
+      if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
         helm_args+=(
           --set customize.central.envVars.ROX_MANAGED_CENTRAL="${ROX_MANAGED_CENTRAL}"
         )
@@ -341,7 +341,7 @@ function launch_central {
         ${ORCH_CMD} -n stackrox set env deploy/central MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
       fi
 
-      if [["$ROX_MANAGED_CENTRAL" == "true" ]]; then
+      if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
         ${ORCH_CMD} -n stackrox set env deploy/central ROX_MANAGED_CENTRAL="${ROX_MANAGED_CENTRAL}"
       fi
 
