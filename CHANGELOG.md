@@ -20,7 +20,7 @@ authentication is still required for an email notifier, but the user can now cho
   - Any cluster that is expected to be unavailable for a period of time (e.g. clusters used in disaster recovery), can be tagged with a customizable label. Clusters with those labels will never be removed automatically.
   - By default, this unhealthy cluster removal is disabled (number of days set to 0)
 - ROX-7591: Policy `Fixable CVSS >= 6 and Privileged` disabled by default on new installations, new policy `Severity Important and Privileged` added and enabled by default.
-- Search by string expressions will support substring match starting 3.73, in addition to current support for prefix string match.
+- Starting 3.73, the default technique used by string expression searches will be substring matching.
 
 ## [3.71.0]
 
