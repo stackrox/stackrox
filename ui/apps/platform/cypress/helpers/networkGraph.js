@@ -218,7 +218,7 @@ const requestConfigToVisitGraph = {
         },
         'search/metadata/options': {
             method: 'GET',
-            url: `/v1/search/metadata/options?categories=DEPLOYMENTS`,
+            url: api.search.optionsCategories('DEPLOYMENTS'),
         },
     },
 };

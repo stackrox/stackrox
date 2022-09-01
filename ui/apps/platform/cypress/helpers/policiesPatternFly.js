@@ -12,7 +12,7 @@ const routeMatcherMap = {
     },
     'search/metadata/options': {
         method: 'GET',
-        url: `/v1/search/metadata/options?categories=POLICIES`,
+        url: api.search.optionsCategories('POLICIES'),
     },
     policies: {
         method: 'GET',
