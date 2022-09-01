@@ -88,9 +88,9 @@ function setup_roxctl {
   local target url
   target="$GOPATH/bin/roxctl"
   if is_linux; then
-    url="https://mirror.openshift.com/pub/rhacs/assets/$MAIN_IMAGE_TAG/bin/linux_amd64/roxctl"
+    url="https://mirror.openshift.com/pub/rhacs/assets/$MAIN_IMAGE_TAG/bin/linux/roxctl"
   elif is_darwin; then
-    url="https://mirror.openshift.com/pub/rhacs/assets/$MAIN_IMAGE_TAG/bin/darwin_amd64/roxctl"
+    url="https://mirror.openshift.com/pub/rhacs/assets/$MAIN_IMAGE_TAG/bin/darwin/roxctl"
   else
     error "Unknown OS [$(uname)]"
   fi

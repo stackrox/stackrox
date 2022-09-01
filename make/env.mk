@@ -19,10 +19,6 @@ ifeq ($(shell uname -ms),Darwin arm64)
 	GOARCH := arm64
 else ifeq ($(shell uname -ms),Linux aarch64)
 	GOARCH := arm64
-else ifeq ($(shell uname -ms),Linux ppc64le)
-	GOARCH := ppc64le
-else ifeq ($(shell uname -ms),Linux s390x)
-	GOARCH := s390x
 else
 	GOARCH := amd64
 endif

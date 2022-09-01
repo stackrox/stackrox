@@ -43,7 +43,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/compliance && \
     ln -s entrypoint-wrapper.sh /stackrox/kubernetes-sensor && \
     ln -s entrypoint-wrapper.sh /stackrox/sensor-upgrader && \
-    ln -s /assets/downloads/cli/roxctl-linux-amd64 /stackrox/roxctl && \
+    ln -s /assets/downloads/cli/roxctl-linux /stackrox/roxctl && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf upgrade && \
     rpm -i /tmp/snappy.rpm && \
@@ -72,6 +72,6 @@ EXPOSE 8443
 
 USER 4000:4000
 
-ENTRYPOINT ["/stackrox/roxctl"]
+ENTRYPOINT ["/assets/downloads/cli/roxctl-linux"]
 
 HEALTHCHECK CMD curl --insecure --fail https://127.0.0.1:8443/v1/ping

@@ -48,7 +48,7 @@ $ cdrox
 
 # Receive the rendered helm chart from roxctl
 # To use a custom template path use the `--debug-path=</path/to/templates>` argument.
-$ ./bin/darwin_amd64/roxctl helm output central-services --image-defaults=development_build --debug
+$ ./bin/darwin/roxctl helm output central-services --image-defaults=development_build --debug
 
 # Install the helm chart
 $ helm upgrade --install -n stackrox stackrox-central-services --create-namespace  ./stackrox-central-services-chart \

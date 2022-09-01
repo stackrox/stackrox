@@ -343,39 +343,35 @@ endif
 
 .PHONY: build-prep
 build-prep: deps
-	mkdir -p bin/{darwin_amd64,linux_amd64,linux_ppc64le,linux_s390x,windows_amd64}
+	mkdir -p bin/{darwin,linux,windows}
 
 .PHONY: cli-build
 cli-build: build-prep
 	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
 ifdef CI
-	RACE=0 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=windows $(GOBUILD) ./roxctl
 endif
 
 .PHONY: cli
 cli: cli-build
 	# Copy the user's specific OS into gopath
-	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
+	cp bin/$(HOST_OS)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
 
 cli-linux: build-prep
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
 
 cli-darwin: build-prep
 	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
 
-upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
+upgrader: bin/$(HOST_OS)/upgrader
 
-bin/$(HOST_OS)_$(GOARCH)/upgrader: build-prep
-	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/upgrader
+bin/%/upgrader: build-prep
+	GOOS=$* $(GOBUILD) ./sensor/upgrader
 
-bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
-	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/admission-control
+bin/%/admission-control: build-prep
+	GOOS=$* $(GOBUILD) ./sensor/admission-control
 
 .PHONY: build-volumes
 build-volumes:
@@ -576,7 +572,7 @@ docker-build-data-image: docs-image
 
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
-	cp -f bin/linux_$(GOARCH)/roxctl image/roxctl/roxctl
+	cp -f bin/linux/roxctl image/roxctl/roxctl-linux
 	docker build \
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
@@ -586,24 +582,22 @@ docker-build-roxctl-image:
 
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
-	cp bin/linux_$(GOARCH)/central image/bin/central
+	cp bin/linux/central image/bin/central
 ifdef CI
-	cp bin/linux_amd64/roxctl image/bin/roxctl-linux-amd64
-	cp bin/linux_ppc64le/roxctl image/bin/roxctl-linux-ppc64le
-	cp bin/linux_s390x/roxctl image/bin/roxctl-linux-s390x
-	cp bin/darwin_amd64/roxctl image/bin/roxctl-darwin-amd64
-	cp bin/windows_amd64/roxctl.exe image/bin/roxctl-windows-amd64.exe
+	cp bin/linux/roxctl image/bin/roxctl-linux
+	cp bin/darwin/roxctl image/bin/roxctl-darwin
+	cp bin/windows/roxctl.exe image/bin/roxctl-windows.exe
 else
 ifneq ($(HOST_OS),linux)
-	cp bin/linux_$(GOARCH)/roxctl image/bin/roxctl-linux-$(GOARCH)
+	cp bin/linux/roxctl image/bin/roxctl-linux
 endif
-	cp bin/$(HOST_OS)_amd64/roxctl image/bin/roxctl-$(HOST_OS)-amd64
+	cp bin/$(HOST_OS)/roxctl image/bin/roxctl-$(HOST_OS)
 endif
-	cp bin/linux_$(GOARCH)/migrator image/bin/migrator
-	cp bin/linux_$(GOARCH)/kubernetes        image/bin/kubernetes-sensor
-	cp bin/linux_$(GOARCH)/upgrader          image/bin/sensor-upgrader
-	cp bin/linux_$(GOARCH)/admission-control image/bin/admission-control
-	cp bin/linux_$(GOARCH)/collection        image/bin/compliance
+	cp bin/linux/migrator image/bin/migrator
+	cp bin/linux/kubernetes        image/bin/kubernetes-sensor
+	cp bin/linux/upgrader          image/bin/sensor-upgrader
+	cp bin/linux/admission-control image/bin/admission-control
+	cp bin/linux/collection        image/bin/compliance
 	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
 	find image/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 
@@ -620,10 +614,10 @@ endif
 
 .PHONY: scale-image
 scale-image: scale-build clean-image
-	cp bin/linux_$(GOARCH)/mocksensor scale/image/bin/mocksensor
-	cp bin/linux_$(GOARCH)/mockcollector scale/image/bin/mockcollector
-	cp bin/linux_$(GOARCH)/profiler scale/image/bin/profiler
-	cp bin/linux_$(GOARCH)/chaos scale/image/bin/chaos
+	cp bin/linux/mocksensor scale/image/bin/mocksensor
+	cp bin/linux/mockcollector scale/image/bin/mockcollector
+	cp bin/linux/profiler scale/image/bin/profiler
+	cp bin/linux/chaos scale/image/bin/chaos
 	chmod +w scale/image/bin/*
 	docker build \
 		-t stackrox/scale:$(TAG) \
@@ -632,7 +626,7 @@ scale-image: scale-build clean-image
 
 webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
-	cp bin/linux_$(GOARCH)/webhookserver webhookserver/bin/webhookserver
+	cp bin/linux/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
 	docker build \
 		-t stackrox/webhookserver:1.2 \
@@ -641,7 +635,7 @@ webhookserver-image: webhookserver-build
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image
-	cp bin/linux_$(GOARCH)/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
+	cp bin/linux/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	docker build \
 		-t stackrox/grpc-server:$(TAG) \
 		-t quay.io/rhacs-eng/grpc-server:$(TAG) \

@@ -58,9 +58,9 @@ COPY operator/build/status.sh status.sh
 RUN git init && git add .
 
 # Build the operator binary.
-RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build.sh operator
+RUN GOOS=$(go env GOOS) scripts/go-build.sh operator
 # Copy the operator binary to a location from where it will be taken into the final image.
-RUN cp -a bin/$(go env GOOS)_$(go env GOARCH)/operator stackrox-operator
+RUN cp -a bin/$(go env GOOS)/operator stackrox-operator
 
 FROM registry.access.redhat.com/ubi8-micro:8.6
 

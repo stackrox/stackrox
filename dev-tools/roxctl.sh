@@ -21,9 +21,9 @@ is_operator_on_openshift() {
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-roxctl_bin="$DIR/../bin/linux_amd64/roxctl"
+roxctl_bin="$DIR/../bin/linux/roxctl"
 if [[ "$(uname)" == "Darwin"* ]]; then
-  roxctl_bin="$DIR/../bin/darwin_amd64/roxctl"
+  roxctl_bin="$DIR/../bin/darwin/roxctl"
 fi
 
 cache=""
