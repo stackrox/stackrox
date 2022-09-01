@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eo pipefail
+set -euo pipefail
 
 logmein() {
   target_url="$(curl -sSkf -u "admin:${STACKROX_ADMIN_PASSWORD}" -w '%{redirect_url}' "https://localhost:8000/sso/providers/basic/4df1b98c-24ed-4073-a9ad-356aec6bb62d/challenge?micro_ts=0")"
@@ -68,7 +68,7 @@ fi
 
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services \
  --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}" \
- "${installflags[@]}"
+ "${installflags[@]+"${installflags[@]}"}"
 
 kubectl -n stackrox rollout status deploy/central --timeout=3m
 
@@ -94,7 +94,7 @@ echo "Installing stackrox-secured-cluster-services"
 
 helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
  -f stackrox-init-bundle.yaml --set clusterName="my-secured-cluster" \
- "${installflags[@]}"
+ "${installflags[@]+"${installflags[@]}"}"
 
 echo "Logging into StackRox in the browser"
 
