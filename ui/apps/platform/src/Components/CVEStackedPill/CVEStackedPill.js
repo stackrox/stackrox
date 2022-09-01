@@ -38,12 +38,11 @@ const CVEStackedPill = ({
     fixableUrl,
     showTooltip,
     entityName,
-    scan,
+    scanTime,
     scanMessage,
 }) => {
     const hasCounts = vulnCounter?.all?.total > 0;
-    const useScan = !!scan;
-    const hasScan = !!scan?.scanTime;
+    const hasScan = !scanTime;
     const hasScanMessage = !!scanMessage?.header;
 
     const pillTooltip = showTooltip
@@ -57,7 +56,7 @@ const CVEStackedPill = ({
 
     return (
         <div className="flex items-center w-full">
-            {useScan && !hasScan && <span>{entityName} not scanned</span>}
+            {!hasScan && <span>{entityName} not scanned</span>}
             {!hasCounts && <span>No CVEs</span>}
             {hasCounts && (
                 <>
@@ -133,10 +132,7 @@ CVEStackedPill.propTypes = {
     fixableUrl: PropTypes.string,
     showTooltip: PropTypes.bool,
     entityName: PropTypes.string,
-    scan: PropTypes.shape({
-        scanTime: PropTypes.string,
-        notes: PropTypes.arrayOf(PropTypes.string),
-    }),
+    scanTime: PropTypes.string,
     scanMessage: PropTypes.shape({
         header: PropTypes.string,
         body: PropTypes.string,
@@ -150,7 +146,7 @@ CVEStackedPill.defaultProps = {
     fixableUrl: '',
     showTooltip: true,
     entityName: '',
-    scan: null,
+    scanTime: '',
     scanMessage: null,
 };
 
