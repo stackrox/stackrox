@@ -7,7 +7,7 @@ import services.SearchService
 import spock.lang.Unroll
 
 class AutocompleteTest extends BaseSpecification {
-    def VULNERABILITY_SEARCH_CATEGORY =
+    private static final SearchCategory VULNERABILITY_SEARCH_CATEGORY =
         isPostgresRun() ?
             SearchCategory.IMAGE_VULNERABILITIES :
             SearchCategory.VULNERABILITIES
