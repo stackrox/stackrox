@@ -129,12 +129,7 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
                 <Formik
                     initialValues={{ imageTag: '' }}
                     validationSchema={Yup.object({
-                        imageTag: Yup.string()
-                            .matches(
-                                /([a-z.]+\/)([a-z0-9-]+\/)?([a-z0-9-@./]+)(?::[0-9a-z\-.]+)?/,
-                                'Must be a valid path to a container image'
-                            )
-                            .required('Required'),
+                        imageTag: Yup.string().required('Required'),
                     })}
                     onSubmit={addToWatch}
                     // }}
