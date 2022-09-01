@@ -124,11 +124,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
 
     // @TODO: extract this out to make it re-usable and easier to test
     const failingDeployments = deployments.filter((singleDeploy) => {
-        if (
-            singleDeploy.policyStatus === 'pass' ||
-            !singleDeploy.deployAlerts ||
-            !singleDeploy.deployAlerts.length
-        ) {
+        if (singleDeploy.policyStatus === 'pass') {
             return false;
         }
         return singleDeploy.deployAlerts.some((alert) => {

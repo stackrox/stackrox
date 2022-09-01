@@ -8,8 +8,8 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import {
-    DEPLOYMENT_LIST_FRAGMENT,
-    DEPLOYMENT_LIST_FRAGMENT_UPDATED,
+    DEPLOYMENT_LIST_FOR_POLICY_FRAGMENT,
+    DEPLOYMENT_LIST_FOR_POLICY_FRAGMENT_UPDATED,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import useFeatureFlags from 'hooks/useFeatureFlags';
@@ -34,8 +34,8 @@ const VulmMgmtEntityPolicy = ({
     const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const fragmentToUse = showVMUpdates
-        ? DEPLOYMENT_LIST_FRAGMENT_UPDATED
-        : DEPLOYMENT_LIST_FRAGMENT;
+        ? DEPLOYMENT_LIST_FOR_POLICY_FRAGMENT_UPDATED
+        : DEPLOYMENT_LIST_FOR_POLICY_FRAGMENT;
 
     const overviewQuery = gql`
         query getPolicy($id: ID!, $policyQuery: String, $scopeQuery: String) {

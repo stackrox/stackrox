@@ -506,6 +506,50 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
     }
 `;
 
+export const DEPLOYMENT_LIST_FOR_POLICY_FRAGMENT = gql`
+    fragment deploymentFieldForPolicy on Deployment {
+        id
+        name
+        vulnCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            moderate {
+                total
+                fixable
+            }
+            important {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        # failingPolicyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        policyStatus(query: $policyQuery)
+        clusterName
+        clusterId
+        namespace
+        namespaceId
+        imageCount
+        latestViolation(query: $policyQuery)
+        priority
+        images {
+            scan {
+                scanTime
+            }
+        }
+    }
+`;
+
 export const DEPLOYMENT_LIST_FRAGMENT_UPDATED = gql`
     fragment deploymentFields on Deployment {
         id
@@ -553,6 +597,45 @@ export const DEPLOYMENT_LIST_FRAGMENT_UPDATED = gql`
                 scanTime
             }
         }
+    }
+`;
+
+export const DEPLOYMENT_LIST_FOR_POLICY_FRAGMENT_UPDATED = gql`
+    fragment deploymentFields on Deployment {
+        id
+        name
+        imageVulnerabilityCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            moderate {
+                total
+                fixable
+            }
+            important {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        # failingPolicyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        policyStatus(query: $policyQuery)
+        clusterName
+        clusterId
+        namespace
+        namespaceId
+        imageCount
+        latestViolation(query: $policyQuery)
+        priority
     }
 `;
 
