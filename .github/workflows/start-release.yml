@@ -172,6 +172,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: stackrox/openshift-release
+          token: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
       - name: Check remote branch exists
         id: check-existing
         run: |
