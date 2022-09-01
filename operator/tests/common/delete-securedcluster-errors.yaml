@@ -293,7 +293,12 @@ metadata:
 apiVersion: authorization.openshift.io/v1
 kind: RoleBinding
 metadata:
-  name: sensor-use-scc
+  name: sensor-use-stackrox-sensor-scc
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: sensor-use-anyuid-scc
 ---
 apiVersion: authorization.openshift.io/v1
 kind: RoleBinding
@@ -373,7 +378,12 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: sensor-use-scc
+  name: sensor-use-stackrox-sensor-scc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sensor-use-anyuid-scc
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

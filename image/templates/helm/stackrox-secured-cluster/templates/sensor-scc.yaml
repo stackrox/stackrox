@@ -71,14 +71,33 @@ rules:
   - use
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: Role
 metadata:
-  name: sensor-use-scc
+  name: use-stackrox-sensor-scc
   namespace: {{ ._rox._namespace }}
   labels:
-    {{- include "srox.labels" (list . "rolebinding" "sensor-use-scc") | nindent 4 }}
+    {{- include "srox.labels" (list . "role" "use-stackrox-sensor-scc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "rolebinding" "sensor-use-scc") | nindent 4 }}
+    {{- include "srox.annotations" (list . "role" "use-stackrox-sensor-scc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - stackrox-sensor
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sensor-use-anyuid-scc
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "sensor-use-anyuid-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "sensor-use-anyuid-scc") | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -90,5 +109,25 @@ subjects:
 - kind: ServiceAccount
   name: sensor-upgrader
   namespace: {{ ._rox._namespace }}
-
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sensor-use-stackrox-sensor-scc
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "sensor-use-stackrox-sensor-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "sensor-use-stackrox-sensor-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-stackrox-sensor-scc
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{ ._rox._namespace }}
+- kind: ServiceAccount
+  name: sensor-upgrader
+  namespace: {{ ._rox._namespace }}
 {{- end }}
