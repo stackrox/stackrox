@@ -78,7 +78,7 @@ setup_deployment_env() {
 install_built_roxctl_in_gopath() {
     require_environment "GOPATH"
 
-    local bin_os bin_platform
+    local bin_os
     if is_darwin; then
         bin_os="darwin"
     elif is_linux; then
@@ -87,15 +87,7 @@ install_built_roxctl_in_gopath() {
         die "Only linux or darwin are supported for this test"
     fi
 
-    case "$(uname -m)" in
-        x86_64) bin_platform="${bin_os}_amd64" ;;
-        aarch64) bin_platform="${bin_os}_arm64" ;;
-        ppc64le) bin_platform="${bin_os}_ppc64le" ;;
-        s390x) bin_platform="${bin_os}_s390x" ;;
-        *) die "Unknown architecture" ;;
-    esac
-
-    local roxctl="$SCRIPTS_ROOT/bin/${bin_platform}/roxctl"
+    local roxctl="$SCRIPTS_ROOT/bin/$bin_os/roxctl"
 
     require_executable "$roxctl" "roxctl should be built"
 

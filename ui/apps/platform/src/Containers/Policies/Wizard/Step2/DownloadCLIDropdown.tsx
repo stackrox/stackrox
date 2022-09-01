@@ -40,14 +40,14 @@ function DownloadCLIDropdown({ hasBuild }) {
             isOpen={isCLIDropdownOpen}
             onSelect={handleDownloadCLI}
             dropdownItems={[
-                <DropdownItem value="darwin-amd64" component="button">
-                    Mac x86_64
+                <DropdownItem value="darwin" component="button">
+                    Mac 64-bit
                 </DropdownItem>,
-                <DropdownItem value="linux-amd64" component="button">
-                    Linux x86_64
+                <DropdownItem value="linux" component="button">
+                    Linux 64-bit
                 </DropdownItem>,
-                <DropdownItem value="windows-amd64" component="button">
-                    Windows x86_64
+                <DropdownItem value="windows" component="button">
+                    Windows 64-bit
                 </DropdownItem>,
             ]}
         />

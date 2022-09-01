@@ -8,9 +8,9 @@ import { saveFile } from 'services/DownloadService';
 export default function downloadCLI(type) {
     let name = 'roxctl';
     let suffix = type;
-    if (type.startsWith('windows-')) {
+    if (type === 'windows') {
         name = 'roxctl.exe';
-        suffix += '.exe';
+        suffix = 'windows.exe';
     }
     return saveFile({
         method: 'get',
