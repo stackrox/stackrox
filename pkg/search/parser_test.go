@@ -24,7 +24,7 @@ func TestSplitQuery(t *testing.T) {
 			pairs: []string{"Deployment Label:label+label"},
 		},
 		{
-			query: NewQueryBuilder().AddStrings(DeploymentLabel, "label+label").AddStrings(Annotation, "annotation").Query(),
+			query: NewQueryBuilder().AddStrings(DeploymentLabel, "label+label").AddStrings(DeploymentAnnotation, "annotation").Query(),
 			pairs: []string{"Deployment Label:label+label", "Annotation:annotation"},
 		},
 		{

@@ -266,7 +266,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{})
 
 	f.registerFieldMetadata(fieldnames.DisallowedAnnotation,
-		querybuilders.ForFieldLabelMap(search.Annotation, query.MapShouldContain),
+		querybuilders.ForFieldLabelMap(search.DeploymentAnnotation, query.MapShouldContain),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
@@ -561,7 +561,7 @@ func initializeFieldMetadata() FieldMetadata {
 	)
 
 	f.registerFieldMetadata(fieldnames.RequiredAnnotation,
-		querybuilders.ForFieldLabelMap(search.Annotation, query.MapShouldNotContain),
+		querybuilders.ForFieldLabelMap(search.DeploymentAnnotation, query.MapShouldNotContain),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
 			return keyValueValueRegex
