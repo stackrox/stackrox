@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -162,10 +163,16 @@ type serviceTestRun struct {
 	t           *testing.T
 }
 
+// execute runs the review request through the handler and then
+// runs alerts from manager through the assertion function.
 func (r serviceTestRun) execute() {
 	require.NotNil(r.t, r.mgr)
 	require.NotNil(r.t, r.handlerFunc)
 	require.True(r.t, r.mgr.IsReady(), "Manager is stopped or was not started")
+	// Wait for any events delivered to manager prior to this call to be processed.
+	syncCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	require.NoError(r.t, r.mgr.Sync(syncCtx))
 
 	s := service{
 		mgr: r.mgr,
@@ -184,7 +191,7 @@ func (r serviceTestRun) execute() {
 	assert.Equal(r.t, http.StatusOK, resp.Code)
 
 	select {
-	case <-time.After(30 * time.Second):
+	case <-time.After(3 * time.Second):
 		assert.Fail(r.t, "Did not receive any alerts before timeout expired, but expected some")
 	case alerts := <-r.mgr.Alerts():
 		r.assertionFunc(r.t, resp.Result(), alerts)

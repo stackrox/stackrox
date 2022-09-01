@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"sync/atomic"
 	"unsafe"
 
@@ -86,6 +87,8 @@ type manager struct {
 	settingsC          chan *sensor.AdmissionControlSettings
 	lastSettingsUpdate *types.Timestamp
 
+	syncC chan *concurrency.Signal
+
 	statePtr unsafe.Pointer
 
 	cacheVersion string
@@ -111,6 +114,7 @@ func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient se
 		settingsStream: concurrency.NewValueStream(nil),
 		settingsC:      make(chan *sensor.AdmissionControlSettings),
 		stoppedSig:     concurrency.NewErrorSignal(),
+		syncC:          make(chan *concurrency.Signal),
 
 		client:     imageServiceClient,
 		imageCache: cache,
@@ -140,13 +144,32 @@ func (m *manager) IsReady() bool {
 	return m.currentState() != nil
 }
 
+func (m *manager) Sync(ctx context.Context) error {
+	syncSig := concurrency.NewSignal()
+	select {
+	case m.syncC <- &syncSig:
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-m.stoppedSig.Done():
+		return m.stoppedSig.ErrorWithDefault(pkgErr.New("manager was stopped"))
+	}
+
+	select {
+	case <-syncSig.Done():
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-m.stoppedSig.Done():
+		return m.stoppedSig.ErrorWithDefault(pkgErr.New("manager was stopped"))
+	}
+}
+
 func (m *manager) Start() error {
 	if !m.stopSig.Reset() {
 		return pkgErr.New("admission control manager has already been started")
 	}
 
-	go m.runSettingsWatch()
-	go m.runUpdateResourceReqWatch()
+	go m.run()
 	return nil
 }
 
@@ -170,9 +193,9 @@ func (m *manager) InitialResourceSyncSig() *concurrency.Signal {
 	return &m.initialSyncSig
 }
 
-func (m *manager) runSettingsWatch() {
+func (m *manager) run() {
 	defer m.stoppedSig.Signal()
-	defer log.Info("Stopping watcher for new settings")
+	defer log.Info("Stopping watcher")
 
 	for !m.stopSig.IsDone() {
 		select {
@@ -181,20 +204,23 @@ func (m *manager) runSettingsWatch() {
 			return
 		case newSettings := <-m.settingsC:
 			m.ProcessNewSettings(newSettings)
-		}
-	}
-}
-
-func (m *manager) runUpdateResourceReqWatch() {
-	defer m.stoppedSig.Signal()
-	defer log.Info("Stopping watcher for new sensor events")
-
-	for {
-		select {
-		case <-m.stopSig.Done():
-			return
 		case req := <-m.resourceUpdatesC:
 			m.processUpdateResourceRequest(req)
+		default:
+			// Select on syncC only if there is nothing to be read from the main
+			// channels. The duplication of select branches is a bit ugly, but inevitable
+			// without reflection.
+			select {
+			case <-m.stopSig.Done():
+				m.ProcessNewSettings(nil)
+				return
+			case newSettings := <-m.settingsC:
+				m.ProcessNewSettings(newSettings)
+			case req := <-m.resourceUpdatesC:
+				m.processUpdateResourceRequest(req)
+			case syncSig := <-m.syncC:
+				syncSig.Signal()
+			}
 		}
 	}
 }

@@ -40,6 +40,11 @@ class Service {
         return this
     }
 
+    def setTargetPort(Integer targetPort) {
+        this.targetport = targetPort
+        return this
+    }
+
     enum Type {
         CLUSTERIP("ClusterIP"),
         LOADBALANCER("LoadBalancer"),

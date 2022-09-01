@@ -123,7 +123,8 @@ func (s *ReprocessorPostgresTestSuite) TestUnsuppressWithPostgres() {
 			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
 		}
 	}
-	s.Equal(image, storedImage)
+	expectedImage := cloneAndUpdateRiskPriority(image)
+	s.Equal(expectedImage, storedImage)
 
 	s.reprocessorLoop.unsuppressCVEsWithExpiredSuppressState()
 
@@ -135,4 +136,13 @@ func (s *ReprocessorPostgresTestSuite) TestUnsuppressWithPostgres() {
 			s.False(vuln.GetSuppressed())
 		}
 	}
+}
+
+func cloneAndUpdateRiskPriority(image *storage.Image) *storage.Image {
+	cloned := image.Clone()
+	cloned.Priority = 1
+	for _, component := range cloned.GetScan().GetComponents() {
+		component.Priority = 1
+	}
+	return cloned
 }

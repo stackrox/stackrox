@@ -352,8 +352,8 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
 	}
-	testImage.Priority = 1
-	s.Equal(testImage, storedImage)
+	expectedImage := cloneAndUpdateRiskPriority(testImage)
+	s.Equal(expectedImage, storedImage)
 
 	// Verify that new scan with less components cleans up the old relations correctly.
 	testImage.Scan.ScanTime = protoTypes.TimestampNow()
@@ -370,7 +370,8 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	storedImage, found, err = s.datastore.GetImage(ctx, testImage.GetId())
 	s.NoError(err)
 	s.True(found)
-	s.Equal(testImage, storedImage)
+	expectedImage = cloneAndUpdateRiskPriority(testImage)
+	s.Equal(expectedImage, storedImage)
 
 	// Verify orphaned image components are removed.
 	count, err := s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -395,8 +396,8 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
 	}
-	testImage2.Priority = 1
-	s.Equal(testImage2, storedImage)
+	expectedImage = cloneAndUpdateRiskPriority(testImage2)
+	s.Equal(expectedImage, storedImage)
 
 	// Verify that number of image components remains unchanged since both images have same components.
 	count, err = s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -415,7 +416,8 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	storedImage, found, err = s.datastore.GetImage(ctx, testImage2.GetId())
 	s.NoError(err)
 	s.True(found)
-	s.Equal(testImage2, storedImage)
+	expectedImage = cloneAndUpdateRiskPriority(testImage2)
+	s.Equal(expectedImage, storedImage)
 
 	// Set all components to contain same cve.
 	for _, component := range testImage2.GetScan().GetComponents() {
@@ -440,7 +442,8 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
 		}
 	}
-	s.Equal(testImage2, storedImage)
+	expectedImage = cloneAndUpdateRiskPriority(testImage2)
+	s.Equal(expectedImage, storedImage)
 
 	// Verify orphaned image components are removed.
 	count, err = s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -461,7 +464,8 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	storedImage, found, err = s.datastore.GetImage(ctx, testImage2.GetId())
 	s.NoError(err)
 	s.True(found)
-	s.Equal(testImage2, storedImage)
+	expectedImage = cloneAndUpdateRiskPriority(testImage2)
+	s.Equal(expectedImage, storedImage)
 
 	// Verify orphaned image components are removed.
 	count, err = s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -482,7 +486,8 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	storedImage, found, err = s.datastore.GetImage(ctx, testImage2.GetId())
 	s.NoError(err)
 	s.True(found)
-	s.Equal(testImage2, storedImage)
+	expectedImage = cloneAndUpdateRiskPriority(testImage2)
+	s.Equal(expectedImage, storedImage)
 
 	// Verify no components exist.
 	count, err = s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())

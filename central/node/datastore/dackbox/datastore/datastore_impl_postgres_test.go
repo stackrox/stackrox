@@ -126,7 +126,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 			cve.CveBaseInfo.CreatedAt = storedNode.GetLastUpdated()
 		}
 	}
-	suite.EqualValues(node, storedNode)
+	expectedNode := cloneAndUpdateRiskPriority(node)
+	suite.EqualValues(expectedNode, storedNode)
 
 	// Exists tests.
 	exists, err = suite.datastore.Exists(allowAllCtx, "id1")
@@ -144,9 +145,9 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	suite.True(exists)
 	suite.NoError(err)
 	// Node is updated.
-	node.LastUpdated = storedNode.GetLastUpdated()
+	expectedNode.LastUpdated = storedNode.GetLastUpdated()
 	// Scan data is unchanged.
-	suite.Equal(node, storedNode)
+	suite.Equal(expectedNode, storedNode)
 
 	newNode := node.Clone()
 	newNode.Id = "id2"
@@ -164,7 +165,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	suite.True(exists)
 	suite.NoError(err)
 	suite.NotNil(storedNode)
-	suite.Equal(newNode, storedNode)
+	newExpectedNode := cloneAndUpdateRiskPriority(newNode)
+	suite.Equal(newExpectedNode, storedNode)
 
 	// Count nodes.
 	count, err := suite.datastore.CountNodes(allowAllCtx)
@@ -175,7 +177,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	nodes, err := suite.datastore.GetNodesBatch(allowAllCtx, []string{"id1", "id2"})
 	suite.NoError(err)
 	suite.Len(nodes, 2)
-	suite.ElementsMatch([]*storage.Node{node, newNode}, nodes)
+	suite.ElementsMatch([]*storage.Node{expectedNode, newExpectedNode}, nodes)
 
 	// Delete both nodes.
 	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), "id1", storage.RiskSubjectType_NODE).Return(nil)
@@ -228,7 +230,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicSearch() {
 			cve.CveBaseInfo.CreatedAt = nodes[0].GetLastUpdated()
 		}
 	}
-	suite.Equal(node, nodes[0])
+	expectedNode := cloneAndUpdateRiskPriority(node)
+	suite.Equal(expectedNode, nodes[0])
 
 	// Upsert new node.
 	newNode := getTestNodeForPostgres("id2", "name2")
@@ -253,7 +256,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicSearch() {
 	nodes, err = suite.datastore.SearchRawNodes(scopedCtx, pkgSearch.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(nodes, 1)
-	suite.Equal(node, nodes[0])
+	suite.Equal(expectedNode, nodes[0])
 
 	suite.deleteTestNodes(allowAllCtx)
 
@@ -472,8 +475,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 			cve.CveBaseInfo.CreatedAt = storedNode.GetLastUpdated()
 		}
 	}
-	testNode.Priority = 1
-	suite.Equal(testNode, storedNode)
+	expectedNode := cloneAndUpdateRiskPriority(testNode)
+	suite.Equal(expectedNode, storedNode)
 
 	// Verify that new scan with less components cleans up the old relations correctly.
 	testNode.Scan.ScanTime = types.TimestampNow()
@@ -490,7 +493,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode.GetId())
 	suite.NoError(err)
 	suite.True(found)
-	suite.Equal(testNode, storedNode)
+	expectedNode = cloneAndUpdateRiskPriority(testNode)
+	suite.Equal(expectedNode, storedNode)
 
 	// Verify orphaned node components are removed.
 	count, err := suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -508,8 +512,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
 	suite.NoError(err)
 	suite.True(found)
-	testNode2.Priority = 1
-	suite.Equal(testNode2, storedNode)
+	expectedNode = cloneAndUpdateRiskPriority(testNode2)
+	suite.Equal(expectedNode, storedNode)
 
 	// Verify that number of node components remains unchanged since both nodes have same components.
 	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -528,7 +532,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
 	suite.NoError(err)
 	suite.True(found)
-	suite.Equal(testNode2, storedNode)
+	expectedNode = cloneAndUpdateRiskPriority(testNode2)
+	suite.Equal(expectedNode, storedNode)
 
 	// Set all components to contain same cve.
 	for _, component := range testNode2.GetScan().GetComponents() {
@@ -548,7 +553,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 			cve.CveBaseInfo.CreatedAt = storedNode.GetLastUpdated()
 		}
 	}
-	suite.Equal(testNode2, storedNode)
+	expectedNode = cloneAndUpdateRiskPriority(testNode2)
+	suite.Equal(expectedNode, storedNode)
 
 	// Verify orphaned node components are removed.
 	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -569,7 +575,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
 	suite.NoError(err)
 	suite.True(found)
-	suite.Equal(testNode2, storedNode)
+	expectedNode = cloneAndUpdateRiskPriority(testNode2)
+	suite.Equal(expectedNode, storedNode)
 
 	// Verify orphaned node components are removed.
 	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -590,7 +597,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
 	suite.NoError(err)
 	suite.True(found)
-	suite.Equal(testNode2, storedNode)
+	expectedNode = cloneAndUpdateRiskPriority(testNode2)
+	suite.Equal(expectedNode, storedNode)
 
 	// Verify no components exist.
 	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -667,6 +675,5 @@ func getTestNodeForPostgres(id, name string) *storage.Node {
 			},
 		},
 		RiskScore: 30,
-		Priority:  1,
 	}
 }
