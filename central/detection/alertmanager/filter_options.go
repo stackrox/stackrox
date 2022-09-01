@@ -66,7 +66,7 @@ func WithClusterID(clusterID string) AlertFilterOption {
 func WithoutResourceType(resourceType storage.ListAlert_ResourceType) AlertFilterOption {
 	return &alertFilterOptionImpl{
 		applyFunc: func(qb *search.QueryBuilder) {
-			qb.AddExactMatches(search.ResourceType, search.NegateQueryString(resourceType.String()))
+			qb.AddStrings(search.ResourceType, search.NegateQueryString(resourceType.String()))
 		},
 	}
 }
