@@ -2,30 +2,43 @@ import * as api from '../constants/apiEndpoints';
 
 import { interceptRequests, waitForResponses } from './request';
 
-// generic requests to render the MainPage component
+// Import one or more alias constants in test files that call visitWithResponseMapGeneric function.
+export const featureflagsAlias = 'featureflags';
+export const loginAuthProviders = 'login/authproviders';
+export const mypermissionsAlias = 'mypermissions';
+export const configPublicAlias = 'config/public';
+export const authStatusAlias = 'auth/status';
+export const credentialexpiryCentralAlias = 'credentialexpiry_CENTRAL';
+export const credentialexpiryScannerAlias = 'credentialexpiry_SCANNER';
+
+// Generic requests to render the MainPage component (that is, prerequisite to test any page).
 const requestConfigGeneric = {
     routeMatcherMap: {
-        featureflags: {
+        [featureflagsAlias]: {
             method: 'GET',
             url: api.featureFlags,
         }, // reducers/featureFlags and sagas/featureFlagSagas
-        mypermissions: {
+        [loginAuthProviders]: {
+            method: 'GET',
+            url: api.auth.loginAuthProviders,
+        }, // reducers/auth and sagas/authSagas
+        [mypermissionsAlias]: {
             method: 'GET',
             url: api.roles.mypermissions,
         }, // hooks/usePermissions and reducers/roles and sagas/authSagas
-        'config/public': {
+        [configPublicAlias]: {
             method: 'GET',
             url: api.system.configPublic,
         }, // reducers/systemConfig and sagas/systemConfig
-        'auth/status': {
+        [authStatusAlias]: {
             method: 'GET',
             url: api.auth.authStatus,
         }, // sagas/authSagas
-        credentialexpiry_CENTRAL: {
+        [credentialexpiryCentralAlias]: {
             method: 'GET',
             url: api.certExpiry.central,
         }, // MainPage/CredentialExpiryService
-        credentialexpiry_SCANNER: {
+        [credentialexpiryScannerAlias]: {
             method: 'GET',
             url: api.certExpiry.scanner,
         }, // MainPage/CredentialExpiryService
@@ -65,29 +78,57 @@ export function visit(pageUrl, requestConfig, staticResponseMap) {
 
 /*
  * Visit page to test conditional rendering for user role permissions specified as response or fixture.
+ * Optional third and fouth arguments are for page-specific requests.
  *
  * { body: { resourceToAccess: { … } } }
  * { fixture: 'fixtures/wherever/whatever.json' }
  *
  * @param {string} pageUrl
- * @param {{ body: { resourceToAccess: Record<string, string> } } | { fixture: string }} permissionsStaticResponseMap
- * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
- * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ * @param {{ body: { resourceToAccess: Record<string, string> } } | { fixture: string }} staticResponseForPermissions
+ * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfigSpecific]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMapSpecific]
  */
-export function visitWithPermissions(
+export function visitWithPermissionsResponse(
     pageUrl,
-    permissionsStaticResponse,
-    requestConfig,
-    staticResponseMap
+    staticResponseForPermissions,
+    requestConfigSpecific,
+    staticResponseMapSpecific
 ) {
     const staticResponseMapGeneric = {
-        mypermissions: permissionsStaticResponse,
+        mypermissions: staticResponseForPermissions,
     };
+    visitWithGenericResponses(
+        pageUrl,
+        staticResponseMapGeneric,
+        requestConfigSpecific,
+        staticResponseMapSpecific
+    );
+}
+
+/*
+ * Visit page to test one or more generic responses (for example, auth/status or credentialexpiry, possibly with mypermissions).
+ * Optional third and fouth arguments are for page-specific requests.
+ *
+ * Examples
+ * { [authStatusAlias]: { body: {}, statusCode: 401 } }
+ * { [credentialExpiryCentralAlias]: { expiry } }
+ *
+ * @param {string} pageUrl
+ * @param {{ body: unknown } | { fixture: string }} staticResponseMapGeneric
+ * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfigSpecific]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMapSpecific]
+ */
+export function visitWithGenericResponses(
+    pageUrl,
+    staticResponseMapGeneric,
+    requestConfigSpecific,
+    staticResponseMapSpecific
+) {
     interceptRequests(requestConfigGeneric, staticResponseMapGeneric);
-    interceptRequests(requestConfig, staticResponseMap);
+    interceptRequests(requestConfigSpecific, staticResponseMapSpecific);
 
     cy.visit(pageUrl);
 
     waitForResponses(requestConfigGeneric);
-    waitForResponses(requestConfig);
+    waitForResponses(requestConfigSpecific);
 }
