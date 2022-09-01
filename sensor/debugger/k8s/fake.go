@@ -82,6 +82,7 @@ type FakeEventsManager struct {
 
 const (
 	createAction string = "CREATE_RESOURCE"
+	syncAction   string = "SYNC_RESOURCE"
 	updateAction string = "UPDATE_RESOURCE"
 	removeAction string = "REMOVE_RESOURCE"
 )
@@ -386,6 +387,10 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan<- 
 		return fmt.Errorf("resource %s not found", kind)
 	}
 	cl := clFunc(getNamespace(reflect.ValueOf(r)))
+
+	if msg.Action == syncAction {
+		msg.Action = createAction
+	}
 
 	if msg.Action == removeAction {
 		return f.handleRunOp(msg.Action, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(getName(reflect.ValueOf(r))))
