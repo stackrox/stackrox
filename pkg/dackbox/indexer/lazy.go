@@ -92,26 +92,26 @@ func (li *lazyImpl) runIndexing() {
 }
 
 type hashableField struct {
-	name           string
-	value          []byte
-	arrayPositions []uint64
+	Name           string
+	Value          []byte
+	ArrayPositions []uint64
 }
 
 type hashableDoc struct {
-	id     string
-	fields []hashableField
+	ID     string
+	Fields []hashableField
 }
 
 func (li *lazyImpl) evaluateDeduping(doc *document.Document) bool {
 	hashableDoc := hashableDoc{
-		id:     doc.ID,
-		fields: make([]hashableField, 0, len(doc.Fields)),
+		ID:     doc.ID,
+		Fields: make([]hashableField, 0, len(doc.Fields)),
 	}
 	for _, f := range doc.Fields {
-		hashableDoc.fields = append(hashableDoc.fields, hashableField{
-			name:           f.Name(),
-			value:          f.Value(),
-			arrayPositions: f.ArrayPositions(),
+		hashableDoc.Fields = append(hashableDoc.Fields, hashableField{
+			Name:           f.Name(),
+			Value:          f.Value(),
+			ArrayPositions: f.ArrayPositions(),
 		})
 	}
 	hashValue, err := hashstructure.Hash(hashableDoc, &hashstructure.HashOptions{
@@ -176,17 +176,17 @@ func (li *lazyImpl) indexItems(itemsToIndex map[string]interface{}) {
 	batch := li.index.NewBatch()
 	for key, value := range itemsToIndex {
 		if value != nil {
-			var doc document.Document
-			if err := li.index.Mapping().MapDocument(&doc, value); err != nil {
+			doc := document.NewDocument(key)
+			if err := li.index.Mapping().MapDocument(doc, value); err != nil {
 				log.Errorf("unable to map document: %v", err)
 				continue
 			}
-			if li.evaluateDeduping(&doc) {
+			if li.evaluateDeduping(doc) {
 				indexObjectsDeduped.Inc()
 				continue
 			}
 			indexObjectsIndexed.Inc()
-			if err := batch.IndexAdvanced(&doc); err != nil {
+			if err := batch.IndexAdvanced(doc); err != nil {
 				log.Errorf("unable to index item: %q, %v", key, err)
 			}
 		} else {
