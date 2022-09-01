@@ -7,6 +7,11 @@ import services.SearchService
 import spock.lang.Unroll
 
 class AutocompleteTest extends BaseSpecification {
+    def VULNERABILITY_SEARCH_CATEGORY =
+        isPostgresRun() ?
+            SearchCategory.IMAGE_VULNERABILITIES :
+            SearchCategory.VULNERABILITIES
+
     @Category([BAT])
     def "Verify Autocomplete: #query #category #contains"() {
         when:
@@ -49,9 +54,7 @@ class AutocompleteTest extends BaseSpecification {
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.IMAGES                | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
-        isPostgresRun() ?
-            SearchCategory.IMAGE_VULNERABILITIES :
-            SearchCategory.VULNERABILITIES   | ["Cluster", "Deployment",
+        VULNERABILITY_SEARCH_CATEGORY        | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.IMAGE_COMPONENTS      | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
