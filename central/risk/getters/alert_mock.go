@@ -2,7 +2,6 @@ package getters
 
 import (
 	"context"
-	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -31,7 +30,7 @@ func (m MockAlertsGetter) ListAlerts(ctx context.Context, req *v1.ListAlertsRequ
 	})
 
 	for _, a := range m.Alerts {
-		if a.GetState().String() == strings.Trim(state, "\"") {
+		if a.GetState().String() == state {
 			alerts = append(alerts, a)
 		}
 	}

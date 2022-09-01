@@ -109,8 +109,8 @@ func anyActiveDeployAlerts(ctx context.Context, root *Resolver, q *v1.Query) (bo
 		return false, err
 	}
 
-	alertsQuery := search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-		AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
+	alertsQuery := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
 		ProtoQuery()
 
 	q, err := search.AddAsConjunction(q, alertsQuery)
