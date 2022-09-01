@@ -95,8 +95,7 @@ describe('Components list Page and its entity detail page, (related entities) su
                 'Operating System',
                 'CVEs',
                 'Top CVSS',
-                'Images',
-                'Deployments',
+                'Nodes',
                 'Risk Priority',
             ]);
             cy.get(selectors.tableBodyColumn).each(($el) => {
