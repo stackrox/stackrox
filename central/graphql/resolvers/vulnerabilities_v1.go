@@ -489,7 +489,7 @@ func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, _ Raw
 	}
 
 	// We only support OS level component. The active state is not determined if there is no OS level component associate with this vuln.
-	query := search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).AddExactMatches(search.ComponentSource, storage.SourceType_OS.String()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).AddStrings(search.ComponentSource, storage.SourceType_OS.String()).ProtoQuery()
 	osLevelComponents, err := evr.root.ImageComponentDataStore.Count(ctx, query)
 	if err != nil {
 		return nil, err
