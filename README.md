@@ -4,11 +4,8 @@
     - [Table of Contents](#table-of-contents)
     - [Community](#community)
     - [Deploying StackRox](#deploying-stackrox)
-        - [Installation via Helm](#installation-via-helm)
-            - [Default Central Installation](#default-central-installation)
-            - [Install Central in Clusters With Limited Resources](#install-central-in-clusters-with-limited-resources)
-            - [Default Secured Cluster Installation](#default-secured-cluster-installation)
-            - [Install Secured Cluster with Limited Resources](#install-secured-cluster-with-limited-resources)
+        - [Quick Installation using Helm](#quick-installation-using-helm)
+        - [Manual Installation using Helm](#manual-installation-using-helm)
         - [Installation via Scripts](#installation-via-scripts)
             - [Kubernetes Distributions (EKS, AKS, GKE)](#kubernetes-distributions-eks-aks-gke)
             - [OpenShift](#openshift)
@@ -58,7 +55,32 @@ To [report a vulnerability or bug](https://github.com/stackrox/stackrox/security
 ---
 
 ## Deploying StackRox
-### Installation via Helm
+
+### Quick Installation using Helm
+
+StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
+Then run the helm quick install script or proceed to section [Manual Helm Installation](#manual-helm-installation) for configuration options.
+
+**<details><summary>Install StackRox via Helm Installation Script </summary>**
+
+```sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/stackrox/stackrox/master/scripts/quick-helm-install.sh)"
+```
+A default deployment of StackRox has certain CPU and memory requests and may fail on small (e.g. development) clusters if sufficient resources are not available. You may use the `--small` command-line option in order to install StackRox on smaller clusters with limited resources. Using this option is not recommended for production deployments.
+```sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/stackrox/stackrox/master/scripts/quick-helm-install.sh)" --small
+```
+The script adds the StackRox helm repository, generates an admin password, installs stackrox-central-services, creates an init bundle for provisioning stackrox-secured-cluster-services, and finally installs stackrox-secured-cluster-services on the same cluster.
+
+Finally, the script will automatically open the browser and log you into StackRox. A certificate warning may be displayed since the certificate is self-signed. See the [Accessing the StackRox User Interface (UI)](#accessing-the-stackrox-user-interface-ui) section to read more about the warnings. After authenticating you can access the dashboard using <https://localhost:8000/main/dashboard>.
+
+To further customize your Helm installation, consult these documents:
+* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html>
+* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-customization.html>
+
+</details>
+
+### Manual Installation using Helm
 
 StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get the `helm` CLI on your system.
 
@@ -73,6 +95,7 @@ Deploying using Helm consists of 4 steps
 
 #### Default Central Installation
 First, the StackRox Central Services will be added to your Kubernetes cluster. This includes the UI and Scanner. To start, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
+
 ```sh
 helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
 ```
@@ -82,11 +105,11 @@ helm search repo stackrox
 ```
 To install stackrox-central-services, you will need a secure password. This password will be needed later when creating an init bundle.
 ```sh
-openssl rand -base64 20 | tr -d '/=+' > stackrox-admin-password.txt
+STACKROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 ```
 From here, you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
 ```sh
-helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="$(cat stackrox-admin-password.txt)"
+helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}"
 ```
 
 #### Install Central in Clusters With Limited Resources
@@ -109,7 +132,7 @@ helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-ser
 
 </details>
 
-**<details><summary>Install StackRox Secured Cluster Services</summary>**
+**<details><summary>Install StackRox Secured Cluster Services </summary>**
 
 #### Default Secured Cluster Installation
 Next, the secured cluster component will need to be deployed to collect information on from the Kubernetes nodes.
@@ -117,7 +140,7 @@ Next, the secured cluster component will need to be deployed to collect informat
 Generate an init bundle containing initialization secrets. The init bundle will be saved in `stackrox-init-bundle.yaml`, and you will use it to provision secured clusters as shown below.
 ```sh
 kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
-  --password "$(cat stackrox-admin-password.txt)" \
+  --password "${STACKROX_ADMIN_PASSWORD}" \
   central init-bundles generate stackrox-init-bundle --output - > stackrox-init-bundle.yaml
 ```
 Set a meaningful cluster name for your secured cluster in the `CLUSTER_NAME` shell variable. The cluster will be identified by this name in the clusters list of the StackRox UI.
@@ -150,7 +173,6 @@ To further customize your Helm installation consult these documents:
 * <https://docs.openshift.com/acs/installing/installing_helm/install-helm-customization.html>
 
 </details>
-
 
 ### Installation via Scripts
 
@@ -245,7 +267,7 @@ Then go to https://localhost:8000/ in your web browser.
 
 **Username** = The default user is `admin`
 
-**Password (Helm)**   = The password is in the generated `stackrox-admin-password.txt` folder.
+**Password (Helm)**   = The password is in `$STACKROX_ADMIN_PASSWORD` after a manual installation, or printed at the end of the quick install script.
 
 **Password (Script)** = The password will be located in the `/deploy/<orchestrator>/central-deploy/password.txt` folder for the script install.
 
