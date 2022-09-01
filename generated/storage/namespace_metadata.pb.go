@@ -25,11 +25,10 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type NamespaceMetadata struct {
-	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Namespace ID" sql:"pk"`
-	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Namespace,store"`
-	ClusterId   string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint"`
-	ClusterName string `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`
-	// TODO(ROX-6895): "Label" search term is ambiguous.
+	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Namespace ID" sql:"pk"`
+	Name                 string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Namespace,store"`
+	ClusterId            string            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint"`
+	ClusterName          string            `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`
 	Labels               map[string]string `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" search:"Namespace Label" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	CreationTime         *types.Timestamp  `protobuf:"bytes,6,opt,name=creation_time,json=creationTime,proto3" json:"creation_time,omitempty"`
 	Priority             int64             `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`

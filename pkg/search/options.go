@@ -97,7 +97,7 @@ var (
 	AllowPrivilegeEscalation     = newFieldLabel("Allow Privilege Escalation")
 	AppArmorProfile              = newFieldLabel("AppArmor Profile")
 	AutomountServiceAccountToken = newFieldLabel("Automount Service Account Token")
-	Annotation                   = newFieldLabel("Annotation")
+	DeploymentAnnotation         = newFieldLabel("Deployment Annotation")
 	CPUCoresLimit                = newFieldLabel("CPU Cores Limit")
 	CPUCoresRequest              = newFieldLabel("CPU Cores Request")
 	ContainerID                  = newFieldLabel("Container ID")
@@ -145,6 +145,8 @@ var (
 	SeccompProfileType            = newFieldLabel("Seccomp Profile Type")
 	ServiceAccountName            = newFieldLabel("Service Account")
 	ServiceAccountPermissionLevel = newFieldLabel("Service Account Permission Level")
+	ServiceAccountLabel           = newFieldLabel("Service Account Label")
+	ServiceAccountAnnotation      = newFieldLabel("Service Account Annotation")
 	Created                       = newFieldLabel("Created")
 	VolumeName                    = newFieldLabel("Volume Name")
 	VolumeSource                  = newFieldLabel("Volume Source")
@@ -197,6 +199,8 @@ var (
 	OperatingSystem  = newFieldLabel("Operating System")
 	ContainerRuntime = newFieldLabel("Container Runtime")
 	NodeJoinTime     = newFieldLabel("Node Join Time")
+	NodeLabel        = newFieldLabel("Node Label")
+	NodeAnnotation   = newFieldLabel("Node Annotation")
 
 	// Namespace Search Fields
 	NamespaceID         = newFieldLabel("Namespace ID")
@@ -205,13 +209,17 @@ var (
 	NamespaceLabel      = newFieldLabel("Namespace Label")
 
 	// Role Search Fields
-	RoleID      = newFieldLabel("Role ID")
-	RoleName    = newFieldLabel("Role")
-	ClusterRole = newFieldLabel("Cluster Role")
+	RoleID         = newFieldLabel("Role ID")
+	RoleName       = newFieldLabel("Role")
+	RoleLabel      = newFieldLabel("Role Label")
+	RoleAnnotation = newFieldLabel("Role Annotation")
+	ClusterRole    = newFieldLabel("Cluster Role")
 
 	// Role Binding Search Fields
-	RoleBindingID   = newFieldLabel("Role Binding ID")
-	RoleBindingName = newFieldLabel("Role Binding")
+	RoleBindingID         = newFieldLabel("Role Binding ID")
+	RoleBindingName       = newFieldLabel("Role Binding")
+	RoleBindingLabel      = newFieldLabel("Role Binding Label")
+	RoleBindingAnnotation = newFieldLabel("Role Binding Annotation")
 
 	// Subject search fields
 	SubjectKind = newFieldLabel("Subject Kind")

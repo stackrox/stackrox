@@ -23,9 +23,8 @@ message Node {
     repeated Taint taints                  = 3;
     string cluster_id                      = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint"'];
     string cluster_name                    = 5 [(gogoproto.moretags) = 'search:"Cluster,store"'];
-    // TODO(ROX-6895): "Label" search term is ambiguous.
-    map<string, string> labels             = 6 [(gogoproto.moretags) = 'search:"Label"'];
-    map<string, string> annotations        = 7 [(gogoproto.moretags) = 'search:"Annotation"'];
+    map<string, string> labels             = 6 [(gogoproto.moretags) = 'search:"Node Label"'];
+    map<string, string> annotations        = 7 [(gogoproto.moretags) = 'search:"Node Annotation"'];
     // When the cluster reported the node was added
     google.protobuf.Timestamp joined_at    = 13 [(gogoproto.moretags) = 'search:"Node Join Time,store"'];
     // node internal IP addresses
