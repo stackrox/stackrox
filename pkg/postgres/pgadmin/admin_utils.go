@@ -14,8 +14,6 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-
-	postgresQueryTimeout = 5 * time.Second
 )
 
 const (
@@ -30,6 +28,9 @@ const (
 
 	// postgresTimeBetweenRetries - time to wait between retries
 	postgresTimeBetweenRetries = 10 * time.Second
+
+	// PostgresQueryTimeout - timeout time for query
+	PostgresQueryTimeout = 5 * time.Second
 
 	getCloneStmt = "SELECT datname FROM pg_catalog.pg_database WHERE datname ~ '^%s_.*'"
 
@@ -82,9 +83,9 @@ func CreateDB(sourceMap map[string]string, adminConfig *pgxpool.Config, dbTempla
 
 	SetPostgresCmdEnv(cmd, sourceMap, adminConfig)
 
-	// terminate connections to the source database.  You cannot copy from a database if
+	// Terminate connections to the source database.  You cannot copy from a database if
 	// there are open connections to it.
-	err := terminateConnection(adminConfig, dbTemplate)
+	err := TerminateConnection(adminConfig, dbTemplate)
 	if err != nil {
 		return err
 	}
@@ -96,12 +97,12 @@ func CreateDB(sourceMap map[string]string, adminConfig *pgxpool.Config, dbTempla
 // RenameDB - renames a database
 func RenameDB(adminPool *pgxpool.Pool, originalDB, newDB string) error {
 	log.Debugf("Renaming database %q to %q", originalDB, newDB)
-	ctx, cancel := context.WithTimeout(context.Background(), postgresQueryTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
 	defer cancel()
 
-	// terminate connections to the source database.  You cannot move a database if
+	// Terminate connections to the source database.  You cannot move a database if
 	// there are open connections to it.
-	err := terminateConnection(adminPool.Config(), originalDB)
+	err := TerminateConnection(adminPool.Config(), originalDB)
 	if err != nil {
 		return err
 	}
@@ -123,7 +124,7 @@ func CheckIfDBExists(pgConfig *pgxpool.Config, dbName string) bool {
 	defer connectPool.Close()
 
 	// Create a context with a timeout
-	ctx, cancel := context.WithTimeout(context.Background(), postgresQueryTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
 	defer cancel()
 
 	existsStmt := "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1)"
@@ -147,7 +148,7 @@ func GetDatabaseClones(pgConfig *pgxpool.Config) []string {
 	// Close the admin connection pool
 	defer connectPool.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), postgresQueryTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
 	defer cancel()
 
 	cloneStmt := fmt.Sprintf(getCloneStmt, config.GetConfig().CentralDB.DatabaseName)
@@ -188,9 +189,9 @@ func AnalyzeDatabase(config *pgxpool.Config, dbName string) error {
 	return err
 }
 
-// terminateConnection - terminates connections to the specified database
-func terminateConnection(config *pgxpool.Config, dbName string) error {
-	log.Debugf("terminateConnection - %q", dbName)
+// TerminateConnection - terminates connections to the specified database
+func TerminateConnection(config *pgxpool.Config, dbName string) error {
+	log.Debugf("TerminateConnection - %q", dbName)
 
 	// Connect to different database for admin functions
 	connectPool := GetAdminPool(config)
@@ -199,7 +200,7 @@ func terminateConnection(config *pgxpool.Config, dbName string) error {
 
 	_, err := connectPool.Exec(context.Background(), terminateConnectionStmt, dbName)
 
-	log.Debug("terminateConnection done")
+	log.Debug("TerminateConnection done")
 	return err
 }
 

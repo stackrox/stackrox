@@ -84,33 +84,6 @@ func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config 
 	return nil
 }
 
-// SwitchToRestoredDB - switches the restore DB to be the active DB
-func SwitchToRestoredDB(sourceMap map[string]string, dbConfig *pgxpool.Config) error {
-	log.Info("Switching to restored database")
-
-	// Connect to different database for admin functions
-	connectPool := pgadmin.GetAdminPool(dbConfig)
-	// Close the admin connection pool
-	defer connectPool.Close()
-
-	// Restore succeeded to the separate DB, so we need to drop the original in order to rename
-	// the new one.
-	err := pgadmin.DropDB(sourceMap, dbConfig, pgconfig.GetActiveDB())
-	if err != nil {
-		log.Errorf("Could not drop the DB: %v", err)
-		return err
-	}
-
-	// rename central_restore to postgres
-	err = pgadmin.RenameDB(connectPool, getRestoreDBName(), pgconfig.GetActiveDB())
-	if err != nil {
-		log.Errorf("Could not rename the DB: %v", err)
-		return err
-	}
-
-	return nil
-}
-
 // CheckIfRestoreDBExists - checks to see if a restore database exists
 func CheckIfRestoreDBExists(dbConfig *pgxpool.Config) bool {
 	return pgadmin.CheckIfDBExists(dbConfig, getRestoreDBName())
