@@ -326,8 +326,12 @@ func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) erro
 
 func (d *dbCloneManagerImpl) renameClone(ctx context.Context, tx pgx.Tx, srcClone, destClone string) error {
 	// Move the current to the previous clone
-	pgadmin.TerminateConnection(d.adminConfig, srcClone)
-	_, err := tx.Exec(ctx, fmt.Sprintf("ALTER DATABASE %s RENAME TO %s", srcClone, destClone))
+	err := pgadmin.TerminateConnection(d.adminConfig, srcClone)
+	if err != nil {
+		return err
+	}
+	
+	_, err = tx.Exec(ctx, fmt.Sprintf("ALTER DATABASE %s RENAME TO %s", srcClone, destClone))
 	if err != nil {
 		log.Errorf("Unable to switch to clone %q DB: %v", destClone, err)
 		if err := tx.Rollback(ctx); err != nil {
