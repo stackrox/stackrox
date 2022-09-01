@@ -330,7 +330,6 @@ func (d *dbCloneManagerImpl) renameClone(ctx context.Context, tx pgx.Tx, srcClon
 	if err != nil {
 		return err
 	}
-	
 	_, err = tx.Exec(ctx, fmt.Sprintf("ALTER DATABASE %s RENAME TO %s", srcClone, destClone))
 	if err != nil {
 		log.Errorf("Unable to switch to clone %q DB: %v", destClone, err)
