@@ -218,8 +218,8 @@ func (m *manager) run() {
 				m.ProcessNewSettings(newSettings)
 			case req := <-m.resourceUpdatesC:
 				m.processUpdateResourceRequest(req)
-			case sig := <-m.syncC:
-				sig.Signal()
+			case syncSig := <-m.syncC:
+				syncSig.Signal()
 			}
 		}
 	}
