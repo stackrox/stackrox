@@ -434,7 +434,7 @@ replace (
 
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
-	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.8-0.20220804162433-be98f831243c
+	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.11-0.20220902111655-fcac4d6f4f5e
 	// github.com/sigstore/rekor is a transitive dep pulled in by cosign. The version pulled in by cosign is using
 	// a vulnerable go-tuf version
 	// (https://github.com/theupdateframework/go-tuf/security/advisories/GHSA-66x3-6cw3-v5gj).

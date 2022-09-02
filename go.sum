@@ -2757,8 +2757,8 @@ github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd h1:vEjp7Q6
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd/go.mod h1:HILeV3i/EyJz844GcrC3+oU7oZONhjfujaIYBMJ/bZE=
 github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7 h1:F4Gq3G5G07HQ/ECrg/+EQxFBmCTcq9ZDyLPI5LaDUKI=
 github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7/go.mod h1:faUw9vx/mA7ql41Ftlst5MYar2DT3nnS6oK94lbaW0g=
-github.com/stackrox/helm-operator v0.0.8-0.20220804162433-be98f831243c h1:mP6VDc8pG6IAFzxyufwdFFGMZ3hdzbxhnsMYHvkGp7A=
-github.com/stackrox/helm-operator v0.0.8-0.20220804162433-be98f831243c/go.mod h1:w+aTtmogp/HRpQcRouVHeNGHn80IrDMiWkWzmIOdcGE=
+github.com/stackrox/helm-operator v0.0.11-0.20220902111655-fcac4d6f4f5e h1:LGoMKQ+DpIqiLIKb6EhPCQuRIiOK/BEgkTa6ObHrnRg=
+github.com/stackrox/helm-operator v0.0.11-0.20220902111655-fcac4d6f4f5e/go.mod h1:5SNPtUyW8cUTZwV1Jgowq/dR9dy35XWPoktYQn2cADs=
 github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347 h1:ByiXbT2lnhWmUlrpUCeQlk8hRZTFr6CPtTtpd7XlOGY=
 github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347/go.mod h1:vWZFszN4CfxMWzzMI/XfrcG4kkoDIPdwfDry76nYIbo=
 github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab h1:77xJmm1YkqbgrQzHI3C4MyPckWL+PYRLWakQRC6Mzj8=
