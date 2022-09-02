@@ -18,7 +18,7 @@ check_not_empty \
 
 if [ "$(git tag "$TAG" --points-at HEAD)" = "$TAG" ]; then
     git push --delete origin "$TAG"
-    gh_log warning "Tag '$TAG' has been deleted."
+    gh_log warning "Existing tag '$TAG' has been deleted."
 fi
 
 git commit --allow-empty --message "Empty commit to trigger CI"
