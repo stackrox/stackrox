@@ -29,7 +29,6 @@ func IsCIDRBlockInPrivateSubnet(cidrStr string) bool {
 	return false
 }
 
-
 // MustParseCIDR parses the given CIDR string and returns the corresponding IPNet. If the string is invalid, this
 // function panics.
 func MustParseCIDR(cidr string) *net.IPNet {

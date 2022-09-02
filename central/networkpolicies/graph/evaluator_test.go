@@ -1300,7 +1300,6 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace:   "qa",
 					NamespaceId: "qa",
 				},
-
 			},
 			networkTree: t1,
 			nps: []*storage.NetworkPolicy{
