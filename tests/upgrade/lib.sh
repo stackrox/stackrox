@@ -60,7 +60,7 @@ validate_upgrade() {
     local upgrade_cluster_id="$3"
     local policies_dir="../pkg/defaults/policies/files"
 
-    if [[ -n ${API_TOKEN:-} ]]; then
+    if [[ -n "${API_TOKEN:-}" ]]; then
         info "Verifying API token generated can access the central"
         echo $API_TOKEN | $TEST_ROOT/bin/$TEST_HOST_OS/roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" --token-file /dev/stdin central whoami > /dev/null
     fi
