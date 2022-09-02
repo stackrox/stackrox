@@ -62,7 +62,7 @@ validate_upgrade() {
 
     if [[ -n "${API_TOKEN:-}" ]]; then
         info "Verifying API token generated can access the central"
-        echo $API_TOKEN | $TEST_ROOT/bin/$TEST_HOST_OS/roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" --token-file /dev/stdin central whoami > /dev/null
+        echo "$API_TOKEN" | "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl" --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" --token-file /dev/stdin central whoami > /dev/null
     fi
 
     info "Validating the upgrade with upgrade tests: $stage_description"
