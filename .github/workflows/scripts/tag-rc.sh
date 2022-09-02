@@ -16,7 +16,7 @@ check_not_empty \
     \
     DRY_RUN
 
-if git ls-remote --tags --exit-code origin "$TAG"; then
+if [ "$(git tag "$TAG" --points-at HEAD)" = "$TAG" ]; then
     git push --delete origin "$TAG"
     git commit --allow-empty --message "Empty commit to trigger CI"
     gh_log warning "Tag '$TAG' has been deleted and an empty commit has been added to trigger CI."
