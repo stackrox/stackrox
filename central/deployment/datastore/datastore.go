@@ -100,7 +100,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Po
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	var storage store.Store
 	if features.PostgresDatastore.Enabled() {
-		storage = postgres.NewFullStore(context.TODO(), pool)
+		storage = postgres.NewFullStore(pool)
 	} else {
 		storage = dackBoxStore.New(dacky, keyFence)
 	}
