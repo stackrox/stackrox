@@ -43,7 +43,7 @@ func (suite *VersionStoreTestSuite) SetupTest() {
 		pool, _ := pgxpool.ConnectConfig(suite.ctx, config)
 		suite.pool = pool
 
-		suite.store = NewPostgres(pool)
+		suite.store = NewPostgres(suite.ctx, pool)
 	} else {
 		boltDB, err := bolthelper.NewTemp(suite.T().Name() + ".db")
 		suite.Require().NoError(err, "Failed to make BoltDB")

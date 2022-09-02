@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -45,7 +46,7 @@ func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS
 	}
 	indexer := index.New(bleveIndex)
 	searcher := search.New(store, indexer)
-	return newDatastoreImpl(context.TODO(), store, indexer, searcher, indicators, processFilter)
+	return newDatastoreImpl(sac.WithAllAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
 }
 
 // NewPostgresDB creates a pod datastore based on Postgres
@@ -56,7 +57,7 @@ func NewPostgresDB(db *pgxpool.Pool, indicators piDS.DataStore, processFilter fi
 	}
 	indexer := postgres.NewIndexer(db)
 	searcher := search.New(store, indexer)
-	return newDatastoreImpl(context.TODO(), store, indexer, searcher, indicators, processFilter)
+	return newDatastoreImpl(sac.WithAllAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.

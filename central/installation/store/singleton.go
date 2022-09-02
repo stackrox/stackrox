@@ -47,7 +47,7 @@ func createInitial() {
 func Singleton() Store {
 	singletonInit.Do(func() {
 		if features.PostgresDatastore.Enabled() {
-			storeSingleton = postgres.New(context.TODO(), globaldb.GetPostgres())
+			storeSingleton = postgres.New(sac.WithNoAccess(context.Background()), globaldb.GetPostgres())
 		} else {
 			storeSingleton = bolt.New(globaldb.GetGlobalDB())
 		}

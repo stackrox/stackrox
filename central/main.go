@@ -238,12 +238,13 @@ func main() {
 		return
 	}
 
-	proxy.WatchProxyConfig(context.Background(), proxyConfigPath, proxyConfigFile, true)
+	ctx := context.Background()
+	proxy.WatchProxyConfig(ctx, proxyConfigPath, proxyConfigFile, true)
 
 	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
-	ensureDB()
+	ensureDB(ctx)
 
 	// Need to remove the backup clone and set the current version
 	if features.PostgresDatastore.Enabled() {
@@ -278,10 +279,10 @@ func main() {
 	waitForTerminationSignal()
 }
 
-func ensureDB() {
+func ensureDB(ctx context.Context) {
 	var versionStore vStore.Store
 	if features.PostgresDatastore.Enabled() {
-		versionStore = vStore.NewPostgres(globaldb.GetPostgres())
+		versionStore = vStore.NewPostgres(ctx, globaldb.InitializePostgres(ctx))
 	} else {
 		versionStore = vStore.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
 	}

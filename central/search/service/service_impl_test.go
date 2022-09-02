@@ -143,7 +143,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 
 	var pool *pgxpool.Pool
 	if features.PostgresDatastore.Enabled() {
-		pool = globaldb.GetPostgres()
+		pool = globaldb.GetPostgresTest(s.T())
 	}
 	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
@@ -302,7 +302,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 
 	var pool *pgxpool.Pool
 	if features.PostgresDatastore.Enabled() {
-		pool = globaldb.GetPostgres()
+		pool = globaldb.GetPostgresTest(s.T())
 	}
 	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
@@ -384,7 +384,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 
 	var pool *pgxpool.Pool
 	if features.PostgresDatastore.Enabled() {
-		pool = globaldb.GetPostgres()
+		pool = globaldb.GetPostgresTest(s.T())
 	}
 	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)

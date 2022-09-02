@@ -2,6 +2,7 @@ package globaldb
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -64,8 +65,19 @@ var (
 	PostgresQueryTimeout = 10 * time.Second
 )
 
-// GetPostgres returns a global database instance
+// GetPostgres returns a global database instance. It should be called after InitializePostgres
 func GetPostgres() *pgxpool.Pool {
+	return postgresDB
+}
+
+// GetPostgresTest returns a global database instance. It should be used in tests only.
+func GetPostgresTest(t *testing.T) *pgxpool.Pool {
+	t.Log("Initializing Postgres...")
+	return InitializePostgres(context.Background())
+}
+
+// InitializePostgres creates and returns returns a global database instance.
+func InitializePostgres(ctx context.Context) *pgxpool.Pool {
 	pgSync.Do(func() {
 		_, dbConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
@@ -79,7 +91,7 @@ func GetPostgres() *pgxpool.Pool {
 		dbConfig.ConnConfig.Database = activeDB
 
 		if err := retry.WithRetry(func() error {
-			postgresDB, err = pgxpool.ConnectConfig(context.Background(), dbConfig)
+			postgresDB, err = pgxpool.ConnectConfig(ctx, dbConfig)
 			return err
 		}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
 			time.Sleep(postgresTimeBetweenRetries)
@@ -89,18 +101,18 @@ func GetPostgres() *pgxpool.Pool {
 			log.Fatalf("Timed out trying to open database: %v", err)
 		}
 
-		_, err = postgresDB.Exec(context.TODO(), "create extension if not exists pg_stat_statements")
+		_, err = postgresDB.Exec(ctx, "create extension if not exists pg_stat_statements")
 		if err != nil {
 			log.Errorf("Could not create pg_stat_statements extension: %v", err)
 		}
-		go startMonitoringPostgres(postgresDB)
+		go startMonitoringPostgres(ctx, postgresDB)
 
 	})
 	return postgresDB
 }
 
-func collectPostgresStats(db *pgxpool.Pool) {
-	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
+func collectPostgresStats(ctx context.Context, db *pgxpool.Pool) {
+	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
 	row, err := db.Query(ctx, tableQuery)
 	if err != nil {
@@ -132,10 +144,10 @@ func collectPostgresStats(db *pgxpool.Pool) {
 	}
 }
 
-func startMonitoringPostgres(db *pgxpool.Pool) {
+func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool) {
 	t := time.NewTicker(1 * time.Minute)
 	defer t.Stop()
 	for range t.C {
-		collectPostgresStats(db)
+		collectPostgresStats(ctx, db)
 	}
 }
