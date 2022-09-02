@@ -33,7 +33,7 @@ require (
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/docker/go-connections v0.4.0
-	github.com/docker/go-units v0.4.0
+	github.com/docker/go-units v0.5.0
 	github.com/facebookincubator/nvdtools v0.1.4
 	github.com/fatih/color v1.13.0
 	github.com/fullsailor/pkcs7 v0.0.0
