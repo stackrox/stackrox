@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
@@ -46,6 +45,10 @@ func init() {
 			"scan: NodeScan",
 			"topNodeVulnerability(query: String): NodeVulnerability",
 			"unusedVarSink(query: String): Int",
+
+			// Node scan-related fields
+			"scanNotes: [NodeScan_Note!]!",
+			"scanTime: Time",
 		}),
 		// deprecated fields
 		schema.AddExtraResolvers("Node", []string{
@@ -519,7 +522,26 @@ func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, ar
 }
 
 func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
-	res, err := resolver.root.wrapNodeScan(resolver.data.GetScan(), true, nil)
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+	scan := resolver.data.GetScan()
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		// If scan is pulled, it is most likely to fetch all components and vulns contained in node.
+		// Therefore, load the node again with full scan.
+		nodeLoader, err := loaders.GetNodeLoader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// If Postgres is not enabled, node loader always pulls full node.
+		node, err := nodeLoader.FullNodeWithID(ctx, resolver.data.GetId())
+		if err != nil {
+			return nil, err
+		}
+		scan = node.GetScan()
+	}
+	res, err := resolver.root.wrapNodeScan(scan, true, nil)
 	if err != nil || res == nil {
 		return nil, err
 	}
@@ -545,4 +567,16 @@ func (resolver *nodeResolver) nodeScopeContext(ctx context.Context) context.Cont
 		Level: v1.SearchCategory_NODES,
 		ID:    resolver.data.GetId(),
 	})
+}
+
+//// Node scan-related fields pulled as direct sub-resolvers of node.
+
+func (resolver *nodeResolver) ScanNotes(ctx context.Context) []string {
+	value := resolver.data.GetScan().GetNotes()
+	return stringSlice(value)
+}
+
+func (resolver *nodeResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetScan().GetScanTime()
+	return timestamp(value)
 }

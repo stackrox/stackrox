@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -59,6 +60,7 @@ func BenchmarkGetManyNodes(b *testing.B) {
 
 	for i := 0; i < 100; i++ {
 		node := fixtures.GetNodeWithUniqueComponents(5)
+		converter.MoveNodeVulnsToNewField(node)
 		id := fmt.Sprintf("%d", i)
 		ids = append(ids, id)
 		node.Id = id

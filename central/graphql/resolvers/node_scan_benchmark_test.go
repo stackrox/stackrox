@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -71,4 +72,105 @@ func BenchmarkNodeResolver(b *testing.B) {
 	defer pgtest.CloseGormDB(b, gormDB)
 	defer db.Close()
 
+	nodeDataStore := createNodeDatastoreForPostgres(b, mockCtrl, db, gormDB)
+	nodeComponentDataStore := createNodeComponentDatastoreForPostgres(b, mockCtrl, db, gormDB)
+	cveDataStore := createNodeCVEDatastoreForPostgres(b, db, gormDB)
+	nodeComponentCVEEdgeDataStore := NodeComponentCVEEdgeDatastoreForPostgres(b, db, gormDB)
+	schema := setupResolverForNodeGraphQLTestsWithPostgres(b, nodeDataStore, nodeComponentDataStore, cveDataStore, nodeComponentCVEEdgeDataStore)
+	ctx := contextWithNodePerm(b, mockCtrl)
+
+	nodes := getTestNodesForPostgres(100)
+	for _, node := range nodes {
+		require.NoError(b, nodeDataStore.UpsertNode(ctx, node))
+	}
+
+	b.Run("GetNodeComponentsInNodeScanResolver", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				nodeWithScanQuery,
+				"getNodes",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
+
+	b.Run("GetNodeComponentsWithoutNodeScanResolver", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				nodeWithoutScanQuery,
+				"getNodes",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
+
+	b.Run("GetNodeComponentsDerivedFieldsWithNodeScanResolver", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				nodeWithScanLongQuery,
+				"getNodes",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
+
+	b.Run("GetNodeComponentsDerivedWithoutNodeScanResolver", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				nodeWithoutScanLongQuery,
+				"getNodes",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
+
+	b.Run("GetNodeOnly", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				nodeOnlyQuery,
+				"getNodes",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
+
+	b.Run("GetNodeWithCounts", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				nodeWithCountsQuery,
+				"getNodes",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
 }
