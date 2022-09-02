@@ -1,7 +1,8 @@
 # Misha gives a demo
 
-Some text here.
-More text here.
+* Some text here.
+* More text here.
+* Bullet points!
 
 ## Table of Contents
 
