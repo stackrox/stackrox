@@ -24,7 +24,7 @@ require (
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
 	github.com/cloudflare/cfssl v1.6.2
 	github.com/containers/image/v5 v5.20.0
-	github.com/coreos/go-oidc/v3 v3.2.0
+	github.com/coreos/go-oidc/v3 v3.3.0
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/couchbase/moss v0.1.0 // indirect
 	github.com/dave/jennifer v1.5.1
@@ -105,10 +105,10 @@ require (
 	go.uber.org/atomic v1.10.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220824171710-5757bc0c5503
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
+	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.12
 	golang.stackrox.io/grpc-http1 v0.2.4
@@ -127,7 +127,7 @@ require (
 	k8s.io/apimachinery v0.23.10
 	k8s.io/apiserver v0.23.10
 	k8s.io/client-go v0.23.10
-	k8s.io/kubectl v0.23.1
+	k8s.io/kubectl v0.23.10
 	k8s.io/kubelet v0.22.13
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/controller-runtime v0.11.2
@@ -387,7 +387,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.1.0 // indirect
 	k8s.io/apiextensions-apiserver v0.23.5 // indirect
-	k8s.io/cli-runtime v0.23.1 // indirect
+	k8s.io/cli-runtime v0.23.10 // indirect
 	k8s.io/component-base v0.23.10 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf // indirect
