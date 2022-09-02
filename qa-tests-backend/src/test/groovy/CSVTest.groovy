@@ -184,11 +184,11 @@ class CSVTest extends BaseSpecification {
     }
 
     def getComponentQuery() {
-        return "COMPONENT ID:" + getComponentId() + "+" + isPostgresRun() ? "Is" : "" + "Fixable:true"
+        return "COMPONENT ID:" + getComponentId() + "+" + getFixableQuery()
     }
 
     def getFixableQuery() {
-        return isPostgresRun() ? "Is" : "" + "Fixable:true"
+        return isPostgresRun() ? "IsFixable:true" : "Fixable:true"
     }
 
     @Category(BAT)
