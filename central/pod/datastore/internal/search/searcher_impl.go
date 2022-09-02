@@ -47,7 +47,6 @@ func (ds *searcherImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*stor
 	}
 
 	ids := search.ResultsToIDs(results)
-	log.Info("The search yielded ", len(ids), " results.")
 	pods, _, err := ds.storage.GetMany(ctx, ids)
 	return pods, err
 }
