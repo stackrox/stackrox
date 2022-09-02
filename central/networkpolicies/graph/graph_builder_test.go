@@ -19,7 +19,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "192.16.0.0/16",
+						Cidr: "192.168.0.0/16",
 					},
 				},
 			},
@@ -33,7 +33,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "192.16.0.0/32",
+						Cidr: "192.168.0.0/32",
 					},
 				},
 			},
@@ -47,7 +47,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "192.16.10.0/24",
+						Cidr: "192.168.10.0/24",
 					},
 				},
 			},
@@ -58,7 +58,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "192.16.15.0/24",
+						Cidr: "192.168.15.0/24",
 					},
 				},
 			},
@@ -154,7 +154,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 			networkTree: t1,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
-					Cidr: "192.16.0.0/24",
+					Cidr: "192.168.0.0/24",
 				},
 			},
 			expectedMatches: []expectedMatch{
@@ -167,7 +167,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 			networkTree: t1,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
-					Cidr: "192.16.0.0/24",
+					Cidr: "192.168.0.0/24",
 				},
 			},
 			expectedMatches: []expectedMatch{
@@ -185,7 +185,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 			networkTree: t2,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
-					Cidr: "192.16.0.0/24",
+					Cidr: "192.168.0.0/24",
 				},
 			},
 			expectedMatches: []expectedMatch{
@@ -199,8 +199,8 @@ func TestMatchPolicyPeer(t *testing.T) {
 			networkTree: t3,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
-					Cidr:   "192.16.0.0/16",
-					Except: []string{"192.16.15.0/22"},
+					Cidr:   "192.168.0.0/16",
+					Except: []string{"192.168.15.0/22"},
 				},
 			},
 			expectedMatches: []expectedMatch{

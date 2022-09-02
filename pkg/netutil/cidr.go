@@ -3,6 +3,7 @@ package netutil
 import (
 	"net"
 
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -15,12 +16,16 @@ var (
 		MustParseCIDR("::1/128"),        // IPv6 localhost
 		MustParseCIDR("fd00::/8"),       // IPv6 ULA
 	}
+	log = logging.LoggerForModule()
 )
 
 // IsCIDRBlockInPrivateSubnet parses cidrStr and checks if it falls under the RFC 1819 private IP range
 func IsCIDRBlockInPrivateSubnet(cidrStr string) bool {
 	_, cidr, err := net.ParseCIDR(cidrStr)
-	utils.CrashOnError(err)
+	if err != nil {
+		log.Warnf("Parsing incorrect CIDR block string (%s) as CIDR %s", cidrStr, err)
+		return false
+	}
 	for _, subnet := range privateSubnets {
 		if IsIPNetSubset(subnet, cidr) {
 			return true
