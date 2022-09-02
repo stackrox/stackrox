@@ -44,76 +44,36 @@ volumes:
   - emptyDir
   - secret
 
-{{- else if eq ._rox.env.openshift 4 }}
-
-{{- if false }}
-# "fake" document separator to aid GVK extraction heuristic
----
 {{- end }}
 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: use-anyuid-scc
+  name: use-sccs-for-sensor
   namespace: {{ ._rox._namespace }}
   labels:
-    {{- include "srox.labels" (list . "role" "use-anyuid-scc") | nindent 4 }}
+    {{- include "srox.labels" (list . "role" "use-sccs-for-sensor") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "role" "use-anyuid-scc") | nindent 4 }}
+    {{- include "srox.annotations" (list . "role" "use-sccs-for-sensor") | nindent 4 }}
 rules:
 - apiGroups:
   - security.openshift.io
   resources:
   - securitycontextconstraints
   resourceNames:
+{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
+  - stackrox-sensor
+{{- end }}
+  - nonroot-v2
+  - nonroot
   - anyuid
   verbs:
   - use
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: use-stackrox-sensor-scc
-  namespace: {{ ._rox._namespace }}
-  labels:
-    {{- include "srox.labels" (list . "role" "use-stackrox-sensor-scc") | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "role" "use-stackrox-sensor-scc") | nindent 4 }}
-rules:
-- apiGroups:
-  - security.openshift.io
-  resources:
-  - securitycontextconstraints
-  resourceNames:
-  - stackrox-sensor
-  verbs:
-  - use
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: sensor-use-anyuid-scc
-  namespace: {{ ._rox._namespace }}
-  labels:
-    {{- include "srox.labels" (list . "rolebinding" "sensor-use-anyuid-scc") | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "rolebinding" "sensor-use-anyuid-scc") | nindent 4 }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: use-anyuid-scc
-subjects:
-- kind: ServiceAccount
-  name: sensor
-  namespace: {{ ._rox._namespace }}
-- kind: ServiceAccount
-  name: sensor-upgrader
-  namespace: {{ ._rox._namespace }}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: sensor-use-stackrox-sensor-scc
+  name: sensor-use-sccs-for-sensor
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "sensor-use-stackrox-sensor-scc") | nindent 4 }}
@@ -122,7 +82,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: use-stackrox-sensor-scc
+  name: use-sccs-for-sensor
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -130,4 +90,3 @@ subjects:
 - kind: ServiceAccount
   name: sensor-upgrader
   namespace: {{ ._rox._namespace }}
-{{- end }}
