@@ -18,10 +18,10 @@ check_not_empty \
 
 if [ "$(git tag "$TAG" --points-at HEAD)" = "$TAG" ]; then
     git push --delete origin "$TAG"
-    git commit --allow-empty --message "Empty commit to trigger CI"
-    gh_log warning "Tag '$TAG' has been deleted and an empty commit has been added to trigger CI."
+    gh_log warning "Tag '$TAG' has been deleted."
 fi
 
+git commit --allow-empty --message "Empty commit to trigger CI"
 git tag --force --annotate "$TAG" --message "Upstream release automation"
 
 if [ "$DRY_RUN" = "false" ]; then
