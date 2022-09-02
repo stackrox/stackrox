@@ -1,7 +1,7 @@
 {{- include "srox.init" . -}}
 
 {{- if and ._rox.env.openshift ._rox.system.createSCCs }}
-
+---
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
@@ -40,6 +40,8 @@ volumes:
   - downwardAPI
   - emptyDir
   - secret
+
+---
 
 {{- end }}
 
