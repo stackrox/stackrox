@@ -62,6 +62,7 @@ import util.Timer
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import spock.lang.IgnoreIf
+import spock.lang.Requires
 import spock.lang.Shared
 import spock.lang.Unroll
 
@@ -1071,12 +1072,11 @@ class ComplianceTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @Requires({ ClusterService.isOpenShift4() })
+    @IgnoreIf({ true }) // ROX-12461 The compliance operator tests are not working as expected
     def "Verify Compliance Operator aggregation results on OpenShift for machine configs #standard"() {
         given:
         "get compliance aggregation results"
-        Assume.assumeTrue(ClusterService.isOpenShift4())
-        Assume.assumeTrue(Env.CI_JOBNAME == "openshift-newest-qa-e2e-tests")
-
         log.info "Getting compliance results for ${standard}"
         ComplianceRunResults run = BASE_RESULTS.get(standard)
 
@@ -1109,14 +1109,12 @@ class ComplianceTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @Requires({ ClusterService.isOpenShift4() })
+    @IgnoreIf({ true }) // ROX-12461 The compliance operator tests are not working as expected
     def "Verify Tailored Profile does not have evidence for disabled rule"() {
         given:
         "get compliance aggregation results"
-        Assume.assumeTrue(ClusterService.isOpenShift4())
-
-        // https://issues.redhat.com/browse/ROX-9951 -- fails on OSD
-        Assume.assumeTrue(Env.CI_JOBNAME == "openshift-newest-qa-e2e-tests")
-
+        log.info "Getting compliance results for rhcos4-moderate-modified"
         ComplianceRunResults run = BASE_RESULTS.get("rhcos4-moderate-modified")
 
         expect:
@@ -1138,12 +1136,11 @@ class ComplianceTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @Requires({ ClusterService.isOpenShift4() })
+    @IgnoreIf({ true }) // ROX-12461 The compliance operator tests are not working as expected
     def "Verify Compliance Operator aggregation results on OpenShift for cluster results"() {
         given:
         "get compliance aggregation results"
-        Assume.assumeTrue(ClusterService.isOpenShift4())
-        Assume.assumeTrue(Env.CI_JOBNAME == "openshift-newest-qa-e2e-tests")
-
         log.info "Getting compliance results for ocp4-cis"
         ComplianceRunResults run = BASE_RESULTS.get("ocp4-cis")
 
