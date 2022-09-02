@@ -136,6 +136,14 @@ jobs:
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
           git switch --create "${{needs.variables.outputs.branch}}"
+          # Tagging the branching point so that the commits on the main branch
+          # be correctly described.
+          git tag --annotate --message "Upstream automation" \
+            "${{needs.variables.outputs.release}}.x" HEAD
+
+          # TODO: tag the first commit on the release branch with the current
+          #       release version when main branch versioning is changed to
+          #       'next.version-dev'.
       - name: Update docs submodule
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
@@ -159,7 +167,7 @@ jobs:
       - name: Push changes
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
         run: |
-          git push --set-upstream origin ${{needs.variables.outputs.branch}}
+          git push --follow-tags --set-upstream origin "${{needs.variables.outputs.branch}}"
 
   ci:
     name: Configure OpenShift CI jobs
