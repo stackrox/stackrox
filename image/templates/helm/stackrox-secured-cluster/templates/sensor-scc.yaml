@@ -61,7 +61,9 @@ rules:
 {{- if and ._rox.env.openshift ._rox.system.createSCCs }}
   - stackrox-sensor
 {{- end }}
+{{- if eq ._rox.env.openshift 4 }}
   - nonroot-v2
+{{- end }}
   - nonroot
   - anyuid
   verbs:
