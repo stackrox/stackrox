@@ -157,7 +157,7 @@ $(PROTOLOCK_BIN): deps
 ## Style ##
 ###########
 .PHONY: style
-style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style
+style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style shell-style
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCILINT_BIN)
@@ -185,6 +185,11 @@ qa-tests-style:
 ui-lint:
 	@echo "+ $@"
 	make -C ui lint
+
+.PHONY: shell-style
+shell-style:
+	@echo "+ $@"
+	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh
 
 .PHONY: ci-config-validate
 ci-config-validate:
