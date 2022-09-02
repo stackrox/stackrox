@@ -12,6 +12,19 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Support for violation tags and process tags has been removed.
 ### Deprecated Features
 - ROX-11284: Permission `ClusterCVE` is deprecated and will be superseded by the existing permission `Cluster`.
+- `Label` and `Annotation` search options are deprecated and will be removed in 3.73. Use the following search options starting 3.73:
+  - **Resource | Deprecated Search Option | New Search Option**
+  - Node | Label | Node Label
+  - Node | Annotation | Node Annotation
+  - Namespace | Label | Namespace Label
+  - Deployment | Label | Deployment Label
+  - ServiceAccount | Label | Service Account Label
+  - ServiceAccount | Label | Service Account Annotation
+  - K8sRole | Label | Role Label
+  - K8sRole | Annotation | Role Annotation
+  - K8sRoleBinding | Label | Role Binding Label
+  - K8sRoleAnnotation | Annotation | Role Binding Annotation
+
 ### Technical Changes
 - ROX-11181: Any clusters that have been unhealthy (defined as central being unable to reach sensor running on those clusters) for a configured period of time will be automatically removed. The number of days after which an 'unhealthy' cluster is removed can be configured in the System Configuration page or using the cluster API.
   - Any cluster that is expected to be unavailable for a period of time (e.g. clusters used in disaster recovery), can be tagged with a customizable label. Clusters with those labels will never be removed automatically.
