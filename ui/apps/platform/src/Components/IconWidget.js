@@ -30,12 +30,12 @@ const IconWidget = ({ title, icon, description, linkUrl, loading, textSizeClass 
             {linkUrl && !loading ? (
                 <Link
                     to={linkUrl}
-                    className="w-full h-full flex flex-col justify-center text-base-600"
+                    className="w-full h-full flex flex-col justify-center text-base-600 break-all"
                 >
                     {contents}
                 </Link>
             ) : (
-                contents
+                <div className="break-all">{contents}</div>
             )}
         </Widget>
     );
