@@ -184,7 +184,11 @@ class CSVTest extends BaseSpecification {
     }
 
     def getComponentQuery() {
-        return "COMPONENT ID:" + getComponentId() + "+Fixable:true"
+        return "COMPONENT ID:" + getComponentId() + "+" + isPostgresRun() ? "Is" : "" + "Fixable:true"
+    }
+
+    def getFixableQuery() {
+        return isPostgresRun() ? "Is" : "" + "Fixable:true"
     }
 
     @Category(BAT)
@@ -280,7 +284,7 @@ class CSVTest extends BaseSpecification {
                 query: "",
                 // must scope without scope query since graphQL is hitting sub-resolver
                 scopeQuery: "",
-                vulnQuery : "Fixable:true",
+                vulnQuery : getFixableQuery(),
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
         ] | "Image Sha:sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f+Fixable:true"
         FIXABLE_CVES_IN_COMPONENT_QUERY | FIXABLE_CVES_IN_COMPONENT_POSTGRES_QUERY   | [
@@ -288,14 +292,14 @@ class CSVTest extends BaseSpecification {
                 id        : getComponentId(),
                 query: "",
                 scopeQuery: "",
-                vulnQuery : "Fixable:true",
+                vulnQuery : getFixableQuery(),
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
         ] | getComponentQuery()
         FIXABLE_CVES_IN_DEPLOYMENT_QUERY | FIXABLE_CVES_IN_DEPLOYMENT_POSTGRES_QUERY | [
                 id        : CVE_DEPLOYMENT.deploymentUid,
                 query: "",
                 scopeQuery: "",
-                vulnQuery : "Fixable:true",
+                vulnQuery : getFixableQuery(),
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
         ] | "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
     }
