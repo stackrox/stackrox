@@ -19,7 +19,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Namespace | Label | Namespace Label
   - Deployment | Label | Deployment Label
   - ServiceAccount | Label | Service Account Label
-  - ServiceAccount | Label | Service Account Annotation
+  - ServiceAccount | Annotation | Service Account Annotation
   - K8sRole | Label | Role Label
   - K8sRole | Annotation | Role Annotation
   - K8sRoleBinding | Label | Role Binding Label
