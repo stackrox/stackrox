@@ -1,6 +1,10 @@
 package postgres
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
@@ -53,6 +57,8 @@ func (d *dbCloneManagerImpl) Scan() error {
 			d.cloneMap[name] = metadata.NewPostgres(ver, name)
 			log.Debugf("Closing the pool from scan %q", name)
 			pool.Close()
+		case name == TempClone:
+			clonesToRemove.Add(name)
 		}
 	}
 
@@ -163,7 +169,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 				// If for some reason, we cannot create a temp clone we will need to continue to upgrade
 				// with the current and thus no fallback.
 				if err != nil {
-					log.Errorf("Unable to create Temp database: %v", err)
+					log.Errorf("Unable to create temp clone: %v", err)
 				}
 			}
 			d.cloneMap[TempClone] = metadata.NewPostgres(d.cloneMap[CurrentClone].GetMigVersion(), TempClone)
@@ -194,7 +200,8 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 				// If for some reason, we cannot create a temp clone we will need to continue to upgrade
 				// with the current and thus no fallback.
 				if err != nil {
-					log.Errorf("Unable to create Temp database: %v", err)
+					log.Errorf("Unable to create temp clone, will use current clone: %v", err)
+					return CurrentClone, false, nil
 				}
 			}
 			d.cloneMap[TempClone] = metadata.NewPostgres(d.cloneMap[CurrentClone].GetMigVersion(), TempClone)
@@ -247,11 +254,6 @@ func (d *dbCloneManagerImpl) Persist(cloneName string) error {
 func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 	log.Infof("doPersist clone = %q, prev = %q", cloneName, prev)
 
-	// Connect to different database for admin functions
-	connectPool := pgadmin.GetAdminPool(d.adminConfig)
-	// Close the admin connection pool
-	defer connectPool.Close()
-
 	var moveCurrent string
 	// Remove prev clone if exist.
 	if prev != "" {
@@ -262,17 +264,9 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 		moveCurrent = TempClone
 	}
 
-	// Flip current to prev
-	err := pgadmin.RenameDB(connectPool, CurrentClone, moveCurrent)
+	err := d.moveClones(moveCurrent, cloneName)
 	if err != nil {
-		log.Errorf("Unable to switch to previous DB: %v", err)
-		return err
-	}
-
-	// Now flip the clone to be the primary DB
-	err = pgadmin.RenameDB(connectPool, cloneName, CurrentClone)
-	if err != nil {
-		log.Errorf("Unable to switch to clone DB: %v", err)
+		log.Errorf("unable to move clones: %v", err)
 		return err
 	}
 
@@ -284,6 +278,65 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 			log.Errorf("Unable to remove the temp DB (%s): %v", moveCurrent, err)
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) error {
+	// Connect to different database for admin functions
+	connectPool := pgadmin.GetAdminPool(d.adminConfig)
+	// Close the admin connection pool
+	defer connectPool.Close()
+
+	// Wrap in a transaction so either both renames work or none work
+	ctx, cancel := context.WithTimeout(context.Background(), pgadmin.PostgresQueryTimeout)
+	defer cancel()
+	conn, err := connectPool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	// Start a transaction
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Move the current to the previous clone
+	err = d.renameClone(ctx, tx, CurrentClone, previousClone)
+	if err != nil {
+		return err
+	}
+
+	// Now flip the clone to be the primary DB
+	err = d.renameClone(ctx, tx, updatedClone, CurrentClone)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Info("Commit")
+		return err
+	}
+
+	return nil
+}
+
+func (d *dbCloneManagerImpl) renameClone(ctx context.Context, tx pgx.Tx, srcClone, destClone string) error {
+	// Move the current to the previous clone
+	err := pgadmin.TerminateConnection(d.adminConfig, srcClone)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(ctx, fmt.Sprintf("ALTER DATABASE %s RENAME TO %s", srcClone, destClone))
+	if err != nil {
+		log.Errorf("Unable to switch to clone %q DB: %v", destClone, err)
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
 	}
 
 	return nil
