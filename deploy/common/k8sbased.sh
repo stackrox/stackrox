@@ -198,7 +198,7 @@ function launch_central {
       add_args "--enable-pod-security-policies"
     fi
 
-    if [[ "$ORCH" == "openshift" && -n "${OPENSHIFT_VERSION}" ]]; then
+    if [[ "$ORCH" == "openshift" ]] && [[ -n "${OPENSHIFT_VERSION}" ]]; then
       add_args "--openshift-version=${OPENSHIFT_VERSION}"
     fi
 
