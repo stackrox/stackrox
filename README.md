@@ -64,11 +64,11 @@ Then run the helm quick install script or proceed to section [Manual Helm Instal
 **<details><summary>Install StackRox via Helm Installation Script </summary>**
 
 ```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/stackrox/stackrox/master/scripts/quick-helm-install.sh)"
+/bin/bash <(curl -fsSL https://raw.githubusercontent.com/stackrox/stackrox/master/scripts/quick-helm-install.sh)
 ```
 A default deployment of StackRox has certain CPU and memory requests and may fail on small (e.g. development) clusters if sufficient resources are not available. You may use the `--small` command-line option in order to install StackRox on smaller clusters with limited resources. Using this option is not recommended for production deployments.
 ```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/stackrox/stackrox/master/scripts/quick-helm-install.sh)" --small
+/bin/bash <(curl -fsSL https://raw.githubusercontent.com/stackrox/stackrox/master/scripts/quick-helm-install.sh) --small
 ```
 The script adds the StackRox helm repository, generates an admin password, installs stackrox-central-services, creates an init bundle for provisioning stackrox-secured-cluster-services, and finally installs stackrox-secured-cluster-services on the same cluster.
 
