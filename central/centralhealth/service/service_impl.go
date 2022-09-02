@@ -49,21 +49,41 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetUpgradeStatus returns the upgrade status for Central.
 func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v1.GetUpgradeStatusResponse, error) {
-	// TODO: ROX-12059 Need to figure out if there is anything we can do with size in Postgres as that data
-	// IS NOT accessible from central
 	if features.PostgresDatastore.Enabled() {
-		upgradeStatus := &v1.CentralUpgradeStatus{
-			Version: version.GetMainVersion(),
-			//CanRollbackAfterUpgrade:               int64(freeBytes)+toBeFreedBytes > requiredBytes,
-			//SpaceAvailableForRollbackAfterUpgrade: int64(freeBytes) + toBeFreedBytes,
-			//SpaceRequiredForRollbackAfterUpgrade:  requiredBytes,
-		}
-
-		// Get a short-lived connection for the purposes of checking the version of the clone.
+		// Get Postgres config data
 		_, adminConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
 			return nil, err
 		}
+
+		// Check Postgres remaining capacity
+		freeBytes, err := pgadmin.GetRemainingCapacity(adminConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		currentDBBytes, err := pgadmin.GetDatabaseSize(adminConfig, migrations.GetCurrentClone())
+		if err != nil {
+			return nil, errors.Wrapf(err, "Fail to get database size %s", migrations.CurrentDatabase)
+		}
+		requiredBytes := int64(math.Ceil(float64(currentDBBytes) * (1.0 + capacityMarginFraction)))
+
+		var toBeFreedBytes int64
+		if pgadmin.CheckIfDBExists(adminConfig, migrations.PreviousDatabase) {
+			toBeFreedBytes, err = pgadmin.GetDatabaseSize(adminConfig, migrations.GetPreviousClone())
+			if err != nil {
+				return nil, errors.Wrapf(err, "Fail to get database size %s", migrations.PreviousDatabase)
+			}
+		}
+
+		upgradeStatus := &v1.CentralUpgradeStatus{
+			Version:                               version.GetMainVersion(),
+			CanRollbackAfterUpgrade:               freeBytes+toBeFreedBytes > requiredBytes,
+			SpaceAvailableForRollbackAfterUpgrade: freeBytes + toBeFreedBytes,
+			SpaceRequiredForRollbackAfterUpgrade:  requiredBytes,
+		}
+
+		// Get a short-lived connection for the purposes of checking the version of the replica.
 		pool := pgadmin.GetClonePool(adminConfig, migrations.GetPreviousClone())
 		defer pool.Close()
 
@@ -105,7 +125,7 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 	if err == nil {
 		toBeFreedBytes, err = fileutils.DirectorySize(prevPath)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Fail to get directory size %s", currPath)
+			return nil, errors.Wrapf(err, "Fail to get directory size %s", prevPath)
 		}
 	}
 
