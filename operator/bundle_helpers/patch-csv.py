@@ -75,6 +75,8 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
         else:
             csv_doc["spec"]["replaces"] = f'{raw_name}.v{x}.{y}.{z-1}'
 
+    # We don't know what this does or why it is there, but it breaks downstream builds.
+    del csv_doc['spec']['relatedImages']
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Patch StackRox Operator ClusterServiceVersion file')
