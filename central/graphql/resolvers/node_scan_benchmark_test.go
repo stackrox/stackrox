@@ -75,7 +75,7 @@ func BenchmarkNodeResolver(b *testing.B) {
 	nodeDataStore := createNodeDatastoreForPostgres(b, mockCtrl, db, gormDB)
 	nodeComponentDataStore := createNodeComponentDatastoreForPostgres(b, mockCtrl, db, gormDB)
 	cveDataStore := createNodeCVEDatastoreForPostgres(b, db, gormDB)
-	nodeComponentCVEEdgeDataStore := NodeComponentCVEEdgeDatastoreForPostgres(b, db, gormDB)
+	nodeComponentCVEEdgeDataStore := createNodeComponentCVEEdgeDatastoreForPostgres(b, db, gormDB)
 	schema := setupResolverForNodeGraphQLTestsWithPostgres(b, nodeDataStore, nodeComponentDataStore, cveDataStore, nodeComponentCVEEdgeDataStore)
 	ctx := contextWithNodePerm(b, mockCtrl)
 

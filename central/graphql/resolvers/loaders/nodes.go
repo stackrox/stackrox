@@ -78,8 +78,24 @@ func (ndl *nodeLoaderImpl) FromID(ctx context.Context, id string) (*storage.Node
 
 // FullNodeWithID loads full node from an ID.
 func (ndl *nodeLoaderImpl) FullNodeWithID(ctx context.Context, id string) (*storage.Node, error) {
-	//TODO implement me
-	panic("implement me")
+	node, err := ndl.FromID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	// Load the full node if full scan is not available.
+	if node.GetComponents() == 0 || len(node.GetScan().GetComponents()) > 0 {
+		return node, nil
+	}
+
+	ndl.lock.Lock()
+	delete(ndl.loaded, id)
+	ndl.lock.Unlock()
+
+	nodes, err := ndl.load(ctx, []string{id}, true)
+	if err != nil {
+		return nil, err
+	}
+	return nodes[0], nil
 }
 
 // FromQuery loads a set of nodes that match a query.
