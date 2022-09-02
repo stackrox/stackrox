@@ -5,6 +5,7 @@ import (
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
 	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
@@ -22,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -60,7 +62,7 @@ func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-// CountNodes returns the number of nodes currently stored in the DB.
+// Count returns the number of nodes currently stored in the DB.
 func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, typ)
 
@@ -78,7 +80,7 @@ func (b *storeImpl) Count(_ context.Context) (int, error) {
 	return count, nil
 }
 
-// GetNode returns the node with given id.
+// Get returns the node with given id.
 func (b *storeImpl) Get(_ context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, typ)
 
@@ -112,7 +114,12 @@ func (b *storeImpl) GetNodeMetadata(_ context.Context, id string) (*storage.Node
 	return node, node != nil, err
 }
 
-// GetNodesBatch returns nodes with given ids.
+func (b *storeImpl) GetManyNodeMetadata(ctx context.Context, id []string) ([]*storage.Node, []int, error) {
+	utils.Must(errors.New("Unexpected call to GetManyNodeMetadata in Dackbox when running on Postgres"))
+	return nil, nil, nil
+}
+
+// GetMany returns nodes with given ids.
 func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Node, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, typ)
 

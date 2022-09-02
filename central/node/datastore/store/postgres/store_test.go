@@ -47,7 +47,7 @@ func (s *NodesStoreSuite) TestStore() {
 
 	gormDB := pgtest.OpenGormDB(s.T(), source)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
-	store := CreateTableAndNewStore(ctx, s.T(), pool, gormDB, false)
+	store := CreateTableAndNewStore(ctx, pool, gormDB, false)
 
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

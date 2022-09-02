@@ -12,3 +12,8 @@ var VulnerabilityOptionsMap = search.Walk(v1.SearchCategory_VULNERABILITIES, "no
 // ComponentOptionsMap defines the search options for node components stored in nodes.
 // Note: node components are the same as image components for search.
 var ComponentOptionsMap = search.Walk(v1.SearchCategory_IMAGE_COMPONENTS, "node.scan.components", (*storage.EmbeddedNodeScanComponent)(nil))
+
+var NodeComponentOptionsMap = search.Walk(v1.SearchCategory_NODE_COMPONENTS, "node.scan.components", (*storage.EmbeddedNodeScanComponent)(nil))
+
+// NodeVulnerabilityOptionsMap defines the search options for NodeVulnerabilities stores in node scan
+var NodeVulnerabilityOptionsMap = search.Walk(v1.SearchCategory_NODE_VULNERABILITIES, "node.scan.components.vulnerabilities", (*storage.NodeVulnerability)(nil))
