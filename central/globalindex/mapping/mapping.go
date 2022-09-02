@@ -169,7 +169,7 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_ROLEBINDINGS:            schema.RoleBindingsSchema.OptionsMap,
 		v1.SearchCategory_SECRETS:                 schema.SecretsSchema.OptionsMap,
 		v1.SearchCategory_SERVICE_ACCOUNTS:        schema.ServiceAccountsSchema.OptionsMap,
-		v1.SearchCategory_SUBJECTS:                schema.RoleBindingsSchema.OptionsMap,
+		v1.SearchCategory_SUBJECTS:                subjectMapping.OptionsMap,
 		v1.SearchCategory_VULN_REQUEST:            schema.VulnerabilityRequestsSchema.OptionsMap,
 		// v1.SearchCategory_VULNERABILITIES:       cveSearchOptions,
 	}

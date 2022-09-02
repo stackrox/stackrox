@@ -30,6 +30,7 @@ class AutocompleteTest extends BaseSpecification {
         where:
         "Data inputs are: "
         query                 | category                   | contains
+
         "Subject:system:auth" | []                         | "system:authenticated"
         "Subject:system:auth" | [SearchCategory.SUBJECTS]  | "system:authenticated"
         "Subject Kind:GROUP"  | []                         | GROUP_AUTOCOMPLETE
