@@ -12,7 +12,7 @@ class AutocompleteTest extends BaseSpecification {
             SearchCategory.IMAGE_VULNERABILITIES :
             SearchCategory.VULNERABILITIES
 
-    private static final String GROUP_UC_AUTOCOMPLETE = isPostgresRun() ? "GROUP" : "group"
+    private static final String GROUP_AUTOCOMPLETE = isPostgresRun() ? "GROUP" : "group"
 
     @Category([BAT])
     def "Verify Autocomplete: #query #category #contains"() {
@@ -32,9 +32,9 @@ class AutocompleteTest extends BaseSpecification {
         query                 | category                   | contains
         "Subject:system:auth" | []                         | "system:authenticated"
         "Subject:system:auth" | [SearchCategory.SUBJECTS]  | "system:authenticated"
-        "Subject Kind:GROUP"  | []                         | GROUP_UC_AUTOCOMPLETE
-        "Subject Kind:group"  | []                         | "group"
-        "Subject Kind:gr"     | []                         | "group"
+        "Subject Kind:GROUP"  | []                         | GROUP_AUTOCOMPLETE
+        "Subject Kind:group"  | []                         | GROUP_AUTOCOMPLETE
+        "Subject Kind:gr"     | []                         | GROUP_AUTOCOMPLETE
     }
 
     @Unroll
