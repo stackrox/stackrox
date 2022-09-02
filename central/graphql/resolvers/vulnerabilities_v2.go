@@ -1002,7 +1002,7 @@ func (resolver *cVEResolver) ActiveState(ctx context.Context, args RawQuery) (*a
 		return nil, nil
 	}
 	// We only support OS level component. The active state is not determined if there is no OS level component associate with this vuln.
-	query := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).AddStrings(search.ComponentSource, storage.SourceType_OS.String()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).AddExactMatches(search.ComponentSource, storage.SourceType_OS.String()).ProtoQuery()
 	osLevelComponents, err := resolver.root.ImageComponentDataStore.Count(ctx, query)
 	if err != nil {
 		return nil, err

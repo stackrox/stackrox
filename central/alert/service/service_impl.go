@@ -257,7 +257,7 @@ func (s *serviceImpl) ResolveAlerts(ctx context.Context, req *v1.ResolveAlertsRe
 		log.Error(err)
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	runtimeQuery := search.NewQueryBuilder().AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery()
+	runtimeQuery := search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery()
 	cq := search.ConjunctionQuery(query, runtimeQuery)
 	alerts, err := s.dataStore.SearchRawAlerts(ctx, cq)
 	if err != nil {
