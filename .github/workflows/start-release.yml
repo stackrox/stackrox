@@ -119,7 +119,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{inputs.ref}}
-          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
       - name: Check remote branch exists
         id: check-existing
         run: |
@@ -173,69 +172,64 @@ jobs:
     name: Configure OpenShift CI jobs
     needs: [variables, branch]
     runs-on: ubuntu-latest
+    env:
+      RELEASE: "${{needs.variables.outputs.release}}"
+      BRANCH: "stackrox-release-${{needs.variables.outputs.release}}"
     steps:
       - name: Check out stackrox/openshift-release
         uses: actions/checkout@v3
         with:
           repository: stackrox/openshift-release
-          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          token: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
       - name: Check remote branch exists
         id: check-existing
         run: |
-          if git ls-remote --quiet --exit-code origin "stackrox-release-$RELEASE"; then
+          if git ls-remote --quiet --exit-code origin "$BRANCH"; then
             echo "::set-output name=branch-exists::true"
             echo "::notice::OpenShift CI configuration branch exists. Assuming CI is ready."
           else
             echo "::set-output name=branch-exists::false"
+            git switch --create "$BRANCH"
           fi
       - name: Initialize mandatory git config
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
           git config user.name "${{github.event.sender.login}}"
           git config user.email noreply@github.com
-      - name: Branch
+      - name: Make configuration
         if: steps.check-existing.outputs.branch-exists == 'false'
         env:
-          RELEASE: "${{needs.variables.outputs.release}}"
           CFG_DIR: "ci-operator/config/stackrox/stackrox"
-          JOBS_DIR: "ci-operator/jobs/stackrox/stackrox"
         run: |
-          PREFIX="$CFG_DIR/stackrox-stackrox-release-$RELEASE"
-          git switch --create "stackrox-release-$RELEASE"
-
-          # Duplicate the main config.
+          # Duplicate the main config and keep only postsubmit jobs.
           yq "del(.tests[] | select(.postsubmit != true or has(\"cron\"))) |
               .promotion.tag=\"$RELEASE\" |
               .zz_generated_metadata.branch=\"release-$RELEASE\"" \
             "$CFG_DIR/stackrox-stackrox-master.yaml" \
-            > "${PREFIX}.yaml"
+            > "$CFG_DIR/stackrox-$BRANCH.yaml"
 
-          # Duplicate the opensource images config.
+          # Duplicate the opensource images config and keep only postsubmit jobs.
           yq "del(.tests[] | select(.postsubmit != true or has(\"cron\"))) |
               .promotion.tag=\"$RELEASE-stackrox-branding\" |
               .zz_generated_metadata.branch=\"release-$RELEASE\"" \
             "$CFG_DIR/stackrox-stackrox-master__stackrox_branding.yaml" \
-            > "${PREFIX}__stackrox_branding.yaml"
-
-          # Delete periodic and presubmit jobs if any.
-          PREFIX="$JOBS_DIR/stackrox-stackrox-release-$RELEASE"
-          rm -vf "$PREFIX-periodics.yaml" "$PREFIX-presubmits.yaml"
+            > "$CFG_DIR/stackrox-${BRANCH}__stackrox_branding.yaml"
       - name: Make update
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
           make update
 
           git add ci-operator
-          git commit -m "Release ${{needs.variables.outputs.release}} files" >> $GITHUB_STEP_SUMMARY
+          git commit -m "Release $RELEASE files" >> $GITHUB_STEP_SUMMARY
       - name: Push and create PR
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
         run: |
-          git push --set-upstream origin stackrox-release-${RELEASE}
+          git push --set-upstream origin "$BRANCH"
 
           PR_URL=$(gh pr create --repo openshift/release \
-            --title "Stackrox release ${{needs.variables.outputs.release}}" \
+            --title "Stackrox release $RELEASE" \
             --base "master" \
-            --body "CI configuration files to support Stackrox release \`${{needs.variables.outputs.release}}\`." \
+            --body "CI configuration files to support Stackrox release \`$RELEASE\`." \
             --assignee "$GITHUB_ACTOR")
 
           echo ":arrow_right: Review and merge the [PR]($PR_URL) that has been created for the \`openshift/release\` repository." >> $GITHUB_STEP_SUMMARY
