@@ -7,6 +7,18 @@ set -euo pipefail
 
 style_checks() {
     info "Starting style-checks"
+
+    # Temp hack for missing tools
+    source "$ROOT/scripts/ci/gcp.sh"
+    source "$ROOT/tests/e2e/lib.sh"
+    setup_gcp
+    gsutil cp gs://roxci-artifacts/stackrox/tools/shellcheck-v0.8.0/shellcheck .
+    install shellcheck /go/bin
+    shellcheck || true
+    gsutil cp gs://roxci-artifacts/stackrox/tools/xmlstarlet .
+    install xmlstarlet /go/bin
+    xmlstarlet || true
+
     make style || touch FAIL
 
     info "Saving junit XML report"
