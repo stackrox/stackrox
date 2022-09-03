@@ -9,7 +9,7 @@ source "$TEST_ROOT/scripts/lib.sh"
 setup_certs() {
     target_dir="$1"
     cn="$2"
-\
+
     [[ -n "$cn" ]] || {
         echo >&2 "No CN specified!"
         exit 1
