@@ -3,6 +3,7 @@ package x509utils
 import (
 	"crypto/x509"
 	_ "embed"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,10 +17,11 @@ import (
 var (
 	//go:embed testdata/cert-chain.pem
 	pemChain string
-)
 
-var (
-	verificationTime = timeutil.MustParse(time.RFC3339, "2022-09-04T00:00:00Z")
+	//go:embed testdata/verification-time
+	verificationTimeStr string
+
+	verificationTime = timeutil.MustParse(time.RFC3339, strings.TrimSpace(verificationTimeStr))
 
 	certChain []*x509.Certificate
 	derChain  [][]byte
