@@ -8,7 +8,7 @@ MENU_OPTIONS=(
   "Quit"
 )
 
-FIX_VERSION="68.0 (01/31)" # copy this from JIRA
+FIX_VERSION="3.72.0" # copy this from JIRA
 
 main() {
   local action="${1}"
@@ -80,8 +80,11 @@ not_done_yet() {
   local QRY
   read -r -d '' QRY <<EOF
   (project = ROX OR project = "Rox Services" OR project = "Red Hat Advanced Cluster Security" )
+    AND component != "Documentation"
     AND fixVersion = "$FIX_VERSION"
     AND status != Done
+    AND status != "Release Pending"
+    AND status != CLOSED
     ORDER BY created DESC
 EOF
 
@@ -107,7 +110,8 @@ call_jira() {
     --data-urlencode "jql=${JQL}" \
     -H "Authorization: Bearer $JIRA_TOKEN" \
     -H "Content-Type: application/json" \
-    "https://issues.redhat.com/rest/api/2/search" | jq -r '.issues[] | "assingee: \"" + (.fields.assignee.displayName // "unassigned")  + "\" key: \"" + .key + "\""' | sort
+    "https://issues.redhat.com/rest/api/2/search" \
+    | jq -r '.issues[] | "assignee: \"" + (.fields.assignee.emailAddress // "unassigned") + "\" tz: \"" + (.fields.assignee.timeZone)  + "\" key: \"" + .key + "\""' | sort
 }
 
 print_ticket_todo_summary() {
@@ -115,11 +119,12 @@ print_ticket_todo_summary() {
   while IFS= read -r line
   do
     ## take some action on $line
-    regex='^assingee: "(.*)" key: "(.*)"$'
+    regex='^assignee: "(.*)" tz: "(.*)" key: "(.*)"$'
     if [[ $line =~ $regex ]]; then
       slack="$(name2slack "${BASH_REMATCH[1]}")"
-      ticket="https://issues.redhat.com/browse/${BASH_REMATCH[2]}"
-      todo+=("- @${slack}: $ticket")
+      timeZone="${BASH_REMATCH[2]}"
+      ticket="https://issues.redhat.com/browse/${BASH_REMATCH[3]}"
+      todo+=("- ${timeZone} @${slack}: $ticket")
     else
       echo "$line"
     fi
@@ -134,7 +139,7 @@ print_ticket_verification_summary() {
   while IFS= read -r line
   do
     ## take some action on $line
-    regex='^assingee: "(.*)" key: "(.*)"$'
+    regex='^assignee: "(.*)" key: "(.*)"$'
     if [[ $line =~ $regex ]]; then
       slack="$(name2slack "${BASH_REMATCH[1]}")"
       ticket="https://issues.redhat.com/browse/${BASH_REMATCH[2]}"
@@ -163,6 +168,8 @@ print_ticket_verification_summary() {
 }
 
 name2slack() {
+  echo " ${1%%@*}"
+  return
   # data taken from: https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/1620214005/Team+Alignments
   while [[ "$#" -gt 0 ]]; do
     case $1 in
