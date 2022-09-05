@@ -354,7 +354,7 @@ func (resolver *imageCVEResolver) IsFixable(_ context.Context, args RawQuery) (b
 		return false, err
 	}
 	// check for Fixable fields in args
-	logErrorOnQueryContainingField(query, search.Fixable, "IsFixable")
+	// logErrorOnQueryContainingField(query, search.Fixable, "IsFixable")
 
 	conjuncts := []*v1.Query{query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
 
