@@ -65,7 +65,21 @@ func TestMatchPolicyPeer(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-	_, _, _ = t1, t2, t3
+	t4, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
+		{
+			Id:   "3",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "30.30.0.0/32",
+					},
+				},
+			},
+		},
+	})
+
+	_, _, _, _ = t1, t2, t3, t4
 
 	type expectedMatch struct {
 		id        string
@@ -217,6 +231,25 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			expectedMatches: []expectedMatch{
+				{id: networkgraph.InternetExternalSourceID, matchType: storage.NetworkEntityInfo_INTERNET},
+			},
+		},
+		{
+			name:        "ip block - matches public IP CIDR block and excludes cluster deployments",
+			networkTree: t4,
+			deployments: []*storage.Deployment{
+				{
+					Id:        "DEP1",
+					Namespace: "default",
+				},
+			},
+			peer: &storage.NetworkPolicyPeer{
+				IpBlock: &storage.IPBlock{
+					Cidr: "30.30.0.0/24",
+				},
+			},
+			expectedMatches: []expectedMatch{
+				{id: "3", matchType: storage.NetworkEntityInfo_EXTERNAL_SOURCE},
 				{id: networkgraph.InternetExternalSourceID, matchType: storage.NetworkEntityInfo_INTERNET},
 			},
 		},
