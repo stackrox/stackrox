@@ -112,7 +112,7 @@ call_jira() {
     -H "Authorization: Bearer $JIRA_TOKEN" \
     -H "Content-Type: application/json" \
     "https://issues.redhat.com/rest/api/2/search" \
-    | jq -r '.issues[] | "assignee: \"" + (.fields.assignee.emailAddress // "unassigned") + "\" tz: \"" + (.fields.assignee.timeZone)  + "\" key: \"" + .key + "\""' | sort
+    | jq -r '.issues[] | "assignee: \"" + (.fields.assignee.emailAddress // "unassigned") + "\" key: \"" + .key + "\""' | sort
 }
 
 print_ticket_todo_summary() {
@@ -120,10 +120,9 @@ print_ticket_todo_summary() {
   while IFS= read -r line
   do
     ## take some action on $line
-    regex='^assignee: "(.*)" tz: "(.*)" key: "(.*)"$'
+    regex='^assignee: "(.*)" key: "(.*)"$'
     if [[ $line =~ $regex ]]; then
       slack="$(name2slack "${BASH_REMATCH[1]}")"
-      timeZone="${BASH_REMATCH[2]}"
       ticket="https://issues.redhat.com/browse/${BASH_REMATCH[3]}"
       todo+=("- @${slack}: $ticket")
     else
