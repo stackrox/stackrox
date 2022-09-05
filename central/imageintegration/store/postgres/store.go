@@ -49,6 +49,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ImageIntegration, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageIntegration, error)
 	GetAll(ctx context.Context) ([]*storage.ImageIntegration, error)
 	Upsert(ctx context.Context, obj *storage.ImageIntegration) error
 	UpsertMany(ctx context.Context, objs []*storage.ImageIntegration) error
@@ -440,6 +441,39 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageIntegration, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "ImageIntegration")
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
+		return nil, nil
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var results []*storage.ImageIntegration
+	for _, data := range rows {
+		msg := &storage.ImageIntegration{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, err
+		}
+		results = append(results, msg)
+	}
+	return results, nil
 }
 
 // Delete removes the specified IDs from the store
