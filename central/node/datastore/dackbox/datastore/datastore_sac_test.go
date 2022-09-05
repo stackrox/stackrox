@@ -569,7 +569,7 @@ func (s *nodeDatastoreSACSuite) TestDeleteNodesMulti() {
 			if c.ExpectError {
 				s.ErrorIs(err, c.ExpectedError)
 
-				// Check that nodes are removed from datastore.
+				// Check that nodes are not removed from datastore.
 				for _, delNodeID := range delNodeIDs {
 					_, found, errGetNode := s.datastore.GetNode(s.testContexts[testutils.UnrestrictedReadWriteCtx], delNodeID)
 					s.True(found)
