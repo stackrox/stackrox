@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/features"
@@ -45,7 +46,7 @@ type nodeDatastoreSACSuite struct {
 	// Elements for bleve+rocksdb mode
 	rocksEngine *rocksdb.RocksDB
 	bleveIndex  bleve.Index
-	keyFence    concurrency.KeyFence
+	keyFence    dackboxConcurrency.KeyFence
 	indexQ      queue.WaitableQueue
 	dacky       *dackbox.DackBox
 
@@ -72,7 +73,7 @@ func (s *nodeDatastoreSACSuite) setupRocks() {
 	s.Require().NoError(err)
 	s.bleveIndex, err = globalindex.MemOnlyIndex()
 	s.Require().NoError(err)
-	s.keyFence = concurrency.NewKeyFence()
+	s.keyFence = dackboxConcurrency.NewKeyFence()
 	s.indexQ = queue.NewWaitableQueue()
 	s.dacky, err = dackbox.NewRocksDBDackBox(s.rocksEngine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
 	s.Require().NoError(err)
