@@ -2,16 +2,22 @@ package augmentedobjs
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
 	// CompositeFieldCharSep is the separating character used when we create a composite field.
 	CompositeFieldCharSep = "\t"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process *storage.ProcessIndicator) (int, error) {
@@ -147,6 +153,12 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 	appliedPolicies := pathutil.NewAugmentedObj(applied)
 	if err := obj.AddAugmentedObjAt(appliedPolicies, pathutil.FieldStep(networkPoliciesAppliedKey)); err != nil {
 		return nil, utils.Should(err)
+	}
+	shouldLog := strings.Contains(deployment.GetName(), "rox-12400")
+
+	if shouldLog {
+		log.Debugf("Constructing deployment %q: %+v", deployment.GetName(), deployment)
+		log.Debugf("Using following images for deployment %q: %+v", deployment.GetName(), images)
 	}
 
 	for i, image := range images {

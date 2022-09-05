@@ -2,6 +2,7 @@ package detector
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -308,6 +309,15 @@ func (d *detectorImpl) runDetector() {
 		case <-d.detectorStopper.StopDone():
 			return
 		case scanOutput := <-d.enricher.outputChan():
+			if strings.Contains(scanOutput.deployment.GetName(), "rox-12400") {
+				log.Debugf("Detecting deployment %q: %+v",
+					scanOutput.deployment.GetName(), scanOutput.deployment)
+				log.Debugf("Containers within deployment %q: %+v",
+					scanOutput.deployment.GetName(), scanOutput.deployment.GetContainers())
+				log.Debugf("Images within deployment %q: %+v",
+					scanOutput.deployment.GetName(), scanOutput.images)
+			}
+
 			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
 				Deployment:             scanOutput.deployment,
 				Images:                 scanOutput.images,
