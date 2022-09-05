@@ -81,6 +81,7 @@ not_done_yet() {
   read -r -d '' QRY <<EOF
   (project = ROX OR project = "Rox Services" OR project = "Red Hat Advanced Cluster Security" )
     AND component != "Documentation"
+    AND component != "ACS Managed Service"
     AND fixVersion = "$FIX_VERSION"
     AND status != Done
     AND status != "Release Pending"
