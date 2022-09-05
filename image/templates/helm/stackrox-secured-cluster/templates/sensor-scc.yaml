@@ -2,7 +2,7 @@
 
 {{- if ._rox.env.openshift }}
 {{- if ._rox.system.createSCCs }}
----
+
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
