@@ -373,6 +373,11 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  name: sensor-use-sccs-for-sensor
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
   name: stackrox-admission-control-psp
 ---
 apiVersion: rbac.authorization.k8s.io/v1
