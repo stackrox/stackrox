@@ -61,7 +61,7 @@ rules:
   resources:
   - securitycontextconstraints
   resourceNames:
-{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
+{{- if ._rox.system.createSCCs }}
   - stackrox-sensor
 {{- end }}
   - nonroot-v2
