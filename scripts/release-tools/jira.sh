@@ -124,7 +124,7 @@ print_ticket_todo_summary() {
       slack="$(name2slack "${BASH_REMATCH[1]}")"
       timeZone="${BASH_REMATCH[2]}"
       ticket="https://issues.redhat.com/browse/${BASH_REMATCH[3]}"
-      todo+=("- ${timeZone} @${slack}: $ticket")
+      todo+=("- @${slack}: $ticket")
     else
       echo "$line"
     fi
@@ -168,7 +168,7 @@ print_ticket_verification_summary() {
 }
 
 name2slack() {
-  echo " ${1%%@*}"
+  echo "${1%%@*}"
   return
   # data taken from: https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/1620214005/Team+Alignments
   while [[ "$#" -gt 0 ]]; do
