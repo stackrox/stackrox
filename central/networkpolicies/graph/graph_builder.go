@@ -2,6 +2,7 @@ package graph
 
 import (
 	"fmt"
+	"net"
 	"sort"
 	"strings"
 
@@ -114,15 +115,22 @@ func (b *graphBuilder) evaluatePeers(currentNS *storage.NamespaceMetadata, peers
 func (b *graphBuilder) evaluatePeer(currentNS *storage.NamespaceMetadata, peer *storage.NetworkPolicyPeer) []*node {
 	if peer.GetIpBlock() != nil {
 		var allNodes []*node
+		_, ipNet, err := net.ParseCIDR(peer.GetIpBlock().GetCidr())
+		if err != nil {
+			log.Warnf("Failed to parse CIDR block: %s", err)
+			return allNodes
+		}
+
 		// If the IP is in the private range, we add edges to other deployments in the cluster.
 		// This is still not the perfect approach, but it solves user issues where edges were being
 		// shown on *every* deployment with a Network Policy that uses CIDR block matchers. By
 		// limiting to private ranges only, the set of edges in the graph is likely more accurate, but
 		// still not the reality. There is an epic created to tackle this further and come up with a
 		// more elaborate logic for this: ROX-12120
-		if netutil.IsCIDRBlockInPrivateSubnet(peer.GetIpBlock().GetCidr()) {
+		if netutil.IsIPSubNetOverlapingPrivateRange(ipNet) {
 			allNodes = append(allNodes, b.allDeployments...)
 		}
+
 		allNodes = append(allNodes, b.evaluateExternalPeer(peer.GetIpBlock())...)
 		return allNodes
 	}
