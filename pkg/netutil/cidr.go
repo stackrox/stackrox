@@ -8,14 +8,6 @@ import (
 )
 
 var (
-	privateSubnets = []*net.IPNet{
-		MustParseCIDR("127.0.0.0/8"),    // IPv4 localhost
-		MustParseCIDR("10.0.0.0/8"),     // class A
-		MustParseCIDR("172.16.0.0/12"),  // class B
-		MustParseCIDR("192.168.0.0/16"), // class C
-		MustParseCIDR("::1/128"),        // IPv6 localhost
-		MustParseCIDR("fd00::/8"),       // IPv6 ULA
-	}
 	log = logging.LoggerForModule()
 )
 
@@ -27,8 +19,11 @@ func MustParseCIDR(cidr string) *net.IPNet {
 	return ipNet
 }
 
-// IsCIDRBlockInPrivateSubnet parses cidrStr and checks if it falls under the RFC 1819 private IP range
-func IsIPSubNetOverlapingPrivateRange(ipNet *net.IPNet) bool {
+// IsIPNetOverlapingPrivateRange checks if network overlaps with private subnets
+func IsIPNetOverlapingPrivateRange(ipNet *net.IPNet) bool {
+	var privateSubnets []*net.IPNet
+	privateSubnets = append(privateSubnets, IPV4PrivateNetworks...)
+	privateSubnets = append(privateSubnets, IPV6PrivateNetworks...)
 	return AnyOverlap(ipNet, privateSubnets)
 }
 
@@ -66,4 +61,3 @@ func AnyOverlap(n1 *net.IPNet, ns []*net.IPNet) bool {
 	}
 	return false
 }
-

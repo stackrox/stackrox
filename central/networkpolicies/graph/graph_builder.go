@@ -127,7 +127,7 @@ func (b *graphBuilder) evaluatePeer(currentNS *storage.NamespaceMetadata, peer *
 		// limiting to private ranges only, the set of edges in the graph is likely more accurate, but
 		// still not the reality. There is an epic created to tackle this further and come up with a
 		// more elaborate logic for this: ROX-12120
-		if netutil.IsIPSubNetOverlapingPrivateRange(ipNet) {
+		if netutil.IsIPNetOverlapingPrivateRange(ipNet) {
 			allNodes = append(allNodes, b.allDeployments...)
 		}
 

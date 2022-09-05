@@ -19,35 +19,6 @@ const (
 	IPv6
 )
 
-var (
-	ipV4PrivateNetworks = []*net.IPNet{
-		// private networks per RFC1918
-		netutil.MustParseCIDR("10.0.0.0/8"),
-		netutil.MustParseCIDR("172.16.0.0/12"),
-		netutil.MustParseCIDR("192.168.0.0/16"),
-
-		// Other reserved ranges
-		netutil.MustParseCIDR("100.64.0.0/10"),
-		netutil.MustParseCIDR("169.254.0.0/16"),
-	}
-
-	ipV6PrivateNetworks = []*net.IPNet{
-		// Unique Local Addresses (ULA)
-		netutil.MustParseCIDR("fd00::/8"),
-
-		// IPv4-mapped IPv6 for private networks per RFC1918
-		netutil.MustParseCIDR("::ffff:10.0.0.0/104"),
-		netutil.MustParseCIDR("::ffff:172.16.0.0/108"),
-		netutil.MustParseCIDR("::ffff:192.168.0.0/112"),
-
-		// Other reserved IPv4 ranges
-		netutil.MustParseCIDR("::ffff:100.64.0.0/106"),
-		netutil.MustParseCIDR("::ffff:169.254.0.0/112"),
-	}
-
-	ipV4MappedIPv6Loopback = netutil.MustParseCIDR("::ffff:127.0.0.1/104")
-)
-
 // String returns a string representation of the family
 func (f Family) String() string {
 	switch f {
@@ -95,7 +66,7 @@ func (d ipv4data) isLoopback() bool {
 
 func (d ipv4data) isPublic() bool {
 	netIP := net.IP(d.bytes())
-	for _, privateIPNet := range ipV4PrivateNetworks {
+	for _, privateIPNet := range netutil.IPV4PrivateNetworks {
 		if privateIPNet.Contains(netIP) {
 			return false
 		}
@@ -116,7 +87,7 @@ func (d ipv6data) bytes() []byte {
 	return d[:]
 }
 func (d ipv6data) isLoopback() bool {
-	if ipV4MappedIPv6Loopback.Contains(net.IP(d.bytes())) {
+	if netutil.IPV4MappedIPv6Loopback.Contains(net.IP(d.bytes())) {
 		return true
 	}
 
@@ -133,7 +104,7 @@ func (d ipv6data) isLoopback() bool {
 
 func (d ipv6data) isPublic() bool {
 	netIP := net.IP(d.bytes())
-	for _, privateIPNet := range ipV6PrivateNetworks {
+	for _, privateIPNet := range netutil.IPV6PrivateNetworks {
 		if privateIPNet.Contains(netIP) {
 			return false
 		}
