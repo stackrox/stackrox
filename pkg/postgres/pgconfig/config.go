@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -16,6 +17,10 @@ const (
 	DBPasswordFile = "/run/secrets/stackrox.io/db-password/password"
 
 	activeSuffix = "_active"
+
+	// TODO(ROX-12059):  Assuming capacity until we can figure out best way to determine that
+	// across the possible configurations which includes a managed Postgres.
+	capacity = 100 * size.GB
 )
 
 // GetPostgresConfig - gets the configuration used to connect to Postgres
@@ -63,4 +68,9 @@ func ParseSource(source string) (map[string]string, error) {
 // GetActiveDB - returns the name of the active database
 func GetActiveDB() string {
 	return fmt.Sprintf("%s%s", config.GetConfig().CentralDB.DatabaseName, activeSuffix)
+}
+
+// GetPostgresCapacity - returns the capacity of the Postgres instance
+func GetPostgresCapacity() int64 {
+	return capacity
 }

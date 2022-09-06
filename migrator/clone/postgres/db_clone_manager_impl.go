@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -354,6 +355,27 @@ func (d *dbCloneManagerImpl) rollbackEnabled() bool {
 }
 
 func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
-	// TODO(ROX-12059):  Figure out what this means in the Postgres world.
-	return true
+	currReplica, currExists := d.cloneMap[CurrentClone]
+	if !currExists {
+		log.Warn("cannot find current replica for Postgres.  Indicates initial creation")
+		return false
+	}
+
+	availableBytes, err := pgadmin.GetRemainingCapacity(d.adminConfig)
+	if err != nil {
+		log.Warnf("Fail to get available bytes in Postgres")
+		return false
+	}
+
+	currentDBBytes, err := pgadmin.GetDatabaseSize(d.adminConfig, currReplica.GetDatabaseName())
+	if err != nil {
+		log.Warnf("Fail to get database size %s.  %v", currReplica.GetDatabaseName(), err)
+		return false
+	}
+
+	requiredBytes := int64(math.Ceil(float64(currentDBBytes) * (1.0 + migrations.CapacityMarginFraction)))
+	hasSpace := float64(availableBytes) > float64(requiredBytes)
+	log.Infof("Central has space to create backup for rollback: %v, required: %d, available: %d with %f margin", hasSpace, requiredBytes, availableBytes, migrations.CapacityMarginFraction)
+
+	return hasSpace
 }

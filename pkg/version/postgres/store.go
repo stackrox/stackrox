@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -17,6 +18,11 @@ import (
 const (
 	getStmt    = "SELECT serialized FROM versions LIMIT 1"
 	deleteStmt = "DELETE FROM versions"
+)
+
+var (
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.VersionsSchema
 )
 
 // Store access versions in database
@@ -144,6 +150,8 @@ func (s *storeImpl) Delete(ctx context.Context) error {
 	}
 	return nil
 }
+
+// Used for Testing
 
 // Destroy is Used for Testing
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
