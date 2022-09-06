@@ -2096,6 +2096,10 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 		},
 		{
 			value:           "alpine",
+			expectedMatches: []string{},
+		},
+		{
+			value:           "alpine.*",
 			expectedMatches: []string{"alpine:v3.4", "alpine:v3.11"},
 		},
 		{

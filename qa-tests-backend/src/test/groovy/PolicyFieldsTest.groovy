@@ -528,7 +528,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private IS_BASED_ON_ALPINE = setPolicyFieldANDValues(
             BASE_POLICY.clone().setName("AAA_BASED_ON_ALPINE"),
             "Image OS",
-            ["alpine"]
+            ["alpine.*"]
     )
 
     // "Image Registry"
