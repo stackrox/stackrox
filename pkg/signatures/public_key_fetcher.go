@@ -55,7 +55,10 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 	registry registryTypes.Registry) ([]*storage.Signature, error) {
 	// Short-circuit for images that do not have V2 metadata associated with them. These would be older images manifest
 	// schemes that are not supported by cosign, like the docker v1 manifest.
+	log.Infof("Fetching signatures for image %q", image.GetName().GetFullName())
 	if image.GetMetadata().GetV2() == nil {
+		log.Infof("Skipping signatures for image %q since no V2 metadata is set on the image",
+			image.GetName().GetFullName())
 		return nil, nil
 	}
 
@@ -78,6 +81,7 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 	signedPayloads, err := cosign.FetchSignaturesForReference(ctx, imgRef,
 		ociremote.WithRemoteOptions(optionsFromRegistry(registry)...))
 
+	log.Infof("Got the following signed payload for image %q: %+v", imgFullName, signedPayloads)
 	// Cosign will return an error in case no signature is associated, we don't want to return that error. Since no
 	// error types are exposed need to check for string comparison.
 	// Cosign ref:

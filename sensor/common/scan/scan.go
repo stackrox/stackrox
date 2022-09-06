@@ -62,6 +62,8 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 		return nil, errors.Wrapf(err, "fetching image metadata for image %q", imgName)
 	}
 
+	image.Metadata = metadata
+
 	log.Debugf("Received metadata for image %q: %v", imgName, metadata)
 
 	// Scan the image via local scanner.
@@ -70,6 +72,8 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 		log.Debugf("Scan for image %q failed: %v", imgName, err)
 		return nil, errors.Wrapf(err, "scanning image %q locally", imgName)
 	}
+
+	log.Infof("Attempting to fetch signatures for image %q", imgName)
 
 	// Fetch signatures from cluster-local registry.
 	sigs, err := fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image,
