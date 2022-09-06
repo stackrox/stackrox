@@ -68,17 +68,17 @@ const requestConfigGeneric = {
  * Optionally wait for responses with waitOptions: { requestTimeout, responseTimeout }
  *
  * @param {string} pageUrl
- * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
- * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfigSpecific]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMapSpecific]
  */
-export function visit(pageUrl, requestConfig, staticResponseMap) {
+export function visit(pageUrl, requestConfigSpecific, staticResponseMapSpecific) {
     interceptRequests(requestConfigGeneric);
-    interceptRequests(requestConfig, staticResponseMap);
+    interceptRequests(requestConfigSpecific, staticResponseMapSpecific);
 
     cy.visit(pageUrl);
 
     waitForResponses(requestConfigGeneric);
-    waitForResponses(requestConfig);
+    waitForResponses(requestConfigSpecific);
 }
 
 /*
