@@ -90,7 +90,7 @@ function processData(
 
     const sorted = sortBy(modifiedData, [(datum) => datum.passing]);
 
-    if (sortDirection === 'asc') {
+    if (sortDirection === 'desc') {
         sorted.reverse();
     }
 
@@ -144,7 +144,10 @@ function ComplianceLevelsByStandard() {
     );
 
     const complianceData = useMemo(
-        () => processData(searchFilter, sortDataBy, data || previousData)?.slice(0, 6),
+        () =>
+            processData(searchFilter, sortDataBy, data || previousData)
+                ?.slice(0, 6)
+                ?.reverse(), // Reverse since Victory charts renders items from bottom to top
         [searchFilter, sortDataBy, data, previousData]
     );
 
