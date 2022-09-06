@@ -114,6 +114,7 @@ export const images = {
 };
 
 export const auth = {
+    availableAuthProviders: '/v1/availableAuthProviders',
     loginAuthProviders: '/v1/login/authproviders',
     authProviders: '/v1/authProviders',
     authStatus: '/v1/auth/status',

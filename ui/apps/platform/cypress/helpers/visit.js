@@ -3,8 +3,9 @@ import * as api from '../constants/apiEndpoints';
 import { interceptRequests, waitForResponses } from './request';
 
 // Import one or more alias constants in test files that call visitWithResponseMapGeneric function.
+export const availableAuthProvidersAlias = 'availableAuthProviders';
 export const featureflagsAlias = 'featureflags';
-export const loginAuthProviders = 'login/authproviders';
+export const loginAuthProvidersAlias = 'login/authproviders';
 export const mypermissionsAlias = 'mypermissions';
 export const configPublicAlias = 'config/public';
 export const authStatusAlias = 'auth/status';
@@ -14,11 +15,15 @@ export const credentialexpiryScannerAlias = 'credentialexpiry_SCANNER';
 // Generic requests to render the MainPage component (that is, prerequisite to test any page).
 const requestConfigGeneric = {
     routeMatcherMap: {
+        [availableAuthProvidersAlias]: {
+            method: 'GET',
+            url: api.auth.availableAuthProviders,
+        }, // reducers/auth and sagas/authSagas
         [featureflagsAlias]: {
             method: 'GET',
             url: api.featureFlags,
         }, // reducers/featureFlags and sagas/featureFlagSagas
-        [loginAuthProviders]: {
+        [loginAuthProvidersAlias]: {
             method: 'GET',
             url: api.auth.loginAuthProviders,
         }, // reducers/auth and sagas/authSagas
