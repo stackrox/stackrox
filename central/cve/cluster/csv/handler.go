@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/parser"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -134,7 +135,9 @@ func ClusterCVECSVHandler() http.HandlerFunc {
 			dataRow := clusterCveRow{}
 			dataRow.cve = d.CVE(ctx)
 			dataRow.cveTypes = strings.Join(d.VulnerabilityTypes(), " ")
-			isFixable, err := d.IsFixable(ctx, rawQuery)
+			// query to IsFixable should not have Fixable field
+			rawQueryWithoutFixable := resolvers.FilterFieldFromRawQuery(rawQuery, search.Fixable)
+			isFixable, err := d.IsFixable(ctx, rawQueryWithoutFixable)
 			if err != nil {
 				errorList.AddError(err)
 			}
