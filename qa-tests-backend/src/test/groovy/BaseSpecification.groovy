@@ -261,7 +261,9 @@ class BaseSpecification extends Specification {
         BaseService.setUseClientCert(false)
 
         log.info "Removing integration"
-        ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
+        if (coreImageIntegrationId != null) {
+            ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
+        }
 
         try {
             orchestrator.cleanup()
