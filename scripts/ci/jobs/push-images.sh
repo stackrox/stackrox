@@ -22,7 +22,7 @@ push_images() {
     local tag
     tag="$(make --quiet tag)"
 
-    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+    if [[ "$brand" == "STACKROX_BRANDING" ]] && [[ -n "${MAIN_IMAGE}" ]]; then
         slack_build_notice "$tag"
     fi
 
@@ -44,11 +44,13 @@ push_images() {
         push_context="merge-to-master"
     fi
 
-    if is_OPENSHIFT_CI && is_in_PR_context && pr_has_label "turbo-build" && [[ "$brand" == "RHACS_BRANDING" ]]; then
-        info "Images were built and pushed elsewhere, skipping it here."
-    else
-        push_main_image_set "$push_context" "$brand"
-        push_matching_collector_scanner_images "$brand"
+    if [[ -n "${MAIN_IMAGE}" ]]; then
+        if is_OPENSHIFT_CI && is_in_PR_context && pr_has_label "turbo-build" && [[ "$brand" == "RHACS_BRANDING" ]]; then
+            info "Images were built and pushed elsewhere, skipping it here."
+        else
+            push_main_image_set "$push_context" "$brand"
+            push_matching_collector_scanner_images "$brand"
+        fi
     fi
     if [[ -n "${PIPELINE_DOCS_IMAGE:-}" ]]; then
         push_docs_image
@@ -56,7 +58,6 @@ push_images() {
     if [[ -n "${MAIN_RCD_IMAGE:-}" ]]; then
         push_race_condition_debug_image
     fi
-    # TODO(ROX-12041): make this unconditional once the openshift/release side is ready
     if [[ -n "${OPERATOR_IMAGE:-}" ]]; then
         if is_OPENSHIFT_CI && is_in_PR_context && pr_has_label "turbo-build"; then
             info "Operator images were built and pushed elsewhere, skipping it here."
@@ -65,7 +66,7 @@ push_images() {
         fi
     fi
 
-    if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]]; then
+    if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]] && [[ -n "${MAIN_IMAGE}" ]]; then
         add_build_comment_to_pr
     fi
 }
