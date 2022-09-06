@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
@@ -322,11 +323,15 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 			}
 
 			image := w.Deployment.Containers[i].Image
+			shouldLog := strings.Contains(image.GetName().GetFullName(), "nginx")
 
 			// If there already is an image ID for the image then that implies that the name of the image was fully qualified
 			// with an image digest. e.g. stackrox.io/main@sha256:xyz
 			// If the ID already exists, populate NotPullable and IsClusterLocal.
 			if image.GetId() != "" {
+				if shouldLog {
+					log.Infof("Found ID for image %q: %q", image.GetName().GetFullName(), image.GetId())
+				}
 				// Use the image ID from the pod's ContainerStatus.
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 				image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
@@ -346,6 +351,18 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 			}
 
 			if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
+				// (dhaus): we _probably_ shouldn't use the digest from the image ID, if it's there. instead, we should
+				// access the cri-interface and retrieve the image ID from there - if one exists. Otherwise, it's probably skewed here.
+				// The best would probably:
+				// 1. Check if digest exists - if it doesn't exist, don't bother reaching out to CRI as the runtime hasn't pulled the image etc.
+				// 2. Iff a digest exists - reach out to CRI service and retrieve the specific image and retrieve the ID from there
+				// This will introduce a bit of latency, in the case the digest is existent, we will have one additional
+				// call to the CRI runtime.
+				// TODO(dhaus): Need to check, once implemented, if that is something heavily influencing performance.
+				if shouldLog {
+					log.Infof("Found the following digest from the container status image ID %q: %q", c.ImageID, digest)
+				}
+				// TODO(dhaus): The issue is here. We use the image ID as reported by the container status as ID, which in turn skews everything, since it's not the _correct_ image ID, it should be the v2 digest as obtained by the image metadata.
 				image.Id = digest
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 				image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
