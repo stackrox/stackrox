@@ -13,6 +13,11 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-sensor") | nindent 4 }}
     kubernetes.io/description: stackrox-sensor is the security constraint for the sensor
+{{- if eq ._rox.env.openshift 3 }}
+users:
+  - system:serviceaccount:{{ ._rox._namespace }}:sensor
+  - system:serviceaccount:{{ ._rox._namespace }}:sensor-upgrader
+{{- end }}
 priority: 0
 runAsUser:
   type: RunAsAny
