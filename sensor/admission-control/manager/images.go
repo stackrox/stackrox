@@ -44,6 +44,7 @@ func (m *manager) getCachedImage(img *storage.ContainerImage) *storage.Image {
 
 func (m *manager) cacheImage(img *storage.Image) {
 	if img.GetId() == "" {
+		log.Infof("Skipping caching image due to no image ID set: %+v", img)
 		return
 	}
 
@@ -51,7 +52,7 @@ func (m *manager) cacheImage(img *storage.Image) {
 		Image:     img,
 		timestamp: time.Now(),
 	}
-
+	log.Infof("Adding cache entry for image with id %q: %+v", img.GetId(), img)
 	m.imageCache.Add(img.GetId(), cacheEntry)
 }
 
@@ -74,6 +75,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 		if err != nil {
 			return nil, err
 		}
+		log.Infof("Received the following image from central: %+v", resp.GetImage())
 		return resp.GetImage(), nil
 	}
 
@@ -85,6 +87,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("Received the following image from sensor local scan: %+v", resp.GetImage())
 	return resp.GetImage(), nil
 }
 
@@ -126,6 +129,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 		if image.GetId() != "" || scanInline {
 			cachedImage := m.getCachedImage(image)
 			if cachedImage != nil {
+				log.Infof("Received cached image for container image %q: %+v", image.GetName().GetFullName(), cachedImage)
 				images[idx] = cachedImage
 			}
 			// The cached image might be insufficient if it doesn't have a scan and we want to do inline scans.
