@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"encoding/binary"
 	"fmt"
 	"hash"
 	"hash/fnv"
@@ -10,7 +11,6 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/document"
 	"github.com/gogo/protobuf/proto"
-	"github.com/mitchellh/hashstructure"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/logging"
@@ -91,36 +91,25 @@ func (li *lazyImpl) runIndexing() {
 	}
 }
 
-type hashableField struct {
-	Name           string
-	Value          []byte
-	ArrayPositions []uint64
-}
-
-type hashableDoc struct {
-	ID     string
-	Fields []hashableField
-}
-
 func (li *lazyImpl) evaluateDeduping(doc *document.Document) bool {
-	hashableDoc := hashableDoc{
-		ID:     doc.ID,
-		Fields: make([]hashableField, 0, len(doc.Fields)),
-	}
+	li.hasher.Reset()
 	for _, f := range doc.Fields {
-		hashableDoc.Fields = append(hashableDoc.Fields, hashableField{
-			Name:           f.Name(),
-			Value:          f.Value(),
-			ArrayPositions: f.ArrayPositions(),
-		})
+		if _, err := li.hasher.Write([]byte(f.Name())); err != nil {
+			log.Errorf("unable to write hash: %v", err)
+			return false
+		}
+		if _, err := li.hasher.Write(f.Value()); err != nil {
+			log.Errorf("unable to write hash: %v", err)
+			return false
+		}
+		for _, pos := range f.ArrayPositions() {
+			if err := binary.Write(li.hasher, binary.LittleEndian, pos); err != nil {
+				log.Errorf("unable to write hash: %v", err)
+				return false
+			}
+		}
 	}
-	hashValue, err := hashstructure.Hash(hashableDoc, &hashstructure.HashOptions{
-		Hasher: li.hasher,
-	})
-	if err != nil {
-		log.Errorf("error calculating hash: %v", err)
-		return false
-	}
+	hashValue := li.hasher.Sum64()
 	val, ok := li.deduper[doc.ID]
 	if ok && val == hashValue {
 		return true
