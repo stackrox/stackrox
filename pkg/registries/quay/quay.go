@@ -8,6 +8,7 @@ import (
 	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -35,28 +36,70 @@ type Quay struct {
 	config *storage.QuayConfig
 }
 
-func validate(quay *storage.QuayConfig) error {
+func validate(quay *storage.QuayConfig, categories []storage.ImageIntegrationCategory) error {
 	if quay.GetEndpoint() == "" {
 		return errors.New("Quay endpoint must be specified")
 	}
-	// Note that the oauth token could be empty because there are public images
+
+	if features.QuayRobotAccounts.Enabled() {
+		if len(categories) == 1 && categories[0] == storage.ImageIntegrationCategory_SCANNER {
+			// If scanner only, robot credentials doesn't work. So expect either OAuth token or nothing (public registry)
+			if quay.GetRegistryRobotCredentials() != nil {
+				return errors.New("Quay scanner integration cannot use robot credentials")
+			}
+		} else if len(categories) == 1 && categories[0] == storage.ImageIntegrationCategory_REGISTRY {
+			// If registry only, only one of OAuth token, robot credentials or neither is allowed. Error if both are provided
+			if quay.GetRegistryRobotCredentials() != nil && quay.GetOauthToken() != "" {
+				return errors.New("Quay registry integration should use robot credentials or OAuth token but not both")
+			}
+		} else {
+			// If both scanner and registry, then ensure that we don't have robot credentials by itself
+			// That implies we have to use robot creds for scanner which is not possible.
+			// Both being empty is ok as that's a public registry.
+			if quay.GetOauthToken() == "" && quay.GetRegistryRobotCredentials() != nil {
+				return errors.New("Quay scanner integration cannot use robot credentials")
+			}
+		}
+
+		// If using robot creds, check that both username and password is provided.
+		if quay.GetRegistryRobotCredentials() != nil {
+			if quay.GetRegistryRobotCredentials().GetUsername() == "" || quay.GetRegistryRobotCredentials().GetPassword() == "" {
+				return errors.New("Both username and password must be provided when using Quay robot credentials")
+			}
+		}
+	}
+
+	// Note that all credentials could be empty because there are public images
 	return nil
 }
 
 // NewRegistryFromConfig returns a new instantiation of the Quay registry
 func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.ImageIntegration) (types.Registry, error) {
-	if err := validate(config); err != nil {
+	if err := validate(config, integration.GetCategories()); err != nil {
 		return nil, err
 	}
 
-	var username string
-	if config.GetOauthToken() != "" {
-		username = oauthTokenString
+	var username, password string
+	password = config.GetOauthToken()
+
+	if features.QuayRobotAccounts.Enabled() {
+		if config.GetRegistryRobotCredentials() != nil {
+			// If robot credentials are provided use it for registry, regardless of whether ImageIntegration is also for scanner.
+			// The scanner portion of it can use OAuth token, but the registry object should use proper robot creds.
+			username = config.GetRegistryRobotCredentials().GetUsername()
+			password = config.GetRegistryRobotCredentials().GetPassword()
+		} else if config.GetOauthToken() != "" {
+			username = oauthTokenString
+		}
+	} else {
+		if config.GetOauthToken() != "" {
+			username = oauthTokenString
+		}
 	}
 
 	cfg := docker.Config{
 		Username: username,
-		Password: config.GetOauthToken(),
+		Password: password,
 		Endpoint: config.GetEndpoint(),
 		Insecure: config.GetInsecure(),
 	}
