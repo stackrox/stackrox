@@ -2,6 +2,7 @@ import static Services.checkForNoViolations
 import static Services.waitForViolation
 
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass.DryRunResponse
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.storage.NodeOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -225,15 +226,17 @@ class PolicyConfigurationTest extends BaseSpecification {
         when:
         "Image Scan cache is cleared if required"
         if (requireFreshScan) {
-            // If a test requires accurate scan results, then force an image scan so that it uses the latest data
+            // If a test requires accurate scan results, then delete the image from DB so that it fetches a fresh scan.
             // A fresh scan might be required because other tests in the suite could've run a scan on the same image,
             // and we don't want those results to taint this test
             // TODO: Find a direct way to clear the cache than just forcing a scan
             def dep = DEPLOYMENTS.find { it.getName() == depname }
             assert dep != null
 
-            log.info "Forcing an image scan to clear the cache for image ${dep.getImage()}"
-            ImageService.scanImage(dep.getImage(), false, true) // this forces a new scan
+            log.info "Deleting image ${dep.getImage()} from DB"
+            ImageService.deleteImages(
+                    SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${dep.getImage()}").build(),
+                    true)
         }
 
         and:
@@ -243,7 +246,9 @@ class PolicyConfigurationTest extends BaseSpecification {
 
         then:
         "Verify Violation #policyName is triggered"
-        assert waitForViolation(depname, policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
+        withRetry(2, 15) {
+            assert waitForViolation(depname, policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
+        }
 
         cleanup:
         "Remove Policy #policyName"
