@@ -83,16 +83,13 @@ if [ -z "$OPEN_ISSUES" ]; then
     exit 0
 fi
 
-if [ -n "$OPEN_ISSUES" ]; then
-    gh_summary <<EOF
+gh_summary <<EOF
 :red_circle: The following Jira issues are still open for release $RELEASE_PATCH:
 
 $OPEN_ISSUES
 
+:arrow_right: Contact the assignees to clarify the status.
 EOF
-fi
-
-gh_summary ":arrow_right: Contact the assignees to clarify the status."
 
 gh_log error "There are non-closed Jira issues for version $RELEASE_PATCH."
 
