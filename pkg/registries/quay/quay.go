@@ -50,7 +50,7 @@ func validate(quay *storage.QuayConfig, categories []storage.ImageIntegrationCat
 		} else if len(categories) == 1 && categories[0] == storage.ImageIntegrationCategory_REGISTRY {
 			// If registry only, only one of OAuth token, robot credentials or neither is allowed. Error if both are provided
 			if quay.GetRegistryRobotCredentials() != nil && quay.GetOauthToken() != "" {
-				return errors.New("Quay registry integration should use robot credentials or robot credentials but not both")
+				return errors.New("Quay registry integration should use robot credentials or OAuth token but not both")
 			}
 		} else {
 			// If both scanner and registry, then ensure that we don't have robot credentials by itself
@@ -64,12 +64,12 @@ func validate(quay *storage.QuayConfig, categories []storage.ImageIntegrationCat
 		// If using robot creds, check that both username and password is provided.
 		if quay.GetRegistryRobotCredentials() != nil {
 			if quay.GetRegistryRobotCredentials().GetUsername() == "" || quay.GetRegistryRobotCredentials().GetPassword() == "" {
-				return errors.New("If using Quay robot credentials, both username and password must be provided")
+				return errors.New("Both username and password must be provided when using Quay robot credentials")
 			}
 		}
 	}
 
-	// Note that the oauth token could be empty because there are public images
+	// Note that all credentials could be empty because there are public images
 	return nil
 }
 
@@ -84,7 +84,7 @@ func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.Imag
 
 	if features.QuayRobotAccounts.Enabled() {
 		if config.GetRegistryRobotCredentials() != nil {
-			// If robot credentials are provided use it for registry, regardless of if ImageIntegration is also for scanner.
+			// If robot credentials are provided use it for registry, regardless of whether ImageIntegration is also for scanner.
 			// The scanner portion of it can use OAuth token, but the registry object should use proper robot creds.
 			username = config.GetRegistryRobotCredentials().GetUsername()
 			password = config.GetRegistryRobotCredentials().GetPassword()
