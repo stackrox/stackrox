@@ -391,11 +391,8 @@ func (resolver *clusterCVEResolver) EnvImpact(ctx context.Context) (float64, err
 
 func (resolver *clusterCVEResolver) FixedByVersion(_ context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "FixedByVersion")
-	scope, hasScope := scoped.GetScope(resolver.ctx)
+	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_CLUSTERS)
 	if !hasScope {
-		return "", nil
-	}
-	if scope.Level != v1.SearchCategory_CLUSTERS {
 		return "", nil
 	}
 

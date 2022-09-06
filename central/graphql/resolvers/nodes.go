@@ -443,7 +443,7 @@ func (resolver *nodeResolver) Vulns(ctx context.Context, args PaginatedQuery) ([
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.vulnerabilitiesV2(resolver.nodeScopeContext(), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.vulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // VulnCount returns the number of vulnerabilities the node has.
@@ -454,7 +454,7 @@ func (resolver *nodeResolver) VulnCount(ctx context.Context, args RawQuery) (int
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.vulnerabilityCountV2(resolver.nodeScopeContext(), RawQuery{Query: &query})
+	return resolver.root.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 }
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in a node.
@@ -465,7 +465,7 @@ func (resolver *nodeResolver) VulnCounter(ctx context.Context, args RawQuery) (*
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.vulnCounterV2(resolver.nodeScopeContext(), RawQuery{Query: &query})
+	return resolver.root.vulnCounterV2(ctx, RawQuery{Query: &query})
 }
 
 // NodeVulnerabilities returns the vulnerabilities in the node.

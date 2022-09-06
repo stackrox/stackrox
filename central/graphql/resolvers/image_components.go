@@ -253,6 +253,51 @@ func queryWithImageIDRegexFilter(q string) string {
 		search.NewQueryBuilder().AddRegexes(search.ImageSHA, ".+").Query())
 }
 
+func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns []*storage.EmbeddedVulnerability, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
+	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
+	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the images to map CVEs to the images and components.
+	idToVals := make(map[string]*imageCVEResolver)
+	for _, vuln := range vulns {
+		if !predicate.Matches(vuln) {
+			continue
+		}
+		id := cve.ID(vuln.GetCve(), os)
+		if _, exists := idToVals[id]; !exists {
+			converted := cveConverter.EmbeddedVulnerabilityToImageCVE(os, vuln)
+			resolver, err := root.wrapImageCVE(converted, true, nil)
+			if err != nil {
+				return nil, err
+			}
+			resolver.ctx = embeddedobjs.VulnContext(ctx, vuln)
+			idToVals[id] = resolver
+		}
+	}
+
+	// For now, sort by ID.
+	resolvers := make([]*imageCVEResolver, 0, len(idToVals))
+	for _, vuln := range idToVals {
+		resolvers = append(resolvers, vuln)
+	}
+	if len(query.GetPagination().GetSortOptions()) == 0 {
+		sort.SliceStable(resolvers, func(i, j int) bool {
+			return resolvers[i].data.GetId() < resolvers[j].data.GetId()
+		})
+	}
+	resolverI := make([]ImageVulnerabilityResolver, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		resolverI = append(resolverI, resolver)
+	}
+	ret, err := paginationWrapper{
+		pv: query.GetPagination(),
+	}.paginate(resolverI, nil)
+	return ret.([]ImageVulnerabilityResolver), err
+}
+
 /*
 Sub Resolver Functions
 */
@@ -355,14 +400,13 @@ func (resolver *imageComponentResolver) ImageVulnerabilities(_ context.Context, 
 
 func (resolver *imageComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "LastScanned")
-	ctx := resolver.ctx
 
 	// Short path. Full image is embedded when image scan resolver is called.
-	if scanTime := embeddedobjs.LastScannedFromContext(ctx); scanTime != nil {
+	if scanTime := embeddedobjs.LastScannedFromContext(resolver.ctx); scanTime != nil {
 		return timestamp(scanTime)
 	}
 
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +423,7 @@ func (resolver *imageComponentResolver) LastScanned(_ context.Context) (*graphql
 		},
 	}
 
-	images, err := imageLoader.FromQuery(ctx, q)
+	images, err := imageLoader.FromQuery(resolver.ctx, q)
 	if err != nil || len(images) == 0 {
 		return nil, err
 	} else if len(images) > 1 {
@@ -500,49 +544,4 @@ func (resolver *imageComponentResolver) UnusedVarSink(_ context.Context, _ RawQu
 
 func (resolver *imageComponentResolver) FixedIn(_ context.Context) string {
 	return resolver.data.GetFixedBy()
-}
-
-func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns []*storage.EmbeddedVulnerability, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
-	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
-	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
-	if err != nil {
-		return nil, err
-	}
-
-	// Use the images to map CVEs to the images and components.
-	idToVals := make(map[string]*imageCVEResolver)
-	for _, vuln := range vulns {
-		if !predicate.Matches(vuln) {
-			continue
-		}
-		id := cve.ID(vuln.GetCve(), os)
-		if _, exists := idToVals[id]; !exists {
-			converted := cveConverter.EmbeddedVulnerabilityToImageCVE(os, vuln)
-			resolver, err := root.wrapImageCVE(converted, true, nil)
-			if err != nil {
-				return nil, err
-			}
-			resolver.ctx = embeddedobjs.VulnContext(ctx, vuln)
-			idToVals[id] = resolver
-		}
-	}
-
-	// For now, sort by ID.
-	resolvers := make([]*imageCVEResolver, 0, len(idToVals))
-	for _, vuln := range idToVals {
-		resolvers = append(resolvers, vuln)
-	}
-	if len(query.GetPagination().GetSortOptions()) == 0 {
-		sort.SliceStable(resolvers, func(i, j int) bool {
-			return resolvers[i].data.GetId() < resolvers[j].data.GetId()
-		})
-	}
-	resolverI := make([]ImageVulnerabilityResolver, 0, len(resolvers))
-	for _, resolver := range resolvers {
-		resolverI = append(resolverI, resolver)
-	}
-	ret, err := paginationWrapper{
-		pv: query.GetPagination(),
-	}.paginate(resolverI, nil)
-	return ret.([]ImageVulnerabilityResolver), err
 }

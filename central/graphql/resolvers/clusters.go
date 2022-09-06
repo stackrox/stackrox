@@ -14,6 +14,7 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -248,19 +249,30 @@ func (resolver *clusterResolver) DeploymentCount(_ context.Context, args RawQuer
 // Nodes returns all nodes on the cluster
 func (resolver *clusterResolver) Nodes(_ context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Nodes")
+	if !features.PostgresDatastore.Enabled() {
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+		return resolver.root.Nodes(resolver.ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	}
 	return resolver.root.Nodes(resolver.clusterScopeContext(), args)
 }
 
 // NodeCount returns count of all nodes on the cluster
 func (resolver *clusterResolver) NodeCount(_ context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeCount")
+	if !features.PostgresDatastore.Enabled() {
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+		return resolver.root.NodeCount(resolver.ctx, RawQuery{Query: &query})
+	}
 	return resolver.root.NodeCount(resolver.clusterScopeContext(), args)
 }
 
 // Node returns a given node on a cluster
 func (resolver *clusterResolver) Node(_ context.Context, args struct{ Node graphql.ID }) (*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Node")
-	return resolver.root.Node(resolver.ctx, struct{ graphql.ID }{args.Node})
+	if !features.PostgresDatastore.Enabled() {
+		return resolver.root.Node(resolver.ctx, struct{ graphql.ID }{args.Node})
+	}
+	return resolver.root.Node(resolver.clusterScopeContext(), struct{ graphql.ID }{args.Node})
 }
 
 // Namespaces returns the namespaces in a cluster.
@@ -273,7 +285,7 @@ func (resolver *clusterResolver) Namespaces(_ context.Context, args PaginatedQue
 func (resolver *clusterResolver) Namespace(_ context.Context, args struct{ Name string }) (*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Namespace")
 
-	return resolver.root.NamespaceByClusterIDAndName(resolver.ctx, clusterIDAndNameQuery{
+	return resolver.root.NamespaceByClusterIDAndName(resolver.clusterScopeContext(), clusterIDAndNameQuery{
 		ClusterID: graphql.ID(resolver.data.GetId()),
 		Name:      args.Name,
 	})
