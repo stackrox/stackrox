@@ -157,8 +157,8 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 	shouldLog := strings.Contains(deployment.GetName(), "rox-12400")
 
 	if shouldLog {
-		log.Debugf("Constructing deployment %q: %+v", deployment.GetName(), deployment)
-		log.Debugf("Using following images for deployment %q: %+v", deployment.GetName(), images)
+		log.Infof("Constructing deployment %q: %+v", deployment.GetName(), deployment)
+		log.Infof("Using following images for deployment %q: %+v", deployment.GetName(), images)
 	}
 
 	for i, image := range images {

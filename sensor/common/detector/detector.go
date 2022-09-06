@@ -310,11 +310,11 @@ func (d *detectorImpl) runDetector() {
 			return
 		case scanOutput := <-d.enricher.outputChan():
 			if strings.Contains(scanOutput.deployment.GetName(), "rox-12400") {
-				log.Debugf("Detecting deployment %q: %+v",
+				log.Infof("Detecting deployment %q: %+v",
 					scanOutput.deployment.GetName(), scanOutput.deployment)
-				log.Debugf("Containers within deployment %q: %+v",
+				log.Infof("Containers within deployment %q: %+v",
 					scanOutput.deployment.GetName(), scanOutput.deployment.GetContainers())
-				log.Debugf("Images within deployment %q: %+v",
+				log.Infof("Images within deployment %q: %+v",
 					scanOutput.deployment.GetName(), scanOutput.images)
 			}
 

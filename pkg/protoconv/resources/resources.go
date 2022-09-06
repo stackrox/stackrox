@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
 	ptypes "github.com/gogo/protobuf/types"
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
@@ -424,6 +426,11 @@ func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 func (w *DeploymentWrap) populateImages(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
 		parsedImage, err := imageUtils.GenerateImageFromStringWithOverride(c.Image, w.registryOverride)
+		if strings.Contains(c.Image, "nginx") {
+			log.Infof("Found the image %q in the podspec", c.Image)
+			log.Infof("The parsed container image is %+v", parsedImage)
+			log.Infof("If we were to create a storage.Image, it would be %+v", types.ToImage(parsedImage))
+		}
 
 		if err != nil {
 			log.Error(err)

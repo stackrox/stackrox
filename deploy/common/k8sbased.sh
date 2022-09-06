@@ -140,6 +140,8 @@ function launch_central {
 
     add_args "--offline=$OFFLINE_MODE"
 
+    add_args "--openshift-version=4"
+
     if [[ -n "$ROX_LICENSE_KEY" ]]; then
       add_args "--license"
       add_maybe_file_arg "${ROX_LICENSE_KEY}"
@@ -502,6 +504,7 @@ function launch_sensor {
         --set "image.main.tag=${MAIN_IMAGE_TAG}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
         --set "env.openshift=$([[ "$ORCH" == "openshift" ]] && echo "true" || echo "false")"
+        --set "scanner.disable=false"
       )
       if [[ -f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml" ]]; then
         helm_args+=(-f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml")
