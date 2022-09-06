@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"runtime/debug"
 	"time"
 
@@ -30,6 +31,7 @@ type queryTracer struct {
 	id     string
 }
 
+// AddEvent adds a Postgres query to the tracer
 func (qt *queryTracer) AddEvent(start time.Time, query string, args ...interface{}) {
 	qt.lock.Lock()
 	defer qt.lock.Unlock()
@@ -42,8 +44,14 @@ func (qt *queryTracer) AddEvent(start time.Time, query string, args ...interface
 	})
 }
 
-func LogTrace(logger *logging.Logger, ctx context.Context, contextString string) {
-	tracer := ctx.Value(queryTracerKey{}).(*queryTracer)
+// LogTracef is a wrapper around LogTrace that provides formatting
+func LogTracef(ctx context.Context, logger *logging.Logger, contextString string, args ...interface{}) {
+	LogTrace(ctx, logger, fmt.Sprintf(contextString, args...))
+}
+
+// LogTrace logs the queries seen in the current trace
+func LogTrace(ctx context.Context, logger *logging.Logger, contextString string) {
+	tracer := GetTracerFromContext(ctx)
 
 	logger.Infof("trace=%s: %s", tracer.id, contextString)
 	if len(tracer.events) == 0 {
@@ -57,6 +65,7 @@ func LogTrace(logger *logging.Logger, ctx context.Context, contextString string)
 	}
 }
 
+// WithTracerContext appends a query tracer to the returned context
 func WithTracerContext(ctx context.Context) context.Context {
 	if tracer := GetTracerFromContext(ctx); tracer != nil {
 		return ctx
@@ -66,6 +75,7 @@ func WithTracerContext(ctx context.Context) context.Context {
 	})
 }
 
+// GetTracerFromContext returns the tracer appended to the context or nil if no tracer exists
 func GetTracerFromContext(ctx context.Context) *queryTracer {
 	val, ok := ctx.Value(queryTracerKey{}).(*queryTracer)
 	if ok {
@@ -74,6 +84,7 @@ func GetTracerFromContext(ctx context.Context) *queryTracer {
 	return nil
 }
 
+// AddTracedQuery adds a query into the tracer
 func AddTracedQuery(ctx context.Context, start time.Time, sql string, args ...interface{}) {
 	tracer := GetTracerFromContext(ctx)
 	if tracer == nil {

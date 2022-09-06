@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"runtime"
 	"time"
@@ -85,7 +84,7 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if queryTracerEnabled && time.Since(startTime) > graphQLQueryThreshold {
-		postgres.LogTrace(log, ctx, fmt.Sprintf("GraphQL Op %s took %d ms: %s %+v", params.OperationName, time.Since(startTime).Milliseconds(), params.Query, params.Variables))
+		postgres.LogTracef(ctx, log, "GraphQL Op %s took %d ms: %s %+v", params.OperationName, time.Since(startTime).Milliseconds(), params.Query, params.Variables)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(responseJSON)
