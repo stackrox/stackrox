@@ -86,7 +86,7 @@ function QuayIntegrationForm({
     // Refer to stored token only if it exists initially.
     const hasInitialOauthToken = Boolean(initialValues?.quay.oauthToken);
 
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = { ...defaultValues };
     if (initialValues) {
         formInitialValues.config = { ...formInitialValues.config, ...initialValues };
 
