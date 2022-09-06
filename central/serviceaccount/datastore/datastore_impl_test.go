@@ -56,7 +56,7 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 		suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 		suite.Require().NoError(err)
 
-		suite.db, err := rocksdbHelper.NewTemp(suite.T().Name())
+		suite.db, err = rocksdbHelper.NewTemp(suite.T().Name())
 		suite.Require().NoError(err)
 
 		suite.storage = rocksdb.New(suite.db)
