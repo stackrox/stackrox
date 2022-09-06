@@ -93,7 +93,7 @@ function QuayIntegrationForm({
         // We want to clear the token or password because backend returns '******'
         // to represent that there are currently stored credentials.
         formInitialValues.config.quay.oauthToken = '';
-        if (formInitialValues.config.quay?.registryRobotCredentials?.password) {
+        if (formInitialValues.config.quay.registryRobotCredentials?.password) {
             formInitialValues.config.quay.registryRobotCredentials.password = '';
         }
 
@@ -103,8 +103,8 @@ function QuayIntegrationForm({
          * If an existing integration does not have stored credentials,
          * updatePassword is initially cleared, so user must tick it to add stored credentials.
          */
-        const hasInitialRobotAccount = Boolean(initialValues?.quay.registryRobotCredentials);
-        if (!hasInitialOauthToken && !hasInitialRobotAccount) {
+        const hasInitialRobotAccount = Boolean(initialValues.quay.registryRobotCredentials);
+        if (!hasInitialOauthToken && !hasInitialRobotAccount && isQuayRobotAccountsEnabled) {
             formInitialValues.updatePassword = false;
         }
     }
