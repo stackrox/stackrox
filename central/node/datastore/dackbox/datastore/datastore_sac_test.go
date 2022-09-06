@@ -122,7 +122,7 @@ func (s *nodeDatastoreSACSuite) TearDownTest() {
 func (s *nodeDatastoreSACSuite) addTestNode(clusterID string) string {
 	nodeID := uuid.NewV4().String()
 	node := fixtures.GetScopedNode(nodeID, clusterID)
-	node.Priority = 10
+	node.Priority = 1
 
 	errUpsert := s.datastore.UpsertNode(s.testContexts[testutils.UnrestrictedReadWriteCtx], node)
 	s.Require().NoError(errUpsert)
@@ -261,6 +261,9 @@ func (s *nodeDatastoreSACSuite) TestGetNode() {
 			if c.ExpectedFound {
 				s.True(found)
 				s.NotNil(fetchedNode)
+
+				// Priority can have updated value, and we want to ignore it.
+				fetchedNode.Priority = s.testNodes[nodeID].Priority
 				s.Equal(*s.testNodes[nodeID], *fetchedNode)
 			} else {
 				s.False(found)
