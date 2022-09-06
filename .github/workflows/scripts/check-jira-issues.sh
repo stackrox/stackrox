@@ -22,10 +22,10 @@ check_not_empty \
 # TODO: Jira returns 400 if requested fixVersion does not exist. That means
 # the named release must exist on Jira, which is not given.
 JQL="project IN ($PROJECTS) \
-AND fixVersion IN (\"$RELEASE.$PATCH\") \
+AND fixVersion = \"$RELEASE.$PATCH\" \
 AND status != CLOSED \
-AND Component != Documentation \
-AND type != Epic \
+AND Component NOT IN (Documentation, \"ACS Managed Service\") \
+AND type NOT IN (Epic, \"Feature Request\") \
 ORDER BY assignee"
 
 get_issues() {
@@ -49,13 +49,13 @@ get_issues_summary() {
     read -r GH_MD_FORMAT_LINE <<EOF
 * [\(.key)](https://issues.redhat.com/browse/\(.key)): \
 **\(.fields.assignee.displayName // "unassigned")** \
-(\(.fields.status.name)) — _\(.fields.summary | gsub (" +$";""))_
+(\(.fields.issuetype.name), \(.fields.status.name)) — _\(.fields.summary | gsub (" +$";""))_
 EOF
     get_issues | jq -r ".issues[] | \"$GH_MD_FORMAT_LINE\"" | sort
 }
 
 get_open_issues() {
-    get_issues | jq -r '.issues[] | "\(.key) - \(.fields.assignee.displayName)"' | sort
+    get_issues | jq -r '.issues[] | "\(.key) - \(.fields.assignee.displayName // "unassigned")"' | sort
 }
 
 ISSUES=$(get_issues_summary)
