@@ -53,6 +53,7 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "role" "use-anyuid-scc") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "role" "use-anyuid-scc") | nindent 4 }}
 rules:
@@ -77,6 +78,7 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "sensor-use-scc") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "rolebinding" "sensor-use-scc") | nindent 4 }}
 roleRef:
