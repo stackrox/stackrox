@@ -65,9 +65,6 @@ rules:
   resources:
   - securitycontextconstraints
   resourceNames:
-{{- if ._rox.system.createSCCs }}
-  - stackrox-sensor
-{{- end }}
   - nonroot-v2
   - nonroot
   - anyuid
