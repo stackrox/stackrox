@@ -55,7 +55,8 @@ type mockCentral struct {
 	setVersion  func(t *testing.T, ver *versionPair)
 	adminConfig *pgxpool.Config
 	// May need to run both databases if testing case of upgrading from rocks version to a postgres version
-	runBoth bool
+	runBoth    bool
+	updateBoth bool
 }
 
 // createCentral - creates a central that runs Rocks OR Postgres OR both.  Need to cover
@@ -122,7 +123,15 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 
 	m.runCentral()
 
-	if features.PostgresDatastore.Enabled() {
+	if features.PostgresDatastore.Enabled() && m.runBoth {
+		if m.rollbackEnabled && version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
+			if pgadmin.CheckIfDBExists(m.adminConfig, postgres.PreviousClone) {
+				m.verifyClonePostgres(postgres.PreviousClone, curVer)
+			}
+		} else {
+			assert.False(m.t, pgadmin.CheckIfDBExists(m.adminConfig, postgres.PreviousClone))
+		}
+	} else if features.PostgresDatastore.Enabled() {
 		if m.rollbackEnabled && version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
 			m.verifyClonePostgres(postgres.PreviousClone, curVer)
 		} else {
@@ -210,12 +219,13 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 		return
 	}
 
-	persistBoth := false
+	// assume we only need to persist one.
+	m.updateBoth = false
 	if clone != "" && pgClone != "" {
-		persistBoth = true
+		m.updateBoth = true
 	}
 
-	require.NoError(m.t, dbm.Persist(clone, pgClone, persistBoth))
+	require.NoError(m.t, dbm.Persist(clone, pgClone, m.updateBoth))
 
 	if !features.PostgresDatastore.Enabled() {
 		m.verifyDBVersion(migrations.CurrentPath(), migrations.CurrentDBVersionSeqNum())
@@ -224,7 +234,7 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 }
 
 func (m *mockCentral) runCentral() {
-	if !features.PostgresDatastore.Enabled() || m.runBoth {
+	if !features.PostgresDatastore.Enabled() || m.updateBoth {
 		require.NoError(m.t, migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(m.mountPath, ".backup")))
 		if version.CompareVersions(version.GetMainVersion(), "3.0.57.0") >= 0 {
 			migrations.SetCurrent(migrations.CurrentPath())

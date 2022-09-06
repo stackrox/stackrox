@@ -78,7 +78,9 @@ func GetRestoreClone() string {
 // If path is a symbolic link, remove it and the database it points to.
 func SafeRemoveDBWithSymbolicLink(path string) error {
 	currentDB, err := fileutils.ResolveIfSymlink(CurrentPath())
-	utils.CrashOnError(errors.Wrap(err, "no current database"))
+	if err != nil {
+		utils.CrashOnError(errors.Wrap(err, "no current database"))
+	}
 
 	switch path {
 	case CurrentPath(), currentDB:
@@ -92,9 +94,14 @@ func SafeRemoveDBWithSymbolicLink(path string) error {
 			if err != nil {
 				return err
 			}
+			log.Infof("Remove path = %q", path)
 			if err = os.RemoveAll(path); err != nil {
 				return err
 			}
+			// Remove any rocks database if in postgres mode
+			log.Infof("Remove linkTo = %q", linkTo)
+			return os.RemoveAll(linkTo)
+
 			// Remove linked database if it is not the current database
 			if linkTo != CurrentPath() && linkTo != currentDB {
 				return os.RemoveAll(linkTo)

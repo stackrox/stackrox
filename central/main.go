@@ -673,13 +673,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/db/backup",
 			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), false)),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), false)),
 			Compression:   true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/extensions/backup",
 			Authorizer:    user.WithRole(role.Admin),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), true)),
+			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), true)),
 			Compression:   true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{

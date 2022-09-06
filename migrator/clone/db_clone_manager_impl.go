@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 )
 
-// DBCloneManagerImpl - scans and manage database clones within central.
+// dbCloneManagerImpl - scans and manage database clones within central.
 type dbCloneManagerImpl struct {
 	forceRollbackVersion string
 	adminConfig          *pgxpool.Config
@@ -82,7 +82,8 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 		}
 
 		// If we need to migrate from rocks we need to continue processing and
-		// get the Rocks clones.  If we don't, there is no need to process Rocks
+		// get the Rocks clones.  If we don't, there is no need to process Rocks, but
+		// we will check to see if we can get rid of rocks
 		if !migrateFromRocks {
 			return "", "", pgClone, nil
 		}
@@ -111,7 +112,24 @@ func (d *dbCloneManagerImpl) Persist(cloneName string, pgClone string, persistBo
 				log.Warnf("Unable to create a previous version of Rocks to rollback to: %v", err)
 			}
 		}
-		return d.dbmPostgres.Persist(pgClone)
+
+		err := d.dbmPostgres.Persist(pgClone)
+		if err != nil {
+			return err
+		}
+
+		// Now that updated Postgres was persisted we can decommission RocksDB if necessary
+		if !persistBoth {
+			rocksVersion := d.dbmRocks.GetVersion(rocksdb.CurrentClone)
+			currentPostgresVersion := d.dbmPostgres.GetCurrentVersion()
+
+			// If the versions do not match, we have updated another time with Postgres,
+			// so we can no longer roll back to RocksDB.
+			if rocksVersion == nil || rocksVersion.MainVersion != currentPostgresVersion.MainVersion {
+				d.dbmRocks.DecommissionRocksDB()
+			}
+		}
+		return nil
 	}
 	return d.dbmRocks.Persist(cloneName)
 }
