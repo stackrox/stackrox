@@ -111,8 +111,7 @@ call_jira() {
     --data-urlencode "jql=${JQL}" \
     -H "Authorization: Bearer $JIRA_TOKEN" \
     -H "Content-Type: application/json" \
-    "https://issues.redhat.com/rest/api/2/search" \
-    | jq -r '.issues[] | "assignee: \"" + (.fields.assignee.emailAddress // "unassigned") + "\" key: \"" + .key + "\""' | sort
+    "https://issues.redhat.com/rest/api/2/search" | jq -r '.issues[] | "assingee: \"" + (.fields.assignee.displayName // "unassigned")  + "\" key: \"" + .key + "\""' | sort
 }
 
 print_ticket_todo_summary() {
@@ -120,10 +119,10 @@ print_ticket_todo_summary() {
   while IFS= read -r line
   do
     ## take some action on $line
-    regex='^assignee: "(.*)" key: "(.*)"$'
+    regex='^assingee: "(.*)" key: "(.*)"$'
     if [[ $line =~ $regex ]]; then
       slack="$(name2slack "${BASH_REMATCH[1]}")"
-      ticket="https://issues.redhat.com/browse/${BASH_REMATCH[3]}"
+      ticket="https://issues.redhat.com/browse/${BASH_REMATCH[2]}"
       todo+=("- @${slack}: $ticket")
     else
       echo "$line"
@@ -139,7 +138,7 @@ print_ticket_verification_summary() {
   while IFS= read -r line
   do
     ## take some action on $line
-    regex='^assignee: "(.*)" key: "(.*)"$'
+    regex='^assingee: "(.*)" key: "(.*)"$'
     if [[ $line =~ $regex ]]; then
       slack="$(name2slack "${BASH_REMATCH[1]}")"
       ticket="https://issues.redhat.com/browse/${BASH_REMATCH[2]}"
@@ -168,8 +167,6 @@ print_ticket_verification_summary() {
 }
 
 name2slack() {
-  echo "${1%%@*}"
-  return
   # data taken from: https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/1620214005/Team+Alignments
   while [[ "$#" -gt 0 ]]; do
     case $1 in
