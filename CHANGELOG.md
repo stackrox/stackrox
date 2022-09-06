@@ -20,6 +20,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-11348: The email notifier now allows for unauthenticated SMTP. By default,
   authentication is still required for an email notifier, but the user can now choose to turn it off.
 - Previously, the syslog integration did not respect a configured TCP proxy. This is now fixed.
+- The default technique used by string expression searches will be to match any substrings in future release. Currently, string search uses prefix matching technique in most cases.
 - The `init-db` init-container for ScannerDB now specifies resource requests/limits which match the `db` container in ScannerDB.
 
 ## [3.71.0]

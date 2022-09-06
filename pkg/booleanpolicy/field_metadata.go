@@ -372,7 +372,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, negationForbidden)
 
 	f.registerFieldMetadata(fieldnames.ImageOS,
-		querybuilders.ForFieldLabel(search.ImageOS),
+		querybuilders.ForFieldLabelRegex(search.ImageOS),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
