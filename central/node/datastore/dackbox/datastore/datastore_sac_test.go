@@ -122,7 +122,7 @@ func (s *nodeDatastoreSACSuite) TearDownTest() {
 func (s *nodeDatastoreSACSuite) addTestNode(clusterID string) string {
 	nodeID := uuid.NewV4().String()
 	node := fixtures.GetScopedNode(nodeID, clusterID)
-	node.Priority = 1
+	node.Priority = 10
 
 	errUpsert := s.datastore.UpsertNode(s.testContexts[testutils.UnrestrictedReadWriteCtx], node)
 	s.Require().NoError(errUpsert)
