@@ -6,12 +6,14 @@ import (
 	"strconv"
 	"strings"
 
+	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	csvCommon "github.com/stackrox/rox/central/cve/common/csv"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search/parser"
@@ -43,12 +45,20 @@ func initialize() {
 }
 
 func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
+	var searchWrappers []*csvCommon.SearchWrapper
+	// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
+	if features.PostgresDatastore.Enabled() {
+		searchWrappers = []*csvCommon.SearchWrapper{
+			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
+		}
+	} else {
+		searchWrappers = []*csvCommon.SearchWrapper{
+			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, clusterMappings.OptionsMap, resolver.ClusterDataStore),
+		}
+	}
 	return csvCommon.NewCSVHandler(
 		resolver,
-		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
-		[]*csvCommon.SearchWrapper{
-			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
-		},
+		searchWrappers,
 	)
 }
 
