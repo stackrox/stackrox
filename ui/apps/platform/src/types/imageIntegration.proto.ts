@@ -142,6 +142,16 @@ export type QuayConfig = {
     // The OAuth token for the integration. The server will mask the value of this credential in responses and logs.
     oauthToken: string; // scrub: always
     insecure: boolean;
+    // For registry integrations, Quay recommends using robot accounts. oauthToken will continue to be used for scanner integration.
+    registryRobotCredentials: QuayRobotAccount | null;
+};
+
+// Robot account is Quay's named tokens that can be granted permissions on multiple repositories under an organization.
+// It's Quay's recommended authentication model when possible (i.e. registry integration)
+export type QuayRobotAccount = {
+    username: string;
+    // The server will mask the value of this password in responses and logs.
+    password: string; // scrub: always
 };
 
 export type RhelImageIntegration = {

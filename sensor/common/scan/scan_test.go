@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/signatures"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
@@ -37,7 +36,6 @@ func (i *fakeImageServiceClient) EnrichLocalImageInternal(ctx context.Context,
 
 type scanTestSuite struct {
 	suite.Suite
-	env                      *envisolator.EnvIsolator
 	fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
 		registry registryTypes.Registry) ([]*storage.Signature, error)
 	getMatchingRegistry    func(image *storage.ImageName) (registryTypes.Registry, error)
@@ -58,16 +56,10 @@ func (suite *scanTestSuite) createMockImageServiceClient(img *storage.Image, fai
 }
 
 func (suite *scanTestSuite) SetupSuite() {
-	suite.env = envisolator.NewEnvIsolator(suite.T())
-	suite.env.Setenv("ROX_VERIFY_IMAGE_SIGNATURE", "true")
 	suite.fetchSignaturesWithRetry = fetchSignaturesWithRetry
 	suite.getMatchingRegistry = getMatchingRegistry
 	suite.scannerClientSingleton = scannerClientSingleton
 	suite.scanImg = scanImg
-}
-
-func (suite *scanTestSuite) TearDownSuite() {
-	suite.env.RestoreAll()
 }
 
 func (suite *scanTestSuite) AfterTest(_, _ string) {
@@ -174,6 +166,34 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 	}
 }
 
+func (suite *scanTestSuite) TestMetadataBeingSet() {
+	scanImg = successfulScan
+	fetchSignaturesWithRetry = func(_ context.Context, _ signatures.SignatureFetcher, img *storage.Image,
+		_ registryTypes.Registry) ([]*storage.Signature, error) {
+		if img.GetMetadata().GetV2() == nil {
+			return nil, errors.New("image metadata missing, not attempting fetch of signatures")
+		}
+		return nil, nil
+	}
+	getMatchingRegistry = func(image *storage.ImageName) (registryTypes.Registry, error) {
+		return &fakeRegistry{fail: false}, nil
+	}
+	scannerClientSingleton = emptyScannerClientSingleton
+
+	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
+	suite.Require().NoError(err, "failed creating test image")
+
+	img := types.ToImage(containerImg)
+	imageServiceClient := suite.createMockImageServiceClient(img, false)
+	resultImg, err := EnrichLocalImage(context.Background(), imageServiceClient, containerImg)
+
+	suite.Require().NoError(err, "unexpected error when enriching image")
+
+	suite.Assert().Equal(img, resultImg, "resulting image is not equal to expected one")
+
+	suite.Assert().True(imageServiceClient.enrichTriggered, "enrichment on central was not triggered")
+}
+
 func successfulScan(_ context.Context, _ *storage.Image,
 	_ registryTypes.Registry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
 	return &scannerV1.GetImageComponentsResponse{
@@ -223,7 +243,7 @@ func (f *fakeRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, e
 	if f.fail {
 		return nil, errors.New("failed fetching metadata")
 	}
-	return nil, nil
+	return &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "sha256:XYZ"}}, nil
 }
 
 func (f *fakeRegistry) Name() string {

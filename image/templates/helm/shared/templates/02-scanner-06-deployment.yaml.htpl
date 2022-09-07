@@ -253,7 +253,7 @@ spec:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
           resources:
-            {{- ._rox.scanner._dbResources | nindent 10 }}
+            {{- ._rox.scanner._dbResources | nindent 12 }}
           volumeMounts:
             - name: scanner-db-data
               mountPath: /var/lib/postgresql/data

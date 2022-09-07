@@ -299,6 +299,19 @@
       },
       "description": "An authorization data represents the IAM authentication credentials and\ncan be used to access any Amazon ECR registry that the IAM principal has\naccess to."
     },
+    "QuayConfigRobotAccount": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string",
+          "description": "The server will mask the value of this password in responses and logs."
+        }
+      },
+      "title": "Robot account is Quay's named tokens that can be granted permissions on multiple repositories under an organization.\nIt's Quay's recommended authentication model when possible (i.e. registry integration)"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -512,10 +525,14 @@
         },
         "oauthToken": {
           "type": "string",
-          "description": "The OAuth token for the integration. The server will mask the value of this credential in responses and logs."
+          "description": "The OAuth token for the integration. Required if this is a scanner integration. The server will mask the value of this credential in responses and logs."
         },
         "insecure": {
           "type": "boolean"
+        },
+        "registryRobotCredentials": {
+          "$ref": "#/definitions/QuayConfigRobotAccount",
+          "description": "For registry integrations, Quay recommends using robot accounts. oauthToken will continue to be used for scanner integration."
         }
       }
     },

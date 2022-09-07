@@ -254,7 +254,6 @@ describe('Image Integrations Test', () => {
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Endpoint').contains('An endpoint is required');
-        getHelperElementByLabel('OAuth token').contains('An OAuth token is required');
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
 

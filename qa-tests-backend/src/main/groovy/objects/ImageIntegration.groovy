@@ -206,6 +206,14 @@ class QuayImageIntegration implements ImageIntegration {
                         .setOauthToken(args.oauthToken as String)
                         .setInsecure(args.insecure as Boolean)
 
+        if (args.useRobotCreds) {
+            config.setRegistryRobotCredentials(
+                    ImageIntegrationOuterClass.QuayConfig.RobotAccount.newBuilder()
+                        .setUsername(Env.mustGet("QUAY_RHACS_ENG_RO_USERNAME"))
+                        .setPassword(Env.mustGet("QUAY_RHACS_ENG_RO_PASSWORD"))
+            )
+        }
+
         return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                 .setName(args.name as String)
                 .setType("quay")
