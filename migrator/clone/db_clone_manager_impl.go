@@ -118,7 +118,7 @@ func (d *dbCloneManagerImpl) Persist(cloneName string, pgClone string, persistBo
 			return err
 		}
 
-		// Now that updated Postgres was persisted we can decommission RocksDB if necessary
+		// Now that updated Postgres was persisted we can decommission RocksDB
 		if !persistBoth {
 			rocksVersion := d.dbmRocks.GetVersion(rocksdb.CurrentClone)
 			currentPostgresVersion := d.dbmPostgres.GetCurrentVersion()

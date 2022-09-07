@@ -386,9 +386,4 @@ func (d *dbCloneManagerImpl) GetCurrentVersion() *migrations.MigrationVersion {
 	pool.Close()
 
 	return ver
-	//clone, cloneExists := d.cloneMap[CurrentClone]
-	//if cloneExists {
-	//	return clone.GetMigVersion()
-	//}
-	//return nil
 }
