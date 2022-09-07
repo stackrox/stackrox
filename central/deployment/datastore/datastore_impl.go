@@ -19,6 +19,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -215,7 +216,7 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 // UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
 func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeployment")
-
+	debug.ROX12096(log.Infof, deployment.GetName(), "upserting deployment %q: %+v", deployment.GetName(), deployment)
 	return ds.upsertDeployment(ctx, deployment)
 }
 
