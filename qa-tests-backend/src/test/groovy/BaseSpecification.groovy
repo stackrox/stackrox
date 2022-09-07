@@ -15,6 +15,9 @@ import org.javers.core.Javers
 import org.javers.core.JaversBuilder
 import org.javers.core.diff.Diff
 import org.javers.core.diff.ListCompareAlgorithm
+
+import services.DebugService
+
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
@@ -148,6 +151,10 @@ class BaseSpecification extends Specification {
                 }
             }
         }
+
+        String debug = "Debug"
+        LOG.info("Set central log level to ${debug}")
+        DebugService.setLogLevel(debug)
 
         globalSetupDone = true
     }
