@@ -24,7 +24,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - K8sRole | Annotation | Role Annotation
   - K8sRoleBinding | Label | Role Binding Label
   - K8sRoleAnnotation | Annotation | Role Binding Annotation
-- ROX-12496: CSV export API endpoint `/api/vm/export/csv` will is deprecated and will be removed in 3.73. It will be replaced with three new endpoints, one for each CVE type.
+- ROX-12496: CSV export API endpoint `/api/vm/export/csv` is deprecated and will be removed in the future. It will be replaced with three new endpoints, one for each CVE type.
   - For NodeCVEs : `/api/export/csv/node/cve`
   - For ImageCVEs: `/api/export/csv/image/cve`
   - For ClusterCVEs: `/api/export/csv/cluster/cve`
