@@ -12,6 +12,7 @@ import {
     ToggleGroup,
     ToggleGroupItem,
 } from '@patternfly/react-core';
+import cloneDeep from 'lodash/cloneDeep';
 import * as yup from 'yup';
 
 import { QuayImageIntegration } from 'types/imageIntegration.proto';
@@ -76,25 +77,23 @@ export const defaultValues: QuayIntegrationFormValues = {
     updatePassword: true,
 };
 
-function QuayIntegrationForm({
-    initialValues = null,
-    isEditable = false,
-}: IntegrationFormProps<QuayImageIntegration>): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isQuayRobotAccountsEnabled = isFeatureFlagEnabled('ROX_QUAY_ROBOT_ACCOUNTS');
-
-    // Refer to stored token only if it exists initially.
-    const hasInitialOauthToken = Boolean(initialValues?.quay.oauthToken);
-
-    const formInitialValues = { ...defaultValues };
+// Given initial values for an existing integration, return form initial values.
+function computeInitialValues(
+    initialValues: QuayImageIntegration | null,
+    isQuayRobotAccountsEnabled: boolean
+): QuayIntegrationFormValues {
     if (initialValues) {
-        formInitialValues.config = { ...formInitialValues.config, ...initialValues };
-
-        // We want to clear the token or password because backend returns '******'
-        // to represent that there are currently stored credentials.
-        formInitialValues.config.quay.oauthToken = '';
-        if (formInitialValues.config.quay.registryRobotCredentials?.password) {
-            formInitialValues.config.quay.registryRobotCredentials.password = '';
+        /*
+         * Clear token or password because backend returns '******'
+         * to represent that there are currently stored credentials.
+         *
+         * However, this convention prevents the rare edge case
+         * to remove stored credentials from an existing integration.
+         */
+        const config = cloneDeep(initialValues);
+        config.quay.oauthToken = '';
+        if (config.quay.registryRobotCredentials?.password) {
+            config.quay.registryRobotCredentials.password = '';
         }
 
         /*
@@ -102,12 +101,32 @@ function QuayIntegrationForm({
          * because unauthenticated is an implicit instead of explicit property.
          * If an existing integration does not have stored credentials,
          * updatePassword is initially cleared, so user must tick it to add stored credentials.
+         *
+         * However, assignment statement is from positive instead of negative viewpoint.
          */
+        const hasInitialOauthToken = Boolean(initialValues.quay.oauthToken);
         const hasInitialRobotAccount = Boolean(initialValues.quay.registryRobotCredentials);
-        if (!hasInitialOauthToken && !hasInitialRobotAccount && isQuayRobotAccountsEnabled) {
-            formInitialValues.updatePassword = false;
-        }
+        const updatePassword =
+            hasInitialOauthToken || hasInitialRobotAccount || !isQuayRobotAccountsEnabled;
+
+        // Edit or view existing integration.
+        return { config, updatePassword };
     }
+
+    // Create new integration.
+    return cloneDeep(defaultValues);
+}
+
+function QuayIntegrationForm({
+    initialValues = null,
+    isEditable = false,
+}: IntegrationFormProps<QuayImageIntegration>): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isQuayRobotAccountsEnabled = isFeatureFlagEnabled('ROX_QUAY_ROBOT_ACCOUNTS');
+
+    // Refer to stored token in placeholder only if it exists initially.
+    const hasInitialOauthToken = Boolean(initialValues?.quay?.oauthToken);
+
     const {
         values,
         touched,
@@ -123,7 +142,7 @@ function QuayIntegrationForm({
         onCancel,
         message,
     } = useIntegrationForm<QuayIntegrationFormValues>({
-        initialValues: formInitialValues,
+        initialValues: computeInitialValues(initialValues, isQuayRobotAccountsEnabled),
         validationSchema,
     });
     const { isCreating } = usePageState();
@@ -132,8 +151,34 @@ function QuayIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onChangeRobotUsername(value, event) {
+        if (value || values.config.quay.registryRobotCredentials?.password) {
+            return setFieldValue(event.target.id, value);
+        }
+
+        // Replace with null because both empty fails backend validation.
+        return setFieldValue('config.quay.registryRobotCredentials', null);
+    }
+
+    function onChangeRobotPassword(value, event) {
+        if (value || values.config.quay.registryRobotCredentials?.username) {
+            return setFieldValue(event.target.id, value);
+        }
+
+        // Replace with null because both empty fails backend validation.
+        return setFieldValue('config.quay.registryRobotCredentials', null);
+    }
+
+    // Clear form values for stored credentials whether click to select or clear the checkbox.
     function onUpdateCredentialsChange(value, event) {
         setFieldValue('config.quay.oauthToken', '');
+        if (values.config.quay.registryRobotCredentials) {
+            if (values.config.quay.registryRobotCredentials.username) {
+                setFieldValue('config.quay.registryRobotCredentials.password', '');
+            } else {
+                setFieldValue('config.quay.registryRobotCredentials', null);
+            }
+        }
         return setFieldValue(event.target.id, value);
     }
 
@@ -298,7 +343,7 @@ function QuayIntegrationForm({
                                             values.config.quay.registryRobotCredentials?.username ??
                                             ''
                                         }
-                                        onChange={onChange}
+                                        onChange={onChangeRobotUsername}
                                         onBlur={handleBlur}
                                         isDisabled={!isEditable || !values.updatePassword}
                                     />
@@ -318,7 +363,7 @@ function QuayIntegrationForm({
                                             values.config.quay.registryRobotCredentials?.password ??
                                             ''
                                         }
-                                        onChange={onChange}
+                                        onChange={onChangeRobotPassword}
                                         onBlur={handleBlur}
                                         isDisabled={!isEditable || !values.updatePassword}
                                         placeholder={
