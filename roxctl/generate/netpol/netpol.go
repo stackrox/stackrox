@@ -12,14 +12,16 @@ import (
 
 type generateNetpolCommand struct {
 	// Properties that are bound to cobra flags.
-	offline          bool
-	folderPath       string
-	outputFolderPath string
-	outputFilePath   string
-	removeOutputPath bool
-	mergeMode        bool
-	splitMode        bool
-	stdoutMode       bool
+	offline               bool
+	stopOnFirstError      bool
+	treatWarningsAsErrors bool
+	folderPath            string
+	outputFolderPath      string
+	outputFilePath        string
+	removeOutputPath      bool
+	mergeMode             bool
+	splitMode             bool
+	stdoutMode            bool
 
 	// injected or constructed values
 	env     environment.Environment
@@ -42,6 +44,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return generateNetpolCmd.generateNetpol()
 		},
 	}
+	c.Flags().BoolVar(&generateNetpolCmd.treatWarningsAsErrors, "strict", false, "treat warnings as errors")
+	c.Flags().BoolVar(&generateNetpolCmd.stopOnFirstError, "fail", false, "fail on the first encountered error")
 	c.Flags().BoolVar(&generateNetpolCmd.removeOutputPath, "remove", false, "remove the output path if it already exists")
 	c.Flags().StringVarP(&generateNetpolCmd.outputFolderPath, "output-dir", "d", "", "save generated policies into target folder - one file per policy")
 	c.Flags().StringVarP(&generateNetpolCmd.outputFilePath, "output-file", "f", "", "save and merge generated policies into a single yaml file")

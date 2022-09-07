@@ -5,24 +5,54 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/np-guard/cluster-topology-analyzer/pkg/controller"
+	npguard "github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	v1 "k8s.io/api/networking/v1"
 )
 
+var errNPGErrorsIndicator = errors.New("there were errors during execution")
+
 func (cmd *generateNetpolCommand) generateNetpol() error {
-	recommendedNetpols, err := controller.PoliciesFromFolderPath(cmd.folderPath)
-	if err != nil {
-		return errors.Wrap(err, "error synthesizing policies from folder")
+	opts := []npguard.PoliciesSynthesizerOption{
+		npguard.WithLogger(newNpgLogger(cmd.env.Logger())),
 	}
+	if cmd.stopOnFirstError {
+		opts = append(opts, npguard.WithStopOnError())
+	}
+	npSynth := npguard.NewPoliciesSynthesizer(opts...)
+	recommendedNetpols, err := npSynth.PoliciesFromFolderPath(cmd.folderPath)
+	if err != nil {
+		return errors.Wrap(err, "error generating network policies")
+	}
+	if err := cmd.ouputNetpols(recommendedNetpols); err != nil {
+		return err
+	}
+	var roxerr error = nil
+	for _, e := range npSynth.Errors() {
+		if e.IsSevere() {
+			cmd.env.Logger().ErrfLn("%s %s", e.Error(), e.Location())
+			roxerr = errNPGErrorsIndicator
+		} else {
+			cmd.env.Logger().WarnfLn("%s %s", e.Error(), e.Location())
+			if cmd.treatWarningsAsErrors {
+				roxerr = errNPGErrorsIndicator
+			}
+		}
+	}
+	return roxerr
+}
+
+func (cmd *generateNetpolCommand) ouputNetpols(recommendedNetpols []*v1.NetworkPolicy) error {
 	if _, err := os.Stat(cmd.outputFolderPath); err == nil {
 		if err := os.RemoveAll(cmd.outputFolderPath); err != nil {
 			return errors.Wrapf(err, "failed to remove output path %s", cmd.outputFolderPath)
 		}
 		cmd.env.Logger().WarnfLn("Removed output path %s", cmd.outputFolderPath)
 	}
-	cmd.env.Logger().InfofLn("Writing generated Network Policies to %s", cmd.outputFolderPath)
+	if cmd.outputFolderPath != "" {
+		cmd.env.Logger().InfofLn("Writing generated Network Policies to %s", cmd.outputFolderPath)
+	}
 
 	var mergedPolicy string
 	yamlPolicies := make([]string, 0, len(recommendedNetpols))
@@ -54,8 +84,7 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 		return nil
 	}
 
-	cmd.env.Logger().WarnfLn("No mode selected, not providing any output.")
-	return nil
+	return errors.New("no mode selected, not providing any output")
 }
 
 func (cmd *generateNetpolCommand) printNetpols(combinedNetpols string) {
