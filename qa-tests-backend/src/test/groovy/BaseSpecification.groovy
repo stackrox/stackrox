@@ -195,6 +195,12 @@ class BaseSpecification extends Specification {
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
 
+        setupCoreImageIntegration()
+
+        recordResourcesAtSpecStart()
+    }
+
+    protected void setupCoreImageIntegration() {
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
                 Constants.CORE_IMAGE_INTEGRATION_NAME)
         if (!coreImageIntegrationId) {
@@ -217,8 +223,6 @@ class BaseSpecification extends Specification {
             log.warn "Could not create the core image integration."
             log.warn "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
         }
-
-        recordResourcesAtSpecStart()
     }
 
     def recordResourcesAtSpecStart() {
