@@ -2288,8 +2288,6 @@ github.com/nishanths/predeclared v0.0.0-20190419143655-18a43bb90ffc/go.mod h1:62
 github.com/nishanths/predeclared v0.0.0-20200524104333-86fad755b4d3/go.mod h1:nt3d53pc1VYcphSCIaYAJtnPYnr3Zyn8fMq2wvPGPso=
 github.com/nishanths/predeclared v0.2.1/go.mod h1:HvkGJcA3naj4lOwnFXFDkFxVtSqQMB9sbB1usJ+xjQE=
 github.com/nkovacs/streamquote v0.0.0-20170412213628-49af9bddb229/go.mod h1:0aYXnNPJ8l7uZxf45rWW1a/uME32OF0rhiYGNQ2oF2E=
-github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220802140408-c0ab819afba6 h1:HY77DOtDx0IFR9gQ6/qIHlk2xswANPfTc2R9cnc/LOk=
-github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220802140408-c0ab819afba6/go.mod h1:Rhk1AmdvZAqWXV5v7llf+gQ8Ufwp41mn/56AQWgVPac=
 github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220905143132-4bca39e41111 h1:dQjrYzyElZpra9SgEECdXvau0HAdZ/KansI/lrBuWd8=
 github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220905143132-4bca39e41111/go.mod h1:wl55xYBibeYdVg8/ceW/31AIDhbyDIqJ9JDeloVp0wo=
 github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
