@@ -96,6 +96,7 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 	s.resolver.ImageCVEEdgeDataStore = getImageCVEEdgeDatastore(s.ctx, s.db, s.gormDB)
 	s.resolver.ComponentCVEEdgeDataStore = getImageComponentCVEEdgeDatastore(s.ctx, s.db, s.gormDB)
 	s.resolver.DeploymentDataStore, err = getDeploymentDatastore(s.ctx, s.db, s.gormDB, s.resolver.ImageDataStore, riskMock)
+	s.NoError(err, "Failed to get DeploymentDataStore")
 
 	// Sac permissions
 	s.ctx = sac.WithAllAccess(s.ctx)
@@ -157,14 +158,14 @@ func (s *GraphQLImageComponentTestSuite) TestUnauthorizedImageComponentCountEndp
 func (s *GraphQLImageComponentTestSuite) TestImageComponents() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	expectedIds := []string{"comp1#0.9#", "comp2#1.1#", "comp3#1.0#", "comp4#1.0#"}
-	expectedCount := int32(len(expectedIds))
+	expectedIDs := []string{"comp1#0.9#", "comp2#1.1#", "comp3#1.0#", "comp4#1.0#"}
+	expectedCount := int32(len(expectedIDs))
 
 	comps, err := s.resolver.ImageComponents(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(expectedCount, int32(len(comps)))
 	idList := getIDList(ctx, comps)
-	s.ElementsMatch(expectedIds, idList)
+	s.ElementsMatch(expectedIDs, idList)
 
 	count, err := s.resolver.ImageComponentCount(ctx, RawQuery{})
 	s.NoError(err)
@@ -407,11 +408,11 @@ func (s *GraphQLImageComponentTestSuite) TestTopImageVulnerability() {
 
 	comp := s.getImageComponentResolver(ctx, "comp3#1.0#")
 
-	expectedId := graphql.ID("cve-2019-1#")
+	expectedID := graphql.ID("cve-2019-1#")
 
 	vuln, err := comp.TopImageVulnerability(ctx)
 	s.NoError(err)
-	s.Equal(expectedId, vuln.Id(ctx))
+	s.Equal(expectedID, vuln.Id(ctx))
 }
 
 func (s *GraphQLImageComponentTestSuite) getImageResolver(ctx context.Context, id string) *imageResolver {

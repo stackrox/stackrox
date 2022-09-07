@@ -108,6 +108,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Po
 	return newDataStore(storage, dacky, pool, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 }
 
+// NewTestDataStore allows for direct creation of the datastore for testing purposes
 func NewTestDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpool.Pool,
 	bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
