@@ -376,9 +376,19 @@ func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 
 // GetCurrentVersion -- gets the version of the current clone
 func (d *dbCloneManagerImpl) GetCurrentVersion() *migrations.MigrationVersion {
-	clone, cloneExists := d.cloneMap[CurrentClone]
-	if cloneExists {
-		return clone.GetMigVersion()
+	// Get a short-lived connection for the purposes of checking the version of the clone.
+	pool := pgadmin.GetClonePool(d.adminConfig, CurrentClone)
+
+	ver, err := migrations.ReadVersionPostgres(pool)
+	if err != nil {
+		return nil
 	}
-	return nil
+	pool.Close()
+
+	return ver
+	//clone, cloneExists := d.cloneMap[CurrentClone]
+	//if cloneExists {
+	//	return clone.GetMigVersion()
+	//}
+	//return nil
 }

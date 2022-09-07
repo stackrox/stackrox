@@ -122,10 +122,11 @@ func (d *dbCloneManagerImpl) Persist(cloneName string, pgClone string, persistBo
 		if !persistBoth {
 			rocksVersion := d.dbmRocks.GetVersion(rocksdb.CurrentClone)
 			currentPostgresVersion := d.dbmPostgres.GetCurrentVersion()
+			log.Infof("Current PG => %v", currentPostgresVersion)
 
 			// If the versions do not match, we have updated another time with Postgres,
 			// so we can no longer roll back to RocksDB.
-			if rocksVersion == nil || rocksVersion.MainVersion != currentPostgresVersion.MainVersion {
+			if rocksVersion == nil || (currentPostgresVersion != nil && rocksVersion.MainVersion != currentPostgresVersion.MainVersion) {
 				d.dbmRocks.DecommissionRocksDB()
 			}
 		}
