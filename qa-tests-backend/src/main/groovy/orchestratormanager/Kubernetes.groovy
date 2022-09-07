@@ -76,8 +76,8 @@ import io.fabric8.kubernetes.api.model.rbac.Role
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding
 import io.fabric8.kubernetes.api.model.rbac.RoleRef
 import io.fabric8.kubernetes.api.model.rbac.Subject
-import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClient
+import io.fabric8.kubernetes.client.KubernetesClientBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.kubernetes.client.dsl.Deletable
 import io.fabric8.kubernetes.client.dsl.ExecListener
@@ -129,7 +129,7 @@ class Kubernetes implements OrchestratorMain {
 
     Kubernetes(String ns) {
         this.namespace = ns
-        this.client = new DefaultKubernetesClient()
+        this.client = new KubernetesClientBuilder().build()
         // On OpenShift, the namespace config is typically non-null (set to the default project), which causes all
         // "any namespace" requests to be scoped to the default project.
         this.client.configuration.namespace = null
