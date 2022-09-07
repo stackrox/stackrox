@@ -9,6 +9,7 @@ import {
     PageSection,
     SelectOption,
     TextInput,
+    Popover,
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import { FormikErrors, FormikTouched } from 'formik';
@@ -17,7 +18,6 @@ import SelectSingle from 'Components/SelectSingle';
 import AnnotationKeyLabelIcon from 'Containers/Integrations/IntegrationForm//AnnotationKeyLabelIcon';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
 import { EmailIntegrationFormValues } from 'Containers/Integrations/IntegrationForm/Forms/EmailIntegrationForm';
-import ToggledPopoverElement from 'Components/ToggledPopoverElement';
 
 const startTLSAuthMethods = [
     {
@@ -125,13 +125,19 @@ function EmailIntegrationForm({
                                     onChange={onUpdateUnauthenticatedChange}
                                     onBlur={handleBlur}
                                 />
-                                <ToggledPopoverElement
-                                    popoverContent="Enable unauthenticated SMTP will allow you to setup the RHACS email notifiers if you don’t have authenticated email services."
-                                    ariaLabel="More info on unauthenticated SMTP field"
-                                    className="pf-c-form__group-label-help"
+                                <Popover
+                                    showClose={false}
+                                    bodyContent="Enable unauthenticated SMTP will allow you to setup an email notifier if you don’t have authenticated email services."
                                 >
-                                    <HelpIcon />
-                                </ToggledPopoverElement>
+                                    <button
+                                        type="button"
+                                        aria-label="More info on unauthenticated SMTP field"
+                                        onClick={(e) => e.preventDefault()}
+                                        className="pf-c-form__group-label-help"
+                                    >
+                                        <HelpIcon />
+                                    </button>
+                                </Popover>
                             </div>
                             {allowUnauthenticatedSmtp && (
                                 <Alert
