@@ -30,8 +30,10 @@ chmod -R 755 "${bundle_root}"
 # =============================================================================
 # Get latest postgres minor version
 arch="x86_64"
+dnf_list_args=()
 if [[ $(uname -m) == "arm64" ]]; then
   arch="aarch64"
+  dnf_list_args=('--nogpgcheck')
 fi
 postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
 postgres_major="14"
@@ -46,7 +48,7 @@ else
     docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
 FROM registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
 RUN dnf install --disablerepo='*' -y "${postgres_repo_url}"
-ENTRYPOINT dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
+ENTRYPOINT dnf list "${dnf_list_args[@]}" --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
 EOF
     postgres_minor="$(docker run --rm postgres-minor-image).${arch}"
     rm -rf "${build_dir}"

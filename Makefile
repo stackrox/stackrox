@@ -69,7 +69,7 @@ BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMA
 ifeq ($(UNAME_S),Darwin)
 ifeq ($(UNAME_M),arm64)
 	# TODO(ROX-12064) build these images in the CI pipeline
-	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.44-arm64
+	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.46-arm64
 endif
 endif
 
@@ -343,12 +343,14 @@ endif
 
 .PHONY: build-prep
 build-prep: deps
-	mkdir -p bin/{darwin_amd64,linux_amd64,linux_ppc64le,linux_s390x,windows_amd64}
+	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
 .PHONY: cli-build
 cli-build: build-prep
 	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
 ifdef CI
@@ -357,6 +359,8 @@ endif
 
 .PHONY: cli
 cli: cli-build
+	# Workaround a bug on MacOS
+	rm $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
@@ -557,6 +561,7 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
+		--build-arg TARGET_ARCH=$(UNAME_M) \
 		--file image/rhel/Dockerfile.gen \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
