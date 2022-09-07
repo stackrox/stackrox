@@ -634,6 +634,24 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
+			Route:         "/api/export/csv/node/cve",
+			Authorizer:    user.With(permissions.View(resources.Node)),
+			ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/export/csv/image/cve",
+			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
+			ServerHandler: imageCveCsv.ImageCVECSVHandler(),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/export/csv/cluster/cve",
+			Authorizer:    user.With(permissions.View(resources.Cluster)),
+			ServerHandler: clusterCveCsv.ClusterCVECSVHandler(),
+			Compression:   true,
+		},
+		{
 			Route:         "/api/splunk/ta/vulnmgmt",
 			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
 			ServerHandler: splunk.NewVulnMgmtHandler(deploymentDatastore.Singleton(), imageDatastore.Singleton()),
@@ -680,24 +698,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/extensions/backup",
 			Authorizer:    user.WithRole(role.Admin),
 			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), true)),
-			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/export/csv/node/cve",
-			Authorizer:    user.With(permissions.View(resources.Node)),
-			ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
-			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/export/csv/image/cve",
-			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
-			ServerHandler: imageCveCsv.ImageCVECSVHandler(),
-			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/export/csv/cluster/cve",
-			Authorizer:    user.With(permissions.View(resources.Cluster)),
-			ServerHandler: clusterCveCsv.ClusterCVECSVHandler(),
 			Compression:   true,
 		})
 	} else {
