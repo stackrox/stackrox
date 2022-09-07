@@ -50,6 +50,7 @@ interface OrchestratorMain {
     def getDeploymentReplicaCount(Deployment deployment)
     def getDeploymentUnavailableReplicaCount(Deployment deployment)
     def getDeploymentNodeSelectors(Deployment deployment)
+    def getDeploymentCount()
     def getDeploymentCount(String ns)
     Set<String> getDeploymentSecrets(Deployment deployment)
     def createPortForward(int port, Deployment deployment)
@@ -64,6 +65,7 @@ interface OrchestratorMain {
     def getDaemonSetReplicaCount(DaemonSet daemonSet)
     def getDaemonSetNodeSelectors(DaemonSet daemonSet)
     def getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet)
+    def getDaemonSetCount()
     def getDaemonSetCount(String ns)
     def waitForDaemonSetDeletion(String name)
     def waitForDaemonSetReady(String ns, String name, int retires, int intervalSeconds)
@@ -77,6 +79,7 @@ interface OrchestratorMain {
     def wasContainerKilled(String containerName, String namespace)
     def isKubeDashboardRunning()
     String getContainerlogs(String ns, String podName, String containerName)
+    def getStaticPodCount()
     def getStaticPodCount(String ns)
 
     //Services
@@ -98,6 +101,7 @@ interface OrchestratorMain {
     def createImagePullSecret(Secret secret)
     def deleteSecret(String name, String namespace)
     int getSecretCount(String ns)
+    int getSecretCount()
     io.fabric8.kubernetes.api.model.Secret getSecret(String name, String namespace)
     def updateSecret(io.fabric8.kubernetes.api.model.Secret secret)
 

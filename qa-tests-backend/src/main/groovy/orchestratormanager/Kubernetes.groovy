@@ -499,7 +499,11 @@ class Kubernetes implements OrchestratorMain {
         return secretSet
     }
 
-    def getDeploymentCount(String ns = null) {
+    def getDeploymentCount() {
+        return this.deployments.list().getItems().collect { it.metadata.name }
+    }
+
+    def getDeploymentCount(String ns) {
         return this.deployments.inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
 
@@ -708,8 +712,12 @@ class Kubernetes implements OrchestratorMain {
         return null
     }
 
-    def getDaemonSetCount(String ns = null) {
+    def getDaemonSetCount(String ns) {
         return this.daemonsets.inNamespace(ns).list().getItems().collect { it.metadata.name }
+    }
+
+    def getDaemonSetCount() {
+        return this.daemonsets.list().getItems().collect { it.metadata.name }
     }
 
     String getDaemonSetId(DaemonSet daemonSet) {
@@ -722,7 +730,11 @@ class Kubernetes implements OrchestratorMain {
         StatefulSet Methods
     */
 
-    def getStatefulSetCount(String ns = null) {
+    def getStatefulSetCount() {
+        return this.statefulsets.list().getItems().collect { it.metadata.name }
+    }
+
+    def getStatefulSetCount(String ns) {
         return this.statefulsets.inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
 
@@ -781,7 +793,8 @@ class Kubernetes implements OrchestratorMain {
             // This method assumes that a static pod name will contain the node name that the pod is running on
             def nodeNames = client.nodes().list().items.collect { it.metadata.name }
             Set<String> staticPods = [] as Set
-            client.pods().inNamespace(ns).list().items.each {
+            PodList podList = ns == null ? client.pods().list() : client.pods().inNamespace(ns).list()
+            podList.items.each {
                 for (String node : nodeNames) {
                     if (it.metadata.name.contains(node)) {
                         staticPods.add(it.metadata.name[0..it.metadata.name.indexOf(node) - 2])
@@ -1077,9 +1090,17 @@ class Kubernetes implements OrchestratorMain {
         log.debug name + ": Secret removed."
     }
 
-    int getSecretCount(String ns = null) {
+    int getSecretCount(String ns) {
         return evaluateWithRetry(2, 3) {
             return client.secrets().inNamespace(ns).list().getItems().findAll {
+                !it.type.startsWith("kubernetes.io/service-account-token")
+            }.size()
+        }
+    }
+
+    int getSecretCount() {
+        return evaluateWithRetry(2, 3) {
+            return client.secrets().list().getItems().findAll {
                 !it.type.startsWith("kubernetes.io/service-account-token")
             }.size()
         }
@@ -1658,9 +1679,15 @@ class Kubernetes implements OrchestratorMain {
         Jobs
      */
 
-    def getJobCount(String ns = null) {
+    def getJobCount(String ns) {
         return evaluateWithRetry(2, 3) {
             return client.batch().v1().jobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
+        }
+    }
+
+    def getJobCount() {
+        return evaluateWithRetry(2, 3) {
+            return client.batch().v1().jobs().list().getItems().collect { it.metadata.name }
         }
     }
 
@@ -1872,7 +1899,7 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    int getAllDeploymentTypesCount(String ns = null) {
+    int getAllDeploymentTypesCount(String ns) {
         return getDeploymentCount(ns).size() +
                 getDaemonSetCount(ns).size() +
                 getStaticPodCount(ns).size() +

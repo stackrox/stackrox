@@ -82,7 +82,7 @@ class OpenShift extends Kubernetes {
     */
 
     @Override
-    def getDeploymentCount(String ns = null) {
+    def getDeploymentCount(String ns) {
         return oClient.apps().deployments().inNamespace(ns).list().getItems().collect { it.metadata.name } +
                 oClient.deploymentConfigs().inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
