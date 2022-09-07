@@ -1,0 +1,21 @@
+# This is a combination of 2 commits.
+# This is the 1st commit message:
+
+refactor and optimize BE
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Date:      Wed Sep 7 13:34:06 2022 -0700
+#
+# interactive rebase in progress; onto a3d30c5b9
+# Last commands done (3 commands done):
+#    pick 2aa872050 refactor and optimize BE
+#    squash c8c0a4be7 s
+# No commands remaining.
+# You are currently rebasing branch 'md/vm-pol-perf' on 'a3d30c5b9'.
+#
+# Changes to be committed:
+#	modified:   central/graphql/resolvers/violations.go
+#	modified:   ui/apps/platform/src/Containers/VulnMgmt/Entity/Policy/VulnMgmtPolicyOverview.js
+#
