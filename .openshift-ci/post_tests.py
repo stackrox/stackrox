@@ -17,6 +17,7 @@ class PostTestsConstants:
     CHECK_TIMEOUT = 5 * 60
     STORE_TIMEOUT = 5 * 60
     FIXUP_TIMEOUT = 5 * 60
+    ARTIFACTS_TIMEOUT = 3 * 60
     # Where the QA tests store failure logs:
     # qa-tests-backend/src/main/groovy/common/Constants.groovy
     QA_TEST_DEBUG_LOGS = "/tmp/qa-tests-backend-logs"
@@ -105,9 +106,11 @@ class PostClusterTest(StoreArtifacts):
         collect_central_artifacts=True,
         check_stackrox_logs=False,
         artifact_destination_prefix=None,
+        add_test_output=False,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_stackrox_logs = check_stackrox_logs
+        self._add_test_output = add_test_output
         self.k8s_namespaces = ["stackrox", "stackrox-operator", "proxies", "squid"]
         self.openshift_namespaces = [
             "openshift-dns",
@@ -127,6 +130,8 @@ class PostClusterTest(StoreArtifacts):
         self.collect_service_logs()
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
+        if self._add_test_output:
+            self.add_test_output()
         self.store_artifacts(test_outputs)
         self.handle_run_failure()
 
@@ -202,6 +207,14 @@ class PostClusterTest(StoreArtifacts):
         self.run_with_best_effort(
             ["tests/e2e/lib.sh", "check_stackrox_logs", PostTestsConstants.K8S_LOG_DIR],
             timeout=PostTestsConstants.CHECK_TIMEOUT,
+        )
+
+    def add_test_output(self):
+        print("Storing operator test results in JUnit format")
+        self.run_with_best_effort(
+            ["scripts/ci/store-artifacts.sh", "store_test_results",
+             "operator/build/kuttl-test-artifacts"],
+            timeout=PostTestsConstants.ARTIFACTS_TIMEOUT,
         )
 
 
