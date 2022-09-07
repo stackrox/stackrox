@@ -5,10 +5,6 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
-- ROX-11348: The email notifier now allows for unauthenticated SMTP. By default, 
-authentication is still required for an email notifier, but the user can now choose to turn it off.
-- Previously, the syslog integration did not respect a configured TCP proxy. This is now fixed.
-- ROX-9484: When integrating Quay registry you can now optionally use robot account instead of just OAuth tokens. In fact this is Quay's recommended integration credentials. However, integration with Quay scanner still requires an OAuth token.
 
 ### Removed Features
 - ROX-11784: The `RenamePolicyCategory` and `DeletePolicyCategory` methods in the
@@ -21,7 +17,12 @@ authentication is still required for an email notifier, but the user can now cho
   - Any cluster that is expected to be unavailable for a period of time (e.g. clusters used in disaster recovery), can be tagged with a customizable label. Clusters with those labels will never be removed automatically.
   - By default, this unhealthy cluster removal is disabled (number of days set to 0)
 - ROX-7591: Policy `Fixable CVSS >= 6 and Privileged` disabled by default on new installations, new policy `Severity Important and Privileged` added and enabled by default.
+- ROX-11348: The email notifier now allows for unauthenticated SMTP. By default,
+  authentication is still required for an email notifier, but the user can now choose to turn it off.
+- Previously, the syslog integration did not respect a configured TCP proxy. This is now fixed.
 - The default technique used by string expression searches will be to match any substrings in future release. Currently, string search uses prefix matching technique in most cases.
+- ROX-9484: When integrating Quay registry you can now optionally use robot account instead of just OAuth tokens. In fact this is Quay's recommended integration credentials. However, integration with Quay scanner still requires an OAuth token.
+- The `init-db` init-container for ScannerDB now specifies resource requests/limits which match the `db` container in ScannerDB.
 
 ## [3.71.0]
 
