@@ -429,7 +429,7 @@ main-build-nodeps:
 	$(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 ifndef CI
-    CGO_ENABLED=0 $(GOBUILD) roxctl
+	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
 
 .PHONY: scale-build
@@ -595,9 +595,9 @@ ifdef CI
 	cp bin/windows_amd64/roxctl.exe image/bin/roxctl-windows-amd64.exe
 else
 ifneq ($(HOST_OS),linux)
-	cp bin/linux_$(GOARCH)/roxctl image/bin/roxctl-linux-$(GOARCH)
+	cp bin/linux_amd64/roxctl image/bin/roxctl-linux-amd64
 endif
-	cp bin/$(HOST_OS)_amd64/roxctl image/bin/roxctl-$(HOST_OS)-amd64
+	cp bin/$(HOST_OS)_$(GOARCH)/roxctl image/bin/roxctl-$(HOST_OS)-$(GOARCH)
 endif
 	cp bin/linux_$(GOARCH)/migrator image/bin/migrator
 	cp bin/linux_$(GOARCH)/kubernetes        image/bin/kubernetes-sensor
