@@ -1,13 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-void */
-import React, { ReactElement } from 'react';
-import { Checkbox, Form, PageSection, SelectOption, TextInput } from '@patternfly/react-core';
+import React, { ReactElement, useState } from 'react';
+import {
+    Alert,
+    AlertVariant,
+    Checkbox,
+    Form,
+    PageSection,
+    SelectOption,
+    TextInput,
+} from '@patternfly/react-core';
+import { HelpIcon } from '@patternfly/react-icons';
 import { FormikErrors, FormikTouched } from 'formik';
 
 import SelectSingle from 'Components/SelectSingle';
 import AnnotationKeyLabelIcon from 'Containers/Integrations/IntegrationForm//AnnotationKeyLabelIcon';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
 import { EmailIntegrationFormValues } from 'Containers/Integrations/IntegrationForm/Forms/EmailIntegrationForm';
+import ToggledPopoverElement from 'Components/ToggledPopoverElement';
 
 const startTLSAuthMethods = [
     {
@@ -39,6 +49,8 @@ function EmailIntegrationForm({
     errors,
     touched,
 }: EmailIntegrationFormProps): ReactElement {
+    const [storedUsername, setStoredUsername] = useState('');
+    const { allowUnauthenticatedSmtp } = values.notifier.email;
     function onChange(value, event) {
         return void setFieldValue(event.target.id, value);
     }
@@ -48,6 +60,17 @@ function EmailIntegrationForm({
         if (value === false && values.notifier.email.startTLSAuthMethod !== 'DISABLED') {
             void setFieldValue('notifier.email.startTLSAuthMethod', 'DISABLED');
         }
+    }
+
+    function onUpdateUnauthenticatedChange(isChecked) {
+        if (isChecked) {
+            setStoredUsername(values.notifier.email.username);
+            setFieldValue('notifier.email.username', '');
+            setFieldValue('notifier.email.password', '');
+        } else {
+            setFieldValue('notifier.email.username', storedUsername);
+        }
+        setFieldValue('notifier.email.allowUnauthenticatedSmtp', isChecked);
     }
 
     return (
@@ -89,39 +112,80 @@ function EmailIntegrationForm({
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
+                        label=""
+                        fieldId="notifier.email.unauthenticated"
+                        errors={errors}
+                    >
+                        <>
+                            <div className="pf-u-display-flex pf-u-align-items-flex-start">
+                                <Checkbox
+                                    label="Enable unauthenticated SMTP"
+                                    id="notifier.email.unauthenticated"
+                                    isChecked={allowUnauthenticatedSmtp}
+                                    onChange={onUpdateUnauthenticatedChange}
+                                    onBlur={handleBlur}
+                                />
+                                <ToggledPopoverElement
+                                    popoverContent="Enable unauthenticated SMTP will allow you to setup the RHACS email notifiers if you don’t have authenticated email services."
+                                    ariaLabel="More info on unauthenticated SMTP field"
+                                    className="pf-c-form__group-label-help"
+                                >
+                                    <HelpIcon />
+                                </ToggledPopoverElement>
+                            </div>
+                            {allowUnauthenticatedSmtp && (
+                                <Alert
+                                    className="pf-u-mt-md"
+                                    title="Security Warning"
+                                    variant={AlertVariant.warning}
+                                    isInline
+                                >
+                                    <p>
+                                        Unauthenticated SMTP is an insecure configuration and not
+                                        generally recommended. Please proceed with caution when
+                                        enabling this setting.
+                                    </p>
+                                </Alert>
+                            )}
+                        </>
+                    </FormLabelGroup>
+                    <FormLabelGroup
                         label="Username"
-                        isRequired
+                        isRequired={!allowUnauthenticatedSmtp}
                         fieldId="notifier.email.username"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
-                            isRequired
+                            isRequired={!allowUnauthenticatedSmtp}
                             type="text"
                             id="notifier.email.username"
                             value={values.notifier.email.username}
-                            placeholder="example, postmaster@example.com"
+                            placeholder={
+                                allowUnauthenticatedSmtp ? '' : 'example, postmaster@example.com'
+                            }
                             onChange={onChange}
                             onBlur={handleBlur}
+                            isDisabled={allowUnauthenticatedSmtp}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Password"
-                        isRequired={values.updatePassword}
+                        isRequired={values.updatePassword && !allowUnauthenticatedSmtp}
                         fieldId="notifier.email.password"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
-                            isRequired={values.updatePassword}
+                            isRequired={values.updatePassword && !allowUnauthenticatedSmtp}
                             type="password"
                             id="notifier.email.password"
                             value={values.notifier.email.password}
                             onChange={onChange}
                             onBlur={handleBlur}
-                            isDisabled={!values.updatePassword}
+                            isDisabled={!values.updatePassword || allowUnauthenticatedSmtp}
                             placeholder={
-                                values.updatePassword
+                                values.updatePassword || allowUnauthenticatedSmtp
                                     ? ''
                                     : 'Currently-stored password will be used.'
                             }
