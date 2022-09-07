@@ -413,7 +413,7 @@ require (
 // The `go mod tidy` takes care of normalizing the symbol version information (e.g. branch name) which is required
 // for Go build tools to accept the `go.mod`.
 replace (
-	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20220906230509-6926dbdce8af
+	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20220907142141-15a243523c74
 
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
