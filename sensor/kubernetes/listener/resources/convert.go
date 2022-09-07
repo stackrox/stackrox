@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
@@ -342,6 +343,17 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 
 			// If the pod spec image doesn't match the top level image, then it is an old spec, so we should ignore its digest
 			if parsedName.GetName().GetFullName() != image.GetName().GetFullName() {
+				continue
+			}
+
+			// In case you are using a re-tagged image, it may occur that the contents of imageID refer to a whole different
+			// image.
+			// As an example: Two images with the same manifest: docker.io/nginx:1.23, quay.io/nginx:1.23.
+			//   The imageID for a pod running quay.io/nginx:1.23 may be set to: docker.io/nginx@sha-256:xxx
+			// In this case, we should ignore the digest, as the repository digest may be different and not valid for
+			// the specific image in the registry.
+			if !strings.Contains(c.ImageID, fmt.Sprintf("%s/%s",
+				image.GetName().GetRegistry(), image.GetName().GetRemote())) {
 				continue
 			}
 

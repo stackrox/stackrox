@@ -329,6 +329,27 @@ func TestPopulateImageMetadata(t *testing.T) {
 			},
 			isClusterLocal: true,
 		},
+		{
+			name: "Image and ImageID mismatch",
+			wrap: []wrapContainer{
+				{
+					image: "quay.io/nginx:1.23",
+				},
+			},
+			pods: []pod{
+				{
+					images: []string{"quay.io/nginx:1.23"},
+					imageIDsInStatus: []string{
+						"docker.io/nginx@sha256:89020cd33be2767f3f894484b8dd77bc2e5a1ccc864350b92c53262213257dfc",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "",
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {
