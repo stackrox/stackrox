@@ -71,6 +71,7 @@ export type Email = {
     // DEPRECATED_useStartTLS deprecated
     from: string;
     startTLSAuthMethod: EmailAuthMethod;
+    allowUnauthenticatedSmtp: boolean;
 };
 
 export type EmailAuthMethod = 'DISABLED' | 'PLAIN' | 'LOGIN';
