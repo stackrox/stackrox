@@ -62,6 +62,11 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 		return nil, errors.Wrapf(err, "fetching image metadata for image %q", imgName)
 	}
 
+	// Ensure the metadata is set on the image we pass to i.e. fetching signatures. If no V2 digest is available for the
+	// image, the signature will not be attempted to be fetched.
+	// We don't need to do anything on central side, as there the image will correctly have the metadata assigned.
+	image.Metadata = metadata
+
 	log.Debugf("Received metadata for image %q: %v", imgName, metadata)
 
 	// Scan the image via local scanner.
