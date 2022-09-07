@@ -4,7 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ScanSetting is the Schema for the scansettings API
 // +kubebuilder:subresource:status
@@ -19,7 +19,7 @@ type ScanSetting struct {
 	Roles []string `json:"roles,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ScanSettingList contains a list of ScanSetting
 type ScanSettingList struct {

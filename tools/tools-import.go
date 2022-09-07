@@ -14,4 +14,5 @@ import (
 	_ "github.com/mailru/easyjson/easyjson"
 	_ "github.com/mauricelam/genny"
 	_ "golang.org/x/tools/cmd/stringer"
+	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 )

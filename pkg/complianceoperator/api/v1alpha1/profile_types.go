@@ -37,7 +37,7 @@ type ProfilePayload struct {
 	Values []ProfileValue `json:"values,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // Profile is the Schema for the profiles API
 // +kubebuilder:resource:path=profiles,scope=Namespaced,shortName=profs;prof
@@ -48,7 +48,7 @@ type Profile struct {
 	ProfilePayload `json:",inline"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ProfileList contains a list of Profile
 type ProfileList struct {
