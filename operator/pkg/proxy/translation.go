@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func getProxyConfigHelmValues(obj k8sutil.Object, proxyEnvVars map[string]string) (chartutil.Values, error) {
+func getProxyConfigEnvVars(obj k8sutil.Object, proxyEnvVars map[string]string) (map[string]interface{}, error) {
 	if len(proxyEnvVars) == 0 {
 		return nil, nil
 	}
@@ -37,11 +37,7 @@ func getProxyConfigHelmValues(obj k8sutil.Object, proxyEnvVars map[string]string
 		}
 	}
 
-	return chartutil.Values{
-		"customize": map[string]interface{}{
-			"envVars": envVarsMap,
-		},
-	}, nil
+	return envVarsMap, nil
 }
 
 // InjectProxyEnvVars wraps a Translator to inject proxy configuration environment variables.
@@ -52,7 +48,33 @@ func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string
 			return nil, err
 		}
 
-		proxyVals, _ := getProxyConfigHelmValues(obj, proxyEnv) // ignore errors for now
-		return chartutil.CoalesceTables(vals, proxyVals), nil
+		proxyEnvVars, _ := getProxyConfigEnvVars(obj, proxyEnv) // ignore errors for now
+		if len(proxyEnvVars) == 0 {
+			return vals, nil
+		}
+
+		// We must only set environment variables which are not already set via the CR. Otherwise, we might end up with
+		// an invalid deployment spec, where env entries have both a `value` and `valueFrom` set.
+
+		// Make sure customize.envVars section is present
+		vals = chartutil.CoalesceTables(vals, map[string]interface{}{
+			"customize": map[string]interface{}{
+				"envVars": map[string]interface{}{},
+			},
+		})
+
+		envVarVals, err := vals.Table("customize.envVars")
+		if err != nil {
+			return vals, nil // give up on injecting env vars, something is off
+		}
+
+		for envVarName, envVarSpec := range proxyEnvVars {
+			if _, ok := envVarVals[envVarName]; ok {
+				continue // env var already set
+			}
+			envVarVals[envVarName] = envVarSpec
+		}
+
+		return vals, nil
 	})
 }
