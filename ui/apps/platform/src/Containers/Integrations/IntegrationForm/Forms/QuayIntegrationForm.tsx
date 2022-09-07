@@ -312,7 +312,7 @@ function QuayIntegrationForm({
                                     errors={errors}
                                 >
                                     <TextInput
-                                        type="text"
+                                        type="password"
                                         id="config.quay.registryRobotCredentials.password"
                                         value={
                                             values.config.quay.registryRobotCredentials?.password ??
