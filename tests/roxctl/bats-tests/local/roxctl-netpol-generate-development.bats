@@ -117,8 +117,8 @@ teardown() {
 
 @test "roxctl-development generate netpol stops on first error when run with --fail" {
   mkdir -p "$out_dir"
-  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX-file1.yaml")"
-  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX-file2.yaml")"
+  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-01-XXXXXX-file1.yaml")"
+  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-02-XXXXXX-file2.yaml")"
 
   run roxctl-development generate netpol "$out_dir/" --remove --output-file=/dev/null --fail
   assert_failure
