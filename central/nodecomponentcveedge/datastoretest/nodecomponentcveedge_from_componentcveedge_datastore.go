@@ -3,14 +3,14 @@ package datastoretest
 import (
 	"context"
 
-	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
+	"github.com/stackrox/rox/central/componentcveedge/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 type nodeComponentCVEEdgeFromGenericStore struct {
-	genericStore componentCVEEdgeDataStore.DataStore
+	genericStore datastore.DataStore
 }
 
 func imageComponentCVEEdgeToNodeComponentCVEEdge(edge *storage.ComponentCVEEdge) *storage.NodeComponentCVEEdge {
