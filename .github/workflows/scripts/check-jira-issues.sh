@@ -21,15 +21,22 @@ check_not_empty \
 
 # TODO: Jira returns 400 if requested fixVersion does not exist. That means
 # the named release must exist on Jira, which is not given.
-JQL="project IN ($PROJECTS) \
+JQL_OPEN_ISSUES="project IN ($PROJECTS) \
 AND fixVersion = \"$RELEASE.$PATCH\" \
-AND status != CLOSED \
-AND Component NOT IN (Documentation, \"ACS Managed Service\") \
+AND statusCategory != done \
+AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Managed Service\")) \
 AND type NOT IN (Epic, \"Feature Request\") \
 ORDER BY assignee"
 
+JQL_CLOSED_WITH_PR="project IN ($PROJECTS) \
+AND fixVersion = \"$RELEASE.$PATCH\" \
+AND statusCategory = done \
+AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Managed Service\")) \
+AND issue.property[development].openprs > 0 \
+ORDER BY assignee"
+
 get_issues() {
-    curl --fail -sSL --get --data-urlencode "jql=$JQL" \
+    curl --fail -sSL --get --data-urlencode "jql=$1" \
         -H "Authorization: Bearer $JIRA_TOKEN" \
         -H "Accept: application/json" \
         "https://issues.redhat.com/rest/api/2/search"
@@ -51,16 +58,27 @@ get_issues_summary() {
 **\(.fields.assignee.displayName // "unassigned")** \
 (\(.fields.issuetype.name), \(.fields.status.name)) — _\(.fields.summary | gsub (" +$";""))_
 EOF
-    get_issues | jq -r ".issues[] | \"$GH_MD_FORMAT_LINE\"" | sort
+    get_issues "$1" | jq -r ".issues[] | \"$GH_MD_FORMAT_LINE\"" | sort
 }
 
 get_open_issues() {
-    get_issues | jq -r '.issues[] | "\(.key) - \(.fields.assignee.displayName // "unassigned")"' | sort
+    get_issues "$1" | jq -r '.issues[] | "\(.key) - \(.fields.assignee.displayName // "unassigned")"' | sort
 }
 
-ISSUES=$(get_issues_summary)
+CLOSED_WITH_PR=$(get_issues_summary "$JQL_CLOSED_WITH_PR")
 
-if [ -z "$ISSUES" ]; then
+if [ -n "$CLOSED_WITH_PR" ]; then
+    gh_summary <<EOF
+:warning: The following Jira issues have been marked complete, but have open PRs:
+
+$CLOSED_WITH_PR
+
+EOF
+fi
+
+OPEN_ISSUES=$(get_issues_summary "$JQL_OPEN_ISSUES")
+
+if [ -z "$OPEN_ISSUES" ]; then
     gh_summary "All issues for Jira release $RELEASE_PATCH are closed."
     exit 0
 fi
@@ -68,15 +86,19 @@ fi
 gh_summary <<EOF
 :red_circle: The following Jira issues are still open for release $RELEASE_PATCH:
 
-$ISSUES
+$OPEN_ISSUES
 
 :arrow_right: Contact the assignees to clarify the status.
 EOF
 
 gh_log error "There are non-closed Jira issues for version $RELEASE_PATCH."
 
-OPEN_ISSUES=$(get_open_issues)
+CLOSED_WITH_PR=$(get_open_issues "$JQL_CLOSED_WITH_PR")
+OPEN_ISSUES=$(get_open_issues "$JQL_OPEN_ISSUES")
 
+echo "Completed issues with open PR:"
+echo "$CLOSED_WITH_PR"
+echo
 echo "Open issues:"
 echo "$OPEN_ISSUES"
 

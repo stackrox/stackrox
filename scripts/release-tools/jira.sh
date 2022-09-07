@@ -8,7 +8,7 @@ MENU_OPTIONS=(
   "Quit"
 )
 
-FIX_VERSION="68.0 (01/31)" # copy this from JIRA
+FIX_VERSION="3.72.0" # copy this from JIRA
 
 main() {
   local action="${1}"
@@ -57,10 +57,10 @@ is_ticket_checked() {
 tickets_to_verify() {
   local QRY
   read -r -d '' QRY <<EOF
-  (project = ROX OR project = "Rox Services" OR project = "Red Hat Advanced Cluster Security" )
+    project IN (ROX, RS, RTOOLS)
     AND fixVersion = "$FIX_VERSION"
     AND issuetype != "STORY"
-    AND status = Done
+    AND statusCategory = done
     ORDER BY key ASC, status DESC, priority DESC
 EOF
 
@@ -79,9 +79,11 @@ EOF
 not_done_yet() {
   local QRY
   read -r -d '' QRY <<EOF
-  (project = ROX OR project = "Rox Services" OR project = "Red Hat Advanced Cluster Security" )
+    project IN (ROX, RS, RTOOLS)
+    AND (Component IS EMPTY or Component NOT IN (Documentation, "ACS Managed Service"))
     AND fixVersion = "$FIX_VERSION"
-    AND status != Done
+    AND statusCategory != done
+    AND issuetype NOT IN (Epic, "Feature Request")
     ORDER BY created DESC
 EOF
 
