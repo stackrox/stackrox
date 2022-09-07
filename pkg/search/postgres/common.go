@@ -518,11 +518,32 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 	}
 }
 
-func tracedQuery(ctx context.Context, pool *pgxpool.Pool, sql string, args ...interface{}) (pgx.Rows, error) {
+type tracedRows struct {
+	qe *postgres.QueryEvent
+	pgx.Rows
+	accessedRows int
+}
+
+func (t *tracedRows) Next() bool {
+	if !t.Rows.Next() {
+		return false
+	}
+	t.accessedRows++
+	return true
+}
+
+func (t *tracedRows) Close() {
+	t.Rows.Close()
+	t.qe.SetRowsAccessed(t.accessedRows)
+}
+
+func tracedQuery(ctx context.Context, pool *pgxpool.Pool, sql string, args ...interface{}) (*tracedRows, error) {
 	t := time.Now()
 	rows, err := pool.Query(ctx, sql, args...)
-	postgres.AddTracedQuery(ctx, t, sql, args)
-	return rows, err
+	return &tracedRows{
+		qe:   postgres.AddTracedQuery(ctx, t, sql, args),
+		Rows: rows,
+	}, err
 }
 
 func tracedQueryRow(ctx context.Context, pool *pgxpool.Pool, sql string, args ...interface{}) pgx.Row {

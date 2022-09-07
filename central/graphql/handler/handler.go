@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -84,7 +85,8 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if queryTracerEnabled && time.Since(startTime) > graphQLQueryThreshold {
-		postgres.LogTracef(ctx, log, "GraphQL Op %s took %d ms: %s %+v", params.OperationName, time.Since(startTime).Milliseconds(), params.Query, params.Variables)
+		singleLineQuery := strings.ReplaceAll(params.Query, "\n", " ")
+		postgres.LogTracef(ctx, log, "GraphQL Op %s took %d ms: %s vars=%+v", params.OperationName, time.Since(startTime).Milliseconds(), singleLineQuery, params.Variables)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(responseJSON)

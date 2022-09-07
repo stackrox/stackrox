@@ -18,30 +18,41 @@ var (
 
 type queryTracerKey struct{}
 
-type queryEvent struct {
-	query    string
-	args     []interface{}
-	duration time.Duration
-	stack    []byte
+// QueryEvent defines an event that tracks a Postgres query
+type QueryEvent struct {
+	query        string
+	rowsAccessed *int
+	args         []interface{}
+	duration     time.Duration
+	stack        []byte
+}
+
+// SetRowsAccessed sets the number of rows fetched from Postgres
+func (qe *QueryEvent) SetRowsAccessed(n int) {
+	if qe != nil {
+		qe.rowsAccessed = &n
+	}
 }
 
 type queryTracer struct {
 	lock   sync.Mutex
-	events []queryEvent
+	events []*QueryEvent
 	id     string
 }
 
 // AddEvent adds a Postgres query to the tracer
-func (qt *queryTracer) AddEvent(start time.Time, query string, args ...interface{}) {
+func (qt *queryTracer) AddEvent(start time.Time, query string, args ...interface{}) *QueryEvent {
 	qt.lock.Lock()
 	defer qt.lock.Unlock()
 
-	qt.events = append(qt.events, queryEvent{
+	event := &QueryEvent{
 		query:    query,
 		args:     args,
 		duration: time.Since(start),
 		stack:    debug.Stack(),
-	})
+	}
+	qt.events = append(qt.events, event)
+	return event
 }
 
 // LogTracef is a wrapper around LogTrace that provides formatting
@@ -59,8 +70,12 @@ func LogTrace(ctx context.Context, logger *logging.Logger, contextString string)
 		return
 	}
 	for _, e := range tracer.events {
+		rowsAccessed := 1
+		if e.rowsAccessed != nil {
+			rowsAccessed = *e.rowsAccessed
+		}
 		if e.duration > queryThreshold {
-			logger.Infof("trace=%s: took(%d ms): %s %+v", tracer.id, e.duration.Milliseconds(), e.query, e.args)
+			logger.Infof("trace=%s: returned %d rows and took(%d ms): %s %+v", tracer.id, rowsAccessed, e.duration.Milliseconds(), e.query, e.args)
 		}
 	}
 }
@@ -85,10 +100,10 @@ func GetTracerFromContext(ctx context.Context) *queryTracer {
 }
 
 // AddTracedQuery adds a query into the tracer
-func AddTracedQuery(ctx context.Context, start time.Time, sql string, args ...interface{}) {
+func AddTracedQuery(ctx context.Context, start time.Time, sql string, args ...interface{}) *QueryEvent {
 	tracer := GetTracerFromContext(ctx)
 	if tracer == nil {
-		return
+		return nil
 	}
-	tracer.AddEvent(start, sql, args)
+	return tracer.AddEvent(start, sql, args)
 }
