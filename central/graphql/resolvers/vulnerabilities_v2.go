@@ -753,12 +753,14 @@ func (resolver *cVEResolver) ComponentCount(ctx context.Context, args RawQuery) 
 
 func (resolver *cVEResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "ImageComponents")
-	return resolver.root.ImageComponents(resolver.withVulnerabilityScope(ctx), args)
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+	return resolver.root.ImageComponents(resolver.withVulnerabilityScope(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 func (resolver *cVEResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "ImageComponentCount")
-	return resolver.root.ImageComponentCount(resolver.withVulnerabilityScope(ctx), args)
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+	return resolver.root.ImageComponentCount(resolver.withVulnerabilityScope(ctx), RawQuery{Query: &query})
 }
 
 // NodeComponents are the node components that contain the CVE/Vulnerability.
