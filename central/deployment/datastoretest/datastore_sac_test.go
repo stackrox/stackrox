@@ -353,6 +353,7 @@ func (s *deploymentDatastoreSACSuite) TestUpsertDeployment() {
 
 func (s *deploymentDatastoreSACSuite) TestGetDeployment() {
 	deployment := s.pushDeploymentToStore(testconsts.Cluster2, testconsts.NamespaceB)
+	s.waitForIndexing()
 	deployment.Priority = 1
 
 	cases := testutils.GenericNamespaceSACGetTestCases(s.T())

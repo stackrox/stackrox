@@ -1,11 +1,15 @@
 package indexer
 
 import (
+	"encoding/binary"
 	"fmt"
+	"hash"
+	"hash/fnv"
 	"strings"
 	"time"
 
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/document"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
@@ -38,6 +42,8 @@ func NewLazy(toIndex queue.WaitableQueue, wrapper Wrapper, index bleve.Index, ac
 		index:      index,
 		acker:      acker,
 		toIndex:    toIndex,
+		deduper:    make(map[string]uint64),
+		hasher:     fnv.New64a(),
 		buff:       NewBuffer(maxBatchSize),
 		stopSignal: concurrency.NewSignal(),
 	}
@@ -48,6 +54,8 @@ type lazyImpl struct {
 	index   bleve.Index
 	acker   Acker
 	toIndex queue.WaitableQueue
+	deduper map[string]uint64
+	hasher  hash.Hash64
 
 	buff Buffer
 
@@ -81,6 +89,33 @@ func (li *lazyImpl) runIndexing() {
 			li.consumeFromQueue()
 		}
 	}
+}
+
+func (li *lazyImpl) evaluateDeduping(doc *document.Document) bool {
+	li.hasher.Reset()
+	for _, f := range doc.Fields {
+		if _, err := li.hasher.Write([]byte(f.Name())); err != nil {
+			log.Errorf("unable to write hash: %v", err)
+			return false
+		}
+		if _, err := li.hasher.Write(f.Value()); err != nil {
+			log.Errorf("unable to write hash: %v", err)
+			return false
+		}
+		for _, pos := range f.ArrayPositions() {
+			if err := binary.Write(li.hasher, binary.LittleEndian, pos); err != nil {
+				log.Errorf("unable to write hash: %v", err)
+				return false
+			}
+		}
+	}
+	hashValue := li.hasher.Sum64()
+	val, ok := li.deduper[doc.ID]
+	if ok && val == hashValue {
+		return true
+	}
+	li.deduper[doc.ID] = hashValue
+	return false
 }
 
 func (li *lazyImpl) consumeFromQueue() {
@@ -130,10 +165,21 @@ func (li *lazyImpl) indexItems(itemsToIndex map[string]interface{}) {
 	batch := li.index.NewBatch()
 	for key, value := range itemsToIndex {
 		if value != nil {
-			if err := batch.Index(key, value); err != nil {
+			doc := document.NewDocument(key)
+			if err := li.index.Mapping().MapDocument(doc, value); err != nil {
+				log.Errorf("unable to map document: %v", err)
+				continue
+			}
+			if li.evaluateDeduping(doc) {
+				indexObjectsDeduped.Inc()
+				continue
+			}
+			indexObjectsIndexed.Inc()
+			if err := batch.IndexAdvanced(doc); err != nil {
 				log.Errorf("unable to index item: %q, %v", key, err)
 			}
 		} else {
+			delete(li.deduper, key)
 			batch.Delete(key)
 		}
 	}
