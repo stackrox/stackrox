@@ -8,12 +8,85 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/cve/converter/v2"
+	"github.com/jackc/pgx/v4/pgxpool"
+	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
+	componentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
+	componentCVEEdgeSearch "github.com/stackrox/rox/central/componentcveedge/search"
+	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
+	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
+	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
+	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
+	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
+	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
+	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
+	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
+	imageCVEEdgeSearch "github.com/stackrox/rox/central/imagecveedge/search"
+	"github.com/stackrox/rox/central/ranking"
+	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
+	types2 "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
+
+func testDeployments() []*storage.Deployment {
+	return []*storage.Deployment{
+		{
+			Id:          "dep1id",
+			Name:        "dep1name",
+			Namespace:   "namespace1name",
+			NamespaceId: "namespace1id",
+			ClusterId:   "cluster1id",
+			ClusterName: "cluster1name",
+			Containers: []*storage.Container{
+				{
+					Name:  "container1name",
+					Image: types2.ToContainerImage(testImages()[0]),
+				},
+				{
+					Name:  "container2name",
+					Image: types2.ToContainerImage(testImages()[1]),
+				},
+			},
+		},
+		{
+			Id:          "dep2id",
+			Name:        "dep2name",
+			Namespace:   "namespace1name",
+			NamespaceId: "namespace1id",
+			ClusterId:   "cluster1id",
+			ClusterName: "cluster1name",
+			Containers: []*storage.Container{
+				{
+					Name:  "container1name",
+					Image: types2.ToContainerImage(testImages()[0]),
+				},
+			},
+		},
+		{
+			Id:          "dep3id",
+			Name:        "dep3name",
+			Namespace:   "namespace2name",
+			NamespaceId: "namespace2id",
+			ClusterId:   "cluster2id",
+			ClusterName: "cluster2name",
+			Containers: []*storage.Container{
+				{
+					Name:  "container1name",
+					Image: types2.ToContainerImage(testImages()[1]),
+				},
+			},
+		},
+	}
+}
 
 func testImages() []*storage.Image {
 	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
@@ -534,6 +607,10 @@ func getIDList(ctx context.Context, resolvers interface{}) []string {
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
+	case []*deploymentResolver:
+		for _, r := range res {
+			list = append(list, string(r.Id(ctx)))
+		}
 	}
 	return list
 }
@@ -572,4 +649,42 @@ func getNodeVulnerabilityResolver(ctx context.Context, t *testing.T, resolver *R
 	require.NoError(t, err)
 	require.Equal(t, vulnID, vuln.Id(ctx))
 	return vuln
+}
+
+func getImageCVEDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) (imageCVEDataStore.DataStore, error) {
+	imageCVEStore := imageCVEPostgres.CreateTableAndNewStore(ctx, db, gormDB)
+	imageCVEIndexer := imageCVEPostgres.NewIndexer(db)
+	imageCVESearcher := imageCVESearch.New(imageCVEStore, imageCVEIndexer)
+	imageCVEDatastore, err := imageCVEDataStore.New(imageCVEStore, imageCVEIndexer, imageCVESearcher, dackboxConcurrency.NewKeyFence())
+	return imageCVEDatastore, err
+}
+
+func getImageDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, risks riskDataStore.DataStore) imageDatastore.DataStore {
+	imageStore := imagePostgres.CreateTableAndNewStore(ctx, db, gormDB, false)
+	return imageDatastore.NewWithPostgres(imageStore, imagePostgres.NewIndexer(db), risks, ranking.NewRanker(), ranking.NewRanker())
+}
+
+func getImageComponentDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, risks riskDataStore.DataStore) imageComponentDataStore.DataStore {
+	imageCompStore := imageComponentPostgres.CreateTableAndNewStore(ctx, db, gormDB)
+	imageCompIndexer := imageComponentPostgres.NewIndexer(db)
+	imageCompSearcher := imageComponentSearch.NewV2(imageCompStore, imageCompIndexer)
+	return imageComponentDataStore.New(nil, imageCompStore, imageCompIndexer, imageCompSearcher, risks, ranking.NewRanker())
+}
+func getImageCVEEdgeDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) imageCVEEdgeDataStore.DataStore {
+	imageCveEdgeStore := imageCVEEdgePostgres.CreateTableAndNewStore(ctx, db, gormDB)
+	imageCveEdgeIndexer := imageCVEEdgePostgres.NewIndexer(db)
+	imageCveEdgeSearcher := imageCVEEdgeSearch.NewV2(imageCveEdgeStore, imageCveEdgeIndexer)
+	return imageCVEEdgeDataStore.New(nil, imageCveEdgeStore, imageCveEdgeSearcher)
+}
+
+func getImageComponentCVEEdgeDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) componentCVEEdgeDataStore.DataStore {
+	componentCveEdgeStore := componentCVEEdgePostgres.CreateTableAndNewStore(ctx, db, gormDB)
+	componentCveEdgeIndexer := componentCVEEdgePostgres.NewIndexer(db)
+	componentCveEdgeSearcher := componentCVEEdgeSearch.NewV2(componentCveEdgeStore, componentCveEdgeIndexer)
+	return componentCVEEdgeDataStore.New(nil, componentCveEdgeStore, componentCveEdgeIndexer, componentCveEdgeSearcher)
+}
+
+func getDeploymentDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, imageDatastore imageDatastore.DataStore, risks riskDataStore.DataStore) (deploymentDatastore.DataStore, error) {
+	deploymentStore := deploymentPostgres.NewFullTestStore(nil, deploymentPostgres.CreateTableAndNewStore(ctx, db, gormDB))
+	return deploymentDatastore.NewTestDataStore(deploymentStore, nil, db, nil, nil, imageDatastore, nil, nil, risks, nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
 }
