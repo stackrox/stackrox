@@ -75,7 +75,7 @@ type OutputRef struct {
 	Namespace string `json:"namespace"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // TailoredProfile is the Schema for the tailoredprofiles API
 // +kubebuilder:subresource:status
@@ -89,7 +89,7 @@ type TailoredProfile struct {
 	Status TailoredProfileStatus `json:"status,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // TailoredProfileList contains a list of TailoredProfile
 type TailoredProfileList struct {

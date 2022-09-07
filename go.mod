@@ -131,6 +131,7 @@ require (
 	k8s.io/kubelet v0.22.13
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/controller-runtime v0.11.2
+	sigs.k8s.io/controller-tools v0.7.0
 	sigs.k8s.io/e2e-framework v0.0.7
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -219,6 +220,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.11.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
+	github.com/gobuffalo/flect v0.2.4 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
