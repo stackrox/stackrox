@@ -97,15 +97,17 @@ spec:
           protocol: TCP
         resources:
           limits:
+            cpu: "4"
+            memory: 8Gi
+          requests:
             cpu: "2"
             memory: 4Gi
-          requests:
-            cpu: 200m
-            memory: 200Mi
         securityContext:
           runAsUser: 70
           runAsGroup: 70
         volumeMounts:
+        - name: config-volume
+          mountPath: /etc/stackrox.d/config/
         - mountPath: /var/lib/postgresql/data
           name: disk
         - name: central-db-tls-volume
@@ -122,6 +124,9 @@ spec:
         {{- else }}
         emptyDir: {}
         {{- end }}
+      - name: config-volume
+        configMap:
+          name: central-db-config
       - name: central-db-password
         secret:
           secretName: central-db-password
@@ -139,7 +144,7 @@ spec:
       - name: shared-memory
         emptyDir:
           medium: Memory
-          {{- /* Keep this in sync with shared_buffers in /Users/cong/go/src/github.com/stackrox/rox/image/postgres/postgresql.conf */}}
+          {{- /* Keep this in sync with shared_buffers in image/templates/helm/stackrox-central/templates/01-central-08-db-configmap.yaml */}}
           sizeLimit: 2Gi
 ---
 apiVersion: v1
