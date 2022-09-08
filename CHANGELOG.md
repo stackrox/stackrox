@@ -69,10 +69,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - These endpoints are deprecated as license files are not required to run the platform
 - `firstNodeOccurrence` field of `storage.Node` object, which is in the response of Node endpoints, has been removed.
 - `vulns` fields of `storage.Node` object, which is in the response payload of `v1/nodes` is deprecated and will be removed in future release.
-- `/v1/cves/suppress` and `/v1/cves/unsuppress` has been deprecated and will be removed in the future.
-  - Use `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` to snooze and unsnooze image  vulnerabilities.
-  - Use `/v1/nodecves/suppress` and `/v1/nodecves/unsuppress` to snooze and unsnooze node/host vulnerabilities.
-  - Use `/v1/clustercves/suppress` and `/v1/clustercves/unsuppress` to snooze and unsnooze platform (k8s, istio, and openshift) vulnerabilities.
+- `/v1/cves/suppress` and `/v1/cves/unsuppress` has been deprecated and will be removed in the future. Once removed:
+  - Use `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` to snooze and unsnooze only image  vulnerabilities.
+  - Use `/v1/nodecves/suppress` and `/v1/nodecves/unsuppress` to snooze and unsnooze only node/host vulnerabilities.
+  - Use `/v1/clustercves/suppress` and `/v1/clustercves/unsuppress` to snooze and unsnooze only platform (k8s, istio, and openshift) vulnerabilities.
+  - Note that in deprecation phase, the recommended new APIs will snooze and unsnooze vulnerabilities across all categories—image, node and platform—similar to the deprecated APIs.
 - /v1/compliance/results was never implemented and will be removed in this release
 - In release 73.0, the /v1/compliance/runresults endpoint will contain a slimmed down version of the ComplianceDomain object. This allows for greater scalability and reduced memory usage.
 - When the underlying database changes to Postgres the api `/db/restore` will no longer be a supported means for database restores.  At that time using `roxctl` will be the supported mechanism for database restores.

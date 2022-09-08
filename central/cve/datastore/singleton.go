@@ -4,6 +4,7 @@ import (
 	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
 	clusterCVEEdgeIndexer "github.com/stackrox/rox/central/clustercveedge/index"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
+	"github.com/stackrox/rox/central/cve/common"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/cve/search"
 	"github.com/stackrox/rox/central/cve/store/dackbox"
@@ -51,6 +52,12 @@ func initialize() {
 
 // Singleton returns a singleton instance of cve datastore
 func Singleton() DataStore {
+	once.Do(initialize)
+	return ds
+}
+
+// CVESuppressManager returns a singleton instance of cve suppress manager.
+func CVESuppressManager() common.CVESuppressManager {
 	once.Do(initialize)
 	return ds
 }

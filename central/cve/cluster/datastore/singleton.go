@@ -3,6 +3,7 @@ package datastore
 import (
 	"github.com/stackrox/rox/central/cve/cluster/datastore/search"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
+	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -25,6 +26,12 @@ func initialize() {
 
 // Singleton returns a singleton instance of cve datastore
 func Singleton() DataStore {
+	once.Do(initialize)
+	return ds
+}
+
+// CVESuppressManager returns a singleton instance of cve suppress manager.
+func CVESuppressManager() common.CVESuppressManager {
 	once.Do(initialize)
 	return ds
 }

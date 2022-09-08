@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/index"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/search"
@@ -20,6 +19,8 @@ import (
 // DataStore is an intermediary to cluster CVE storage.
 //go:generate mockgen-wrapper
 type DataStore interface {
+	common.CVESuppressManager
+
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 	SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.ClusterCVE, error)
@@ -28,9 +29,6 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ClusterCVE, bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ClusterCVE, error)
-
-	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error
-	Unsuppress(ctx context.Context, ids ...string) error
 
 	// UpsertInternal and DeleteInternal provide functionality to add and remove k8s, openshift and istio vulnerabilities.
 	// These functions are used only by cve fetcher to periodically update cluster vulns, and should not be exposed to the service layer.

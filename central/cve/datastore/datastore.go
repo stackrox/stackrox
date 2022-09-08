@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/gogo/protobuf/types"
 	clusterIndex "github.com/stackrox/rox/central/cluster/index"
 	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
 	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
@@ -34,6 +33,8 @@ import (
 // DataStore is an intermediary to CVE storage.
 //go:generate mockgen-wrapper
 type DataStore interface {
+	common.CVESuppressManager
+
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 	SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error)
@@ -43,8 +44,6 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.CVE, error)
 
-	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error
-	Unsuppress(ctx context.Context, ids ...string) error
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 	EnrichNodeWithSuppressedCVEs(node *storage.Node)
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/cve/node/datastore"
+	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -32,7 +32,7 @@ var (
 
 // serviceImpl provides APIs for CVEs.
 type serviceImpl struct {
-	cves datastore.DataStore
+	cves common.CVESuppressManager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

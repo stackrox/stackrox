@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	cveDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
+	"github.com/stackrox/rox/central/cve/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -18,7 +18,7 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(cveDataStore cveDataStore.DataStore) Service {
+func New(cveDataStore common.CVESuppressManager) Service {
 	return &serviceImpl{
 		cves: cveDataStore,
 	}

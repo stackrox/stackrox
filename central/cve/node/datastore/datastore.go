@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/node/datastore/index"
@@ -20,6 +19,8 @@ import (
 // DataStore is an intermediary to CVE storage.
 //go:generate mockgen-wrapper
 type DataStore interface {
+	common.CVESuppressManager
+
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 	SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.NodeCVE, error)
@@ -29,10 +30,6 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.NodeCVE, error)
 
-	// Suppress suppresses node vulnerabilities with provided cve names (not ids) for the duration provided.
-	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error
-	// Unsuppress unsuppresses node vulnerabilities with provided cve names (not ids).
-	Unsuppress(ctx context.Context, cves ...string) error
 	EnrichNodeWithSuppressedCVEs(node *storage.Node)
 }
 

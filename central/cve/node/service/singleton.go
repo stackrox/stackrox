@@ -1,7 +1,9 @@
 package service
 
 import (
+	legacyCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveDataStore "github.com/stackrox/rox/central/cve/node/datastore"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -12,6 +14,10 @@ var (
 )
 
 func initialize() {
+	if !features.PostgresDatastore.Enabled() {
+		as = New(legacyCVEDataStore.CVESuppressManager())
+		return
+	}
 	as = New(cveDataStore.Singleton())
 }
 

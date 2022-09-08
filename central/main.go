@@ -374,12 +374,11 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnRequestService.Singleton(),
+		clusterCVEService.Singleton(),
+		imageCVEService.Singleton(),
+		nodeCVEService.Singleton(),
 	}
-	if features.PostgresDatastore.Enabled() {
-		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
-		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
-		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
-	} else {
+	if !features.PostgresDatastore.Enabled() {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
 	}
 
