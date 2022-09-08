@@ -27,7 +27,7 @@ var (
 		    LastSeenTimestamp timestamp,
 		    ClusterId varchar,
 		    PRIMARY KEY(Flow_id)
-	    )
+	    ) PARTITION BY LIST (ClusterId)
         `,
 		GormModel: (*NetworkFlows)(nil),
 		Indexes: []string{
@@ -42,7 +42,7 @@ var (
 		},
 	}
 
-	// NetworkFlowsSchema is the go schema for table `nodes`.
+	// NetworkFlowsSchema is the go schema for table `network_flows`.
 	NetworkFlowsSchema = func() *walker.Schema {
 		schema := GetSchemaForTable("network_flows")
 		if schema != nil {
