@@ -33,6 +33,7 @@ arch="x86_64"
 dnf_list_args=()
 if [[ $(uname -m) == "arm64" ]]; then
   arch="aarch64"
+  # Workaround for local Darwin ARM64 builds due to "Error: Failed to download metadata for repo 'pgdg14': repomd.xml GPG signature verification error: Bad GPG signature"
   dnf_list_args=('--nogpgcheck')
 fi
 postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
@@ -48,7 +49,7 @@ else
     docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
 FROM registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
 RUN dnf install --disablerepo='*' -y "${postgres_repo_url}"
-ENTRYPOINT dnf list "${dnf_list_args[@]}" --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
+ENTRYPOINT dnf list "${dnf_list_args[@]-}" --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
 EOF
     postgres_minor="$(docker run --rm postgres-minor-image).${arch}"
     rm -rf "${build_dir}"
