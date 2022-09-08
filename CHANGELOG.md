@@ -39,7 +39,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-9484: When integrating Quay registry you can now optionally use robot account instead of just OAuth tokens. In fact this is Quay's recommended integration credentials. However, integration with Quay scanner still requires an OAuth token.
 - The `init-db` init-container for ScannerDB now specifies resource requests/limits which match the `db` container in ScannerDB.
 - Starting 3.73, CSV export API `/api/vm/export/csv` would require to pass `CVE Type` filter as part of the input query parameter. Requests that do not have the filter would error out.
-  - Examples : `CVE Type:NODE_CVE`, `CVE_Type:IMAGE_CVE`, `CVE_TYPE:K8s_CVE`
+  - Examples : `CVE Type:NODE_CVE`, `CVE_Type:IMAGE_CVE`, `CVE_TYPE:K8S_CVE`
 
 ## [3.71.0]
 
