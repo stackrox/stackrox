@@ -42,7 +42,7 @@ const CVEStackedPill = ({
     scanMessage,
 }) => {
     const hasCounts = vulnCounter?.all?.total > 0;
-    const hasScan = !scanTime;
+    const hasScan = !!scanTime;
     const hasScanMessage = !!scanMessage?.header;
 
     const pillTooltip = showTooltip
@@ -56,7 +56,7 @@ const CVEStackedPill = ({
 
     return (
         <div className="flex items-center w-full">
-            {!hasScan && <span>{entityName} not scanned</span>}
+            {hasScan && <span>{entityName} not scanned</span>}
             {!hasCounts && <span>No CVEs</span>}
             {hasCounts && (
                 <>
