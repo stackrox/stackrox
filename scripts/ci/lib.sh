@@ -1034,6 +1034,14 @@ openshift_ci_mods() {
     export CI=true
     export OPENSHIFT_CI=true
 
+    # Single step test jobs do not have HOME
+    if [[ -z "${HOME:-}" ]] || ! touch "${HOME}/openshift-ci-write-test"; then
+        info "HOME (${HOME:-unset}) is not set or not writeable, using mktemp dir"
+        HOME=$( mktemp -d )
+        export HOME
+        info "HOME is now $HOME"
+    fi
+
     if is_in_PR_context && ! is_openshift_CI_rehearse_PR; then
         local sha
         if [[ -n "${PULL_PULL_SHA:-}" ]]; then
