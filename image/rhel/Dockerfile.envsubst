@@ -44,6 +44,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/kubernetes-sensor && \
     ln -s entrypoint-wrapper.sh /stackrox/sensor-upgrader && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /stackrox/roxctl && \
+    ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf upgrade && \
     rpm -i /tmp/snappy.rpm && \
