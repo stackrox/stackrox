@@ -332,7 +332,7 @@ const processDataLegacy = (data, workflowState, limit, showVmUpdates) => {
     return results.slice(0, 8); // @TODO: Remove and add pagination when available
 };
 
-const ClustersWithMostOrchestratorVulnerabilities = ({ entityContext, limit }) => {
+const ClustersWithMostClusterVulnerabilities = ({ entityContext, limit }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
     const queryToUse = showVmUpdates
@@ -399,14 +399,14 @@ const ClustersWithMostOrchestratorVulnerabilities = ({ entityContext, limit }) =
     );
 };
 
-ClustersWithMostOrchestratorVulnerabilities.propTypes = {
+ClustersWithMostClusterVulnerabilities.propTypes = {
     entityContext: PropTypes.shape({}),
     limit: PropTypes.number,
 };
 
-ClustersWithMostOrchestratorVulnerabilities.defaultProps = {
+ClustersWithMostClusterVulnerabilities.defaultProps = {
     entityContext: {},
     limit: 8,
 };
 
-export default ClustersWithMostOrchestratorVulnerabilities;
+export default ClustersWithMostClusterVulnerabilities;
