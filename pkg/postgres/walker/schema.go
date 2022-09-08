@@ -145,12 +145,18 @@ func (s *Schema) SetSearchScope(searchCategories ...v1.SearchCategory) {
 }
 
 // AddFieldWithType adds a field to the schema with the specified data type
-func (s *Schema) AddFieldWithType(field Field, dt DataType) {
+func (s *Schema) AddFieldWithType(field Field, dt DataType, opts PostgresOptions) {
 	if !field.Include() {
 		return
 	}
+
 	field.DataType = dt
-	field.SQLType = DataTypeToSQLType(dt)
+	if opts.ColumnType != "" {
+		field.SQLType = opts.ColumnType
+	} else {
+		field.SQLType = DataTypeToSQLType(dt)
+	}
+
 	field.ModelType = GetToGormModelType(field.Type, field.DataType)
 	s.Fields = append(s.Fields, field)
 }
@@ -392,6 +398,9 @@ type PostgresOptions struct {
 	IgnorePrimaryKey       bool
 	IgnoreUniqueConstraint bool
 	Reference              *foreignKeyRef
+
+	// Which database type will be used to store this value
+	ColumnType string
 
 	// IgnoreChildFKs is an option used to tell the walker that
 	// foreign keys of children of this field should be ignored.
