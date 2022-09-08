@@ -3,8 +3,11 @@ package proxy
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -41,14 +44,22 @@ func getProxyConfigEnvVars(obj k8sutil.Object, proxyEnvVars map[string]string) (
 }
 
 // InjectProxyEnvVars wraps a Translator to inject proxy configuration environment variables.
-func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string) values.Translator {
+func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string, log logr.Logger) values.Translator {
 	return values.TranslatorFunc(func(ctx context.Context, obj *unstructured.Unstructured) (chartutil.Values, error) {
 		vals, err := translator.Translate(ctx, obj)
 		if err != nil {
 			return nil, err
 		}
 
-		proxyEnvVars, _ := getProxyConfigEnvVars(obj, proxyEnv) // ignore errors for now
+		proxyEnvVars, err := getProxyConfigEnvVars(obj, proxyEnv)
+		if err != nil {
+			// Simply log the error, we do not want to fail reconciliation based on this (the check for
+			// len(proxyEnvVars) == 0) should catch a complete failure).
+			// While this log can be spammy (emitted on every reconciliation), an error here is extremely unlikely
+			// and thus we deem this acceptable.
+			log.Error(err, "could not determine proxy environment variables", "gvk", obj.GroupVersionKind(), "namespace", obj.GetNamespace(), "name", obj.GetName())
+		}
+
 		if len(proxyEnvVars) == 0 {
 			return vals, nil
 		}
@@ -65,6 +76,8 @@ func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string
 
 		envVarVals, err := vals.Table("customize.envVars")
 		if err != nil {
+			// This shouldn't happen due to the CoalesceTables call above.
+			utils.Should(errors.Wrap(err, "failed to look up customize.envVars table"))
 			return vals, nil // give up on injecting env vars, something is off
 		}
 

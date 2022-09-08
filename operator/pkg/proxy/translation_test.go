@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/utils"
@@ -76,7 +77,7 @@ func TestInjectProxyEnvVars(t *testing.T) {
 		return chartutil.ReadValues([]byte(`
 foo:
   bar: baz`))
-	}), env).Translate(context.Background(), testObjUnstructured())
+	}), env, logr.Discard()).Translate(context.Background(), testObjUnstructured())
 	assert.NoError(t, err)
 
 	expectedVals, err := chartutil.ReadValues([]byte(`
@@ -114,7 +115,7 @@ customize:
     SOME_VAR: foo
     ANOTHER_VAR:
       value: bar`))
-	}), env).Translate(context.Background(), testObjUnstructured())
+	}), env, logr.Discard()).Translate(context.Background(), testObjUnstructured())
 	assert.NoError(t, err)
 
 	expectedVals, err := chartutil.ReadValues([]byte(`
@@ -157,7 +158,7 @@ customize:
     http_proxy:
       value: bar
     NO_PROXY: baz`))
-	}), env).Translate(context.Background(), testObjUnstructured())
+	}), env, logr.Discard()).Translate(context.Background(), testObjUnstructured())
 	assert.NoError(t, err)
 
 	expectedVals, err := chartutil.ReadValues([]byte(`

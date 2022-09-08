@@ -40,7 +40,7 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 	}
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
-		proxy.InjectProxyEnvVars(translation.Translator{}, proxyEnv),
+		proxy.InjectProxyEnvVars(translation.Translator{}, proxyEnv, mgr.GetLogger()),
 		opts...,
 	)
 }
