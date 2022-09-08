@@ -197,13 +197,13 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComp
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
 	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
 	s.Require().NoError(err)
-	targetEdgeId := cmp1cve1edge
+	targetEdgeID := cmp1cve1edge
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {
 			testCtx := s.testContexts[c.contextKey]
-			exists, err := s.datastore.Exists(testCtx, targetEdgeId)
+			exists, err := s.datastore.Exists(testCtx, targetEdgeID)
 			s.NoError(err)
-			s.Equal(c.expectedEdgeFound[targetEdgeId], exists)
+			s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
 		})
 	}
 }
@@ -213,13 +213,13 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComp
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
 	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
 	s.Require().NoError(err)
-	targetEdgeId := cmp1cve2edge
+	targetEdgeID := cmp1cve2edge
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {
 			testCtx := s.testContexts[c.contextKey]
-			exists, err := s.datastore.Exists(testCtx, targetEdgeId)
+			exists, err := s.datastore.Exists(testCtx, targetEdgeID)
 			s.NoError(err)
-			s.Equal(c.expectedEdgeFound[targetEdgeId], exists)
+			s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
 		})
 	}
 }
@@ -229,13 +229,13 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSharedComp
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
 	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
 	s.Require().NoError(err)
-	targetEdgeId := cmp3cve4edge
+	targetEdgeID := cmp3cve4edge
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {
 			testCtx := s.testContexts[c.contextKey]
-			exists, err := s.datastore.Exists(testCtx, targetEdgeId)
+			exists, err := s.datastore.Exists(testCtx, targetEdgeID)
 			s.NoError(err)
-			s.Equal(c.expectedEdgeFound[targetEdgeId], exists)
+			s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
 		})
 	}
 }
