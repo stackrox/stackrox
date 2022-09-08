@@ -42,7 +42,6 @@ const MOST_COMMON_IMAGE_VULNERABILITIES = gql`
             scoreVersion
             isFixable
             deploymentCount
-            imageCount
             summary
             imageCount
             lastScanned
