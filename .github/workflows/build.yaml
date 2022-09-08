@@ -102,7 +102,7 @@ jobs:
         run: make build-prep main-build-nodeps
 
       - name: Bundle the build to preserve permissions
-        run: tar -cvzf go-binaries-build.tgz bin/linux
+        run: tar -cvzf go-binaries-build.tgz bin/linux_amd64
 
       - uses: actions/upload-artifact@v3
         with: 
