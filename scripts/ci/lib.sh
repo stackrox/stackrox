@@ -941,9 +941,13 @@ gate_pr_job() {
             echo "Determined diff-base as ${diff_base}"
             echo "Master SHA: $(git rev-parse origin/master)"
         elif is_OPENSHIFT_CI; then
-            diff_base="$(jq -r '.refs[0].base_sha' <<<"$CLONEREFS_OPTIONS")"
+            if [[ -n "${PULL_BASE_SHA:-}" ]]; then
+                diff_base="${PULL_BASE_SHA:-}"
+            else
+                diff_base="$(jq -r '.refs[0].base_sha' <<<"$CLONEREFS_OPTIONS")"
+            fi
             echo "Determined diff-base as ${diff_base}"
-            [[ "${diff_base}" != "null" ]] || die "Could not find base_sha in CLONEREFS_OPTIONS: $CLONEREFS_OPTIONS"
+            [[ "${diff_base}" != "null" ]] || die "Could not find base_sha in PULL_BASE_SHA or CLONEREFS_OPTIONS"
         else
             die "unsupported"
         fi
@@ -1253,11 +1257,19 @@ send_slack_notice_for_failures_on_merge() {
 
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
-    local commit_details
-    org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org') || return 1
-    repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo') || return 1
+    if [[ -n "${JOB_SPEC:-}" ]]; then
+        org=$(jq -r <<<"$JOB_SPEC" '.refs.org')
+        repo=$(jq -r <<<"$JOB_SPEC" '.refs.repo')
+    elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+        org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org')
+        repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo')
+    else
+        echo "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
+        return 1
+    fi
     [[ "$org" != "null" ]] && [[ "$repo" != "null" ]] || return 1
     local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${OPENSHIFT_BUILD_COMMIT}"
+    local commit_details
     commit_details=$(curl --retry 5 -sS "${commit_details_url}") || return 1
 
     local job_name="${JOB_NAME_SAFE#merge-}"
