@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
@@ -265,9 +269,107 @@ func getPool(postgresConfig *pgxpool.Config) *pgxpool.Pool {
 	return postgresDB
 }
 
+// getAvailablePostgresCapacity - retrieves the capacity for Postgres
+func getAvailablePostgresCapacity(postgresConfig *pgxpool.Config) (int64, error) {
+	// Connect to database for admin functions
+	connectPool := GetAdminPool(postgresConfig)
+	// Close the admin connection pool
+	defer connectPool.Close()
+
+	// Wrap in a transaction
+	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
+	defer cancel()
+	conn, err := connectPool.Acquire(ctx)
+	if err != nil {
+		log.Error(err)
+		return 0, err
+	}
+	defer conn.Release()
+
+	// Start a transaction
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		log.Error(err)
+		return 0, err
+	}
+
+	// COPY needs some place to write the data.  This table will be deleted when the transaction ends.
+	_, err = tx.Exec(ctx, "CREATE TEMP TABLE IF NOT EXISTS tmp_sys_df (content text) ON COMMIT DROP;")
+	if err != nil {
+		log.Errorf("Unable to create tmp table: %v", err)
+		if err := tx.Rollback(ctx); err != nil {
+			return 0, err
+		}
+		return 0, err
+	}
+
+	// COPY can execute a system level program and stream the results to a table.
+	_, err = tx.Exec(ctx, "COPY tmp_sys_df FROM PROGRAM 'df -kP $PGDATA | tail'")
+	if err != nil {
+		log.Errorf("Unable to copy to tmp table: %v", err)
+		if err := tx.Rollback(ctx); err != nil {
+			return 0, err
+		}
+		return 0, err
+	}
+
+	var rawCapacityInfo []string
+	rows, err := tx.Query(ctx, "SELECT content FROM tmp_sys_df;")
+	if err != nil {
+		log.Errorf("Unable to read tmp table: %v", err)
+		if err := tx.Rollback(ctx); err != nil {
+			return 0, err
+		}
+		return 0, err
+	}
+
+	for rows.Next() {
+		var info string
+		if err := rows.Scan(&info); err != nil {
+			if err := tx.Rollback(ctx); err != nil {
+				return 0, err
+			}
+			return 0, err
+		}
+
+		rawCapacityInfo = append(rawCapacityInfo, info)
+	}
+
+	// We should only get the header row and the row for the size of $PGDATA.  If we
+	// get more than that, then $PGDATA is not defined
+	if len(rawCapacityInfo) > 2 {
+		if err := tx.Rollback(ctx); err != nil {
+			return 0, err
+		}
+		return 0, errors.New("unable to determine postgres volume capacity")
+	}
+
+	// Get the volume size data
+	capacityFields := strings.Fields(rawCapacityInfo[1])
+
+	// Get the available blocks
+	capacityBlocks, err := strconv.ParseInt(capacityFields[3], 10, 64)
+	if err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return 0, err
+		}
+		return 0, errors.New("unable to determine capacity")
+	}
+
+	// Calculate the capacity based on blocks and block size.
+	availableCapacity := capacityBlocks * 1024
+	log.Infof("availableCapacity = %d", availableCapacity)
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+
+	return availableCapacity, nil
+}
+
 // GetRemainingCapacity - retrieves the amount of space left in Postgres
 func GetRemainingCapacity(postgresConfig *pgxpool.Config) (int64, error) {
-	// Connect to different database for admin functions
+	// Connect to database for admin functions
 	connectPool := GetAdminPool(postgresConfig)
 	// Close the admin connection pool
 	defer connectPool.Close()
@@ -278,12 +380,27 @@ func GetRemainingCapacity(postgresConfig *pgxpool.Config) (int64, error) {
 
 	row := connectPool.QueryRow(ctx, totalSizeStmt)
 	var sizeUsed int64
-	if err := row.Scan(&sizeUsed); err != nil {
+	err := row.Scan(&sizeUsed)
+	if err != nil {
 		return 0, err
 	}
 
-	log.Infof("size used = %d.  size left = %d", sizeUsed, pgconfig.GetPostgresCapacity()-sizeUsed)
-	return pgconfig.GetPostgresCapacity() - sizeUsed, nil
+	var capacity int64
+	if env.ManagedCentral.BooleanSetting() {
+		// Cannot get managed services capacity via Postgres.  Assume size for now.
+		capacity = pgconfig.GetPostgresCapacity() - sizeUsed
+	} else {
+		capacity, err = getAvailablePostgresCapacity(postgresConfig)
+		if err != nil {
+			log.Error(err)
+			// If we cannot calculate the capacity, assume it based on the recommended starting
+			// capacity
+			return pgconfig.GetPostgresCapacity() - sizeUsed, err
+		}
+	}
+
+	log.Infof("remaining capacity = %d", capacity)
+	return capacity, nil
 }
 
 // GetDatabaseSize - retrieves the size of the database specified by dbName
