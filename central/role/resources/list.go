@@ -23,21 +23,37 @@ import (
 //
 // KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER (case-sensitive).
 var (
-	// Access is the new resource grouping all access related resources.
+	// Access groups all access-related resources. It aims to cover
+	// configuration for authentication and authorization. For instance,
+	// it has replaced: AuthProvider, Group, Licenses, Role, User.
 	Access = newResourceMetadata("Access", permissions.GlobalScope)
-	// Administration is the new resource grouping all administration-like resources.
+
+	// Administration groups all administration-like resources except those
+	// related to authentication and authorization. It aims to cover platform
+	// configuration. For instance, it has replaced: AllComments, Config,
+	// ComplianceRunSchedule, DebugLogs, NetworkGraphConfig, ProbeUpload,
+	// ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity.
 	Administration = newResourceMetadata("Administration", permissions.GlobalScope)
-	Alert          = newResourceMetadata("Alert", permissions.NamespaceScope)
-	CVE            = newResourceMetadata("CVE", permissions.NamespaceScope)
-	Cluster        = newResourceMetadata("Cluster", permissions.ClusterScope)
-	Compliance     = newResourceMetadata("Compliance", permissions.ClusterScope)
-	Deployment     = newResourceMetadata("Deployment", permissions.NamespaceScope)
-	// DeploymentExtension is the new resource grouping all deployment extending resources.
+
+	Alert      = newResourceMetadata("Alert", permissions.NamespaceScope)
+	CVE        = newResourceMetadata("CVE", permissions.NamespaceScope)
+	Cluster    = newResourceMetadata("Cluster", permissions.ClusterScope)
+	Compliance = newResourceMetadata("Compliance", permissions.ClusterScope)
+	Deployment = newResourceMetadata("Deployment", permissions.NamespaceScope)
+
+	// DeploymentExtension aims to cover our extensions to deployments. For
+	// instance, it has replaced: Indicator, NetworkBaseline, ProcessWhitelist,
+	// Risk.
 	DeploymentExtension = newResourceMetadata("DeploymentExtension", permissions.NamespaceScope)
-	Detection           = newResourceMetadata("Detection", permissions.GlobalScope)
-	Image               = newResourceMetadata("Image", permissions.NamespaceScope)
-	// Integration is the new  resource grouping all integration resources.
-	Integration                      = newResourceMetadata("Integration", permissions.GlobalScope)
+
+	Detection = newResourceMetadata("Detection", permissions.GlobalScope)
+	Image     = newResourceMetadata("Image", permissions.NamespaceScope)
+
+	// Integration groups all integration-related resources. It aims to cover
+	// integrations and their configuration. For instance, it has replaced:
+	// APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration.
+	Integration = newResourceMetadata("Integration", permissions.GlobalScope)
+
 	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
 	K8sRoleBinding                   = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
 	K8sSubject                       = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
