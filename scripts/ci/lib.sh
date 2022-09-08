@@ -1036,7 +1036,11 @@ openshift_ci_mods() {
 
     if is_in_PR_context && ! is_openshift_CI_rehearse_PR; then
         local sha
-        sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || echo "WARNING: Cannot find pull sha"
+        if [[ -n "${PULL_PULL_SHA:-}" ]]; then
+            sha="${PULL_PULL_SHA}"
+        else
+            sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || echo "WARNING: Cannot find pull sha"
+        fi
         if [[ -n "${sha:-}" ]] && [[ "$sha" != "null" ]]; then
             info "Will checkout SHA to match PR: $sha"
             git checkout "$sha"
