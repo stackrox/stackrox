@@ -7,7 +7,7 @@ import { ResourceName } from 'types/roleResources';
 const resourceDescriptions: Record<ResourceName, string> = {
     Access: 'Read: View configuration for authentication and authorization, such as authentication services, roles, groups, and users. Write: Modify configuration for authentication and authorization.',
     Administration:
-        'Read: View configuration for network, sensor, scanner, and debugging configuration. Write: Modify configuration for network, sensor, scanner, and debugging configuration, delete comments from other users.',
+        'Read: View platform configuration (e.g., network graph, sensor, debugging configs). Write: Modify platform configuration, delete comments from other users.',
     APIToken: 'Read: View API tokens. Write: Add or revoke API tokens.',
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
     AllComments:
@@ -38,7 +38,7 @@ const resourceDescriptions: Record<ResourceName, string> = {
         'Read: List image registry integrations. Write: Add, edit, or delete image registry integrations.',
     Indicator: 'Read: View process activity in deployments. Write: N/A',
     Integration:
-        'Read: View integrations and their configuration. This includes backup, registry, image signature and notification systems. Write: Add, modify, delete integrations and their configuration.',
+        'Read: View integrations and their configuration. This includes backup, registry, image signature and notification systems, API tokens. Write: Add, modify, delete integrations and their configuration, API tokens.',
     K8sRole:
         'Read: View roles for Kubernetes role-based access control in secured clusters. Write: N/A',
     K8sRoleBinding:
