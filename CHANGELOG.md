@@ -24,6 +24,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - K8sRole | Annotation | Role Annotation
   - K8sRoleBinding | Label | Role Binding Label
   - K8sRoleAnnotation | Annotation | Role Binding Annotation
+- ROX-12496: CSV export API endpoint `/api/vm/export/csv` is deprecated and will be removed in the future. It will be replaced with three new endpoints, one for each CVE type.
+  - For NodeCVEs : `/api/export/csv/node/cve`
+  - For ImageCVEs: `/api/export/csv/image/cve`
+  - For ClusterCVEs: `/api/export/csv/cluster/cve`
 
 ### Technical Changes
 - ROX-11181: Any clusters that have been unhealthy (defined as central being unable to reach sensor running on those clusters) for a configured period of time will be automatically removed. The number of days after which an 'unhealthy' cluster is removed can be configured in the System Configuration page or using the cluster API.
