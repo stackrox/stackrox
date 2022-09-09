@@ -5,17 +5,21 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
+	postgresStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	rocksdbStore "github.com/stackrox/rox/central/processbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -38,7 +42,8 @@ type ProcessBaselineDataStoreTestSuite struct {
 	searcher           baselineSearch.Searcher
 	indicatorMockStore *indicatorMocks.MockDataStore
 
-	db *rocksdb.RocksDB
+	db   *rocksdb.RocksDB
+	pool *pgxpool.Pool
 
 	baselineResultsStore *mocks.MockDataStore
 
@@ -53,17 +58,25 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 		),
 	)
 
-	db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
-	suite.Require().NoError(err)
+	var err error
 
-	suite.db = db
+	if features.PostgresDatastore.Enabled() {
+		pgtestbase := pgtest.ForT(suite.T())
+		suite.Require().NotNil(pgtestbase)
+		suite.pool = pgtestbase.Pool
+		suite.storage = postgresStore.New(suite.pool)
+		suite.indexer = postgresStore.NewIndexer(suite.pool)
+	} else {
+		suite.db, err = rocksdb.NewTemp(suite.T().Name() + ".db")
+		suite.Require().NoError(err)
 
-	suite.storage, err = rocksdbStore.New(db)
-	suite.NoError(err)
+		suite.storage, err = rocksdbStore.New(suite.db)
+		suite.NoError(err)
 
-	tmpIndex, err := globalindex.TempInitializeIndices("")
-	suite.NoError(err)
-	suite.indexer = index.New(tmpIndex)
+		tmpIndex, err := globalindex.TempInitializeIndices("")
+		suite.NoError(err)
+		suite.indexer = index.New(tmpIndex)
+	}
 
 	suite.searcher, err = baselineSearch.New(suite.storage, suite.indexer)
 	suite.NoError(err)
@@ -77,7 +90,11 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 
 func (suite *ProcessBaselineDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
-	rocksdbtest.TearDownRocksDB(suite.db)
+	if features.PostgresDatastore.Enabled() {
+		suite.pool.Close()
+	} else {
+		rocksdbtest.TearDownRocksDB(suite.db)
+	}
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) mustSerializeKey(key *storage.ProcessBaselineKey) string {
