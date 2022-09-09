@@ -19,6 +19,7 @@ import (
 	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -315,7 +316,9 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 		{
 			"comp1os1",
 			scancomponent.ComponentID("comp1", "0.9", "os1"),
-			[]string{"cve-2018-1#os1"},
+			[]string{
+				cve.ID("cve-2018-1", "os1"),
+			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 1},
 				critical:  &VulnerabilityFixableCounterResolver{0, 0},
@@ -327,7 +330,9 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 		{
 			"comp2os1",
 			scancomponent.ComponentID("comp2", "1.1", "os1"),
-			[]string{"cve-2018-1#os1"},
+			[]string{
+				cve.ID("cve-2018-1", "os1"),
+			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 1},
 				critical:  &VulnerabilityFixableCounterResolver{0, 0},
@@ -339,7 +344,10 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 		{
 			"comp3os1",
 			scancomponent.ComponentID("comp3", "1.0", "os1"),
-			[]string{"cve-2019-1#os1", "cve-2019-2#os1"},
+			[]string{
+				cve.ID("cve-2019-1", "os1"),
+				cve.ID("cve-2019-2", "os1"),
+			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 0},
 				critical:  &VulnerabilityFixableCounterResolver{0, 0},
@@ -351,7 +359,9 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 		{
 			"comp1os2",
 			scancomponent.ComponentID("comp1", "0.9", "os2"),
-			[]string{"cve-2018-1#os2"},
+			[]string{
+				cve.ID("cve-2018-1", "os2"),
+			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 1},
 				critical:  &VulnerabilityFixableCounterResolver{1, 1},
@@ -363,7 +373,10 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 		{
 			"comp3os2",
 			scancomponent.ComponentID("comp3", "1.0", "os2"),
-			[]string{"cve-2019-1#os2", "cve-2019-2#os2"},
+			[]string{
+				cve.ID("cve-2019-1", "os2"),
+				cve.ID("cve-2019-2", "os2"),
+			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 0},
 				critical:  &VulnerabilityFixableCounterResolver{0, 0},
@@ -375,7 +388,10 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 		{
 			"comp4os2",
 			scancomponent.ComponentID("comp4", "1.0", "os2"),
-			[]string{"cve-2017-1#os2", "cve-2017-2#os2"},
+			[]string{
+				cve.ID("cve-2017-1", "os2"),
+				cve.ID("cve-2017-2", "os2"),
+			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 0},
 				critical:  &VulnerabilityFixableCounterResolver{0, 0},
@@ -470,7 +486,7 @@ func (s *GraphQLImageComponentTestSuite) TestTopImageVulnerability() {
 
 	comp := s.getImageComponentResolver(ctx, scancomponent.ComponentID("comp3", "1.0", "os1"))
 
-	expectedID := graphql.ID("cve-2019-1#os1")
+	expectedID := graphql.ID(cve.ID("cve-2019-1", "os1"))
 
 	vuln, err := comp.TopImageVulnerability(ctx)
 	assert.NoError(s.T(), err)
