@@ -166,7 +166,7 @@ interface OrchestratorMain {
 
     //Misc
     def execInContainer(Deployment deployment, String cmd)
-    def execInContainerByPodName(String name, String namespace, String cmd, int retries)
+    boolean execInContainerByPodName(String name, String namespace, String cmd, int retries)
     String generateYaml(Object orchestratorObject)
     String getNameSpace()
     String getSensorContainerName()

@@ -6,9 +6,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.stream.Collectors
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonSyntaxException
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.ConfigMap as K8sConfigMap
@@ -107,13 +104,11 @@ import objects.NetworkPolicyTypes
 import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
-import util.Timer
 import util.Helpers
+import util.Timer
 
 @Slf4j
 class Kubernetes implements OrchestratorMain {
-    private static final Gson GSON = new GsonBuilder().create()
-
     final int sleepDurationSeconds = 5
     final int maxWaitTimeSeconds = 90
     final int lbWaitTimeSeconds = 600
@@ -1740,7 +1735,7 @@ class Kubernetes implements OrchestratorMain {
         Misc/Helper Methods
     */
 
-    def execInContainerByPodName(String name, String namespace, String cmd, int retries = 1) {
+    boolean execInContainerByPodName(String name, String namespace, String cmd, int retries = 1) {
         // Wait for container 0 to be running first.
         def timer = new Timer(retries, 1)
         while (timer.IsValid()) {
@@ -1757,8 +1752,14 @@ class Kubernetes implements OrchestratorMain {
             log.debug "First container in pod ${name} not yet running ..."
         }
 
-        final CompletableFuture<Void> completion = new CompletableFuture<>()
+        final CompletableFuture<ExecStatus> completion = new CompletableFuture<>()
+        final outputStream = new ByteArrayOutputStream()
+        final errorStream = new ByteArrayOutputStream()
+        ExecStatus execStatus = ExecStatus.UNKNOWN
+
         final listener = new ExecListener() {
+            ExecStatus status = ExecStatus.UNKNOWN
+
             @Override
             void onFailure(Throwable t, ExecListener.Response failureResponse) {
                 log.warn("Command failed with response {}", failureResponse, t)
@@ -1768,14 +1769,26 @@ class Kubernetes implements OrchestratorMain {
             @Override
             void onClose(int code, String reason) {
                 // We ignore both code and reason because the code is websocket code, not the program exit code.
-                completion.complete(null)
+                log.debug("Websocket response: $code $reason")
+                completion.complete(status)
+            }
+
+            @Override
+            void onExit(int code, Status s) {
+                log.debug("Command exited with $code - $s")
+                switch (code) {
+                    case 0:
+                        status = ExecStatus.SUCCESS
+                        break
+                    case -1:
+                        status = ExecStatus.UNKNOWN
+                        break
+                    default:
+                        status = ExecStatus.FAILURE
+                }
             }
         }
-        final outputStream = new ByteArrayOutputStream()
-        final errorStream = new ByteArrayOutputStream()
-        final execStatusChannel = new ByteArrayOutputStream()
-        ExecStatus execStatus = ExecStatus.UNKNOWN
-        String execMessage = null
+
         final String[] splitCmd = CommandLine.parse(cmd).with {
             final List<String> result = new ArrayList()
             result.add(it.getExecutable())
@@ -1789,26 +1802,23 @@ class Kubernetes implements OrchestratorMain {
                     .withName(name)
                     .writingOutput(outputStream)
                     .writingError(errorStream)
-                    .writingErrorChannel(execStatusChannel)
                     .usingListener(listener)
                     .exec(splitCmd)
             try {
-                completion.get(30, TimeUnit.SECONDS)
-                (execStatus, execMessage) = parseExecStatus(execStatusChannel.toString())
+                execStatus = completion.get(30, TimeUnit.SECONDS)
             } catch (TimeoutException ex) {
                 // Note that timeout here does not abort the command once it started on the pod.
                 execStatus = ExecStatus.TIMEOUT
-                execMessage = ex.getMessage()
+                log.warn("Timeout occurred when exec-ing command in pod", ex)
             } finally {
                 execCmd.close()
                 log.debug("""\
-                    Command status: {}, message: {}
+                    Command status: {}
                     Stdout:
                     {}
                     Stderr:
                     {}""".stripIndent(),
                         execStatus,
-                        execMessage,
                         outputStream,
                         errorStream)
             }
@@ -1824,36 +1834,6 @@ class Kubernetes implements OrchestratorMain {
         /** E.g. no-zero exit code */
         FAILURE,
         TIMEOUT
-    }
-
-    /**
-     * Parses status of kubectl exec command triggered via fabric8 to see if the command exited successfully.
-     *
-     * The approach is based on the suggestion in https://stackoverflow.com/a/70188047/484050
-     * Here are examples of channel contents for successful and unsuccessful command runs:
-     * {"metadata":{},"status":"Success"}
-     * {"metadata":{},"status":"Failure","message":"command terminated with non-zero exit code:
-     *   Error executing in Docker Container: 7","reason":"NonZeroExitCode",
-     *   "details":{"causes":[{"reason":"ExitCode","message":"7"}]}}
-     */
-    private static Tuple2<ExecStatus, String> parseExecStatus(String execStatusChannelContents) {
-        ExecStatus status = ExecStatus.UNKNOWN
-        String message = null
-        try {
-            final Status parsedStatus = GSON.fromJson(execStatusChannelContents, Status)
-            switch (parsedStatus?.getStatus()) {
-                case "Success":
-                    status = ExecStatus.SUCCESS
-                    break
-                case "Failure":
-                    status = ExecStatus.FAILURE
-                    break
-            }
-            message = parsedStatus?.getMessage()
-        } catch (JsonSyntaxException ex) {
-            log.warn("Could not parse exec status channel contents: {}", execStatusChannelContents, ex)
-        }
-        return new Tuple2(status, message)
     }
 
     def execInContainer(Deployment deployment, String cmd) {
