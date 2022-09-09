@@ -9,7 +9,10 @@ import (
 )
 
 func TestFilterQuery(t *testing.T) {
-	optionsMap := Walk(v1.SearchCategory_IMAGES, "derp", &storage.Image{})
+	optionsMap := CombineOptionsMaps(
+		Walk(v1.SearchCategory_IMAGES, "derp", &storage.Image{}),
+		Walk(v1.SearchCategory_VULNERABILITIES, "c_v_e", (*storage.CVE)(nil)),
+	)
 
 	query := &v1.Query{
 		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
@@ -74,7 +77,10 @@ func TestFilterQuery(t *testing.T) {
 }
 
 func TestInverseFilterQuery(t *testing.T) {
-	optionsMap := Walk(v1.SearchCategory_IMAGES, "derp", &storage.Image{})
+	optionsMap := CombineOptionsMaps(
+		Walk(v1.SearchCategory_IMAGES, "derp", &storage.Image{}),
+		Walk(v1.SearchCategory_VULNERABILITIES, "c_v_e", (*storage.CVE)(nil)),
+	)
 
 	query := &v1.Query{
 		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{

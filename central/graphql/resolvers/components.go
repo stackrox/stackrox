@@ -10,12 +10,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
-	componentPredicateFactory = predicate.NewFactory("component", &storage.EmbeddedImageScanComponent{})
+	componentPredicateFactory = predicate.NewFactory("component", &storage.EmbeddedImageScanComponent{}).ForCustomOptionsMap(images.FullImageComponentOptionsMap)
 )
 
 func init() {

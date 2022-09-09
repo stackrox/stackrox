@@ -18,23 +18,39 @@ var (
 	// ImageComponentOptionsMap defines the search options for image components stored in images.
 	ImageComponentOptionsMap = search.Walk(v1.SearchCategory_IMAGE_COMPONENTS, "image_component", (*storage.ImageComponent)(nil))
 
+	// FullImageComponentOptionsMap defines the search options for image components and vulns stored in images.
+	FullImageComponentOptionsMap = search.CombineOptionsMaps(
+		ImageCVEOptionsMap,
+		ImageCVEEdgeOptionsMap,
+		ImageComponentCVEEdgeOptionsMap,
+		ImageComponentOptionsMap,
+		ImageComponentEdgeOptionsMap,
+	)
+
 	// ImageComponentCVEEdgeOptionsMap defines the search options for Vulnerabilities stored in images.
 	ImageComponentCVEEdgeOptionsMap = search.Walk(v1.SearchCategory_COMPONENT_VULN_EDGE, "component_c_v_e_edge", (*storage.ComponentCVEEdge)(nil))
 
 	// ImageCVEOptionsMap defines the search options for Vulnerabilities stored in images.
 	ImageCVEOptionsMap = search.Walk(v1.SearchCategory_VULNERABILITIES, "c_v_e", (*storage.CVE)(nil))
 
+	// FullImageCVEOptionsMap defines the search options for image  vulns stored in images.
+	FullImageCVEOptionsMap = search.CombineOptionsMaps(
+		ImageCVEOptionsMap,
+		ImageCVEEdgeOptionsMap,
+		ImageComponentCVEEdgeOptionsMap,
+	)
+
 	// ImageCVEEdgeOptionsMap defines the search options for vulnerabilities in images.
 	ImageCVEEdgeOptionsMap = search.Walk(v1.SearchCategory_IMAGE_VULN_EDGE, "image_c_v_e_edge", (*storage.ImageCVEEdge)(nil))
 
 	// FullImageOptionsMap defined the options for image that includes components and vulns options.
 	FullImageOptionsMap = search.CombineOptionsMaps(
-		OptionsMap,
-		ImageComponentEdgeOptionsMap,
-		ImageComponentOptionsMap,
-		ImageComponentCVEEdgeOptionsMap,
 		ImageCVEOptionsMap,
 		ImageCVEEdgeOptionsMap,
+		ImageComponentCVEEdgeOptionsMap,
+		ImageComponentOptionsMap,
+		ImageComponentEdgeOptionsMap,
+		OptionsMap,
 	)
 
 	// ImageDeploymentOptions defines the deployment options available to search on images
