@@ -41,11 +41,6 @@ central:
     name: null # string
     tag: null # string
     fullRef: null # string
-  dbImage:
-    registry: null # string
-    name: null # string
-    tag: null # string
-    fullRef: null # string
   adminPassword:
     value: null # string
     generate: null # bool
@@ -73,14 +68,40 @@ central:
       enabled: null # bool
       host: null # string
   extraMounts: null # [dict]
-  enableCentralDB: null # bool
-  dbPassword:
-    value: null # string
-    generate: null # bool
-  dbServiceTLS:
+centralDB:
+  enabled: false # bool
+  nodeSelector: null # string | dict
+  tolerations: null # [dict]
+  configuration:
+    source:
+      string: null # string
+      minConns: null # int
+      maxConns: null # int
+      statementTimeoutMs: null #int
+    password:
+      value: null # string
+      generate: null # bool
+  serviceTLS:
     cert: null # string
     key: null # string
     generate: null # bool
+  image:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
+  resources: null # string | dict
+  persistence:
+    hostPath: null # string
+    persistentVolumeClaim:
+      claimName: null # string
+      createClaim: null # bool
+      storageClass: null # string
+      size: null # int | string
+      volume:
+        volumeSpec: null # dict
+    none: null # bool
+  extraMounts: null # [dict]
 
 customize:
   labels: {} # dict
@@ -89,6 +110,12 @@ customize:
   podAnnotations: {} # dict
   envVars: {} # dict
   central:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  centralDB:
     labels: {} # dict
     annotations: {} # dict
     podLabels: {} # dict

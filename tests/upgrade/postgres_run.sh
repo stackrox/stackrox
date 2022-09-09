@@ -183,7 +183,7 @@ helm_upgrade_to_current_with_postgres() {
     fi
 
     # enable postgres
-    yq e '.defaults.central.enableCentralDB=true' -i /tmp/stackrox-central-services-chart/internal/defaults.yaml
+    yq e '.defaults.centralDB.enabled=true' -i /tmp/stackrox-central-services-chart/internal/defaults.yaml
     password=`echo ${RANDOM}_$(date +%s-%d-%M) |base64|cut -c 1-20`
     kubectl -n stackrox create secret generic central-db-password --from-literal=password=$password
     kubectl -n stackrox apply -f $TEST_ROOT/tests/upgrade/pvc.yaml

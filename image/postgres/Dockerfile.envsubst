@@ -23,7 +23,6 @@ ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 COPY signatures/RPM-GPG-KEY-PGDG-14 /
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 COPY --from=extracted_bundle /bundle/postgres.rpm /bundle/postgres-libs.rpm /bundle/postgres-server.rpm /bundle/postgres-contrib.rpm /tmp/
-COPY --from=extracted_bundle /bundle/etc/postgresql.conf /bundle/etc/pg_hba.conf /etc/
 
 RUN groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
@@ -46,4 +45,4 @@ USER postgres:postgres
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 5432
-CMD ["postgres", "-c", "config_file=/etc/postgresql.conf"]
+CMD ["postgres", "-c", "config_file=/etc/stackrox.d/config/postgresql.conf"]

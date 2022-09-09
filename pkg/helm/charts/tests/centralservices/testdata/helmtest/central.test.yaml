@@ -24,8 +24,8 @@ tests:
 
 - name: "central with DB enabled"
   values:
-    central:
-      enableCentralDB: true
+    centralDB:
+      enabled: true
   expect:
     .networkpolicys["central-db"] | assertThat(. != null)
 

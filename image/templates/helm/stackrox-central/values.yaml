@@ -193,6 +193,66 @@
 #      # Specify a custom hostname if desired, otherwise accept the default from OpenShift.
 #      host: null
 #
+#centralDB:
+#  # Central DB is currently a WIP and cannot be enabled outside of development
+#  enabled: false
+#
+#  # Preexisting signifies that a Postgres wire-compatible database has already been deployed and a Central DB pod
+#  # does not need to be deployed
+#  preexisting: false
+#
+#  source:
+#    # ConnectionString should not be specified if the Central DB deployment is being managed by the helm chart
+#    # The connection string must be in the format described here https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
+#    # Do NOT use a connection string with a password field. Instead specify the value below in the password section/
+#    connectionString: null
+#    minConns: 10
+#    maxConns: 90
+#    statementTimeoutMs: 60000
+#
+#  # The admin password setting for communication with Central's DB.
+#  # When a value is set explicitly, this is always used, even on upgrade.
+#  # Otherwise, a password will be automatically generated if `generate` is set to true,
+#  # or left unset (null) and the Helm chart is being installed (as opposed to upgraded).
+#  # Should only be used when utilizing Postgres as central's DB
+#  password:
+#    value: null
+#    generate: null
+#
+#  postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
+#  hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
+#
+#  nodeSelector: null
+#
+#  # Settings for the internal service-to-service TLS certificate used by central.
+#  # See the documentation for `ca` at the top level for an explanation.
+#  serviceTLS:
+#    cert: null
+#    key: null
+#    generate: null
+#
+#  image:
+#    registry: null
+#    name: central-db
+#    tag: 3.0.48.x-121-g337915cd3d
+#    fullRef: null
+#
+#  resources:
+#    requests:
+#      memory: "4Gi"
+#      cpu: "2"
+#    limits:
+#      memory: "8Gi"
+#      cpu: "4"
+#
+#  persistence:
+#    hostPath: null
+#    persistentVolumeClaim:
+#      claimName: null
+#      createClaim: null
+#      storageClass: null
+#      size: null
+#    none: null
 #
 ## Configuration options relating to StackRox Scanner.
 #scanner:

@@ -61,8 +61,6 @@ fi
 # would be otherwise downloaded or included via a COPY command in the
 # Dockerfile.
 
-cp -p "${INPUT_ROOT}"/*.conf "${bundle_root}/etc/"
-
 # Get postgres RPMs directly
 postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-${arch}"
 
