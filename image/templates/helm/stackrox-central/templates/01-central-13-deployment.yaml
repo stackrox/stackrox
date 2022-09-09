@@ -100,7 +100,7 @@ spec:
           value: {{ ._rox.central.disableTelemetry | not | quote }}
         - name: ROX_OFFLINE_MODE
           value: {{ ._rox.env.offlineMode | quote }}
-        {{- if and (eq ._rox.env.openshift 4) (not (hasKey ._rox.customize.central.envVars "ROX_MANAGED_CENTRAL" )) }}
+        {{- if eq ._rox.env.openshift 4 }}
         - name: ROX_ENABLE_OPENSHIFT_AUTH
           value: "true"
         {{- end }}

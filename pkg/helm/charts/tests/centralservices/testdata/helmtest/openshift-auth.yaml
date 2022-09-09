@@ -31,6 +31,5 @@ tests:
         envVars:
           ROX_MANAGED_CENTRAL: true
   expect: |
-    envVars(.deployments.central; "central")| assertThat(has("ROX_ENABLE_OPENSHIFT_AUTH") == false)
     .serviceaccounts.central.metadata.annotations | ."serviceaccounts.openshift.io/oauth-redirectreference.main" | assertThat(. == null)
     .serviceaccounts.central.metadata.annotations | ."serviceaccounts.openshift.io/oauth-redirecturi.main" | assertThat(. == null)
