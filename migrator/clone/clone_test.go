@@ -26,6 +26,7 @@ var (
 	preVer        = versionPair{version: "3.0.57.0", seqNum: 65}
 	currVer       = versionPair{version: "3.0.58.0", seqNum: 65}
 	futureVer     = versionPair{version: "10001.0.0.0", seqNum: 6533}
+	moreFutureVer = versionPair{version: "10002.0.0.0", seqNum: 7533}
 
 	// Current versions
 	rcVer      = versionPair{version: "3.0.58.0-rc.1", seqNum: 65}
@@ -55,13 +56,13 @@ func TestCloneMigrationRocksToPostgres(t *testing.T) {
 	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
 	if features.PostgresDatastore.Enabled() {
 		currVer = releaseVer
-		doTestCloneMigration(t, true)
+		doTestCloneMigrationToPostgres(t, true)
 		currVer = devVer
-		doTestCloneMigration(t, true)
+		doTestCloneMigrationToPostgres(t, true)
 		currVer = rcVer
-		doTestCloneMigration(t, true)
+		doTestCloneMigrationToPostgres(t, true)
 		currVer = nightlyVer
-		doTestCloneMigration(t, true)
+		doTestCloneMigrationToPostgres(t, true)
 	}
 }
 
@@ -130,9 +131,71 @@ func doTestCloneMigration(t *testing.T, runBoth bool) {
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
 			mock.enableRollBack(c.enableRollback)
+
 			mock.upgradeCentral(c.toVersion, "")
 			if c.furtherToVersion != nil {
 				mock.upgradeCentral(c.furtherToVersion, "")
+			}
+		})
+	}
+}
+
+func doTestCloneMigrationToPostgres(t *testing.T, runBoth bool) {
+	if buildinfo.ReleaseBuild {
+		return
+	}
+	testCases := []struct {
+		description          string
+		fromVersion          *versionPair
+		toVersion            *versionPair
+		furtherToVersion     *versionPair
+		moreFurtherToVersion *versionPair
+		enableRollback       bool
+	}{
+		{
+			description:          "Upgrade from version 57 to current",
+			fromVersion:          &preVer,
+			toVersion:            &currVer,
+			furtherToVersion:     &futureVer,
+			moreFurtherToVersion: &moreFutureVer,
+		},
+		{
+			description: "Upgrade from current to future",
+			fromVersion: &currVer,
+			toVersion:   &futureVer,
+		},
+		{
+			description:          "Upgrade from version 57 to current with rollback enabled",
+			fromVersion:          &preVer,
+			toVersion:            &currVer,
+			furtherToVersion:     &futureVer,
+			moreFurtherToVersion: &moreFutureVer,
+			enableRollback:       true,
+		},
+		{
+			description:    "Upgrade from current to future with rollback enabled",
+			fromVersion:    &currVer,
+			toVersion:      &futureVer,
+			enableRollback: true,
+		},
+	}
+
+	// Test normal upgrade
+	for _, c := range testCases {
+		t.Run(c.description, func(t *testing.T) {
+			log.Infof("Test = %q", c.description)
+			mock := createAndRunCentralStartRocks(t, c.fromVersion, runBoth)
+
+			defer mock.destroyCentral()
+			mock.setVersion = setVersion
+			mock.enableRollBack(c.enableRollback)
+
+			mock.upgradeCentral(c.toVersion, "")
+			if c.furtherToVersion != nil {
+				mock.upgradeCentral(c.furtherToVersion, "")
+				if c.moreFurtherToVersion != nil {
+					mock.upgradeCentral(c.moreFurtherToVersion, "")
+				}
 			}
 		})
 	}
@@ -788,7 +851,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 			mock.rollbackCentral(c.toVersion, "", "")
 			mock.upgradeCentral(c.fromVersion, "")
 
-			// We turned off Postgres if we passed true to rollbackCentral.  That means we are testing
+			// We turned off Postgres.  That means we are testing
 			// rollback from Postgres to Rocks.  So we need to turn Postgres back on for the next run.
 			require.NoError(t, os.Setenv(features.PostgresDatastore.EnvVar(), strconv.FormatBool(true)))
 		})
