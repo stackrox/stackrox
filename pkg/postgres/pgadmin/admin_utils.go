@@ -389,6 +389,7 @@ func GetRemainingCapacity(postgresConfig *pgxpool.Config) (int64, error) {
 	if env.ManagedCentral.BooleanSetting() {
 		// Cannot get managed services capacity via Postgres.  Assume size for now.
 		capacity = pgconfig.GetPostgresCapacity() - sizeUsed
+		log.Info("cannot yet determine managed capacity.  Calculation is an estimate based on suggested size.")
 	} else {
 		capacity, err = getAvailablePostgresCapacity(postgresConfig)
 		if err != nil {
