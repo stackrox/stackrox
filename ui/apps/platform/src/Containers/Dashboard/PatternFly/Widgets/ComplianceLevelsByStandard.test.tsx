@@ -129,7 +129,7 @@ describe('Compliance levels by standard dashboard widget', () => {
         });
 
         // Sort by descending
-        await user.click(screen.getByText('Options'));
+        await user.click(screen.getByLabelText('Options'));
         await user.click(screen.getByText('Descending'));
 
         await waitFor(async () => {
@@ -160,5 +160,30 @@ describe('Compliance levels by standard dashboard widget', () => {
         expect(history.location.search).toBe(
             `?s[Cluster]=%2A&s[standard]=${encodeURIComponent(standard)}`
         );
+    });
+
+    it('should contain a button that resets the widget options to default', async () => {
+        const { user } = setup();
+
+        await user.click(await screen.findByLabelText('Options'));
+        const [asc, desc] = await screen.findAllByRole('button', {
+            name: /Ascending|Descending/,
+        });
+
+        // Defaults
+        expect(asc).toHaveAttribute('aria-pressed', 'true');
+        expect(desc).toHaveAttribute('aria-pressed', 'false');
+
+        await user.click(desc);
+
+        expect(asc).toHaveAttribute('aria-pressed', 'false');
+        expect(desc).toHaveAttribute('aria-pressed', 'true');
+
+        const resetButton = await screen.findByLabelText('Revert to default options');
+        await user.click(resetButton);
+        await user.unhover(resetButton); // Avoid displaying the tooltip, which leads to React errors on test exit
+
+        expect(asc).toHaveAttribute('aria-pressed', 'true');
+        expect(desc).toHaveAttribute('aria-pressed', 'false');
     });
 });
