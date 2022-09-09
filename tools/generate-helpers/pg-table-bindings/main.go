@@ -270,7 +270,6 @@ func main() {
 			"Obj": object{
 				storageType:              props.Type,
 				permissionCheckerEnabled: permissionCheckerEnabled,
-				isJoinTable:              props.JoinTable,
 				schema:                   schema,
 			},
 			"NoCopyFrom": props.NoCopyFrom,
