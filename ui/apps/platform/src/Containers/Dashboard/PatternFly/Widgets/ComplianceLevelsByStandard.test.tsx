@@ -13,32 +13,21 @@ import ComplianceLevelsByStandard from './ComplianceLevelsByStandard';
 
 jest.setTimeout(10000);
 
-const standards = [
-    /*
-    These standards have been formatted for easier verification of the expected ordering in
-    tests compared to a direct hard coding in the mocked response below.
+/*
+These standards have been formatted for easier verification of the expected ordering in
+tests compared to a direct hard coding in the mocked response below.
 
-    [numFailing, numPassing, id]
-    */
-    [9, 1, 'CIS_Docker_v1_2_0'],
-    [8, 2, 'CIS_Kubernetes_v1_5'],
-    [7, 3, 'HIPAA_164'],
-    [6, 4, 'NIST_800_190'],
-    [5, 5, 'NIST_SP_800_53_Rev_4'],
-    [4, 6, 'PCI_DSS_3_2'],
-    [3, 7, 'ocp4-cis'],
-    [2, 8, 'ocp4-cis-node'],
-];
-
-const standardNames = {
-    CIS_Docker_v1_2_0: 'CIS Docker v1.2.0',
-    CIS_Kubernetes_v1_5: 'CIS Kubernetes v1.5',
-    HIPAA_164: 'HIPAA 164',
-    NIST_800_190: 'NIST SP 800-190',
-    NIST_SP_800_53_Rev_4: 'NIST SP 800-53',
-    PCI_DSS_3_2: 'PCI DSS 3.2.1',
-    'ocp4-cis': 'ocp4-cis',
-    'ocp4-cis-node': 'ocp4-cis-node',
+id: [name, numFailing, numPassing]
+*/
+const standards = {
+    CIS_Docker_v1_2_0: ['CIS Docker v1.2.0', 9, 1],
+    CIS_Kubernetes_v1_5: ['CIS Kubernetes v1.5', 8, 2],
+    HIPAA_164: ['HIPAA 164', 7, 3],
+    NIST_800_190: ['NIST SP 800-190', 6, 4],
+    NIST_SP_800_53_Rev_4: ['NIST SP 800-53', 5, 5],
+    PCI_DSS_3_2: ['PCI DSS 3.2.1', 4, 6],
+    'ocp4-cis': ['ocp4-cis', 3, 7],
+    'ocp4-cis-node': ['ocp4-cis-node', 2, 8],
 };
 
 const mocks = [
@@ -53,7 +42,7 @@ const mocks = [
         result: {
             data: {
                 controls: {
-                    results: standards.map(([numFailing, numPassing, id]) => ({
+                    results: Object.entries(standards).map(([id, [, numFailing, numPassing]]) => ({
                         aggregationKeys: [{ id, scope: 'STANDARD' }],
                         numFailing,
                         numPassing,
@@ -61,9 +50,9 @@ const mocks = [
                         unit: 'CONTROL',
                     })),
                 },
-                complianceStandards: standards.map(([, , id]) => ({
+                complianceStandards: Object.entries(standards).map(([id, [name]]) => ({
                     id,
-                    name: standardNames[id],
+                    name,
                 })),
             },
         },
@@ -96,7 +85,8 @@ describe('Compliance levels by standard dashboard widget', () => {
         await screen.findByLabelText('Compliance coverage by standard');
 
         async function getBarTitles() {
-            const titlesRegex = new RegExp(`${Object.values(standardNames).join('|')}`);
+            const standardNames = Object.values(standards).map(([name]) => name);
+            const titlesRegex = new RegExp(`${standardNames.join('|')}`);
             const titleElements = await screen.findAllByText(titlesRegex);
             const titles = titleElements.map((elem) => elem.innerHTML);
             // Note that we reverse here because the order in the DOM (bottom->top) is the opposite from
