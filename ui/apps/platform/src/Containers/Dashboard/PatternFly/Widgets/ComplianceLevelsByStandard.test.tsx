@@ -1,6 +1,6 @@
 import React from 'react';
 import { MockedProvider } from '@apollo/client/testing';
-import { screen, within, waitFor } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
@@ -12,6 +12,34 @@ import { complianceBasePath, urlEntityListTypes } from 'routePaths';
 import ComplianceLevelsByStandard from './ComplianceLevelsByStandard';
 
 jest.setTimeout(10000);
+
+const standards = [
+    /*
+    These standards have been formatted for easier verification of the expected ordering in
+    tests compared to a direct hard coding in the mocked response below.
+
+    [numFailing, numPassing, id]
+    */
+    [9, 1, 'CIS_Docker_v1_2_0'],
+    [8, 2, 'CIS_Kubernetes_v1_5'],
+    [7, 3, 'HIPAA_164'],
+    [6, 4, 'NIST_800_190'],
+    [5, 5, 'NIST_SP_800_53_Rev_4'],
+    [4, 6, 'PCI_DSS_3_2'],
+    [3, 7, 'ocp4-cis'],
+    [2, 8, 'ocp4-cis-node'],
+];
+
+const standardNames = {
+    CIS_Docker_v1_2_0: 'CIS Docker v1.2.0',
+    CIS_Kubernetes_v1_5: 'CIS Kubernetes v1.5',
+    HIPAA_164: 'HIPAA 164',
+    NIST_800_190: 'NIST SP 800-190',
+    NIST_SP_800_53_Rev_4: 'NIST SP 800-53',
+    PCI_DSS_3_2: 'PCI DSS 3.2.1',
+    'ocp4-cis': 'ocp4-cis',
+    'ocp4-cis-node': 'ocp4-cis-node',
+};
 
 const mocks = [
     {
@@ -25,59 +53,18 @@ const mocks = [
         result: {
             data: {
                 controls: {
-                    results: [
-                        {
-                            aggregationKeys: [{ id: 'CIS_Docker_v1_2_0', scope: 'STANDARD' }],
-                            numFailing: 0,
-                            numPassing: 1,
-                            numSkipped: 0,
-                            unit: 'CONTROL',
-                        },
-                        {
-                            aggregationKeys: [{ id: 'CIS_Kubernetes_v1_5', scope: 'STANDARD' }],
-                            numFailing: 0,
-                            numPassing: 0,
-                            numSkipped: 40,
-                            unit: 'CONTROL',
-                        },
-                        {
-                            aggregationKeys: [{ id: 'HIPAA_164', scope: 'STANDARD' }],
-                            numFailing: 8,
-                            numPassing: 10,
-                            numSkipped: 0,
-                            unit: 'CONTROL',
-                        },
-                        {
-                            aggregationKeys: [{ id: 'NIST_800_190', scope: 'STANDARD' }],
-                            numFailing: 9,
-                            numPassing: 4,
-                            numSkipped: 0,
-                            unit: 'CONTROL',
-                        },
-                        {
-                            aggregationKeys: [{ id: 'NIST_SP_800_53_Rev_4', scope: 'STANDARD' }],
-                            numFailing: 10,
-                            numPassing: 10,
-                            numSkipped: 2,
-                            unit: 'CONTROL',
-                        },
-                        {
-                            aggregationKeys: [{ id: 'PCI_DSS_3_2', scope: 'STANDARD' }],
-                            numFailing: 15,
-                            numPassing: 8,
-                            numSkipped: 1,
-                            unit: 'CONTROL',
-                        },
-                    ],
+                    results: standards.map(([numFailing, numPassing, id]) => ({
+                        aggregationKeys: [{ id, scope: 'STANDARD' }],
+                        numFailing,
+                        numPassing,
+                        numSkipped: 0,
+                        unit: 'CONTROL',
+                    })),
                 },
-                complianceStandards: [
-                    { id: 'CIS_Docker_v1_2_0', name: 'CIS Docker v1.2.0' },
-                    { id: 'CIS_Kubernetes_v1_5', name: 'CIS Kubernetes v1.5' },
-                    { id: 'HIPAA_164', name: 'HIPAA 164' },
-                    { id: 'NIST_800_190', name: 'NIST SP 800-190' },
-                    { id: 'NIST_SP_800_53_Rev_4', name: 'NIST SP 800-53' },
-                    { id: 'PCI_DSS_3_2', name: 'PCI DSS 3.2.1' },
-                ],
+                complianceStandards: standards.map(([, , id]) => ({
+                    id,
+                    name: standardNames[id],
+                })),
             },
         },
     },
@@ -108,36 +95,45 @@ describe('Compliance levels by standard dashboard widget', () => {
         // Allow graph to load
         await screen.findByLabelText('Compliance coverage by standard');
 
-        async function getBarPercentages() {
-            // eslint-disable-next-line testing-library/no-node-access
-            const svgBarsElement = document.querySelector('svg > g:nth-of-type(3)');
-            const barPercentages = await within(svgBarsElement as HTMLElement).findAllByText(
-                /\d+%/
-            );
-            expect(barPercentages).toHaveLength(6);
+        async function getBarTitles() {
+            const titlesRegex = new RegExp(`${Object.values(standardNames).join('|')}`);
+            const titleElements = await screen.findAllByText(titlesRegex);
+            const titles = titleElements.map((elem) => elem.innerHTML);
             // Note that we reverse here because the order in the DOM (bottom->top) is the opposite from
             // how that chart is displayed to the user (top->bottom)
-            return barPercentages.map((elem) => parseInt(elem.innerHTML, 10)).reverse();
+            return titles.reverse();
         }
 
         // Default is ascending
-        await waitFor(async () => {
-            const ascendingPercentages = await getBarPercentages();
-            for (let i = 0; i < ascendingPercentages.length - 1; i += 1) {
-                expect(ascendingPercentages[i]).toBeLessThan(ascendingPercentages[i + 1]);
-            }
-        });
+        const ascendingData = await getBarTitles();
+        expect(ascendingData).toHaveLength(6);
+        expect(ascendingData).toStrictEqual(
+            expect.arrayContaining([
+                'CIS Docker v1.2.0',
+                'CIS Kubernetes v1.5',
+                'HIPAA 164',
+                'NIST SP 800-190',
+                'NIST SP 800-53',
+                'PCI DSS 3.2.1',
+            ])
+        );
 
         // Sort by descending
         await user.click(screen.getByText('Options'));
         await user.click(screen.getByText('Descending'));
 
-        await waitFor(async () => {
-            const descendingPercentages = await getBarPercentages();
-            for (let i = 0; i < descendingPercentages.length - 1; i += 1) {
-                expect(descendingPercentages[i]).toBeGreaterThan(descendingPercentages[i + 1]);
-            }
-        });
+        const descendingData = await getBarTitles();
+        expect(descendingData).toHaveLength(6);
+        expect(descendingData).toStrictEqual(
+            expect.arrayContaining([
+                'ocp4-cis-node',
+                'ocp4-cis',
+                'PCI DSS 3.2.1',
+                'NIST SP 800-53',
+                'NIST SP 800-190',
+                'HIPAA 164',
+            ])
+        );
     });
 
     it('should visit the correct pages when widget links are clicked', async () => {
