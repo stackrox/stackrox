@@ -26,10 +26,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - K8sRole | Annotation | Role Annotation
   - K8sRoleBinding | Label | Role Binding Label
   - K8sRoleAnnotation | Annotation | Role Binding Annotation
-- ROX-12496: CSV export API endpoint `/api/vm/export/csv` is deprecated and will be removed in the future. It will be replaced with three new endpoints, one for each CVE type.
-  - For NodeCVEs : `/api/export/csv/node/cve`
-  - For ImageCVEs: `/api/export/csv/image/cve`
-  - For ClusterCVEs: `/api/export/csv/cluster/cve`
 
 ### Technical Changes
 - ROX-11181: Any clusters that have been unhealthy (defined as central being unable to reach sensor running on those clusters) for a configured period of time will be automatically removed. The number of days after which an 'unhealthy' cluster is removed can be configured in the System Configuration page or using the cluster API.
@@ -42,6 +38,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The default technique used by string expression searches will be to match any substrings in future release. Currently, string search uses prefix matching technique in most cases.
 - ROX-9484: When integrating Quay registry you can now optionally use robot account instead of just OAuth tokens. In fact this is Quay's recommended integration credentials. However, integration with Quay scanner still requires an OAuth token.
 - The `init-db` init-container for ScannerDB now specifies resource requests/limits which match the `db` container in ScannerDB.
+- Starting 3.73, CSV export API `/api/vm/export/csv` would require to pass `CVE Type` filter as part of the input query parameter. Requests that do not have the filter would error out.
+  - Examples : `CVE Type:NODE_CVE`, `CVE_Type:IMAGE_CVE`, `CVE_TYPE:K8S_CVE`
 
 ## [3.71.0]
 
