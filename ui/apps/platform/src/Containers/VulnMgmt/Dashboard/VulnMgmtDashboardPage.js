@@ -22,7 +22,7 @@ import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
 import RecentlyDetectedImageVulnerabilities from '../widgets/RecentlyDetectedImageVulnerabilities';
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
-import ClustersWithMostOrchestratorIstioVulnerabilities from '../widgets/ClustersWithMostOrchestratorIstioVulnerabilities';
+import ClustersWithMostClusterVulnerabilities from '../widgets/ClustersWithMostClusterVulnerabilities';
 import CvesMenu from './CvesMenu';
 
 const baseEntityMenuTypes = [entityTypes.CLUSTER, entityTypes.NAMESPACE, entityTypes.DEPLOYMENT];
@@ -136,7 +136,7 @@ const VulnDashboardPage = ({ history }) => {
                 <DeploymentsWithMostSeverePolicyViolations limit={DASHBOARD_LIMIT} />
             </div>
             <div className="s-2 xxxl:sx-2">
-                <ClustersWithMostOrchestratorIstioVulnerabilities />
+                <ClustersWithMostClusterVulnerabilities />
             </div>
         </DashboardLayout>
     );
