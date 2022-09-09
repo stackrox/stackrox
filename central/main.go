@@ -439,7 +439,11 @@ func startGRPCServer() {
 	// env.EnableOpenShiftAuth signals the desire but does not guarantee Central
 	// is configured correctly to talk to the OpenShift's OAuth server. If this
 	// is the case, we can be setting up an auth providers which won't work.
-	if env.EnableOpenShiftAuth.BooleanSetting() {
+	// Additionally, env.ManagedCentral signals whether this is a managed instance
+	// of central running within an OSD cluster. For these instances, we do not want
+	// the OpenShift auth provider to be visible, as this would essentially disclose
+	// information about the underlying infrastructure.
+	if env.EnableOpenShiftAuth.BooleanSetting() && !env.ManagedCentral.BooleanSetting() {
 		authProviderBackendFactories[openshift.TypeName] = openshift.NewFactory
 	}
 
