@@ -86,9 +86,9 @@ describe('Violations by policy category widget', () => {
         ]);
 
         // Switch to sort-by-volume, which orders the chart by total violations per category
-        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByLabelText('Options'));
         await user.click(await screen.findByText('Total'));
-        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByLabelText('Options'));
 
         await waitForAxisLinksToBe([
             'Security Best Practices',
@@ -105,9 +105,9 @@ describe('Violations by policy category widget', () => {
         expect(await screen.findByText('Anomalous Activity')).toBeInTheDocument();
 
         // Sort by volume, so that enabling lower severity bars changes the order of the chart
-        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByLabelText('Options'));
         await user.click(await screen.findByText('Total'));
-        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByLabelText('Options'));
 
         // Toggle on low and medium violations, which are disabled by default
         await user.click(await screen.findByText('Low'));
@@ -120,5 +120,41 @@ describe('Violations by policy category widget', () => {
             'Docker CIS',
             'Anomalous Activity',
         ]);
+    });
+
+    it('should contain a button that resets the widget options to default', async () => {
+        const { user } = setup();
+
+        await user.click(await screen.findByLabelText('Options'));
+        const [severity, total, all, deploy, runtime] = await screen.findAllByRole('button', {
+            name: /Severity|Total|All|Deploy|Runtime/,
+        });
+
+        // Defaults
+        expect(severity).toHaveAttribute('aria-pressed', 'true');
+        expect(total).toHaveAttribute('aria-pressed', 'false');
+        expect(all).toHaveAttribute('aria-pressed', 'true');
+        expect(deploy).toHaveAttribute('aria-pressed', 'false');
+        expect(runtime).toHaveAttribute('aria-pressed', 'false');
+
+        // Change some options
+        await user.click(total);
+        await user.click(runtime);
+
+        expect(severity).toHaveAttribute('aria-pressed', 'false');
+        expect(total).toHaveAttribute('aria-pressed', 'true');
+        expect(all).toHaveAttribute('aria-pressed', 'false');
+        expect(deploy).toHaveAttribute('aria-pressed', 'false');
+        expect(runtime).toHaveAttribute('aria-pressed', 'true');
+
+        const resetButton = await screen.findByLabelText('Revert to default options');
+        await user.click(resetButton);
+        await user.unhover(resetButton); // Avoid displaying the tooltip, which leads to React errors on test exit
+
+        expect(severity).toHaveAttribute('aria-pressed', 'true');
+        expect(total).toHaveAttribute('aria-pressed', 'false');
+        expect(all).toHaveAttribute('aria-pressed', 'true');
+        expect(deploy).toHaveAttribute('aria-pressed', 'false');
+        expect(runtime).toHaveAttribute('aria-pressed', 'false');
     });
 });

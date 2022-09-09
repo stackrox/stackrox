@@ -16,7 +16,8 @@ import {
 } from '@patternfly/react-core';
 import { SyncIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
-import { sortBy } from 'lodash';
+import isEqual from 'lodash/isEqual';
+import sortBy from 'lodash/sortBy';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useURLSearch from 'hooks/useURLSearch';
@@ -38,6 +39,7 @@ import { standardLabels } from 'messages/standards';
 import ComplianceLevelsByStandardChart, { ComplianceData } from './ComplianceLevelsByStandardChart';
 import WidgetCard from './WidgetCard';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
+import WidgetOptionsResetButton from './WidgetOptionsResetButton';
 
 const fieldIdPrefix = 'compliance-levels-by-standard';
 
@@ -151,6 +153,8 @@ function ComplianceLevelsByStandard() {
         [searchFilter, sortDataBy, data, previousData]
     );
 
+    const isOptionsChanged = !isEqual(sortDataBy, defaultConfig.sortDataBy);
+
     return (
         <WidgetCard
             isLoading={loading && !complianceData}
@@ -161,6 +165,9 @@ function ComplianceLevelsByStandard() {
                         <Title headingLevel="h2">Compliance by standard</Title>
                     </FlexItem>
                     <FlexItem>
+                        {isOptionsChanged && (
+                            <WidgetOptionsResetButton onClick={() => updateConfig(defaultConfig)} />
+                        )}
                         <WidgetOptionsMenu
                             bodyContent={
                                 <Form>

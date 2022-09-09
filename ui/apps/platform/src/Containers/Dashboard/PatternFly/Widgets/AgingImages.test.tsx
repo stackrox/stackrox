@@ -85,7 +85,7 @@ describe('AgingImages dashboard widget', () => {
             await screen.findByText(`${result0 + result1 + result2 + result3} Aging images`)
         ).toBeInTheDocument();
 
-        await user.click(await screen.findByText(`Options`));
+        await user.click(await screen.findByLabelText('Options'));
         const checkboxes = await screen.findAllByLabelText('Toggle image time range');
         expect(checkboxes).toHaveLength(4);
 
@@ -147,12 +147,51 @@ describe('AgingImages dashboard widget', () => {
         expect(history.location.search).toContain('s[Image Created Time]=>365d');
 
         // Deselect the second time range, merging the first and second time buckets
-        await user.click(await screen.findByText(`Options`));
+        await user.click(await screen.findByLabelText('Options'));
         const checkboxes = await screen.findAllByLabelText('Toggle image time range');
         await user.click(checkboxes[1]);
-        await user.click(await screen.findByText(`Options`));
+        await user.click(await screen.findByLabelText('Options'));
 
         await user.click(await screen.findByText('30-180 days'));
         expect(history.location.search).toContain('s[Image Created Time]=30d-180d');
+    });
+
+    it('should contain a button that resets the widget options to default', async () => {
+        const { user } = setup();
+
+        await user.click(await screen.findByLabelText('Options'));
+        const checkboxes = await screen.findAllByLabelText('Toggle image time range');
+        const inputs = (await screen.findAllByLabelText('Image age in days')) as HTMLInputElement[];
+
+        // Defaults
+        checkboxes.forEach((cb) => expect(cb).toBeChecked());
+        expect(inputs.map(({ value }) => parseInt(value, 10))).toEqual(
+            expect.arrayContaining([30, 90, 180, 365])
+        );
+
+        await user.click(checkboxes[0]);
+        await user.click(checkboxes[1]);
+        // Double clicking allows us to select the current input value and type over it
+        await user.dblClick(inputs[1]);
+        await user.type(inputs[1], '100', { skipClick: true });
+        await user.dblClick(inputs[2]);
+        await user.type(inputs[2], '200', { skipClick: true });
+
+        expect(checkboxes[0]).not.toBeChecked();
+        expect(checkboxes[1]).not.toBeChecked();
+        expect(checkboxes[2]).toBeChecked();
+        expect(checkboxes[3]).toBeChecked();
+        expect(inputs.map(({ value }) => parseInt(value, 10))).toEqual(
+            expect.arrayContaining([30, 100, 200, 365])
+        );
+
+        const resetButton = await screen.findByLabelText('Revert to default options');
+        await user.click(resetButton);
+        await user.unhover(resetButton); // Avoid displaying the tooltip, which leads to React errors on test exit
+
+        checkboxes.forEach((cb) => expect(cb).toBeChecked());
+        expect(inputs.map(({ value }) => parseInt(value, 10))).toEqual(
+            expect.arrayContaining([30, 90, 180, 365])
+        );
     });
 });

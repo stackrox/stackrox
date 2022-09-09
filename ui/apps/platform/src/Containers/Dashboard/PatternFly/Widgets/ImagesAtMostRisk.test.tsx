@@ -94,7 +94,7 @@ describe('Images at most risk dashboard widget', () => {
         expect(await screen.findByText('Images at most risk')).toBeInTheDocument();
 
         // Change to display only active images
-        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByLabelText('Options'));
         await user.click(await screen.findByText('Active images'));
 
         expect(await screen.findByText('Active images at most risk')).toBeInTheDocument();
@@ -115,7 +115,7 @@ describe('Images at most risk dashboard widget', () => {
         );
 
         // Switch to show total CVEs
-        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByLabelText('Options'));
         await user.click(await screen.findByText('All CVEs'));
 
         expect(await screen.findAllByText(`${totalCritical} CVEs`)).toHaveLength(mockImages.length);
@@ -143,5 +143,41 @@ describe('Images at most risk dashboard widget', () => {
 
         await user.click(screen.getByText('View all'));
         expect(history.location.pathname).toBe(`${vulnManagementImagesPath}`);
+    });
+
+    it('should contain a button that resets the widget options to default', async () => {
+        const { user } = setup();
+
+        await user.click(await screen.findByLabelText('Options'));
+        const [fixableCves, allCves, activeImages, allImages] = await screen.findAllByRole(
+            'button',
+            {
+                name: /Fixable CVEs|All CVEs|Active images|All images/,
+            }
+        );
+
+        // Defaults
+        expect(fixableCves).toHaveAttribute('aria-pressed', 'true');
+        expect(allCves).toHaveAttribute('aria-pressed', 'false');
+        expect(activeImages).toHaveAttribute('aria-pressed', 'false');
+        expect(allImages).toHaveAttribute('aria-pressed', 'true');
+
+        // Change some options
+        await user.click(allCves);
+        await user.click(activeImages);
+
+        expect(fixableCves).toHaveAttribute('aria-pressed', 'false');
+        expect(allCves).toHaveAttribute('aria-pressed', 'true');
+        expect(activeImages).toHaveAttribute('aria-pressed', 'true');
+        expect(allImages).toHaveAttribute('aria-pressed', 'false');
+
+        const resetButton = await screen.findByLabelText('Revert to default options');
+        await user.click(resetButton);
+        await user.unhover(resetButton); // Avoid displaying the tooltip, which leads to React errors on test exit
+
+        expect(fixableCves).toHaveAttribute('aria-pressed', 'true');
+        expect(allCves).toHaveAttribute('aria-pressed', 'false');
+        expect(activeImages).toHaveAttribute('aria-pressed', 'false');
+        expect(allImages).toHaveAttribute('aria-pressed', 'true');
     });
 });

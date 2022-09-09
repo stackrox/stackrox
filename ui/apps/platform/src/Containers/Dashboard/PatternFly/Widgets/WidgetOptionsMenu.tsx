@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Button, Popover, PopoverPosition } from '@patternfly/react-core';
-import { CaretDownIcon } from '@patternfly/react-icons';
+import { CaretDownIcon, CogIcon } from '@patternfly/react-icons';
 
 import './WidgetOptionsMenu.css';
 
@@ -18,12 +18,13 @@ function WidgetOptionsMenu({ bodyContent }: OptionsMenuProps) {
             bodyContent={bodyContent}
         >
             <Button
+                aria-label="Options"
                 variant="secondary"
                 className="pf-u-mr-sm"
                 icon={<CaretDownIcon />}
                 iconPosition="right"
             >
-                Options
+                <CogIcon className="pf-u-display-inline" />
             </Button>
         </Popover>
     );

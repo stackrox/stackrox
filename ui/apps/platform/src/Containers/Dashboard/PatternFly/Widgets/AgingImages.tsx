@@ -13,6 +13,7 @@ import {
 } from '@patternfly/react-core';
 import { useQuery, gql } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
+import isEqual from 'lodash/isEqual';
 import pluralize from 'pluralize';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -33,6 +34,7 @@ import AgingImagesChart, {
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
+import WidgetOptionsResetButton from './WidgetOptionsResetButton';
 
 export const imageCountQuery = gql`
     query agingImagesQuery($query0: String, $query1: String, $query2: String, $query3: String) {
@@ -115,6 +117,9 @@ type TimeRangeAction =
           type: 'update';
           index: TimeRangeTupleIndex;
           value: number;
+      }
+    | {
+          type: 'reset';
       };
 
 function timeRangeReducer(state: Config, action: TimeRangeAction): Config {
@@ -128,6 +133,8 @@ function timeRangeReducer(state: Config, action: TimeRangeAction): Config {
         case 'update':
             timeRanges[action.index].value = action.value;
             return nextState;
+        case 'reset':
+            return defaultConfig;
         default:
             return nextState;
     }
@@ -178,6 +185,8 @@ function AgingImages() {
             (value, index) => !timeRanges[index].enabled || value === 0
         );
 
+    const isOptionsChanged = !isEqual(timeRanges, defaultConfig.timeRanges);
+
     let inputError: Error | undefined;
     let errorTitle: string | undefined;
     let errorMessage: string | undefined;
@@ -205,6 +214,9 @@ function AgingImages() {
                         </Title>
                     </FlexItem>
                     <FlexItem>
+                        {isOptionsChanged && (
+                            <WidgetOptionsResetButton onClick={() => dispatch({ type: 'reset' })} />
+                        )}
                         <WidgetOptionsMenu
                             bodyContent={
                                 <Form>
