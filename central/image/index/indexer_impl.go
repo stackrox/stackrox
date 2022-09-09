@@ -3,14 +3,9 @@ package index
 import (
 	"bytes"
 	"context"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/document"
-	"github.com/blevesearch/bleve/mapping"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	mappings "github.com/stackrox/rox/pkg/search/options/images"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 const batchSize = 5000
@@ -33,99 +27,6 @@ type indexerImpl struct {
 type imageWrapper struct {
 	*storage.Image `json:"image"`
 	Type           string `json:"type"`
-}
-
-func getComponentPath(s string) (string, []string) {
-	return fmt.Sprintf("image.scan.components.%s", s), []string{"image", "scan", "components", s}
-}
-
-func getVulnPath(s string) (string, []string) {
-	return fmt.Sprintf("image.scan.components.vulns.%s", s), []string{"image", "scan", "components", "vulns", s}
-}
-
-func getSubMappingOrPanic(mapping *mapping.DocumentMapping, subPath string) *mapping.DocumentMapping {
-	subMapping := mapping.Properties[subPath]
-	if subMapping == nil {
-		utils.Should(errors.Errorf("no mapping with name %q", subPath))
-	}
-	return subMapping
-}
-
-func getFieldOrPanic(mapping *mapping.DocumentMapping) *mapping.FieldMapping {
-	if len(mapping.Fields) == 0 {
-		utils.Should(errors.Errorf("no fields are available for mapping: %+v", mapping))
-	}
-	return mapping.Fields[0]
-}
-
-func mapComponents(im *mapping.IndexMappingImpl, components []*storage.EmbeddedImageScanComponent, doc *document.Document) {
-	imageMapping := getSubMappingOrPanic(im.TypeMapping[v1.SearchCategory_IMAGES.String()], "image")
-	scanMapping := getSubMappingOrPanic(imageMapping, "scan")
-	componentMapping := getSubMappingOrPanic(scanMapping, "components")
-
-	componentNameMapping := getFieldOrPanic(getSubMappingOrPanic(componentMapping, "name"))
-	componentNamePathStr, componentNamePath := getComponentPath("name")
-
-	componentVersionMapping := getFieldOrPanic(getSubMappingOrPanic(componentMapping, "version"))
-	componentVersionPathStr, componentVersionPath := getComponentPath("version")
-
-	componentPriorityMapping := getFieldOrPanic(getSubMappingOrPanic(componentMapping, "risk_score"))
-	componentPriorityPathStr, componentPriorityPath := getComponentPath("risk_score")
-
-	vulnMapping := getSubMappingOrPanic(componentMapping, "vulns")
-
-	cveMapping := getFieldOrPanic(getSubMappingOrPanic(vulnMapping, "cve"))
-	cvePathStr, cvePath := getVulnPath("cve")
-
-	cvssMapping := getFieldOrPanic(getSubMappingOrPanic(vulnMapping, "cvss"))
-	cvssPathStr, cvssPath := getVulnPath("cvss")
-
-	cveSuppressedMapping := getFieldOrPanic(getSubMappingOrPanic(vulnMapping, "suppressed"))
-	cveSuppressedPathStr, cveSuppressedPath := getVulnPath("suppressed")
-
-	fixedMapping := vulnMapping.Properties["SetFixedBy"].Properties["fixed_by"].Fields[0]
-	fixedPathStr := "image.scan.components.vulns.SetFixedBy.fixed_by"
-	fixedPath := strings.Split("image.scan.components.vulns.SetFixedBy.fixed_by", ".")
-
-	cveStateMapping := getFieldOrPanic(getSubMappingOrPanic(vulnMapping, "state"))
-	cveStatePathStr, cveStatePath := getVulnPath("state")
-
-	walkContext := im.NewWalkContext(doc, imageMapping)
-
-	for i, c := range components {
-		componentIndex := []uint64{uint64(i)}
-
-		componentNameMapping.ProcessString(c.GetName(), componentNamePathStr, componentNamePath, componentIndex, walkContext)
-		componentVersionMapping.ProcessString(c.GetVersion(), componentVersionPathStr, componentVersionPath, componentIndex, walkContext)
-		componentPriorityMapping.ProcessFloat64(float64(c.GetRiskScore()), componentPriorityPathStr, componentPriorityPath, componentIndex, walkContext)
-
-		for j, vuln := range c.GetVulns() {
-			vulnIndex := []uint64{uint64(i), uint64(j)}
-			cveMapping.ProcessString(vuln.GetCve(), cvePathStr, cvePath, vulnIndex, walkContext)
-			cvssMapping.ProcessFloat64(float64(vuln.GetCvss()), cvssPathStr, cvssPath, vulnIndex, walkContext)
-			cveSuppressedMapping.ProcessBoolean(vuln.GetSuppressed(), cveSuppressedPathStr, cveSuppressedPath, vulnIndex, walkContext)
-			fixedMapping.ProcessString(vuln.GetFixedBy(), fixedPathStr, fixedPath, vulnIndex, walkContext)
-			cveStateMapping.ProcessFloat64(float64(storage.VulnerabilityState(vuln.GetState())), cveStatePathStr, cveStatePath, vulnIndex, walkContext)
-		}
-	}
-}
-
-func (b *indexerImpl) optimizedMapDocument(wrapper *imageWrapper) (*document.Document, error) {
-	doc := document.NewDocument(wrapper.GetId())
-
-	components := wrapper.GetScan().GetComponents()
-	if wrapper.GetScan() != nil {
-		wrapper.Scan.Components = nil
-		defer func() {
-			wrapper.Scan.Components = components
-		}()
-	}
-	if err := b.index.Mapping().MapDocument(doc, wrapper); err != nil {
-		return nil, err
-	}
-
-	mapComponents(b.index.Mapping().(*mapping.IndexMappingImpl), components, doc)
-	return doc, nil
 }
 
 func (b *indexerImpl) AddImage(image *storage.Image) error {

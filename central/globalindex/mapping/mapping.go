@@ -96,7 +96,7 @@ func singleTermAnalyzer() map[string]interface{} {
 
 // GetEntityOptionsMap is a mapping from search categories to the options
 func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
-	nodeSearchOptions := search.CombineOptionsMaps(
+	fullNodeSearchOptions := search.CombineOptionsMaps(
 		nodeMapping.OptionsMap,
 		nodeComponentEdgeMapping.OptionsMap,
 		imageComponentMapping.OptionsMap,
@@ -105,13 +105,9 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	)
 
 	// Images in dackbox support an expanded set of search options
-	imageSearchOptions := search.CombineOptionsMaps(
-		imageMapping.OptionsMap,
+	fullImageSearchOptions := search.CombineOptionsMaps(
+		imageMapping.FullImageOptionsMap,
 		imageMapping.ImageDeploymentOptions,
-		imageComponentEdgeMapping.OptionsMap,
-		imageComponentMapping.OptionsMap,
-		componentVulnEdgeMapping.OptionsMap,
-		cveMapping.OptionsMap,
 	)
 	componentSearchOptions := search.CombineOptionsMaps(
 		imageComponentMapping.OptionsMap,
@@ -121,14 +117,6 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		cveMapping.OptionsMap,
 		imageMapping.ImageDeploymentOptions,
 	)
-	cveSearchOptions := search.CombineOptionsMaps(
-		cveMapping.OptionsMap,
-		componentVulnEdgeMapping.OptionsMap,
-		imageComponentMapping.OptionsMap,
-		imageComponentEdgeMapping.OptionsMap,
-		imageMapping.OptionsMap,
-		deployments.OptionsMap,
-	)
 
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
 	// search document maps are also built off this map
@@ -137,7 +125,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_ALERTS:                alertMapping.OptionsMap,
 		v1.SearchCategory_DEPLOYMENTS:           deployments.OptionsMap,
 		v1.SearchCategory_PODS:                  podMapping.OptionsMap,
-		v1.SearchCategory_IMAGES:                imageSearchOptions,
+		v1.SearchCategory_IMAGES:                fullImageSearchOptions,
 		v1.SearchCategory_POLICIES:              policyMapping.OptionsMap,
 		v1.SearchCategory_POLICY_CATEGORIES:     policyCategoryMapping.OptionsMap,
 		v1.SearchCategory_SECRETS:               secretOptions.OptionsMap,
@@ -146,7 +134,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_COMPLIANCE_CONTROL:    index.ControlOptions,
 		v1.SearchCategory_CLUSTERS:              clusterMapping.OptionsMap,
 		v1.SearchCategory_NAMESPACES:            namespaceMapping.OptionsMap,
-		v1.SearchCategory_NODES:                 nodeSearchOptions,
+		v1.SearchCategory_NODES:                 fullNodeSearchOptions,
 		v1.SearchCategory_PROCESS_BASELINES:     processBaselineMapping.OptionsMap,
 		v1.SearchCategory_REPORT_CONFIGURATIONS: reportConfigurationsMapping.OptionsMap,
 		v1.SearchCategory_RISKS:                 riskMappings.OptionsMap,
@@ -154,7 +142,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_ROLEBINDINGS:          roleBindingOptions.OptionsMap,
 		v1.SearchCategory_SERVICE_ACCOUNTS:      serviceAccountOptions.OptionsMap,
 		v1.SearchCategory_SUBJECTS:              subjectMapping.OptionsMap,
-		v1.SearchCategory_VULNERABILITIES:       cveSearchOptions,
+		v1.SearchCategory_VULNERABILITIES:       fullImageSearchOptions,
 		v1.SearchCategory_COMPONENT_VULN_EDGE:   componentVulnEdgeMapping.OptionsMap,
 		v1.SearchCategory_CLUSTER_VULN_EDGE:     clusterVulnEdgeMapping.OptionsMap,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE:  imageComponentEdgeMapping.OptionsMap,

@@ -84,8 +84,8 @@ message NodeScan {
 }
 
 message EmbeddedNodeScanComponent {
-    string                         name             = 1 [(gogoproto.moretags) = 'search:"Component,store"'];
-    string                         version          = 2 [(gogoproto.moretags) = 'search:"Component Version,store"'];
+    string                         name             = 1;
+    string                         version          = 2;
     repeated EmbeddedVulnerability vulns            = 3;
     repeated NodeVulnerability     vulnerabilities  = 7;
     int64                          priority         = 4;

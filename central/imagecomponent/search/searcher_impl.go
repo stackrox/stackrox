@@ -51,22 +51,10 @@ var (
 			clusterMapping.OptionsMap,
 		),
 	)
-	imageOnlyOptionsMap = search.Difference(
-		imageMappings.OptionsMap,
-		search.CombineOptionsMaps(
-			imageComponentEdgeMappings.OptionsMap,
-			componentMappings.OptionsMap,
-			componentCVEEdgeMappings.OptionsMap,
-			cveMappings.OptionsMap,
-		),
-	)
-	nodeOnlyOptionsMap = search.Difference(
+	imageOnlyOptionsMap = imageMappings.OptionsMap
+	nodeOnlyOptionsMap  = search.Difference(
 		nodeMappings.OptionsMap,
 		search.CombineOptionsMaps(
-			nodeComponentEdgeMappings.OptionsMap,
-			componentMappings.OptionsMap,
-			componentCVEEdgeMappings.OptionsMap,
-			cveMappings.OptionsMap,
 			clusterMapping.OptionsMap,
 		),
 	)

@@ -5,11 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
-	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
-	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/graphql/resolvers"
-	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
-	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
 	nsMappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -43,24 +39,8 @@ func init() {
 				schema.ImagesSchema.OptionsMap,
 			),
 		)
-		ImageOnlyOptionsMap = search.Difference(
-			schema.ImagesSchema.OptionsMap,
-			search.CombineOptionsMaps(
-				schema.ImageComponentEdgesSchema.OptionsMap,
-				schema.ImageComponentsSchema.OptionsMap,
-				schema.ImageComponentCveEdgesSchema.OptionsMap,
-				schema.ImageCvesSchema.OptionsMap,
-			),
-		)
-		NodeOnlyOptionsMap = search.Difference(
-			schema.NodesSchema.OptionsMap,
-			search.CombineOptionsMaps(
-				schema.NodeComponentEdgesSchema.OptionsMap,
-				schema.NodeComponentsSchema.OptionsMap,
-				schema.NodeComponentsCvesEdgesSchema.OptionsMap,
-				schema.NodeCvesSchema.OptionsMap,
-			),
-		)
+		ImageOnlyOptionsMap = schema.ImagesSchema.OptionsMap
+		NodeOnlyOptionsMap = schema.NodesSchema.OptionsMap
 	} else {
 		NamespaceOnlyOptionsMap = search.Difference(nsMappings.OptionsMap, clusterMappings.OptionsMap)
 		DeploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap,
@@ -70,24 +50,8 @@ func init() {
 				imageMappings.OptionsMap,
 			),
 		)
-		ImageOnlyOptionsMap = search.Difference(
-			imageMappings.OptionsMap,
-			search.CombineOptionsMaps(
-				imageComponentEdgeMappings.OptionsMap,
-				componentMappings.OptionsMap,
-				componentCVEEdgeMappings.OptionsMap,
-				cveMappings.OptionsMap,
-			),
-		)
-		NodeOnlyOptionsMap = search.Difference(
-			nodeMappings.OptionsMap,
-			search.CombineOptionsMaps(
-				imageComponentEdgeMappings.OptionsMap,
-				componentMappings.OptionsMap,
-				componentCVEEdgeMappings.OptionsMap,
-				cveMappings.OptionsMap,
-			),
-		)
+		ImageOnlyOptionsMap = imageMappings.OptionsMap
+		NodeOnlyOptionsMap = nodeMappings.OptionsMap
 	}
 }
 

@@ -108,8 +108,8 @@ message ImageSignatureVerificationResult {
 
 // Next Tag: 13
 message EmbeddedImageScanComponent {
-    string                         name        = 1 [(gogoproto.moretags) = 'search:"Component,store"'];
-    string                         version     = 2 [(gogoproto.moretags) = 'search:"Component Version,store"'];
+    string                         name        = 1 [(gogoproto.moretags) = 'policy:"Component"'];
+    string                         version     = 2 [(gogoproto.moretags) = 'policy:"Component Version"'];
     License                        license     = 3;
     repeated EmbeddedVulnerability vulns       = 4;
     oneof has_layer_index {
@@ -121,7 +121,7 @@ message EmbeddedImageScanComponent {
     oneof set_top_cvss {
         float                      top_cvss    = 9;
     }
-    float                          risk_score  = 10 [(gogoproto.moretags) = 'search:"Component Risk Score,hidden"'];
+    float                          risk_score  = 10;
     // Component version that fixes all the fixable vulnerabilities in this component.
     string                         fixed_by    = 11;
     message Executable {
