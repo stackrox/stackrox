@@ -361,7 +361,7 @@ endif
 .PHONY: cli
 cli: cli-build
 	# Workaround a bug on MacOS
-	rm $(GOPATH)/bin/roxctl || true
+	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
