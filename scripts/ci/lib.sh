@@ -1040,6 +1040,7 @@ openshift_ci_mods() {
         if [[ -n "${sha:-}" ]] && [[ "$sha" != "null" ]]; then
             info "Will checkout SHA to match PR: $sha"
             git checkout "$sha"
+            git submodule update
         else
             echo "WARNING: Could not determine a SHA for this PR, ${sha:-}"
         fi

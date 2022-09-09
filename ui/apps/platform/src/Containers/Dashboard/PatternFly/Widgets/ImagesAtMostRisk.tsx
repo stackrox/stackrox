@@ -11,6 +11,7 @@ import {
     ToggleGroup,
     ToggleGroupItem,
 } from '@patternfly/react-core';
+import isEqual from 'lodash/isEqual';
 
 import { vulnManagementImagesPath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
@@ -26,6 +27,7 @@ import ImagesAtMostRiskTable, { CveStatusOption, ImageData } from './ImagesAtMos
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
+import WidgetOptionsResetButton from './WidgetOptionsResetButton';
 
 function getTitle(searchFilter: SearchFilter, imageStatusOption: ImageStatusOption) {
     return imageStatusOption === 'Active' || isResourceScoped(searchFilter)
@@ -101,11 +103,12 @@ function ImagesAtMostRisk() {
     const { searchFilter } = useURLSearch();
     const { pathname } = useLocation();
 
-    const [{ cveStatus, imageStatus }, updateConfig] = useWidgetConfig<Config>(
+    const [config, updateConfig] = useWidgetConfig<Config>(
         'ImagesAtMostRisk',
         pathname,
         defaultConfig
     );
+    const { cveStatus, imageStatus } = config;
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
@@ -117,6 +120,7 @@ function ImagesAtMostRisk() {
 
     const imageData = data || previousData;
     const isScopeApplied = isResourceScoped(searchFilter);
+    const isOptionsChanged = !isEqual(config, defaultConfig);
 
     return (
         <WidgetCard
@@ -128,6 +132,9 @@ function ImagesAtMostRisk() {
                         <Title headingLevel="h2">{getTitle(searchFilter, imageStatus)}</Title>
                     </FlexItem>
                     <FlexItem>
+                        {isOptionsChanged && (
+                            <WidgetOptionsResetButton onClick={() => updateConfig(defaultConfig)} />
+                        )}
                         <WidgetOptionsMenu
                             bodyContent={
                                 <Form>

@@ -82,10 +82,10 @@ func (d *dbCloneManagerImpl) Scan() error {
 	}
 
 	currClone, currExists := d.cloneMap[CurrentClone]
-	if !currExists {
+	if !currExists && !features.PostgresDatastore.Enabled() {
 		return errors.Errorf("Cannot find database at %s", filepath.Join(d.basePath, CurrentClone))
 	}
-	if currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 {
+	if currExists && (currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0) {
 		// If there is no previous clone or force rollback is not requested, we cannot downgrade.
 		prevClone, prevExists := d.cloneMap[PreviousClone]
 		if !prevExists {
@@ -321,4 +321,35 @@ func (d *dbCloneManagerImpl) GetCurrentCloneCreationTime() time.Time {
 // GetDirName - gets the directory name of the clone
 func (d *dbCloneManagerImpl) GetDirName(cloneName string) string {
 	return d.cloneMap[cloneName].GetDirName()
+}
+
+// DecommissionRocksDB -- removes RocksDB from central
+func (d *dbCloneManagerImpl) DecommissionRocksDB() {
+	log.Info("DecommissionRocksDB")
+	for k := range d.cloneMap {
+		path := d.getPath(k)
+		if exists, err := fileutils.Exists(path); err != nil {
+			log.Error(err)
+			continue
+		} else if exists {
+			log.Infof("Removing database %s", path)
+			linkTo, err := fileutils.ResolveIfSymlink(path)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			log.Infof("Remove path = %q", path)
+			if err = os.RemoveAll(path); err != nil {
+				log.Error(err)
+				continue
+			}
+			// Remove any rocks database if in postgres mode
+			log.Infof("Remove linkTo = %q", linkTo)
+			if err = os.RemoveAll(linkTo); err != nil {
+				log.Error(err)
+				continue
+			}
+		}
+		delete(d.cloneMap, k)
+	}
 }

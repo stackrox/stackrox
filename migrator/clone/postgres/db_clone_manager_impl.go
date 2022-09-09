@@ -151,16 +151,21 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
 	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
 	// Otherwise we roll with Postgres->Postgres
-	if rocksVersion != nil && !rocksVersion.LastPersisted.IsZero() {
-		log.Info("A previously used version of Rocks exists")
+	if d.rocksExists(rocksVersion) {
+		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
 		// Rocks has been used but Postgres is fresh.  So just return current.
-		if !currExists || currClone.GetMigVersion() == nil || !d.rollbackEnabled() {
+		if !currExists || currClone.GetMigVersion() == nil {
 			return CurrentClone, true, nil
 		}
 
 		// Rocks more recently updated than Postgres so need to migrate from there.  Otherwise, Postgres is more recent
 		// so just fall through to the rest of the processing.
 		if currClone.GetMigVersion().LastPersisted.Before(rocksVersion.LastPersisted) {
+			// Rollback is not enabled, so process the Rocks -> Postgres migration on CurrentClone.
+			if !d.rollbackEnabled() {
+				return CurrentClone, true, nil
+			}
+
 			// Create a temp clone for processing of current
 			// Seed it from an empty database because we need to run migrations from Rocks to Postgres.
 			if !d.databaseExists(TempClone) {
@@ -220,6 +225,17 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 
 	log.Info("Fell through all checks to return current, meaning probably empty OR rollback disabled.")
 	return CurrentClone, false, nil
+}
+
+func (d *dbCloneManagerImpl) rocksExists(rocksVersion *migrations.MigrationVersion) bool {
+	if rocksVersion != nil &&
+		!rocksVersion.LastPersisted.IsZero() &&
+		rocksVersion.SeqNum != 0 &&
+		rocksVersion.MainVersion != "0" {
+		return true
+	}
+
+	return false
 }
 
 // Persist - replaces current clone with upgraded one.
@@ -377,4 +393,18 @@ func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 	log.Infof("Central has space to create backup for rollback: %v, required: %d, available: %d with %f margin", hasSpace, requiredBytes, availableBytes, migrations.CapacityMarginFraction)
 
 	return hasSpace
+}
+
+// GetCurrentVersion -- gets the version of the current clone
+func (d *dbCloneManagerImpl) GetCurrentVersion() *migrations.MigrationVersion {
+	// Get a short-lived connection for the purposes of checking the version of the clone.
+	pool := pgadmin.GetClonePool(d.adminConfig, CurrentClone)
+
+	ver, err := migrations.ReadVersionPostgres(pool)
+	if err != nil {
+		return nil
+	}
+	pool.Close()
+
+	return ver
 }
