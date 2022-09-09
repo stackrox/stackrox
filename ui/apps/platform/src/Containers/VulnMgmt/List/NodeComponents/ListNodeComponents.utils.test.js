@@ -150,7 +150,9 @@ function getComponentTableColumns(workflowState) {
             className: `w-1/8`,
             accessor: 'imageCount',
             Cell: ({ original }) => original.imageCount,
-            sortField: componentSortFields.IMAGES,
+            // TODO: restore sorting on this field, see https://issues.redhat.com/browse/ROX-12548 for context
+            // sortField: componentSortFields.IMAGES,
+            sortable: false,
         },
         {
             Header: `Deployments`,
