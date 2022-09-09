@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -109,11 +110,14 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Po
 }
 
 // NewTestDataStore allows for direct creation of the datastore for testing purposes
-func NewTestDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpool.Pool,
+func NewTestDataStore(t *testing.T, storage store.Store, graphProvider graph.Provider, pool *pgxpool.Pool,
 	bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
+	if t == nil {
+		return nil, errors.New("NewTestDataStore called without testing")
+	}
 	storage, err := cache.NewCachedStore(storage)
 	if err != nil {
 		return nil, err

@@ -23,7 +23,9 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -95,7 +97,7 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 	s.resolver.ImageComponentDataStore = getImageComponentDatastore(s.ctx, s.db, s.gormDB, riskMock)
 	s.resolver.ImageCVEEdgeDataStore = getImageCVEEdgeDatastore(s.ctx, s.db, s.gormDB)
 	s.resolver.ComponentCVEEdgeDataStore = getImageComponentCVEEdgeDatastore(s.ctx, s.db, s.gormDB)
-	s.resolver.DeploymentDataStore, err = getDeploymentDatastore(s.ctx, s.db, s.gormDB, s.resolver.ImageDataStore, riskMock)
+	s.resolver.DeploymentDataStore, err = getDeploymentDatastore(s.ctx, s.T(), s.db, s.gormDB, s.resolver.ImageDataStore, riskMock)
 	s.NoError(err, "Failed to get DeploymentDataStore")
 
 	// Sac permissions
@@ -125,6 +127,8 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 		err = s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
 		s.NoError(err)
 	}
+
+	s.T().Parallel()
 }
 
 func (s *GraphQLImageComponentTestSuite) TearDownSuite() {
@@ -142,34 +146,40 @@ func (s *GraphQLImageComponentTestSuite) TearDownSuite() {
 
 func (s *GraphQLImageComponentTestSuite) TestUnauthorizedImageComponentEndpoint() {
 	_, err := s.resolver.ImageComponent(s.ctx, IDQuery{})
-	s.Error(err, "Unauthorized request got through")
+	assert.Error(s.T(), err, "Unauthorized request got through")
 }
 
 func (s *GraphQLImageComponentTestSuite) TestUnauthorizedImageComponentsEndpoint() {
 	_, err := s.resolver.ImageComponents(s.ctx, PaginatedQuery{})
-	s.Error(err, "Unauthorized request got through")
+	assert.Error(s.T(), err, "Unauthorized request got through")
 }
 
 func (s *GraphQLImageComponentTestSuite) TestUnauthorizedImageComponentCountEndpoint() {
 	_, err := s.resolver.ImageComponentCount(s.ctx, RawQuery{})
-	s.Error(err, "Unauthorized request got through")
+	assert.Error(s.T(), err, "Unauthorized request got through")
 }
 
 func (s *GraphQLImageComponentTestSuite) TestImageComponents() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	expectedIDs := []string{"comp1#0.9#", "comp2#1.1#", "comp3#1.0#", "comp4#1.0#"}
+	expectedIDs := []string{
+		scancomponent.ComponentID("comp1", "0.9", "os1"),
+		scancomponent.ComponentID("comp1", "0.9", "os2"),
+		scancomponent.ComponentID("comp2", "1.1", "os1"),
+		scancomponent.ComponentID("comp3", "1.0", "os1"),
+		scancomponent.ComponentID("comp3", "1.0", "os2"),
+		scancomponent.ComponentID("comp4", "1.0", "os2"),
+	}
 	expectedCount := int32(len(expectedIDs))
 
 	comps, err := s.resolver.ImageComponents(ctx, PaginatedQuery{})
-	s.NoError(err)
-	s.Equal(expectedCount, int32(len(comps)))
-	idList := getIDList(ctx, comps)
-	s.ElementsMatch(expectedIDs, idList)
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), expectedCount, int32(len(comps)))
+	assert.ElementsMatch(s.T(), expectedIDs, getIDList(ctx, comps))
 
 	count, err := s.resolver.ImageComponentCount(ctx, RawQuery{})
-	s.NoError(err)
-	s.Equal(expectedCount, count)
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), expectedCount, count)
 }
 
 func (s *GraphQLImageComponentTestSuite) TestImageComponentsScoped() {
@@ -183,12 +193,20 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentsScoped() {
 		{
 			"sha1",
 			"sha1",
-			[]string{"comp1#0.9#", "comp2#1.1#", "comp3#1.0#"},
+			[]string{
+				scancomponent.ComponentID("comp1", "0.9", "os1"),
+				scancomponent.ComponentID("comp2", "1.1", "os1"),
+				scancomponent.ComponentID("comp3", "1.0", "os1"),
+			},
 		},
 		{
 			"sha2",
 			"sha2",
-			[]string{"comp1#0.9#", "comp3#1.0#", "comp4#1.0#"},
+			[]string{
+				scancomponent.ComponentID("comp1", "0.9", "os2"),
+				scancomponent.ComponentID("comp3", "1.0", "os2"),
+				scancomponent.ComponentID("comp4", "1.0", "os2"),
+			},
 		},
 	}
 
@@ -198,14 +216,13 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentsScoped() {
 			expectedCount := int32(len(test.expectedIDs))
 
 			comps, err := image.ImageComponents(ctx, PaginatedQuery{})
-			s.NoError(err)
-			s.Equal(expectedCount, int32(len(comps)))
-			idList := getIDList(ctx, comps)
-			s.ElementsMatch(test.expectedIDs, idList)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, int32(len(comps)))
+			assert.ElementsMatch(t, test.expectedIDs, getIDList(ctx, comps))
 
 			count, err := image.ImageComponentCount(ctx, RawQuery{})
-			s.NoError(err)
-			s.Equal(expectedCount, count)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
 		})
 	}
 }
@@ -216,17 +233,17 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentMiss() {
 	compID := graphql.ID("invalid")
 
 	_, err := s.resolver.ImageComponent(ctx, IDQuery{ID: &compID})
-	s.Error(err)
+	assert.Error(s.T(), err)
 }
 
 func (s *GraphQLImageComponentTestSuite) TestImageComponentHit() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	compID := graphql.ID("comp1#0.9#")
+	compID := graphql.ID(scancomponent.ComponentID("comp1", "0.9", "os1"))
 
 	comp, err := s.resolver.ImageComponent(ctx, IDQuery{ID: &compID})
-	s.NoError(err)
-	s.Equal(compID, comp.Id(ctx))
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), compID, comp.Id(ctx))
 }
 
 func (s *GraphQLImageComponentTestSuite) TestImageComponentImages() {
@@ -238,23 +255,33 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImages() {
 		expectedIDs []string
 	}{
 		{
-			"comp1",
-			"comp1#0.9#",
-			[]string{"sha1", "sha2"},
-		},
-		{
-			"comp2",
-			"comp2#1.1#",
+			"comp1os1",
+			scancomponent.ComponentID("comp1", "0.9", "os1"),
 			[]string{"sha1"},
 		},
 		{
-			"comp3",
-			"comp3#1.0#",
-			[]string{"sha1", "sha2"},
+			"comp1os2",
+			scancomponent.ComponentID("comp1", "0.9", "os2"),
+			[]string{"sha2"},
 		},
 		{
-			"comp4",
-			"comp4#1.0#",
+			"comp2os1",
+			scancomponent.ComponentID("comp2", "1.1", "os1"),
+			[]string{"sha1"},
+		},
+		{
+			"comp3os1",
+			scancomponent.ComponentID("comp3", "1.0", "os1"),
+			[]string{"sha1"},
+		},
+		{
+			"comp3os2",
+			scancomponent.ComponentID("comp3", "1.0", "os2"),
+			[]string{"sha2"},
+		},
+		{
+			"comp4os2",
+			scancomponent.ComponentID("comp4", "1.0", "os2"),
 			[]string{"sha2"},
 		},
 	}
@@ -265,14 +292,13 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImages() {
 			expectedCount := int32(len(test.expectedIDs))
 
 			images, err := comp.Images(ctx, PaginatedQuery{})
-			s.NoError(err)
-			s.Equal(expectedCount, int32(len(images)))
-			idList := getIDList(ctx, images)
-			s.ElementsMatch(test.expectedIDs, idList)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, int32(len(images)))
+			assert.ElementsMatch(t, test.expectedIDs, getIDList(ctx, images))
 
 			count, err := comp.ImageCount(ctx, RawQuery{})
-			s.NoError(err)
-			s.Equal(expectedCount, count)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
 		})
 	}
 }
@@ -280,50 +306,82 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImages() {
 func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	type counterValues struct {
-		fixable   int32
-		critical  int32
-		important int32
-		moderate  int32
-		low       int32
-	}
-
 	imageCompTests := []struct {
-		name                  string
-		id                    string
-		expectedIDs           []string
-		expectedCounterValues counterValues
+		name            string
+		id              string
+		expectedIDs     []string
+		expectedCounter *VulnerabilityCounterResolver
 	}{
 		{
-			"comp1",
-			"comp1#0.9#",
-			[]string{"cve-2018-1#"},
-			counterValues{
-				1, 1, 0, 0, 0,
+			"comp1os1",
+			scancomponent.ComponentID("comp1", "0.9", "os1"),
+			[]string{"cve-2018-1#os1"},
+			&VulnerabilityCounterResolver{
+				all:       &VulnerabilityFixableCounterResolver{0, 1},
+				critical:  &VulnerabilityFixableCounterResolver{0, 0},
+				important: &VulnerabilityFixableCounterResolver{0, 0},
+				moderate:  &VulnerabilityFixableCounterResolver{0, 0},
+				low:       &VulnerabilityFixableCounterResolver{1, 1},
 			},
 		},
 		{
-			"comp2",
-			"comp2#1.1#",
-			[]string{"cve-2018-1#"},
-			counterValues{
-				1, 1, 0, 0, 0,
+			"comp2os1",
+			scancomponent.ComponentID("comp2", "1.1", "os1"),
+			[]string{"cve-2018-1#os1"},
+			&VulnerabilityCounterResolver{
+				all:       &VulnerabilityFixableCounterResolver{0, 1},
+				critical:  &VulnerabilityFixableCounterResolver{0, 0},
+				important: &VulnerabilityFixableCounterResolver{0, 0},
+				moderate:  &VulnerabilityFixableCounterResolver{0, 0},
+				low:       &VulnerabilityFixableCounterResolver{1, 1},
 			},
 		},
 		{
-			"comp3",
-			"comp3#1.0#",
-			[]string{"cve-2019-1#", "cve-2019-2#"},
-			counterValues{
-				0, 0, 0, 1, 1,
+			"comp3os1",
+			scancomponent.ComponentID("comp3", "1.0", "os1"),
+			[]string{"cve-2019-1#os1", "cve-2019-2#os1"},
+			&VulnerabilityCounterResolver{
+				all:       &VulnerabilityFixableCounterResolver{0, 0},
+				critical:  &VulnerabilityFixableCounterResolver{0, 0},
+				important: &VulnerabilityFixableCounterResolver{0, 0},
+				moderate:  &VulnerabilityFixableCounterResolver{0, 0},
+				low:       &VulnerabilityFixableCounterResolver{2, 0},
 			},
 		},
 		{
-			"comp4",
-			"comp4#1.0#",
-			[]string{"cve-2017-1#", "cve-2017-2#"},
-			counterValues{
-				0, 0, 2, 0, 0,
+			"comp1os2",
+			scancomponent.ComponentID("comp1", "0.9", "os2"),
+			[]string{"cve-2018-1#os2"},
+			&VulnerabilityCounterResolver{
+				all:       &VulnerabilityFixableCounterResolver{0, 1},
+				critical:  &VulnerabilityFixableCounterResolver{1, 1},
+				important: &VulnerabilityFixableCounterResolver{0, 0},
+				moderate:  &VulnerabilityFixableCounterResolver{0, 0},
+				low:       &VulnerabilityFixableCounterResolver{0, 0},
+			},
+		},
+		{
+			"comp3os2",
+			scancomponent.ComponentID("comp3", "1.0", "os2"),
+			[]string{"cve-2019-1#os2", "cve-2019-2#os2"},
+			&VulnerabilityCounterResolver{
+				all:       &VulnerabilityFixableCounterResolver{0, 0},
+				critical:  &VulnerabilityFixableCounterResolver{0, 0},
+				important: &VulnerabilityFixableCounterResolver{0, 0},
+				moderate:  &VulnerabilityFixableCounterResolver{1, 0},
+				low:       &VulnerabilityFixableCounterResolver{1, 0},
+			},
+		},
+		{
+			"comp4os2",
+			scancomponent.ComponentID("comp4", "1.0", "os2"),
+			[]string{"cve-2017-1#os2", "cve-2017-2#os2"},
+			&VulnerabilityCounterResolver{
+				all:       &VulnerabilityFixableCounterResolver{0, 0},
+				critical:  &VulnerabilityFixableCounterResolver{0, 0},
+				important: &VulnerabilityFixableCounterResolver{2, 0},
+				moderate:  &VulnerabilityFixableCounterResolver{0, 0},
+				low:       &VulnerabilityFixableCounterResolver{0, 0},
 			},
 		},
 	}
@@ -332,25 +390,20 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 		s.T().Run(test.name, func(t *testing.T) {
 			comp := s.getImageComponentResolver(ctx, test.id)
 			expectedCount := int32(len(test.expectedIDs))
+			test.expectedCounter.all.total = expectedCount
 
 			vulns, err := comp.ImageVulnerabilities(ctx, PaginatedQuery{})
-			s.NoError(err)
-			s.Equal(expectedCount, int32(len(vulns)))
-			idList := getIDList(ctx, vulns)
-			s.ElementsMatch(test.expectedIDs, idList)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, int32(len(vulns)))
+			assert.ElementsMatch(t, test.expectedIDs, getIDList(ctx, vulns))
 
 			count, err := comp.ImageVulnerabilityCount(ctx, RawQuery{})
-			s.NoError(err)
-			s.Equal(expectedCount, count)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
 
 			counter, err := comp.ImageVulnerabilityCounter(ctx, RawQuery{})
-			s.NoError(err)
-			s.Equal(expectedCount, counter.All(ctx).Total(ctx))
-			s.Equal(test.expectedCounterValues.fixable, counter.All(ctx).Fixable(ctx))
-			s.Equal(test.expectedCounterValues.critical, counter.Critical(ctx).Total(ctx))
-			s.Equal(test.expectedCounterValues.important, counter.Important(ctx).Total(ctx))
-			s.Equal(test.expectedCounterValues.moderate, counter.Moderate(ctx).Total(ctx))
-			s.Equal(test.expectedCounterValues.low, counter.Low(ctx).Total(ctx))
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectedCounter, counter)
 		})
 	}
 }
@@ -364,23 +417,33 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentDeployments() {
 		expectedIDs []string
 	}{
 		{
-			"comp1",
-			"comp1#0.9#",
-			[]string{"dep1id", "dep2id", "dep3id"},
-		},
-		{
-			"comp2",
-			"comp2#1.1#",
+			"comp1os1",
+			scancomponent.ComponentID("comp1", "0.9", "os1"),
 			[]string{"dep1id", "dep2id"},
 		},
 		{
-			"comp3",
-			"comp3#1.0#",
-			[]string{"dep1id", "dep2id", "dep3id"},
+			"comp2os1",
+			scancomponent.ComponentID("comp2", "1.1", "os1"),
+			[]string{"dep1id", "dep2id"},
 		},
 		{
-			"comp4",
-			"comp4#1.0#",
+			"comp3os1",
+			scancomponent.ComponentID("comp3", "1.0", "os1"),
+			[]string{"dep1id", "dep2id"},
+		},
+		{
+			"comp1os2",
+			scancomponent.ComponentID("comp1", "0.9", "os2"),
+			[]string{"dep1id", "dep3id"},
+		},
+		{
+			"comp3os2",
+			scancomponent.ComponentID("comp3", "1.0", "os2"),
+			[]string{"dep1id", "dep3id"},
+		},
+		{
+			"comp4os2",
+			scancomponent.ComponentID("comp4", "1.0", "os2"),
 			[]string{"dep1id", "dep3id"},
 		},
 	}
@@ -391,14 +454,13 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentDeployments() {
 			expectedCount := int32(len(test.expectedIDs))
 
 			deps, err := comp.Deployments(ctx, PaginatedQuery{})
-			s.NoError(err)
-			s.Equal(expectedCount, int32(len(deps)))
-			idList := getIDList(ctx, deps)
-			s.ElementsMatch(test.expectedIDs, idList)
+			assert.NoError(s.T(), err)
+			assert.Equal(t, expectedCount, int32(len(deps)))
+			assert.ElementsMatch(s.T(), test.expectedIDs, getIDList(ctx, deps))
 
 			count, err := comp.DeploymentCount(ctx, RawQuery{})
-			s.NoError(err)
-			s.Equal(expectedCount, count)
+			assert.NoError(s.T(), err)
+			assert.Equal(t, expectedCount, count)
 		})
 	}
 }
@@ -406,21 +468,21 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentDeployments() {
 func (s *GraphQLImageComponentTestSuite) TestTopImageVulnerability() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	comp := s.getImageComponentResolver(ctx, "comp3#1.0#")
+	comp := s.getImageComponentResolver(ctx, scancomponent.ComponentID("comp3", "1.0", "os1"))
 
-	expectedID := graphql.ID("cve-2019-1#")
+	expectedID := graphql.ID("cve-2019-1#os1")
 
 	vuln, err := comp.TopImageVulnerability(ctx)
-	s.NoError(err)
-	s.Equal(expectedID, vuln.Id(ctx))
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), expectedID, vuln.Id(ctx))
 }
 
 func (s *GraphQLImageComponentTestSuite) getImageResolver(ctx context.Context, id string) *imageResolver {
 	imageID := graphql.ID(id)
 
 	image, err := s.resolver.Image(ctx, struct{ ID graphql.ID }{ID: imageID})
-	s.NoError(err)
-	s.Equal(imageID, image.Id(ctx))
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), imageID, image.Id(ctx))
 	return image
 }
 
@@ -428,7 +490,7 @@ func (s *GraphQLImageComponentTestSuite) getImageComponentResolver(ctx context.C
 	vulnID := graphql.ID(id)
 
 	vuln, err := s.resolver.ImageComponent(ctx, IDQuery{ID: &vulnID})
-	s.NoError(err)
-	s.Equal(vulnID, vuln.Id(ctx))
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), vulnID, vuln.Id(ctx))
 	return vuln
 }

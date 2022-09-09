@@ -100,6 +100,7 @@ func testImages() []*storage.Image {
 				Cves: 3,
 			},
 			Scan: &storage.ImageScan{
+				OperatingSystem: "os1",
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
 						Name:    "comp1",
@@ -149,6 +150,7 @@ func testImages() []*storage.Image {
 				Cves: 5,
 			},
 			Scan: &storage.ImageScan{
+				OperatingSystem: "os2",
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
 						Name:    "comp1",
@@ -684,7 +686,7 @@ func getImageComponentCVEEdgeDatastore(ctx context.Context, db *pgxpool.Pool, go
 	return componentCVEEdgeDataStore.New(nil, componentCveEdgeStore, componentCveEdgeIndexer, componentCveEdgeSearcher)
 }
 
-func getDeploymentDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, imageDatastore imageDatastore.DataStore, risks riskDataStore.DataStore) (deploymentDatastore.DataStore, error) {
-	deploymentStore := deploymentPostgres.NewFullTestStore(nil, deploymentPostgres.CreateTableAndNewStore(ctx, db, gormDB))
-	return deploymentDatastore.NewTestDataStore(deploymentStore, nil, db, nil, nil, imageDatastore, nil, nil, risks, nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
+func getDeploymentDatastore(ctx context.Context, t *testing.T, db *pgxpool.Pool, gormDB *gorm.DB, imageDatastore imageDatastore.DataStore, risks riskDataStore.DataStore) (deploymentDatastore.DataStore, error) {
+	deploymentStore := deploymentPostgres.NewFullTestStore(t, deploymentPostgres.CreateTableAndNewStore(ctx, db, gormDB))
+	return deploymentDatastore.NewTestDataStore(t, deploymentStore, nil, db, nil, nil, imageDatastore, nil, nil, risks, nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
 }
