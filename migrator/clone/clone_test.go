@@ -75,7 +75,6 @@ func doTestCloneMigration(t *testing.T, runBoth bool) {
 		fromVersion      *versionPair
 		toVersion        *versionPair
 		furtherToVersion *versionPair
-		enableRollback   bool
 	}{
 		{
 			description:      "Upgrade from early versions to current",
@@ -95,30 +94,9 @@ func doTestCloneMigration(t *testing.T, runBoth bool) {
 			toVersion:   &futureVer,
 		},
 		{
-			description:      "Upgrade from early versions to current with rollback enabled",
-			fromVersion:      &preHistoryVer,
-			toVersion:        &currVer,
-			furtherToVersion: &futureVer,
-			enableRollback:   true,
-		},
-		{
-			description:      "Upgrade from version 57 to current with rollback enabled",
-			fromVersion:      &preVer,
-			toVersion:        &currVer,
-			furtherToVersion: &futureVer,
-			enableRollback:   true,
-		},
-		{
-			description:    "Upgrade from current to future with rollback enabled",
-			fromVersion:    &currVer,
-			toVersion:      &futureVer,
-			enableRollback: true,
-		},
-		{
-			description:    "Upgrade from early version to future with rollback enabled",
-			fromVersion:    &preHistoryVer,
-			toVersion:      &futureVer,
-			enableRollback: true,
+			description: "Upgrade from early version to future",
+			fromVersion: &preHistoryVer,
+			toVersion:   &futureVer,
 		},
 	}
 
@@ -130,8 +108,6 @@ func doTestCloneMigration(t *testing.T, runBoth bool) {
 
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.enableRollBack(c.enableRollback)
-
 			mock.upgradeCentral(c.toVersion, "")
 			if c.furtherToVersion != nil {
 				mock.upgradeCentral(c.furtherToVersion, "")
@@ -150,33 +126,18 @@ func doTestCloneMigrationToPostgres(t *testing.T, runBoth bool) {
 		toVersion            *versionPair
 		furtherToVersion     *versionPair
 		moreFurtherToVersion *versionPair
-		enableRollback       bool
 	}{
-		{
-			description:          "Upgrade from version 57 to current",
-			fromVersion:          &preVer,
-			toVersion:            &currVer,
-			furtherToVersion:     &futureVer,
-			moreFurtherToVersion: &moreFutureVer,
-		},
-		{
-			description: "Upgrade from current to future",
-			fromVersion: &currVer,
-			toVersion:   &futureVer,
-		},
 		{
 			description:          "Upgrade from version 57 to current with rollback enabled",
 			fromVersion:          &preVer,
 			toVersion:            &currVer,
 			furtherToVersion:     &futureVer,
 			moreFurtherToVersion: &moreFutureVer,
-			enableRollback:       true,
 		},
 		{
-			description:    "Upgrade from current to future with rollback enabled",
-			fromVersion:    &currVer,
-			toVersion:      &futureVer,
-			enableRollback: true,
+			description: "Upgrade from current to future with rollback enabled",
+			fromVersion: &currVer,
+			toVersion:   &futureVer,
 		},
 	}
 
@@ -188,7 +149,6 @@ func doTestCloneMigrationToPostgres(t *testing.T, runBoth bool) {
 
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.enableRollBack(c.enableRollback)
 
 			mock.upgradeCentral(c.toVersion, "")
 			if c.furtherToVersion != nil {
@@ -247,50 +207,26 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 		fromVersion      *versionPair
 		toVersion        *versionPair
 		furtherToVersion *versionPair
-		enableRollback   bool
 		breakPoint       string
 	}{
 		{
-			description:      "Upgrade from early versions to current break after scan",
+			description:      "Upgrade from early versions to current break after db migration",
 			fromVersion:      &preHistoryVer,
 			toVersion:        &currVer,
 			furtherToVersion: &futureVer,
-			breakPoint:       breakAfterScan,
-		},
-		{
-			description:      "Upgrade from version 57 to current break after getting clone",
-			fromVersion:      &preVer,
-			toVersion:        &currVer,
-			furtherToVersion: &futureVer,
-			breakPoint:       breakAfterGetClone,
-		},
-		{
-			description: "Upgrade from current to future break after db migration",
-			fromVersion: &currVer,
-			toVersion:   &futureVer,
-			breakPoint:  breakBeforePersist,
-		},
-		{
-			description:      "Upgrade from early versions to current rollback enabled break after db migration",
-			fromVersion:      &preHistoryVer,
-			toVersion:        &currVer,
-			furtherToVersion: &futureVer,
-			enableRollback:   true,
 			breakPoint:       breakBeforePersist,
 		},
 		{
-			description:    "Upgrade from version 57 to current rollback enabled break after getting clone",
-			fromVersion:    &preVer,
-			toVersion:      &currVer,
-			enableRollback: true,
-			breakPoint:     breakAfterGetClone,
+			description: "Upgrade from version 57 to current break after getting clone",
+			fromVersion: &preVer,
+			toVersion:   &currVer,
+			breakPoint:  breakAfterGetClone,
 		},
 		{
-			description:    "Upgrade from current to future enable rollback enabled break after scan",
-			fromVersion:    &currVer,
-			toVersion:      &futureVer,
-			enableRollback: true,
-			breakPoint:     breakAfterScan,
+			description: "Upgrade from current to future break after scan",
+			fromVersion: &currVer,
+			toVersion:   &futureVer,
+			breakPoint:  breakAfterScan,
 		},
 	}
 	// For the parameters that should not matter, run pseudo random to get coverage on different cases
@@ -305,7 +241,6 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 			mock := createAndRunCentral(t, c.fromVersion, false)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.enableRollBack(c.enableRollback)
 			// Migration aborted
 			mock.upgradeCentral(c.toVersion, c.breakPoint)
 			if reboot {
@@ -369,13 +304,7 @@ func TestCloneRestore(t *testing.T) {
 		},
 	}
 
-	// For the parameters that should not matter, run pseudo random to get coverage on different cases
-	rand.Seed(888)
 	for _, c := range testCases {
-		enableRollback := rand.Intn(2) == 1
-		if enableRollback {
-			c.description = c.description + " rollback enabled"
-		}
 		reboot := rand.Intn(2) == 1
 		if reboot {
 			c.description = c.description + " with reboot"
@@ -386,7 +315,6 @@ func TestCloneRestore(t *testing.T) {
 			mock := createAndRunCentral(t, &preHistoryVer, false)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.enableRollBack(enableRollback)
 			mock.upgradeCentral(&currVer, "")
 			mock.restoreCentral(c.toVersion, c.breakPoint)
 			if reboot {
@@ -420,72 +348,37 @@ func doTestForceRollbackFailure(t *testing.T) {
 	}
 	testCases := []struct {
 		description          string
-		rollbackEnabled      bool
 		forceRollback        string
 		withPrevious         bool
 		expectedErrorMessage string
 		wrongVersion         bool
 	}{
 		{
-			description:          "Rollback disabled without force rollback without previous",
-			rollbackEnabled:      false,
+			description:          "without force rollback without previous",
 			withPrevious:         false,
 			forceRollback:        "",
 			expectedErrorMessage: metadata.ErrNoPrevious,
 		},
 		{
-			description:          "Rollback disabled with force rollback without previous",
-			rollbackEnabled:      false,
-			withPrevious:         false,
-			forceRollback:        currVer.version,
-			expectedErrorMessage: metadata.ErrNoPrevious,
-		},
-		{
-			description:          "Rollback disabled without force rollback with previous",
-			rollbackEnabled:      false,
-			withPrevious:         true,
-			forceRollback:        "",
-			expectedErrorMessage: metadata.ErrForceUpgradeDisabled,
-		},
-		{
-			description:          "Rollback disabled with force rollback with wrong previous clone",
-			rollbackEnabled:      false,
-			withPrevious:         true,
-			forceRollback:        currVer.version,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrPreviousMismatchWithVersions, preVer.version, currVer.version),
-			wrongVersion:         true,
-		},
-		{
-			description:          "Rollback enabled without force rollback without previous",
-			rollbackEnabled:      true,
-			withPrevious:         false,
-			forceRollback:        "",
-			expectedErrorMessage: metadata.ErrNoPrevious,
-		},
-		{
-			description:          "Rollback enabled with force rollback without previous",
-			rollbackEnabled:      true,
+			description:          "with force rollback without previous",
 			withPrevious:         false,
 			forceRollback:        forceRollbackClone,
 			expectedErrorMessage: metadata.ErrNoPrevious,
 		},
 		{
-			description:          "Rollback enabled with force rollback with previous",
-			rollbackEnabled:      true,
+			description:          "with force rollback with previous",
 			withPrevious:         true,
 			forceRollback:        currVer.version,
 			expectedErrorMessage: "",
 		},
 		{
-			description:          "Rollback enabled without force rollback with previous",
-			rollbackEnabled:      true,
+			description:          "without force rollback with previous",
 			withPrevious:         true,
 			forceRollback:        "",
 			expectedErrorMessage: metadata.ErrForceUpgradeDisabled,
 		},
 		{
-			description:          "Rollback enabled with force rollback with wrong previous clone",
-			rollbackEnabled:      true,
+			description:          "with force rollback with wrong previous clone",
 			withPrevious:         true,
 			forceRollback:        currVer.version,
 			expectedErrorMessage: fmt.Sprintf(metadata.ErrPreviousMismatchWithVersions, preVer.version, currVer.version),
@@ -501,10 +394,11 @@ func doTestForceRollbackFailure(t *testing.T) {
 			}
 			mock := createAndRunCentral(t, ver, false)
 			defer mock.destroyCentral()
-			mock.enableRollBack(c.withPrevious)
 			mock.upgradeCentral(&futureVer, "")
+			if !c.withPrevious {
+				mock.removePreviousClone()
+			}
 			// Force rollback
-			mock.enableRollBack(c.rollbackEnabled)
 			setVersion(t, &currVer)
 
 			var dbm DBCloneManager
@@ -556,72 +450,37 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 	}
 	testCases := []struct {
 		description          string
-		rollbackEnabled      bool
 		forceRollback        string
 		withPrevious         bool
 		expectedErrorMessage string
 		wrongVersion         bool
 	}{
 		{
-			description:          "Rollback disabled without force rollback without previous",
-			rollbackEnabled:      false,
+			description:          "without force rollback without previous",
 			withPrevious:         false,
 			forceRollback:        "",
 			expectedErrorMessage: metadata.ErrNoPrevious,
 		},
 		{
-			description:          "Rollback disabled with force rollback without previous",
-			rollbackEnabled:      false,
-			withPrevious:         false,
-			forceRollback:        currVer.version,
-			expectedErrorMessage: metadata.ErrNoPrevious,
-		},
-		{
-			description:          "Rollback disabled without force rollback with previous",
-			rollbackEnabled:      false,
-			withPrevious:         true,
-			forceRollback:        "",
-			expectedErrorMessage: metadata.ErrForceUpgradeDisabled,
-		},
-		{
-			description:          "Rollback disabled with force rollback with wrong previous clone",
-			rollbackEnabled:      false,
-			withPrevious:         true,
-			forceRollback:        currVer.version,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrPreviousMismatchWithVersions, preVer.version, currVer.version),
-			wrongVersion:         true,
-		},
-		{
-			description:          "Rollback enabled without force rollback without previous",
-			rollbackEnabled:      true,
-			withPrevious:         false,
-			forceRollback:        "",
-			expectedErrorMessage: metadata.ErrNoPrevious,
-		},
-		{
-			description:          "Rollback enabled with force rollback without previous",
-			rollbackEnabled:      true,
+			description:          "with force rollback without previous",
 			withPrevious:         false,
 			forceRollback:        forceRollbackClone,
 			expectedErrorMessage: metadata.ErrNoPrevious,
 		},
 		{
-			description:          "Rollback enabled with force rollback with previous",
-			rollbackEnabled:      true,
+			description:          "force rollback with previous",
 			withPrevious:         true,
 			forceRollback:        currVer.version,
 			expectedErrorMessage: "",
 		},
 		{
-			description:          "Rollback enabled without force rollback with previous",
-			rollbackEnabled:      true,
+			description:          "without force rollback with previous",
 			withPrevious:         true,
 			forceRollback:        "",
 			expectedErrorMessage: metadata.ErrForceUpgradeDisabled,
 		},
 		{
-			description:          "Rollback enabled with force rollback with wrong previous clone",
-			rollbackEnabled:      true,
+			description:          "with force rollback with wrong previous clone",
 			withPrevious:         true,
 			forceRollback:        currVer.version,
 			expectedErrorMessage: fmt.Sprintf(metadata.ErrPreviousMismatchWithVersions, preVer.version, currVer.version),
@@ -637,10 +496,11 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			}
 			mock := createAndRunCentral(t, ver, false)
 			defer mock.destroyCentral()
-			mock.enableRollBack(c.withPrevious)
 			mock.upgradeCentral(&futureVer, "")
+			if !c.withPrevious {
+				mock.removePreviousClone()
+			}
 			// Force rollback
-			mock.enableRollBack(c.rollbackEnabled)
 			setVersion(t, &currVer)
 
 			var dbm DBCloneManager
@@ -748,7 +608,6 @@ func doTestRollback(t *testing.T) {
 			mock := createAndRunCentral(t, c.toVersion, false)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.enableRollBack(true)
 			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
 			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
 			mock.rollbackCentral(c.toVersion, "", "")
@@ -841,7 +700,6 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 			mock := createAndRunCentralStartRocks(t, c.toVersion, true)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.enableRollBack(true)
 			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
 			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
 
@@ -894,7 +752,6 @@ func TestRacingConditionInPersist(t *testing.T) {
 				log.Infof("Test = %q", c.description)
 				mock := createAndRunCentral(t, &preVer, false)
 				defer mock.destroyCentral()
-				mock.enableRollBack(true)
 				mock.upgradeCentral(&currVer, "")
 				c.preRun(mock)
 				mock.runMigratorWithBreaksInPersist(breakpoint)

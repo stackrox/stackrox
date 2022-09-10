@@ -47,10 +47,9 @@ type versionPair struct {
 }
 
 type mockCentral struct {
-	t               *testing.T
-	mountPath       string
-	rollbackEnabled bool
-	tp              *pgtest.TestPostgres
+	t         *testing.T
+	mountPath string
+	tp        *pgtest.TestPostgres
 	// Set version function has to be provided by test itself.
 	setVersion  func(t *testing.T, ver *versionPair)
 	adminConfig *pgxpool.Config
@@ -94,11 +93,6 @@ func (m *mockCentral) destroyCentral() {
 	_ = os.RemoveAll(m.mountPath)
 }
 
-func (m *mockCentral) enableRollBack(enable bool) {
-	m.rollbackEnabled = enable
-	require.NoError(m.t, os.Setenv(features.UpgradeRollback.EnvVar(), strconv.FormatBool(enable)))
-}
-
 func (m *mockCentral) rebootCentral() {
 	curSeq := migrations.CurrentDBVersionSeqNum()
 	curVer := version.GetMainVersion()
@@ -124,7 +118,7 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 	m.runCentral()
 
 	if features.PostgresDatastore.Enabled() && m.runBoth {
-		if m.rollbackEnabled && version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
+		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
 			if pgadmin.CheckIfDBExists(m.adminConfig, postgres.PreviousClone) {
 				m.verifyClonePostgres(postgres.PreviousClone, curVer)
 			}
@@ -132,13 +126,13 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 			assert.False(m.t, pgadmin.CheckIfDBExists(m.adminConfig, postgres.PreviousClone))
 		}
 	} else if features.PostgresDatastore.Enabled() {
-		if m.rollbackEnabled && version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
+		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
 			m.verifyClonePostgres(postgres.PreviousClone, curVer)
 		} else {
 			assert.False(m.t, pgadmin.CheckIfDBExists(m.adminConfig, postgres.PreviousClone))
 		}
 	} else {
-		if m.rollbackEnabled && version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
+		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
 			m.verifyClone(rocksdb.PreviousClone, curVer)
 		} else {
 			assert.NoDirExists(m.t, filepath.Join(m.mountPath, rocksdb.PreviousClone))
@@ -465,7 +459,7 @@ func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
 		case rocksdb.TempClone:
 			prev = rocksdb.PreviousClone
 		}
-		_ = migrations.SafeRemoveDBWithSymbolicLink(prev)
+		_ = migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), prev))
 		if breakpoint == breakAfterRemove {
 			return
 		}
@@ -474,5 +468,13 @@ func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
 			return
 		}
 		_ = fileutils.AtomicSymlink(rocksdb.CurrentClone, filepath.Join(m.mountPath, dbm.GetDirName(clone)))
+	}
+}
+
+func (m *mockCentral) removePreviousClone() {
+	if features.PostgresDatastore.Enabled() {
+		pgtest.DropDatabase(m.t, postgres.PreviousClone)
+	} else {
+		_ = migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), rocksdb.PreviousClone))
 	}
 }
