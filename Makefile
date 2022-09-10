@@ -74,6 +74,11 @@ ifeq ($(UNAME_M),arm64)
 endif
 endif
 
+TARGET_ARCH := "amd64"
+ifeq ($(UNAME_M),arm64)
+TARGET_ARCH = "arm64"
+endif
+
 ifeq ($(UNAME_S),Darwin)
 BIND_GOCACHE ?= 0
 BIND_GOPATH ?= 0
@@ -562,7 +567,7 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
-		--build-arg TARGET_ARCH=$(UNAME_M) \
+		--build-arg TARGET_ARCH=$(TARGET_ARCH) \
 		--file image/rhel/Dockerfile.gen \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
