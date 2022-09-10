@@ -265,7 +265,7 @@ func (d *dbCloneManagerImpl) rollbackEnabled() bool {
 
 		return false
 	}
-	return features.UpgradeRollback.Enabled() && currClone.GetSeqNum() != 0
+	return currClone.GetSeqNum() != 0
 }
 
 func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {

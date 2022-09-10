@@ -12,9 +12,6 @@ var (
 	// IntegrationsAsConfig enables loading integrations from config
 	IntegrationsAsConfig = registerFeature("Enable loading integrations from config", "ROX_INTEGRATIONS_AS_CONFIG", false)
 
-	// UpgradeRollback enables rollback to last central version after upgrade.
-	UpgradeRollback = registerFeature("Enable rollback to last central version after upgrade", "ROX_ENABLE_ROLLBACK", true)
-
 	// ComplianceOperatorCheckResults enables getting compliance results from the compliance operator
 	ComplianceOperatorCheckResults = registerFeature("Enable fetching of compliance operator results", "ROX_COMPLIANCE_OPERATOR_INTEGRATION", true)
 
