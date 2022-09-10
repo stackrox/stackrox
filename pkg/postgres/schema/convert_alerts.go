@@ -8,7 +8,7 @@ import (
 )
 
 func ConvertAlertFromProto(p *storage.Alert) (*Alerts, error) {
-	bytes, err := p.Marshal()
+	bytes, err := proto.Marshal(p)
 	if err != nil {
 		return nil, err
 	}

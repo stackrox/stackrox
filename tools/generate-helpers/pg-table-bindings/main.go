@@ -56,6 +56,9 @@ var migrationFile string
 //go:embed migration_test.go.tpl
 var migrationTestFile string
 
+//go:embed migration_tool.go.tpl
+var migrationToolFile string
+
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
@@ -66,6 +69,7 @@ var (
 	permissionCheckerTemplate = newTemplate(permissionCheckerFile)
 	migrationTemplate         = newTemplate(migrationFile)
 	migrationTestTemplate     = newTemplate(migrationTestFile)
+	migrationToolTemplate     = newTemplate(migrationToolFile)
 )
 
 type properties struct {
@@ -352,11 +356,18 @@ func generateSchema(s *walker.Schema, searchCategory string, searchScope []strin
 	if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(dir, s.Table)); err != nil {
 		return err
 	}
+	if err := renderFile(templateMap, migrationToolTemplate, getConversionToolFileName(dir, s.Table)); err != nil {
+		return err
+	}
 	return nil
 }
 
 func getSchemaFileName(dir, table string) string {
 	return fmt.Sprintf("%s/%s.go", dir, table)
+}
+
+func getConversionToolFileName(dir, table string) string {
+	return fmt.Sprintf("%s/internal/convert_%s_with_test.go", dir, table)
 }
 
 func newTemplate(tpl string) func(name string) *template.Template {
