@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -61,13 +62,19 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
+	if features.PostgresDatastore.Enabled() && !r.centralObj.Spec.Central.DB.Preexisting() {
+		if err := r.ReconcileSecret(ctx, "central-db-tls", !shouldDelete, r.validateCentralDBTLSData, r.generateCentralDBTLSData, true); err != nil {
+			return errors.Wrap(err, "reconciling central-db-tls secret")
+		}
+	}
+
 	// scanner and scanner-db certs can be re-issued without a problem.
 	scannerEnabled := r.centralObj.Spec.Scanner.IsEnabled()
 	if err := r.ReconcileSecret(ctx, "scanner-tls", scannerEnabled && !shouldDelete, r.validateScannerTLSData, r.generateScannerTLSData, true); err != nil {
-		return errors.Wrap(err, "reconciling scanner secret")
+		return errors.Wrap(err, "reconciling scanner-tls secret")
 	}
 	if err := r.ReconcileSecret(ctx, "scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
-		return errors.Wrap(err, "reconciling scanner-db secret")
+		return errors.Wrap(err, "reconciling scanner-db-tls secret")
 	}
 	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
 }
@@ -214,9 +221,21 @@ func (r *createCentralTLSExtensionRun) validateScannerDBTLSData(fileMap types.Se
 	return r.validateServiceTLSData(storage.ServiceType_SCANNER_DB_SERVICE, "", fileMap)
 }
 
+func (r *createCentralTLSExtensionRun) validateCentralDBTLSData(fileMap types.SecretDataMap, _ bool) error {
+	return r.validateServiceTLSData(storage.ServiceType_CENTRAL_DB_SERVICE, "", fileMap)
+}
+
 func (r *createCentralTLSExtensionRun) generateScannerDBTLSData() (types.SecretDataMap, error) {
 	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
 	if err := r.generateServiceTLSData(mtls.ScannerDBSubject, "", fileMap); err != nil {
+		return nil, err
+	}
+	return fileMap, nil
+}
+
+func (r *createCentralTLSExtensionRun) generateCentralDBTLSData() (types.SecretDataMap, error) {
+	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
+	if err := r.generateServiceTLSData(mtls.CentralDBSubject, "", fileMap); err != nil {
 		return nil, err
 	}
 	return fileMap, nil
