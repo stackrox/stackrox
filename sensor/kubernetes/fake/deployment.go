@@ -268,9 +268,12 @@ func getContainer(workload ContainerWorkload) corev1.Container {
 			},
 			{
 				Name:  "ROX_SECRET_PASSWORD",
-				Value: "roxapitoken",
+				Value: "secretpassword",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "rox-secret",
+						},
 						Key: "db-password",
 					},
 				},
