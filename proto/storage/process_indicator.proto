@@ -14,7 +14,7 @@ message ProcessIndicator {
     // A unique uuid for the Indicator message
     string id                                      = 1 [(gogoproto.moretags) = 'search:"Process ID,store,hidden"  sql:"pk"'];
 
-    string deployment_id                           = 2 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" policy:",prefer-parent" sql:"index=hash"'];
+    string deployment_id                           = 2 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" policy:",prefer-parent" sql:"index=hash,fk(Deployment:id),no-fk-constraint"'];
     reserved 10; // Previously deployment_state_ts
 
     string container_name                          = 3 [(gogoproto.moretags) = 'search:"Container Name,hidden" policy:",prefer-parent"'];
