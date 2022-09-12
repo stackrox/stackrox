@@ -9,10 +9,7 @@ fi
 load "${bats_helpers_root}/bats-support/load.bash"
 load "${bats_helpers_root}/bats-assert/load.bash"
 
-# luname outputs uname in lowercase
-luname() {
-  uname | tr '[:upper:]' '[:lower:]'
-}
+host_binpath="$(make --quiet host-binpath)"
 
 tmp_roxctl="tmp/roxctl-bats/bin"
 test_data="$BATS_TEST_DIRNAME/../test-data"
@@ -22,10 +19,9 @@ any_version='[0-9]+\.[0-9]+\.'
 # roxctl-development-cmd prints the path to roxctl built with GOTAGS=''. It builds the binary if needed
 roxctl-development-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
-    _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
-    make -s "cli-${_uname}" GOTAGS='' 2>&3
-    mv "bin/${_uname}_amd64/roxctl" "${tmp_roxctl}/roxctl-dev"
+    make -s cli GOTAGS='' 2>&3
+    mv "${host_binpath}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
   echo "${tmp_roxctl}/roxctl-dev"
 }
@@ -38,10 +34,9 @@ roxctl-development() {
 # roxctl-development-cmd prints the path to roxctl built with GOTAGS='release'. It builds the binary if needed
 roxctl-release-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
-    _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
-    make -s "cli-${_uname}" GOTAGS='release' 2>&3
-    mv "bin/${_uname}_amd64/roxctl" "${tmp_roxctl}/roxctl-release"
+    make -s cli GOTAGS='release' 2>&3
+    mv "${host_binpath}/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
   echo "${tmp_roxctl}/roxctl-release"
 }

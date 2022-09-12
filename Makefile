@@ -347,6 +347,8 @@ ifeq ($(UNAME_S),Darwin)
     HOST_OS:=darwin
 endif
 
+HOST_BINPATH := bin/$(HOST_OS)_$(GOARCH)
+
 .PHONY: build-prep
 build-prep: deps
 	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
@@ -370,15 +372,15 @@ cli: cli-build
 	# Workaround a bug on MacOS
 	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
-	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
+	cp $(HOST_BINPATH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
 
-upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
+upgrader: $(HOST_BINPATH)/upgrader
 
-bin/$(HOST_OS)_$(GOARCH)/upgrader: build-prep
+$(HOST_BINPATH)/upgrader: build-prep
 	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/upgrader
 
-bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
+$(HOST_BINPATH)/admission-control: build-prep
 	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/admission-control
 
 .PHONY: build-volumes
@@ -709,6 +711,10 @@ default-image-registry:
 .PHONY: product-branding
 product-branding:
 	@echo $(ROX_PRODUCT_BRANDING)
+
+.PHONY: host-binpath
+host-binpath:
+	@echo $(HOST_BINPATH)
 
 .PHONY: ossls-audit
 ossls-audit: deps
