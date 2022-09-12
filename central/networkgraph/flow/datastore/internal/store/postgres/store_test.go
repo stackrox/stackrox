@@ -56,7 +56,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	networkFlow := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
 			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "a"},
-			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "a"},
+			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "b"},
 			DstPort:    1,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
@@ -97,6 +97,14 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.Nil(foundNetworkFlow)
 
 	s.NoError(store.Upsert(ctx, networkFlow))
+
+	foundDeploymentFlows, err := store.GetFlowsForDeployment(ctx, networkFlow.GetProps().GetSrcEntity().GetId())
+	s.NoError(err)
+	s.True(len(foundDeploymentFlows) == 1)
+
+	foundDeploymentFlows, err = store.GetFlowsForDeployment(ctx, networkFlow.GetProps().GetDstEntity().GetId())
+	s.NoError(err)
+	s.True(len(foundDeploymentFlows) == 1)
 
 	err = store.RemoveFlowsForDeployment(ctx, networkFlow.GetProps().GetSrcEntity().GetId())
 	s.NoError(err)
