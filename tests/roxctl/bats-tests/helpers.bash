@@ -9,7 +9,7 @@ fi
 load "${bats_helpers_root}/bats-support/load.bash"
 load "${bats_helpers_root}/bats-assert/load.bash"
 
-host_binpath="$(make --quiet host-binpath)"
+host_bin_platform="$(make --quiet host-bin-platform)"
 
 tmp_roxctl="tmp/roxctl-bats/bin"
 test_data="$BATS_TEST_DIRNAME/../test-data"
@@ -21,7 +21,7 @@ roxctl-development-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
     mkdir -p "$tmp_roxctl"
     make -s cli GOTAGS='' 2>&3
-    mv "${host_binpath}/roxctl" "${tmp_roxctl}/roxctl-dev"
+    mv "${host_bin_platform}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
   echo "${tmp_roxctl}/roxctl-dev"
 }
@@ -36,7 +36,7 @@ roxctl-release-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
     mkdir -p "$tmp_roxctl"
     make -s cli GOTAGS='release' 2>&3
-    mv "${host_binpath}/roxctl" "${tmp_roxctl}/roxctl-release"
+    mv "${host_bin_platform}/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
   echo "${tmp_roxctl}/roxctl-release"
 }
