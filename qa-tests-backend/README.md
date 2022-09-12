@@ -116,3 +116,14 @@ You will need to start another proxy:
  Or use the script provided by the deployment script:
 
 `deploy/{k8s,openshift}/central-deploy/central/scripts/port-forward.sh 8000`
+
+## When image pulls from docker.io get throttled
+
+You shouldn't use images from DockerHub in tests.
+We don't use a paid account there and so image pulls get throttled, and
+tests that use such images fail.
+
+If you need a specific image from DockerHub, pull it, retag as
+`quay.io/rhacs-eng/qa:<your-tag-here>` and push. 
+Then consume the new image from `quay.io/rhacs-eng/qa:<your-tag-here>`
+in tests. Such pulls shouldn't get throttled.
