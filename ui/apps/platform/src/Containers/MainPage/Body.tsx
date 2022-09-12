@@ -6,6 +6,7 @@ import {
     mainPath,
     dashboardPath,
     networkPath,
+    networkPathPF,
     violationsPath,
     compliancePath,
     clustersPathWithParam,
@@ -50,6 +51,9 @@ const AsyncSearchPage = asyncComponent(() => import('Containers/Search/SearchPag
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
+const AsyncNetworkGraphPage = asyncComponent(
+    () => import('Containers/NetworkGraph/NetworkGraphPage')
+);
 const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/ClustersPage'));
 const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/ClustersPage'));
 const AsyncIntegrationsPage = asyncComponent(
@@ -109,6 +113,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={dashboardPath} component={AsyncDashboardPage} />
                     <Route path={networkPath} component={AsyncNetworkPage} />
+                    <Route path={networkPathPF} component={AsyncNetworkGraphPage} />
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />
                     <Route path={integrationsPath} component={AsyncIntegrationsPage} />

@@ -12,6 +12,7 @@ export const authResponsePrefix = '/auth/response/';
 export const dashboardPath = `${mainPath}/dashboard`;
 export const networkBasePath = `${mainPath}/network`;
 export const networkPath = `${networkBasePath}/:deploymentId?/:externalType?`;
+export const networkPathPF = `${mainPath}/network-graph`;
 export const violationsBasePath = `${mainPath}/violations`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const clustersBasePath = `${mainPath}/clusters`;
