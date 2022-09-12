@@ -100,13 +100,6 @@ ENABLE_WEBHOOKS ?= false
 # Use the value figured in the parent directory Makefile, unless provided explicitly in the environment.
 ROX_IMAGE_FLAVOR ?= $(shell $(MAKE) --quiet --no-print-directory -C .. image-flavor)
 
-# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
-ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
-else
-GOBIN=$(shell go env GOBIN)
-endif
-
 # Lowercase Operating System name, needed for downloading GitHub releases.
 OS=$(shell uname | tr A-Z a-z)
 
@@ -167,15 +160,17 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 
 ##@ Dependencies download
 
-CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen
+CONTROLLER_GEN_VERSION = 0.8.0
+CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen-$(CONTROLLER_GEN_VERSION)
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v$(CONTROLLER_GEN_VERSION))
 
-KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize
+KUSTOMIZE_VERSION = 3.8.7
+KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize-$(KUSTOMIZE_VERSION)
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v$(KUSTOMIZE_VERSION))
 
 OPERATOR_SDK_VERSION = 1.20.1
 OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk-$(OPERATOR_SDK_VERSION)
@@ -204,25 +199,25 @@ envtest: ## Download envtest-setup locally if necessary.
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 GET_GITHUB_RELEASE_FN = get_github_release() { \
-	[ -f $${1} ] || { \
+	[ -x $${1} ] || { \
 		set -euxo pipefail ;\
 		mkdir -p bin ;\
 		curl --fail --location --output $${1} $${2} ;\
-		chmod +x $${1} ;\
 		[[ "$$(uname -s)" != "Darwin" ]] || xattr -c $${1} ;\
+		chmod +x $${1} ;\
 	} \
 }
 
 # go-get-tool will 'go get -d' any package $2 and install it to $(PROJECT_DIR)/bin unless $1 already exists.
 define go-get-tool
-$(SILENT)[ -f $(1) ] || { \
+$(SILENT)[ -x $(1) ] || { \
 set -e ;\
 TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
 go get -d $(2) ;\
-GOBIN=$(PROJECT_DIR)/bin go install $(firstword $(subst @, ,$(2))) ;\
+go build -o $(1) $(firstword $(subst @, ,$(2))) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
