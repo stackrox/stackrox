@@ -6,11 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"path"
+	"runtime"
+	"runtime/pprof"
 	"syscall"
 	"time"
 
@@ -79,6 +82,8 @@ type localSensorConfig struct {
 	PoliciesFile       string
 	FakeWorkloadFile   string
 	WithMetrics        bool
+	NoCPUProfile       bool
+	NoMemProfile       bool
 }
 
 const (
@@ -113,7 +118,9 @@ func writeOutputInBinaryFormat(messages []*central.MsgFromSensor, _, _ time.Time
 		_, err = file.Write(d)
 		utils.CrashOnError(err)
 	}
-	utils.CrashOnError(file.Sync())
+	if outfile != "/dev/null" {
+		utils.CrashOnError(file.Sync())
+	}
 }
 
 var validFormats = map[string]func([]*central.MsgFromSensor, time.Time, time.Time, string){
@@ -142,7 +149,12 @@ func mustGetCommandLineArgs() localSensorConfig {
 		PoliciesFile:       "",
 		FakeWorkloadFile:   "",
 		WithMetrics:        false,
+		NoCPUProfile:       false,
+		NoMemProfile:       false,
 	}
+	flag.BoolVar(&sensorConfig.NoCPUProfile, "no-cpu-prof", sensorConfig.NoCPUProfile, "disables producing CPU profile for performance analysis")
+	flag.BoolVar(&sensorConfig.NoMemProfile, "no-mem-prof", sensorConfig.NoMemProfile, "disables producing memory profile for performance analysis")
+
 	flag.BoolVar(&sensorConfig.Verbose, "verbose", sensorConfig.Verbose, "prints all messages to stdout as well as to the output file")
 	flag.DurationVar(&sensorConfig.Duration, "duration", sensorConfig.Duration, "duration that the scenario should run (leave it empty to run it without timeout)")
 	flag.StringVar(&sensorConfig.CentralOutput, "central-out", sensorConfig.CentralOutput, "file to store the events that would be sent to central")
@@ -183,13 +195,29 @@ func mustGetCommandLineArgs() localSensorConfig {
 	return sensorConfig
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string, outputFormat string, cancelFunc context.CancelFunc) {
+func writeMemoryProfile() {
+	f, err := os.Create(fmt.Sprintf("local-sensor-mem-%s.prof", time.Now().UTC().Format(time.RFC3339)))
+	if err != nil {
+		log.Fatal("could not create memory profile: ", err)
+	}
+	defer utils.IgnoreError(f.Close)
+	runtime.GC()
+	if err := pprof.Lookup("allocs").WriteTo(f, 0); err != nil {
+		log.Fatal("could not write memory profile: ", err)
+	}
+	log.Printf("Wrote memory profile")
+}
+
+func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
 	// We cancel the creation of Events
 	cancelFunc()
 	endTime := time.Now()
+	if writeMemProfile {
+		writeMemoryProfile()
+	}
 	allMessages := fakeCentral.GetAllMessages()
 	dumpMessages(allMessages, startTime, endTime, outfile, outputFormat)
 	os.Exit(0)
@@ -222,6 +250,17 @@ func main() {
 		fakeClient = workloadManager.Client()
 	}
 	utils.CrashOnError(err)
+	if !localConfig.NoCPUProfile {
+		f, err := os.Create(fmt.Sprintf("local-sensor-cpu-%s.prof", time.Now().UTC().Format(time.RFC3339)))
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer utils.IgnoreError(f.Close)
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
 
 	startTime := time.Now()
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tools/local-sensor/certs/cert.pem"))
@@ -250,7 +289,7 @@ func main() {
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	go registerHostKillSignals(startTime, fakeCentral, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc)
+	go registerHostKillSignals(startTime, fakeCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc)
 
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	defer shutdownFakeServer()
@@ -342,4 +381,20 @@ func dumpMessages(messages []*central.MsgFromSensor, start, end time.Time, outfi
 		log.Fatalf("invalid format '%s'", outputFormat)
 	}
 	f(messages, start, end, outfile)
+}
+
+// PrintMemUsage outputs the current, total and OS memory being used. As well as the number
+// of garage collection cycles completed.
+func PrintMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+	fmt.Printf("Alloc = %v MiB", bToMb(m.Alloc))
+	fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
+	fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
+	fmt.Printf("\tNumGC = %v\n", m.NumGC)
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }
