@@ -157,7 +157,7 @@ export function getComponentTableColumns(workflowState) {
         {
             Header: `Images`,
             entityType: entityTypes.IMAGE,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             id: componentSortFields.IMAGE_COUNT,
             accessor: 'imageCount',
@@ -169,7 +169,9 @@ export function getComponentTableColumns(workflowState) {
                     selectedRowId={original.id}
                 />
             ),
-            sortField: componentSortFields.IMAGE_COUNT,
+            // TODO: restore sorting on this field, see https://issues.redhat.com/browse/ROX-12548 for context
+            // sortField: componentSortFields.IMAGES,
+            sortable: false,
         },
         {
             Header: `Deployments`,
