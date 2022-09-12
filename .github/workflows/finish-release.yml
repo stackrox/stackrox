@@ -4,7 +4,7 @@ on:
     types: [released]
 
 env:
-  slack_channel: C03KSV3N6N8 #test-release-automation
+  slack_channel: CMH5M8MHN #eng-release
 
 jobs:
   notify:

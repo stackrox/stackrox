@@ -20,7 +20,7 @@ on:
 
 env:
   docs_repository: openshift/openshift-docs
-  slack_channel: C03KSV3N6N8 #test-release-automation
+  slack_channel: CMH5M8MHN #eng-release
   main_branch: ${{github.event.repository.default_branch}}
   jira_project: ROX
   script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{github.event.repository.default_branch}}
