@@ -103,10 +103,11 @@ func getEnv(c platform.Central) *translation.ValuesBuilder {
 	}
 
 	if annotations != nil {
-		if annotation, ok := annotations[managedServicesAnnotation]; ok {
-			managedServices, err := strconv.ParseBool(annotation)
+		if annotationValue, ok := annotations[managedServicesAnnotation]; ok {
+			managedServices, err := strconv.ParseBool(annotationValue)
 			if err != nil {
-				return env.SetError(fmt.Errorf("invalid annotation.%s %q", managedServicesAnnotation, annotation))
+				return env.SetError(fmt.Errorf("invalid annotation value %q for annotation %s",
+					annotationValue, managedServicesAnnotation))
 			}
 			if managedServices {
 				env.SetBoolValue("managedServices", true)
