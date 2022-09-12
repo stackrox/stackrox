@@ -1,3 +1,4 @@
+// Package netpol provides primitives for command 'roxctl generate netpol'
 package netpol
 
 import (
