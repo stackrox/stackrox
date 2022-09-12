@@ -38,26 +38,6 @@ export type ClusterAlert = {
     severities: AlertEventsBySeverity[];
 };
 
-type AlertsByTimeseriesFilters = {
-    query: string;
-};
-
-/*
- * Fetch alerts by time for timeseries.
- */
-export function fetchAlertsByTimeseries(
-    filters: AlertsByTimeseriesFilters
-): Promise<ClusterAlert[]> {
-    const params = queryString.stringify(filters);
-
-    // set higher timeout for this call to handle known backend scale issues with dashboard
-    return axios
-        .get<{ clusters: ClusterAlert[] }>(`${baseUrl}/summary/timeseries?${params}`, {
-            timeout: 59999,
-        })
-        .then((response) => response.data.clusters);
-}
-
 export type AlertCountBySeverity = {
     severity: Severity;
     count: string;
@@ -94,22 +74,6 @@ export function fetchSummaryAlertCounts(
     );
 }
 
-/**
- * Fetch severity counts.
- *
- * TODO Delete once Action Widgets Dashboard (ROX-10650) becomes the default homepage
- * dashboard view
- */
-export function fetchSummaryAlertCountsLegacy(
-    filters: SummaryAlertCountsFilters
-): Promise<AlertGroup[]> {
-    const params = queryString.stringify(filters);
-
-    // set higher timeout for this call to handle known backend scale issues with dashboard
-    return axios
-        .get<{ groups: AlertGroup[] }>(`${baseUrl}/summary/counts?${params}`, { timeout: 59999 })
-        .then((response) => response.data.groups);
-}
 /*
  * Fetch a page of list alert objects.
  */
