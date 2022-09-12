@@ -17,15 +17,13 @@ var (
 	errNPGWarningsIndicator = errors.New("there were warnings during execution")
 )
 
-func (cmd *generateNetpolCommand) generateNetpol() error {
-	opts := []npguard.PoliciesSynthesizerOption{
-		npguard.WithLogger(newNpgLogger(cmd.env.Logger())),
-	}
-	if cmd.stopOnFirstError {
-		opts = append(opts, npguard.WithStopOnError())
-	}
-	npSynth := npguard.NewPoliciesSynthesizer(opts...)
-	recommendedNetpols, err := npSynth.PoliciesFromFolderPath(cmd.folderPath)
+type netpolGenerator interface {
+	PoliciesFromFolderPath(string) ([]*v1.NetworkPolicy, error)
+	Errors() []npguard.FileProcessingError
+}
+
+func (cmd *generateNetpolCommand) generateNetpol(synth netpolGenerator) error {
+	recommendedNetpols, err := synth.PoliciesFromFolderPath(cmd.folderPath)
 	if err != nil {
 		return errors.Wrap(err, "error generating network policies")
 	}
@@ -33,7 +31,7 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 		return err
 	}
 	var roxerr error
-	for _, e := range npSynth.Errors() {
+	for _, e := range synth.Errors() {
 		if e.IsSevere() {
 			cmd.env.Logger().ErrfLn("%s %s", e.Error(), e.Location())
 			roxerr = errNPGErrorsIndicator

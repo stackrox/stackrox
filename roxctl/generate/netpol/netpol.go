@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/printer"
+
+	npguard "github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 )
 
 type generateNetpolCommand struct {
@@ -34,13 +36,14 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Use:  "netpol <folder-path>",
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := generateNetpolCmd.construct(args, c); err != nil {
+			synth, err := generateNetpolCmd.construct(args, c)
+			if err != nil {
 				return err
 			}
 			if err := generateNetpolCmd.validate(); err != nil {
 				return err
 			}
-			return generateNetpolCmd.generateNetpol()
+			return generateNetpolCmd.generateNetpol(synth)
 		},
 	}
 	c.Flags().BoolVar(&generateNetpolCmd.treatWarningsAsErrors, "strict", false, "treat warnings as errors")
@@ -51,11 +54,18 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	return c
 }
 
-func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) error {
+func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) (netpolGenerator, error) {
 	cmd.folderPath = args[0]
 	cmd.splitMode = c.Flags().Changed("output-dir")
 	cmd.mergeMode = c.Flags().Changed("output-file")
-	return nil
+
+	opts := []npguard.PoliciesSynthesizerOption{
+		npguard.WithLogger(newNpgLogger(cmd.env.Logger())),
+	}
+	if cmd.stopOnFirstError {
+		opts = append(opts, npguard.WithStopOnError())
+	}
+	return npguard.NewPoliciesSynthesizer(opts...), nil
 }
 
 func (cmd *generateNetpolCommand) validate() error {
