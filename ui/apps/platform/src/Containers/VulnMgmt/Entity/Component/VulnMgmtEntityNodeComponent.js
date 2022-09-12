@@ -18,7 +18,7 @@ import {
 export const nodeComponentCountKeyMap = {
     ...defaultCountKeyMap,
     [entityTypes.CVE]: 'vulnCount: nodeVulnerabilityCount',
-    [entityTypes.NODE_CVE]: 'vulnCount: nodeVulnerabilityCount',
+    [entityTypes.NODE_CVE]: 'nodeVulnerabilityCount',
 };
 
 const VulnMgmtEntityNodeComponent = ({
