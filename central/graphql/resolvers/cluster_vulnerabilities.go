@@ -43,7 +43,8 @@ func init() {
 }
 
 // ClusterVulnerabilityResolver represents the supported API on image vulnerabilities
-//  NOTE: This list is and should remain alphabetically ordered
+//
+//	NOTE: This list is and should remain alphabetically ordered
 type ClusterVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
@@ -452,23 +453,12 @@ func (resolver *clusterCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResol
 	return nil
 }
 
-func (resolver *clusterCVEResolver) UnusedVarSink(_ context.Context, args RawQuery) *int32 {
-	return nil
-}
-
-// Following are functions that return information that is nested in the CVEInfo object
-// or are convenience functions to allow time for UI to migrate to new naming schemes
-
 func (resolver *clusterCVEResolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
 	return timestamp(resolver.data.GetCveBaseInfo().GetCreatedAt())
 }
 
 func (resolver *clusterCVEResolver) CVE(_ context.Context) string {
 	return resolver.data.GetCveBaseInfo().GetCve()
-}
-
-func (resolver *clusterCVEResolver) ID(_ context.Context) graphql.ID {
-	return graphql.ID(resolver.data.GetId())
 }
 
 func (resolver *clusterCVEResolver) LastModified(_ context.Context) (*graphql.Time, error) {
@@ -501,4 +491,8 @@ func (resolver *clusterCVEResolver) SuppressExpiry(_ context.Context) (*graphql.
 
 func (resolver *clusterCVEResolver) Suppressed(_ context.Context) bool {
 	return resolver.data.GetSnoozed()
+}
+
+func (resolver *clusterCVEResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
+	return nil
 }
