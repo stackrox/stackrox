@@ -941,9 +941,13 @@ gate_pr_job() {
             echo "Determined diff-base as ${diff_base}"
             echo "Master SHA: $(git rev-parse origin/master)"
         elif is_OPENSHIFT_CI; then
-            diff_base="$(jq -r '.refs[0].base_sha' <<<"$CLONEREFS_OPTIONS")"
+            if [[ -n "${PULL_BASE_SHA:-}" ]]; then
+                diff_base="${PULL_BASE_SHA:-}"
+            else
+                diff_base="$(jq -r '.refs[0].base_sha' <<<"$CLONEREFS_OPTIONS")"
+            fi
             echo "Determined diff-base as ${diff_base}"
-            [[ "${diff_base}" != "null" ]] || die "Could not find base_sha in CLONEREFS_OPTIONS: $CLONEREFS_OPTIONS"
+            [[ "${diff_base}" != "null" ]] || die "Could not find base_sha in PULL_BASE_SHA or CLONEREFS_OPTIONS"
         else
             die "unsupported"
         fi
@@ -1034,9 +1038,21 @@ openshift_ci_mods() {
     export CI=true
     export OPENSHIFT_CI=true
 
+    # Single step test jobs do not have HOME
+    if [[ -z "${HOME:-}" ]] || ! touch "${HOME}/openshift-ci-write-test"; then
+        info "HOME (${HOME:-unset}) is not set or not writeable, using mktemp dir"
+        HOME=$( mktemp -d )
+        export HOME
+        info "HOME is now $HOME"
+    fi
+
     if is_in_PR_context && ! is_openshift_CI_rehearse_PR; then
         local sha
-        sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || echo "WARNING: Cannot find pull sha"
+        if [[ -n "${PULL_PULL_SHA:-}" ]]; then
+            sha="${PULL_PULL_SHA}"
+        else
+            sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || echo "WARNING: Cannot find pull sha"
+        fi
         if [[ -n "${sha:-}" ]] && [[ "$sha" != "null" ]]; then
             info "Will checkout SHA to match PR: $sha"
             git checkout "$sha"
@@ -1242,11 +1258,19 @@ send_slack_notice_for_failures_on_merge() {
 
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
-    local commit_details
-    org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org') || return 1
-    repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo') || return 1
+    if [[ -n "${JOB_SPEC:-}" ]]; then
+        org=$(jq -r <<<"$JOB_SPEC" '.refs.org')
+        repo=$(jq -r <<<"$JOB_SPEC" '.refs.repo')
+    elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+        org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org')
+        repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo')
+    else
+        echo "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
+        return 1
+    fi
     [[ "$org" != "null" ]] && [[ "$repo" != "null" ]] || return 1
     local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${OPENSHIFT_BUILD_COMMIT}"
+    local commit_details
     commit_details=$(curl --retry 5 -sS "${commit_details_url}") || return 1
 
     local job_name="${JOB_NAME_SAFE#merge-}"
