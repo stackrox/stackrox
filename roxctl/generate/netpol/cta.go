@@ -12,7 +12,10 @@ import (
 	v1 "k8s.io/api/networking/v1"
 )
 
-var errNPGErrorsIndicator = errors.New("there were errors during execution")
+var (
+	errNPGErrorsIndicator   = errors.New("there were errors during execution")
+	errNPGWarningsIndicator = errors.New("there were warnings during execution")
+)
 
 func (cmd *generateNetpolCommand) generateNetpol() error {
 	opts := []npguard.PoliciesSynthesizerOption{
@@ -36,8 +39,8 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 			roxerr = errNPGErrorsIndicator
 		} else {
 			cmd.env.Logger().WarnfLn("%s %s", e.Error(), e.Location())
-			if cmd.treatWarningsAsErrors {
-				roxerr = errNPGErrorsIndicator
+			if cmd.treatWarningsAsErrors && roxerr == nil {
+				roxerr = errNPGWarningsIndicator
 			}
 		}
 	}
