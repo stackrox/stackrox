@@ -100,7 +100,6 @@ func testImages() []*storage.Image {
 				Cves: 3,
 			},
 			Scan: &storage.ImageScan{
-				OperatingSystem: "os1",
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
 						Name:    "comp1",
@@ -150,7 +149,6 @@ func testImages() []*storage.Image {
 				Cves: 5,
 			},
 			Scan: &storage.ImageScan{
-				OperatingSystem: "os2",
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
 						Name:    "comp1",
@@ -400,6 +398,13 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 			},
 		},
 	}
+}
+
+func testImagesWithOperatingSystems() []*storage.Image {
+	ret := testImages()
+	ret[0].Scan.OperatingSystem = "os1"
+	ret[1].Scan.OperatingSystem = "os2"
+	return ret
 }
 
 func testNodes() []*storage.Node {

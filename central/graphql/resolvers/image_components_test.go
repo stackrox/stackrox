@@ -123,7 +123,7 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 		s.NoError(err)
 	}
 
-	testImages := testImages()
+	testImages := testImagesWithOperatingSystems()
 	for _, image := range testImages {
 		err = s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
 		s.NoError(err)
@@ -470,12 +470,12 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentDeployments() {
 			expectedCount := int32(len(test.expectedIDs))
 
 			deps, err := comp.Deployments(ctx, PaginatedQuery{})
-			assert.NoError(s.T(), err)
+			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, int32(len(deps)))
-			assert.ElementsMatch(s.T(), test.expectedIDs, getIDList(ctx, deps))
+			assert.ElementsMatch(t, test.expectedIDs, getIDList(ctx, deps))
 
 			count, err := comp.DeploymentCount(ctx, RawQuery{})
-			assert.NoError(s.T(), err)
+			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, count)
 		})
 	}

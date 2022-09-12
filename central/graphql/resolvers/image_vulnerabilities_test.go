@@ -72,8 +72,6 @@ type GraphQLImageVulnerabilityTestSuite struct {
 
 func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 
-	s.T().Skip("Skipping this test suite until it is revisited as the data has changed due to operating systems being added (ROX-12231)")
-
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
