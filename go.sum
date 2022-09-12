@@ -755,8 +755,8 @@ github.com/coreos/go-oidc v2.1.0+incompatible h1:sdJrfw8akMnCuUlaZU3tE/uYXFgfqom
 github.com/coreos/go-oidc v2.1.0+incompatible/go.mod h1:CgnwVTmzoESiwO9qyAFEMiHoZ1nMCKZlZ9V6mm3/LKc=
 github.com/coreos/go-oidc/v3 v3.1.0/go.mod h1:rEJ/idjfUyfkBit1eI1fvyr+64/g9dcKpAm8MJMesvo=
 github.com/coreos/go-oidc/v3 v3.2.0/go.mod h1:rEJ/idjfUyfkBit1eI1fvyr+64/g9dcKpAm8MJMesvo=
-github.com/coreos/go-oidc/v3 v3.3.0 h1:Y1LV3mP+QT3MEycATZpAiwfyN+uxZLqVbAHJUuOJEe4=
-github.com/coreos/go-oidc/v3 v3.3.0/go.mod h1:eHUXhZtXPQLgEaDrOVTgwbgmz1xGOkJNye6h3zkD2Pw=
+github.com/coreos/go-oidc/v3 v3.4.0 h1:xz7elHb/LDwm/ERpwHd+5nb7wFHL32rsr6bBOgaeu6g=
+github.com/coreos/go-oidc/v3 v3.4.0/go.mod h1:eHUXhZtXPQLgEaDrOVTgwbgmz1xGOkJNye6h3zkD2Pw=
 github.com/coreos/go-semver v0.2.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3EedlOD2RNk=
 github.com/coreos/go-semver v0.3.0 h1:wkHLiw0WNATZnSG7epLsujiMCgPAc9xhjJ4tgnAxmfM=
 github.com/coreos/go-semver v0.3.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3EedlOD2RNk=
