@@ -112,7 +112,7 @@ teardown() {
   assert_output --partial 'Yaml document is not a K8s resource'
   assert_output --partial 'no relevant Kubernetes resources found'
   assert_output --partial 'ERROR:'
-  assert_output --partial 'there were errors during execution'
+  assert_output --partial 'there were warnings during execution'
 }
 
 @test "roxctl-development generate netpol stops on first error when run with --fail" {

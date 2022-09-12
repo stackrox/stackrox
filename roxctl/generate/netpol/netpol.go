@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/printer"
-
 	npguard "github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 )
 
