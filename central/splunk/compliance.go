@@ -66,6 +66,7 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 		}
 
 		standardIDs := standards.GetSupportedStandards()
+		fmt.Printf("Iterating over standards: %v", standardIDs)
 		clusterIDs, err := getClusterIDs(r.Context())
 		if err != nil {
 			httputil.WriteError(w, err)
@@ -107,8 +108,6 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 							State:      stateToString(clusterValue.OverallState),
 							Evidence:   getMessageLines(clusterValue.GetEvidence()),
 						}
-						fmt.Print("Cluster Results")
-						fmt.Printf("%v\n", res)
 						if err := arrayWriter.WriteObject(res); err != nil {
 							httputil.WriteError(w, err)
 							return
@@ -132,8 +131,6 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 								State:      stateToString(result.OverallState),
 								Evidence:   getMessageLines(result.GetEvidence()),
 							}
-							fmt.Print("Deployment Results\n")
-							fmt.Printf("%v\n", res)
 							if err := arrayWriter.WriteObject(res); err != nil {
 								httputil.WriteError(w, err)
 								return
@@ -156,8 +153,6 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 								State:      stateToString(result.OverallState),
 								Evidence:   getMessageLines(result.GetEvidence()),
 							}
-							fmt.Print("Node Results")
-							fmt.Printf("%v\n", res)
 							if err := arrayWriter.WriteObject(res); err != nil {
 								httputil.WriteError(w, err)
 								return
