@@ -7,11 +7,11 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
 	componentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
 	componentCVEEdgeSearch "github.com/stackrox/rox/central/componentcveedge/search"
+	"github.com/stackrox/rox/central/cve/converter/v2"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
