@@ -26,10 +26,7 @@ tests:
 - name: OpenShift Auth should be disabled when ROX_MANAGED_CENTRAL is set irrespective of OpenShift 4 being set
   set:
     env.openshift: 4
-    customize:
-      central:
-        envVars:
-          ROX_MANAGED_CENTRAL: true
+    env.managedServices: true
   expect: |
     .serviceaccounts.central.metadata.annotations | ."serviceaccounts.openshift.io/oauth-redirectreference.main" | assertThat(. == null)
     .serviceaccounts.central.metadata.annotations | ."serviceaccounts.openshift.io/oauth-redirecturi.main" | assertThat(. == null)
