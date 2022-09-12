@@ -23,13 +23,3 @@ export function visitMainDashboard(requestConfig, staticResponseMap) {
     cy.wait('@deploymentswithprocessinfo');
     cy.get('h1:contains("Dashboard")');
 }
-
-export function visitMainDashboardViaRedirectFromUrl(redirectFromUrl) {
-    cy.intercept('GET', api.risks.riskyDeployments).as('deploymentswithprocessinfo');
-
-    visit(redirectFromUrl);
-
-    cy.wait('@deploymentswithprocessinfo');
-    cy.location('pathname').should('eq', url);
-    cy.get('h1:contains("Dashboard")');
-}

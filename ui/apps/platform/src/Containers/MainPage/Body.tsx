@@ -47,10 +47,7 @@ function NotFoundPage(): ReactElement {
 
 const AsyncSearchPage = asyncComponent(() => import('Containers/Search/SearchPage'));
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
-const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
-// TODO Rename this and replace AsyncDashboardPage once Sec Metrics Phase One is complete
-// Jira: https://issues.redhat.com/browse/ROX-10650
-const AsyncDashboardPagePF = asyncComponent(
+const AsyncDashboardPage = asyncComponent(
     () => import('Containers/Dashboard/PatternFly/DashboardPage')
 );
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
@@ -97,7 +94,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
     const isSearchPageEnabled = isFeatureFlagEnabled('ROX_SEARCH_PAGE_UI');
-    const isDashboardPatternFlyEnabled = isFeatureFlagEnabled('ROX_SECURITY_METRICS_PHASE_ONE');
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
 
@@ -111,12 +107,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                 <Switch>
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
-                    <Route
-                        path={dashboardPath}
-                        component={
-                            isDashboardPatternFlyEnabled ? AsyncDashboardPagePF : AsyncDashboardPage
-                        }
-                    />
+                    <Route path={dashboardPath} component={AsyncDashboardPage} />
                     <Route path={networkPath} component={AsyncNetworkPage} />
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />
