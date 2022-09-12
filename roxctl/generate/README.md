@@ -19,7 +19,7 @@ The feature `roxctl generate netpol` is currently not available in the officiall
 Refer to [the build tooling section in the Readme](https://github.com/stackrox/stackrox#build-tooling) for details about build prerequisites.
 
 ```shell
-git clone --depth=1 https://github.com/stackrox/stackrox.git && cd stackrox
+git clone https://github.com/stackrox/stackrox.git && cd stackrox
 # Compile roxctl for a given OS with empty GOTAGS
 make cli-{darwin,linux} GOTAGS=''
 # Set feature-flag
