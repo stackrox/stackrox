@@ -8,7 +8,7 @@ assist and answer questions about it.
 
 ## About
 
-The static network policy generator a tool analyzes k8s manifests and generates a set of suggested network policies in form of yaml documents that may be directly applied to a k8s cluster. It is integrated with [NP-Guard's Cluster Topology Analyzer](https://github.com/np-guard/cluster-topology-analyzer) component, which discovers the network connections and generates the network policies. For more details, refer to the [NP-Guard webpage](https://np-guard.github.io/).
+The static network policy generator is a tool that analyzes k8s manifests and generates a set of suggested network policies in form of yaml documents that may be directly applied to a k8s cluster. It is integrated with [NP-Guard's Cluster Topology Analyzer](https://github.com/np-guard/cluster-topology-analyzer) component, which discovers the network connections and generates the network policies. For more details, refer to the [NP-Guard webpage](https://np-guard.github.io/).
 
 ## Usage
 

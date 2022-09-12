@@ -52,7 +52,7 @@ func (cmd *generateNetpolCommand) ouputNetpols(recommendedNetpols []*v1.NetworkP
 		cmd.env.Logger().WarnfLn("Removed output path %s", cmd.outputFolderPath)
 	}
 	if cmd.outputFolderPath != "" {
-		cmd.env.Logger().InfofLn("Writing generated Network Policies to %s", cmd.outputFolderPath)
+		cmd.env.Logger().InfofLn("Writing generated Network Policies to %q", cmd.outputFolderPath)
 	}
 
 	var mergedPolicy string

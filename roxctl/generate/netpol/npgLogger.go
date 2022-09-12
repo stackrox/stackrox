@@ -4,8 +4,8 @@ import (
 	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
-// npgLogger wraps the common logging interface in a NP-Guard compatible logger
-// it mutes all warnings and errors as they are being returned explicitly by the library
+// npgLogger wraps the common logging interface in a NP-Guard compatible logger.
+// It mutes all warnings and errors as they are being returned explicitly by the library.
 type npgLogger struct {
 	l logger.Logger
 }
