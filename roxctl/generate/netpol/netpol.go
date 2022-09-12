@@ -3,12 +3,12 @@ package netpol
 import (
 	"os"
 
+	npguard "github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/printer"
-	npguard "github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 )
 
 type generateNetpolCommand struct {
