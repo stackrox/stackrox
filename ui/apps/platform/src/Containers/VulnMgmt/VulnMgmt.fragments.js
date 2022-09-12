@@ -664,11 +664,9 @@ export const OLD_IMAGE_LIST_FRAGMENT = gql`
         }
         componentCount(query: $query)
         notes
-        scan {
-            scanTime
-            operatingSystem
-            notes
-        }
+        scanTime
+        operatingSystem
+        scanNotes
         vulnCounter {
             all {
                 total
@@ -714,11 +712,9 @@ export const IMAGE_LIST_FRAGMENT = gql`
         }
         componentCount: imageComponentCount(query: $query)
         notes
-        scan {
-            scanTime
-            operatingSystem
-            notes
-        }
+        scanTime
+        operatingSystem
+        scanNotes
         vulnCounter: imageVulnerabilityCounter {
             all {
                 total
