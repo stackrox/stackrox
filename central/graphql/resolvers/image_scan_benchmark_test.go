@@ -54,6 +54,22 @@ const (
 					}
 				}
 			}}`
+
+	imageWithTopLevelScanTimeQuery = `
+		query getImages($query: String, $pagination: Pagination) {
+			images(query: $query, pagination: $pagination) { 
+				id
+				scanTime
+			}}`
+
+	imageWithNestedScanTimeQuery = `
+		query getImages($query: String, $pagination: Pagination) {
+			images(query: $query, pagination: $pagination) { 
+				id
+				scan {
+					scanTime
+				}
+			}}`
 )
 
 func BenchmarkImageResolver(b *testing.B) {
@@ -163,6 +179,36 @@ func BenchmarkImageResolver(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
 				imageWithCountsQuery,
+				"getImages",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
+
+	b.Run("GetImageScanTimeTopLevel", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				imageWithTopLevelScanTimeQuery,
+				"getImages",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
+
+	b.Run("GetImageScanTimeNested", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				imageWithNestedScanTimeQuery,
 				"getImages",
 				map[string]interface{}{
 					"pagination": map[string]interface{}{
