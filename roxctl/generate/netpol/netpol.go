@@ -21,7 +21,6 @@ type generateNetpolCommand struct {
 	removeOutputPath      bool
 	mergeMode             bool
 	splitMode             bool
-	stdoutMode            bool
 
 	// injected or constructed values
 	env     environment.Environment
@@ -56,9 +55,6 @@ func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) err
 	cmd.folderPath = args[0]
 	cmd.splitMode = c.Flags().Changed("output-dir")
 	cmd.mergeMode = c.Flags().Changed("output-file")
-	if !cmd.splitMode && !cmd.mergeMode {
-		cmd.stdoutMode = true
-	}
 	return nil
 }
 

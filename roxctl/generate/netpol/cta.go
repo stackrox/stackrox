@@ -28,7 +28,7 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 	if err := cmd.ouputNetpols(recommendedNetpols); err != nil {
 		return err
 	}
-	var roxerr error = nil
+	var roxerr error
 	for _, e := range npSynth.Errors() {
 		if e.IsSevere() {
 			cmd.env.Logger().ErrfLn("%s %s", e.Error(), e.Location())
@@ -78,13 +78,8 @@ func (cmd *generateNetpolCommand) ouputNetpols(recommendedNetpols []*v1.NetworkP
 		}
 		return nil
 	}
-
-	if cmd.stdoutMode {
-		cmd.printNetpols(mergedPolicy)
-		return nil
-	}
-
-	return errors.New("no mode selected, not providing any output")
+	cmd.printNetpols(mergedPolicy)
+	return nil
 }
 
 func (cmd *generateNetpolCommand) printNetpols(combinedNetpols string) {
