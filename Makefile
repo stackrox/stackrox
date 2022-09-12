@@ -353,13 +353,15 @@ build-prep: deps
 
 .PHONY: cli-build
 cli-build: build-prep
+ifndef CI
+	RACE=0 CGO_ENABLED=0 GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./roxctl
+else
 	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
-ifdef CI
 	RACE=0 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) ./roxctl
 endif
 
@@ -439,7 +441,7 @@ main-build-nodeps:
 	$(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 ifndef CI
-    CGO_ENABLED=0 $(GOBUILD) roxctl
+	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
 
 .PHONY: scale-build
@@ -600,15 +602,14 @@ copy-go-binaries-to-image-dir:
 	cp bin/linux_$(GOARCH)/central image/bin/central
 ifdef CI
 	cp bin/linux_amd64/roxctl image/bin/roxctl-linux-amd64
+	cp bin/linux_arm64/roxctl image/bin/roxctl-linux-arm64
 	cp bin/linux_ppc64le/roxctl image/bin/roxctl-linux-ppc64le
 	cp bin/linux_s390x/roxctl image/bin/roxctl-linux-s390x
 	cp bin/darwin_amd64/roxctl image/bin/roxctl-darwin-amd64
+	cp bin/darwin_arm64/roxctl image/bin/roxctl-darwin-arm64
 	cp bin/windows_amd64/roxctl.exe image/bin/roxctl-windows-amd64.exe
 else
-ifneq ($(HOST_OS),linux)
 	cp bin/linux_$(GOARCH)/roxctl image/bin/roxctl-linux-$(GOARCH)
-endif
-	cp bin/$(HOST_OS)_amd64/roxctl image/bin/roxctl-$(HOST_OS)-amd64
 endif
 	cp bin/linux_$(GOARCH)/migrator image/bin/migrator
 	cp bin/linux_$(GOARCH)/kubernetes        image/bin/kubernetes-sensor
