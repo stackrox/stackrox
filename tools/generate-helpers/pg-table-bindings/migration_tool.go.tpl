@@ -1,21 +1,3 @@
-{{define "schemaVar"}}{{.|upperCamelCase}}Schema{{end}}
-{{define "createTableStmtVar"}}CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
-{{define "commmaSeparatedColumnNamesFromField"}}{{range $idx, $field:= .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
-{{define "commaSeparatedColumnsInThisTable"}}{{range $idx, $columnNamePair := .}}{{if $idx}}, {{end}}{{$columnNamePair.ColumnNameInThisSchema}}{{end}}{{end}}
-{{define "commaSeparatedColumnsInOtherTable"}}{{range $idx, $columnNamePair := .}}{{if $idx}}, {{end}}{{$columnNamePair.ColumnNameInOtherSchema}}{{end}}{{end}}
-
-package convert
-
-import (
-	"github.com/gogo/protobuf/proto"
-	"github.com/lib/pq"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stretchr/testify/assert"
-)
-
 {{- define "convertField" }}
     {{- $field := . }}
     {{- if eq $field.DataType "datetime" -}}
@@ -28,13 +10,16 @@ import (
     {{$field.Getter "obj"}},
     {{- end -}}{{- end -}}{{- end -}}
 {{- end}}
+
 {{- define "convertProtoToModel" }}
 {{- $schema := . }}
-    func convert{{$schema.TypeName}}FromProto(obj {{$schema.Type}}{{ range $idx, $field := $schema.FieldsReferringToParent }}, {{$field.Name}} {{$field.Type}}{{end}}) (*schema.{{$schema.Table|upperCamelCase}}, error) {
+    func convert{{$schema.TypeName}}FromProto(obj {{$schema.Type}}{{if $schema.Parent}}, idx int{{end}}{{ range $idx, $field := $schema.FieldsReferringToParent }}, {{$field.Name}} {{$field.Type}}{{end}}) (*schema.{{$schema.Table|upperCamelCase}}, error) {
+        {{- if not $schema.Parent }}
     	serialized, err := obj.Marshal()
     	if err != nil {
     		return nil, err
     	}
+        {{- end}}
     	model := &schema.{{$schema.Table|upperCamelCase}}{
         {{- range $idx, $field := $schema.DBColumnFields }}
             {{$field.ColumnName|upperCamelCase}}: {{- template "convertField" $field}}
@@ -43,6 +28,7 @@ import (
         return model, nil
     }
 
+    {{- if not $schema.Parent }}
     func convert{{$schema.TypeName}}ToProto(m *schema.{{$schema.Table|upperCamelCase}}) ({{$schema.Type}}, error) {
     	var msg storage.{{$schema.TypeName}}
     	if err := msg.Unmarshal(m.Serialized); err != nil {
@@ -60,9 +46,22 @@ import (
        	assert.NoError(t, err)
        	assert.Equal(t, obj, conv)
     }
+    {{- end}}
+
     {{- range $idx, $child := $schema.Children }}
         {{- template "convertProtoToModel" $child }}
     {{- end }}
 {{- end}}
+package convert
+
+import (
+	"github.com/gogo/protobuf/proto"
+	"github.com/lib/pq"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
+)
 
 {{- template "convertProtoToModel" .Schema }}
