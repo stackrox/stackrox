@@ -1,6 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{- if and ._rox.env.openshift  ._rox.centralDB.enabled (not ._rox.centralDB.preexisting) ._rox.system.createSCCs }}
+{{- if and ._rox.env.openshift  ._rox.central.db.enabled (not ._rox.central.db.preexisting) ._rox.system.createSCCs }}
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:

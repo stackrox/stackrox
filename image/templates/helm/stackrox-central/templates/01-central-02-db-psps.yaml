@@ -1,6 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{- if and ._rox.centralDB.enabled (not ._rox.centralDB.preexisting) ._rox.system.enablePodSecurityPolicies }}
+{{- if and ._rox.central.db.enabled (not ._rox.central.db.preexisting) ._rox.system.enablePodSecurityPolicies }}
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:

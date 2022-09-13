@@ -1,7 +1,7 @@
 {{- include "srox.init" . -}}
 
-{{ if ._rox.centralDB.enabled -}}
-{{ if not ._rox.centralDB.preexisting -}}
+{{ if ._rox.central.db.enabled -}}
+{{ if not ._rox.central.db.preexisting -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -65,7 +65,7 @@ spec:
       serviceAccountName: central-db
       initContainers:
       - name: init-db
-        image: {{ ._rox.centralDB.image.fullRef | quote }}
+        image: {{ ._rox.central.db.image.fullRef | quote }}
         env:
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
@@ -83,13 +83,13 @@ spec:
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/secrets
         resources:
-          {{- ._rox.centralDB._resources | nindent 10 }}
+          {{- ._rox.central.db._resources | nindent 10 }}
         securityContext:
           runAsUser: 70
           runAsGroup: 70
       containers:
       - name: central-db
-        image: {{ ._rox.centralDB.image.fullRef | quote }}
+        image: {{ ._rox.central.db.image.fullRef | quote }}
         env:
         - name: POSTGRES_HOST_AUTH_METHOD
           value: "password"
@@ -100,7 +100,7 @@ spec:
           name: postgresql
           protocol: TCP
         resources:
-          {{- ._rox.centralDB._resources | nindent 10 }}
+          {{- ._rox.central.db._resources | nindent 10 }}
         securityContext:
           runAsUser: 70
           runAsGroup: 70
@@ -117,7 +117,7 @@ spec:
         fsGroup: 70
       volumes:
       - name: disk
-        {{- toYaml ._rox.centralDB.persistence._volumeCfg | nindent 8 }}
+        {{- toYaml ._rox.central.db.persistence._volumeCfg | nindent 8 }}
       - name: config-volume
         configMap:
           name: central-db-config
@@ -159,9 +159,9 @@ spec:
   selector:
     app: central-db
   type: ClusterIP
-{{ end }}
-{{- if ._rox.centralDB._password }}
-{{- if not (kindIs "invalid" ._rox.centralDB._password.value) }}
+{{- end }}
+{{- if ._rox.central.db._password }}
+{{- if not (kindIs "invalid" ._rox.central.db._password.value) }}
 ---
 apiVersion: v1
 kind: Secret
@@ -177,7 +177,7 @@ metadata:
 type: Opaque
 stringData:
   password: |
-    {{- ._rox.centralDB._password.value | nindent 4 }}
+    {{- ._rox.central.db._password.value | nindent 4 }}
 {{- end }}
 {{- end }}
 {{- end }}

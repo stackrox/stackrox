@@ -25,7 +25,17 @@ func validateHostPath(hostpath *renderer.HostPathPersistence) error {
 	if hostpath == nil {
 		return nil
 	}
-	if (hostpath.NodeSelectorKey == "") != (hostpath.NodeSelectorValue == "") {
+	if err := validateHostPathInstance(hostpath.Central); err != nil {
+		return err
+	}
+	return validateHostPathInstance(hostpath.DB)
+}
+
+func validateHostPathInstance(instance *renderer.HostPathPersistenceInstance) error {
+	if instance == nil {
+		return nil
+	}
+	if (instance.NodeSelectorKey == "") != (instance.NodeSelectorValue == "") {
 		return errox.InvalidArgs.New("Both node selector key and node selector value must be specified when using a hostpath")
 	}
 	return nil

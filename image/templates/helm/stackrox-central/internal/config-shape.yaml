@@ -68,41 +68,40 @@ central:
       enabled: null # bool
       host: null # string
   extraMounts: null # [dict]
-centralDB:
-  enabled: false # bool
-  nodeSelector: null # string | dict
-  tolerations: null # [dict]
-  configuration:
-    source:
-      string: null # string
-      minConns: null # int
-      maxConns: null # int
-      statementTimeoutMs: null #int
-    password:
-      value: null # string
+  db:
+    enabled: false # bool
+    nodeSelector: null # string | dict
+    tolerations: null # [dict]
+    configuration:
+      source:
+        string: null # string
+        minConns: null # int
+        maxConns: null # int
+        statementTimeoutMs: null #int
+      password:
+        value: null # string
+        generate: null # bool
+    serviceTLS:
+      cert: null # string
+      key: null # string
       generate: null # bool
-  serviceTLS:
-    cert: null # string
-    key: null # string
-    generate: null # bool
-  image:
-    registry: null # string
-    name: null # string
-    tag: null # string
-    fullRef: null # string
-  resources: null # string | dict
-  persistence:
-    hostPath: null # string
-    persistentVolumeClaim:
-      claimName: null # string
-      createClaim: null # bool
-      storageClass: null # string
-      size: null # int | string
-      volume:
-        volumeSpec: null # dict
-    none: null # bool
-  extraMounts: null # [dict]
-
+    image:
+      registry: null # string
+      name: null # string
+      tag: null # string
+      fullRef: null # string
+    resources: null # string | dict
+    persistence:
+      hostPath: null # string
+      persistentVolumeClaim:
+        claimName: null # string
+        createClaim: null # bool
+        storageClass: null # string
+        size: null # int | string
+        volume:
+          volumeSpec: null # dict
+      none: null # bool
+    extraMounts: null # [dict]
 customize:
   labels: {} # dict
   annotations: {} # dict
@@ -115,12 +114,12 @@ customize:
     podLabels: {} # dict
     podAnnotations: {} # dict
     envVars: {} # dict
-  centralDB:
-    labels: {} # dict
-    annotations: {} # dict
-    podLabels: {} # dict
-    podAnnotations: {} # dict
-    envVars: {} # dict
+    db:
+      labels: {} # dict
+      annotations: {} # dict
+      podLabels: {} # dict
+      podAnnotations: {} # dict
+      envVars: {} # dict
   scanner:
     labels: {} # dict
     annotations: {} # dict

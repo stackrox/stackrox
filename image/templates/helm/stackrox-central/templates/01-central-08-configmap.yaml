@@ -12,19 +12,19 @@ metadata:
 data:
   central-config.yaml: |
     {{- ._rox.central._config | nindent 4 }}
-    {{- if ._rox.centralDB.enabled }}
+    {{- if ._rox.central.db.enabled }}
     centralDB:
-      {{- if ._rox.centralDB.preexisting }}
-      source: {{ ._rox.centralDB.source.connectionString }} statement_timeout={{ ._rox.centralDB.source.statementTimeoutMs }} pool_min_conns={{ ._rox.centralDB.source.minConns }} pool_max_conns={{ ._rox.centralDB.source.maxConns }}
-      {{ else }}
+      {{- if ._rox.central.db.preexisting }}
+      source: {{ ._rox.central.db.source.connectionString }} statement_timeout={{ ._rox.central.db.source.statementTimeoutMs }} pool_min_conns={{ ._rox.central.db.source.minConns }} pool_max_conns={{ ._rox.central.db.source.maxConns }}
+      {{- else }}
       source: >
         host=central-db.{{ .Release.Namespace }}.svc
         port=5432
         user=postgres
         sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }}
         sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
-        statement_timeout={{ ._rox.centralDB.source.statementTimeoutMs }}
-        pool_min_conns={{ ._rox.centralDB.source.minConns }}
-        pool_max_conns={{ ._rox.centralDB.source.maxConns }}
-      {{ end }}
+        statement_timeout={{ ._rox.central.db.source.statementTimeoutMs }}
+        pool_min_conns={{ ._rox.central.db.source.minConns }}
+        pool_max_conns={{ ._rox.central.db.source.maxConns }}
+      {{- end }}
     {{- end }}

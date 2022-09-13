@@ -52,9 +52,9 @@ central:
   {{- end }}
 
   {{- if .HostPath }}
-  {{- if .HostPath.WithNodeSelector }}
+  {{- if .HostPath.Central.WithNodeSelector }}
   nodeSelector:
-    {{ .HostPath.NodeSelectorKey | quote }}: {{ .HostPath.NodeSelectorValue | quote }}
+    {{ .HostPath.Central.NodeSelectorKey | quote }}: {{ .HostPath.Central.NodeSelectorValue | quote }}
   {{- end }}
   {{- end }}
 
@@ -70,31 +70,15 @@ central:
     tag: {{ .K8sConfig.ImageOverrides.Main.Tag }}
     {{- end }}
   {{- end }}
-  {{- if .K8sConfig.ImageOverrides.CentralDB }}
-  dbImage:
-    {{- if .K8sConfig.ImageOverrides.CentralDB.Registry }}
-    registry: {{ .K8sConfig.ImageOverrides.CentralDB.Registry }}
-    {{- end }}
-    {{- if .K8sConfig.ImageOverrides.CentralDB.Name }}
-    name: {{ .K8sConfig.ImageOverrides.CentralDB.Name }}
-    {{- end }}
-    {{- if .K8sConfig.ImageOverrides.CentralDB.Tag }}
-    # WARNING: You are using a non-default Central DB image tag. Upgrades via
-    # 'helm upgrade' will not work as expected. To ensure a smooth upgrade experience,
-    # make sure StackRox images are mirrored with the same tags as in the stackrox.io
-    # registry.
-    tag: {{ .K8sConfig.ImageOverrides.CentralDB.Tag }}
-    {{- end }}
-  {{- end }}
   persistence:
-    {{- if .HostPath }}
-    hostPath: {{ .HostPath.HostPath }}
-    {{ else if .External }}
+    {{- if and .HostPath .HostPath.Central }}
+    hostPath: {{ .HostPath.Central.HostPath }}
+    {{ else if .External.Central }}
     persistentVolumeClaim:
-      claimName: {{ .External.Name | quote }}
-      size: {{ printf "%dGi" .External.Size | quote }}
-      {{- if .External.StorageClass }}
-      storageClass: {{ .External.StorageClass | quote }}
+      claimName: {{ .External.Central.Name | quote }}
+      size: {{ printf "%dGi" .External.Central.Size | quote }}
+      {{- if .External.Central.StorageClass }}
+      storageClass: {{ .External.Central.StorageClass | quote }}
       {{- end }}
     {{- else }}
     none: true
@@ -115,44 +99,44 @@ central:
     {{ end }}
   {{- end }}
 
-centralDB:
-  enabled: {{ .K8sConfig.EnableCentralDB }}
-  {{- if .HostPath }}
-  {{- if .HostPath.WithNodeSelector }}
-  nodeSelector:
-    {{ .HostPath.NodeSelectorKey | quote }}: {{ .HostPath.NodeSelectorValue | quote }}
-  {{- end }}
-  {{- end }}
-
-  {{- if .K8sConfig.ImageOverrides.CentralDB }}
-  image:
-    {{- if .K8sConfig.ImageOverrides.CentralDB.Registry }}
-    registry: {{ .K8sConfig.ImageOverrides.CentralDB.Registry }}
+  db:
+    enabled: {{ .K8sConfig.EnableCentralDB }}
+    {{- if and .HostPath .HostPath.DB }}
+    {{- if .HostPath.DB.WithNodeSelector }}
+    nodeSelector:
+      {{ .HostPath.DB.NodeSelectorKey | quote }}: {{ .HostPath.DB.NodeSelectorValue | quote }}
     {{- end }}
-    {{- if .K8sConfig.ImageOverrides.CentralDB.Name }}
-    name: {{ .K8sConfig.ImageOverrides.CentralDB.Name }}
     {{- end }}
-    {{- if .K8sConfig.ImageOverrides.CentralDB.Tag }}
-    # WARNING: You are using a non-default Central DB image tag. Upgrades via
-    # 'helm upgrade' will not work as expected. To ensure a smooth upgrade experience,
-    # make sure StackRox images are mirrored with the same tags as in the stackrox.io
-    # registry.
-    tag: {{ .K8sConfig.ImageOverrides.CentralDB.Tag }}
-    {{- end }}
-  {{- end }}
-  persistence:
-    {{- if .HostPath }}
-    hostPath: {{ .HostPath.HostPath }}
-    {{ else if .External }}
-    persistentVolumeClaim:
-      claimName: {{ .External.Name | quote }}
-      size: {{ printf "%dGi" .External.Size | quote }}
-      {{- if .External.StorageClass }}
-      storageClass: {{ .External.StorageClass | quote }}
+  
+    {{- if .K8sConfig.ImageOverrides.CentralDB }}
+    image:
+      {{- if .K8sConfig.ImageOverrides.CentralDB.Registry }}
+      registry: {{ .K8sConfig.ImageOverrides.CentralDB.Registry }}
       {{- end }}
-    {{- else }}
-    none: true
+      {{- if .K8sConfig.ImageOverrides.CentralDB.Name }}
+      name: {{ .K8sConfig.ImageOverrides.CentralDB.Name }}
+      {{- end }}
+      {{- if .K8sConfig.ImageOverrides.CentralDB.Tag }}
+      # WARNING: You are using a non-default Central DB image tag. Upgrades via
+      # 'helm upgrade' will not work as expected. To ensure a smooth upgrade experience,
+      # make sure StackRox images are mirrored with the same tags as in the stackrox.io
+      # registry.
+      tag: {{ .K8sConfig.ImageOverrides.CentralDB.Tag }}
+      {{- end }}
     {{- end }}
+    persistence:
+      {{- if and .HostPath .HostPath.DB }}
+      hostPath: {{ .HostPath.DB.HostPath }}
+      {{ else if .External.DB }}
+      persistentVolumeClaim:
+        claimName: {{ .External.DB.Name | quote }}
+        size: {{ printf "%dGi" .External.DB.Size | quote }}
+        {{- if .External.DB.StorageClass }}
+        storageClass: {{ .External.DB.StorageClass | quote }}
+        {{- end }}
+      {{- else }}
+      none: true
+      {{- end }}
 
 scanner:
   # IMPORTANT: If you do not wish to run StackRox Scanner, change the value on the following

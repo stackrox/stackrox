@@ -39,30 +39,30 @@ defaults:
       route:
         enabled: false
 
-  centralDB:
-    enabled: [< .FeatureFlags.ROX_POSTGRES_DATASTORE >]
+    db:
+      enabled: [< .FeatureFlags.ROX_POSTGRES_DATASTORE >]
 
-    preexisting: false
+      preexisting: false
 
-    source:
-      minConns: 10
-      maxConns: 90
-      statementTimeoutMs: 60000
+      source:
+        minConns: 10
+        maxConns: 90
+        statementTimeoutMs: 60000
 
-    postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
-    hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
+      postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
+      hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
 
-    image:
-      name: [< required "" .CentralDBImageRemote >]
-      tag: [< required "" .CentralDBImageTag >]
+      image:
+        name: [< required "" .CentralDBImageRemote >]
+        tag: [< required "" .CentralDBImageTag >]
 
-    resources:
-      requests:
-        memory: "4Gi"
-        cpu: "2"
-      limits:
-        memory: "8Gi"
-        cpu: "4"
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
 
   scanner:
     disable: false

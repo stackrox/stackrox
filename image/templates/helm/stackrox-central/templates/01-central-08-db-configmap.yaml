@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if and ._rox.centralDB.enabled (not ._rox.centralDB.preexisting) }}
+{{- if and ._rox.central.db.enabled (not ._rox.central.db.preexisting) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,7 +11,7 @@ metadata:
     {{- include "srox.annotations" (list . "configmap" "central-db-config") | nindent 4 }}
 data:
   postgresql.conf: |
-    {{- .Files.Get "config/centraldb/postgresql.conf" | nindent 4 }}
+    {{- ._rox.central.db._postgresConfig | nindent 4 }}
   pg_hba.conf: |
-    {{- .Files.Get "config/centraldb/pg_hba.conf" | nindent 4 }}
+    {{- ._rox.central.db._hbaConfig | nindent 4 }}
 {{- end }}

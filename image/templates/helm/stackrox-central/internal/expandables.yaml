@@ -23,16 +23,16 @@ central:
     value: true
     htpasswd: true
   resources: true
-centralDB:
-  postgresConfig: true
-  hbaConfig: true
-  nodeSelector: true
-  serviceTLS:
-    cert: true
-    key: true
-  password:
-    value: true
-  resources: true
+  db:
+    postgresConfig: true
+    hbaConfig: true
+    nodeSelector: true
+    serviceTLS:
+      cert: true
+      key: true
+    password:
+      value: true
+    resources: true
 scanner:
   resources: true
   dbResources: true

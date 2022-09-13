@@ -8,7 +8,7 @@
 {{ $env := $._rox.env }}
 {{ $_ := set $ "_rox" $._rox }}
 {{ $centralCfg := $._rox.central }}
-{{ $centralDBCfg := $._rox.centralDB }}
+{{ $centralDBCfg := $._rox.central.db }}
 
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ $centralCfg.image) }}
@@ -40,13 +40,13 @@
 {{/* Central DB password */}}
 {{ if $centralDBCfg.enabled }}
 {{/* Always set up the password for Postgres if it is enabled */}}
-{{ include "srox.configurePassword" (list $ "centralDB.password") }}
+{{ include "srox.configurePassword" (list $ "central.db.password") }}
 {{ if not $centralDBCfg.preexisting }}
 {{ include "srox.configureImage" (list $ $centralDBCfg.image) }}
 
 {{/* Central DB Service TLS Certificates */}}
 {{ $centralDBCertSpec := dict "CN" "CENTRAL_DB_SERVICE: Central DB" "dnsBase" "central-db" }}
-{{ include "srox.configureCrypto" (list $ "centralDB.serviceTLS" $centralDBCertSpec) }}
+{{ include "srox.configureCrypto" (list $ "central.db.serviceTLS" $centralDBCertSpec) }}
 {{ end }}
 {{ end }}
 
@@ -75,6 +75,9 @@
   {{ end }}
 {{ end }}
 
+{{/*
+    Central's DB PVC config setup
+  */}}
 {{ $dbVolumeCfg := dict }}
 {{ if and $centralDBCfg.enabled (not $centralDBCfg.preexisting) }}
 {{ if $centralDBCfg.persistence.none }}
@@ -89,12 +92,12 @@
 {{ end }}
 {{/* Configure PVC if either any of the settings in `centralDB.persistence.persistentVolumeClaim` are provided,
      or no other persistence backend has been configured yet. */}}
-{{ if or (not (deepEqual $._rox._configShape.centralDB.persistence.persistentVolumeClaim $centralDBCfg.persistence.persistentVolumeClaim)) (not $dbVolumeCfg) }}
-  {{ $dbPvcCfg := $centralDBCfg.persistence.persistentVolumeClaim }}
-  {{ $_ := include "srox.mergeInto" (list $dbPvcCfg $._rox._defaults.dbPVCDefaults (dict "createClaim" $.Release.IsInstall)) }}
-  {{ $_ = set $dbVolumeCfg "persistentVolumeClaim" (dict "claimName" $dbPvcCfg.claimName) }}
-  {{ if $dbPvcCfg.createClaim }}
-    {{ $_ = set $centralDBCfg.persistence "_pvcCfg" $dbPvcCfg }}
+{{ if or (not (deepEqual $._rox._configShape.central.db.persistence.persistentVolumeClaim $centralDBCfg.persistence.persistentVolumeClaim)) (not $dbVolumeCfg) }}
+  {{ $dbPVCCfg := $centralDBCfg.persistence.persistentVolumeClaim }}
+  {{ $_ := include "srox.mergeInto" (list $dbPVCCfg $._rox._defaults.dbPVCDefaults (dict "createClaim" $.Release.IsInstall)) }}
+  {{ $_ = set $dbVolumeCfg "persistentVolumeClaim" (dict "claimName" $dbPVCCfg.claimName) }}
+  {{ if $dbPVCCfg.createClaim }}
+    {{ $_ = set $centralDBCfg.persistence "_pvcCfg" $dbPVCCfg }}
   {{ end }}
 {{ end }}
 {{ end }}
