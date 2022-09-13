@@ -10,6 +10,9 @@ import services.NetworkGraphService
 import util.NetworkGraphUtil
 
 class ExternalNetworkSourcesTest extends BaseSpecification {
+    // Any reliable static IP address should work here.
+    // For now we use the one belonging to CloudFlare
+    // in hopes it doesn't disappear.
     static final private String CF_IP_ADDRESS = "1.1.1.1"
     static final private String CF_CIDR_30 = "$CF_IP_ADDRESS/30"
     static final private String CF_CIDR_31 = "$CF_IP_ADDRESS/31"
