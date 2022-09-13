@@ -37,11 +37,15 @@ describe('Vulnerability Management Policies', () => {
         );
     });
 
+    // Argument 3 in verify functions is one-based index of column which has the links.
+
+    // Some tests might fail in local deployment.
+
     it('should display links for failing deployments', () => {
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'deployments',
-            4,
+            9,
             /^\d+ failing deployments?$/,
             getPanelHeaderTextFromLinkResults
         );
