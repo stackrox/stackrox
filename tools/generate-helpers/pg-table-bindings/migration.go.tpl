@@ -2,6 +2,7 @@
 package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 {{- $ := . }}
 {{- $name := .TrimmedType|lowerCamelCase }}
+{{- $table := .Table|lowerCase }}
 {{ $boltDB := eq .Migration.MigrateFromDB "boltdb" }}
 {{ $dackbox := eq .Migration.MigrateFromDB "dackbox" }}
 {{ $rocksDB := or $dackbox (eq .Migration.MigrateFromDB "rocksdb") }}
@@ -49,6 +50,12 @@ var (
 				return errors.Wrap(err,
 					"moving {{.Table|lowerCase}} from rocksdb to postgres")
 			}
+			{{- if gt (len .Schema.RelationshipsToDefineAsForeignKeys) 0 }}
+			if err := prune(databases.PostgresDB); err != nil {
+				return errors.Wrap(err,
+				"pruning {{.Table|lowerCase}}")
+			}
+			{{- end}}
 			return nil
 		},
 	}
@@ -142,6 +149,23 @@ func store_walk(ctx context.Context, s legacy.Store, fn func(obj *{{.Type}}) err
 	return nil
 }
 {{end}}
+{{- if gt (len (.Schema.RelationshipsToDefineAsForeignKeys)) 0 }}
+func prune(postgresDB *pgxpool.Pool) error {
+{{- range $idx, $rel := .Schema.RelationshipsToDefineAsForeignKeys }}
+	ctx := sac.WithAllAccess(context.Background())
+	deleteStmt := `DELETE FROM {{$table}} child WHERE NOT EXISTS
+		(SELECT * FROM {{$rel.OtherSchema.Table}} parent WHERE
+		{{range $idx2, $col := $rel.MappedColumnNames}}{{if $idx2}}AND {{end}}child.{{ $col.ColumnNameInThisSchema }} = parent.{{ $col.ColumnNameInOtherSchema }}{{end}})`
+	log.WriteToStderr(deleteStmt)
+	_, err := postgresDB.Exec(ctx, deleteStmt)
+	if err != nil {
+	log.WriteToStderrf("failed to clean up orphaned data for %s", schema.Table)
+	return err
+	}
+	return nil
+{{- end}}
+}
+{{- end}}
 
 func init() {
 	migrations.MustRegisterMigration(migration)

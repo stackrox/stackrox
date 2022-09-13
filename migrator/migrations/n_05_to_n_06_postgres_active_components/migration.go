@@ -30,6 +30,10 @@ var (
 				return errors.Wrap(err,
 					"moving active_components from rocksdb to postgres")
 			}
+			if err := prune(databases.PostgresDB); err != nil {
+				return errors.Wrap(err,
+					"pruning cluster_health_statuses")
+			}
 			return nil
 		},
 	}
@@ -66,6 +70,11 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
+	//_, err := postgresDB.Exec(ctx, fmt.Sprintf("ALTER TABLE %s DISABLE TRIGGER ALL", schema.Table))
+	//if err != nil {
+	//	log.WriteToStderrf("failed to disable triggers for %s", schema.Table)
+	//	return err
+	//}
 	var activeComponents []*storage.ActiveComponent
 	err := walk(ctx, legacyStore, func(obj *storage.ActiveComponent) error {
 		activeComponents = append(activeComponents, convertActiveVuln(imageToOsMap, obj)...)
@@ -86,6 +95,14 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 			log.WriteToStderrf("failed to persist active_components to store %v", err)
 			return err
 		}
+	}
+
+	// Now clean up orphaned ones, so we can turn constraints back on
+	_, err = postgresDB.Exec(ctx, "DELETE FROM active_components child WHERE NOT EXISTS (SELECT * from deployments parent WHERE child.deploymentid = parent.id)")
+	//_, err = postgresDB.Exec(ctx, fmt.Sprintf("ALTER TABLE %s ENABLE TRIGGER ALL", schema.Table))
+	if err != nil {
+		log.WriteToStderrf("failed to clean up orphaned data for %s", schema.Table)
+		return err
 	}
 	return nil
 }
@@ -115,6 +132,18 @@ func storeWalk(ctx context.Context, s legacy.Store, fn func(obj *storage.ActiveC
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+func prune(postgresDB *pgxpool.Pool) error {
+	ctx := sac.WithAllAccess(context.Background())
+	deleteStmt := `DELETE FROM active_components child WHERE NOT EXISTS (SELECT * from deployments parent WHERE child.deploymentid = parent.id)`
+	log.WriteToStderr(deleteStmt)
+	_, err := postgresDB.Exec(ctx, deleteStmt)
+	if err != nil {
+		log.WriteToStderrf("failed to clean up orphaned data for %s", schema.Table)
+		return err
 	}
 	return nil
 }

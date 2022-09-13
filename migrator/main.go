@@ -168,6 +168,15 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 			return nil
 		}
 
+		// We need to migrate so turn off foreign key constraints
+		// Now that migrations are complete, turn the constraints back on
+		gormConfig := gormDB.Config
+		gormConfig.DisableForeignKeyConstraintWhenMigrating = true
+		err = gormDB.Apply(gormConfig)
+		if err != nil {
+			return errors.Wrap(err, "failed to turn off foreign key constraints")
+		}
+
 		log.WriteToStderrf("version for %q is %v", dbClone, ver)
 	}
 
@@ -196,6 +205,14 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 	}
 
 	if gormDB != nil {
+		// Now that migrations are complete, turn the constraints back on.  It is assumed the migrations
+		// removed any rows that violated constraints.
+		gormConfig := gormDB.Config
+		gormConfig.DisableForeignKeyConstraintWhenMigrating = false
+		err = gormDB.Apply(gormConfig)
+		if err != nil {
+			return errors.Wrap(err, "failed to turn on foreign key constraints")
+		}
 		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
 	}
 
