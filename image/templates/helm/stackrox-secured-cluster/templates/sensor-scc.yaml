@@ -49,6 +49,7 @@ volumes:
 
 {{- end }}
 
+# Despite the lack of 'anyuid' in this role, the name is kept as 'use-anyuid-scc' to avoid manual upgrade steps
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -67,7 +68,6 @@ rules:
   resourceNames:
   - nonroot-v2
   - nonroot
-  - anyuid
   verbs:
   - use
 ---
