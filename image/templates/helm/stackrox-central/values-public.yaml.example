@@ -366,13 +366,13 @@
 #     podAnnotations: {}
 #     envVars: {}
 #
-#   # Extra metadata for the central db deployment only.
-#   centralDB:
-#     labels: {}
-#     annotations: {}
-#     podLabels: {}
-#     podAnnotations: {}
-#     envVars: {}
+#     # Extra metadata for the central db deployment only.
+#     db:
+#       labels: {}
+#       annotations: {}
+#       podLabels: {}
+#       podAnnotations: {}
+#       envVars: {}
 #
 #   # Extra metadata for the scanner deployment only.
 #   scanner:
