@@ -155,7 +155,7 @@ func prune(postgresDB *pgxpool.Pool) error {
 	ctx := sac.WithAllAccess(context.Background())
 	deleteStmt := `DELETE FROM {{$table}} child WHERE NOT EXISTS
 		(SELECT * FROM {{$rel.OtherSchema.Table}} parent WHERE
-		{{range $idx2, $col := $rel.MappedColumnNames}}{{if $idx2}}AND {{end}}child.{{ $col.ColumnNameInThisSchema }} = parent.{{ $col.ColumnNameInOtherSchema }}{{end}})`
+		{{range $idx2, $col := $rel.MappedColumnNames}}{{if $idx2}} AND {{end}}child.{{ $col.ColumnNameInThisSchema }} = parent.{{ $col.ColumnNameInOtherSchema }}{{end}})`
 	log.WriteToStderr(deleteStmt)
 	_, err := postgresDB.Exec(ctx, deleteStmt)
 	if err != nil {
