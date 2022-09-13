@@ -158,7 +158,7 @@ func (ds *datastoreImpl) GetNodesBatch(ctx context.Context, ids []string) ([]*st
 			return nil, err
 		}
 	} else {
-		idsQuery := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.NodeID, ids...).ProtoQuery()
+		idsQuery := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.NodeID, ids...).ProtoQuery()
 		nodes, err = ds.SearchRawNodes(ctx, idsQuery)
 		if err != nil {
 			return nil, err

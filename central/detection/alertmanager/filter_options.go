@@ -75,7 +75,7 @@ func WithoutResourceType(resourceType storage.ListAlert_ResourceType) AlertFilte
 func WithLifecycleStage(lifecycleStage storage.LifecycleStage) AlertFilterOption {
 	return &alertFilterOptionImpl{
 		applyFunc: func(qb *search.QueryBuilder) {
-			qb.AddStrings(search.LifecycleStage, lifecycleStage.String())
+			qb.AddExactMatches(search.LifecycleStage, lifecycleStage.String())
 		},
 	}
 }
