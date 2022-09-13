@@ -3,6 +3,7 @@ package translation
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	// Required for the usage of go:embed below.
 	_ "embed"
@@ -20,6 +21,10 @@ import (
 var (
 	//go:embed base-values.yaml
 	baseValuesYAML []byte
+)
+
+const (
+	managedServicesAnnotation = "platform.stackrox.io/managed-services"
 )
 
 // Translator translates and enriches helm values
@@ -55,7 +60,7 @@ func translate(c platform.Central) (chartutil.Values, error) {
 	v := translation.NewValuesBuilder()
 
 	v.AddAllFrom(translation.GetImagePullSecrets(c.Spec.ImagePullSecrets))
-	v.AddAllFrom(getEnv(c.Spec.Egress))
+	v.AddAllFrom(getEnv(c))
 	v.AddAllFrom(translation.GetTLSConfigValues(c.Spec.TLS))
 
 	customize := translation.NewValuesBuilder()
@@ -78,8 +83,12 @@ func translate(c platform.Central) (chartutil.Values, error) {
 	return v.Build()
 }
 
-func getEnv(egress *platform.Egress) *translation.ValuesBuilder {
+func getEnv(c platform.Central) *translation.ValuesBuilder {
 	env := translation.NewValuesBuilder()
+
+	egress := c.Spec.Egress
+	annotations := c.GetAnnotations()
+
 	if egress != nil {
 		if egress.ConnectivityPolicy != nil {
 			switch *egress.ConnectivityPolicy {
@@ -92,6 +101,20 @@ func getEnv(egress *platform.Egress) *translation.ValuesBuilder {
 			}
 		}
 	}
+
+	if annotations != nil {
+		if annotationValue, ok := annotations[managedServicesAnnotation]; ok {
+			managedServices, err := strconv.ParseBool(annotationValue)
+			if err != nil {
+				return env.SetError(fmt.Errorf("invalid annotation value %q for annotation %s",
+					annotationValue, managedServicesAnnotation))
+			}
+			if managedServices {
+				env.SetBoolValue("managedServices", true)
+			}
+		}
+	}
+
 	ret := translation.NewValuesBuilder()
 	ret.AddChild("env", &env)
 	return &ret
