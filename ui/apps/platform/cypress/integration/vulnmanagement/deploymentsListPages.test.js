@@ -7,9 +7,16 @@ import {
     allCVECheck,
     // uncomment after the issue fix  - allFixableCheck
 } from '../../helpers/vmWorkflowUtils';
-import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
+import {
+    getCountAndNounFromImageCVEsLinkResults,
+    verifyFilteredSecondaryEntitiesLink,
+    verifySecondaryEntities,
+    visitVulnerabilityManagementEntities,
+} from '../../helpers/vulnmanagement/entities';
 
-describe('Deployments list Page and its entity detail page , (related entities) sub list  validations ', () => {
+const entitiesKey = 'deployments';
+
+describe('Vulnerability Management Deployments', () => {
     withAuth();
 
     describe('with VM updates OFF', () => {
@@ -57,8 +64,9 @@ describe('Deployments list Page and its entity detail page , (related entities) 
             }
         });
 
-        it('should display all the columns and links expected in deployments list page', () => {
-            visitVulnerabilityManagementEntities('deployments');
+        it('should display table columns', () => {
+            visitVulnerabilityManagementEntities(entitiesKey);
+
             hasExpectedHeaderColumns([
                 'Deployment',
                 'Image CVEs',
@@ -69,23 +77,37 @@ describe('Deployments list Page and its entity detail page , (related entities) 
                 'Images',
                 'Risk Priority',
             ]);
-            cy.get(selectors.tableBodyColumn).each(($el) => {
-                const columnValue = $el.text().toLowerCase();
-                if (columnValue !== 'no failing policies' && columnValue.includes('polic')) {
-                    allChecksForEntities(url.list.deployments, 'Polic');
-                }
-                // TODO: find a fix for checking both Image and Image Components so that we can uncomment this section of the test
-                // if (columnValue !== 'no images' && columnValue.includes('image')) {
-                //     allChecksForEntities(url.list.deployments, 'image');
-                // }
-                /* TBD - remove comment after issue fixed : if (columnValue !== 'no cves' && columnValue.includes('fixable'))
-                allFixableCheck(url.list.deployments); */
-                if (columnValue !== 'no cves' && columnValue.includes('image cve')) {
-                    allCVECheck(url.list.deployments);
-                }
-            });
-            //  TBD to be fixed after back end sorting is fixed
-            //  validateSort(selectors.riskScoreCol);
+        });
+
+        //  TBD to be fixed after back end sorting is fixed
+        //  validateSort(selectors.riskScoreCol);
+
+        // Argument 3 in verify functions is one-based index of column which has the links.
+
+        // Some tests might fail in local deployment.
+
+        it('should display links for all image CVEs', () => {
+            verifySecondaryEntities(
+                entitiesKey,
+                'image-cves',
+                2,
+                /^\d+ CVEs?$/,
+                getCountAndNounFromImageCVEsLinkResults
+            );
+        });
+
+        it('should display links for fixable image CVEs', () => {
+            verifyFilteredSecondaryEntitiesLink(
+                entitiesKey,
+                'image-cves',
+                2,
+                /^\d+ Fixable$/,
+                getCountAndNounFromImageCVEsLinkResults
+            );
+        });
+
+        it('should display links for images', () => {
+            verifySecondaryEntities(entitiesKey, 'images', 7, /^\d+ images?$/);
         });
     });
 });

@@ -1,66 +1,102 @@
-import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
+import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
 import {
-    hasExpectedHeaderColumns,
-    allChecksForEntities,
-    // TODO: uncomment the following two imports once we are testing three types of CVEs for cluster
-    //       after feature flag for VM updates defaults to ON
-    // allCVECheck,
-    // allFixableCheck,
-} from '../../helpers/vmWorkflowUtils';
-import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
+    getCountAndNounFromImageCVEsLinkResults,
+    getCountAndNounFromNodeCVEsLinkResults,
+    verifyFilteredSecondaryEntitiesLink,
+    verifySecondaryEntities,
+    visitVulnerabilityManagementEntities,
+} from '../../helpers/vulnmanagement/entities';
 
-describe('Clusters list Page and its single entity detail page, and sub list validations ', () => {
+function getCountAndNounFromClusterCVEsLinkResults([, count]) {
+    return {
+        panelHeaderText: `${count} Platform ${count === 1 ? 'CVE' : 'CVES'}`,
+        relatedEntitiesCount: count,
+        relatedEntitiesNoun: count === 1 ? 'CLUSTER CVE' : 'CLUSTER CVES',
+    };
+}
+
+const entitiesKey = 'clusters';
+
+describe('Vulnerability Management Clusters', () => {
     withAuth();
 
-    it('should display all the columns and links expected in clusters list page', () => {
-        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
+    before(function beforeHook() {
+        if (!hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+            this.skip();
+        }
+    });
 
-        const columnsToCheck = usingVMUpdates
-            ? [
-                  'Cluster',
-                  'Image CVEs',
-                  'Node CVEs',
-                  'Platform CVEs',
-                  'K8S Version',
-                  'Entities',
-                  'Policy Status',
-                  'Latest Violation',
-                  'Risk Priority',
-              ]
-            : [
-                  'Cluster',
-                  'CVEs',
-                  'K8S Version',
-                  'Entities',
-                  'Policy Status',
-                  'Latest Violation',
-                  'Risk Priority',
-              ];
+    it('should display all the columns', () => {
+        visitVulnerabilityManagementEntities(entitiesKey);
 
-        visitVulnerabilityManagementEntities('clusters');
-        hasExpectedHeaderColumns(columnsToCheck);
+        hasExpectedHeaderColumns([
+            'Cluster',
+            'Image CVEs',
+            'Node CVEs',
+            'Platform CVEs',
+            'K8S Version',
+            'Entities',
+            'Policy Status',
+            'Latest Violation',
+            'Risk Priority',
+        ]);
+    });
 
-        cy.get(selectors.tableBodyColumn).each(($el) => {
-            const columnValue = $el.text().toLowerCase();
-            // TODO: replace this helper function for individual entity columns
-            //       with one that checks each count in the combined Entities column
-            if (columnValue !== 'no namespaces' && columnValue.includes('namespace')) {
-                allChecksForEntities(url.list.clusters, 'namespaces');
-            }
+    // Argument 3 in verify functions is one-based index of column which has the links.
 
-            if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
-                allChecksForEntities(url.list.clusters, 'deployments');
-            }
-            // TODO: uncomment and update for three types of CVEs for cluster
-            //       after feature flag for VM updates defaults to ON
-            // if (columnValue !== 'no cves' && columnValue.includes('cve')) {
-            //     allCVECheck(url.list.clusters);
-            // }
-            // if (columnValue.includes('fixable')) {
-            //     allFixableCheck(url.list.clusters);
-            // }
-        });
+    // Some tests might fail in local deployment.
+
+    it('should display links for all image CVEs', () => {
+        verifySecondaryEntities(
+            entitiesKey,
+            'image-cves',
+            2,
+            /^\d+ CVEs?$/,
+            getCountAndNounFromImageCVEsLinkResults
+        );
+    });
+
+    it('should display links for fixable image CVEs', () => {
+        verifyFilteredSecondaryEntitiesLink(
+            entitiesKey,
+            'image-cves',
+            2,
+            /^\d+ Fixable$/,
+            getCountAndNounFromImageCVEsLinkResults
+        );
+    });
+
+    it('should display links for all node CVEs', () => {
+        verifySecondaryEntities(
+            entitiesKey,
+            'node-cves',
+            3,
+            /^\d+ CVEs?$/,
+            getCountAndNounFromNodeCVEsLinkResults
+        );
+    });
+
+    it('should display links for all cluster CVEs', () => {
+        verifySecondaryEntities(
+            entitiesKey,
+            'cluster-cves',
+            4,
+            /^\d+ CVEs?$/,
+            getCountAndNounFromClusterCVEsLinkResults
+        );
+    });
+
+    it('should display links for namespaces', () => {
+        verifySecondaryEntities(entitiesKey, 'namespaces', 6, /^\d+ namespaces?$/);
+    });
+
+    it('should display links for deployments', () => {
+        verifySecondaryEntities(entitiesKey, 'deployments', 6, /^\d+ deployments?$/);
+    });
+
+    it('should display links for nodes', () => {
+        verifySecondaryEntities(entitiesKey, 'nodes', 6, /^\d+ nodes?$/);
     });
 });

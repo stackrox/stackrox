@@ -1,14 +1,26 @@
-import { url, selectors } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import { selectors as policySelectors } from '../../constants/PoliciesPagePatternFly';
 import withAuth from '../../helpers/basicAuth';
-import { hasExpectedHeaderColumns, allChecksForEntities } from '../../helpers/vmWorkflowUtils';
-import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
+import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
+import {
+    verifyFilteredSecondaryEntitiesLink,
+    visitVulnerabilityManagementEntities,
+} from '../../helpers/vulnmanagement/entities';
 
-describe('Policies list Page and its entity detail page , related entities sub list  validations ', () => {
+export function getPanelHeaderTextFromLinkResults([, count]) {
+    return {
+        panelHeaderText: `${count} ${count === 1 ? 'deployment' : 'deployments'}`,
+    };
+}
+
+const entitiesKey = 'policies';
+
+describe('Vulnerability Management Policies', () => {
     withAuth();
 
-    it('should display all the columns and links expected in clusters list page', () => {
-        visitVulnerabilityManagementEntities('policies');
+    it('should display table columns', () => {
+        visitVulnerabilityManagementEntities(entitiesKey);
+
         hasExpectedHeaderColumns(
             [
                 'Policy',
@@ -23,15 +35,16 @@ describe('Policies list Page and its entity detail page , related entities sub l
             ],
             2 // skip 2 additional columns to account for checkbox column, and untitled Statuses column
         );
-        cy.get(selectors.tableBodyColumn).each(($el) => {
-            const columnValue = $el.text().toLowerCase();
-            if (
-                columnValue !== 'no failing deployments' &&
-                columnValue.includes('failing deployments')
-            ) {
-                allChecksForEntities(url.list.policies, 'deployment');
-            }
-        });
+    });
+
+    it('should display links for failing deployments', () => {
+        verifyFilteredSecondaryEntitiesLink(
+            entitiesKey,
+            'deployments',
+            4,
+            /^\d+ failing deployments?$/,
+            getPanelHeaderTextFromLinkResults
+        );
     });
 
     describe('post-Boolean Policy Logic tests', () => {
