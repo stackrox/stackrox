@@ -368,12 +368,9 @@ else
 endif
 
 .PHONY: cli
-cli: cli-build
-	# Workaround a bug on MacOS
-	rm -f $(GOPATH)/bin/roxctl
-	# Copy the user's specific OS into gopath
-	cp $(HOST_BIN_PLATFORM)/roxctl $(GOPATH)/bin/roxctl
-	chmod u+w $(GOPATH)/bin/roxctl
+cli:
+# Build and install roxctl for host platform
+	$(CURDIR)/scripts/go-install.sh ./roxctl
 
 upgrader: $(HOST_BIN_PLATFORM)/upgrader
 
