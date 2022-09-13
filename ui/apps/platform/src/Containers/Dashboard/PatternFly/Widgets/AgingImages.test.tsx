@@ -156,9 +156,9 @@ describe('AgingImages dashboard widget', () => {
         expect(history.location.search).toContain('s[Image Created Time]=30d-180d');
     });
 
-    // Disabled due to React state updates on unmounted components from PatternFly/Tooltip
-    it.skip('should contain a button that resets the widget options to default', async () => {
-        const { user } = setup();
+    it('should contain a button that resets the widget options to default', async () => {
+        setup();
+        const user = userEvent.setup({ skipHover: true });
 
         await user.click(await screen.findByLabelText('Options'));
         const checkboxes = await screen.findAllByLabelText('Toggle image time range');
@@ -188,7 +188,6 @@ describe('AgingImages dashboard widget', () => {
 
         const resetButton = await screen.findByLabelText('Revert to default options');
         await user.click(resetButton);
-        await user.unhover(resetButton); // Avoid displaying the tooltip, which leads to React errors on test exit
 
         checkboxes.forEach((cb) => expect(cb).toBeChecked());
         expect(inputs.map(({ value }) => parseInt(value, 10))).toEqual(
