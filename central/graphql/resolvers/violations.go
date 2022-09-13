@@ -96,7 +96,7 @@ func getLatestViolationTime(ctx context.Context, root *Resolver, q *v1.Query) (*
 		Offset: 0,
 	}
 
-	alerts, err := root.ViolationsDataStore.SearchRawAlerts(ctx, q)
+	alerts, err := root.ViolationsDataStore.SearchListAlerts(ctx, q)
 	if err != nil || len(alerts) == 0 || alerts[0] == nil {
 		return nil, err
 	}
@@ -104,12 +104,13 @@ func getLatestViolationTime(ctx context.Context, root *Resolver, q *v1.Query) (*
 	return timestamp(alerts[0].GetTime())
 }
 
-func anyActiveDeployAlerts(ctx context.Context, root *Resolver, q *v1.Query) (bool, error) {
+func deployTimeAlertExists(ctx context.Context, root *Resolver, q *v1.Query) (bool, error) {
 	if err := readAlerts(ctx); err != nil {
 		return false, err
 	}
 
-	alertsQuery := search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+	alertsQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
 		AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
 		ProtoQuery()
 
@@ -117,10 +118,6 @@ func anyActiveDeployAlerts(ctx context.Context, root *Resolver, q *v1.Query) (bo
 	if err != nil {
 		return false, err
 	}
-	q.Pagination = &v1.QueryPagination{
-		Limit: 1,
-	}
-
-	results, err := root.ViolationsDataStore.Search(ctx, q)
-	return len(results) != 0, err
+	count, err := root.ViolationsDataStore.Count(ctx, q)
+	return count > 0, err
 }

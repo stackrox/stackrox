@@ -221,12 +221,7 @@ func (resolver *policyResolver) DeploymentCount(ctx context.Context, args RawQue
 		return 0, err
 	}
 
-	resolvers, err := resolver.Deployments(ctx, PaginatedQuery{Query: args.Query})
-	if err != nil {
-		return 0, err
-	}
-
-	return int32(len(resolvers)), nil
+	return resolver.DeploymentCount(ctx, RawQuery{Query: args.Query})
 }
 
 // FailingDeploymentCount returns the count of deployments that this policy is failing on
@@ -274,7 +269,7 @@ func (resolver *policyResolver) PolicyStatus(ctx context.Context, args RawQuery)
 		return "", err
 	}
 
-	activeAlerts, err := anyActiveDeployAlerts(ctx, resolver.root, q)
+	activeAlerts, err := deployTimeAlertExists(ctx, resolver.root, q)
 	if err != nil {
 		return "", err
 	}
