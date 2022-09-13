@@ -60,6 +60,9 @@ echo "ROX_DEV_AUTH0_CLIENT_SECRET is set to ${ROX_DEV_AUTH0_CLIENT_SECRET}"
 export ROX_HOTRELOAD="${HOTRELOAD:-false}"
 echo "ROX_HOTRELOAD is set to ${ROX_HOTRELOAD}"
 
+export ROX_MANAGED_CENTRAL="${ROX_MANAGED_CENTRAL:-false}"
+echo "ROX_MANAGED_CENTRAL is set to ${ROX_MANAGED_CENTRAL}"
+
 export TRUSTED_CA_FILE="${TRUSTED_CA_FILE:-}"
 if [[ -n "${TRUSTED_CA_FILE}" ]]; then
   [[ -f "${TRUSTED_CA_FILE}" ]] || { echo "Trusted CA file ${TRUSTED_CA_FILE} not found"; return 1; }

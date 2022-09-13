@@ -304,7 +304,7 @@ function launch_central {
 
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
         helm_args+=(
-          --set customize.central.envVars.ROX_MANAGED_CENTRAL="${ROX_MANAGED_CENTRAL}"
+          --set env.managedServices=true
         )
       fi
 
@@ -342,7 +342,8 @@ function launch_central {
       fi
 
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
-        ${ORCH_CMD} -n stackrox set env deploy/central ROX_MANAGED_CENTRAL="${ROX_MANAGED_CENTRAL}"
+        echo "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
+        exit 1
       fi
 
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
