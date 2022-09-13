@@ -114,6 +114,10 @@ function go_test() (
   invoke_go test "$@"
 )
 
+function go_install() (
+  invoke_go install "$@"
+)
+
 case "$TOOL" in
   build)
     go_build "$@"
@@ -126,6 +130,9 @@ case "$TOOL" in
     ;;
   run)
     go_run "$@"
+    ;;
+  install)
+    go_install "$@"
     ;;
   *)
     die "Unknown go tool '${TOOL}'"
