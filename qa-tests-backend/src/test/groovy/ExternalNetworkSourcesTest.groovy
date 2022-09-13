@@ -10,13 +10,9 @@ import services.NetworkGraphService
 import util.NetworkGraphUtil
 
 class ExternalNetworkSourcesTest extends BaseSpecification {
-    // One of the outputs of: dig storage.googleapis.com
-    // As of now it is stable, but the request would return 404 since the address
-    // is used for resolving bucket names, but we are not supplying any bucket info.
-    // TODO: potentially find a very reliable static IP that can be used for our testing
-    static final private String GOOGLE_IP_ADDRESS = "172.217.6.48"
-    static final private String GOOGLE_CIDR_30 = "172.217.6.48/30"
-    static final private String GOOGLE_CIDR_31 = "172.217.6.48/31"
+    static final private String CF_IP_ADDRESS = "1.1.1.1"
+    static final private String CF_CIDR_30 = "$CF_IP_ADDRESS/30"
+    static final private String CF_CIDR_31 = "$CF_IP_ADDRESS/31"
 
     static final private String EXT_CONN_DEPLOYMENT_NAME = "external-connection"
 
@@ -29,7 +25,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
                     .addLabel("app", EXT_CONN_DEPLOYMENT_NAME)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS / 10}; " +
-                                      "do wget -S ${GOOGLE_IP_ADDRESS}; " +
+                                      "do wget -S ${CF_IP_ADDRESS}; " +
                                       "done" as String,])
 
     private static createAndRegisterDeployment() {
@@ -54,13 +50,13 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     @Category([NetworkFlowVisualization])
     def "Verify connection to a user created external sources"() {
         when:
-        "Deployment is communicating with Google's IP address"
+        "Deployment is communicating with Cloudflare's IP address"
         String deploymentUid = DEP_EXTERNALCONNECTION.deploymentUid
         assert deploymentUid != null
 
-        log.info "Create a external source containing Google's IP address"
+        log.info "Create a external source containing Cloudflare's IP address"
         String externalSourceName = "external-source"
-        NetworkEntity externalSource = createNetworkEntityExternalSource(externalSourceName, GOOGLE_CIDR_31)
+        NetworkEntity externalSource = createNetworkEntityExternalSource(externalSourceName, CF_CIDR_31)
         String externalSourceID = externalSource?.getInfo()?.getId()
         assert externalSourceID != null
 
@@ -81,18 +77,18 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         String deploymentUid = DEP_EXTERNALCONNECTION.deploymentUid
         assert deploymentUid != null
 
-        log.info "Create a smaller network external source containing Google's IP address"
+        log.info "Create a smaller network external source containing Cloudflare's IP address"
         String externalSource31Name = "external-source-31"
-        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, GOOGLE_CIDR_31)
+        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
         assert externalSource31ID != null
 
         log.info "Edge from deployment to external source ${externalSource31Name} should exist"
         assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource31ID)
 
-        log.info "Create a supernet external source containing Google's IP address"
+        log.info "Create a supernet external source containing Cloudflare's IP address"
         String externalSource30Name = "external-source-30"
-        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, GOOGLE_CIDR_30)
+        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_30)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
         assert externalSource30ID != null
 
@@ -118,9 +114,9 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         String deploymentUid = DEP_EXTERNALCONNECTION.deploymentUid
         assert deploymentUid != null
 
-        log.info "Create a smaller subnet network entities with Google's IP address"
+        log.info "Create a smaller subnet network entities with Cloudflare's IP address"
         String externalSource31Name = "external-source-31"
-        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, GOOGLE_CIDR_31)
+        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
         assert externalSource31ID != null
 
@@ -130,7 +126,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Add supernet and remove subnet"
         String externalSource30Name = "external-source-30"
-        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, GOOGLE_CIDR_30)
+        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_30)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
         assert externalSource30ID != null
 
@@ -158,7 +154,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         assert deploymentUid != null
 
         String externalSource30Name = "external-source-30"
-        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, GOOGLE_CIDR_30)
+        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_30)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
         assert externalSource30ID != null
 
@@ -167,7 +163,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Add smaller subnet subnet external source"
         String externalSource31Name = "external-source-31"
-        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, GOOGLE_CIDR_31)
+        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
         assert externalSource31ID != null
 
