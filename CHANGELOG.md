@@ -30,7 +30,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Technical Changes
 
-- ROX-12428: Sensor no longer uses `anyuid` Security Context Constraint (SCC).
+- ROX-9342: Sensor no longer uses `anyuid` Security Context Constraint (SCC).
   The default SCC for sensor is now `nonroot[-v2]` or `stackrox-sensor` depending on the settings.
 
 ## [3.72.0]
