@@ -1,6 +1,7 @@
 {{- include "srox.init" . -}}
 
-{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
+{{- if ._rox.env.openshift }}
+{{- if ._rox.system.createSCCs }}
 
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
@@ -44,11 +45,8 @@ volumes:
   - emptyDir
   - secret
 
-{{- else if eq ._rox.env.openshift 4 }}
-
-{{- if false }}
-# "fake" document separator to aid GVK extraction heuristic
 ---
+
 {{- end }}
 
 apiVersion: rbac.authorization.k8s.io/v1
@@ -58,6 +56,7 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "role" "use-anyuid-scc") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "role" "use-anyuid-scc") | nindent 4 }}
 rules:
@@ -66,6 +65,8 @@ rules:
   resources:
   - securitycontextconstraints
   resourceNames:
+  - nonroot-v2
+  - nonroot
   - anyuid
   verbs:
   - use
@@ -77,6 +78,7 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "sensor-use-scc") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "rolebinding" "sensor-use-scc") | nindent 4 }}
 roleRef:
