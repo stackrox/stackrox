@@ -743,12 +743,11 @@ func (resolver *deploymentResolver) unresolvedAlertsExists(ctx context.Context, 
 	if err != nil {
 		return false, err
 	}
-	q.Pagination = &v1.QueryPagination{Limit: 1}
-	results, err := resolver.root.ViolationsDataStore.Search(ctx, q)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, q)
 	if err != nil {
 		return false, err
 	}
-	return len(results) > 0, nil
+	return count > 0, nil
 }
 
 func (resolver *deploymentResolver) getDeploymentQuery() *v1.Query {
@@ -759,12 +758,12 @@ func (resolver *deploymentResolver) getDeploymentRawQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetId()).Query()
 }
 
-func (resolver *deploymentResolver) getConjunctionQuery(q *v1.Query) (*v1.Query, error) {
+func (resolver *deploymentResolver) withDeploymentQuery(q *v1.Query) (*v1.Query, error) {
 	return search.AddAsConjunction(q, resolver.getDeploymentQuery())
 }
 
 func (resolver *deploymentResolver) getDeploymentActiveAlertsQuery(q *v1.Query) (*v1.Query, error) {
-	q, err := resolver.getConjunctionQuery(q)
+	q, err := resolver.withDeploymentQuery(q)
 	if err != nil {
 		return nil, err
 	}
@@ -785,7 +784,7 @@ func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args Ra
 		}
 	}
 
-	q, err = resolver.getConjunctionQuery(q)
+	q, err = resolver.withDeploymentQuery(q)
 	if err != nil {
 		return nil, err
 	}
