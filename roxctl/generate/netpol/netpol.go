@@ -16,7 +16,7 @@ type generateNetpolCommand struct {
 	offline               bool
 	stopOnFirstError      bool
 	treatWarningsAsErrors bool
-	folderPath            string
+	inputFolderPath       string
 	outputFolderPath      string
 	outputFilePath        string
 	removeOutputPath      bool
@@ -54,12 +54,13 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 }
 
 func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) (netpolGenerator, error) {
-	cmd.folderPath = args[0]
+	cmd.inputFolderPath = args[0]
 	cmd.splitMode = c.Flags().Changed("output-dir")
 	cmd.mergeMode = c.Flags().Changed("output-file")
 
-	opts := []npguard.PoliciesSynthesizerOption{
-		npguard.WithLogger(newNpgLogger(cmd.env.Logger())),
+	var opts []npguard.PoliciesSynthesizerOption
+	if cmd.env != nil && cmd.env.Logger() != nil {
+		opts = append(opts, npguard.WithLogger(newNpgLogger(cmd.env.Logger())))
 	}
 	if cmd.stopOnFirstError {
 		opts = append(opts, npguard.WithStopOnError())

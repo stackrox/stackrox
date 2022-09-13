@@ -23,7 +23,7 @@ type netpolGenerator interface {
 }
 
 func (cmd *generateNetpolCommand) generateNetpol(synth netpolGenerator) error {
-	recommendedNetpols, err := synth.PoliciesFromFolderPath(cmd.folderPath)
+	recommendedNetpols, err := synth.PoliciesFromFolderPath(cmd.inputFolderPath)
 	if err != nil {
 		return errors.Wrap(err, "error generating network policies")
 	}
