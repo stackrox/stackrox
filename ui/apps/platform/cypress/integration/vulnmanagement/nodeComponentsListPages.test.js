@@ -2,22 +2,11 @@ import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
 import {
-    // getCountAndNounFromNodeCVEsLinkResults,
+    getCountAndNounFromNodeCVEsLinkResults,
     verifyFilteredSecondaryEntitiesLink,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
-
-// After the problem has been fixed, import the function above.
-function getCountAndNounFromNodeCVEsLinkResults(resultsFromRegExp) {
-    const relatedEntitiesCount = resultsFromRegExp[1];
-    const relatedEntitiesNoun = relatedEntitiesCount === 1 ? 'NODE CVE' : 'NODE CVES';
-    return {
-        panelHeaderText: 'null Node CVES', // workaround for bug
-        relatedEntitiesCount,
-        relatedEntitiesNoun,
-    };
-}
 
 const entitiesKey = 'node-components';
 
