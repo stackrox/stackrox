@@ -8,6 +8,7 @@ import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.NetworkGraphService
 import util.NetworkGraphUtil
+import spock.lang.Ignore
 
 class ExternalNetworkSourcesTest extends BaseSpecification {
     // One of the outputs of: dig storage.googleapis.com
@@ -51,6 +52,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
     }
 
+    @Ignore("ROX-12516")
     @Category([NetworkFlowVisualization])
     def "Verify connection to a user created external sources"() {
         when:
