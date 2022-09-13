@@ -37,9 +37,6 @@ var (
 	// SearchPageUI enables search page instead of search modal in UI. Frontend only.
 	SearchPageUI = registerFeature("Enable search page instead of search modal in UI", "ROX_SEARCH_PAGE_UI", false)
 
-	// SecurityMetricsPhaseOne enables the PatternFly version of the main dashboard with Action Widgets. (used in the front-end app only)
-	SecurityMetricsPhaseOne = registerFeature("Enable PatternFly version of Security Metrics Dashboard", "ROX_SECURITY_METRICS_PHASE_ONE", true)
-
 	// DecommissionedClusterRetention enables the setting in System Configuration.
 	DecommissionedClusterRetention = registerFeature("Enable Decommissioned Cluster Retention in System Configuration", "ROX_DECOMMISSIONED_CLUSTER_RETENTION", true)
 
