@@ -353,20 +353,6 @@ HOST_BIN_PLATFORM := bin/$(HOST_OS)_$(GOARCH)
 build-prep: deps
 	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
-.PHONY: cli-build
-cli-build: build-prep
-ifndef CI
-	RACE=0 CGO_ENABLED=0 GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./roxctl
-else
-	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) ./roxctl
-endif
-
 .PHONY: cli
 cli:
 # Build and install roxctl for host platform
@@ -424,16 +410,27 @@ ifeq ($(CIRCLE_JOB),build-race-condition-debug-image)
 	docker start -i builder
 	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
 else
-	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make cli-build main-build-nodeps
+endif
+
+.PHONY: cli-build
+cli-build:
+ifndef CI
+	RACE=0 CGO_ENABLED=0 GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./roxctl
+else
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) ./roxctl
 endif
 
 .PHONY: main-build-nodeps
 main-build-nodeps:
 	$(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
-ifndef CI
-	CGO_ENABLED=0 $(GOBUILD) roxctl
-endif
 
 .PHONY: scale-build
 scale-build: build-prep
