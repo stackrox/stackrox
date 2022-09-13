@@ -40,7 +40,7 @@ env:
   script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{github.event.repository.default_branch}}
   DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 # Ensure that only a single release automation workflow can run at a time.
 concurrency: Release automation

@@ -229,7 +229,7 @@ jobs:
 
       - name: Comment on the PR
         env:
-          GITHUB_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
+          GH_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
         run: |
             source ./scripts/ci/lib.sh
             add_build_comment_to_pr
