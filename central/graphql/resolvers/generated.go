@@ -15172,7 +15172,6 @@ func (resolver *Resolver) wrapVulnerabilityRequest_CVEses(values []*storage.Vuln
 	return output, nil
 }
 
-<<<<<<< HEAD
 func (resolver *Resolver) wrapVulnerabilityRequest_CVEsWithContext(ctx context.Context, value *storage.VulnerabilityRequest_CVEs, ok bool, err error) (*vulnerabilityRequest_CVEsResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
@@ -15191,12 +15190,8 @@ func (resolver *Resolver) wrapVulnerabilityRequest_CVEsesWithContext(ctx context
 	return output, nil
 }
 
-func (resolver *vulnerabilityRequest_CVEsResolver) Ids(ctx context.Context) []string {
-	value := resolver.data.GetIds()
-=======
 func (resolver *vulnerabilityRequest_CVEsResolver) Cves(ctx context.Context) []string {
 	value := resolver.data.GetCves()
->>>>>>> 67134959a (Follow up on vulnerability request proto change)
 	return value
 }
 
