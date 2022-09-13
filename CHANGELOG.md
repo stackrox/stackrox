@@ -28,6 +28,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 - ROX-11937: The Splunk integration now processes all additional standards of the compliance operator (ocp4-cis & ocp4-cis-node) correctly.
 
+### Technical Changes
+
+- ROX-12428: Sensor no longer uses `anyuid` Security Context Constraint (SCC).
+  The default SCC for sensor is now `nonroot[-v2]` or `stackrox-sensor` depending on the settings.
+
 ## [3.72.0]
 
 ### Removed Features
