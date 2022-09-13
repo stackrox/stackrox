@@ -121,12 +121,12 @@ $(GOLANGCILINT_BIN): deps
 EASYJSON_BIN := $(GOBIN)/easyjson
 $(EASYJSON_BIN): deps
 	$(SILENT)echo "+ $@"
-	go install github.com/mailru/easyjson/easyjson
+	@cd tools/generators/ && go install github.com/mailru/easyjson/easyjson
 
 CONTROLLER_GEN_BIN := $(GOBIN)/controller-gen
 $(CONTROLLER_GEN_BIN): deps
 	$(SILENT)echo "+ $@"
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen
+	@cd tools/generators/ && go install sigs.k8s.io/controller-tools/cmd/controller-gen
 
 GOVERALLS_BIN := $(GOBIN)/goveralls
 $(GOVERALLS_BIN): deps
@@ -142,17 +142,17 @@ $(ROXVET_BIN): deps
 STRINGER_BIN := $(GOBIN)/stringer
 $(STRINGER_BIN): deps
 	@echo "+ $@"
-	go install golang.org/x/tools/cmd/stringer
+	@cd tools/generators/ && go install golang.org/x/tools/cmd/stringer
 
 MOCKGEN_BIN := $(GOBIN)/mockgen
 $(MOCKGEN_BIN): deps
 	@echo "+ $@"
-	go install github.com/golang/mock/mockgen
+	@cd tools/generators/ && go install github.com/golang/mock/mockgen
 
 GENNY_BIN := $(GOBIN)/genny
 $(GENNY_BIN): deps
 	@echo "+ $@"
-	go install github.com/mauricelam/genny
+	@cd tools/generators/ && go install github.com/mauricelam/genny
 
 GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN): deps
@@ -300,7 +300,7 @@ clean-easyjson-srcs:
 
 COMPLIANCEOPERATOR_FILES = $(shell grep -R '+k8s:deepcopy-gen' pkg/complianceoperator -l)
 pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go: $(CONTROLLER_GEN_BIN) $(COMPLIANCEOPERATOR_FILES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN_BIN) object:headerFile="tools/boilerplate.go.txt" paths="./pkg/complianceoperator/..."
+	$(CONTROLLER_GEN_BIN) object:headerFile="tools/generators/boilerplate.go.txt" paths="./pkg/complianceoperator/..."
 	# The generated source files might not comply with the current go formatting, so format them explicitly.
 	go fmt ./pkg/complianceoperator/...
 
@@ -321,7 +321,7 @@ clean-proto-generated-srcs:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs
 
-deps: $(BASE_DIR)/go.sum tools/linters/go.sum tools/test/go.sum
+deps: $(BASE_DIR)/go.sum tools/linters/go.sum tools/test/go.sum tools/generators/go.sum
 	@echo "+ $@"
 	$(SILENT)touch deps
 

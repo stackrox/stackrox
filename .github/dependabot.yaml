@@ -50,6 +50,15 @@ updates:
         update-types: ["version-update:semver-patch"]
 
   - package-ecosystem: 'gomod'
+    directory: '/tools/generators/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+
+  - package-ecosystem: 'gomod'
     directory: '/tools/linters/'
     schedule:
       interval: 'weekly'
