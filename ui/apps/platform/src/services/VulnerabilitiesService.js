@@ -15,6 +15,7 @@ function getCSVExportUrl(cveType) {
     if (cveType === entityTypes.IMAGE_CVE) {
         return '/api/export/csv/image/cve';
     }
+    // @TODO: Remove this URL when we remove feature flagging for ROX_VM_FRONTEND_UPDATES
     return '/api/vm/export/csv';
 }
 
