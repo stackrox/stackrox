@@ -1,10 +1,12 @@
 package csv
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/pkg/errors"
 	csvCommon "github.com/stackrox/rox/central/cve/common/csv"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
@@ -57,12 +59,12 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 	)
 }
 
-type imageCveRow struct {
-	cve             string
-	fixable         string
-	cvssScore       string
-	envImpact       string
-	impactScore     string
+type ImageCVERow struct {
+	CVE             string
+	Fixable         string
+	CvssScore       string
+	EnvImpact       string
+	ImpactScore     string
 	deploymentCount string
 	imageCount      string
 	componentCount  string
@@ -81,14 +83,14 @@ func newCSVResults(header []string, sort bool) csvResults {
 	}
 }
 
-func (c *csvResults) addRow(row imageCveRow) {
+func (c *csvResults) addRow(row *ImageCVERow) {
 	// image cve, fixable, cvss score, env impact, impact score, deployments, images, images components, scanned time, published time, summary
 	value := []string{
-		row.cve,
-		row.fixable,
-		row.cvssScore,
-		row.envImpact,
-		row.impactScore,
+		row.CVE,
+		row.Fixable,
+		row.CvssScore,
+		row.EnvImpact,
+		row.ImpactScore,
 		row.deploymentCount,
 		row.imageCount,
 		row.componentCount,
@@ -110,24 +112,11 @@ func ImageCVECSVHandler() http.HandlerFunc {
 			csv.WriteError(w, http.StatusBadRequest, err)
 			return
 		}
-
-		ctx, err := csvHandler.GetScopeContext(loaders.WithLoaderContext(r.Context()), query)
-		if err != nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
-			log.Errorf("unable to determine resource scope for query %q: %v", query.String(), err)
-			return
-		}
-
 		rawQuery, paginatedQuery := resolvers.V1RawQueryAsResolverQuery(rQuery)
-		res := csvHandler.GetResolver()
-		if res == nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
-			log.Errorf("Unexpected value (nil) for resolver in Handler")
-		}
-		vulnResolvers, err := res.ImageVulnerabilities(ctx, paginatedQuery)
+
+		cveRows, err := ImageCVECSVRows(loaders.WithLoaderContext(r.Context()), query, rawQuery, paginatedQuery)
 		if err != nil {
 			csv.WriteError(w, http.StatusInternalServerError, err)
-			log.Errorf("unable to get image vulnerabilities for csv export: %v", err)
 			return
 		}
 
@@ -136,60 +125,88 @@ func ImageCVECSVHandler() http.HandlerFunc {
 			paginatedQuery.Pagination.SortOption.Field == nil
 
 		output := newCSVResults(csvHeader, postSortRequired)
-		for _, d := range vulnResolvers {
-			var errorList errorhelpers.ErrorList
-			dataRow := imageCveRow{}
-			dataRow.cve = d.CVE(ctx)
-			// query to IsFixable should not have Fixable field
-			rawQueryWithoutFixable := resolvers.FilterFieldFromRawQuery(rawQuery, search.Fixable)
-			isFixable, err := d.IsFixable(ctx, rawQueryWithoutFixable)
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.fixable = strconv.FormatBool(isFixable)
-			dataRow.cvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
-			envImpact, err := d.EnvImpact(ctx)
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.envImpact = fmt.Sprintf("%.2f", envImpact*100)
-			dataRow.impactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
-			// Entity counts should be scoped to CVE only
-			deploymentCount, err := d.DeploymentCount(ctx, resolvers.RawQuery{})
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.deploymentCount = fmt.Sprint(deploymentCount)
-			// Entity counts should be scoped to CVE only
-			imageCount, err := d.ImageCount(ctx, resolvers.RawQuery{})
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.imageCount = fmt.Sprint(imageCount)
-			// Entity counts should be scoped to CVE only
-			componentCount, err := d.ImageComponentCount(ctx, resolvers.RawQuery{})
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.componentCount = fmt.Sprint(componentCount)
-			scannedTime, err := d.LastScanned(ctx)
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.scannedTime = csv.FromGraphQLTime(scannedTime)
-			publishedTime, err := d.PublishedOn(ctx)
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.publishedTime = csv.FromGraphQLTime(publishedTime)
-			dataRow.summary = d.Summary(ctx)
-
-			output.addRow(dataRow)
-
-			if err := errorList.ToError(); err != nil {
-				log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.cve, err)
-			}
+		for _, row := range cveRows {
+			output.addRow(row)
 		}
 		output.Write(w, "image_cve_export")
 	}
+}
+
+func ImageCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery, paginatedQuery resolvers.PaginatedQuery) ([]*ImageCVERow, error) {
+	if csvHandler == nil {
+		return nil, errors.New("Handler not initialized")
+	}
+
+	ctx, err := csvHandler.GetScopeContext(c, query)
+	if err != nil {
+		log.Errorf("unable to determine resource scope for query %q: %v", query.String(), err)
+		return nil, err
+	}
+
+	res := csvHandler.GetResolver()
+	if res == nil {
+		log.Errorf("Unexpected value (nil) for resolver in Handler")
+		return nil, errors.New("Resolver not initialized in handler")
+	}
+	vulnResolvers, err := res.ImageVulnerabilities(ctx, paginatedQuery)
+	if err != nil {
+		log.Errorf("unable to get image vulnerabilities for csv export: %v", err)
+		return nil, err
+	}
+
+	cveRows := make([]*ImageCVERow, 0, len(vulnResolvers))
+	for _, d := range vulnResolvers {
+		var errorList errorhelpers.ErrorList
+		dataRow := &ImageCVERow{}
+		dataRow.CVE = d.CVE(ctx)
+		// query to IsFixable should not have Fixable field
+		rawQueryWithoutFixable := resolvers.FilterFieldFromRawQuery(rawQuery, search.Fixable)
+		isFixable, err := d.IsFixable(ctx, rawQueryWithoutFixable)
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.Fixable = strconv.FormatBool(isFixable)
+		dataRow.CvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
+		envImpact, err := d.EnvImpact(ctx)
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.EnvImpact = fmt.Sprintf("%.2f", envImpact*100)
+		dataRow.ImpactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
+		// Entity counts should be scoped to CVE only
+		deploymentCount, err := d.DeploymentCount(ctx, resolvers.RawQuery{})
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.deploymentCount = fmt.Sprint(deploymentCount)
+		// Entity counts should be scoped to CVE only
+		imageCount, err := d.ImageCount(ctx, resolvers.RawQuery{})
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.imageCount = fmt.Sprint(imageCount)
+		// Entity counts should be scoped to CVE only
+		componentCount, err := d.ImageComponentCount(ctx, resolvers.RawQuery{})
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.componentCount = fmt.Sprint(componentCount)
+		scannedTime, err := d.LastScanned(ctx)
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.scannedTime = csv.FromGraphQLTime(scannedTime)
+		publishedTime, err := d.PublishedOn(ctx)
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.publishedTime = csv.FromGraphQLTime(publishedTime)
+		dataRow.summary = d.Summary(ctx)
+
+		cveRows = append(cveRows, dataRow)
+		if err := errorList.ToError(); err != nil {
+			log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.CVE, err)
+		}
+	}
+	return cveRows, nil
 }

@@ -66,6 +66,24 @@ func FilterFields(query string, pred func(field string) bool) string {
 	return strings.Join(pairsToKeep, "+")
 }
 
+// QueryHasFieldLabel checks if a raw query contains the given field label
+func QueryHasFieldLabel(query string, label FieldLabel) bool {
+	if query == "" {
+		return false
+	}
+	pairs := splitQuery(query)
+	for _, pair := range pairs {
+		key, _, valid := parsePair(pair, false)
+		if !valid {
+			continue
+		}
+		if key == label.String() {
+			return true
+		}
+	}
+	return false
+}
+
 // Extracts "key", "value1,value2" from a string in the format key:value1,value2
 func parsePair(pair string, allowEmpty bool) (key string, values string, valid bool) {
 	pair = strings.TrimSpace(pair)
