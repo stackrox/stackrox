@@ -221,7 +221,7 @@ func (resolver *policyResolver) DeploymentCount(ctx context.Context, args RawQue
 		return 0, err
 	}
 
-	return resolver.DeploymentCount(ctx, RawQuery{Query: args.Query})
+	return resolver.root.DeploymentCount(ctx, RawQuery{Query: args.Query})
 }
 
 // FailingDeploymentCount returns the count of deployments that this policy is failing on
