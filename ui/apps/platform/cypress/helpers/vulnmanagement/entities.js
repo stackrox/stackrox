@@ -135,17 +135,17 @@ function getCountAndNounFromSecondaryEntitiesLinkResults(resultsFromRegExp) {
 
 export function getCountAndNounFromImageCVEsLinkResults([, count]) {
     return {
-        panelHeaderText: `${count} Image ${count === 1 ? 'CVE' : 'CVES'}`,
+        panelHeaderText: `${count} Image ${count === '1' ? 'CVE' : 'CVES'}`,
         relatedEntitiesCount: count,
-        relatedEntitiesNoun: count === 1 ? 'IMAGE CVE' : 'IMAGE CVES',
+        relatedEntitiesNoun: count === '1' ? 'IMAGE CVE' : 'IMAGE CVES',
     };
 }
 
 export function getCountAndNounFromNodeCVEsLinkResults([, count]) {
     return {
-        panelHeaderText: `${count} Node ${count === 1 ? 'CVE' : 'CVES'}`,
+        panelHeaderText: `${count} Node ${count === '1' ? 'CVE' : 'CVES'}`,
         relatedEntitiesCount: count,
-        relatedEntitiesNoun: count === 1 ? 'NODE CVE' : 'NODE CVES',
+        relatedEntitiesNoun: count === '1' ? 'NODE CVE' : 'NODE CVES',
     };
 }
 

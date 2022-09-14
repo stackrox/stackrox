@@ -9,7 +9,7 @@ import {
 
 export function getPanelHeaderTextFromLinkResults([, count]) {
     return {
-        panelHeaderText: `${count} ${count === 1 ? 'deployment' : 'deployments'}`,
+        panelHeaderText: `${count} ${count === '1' ? 'deployment' : 'deployments'}`,
     };
 }
 

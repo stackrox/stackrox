@@ -11,9 +11,9 @@ import {
 
 function getCountAndNounFromClusterCVEsLinkResults([, count]) {
     return {
-        panelHeaderText: `${count} Platform ${count === 1 ? 'CVE' : 'CVES'}`,
+        panelHeaderText: `${count} Platform ${count === '1' ? 'CVE' : 'CVES'}`,
         relatedEntitiesCount: count,
-        relatedEntitiesNoun: count === 1 ? 'CLUSTER CVE' : 'CLUSTER CVES',
+        relatedEntitiesNoun: count === '1' ? 'CLUSTER CVE' : 'CLUSTER CVES',
     };
 }
 
