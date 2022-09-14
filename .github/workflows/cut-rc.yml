@@ -41,6 +41,7 @@ env:
   DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
 
 # Ensure that only a single release automation workflow can run at a time.
 concurrency: Release automation
