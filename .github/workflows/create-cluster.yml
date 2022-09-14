@@ -79,7 +79,8 @@ jobs:
       - name: Create Cluster
         env:
           INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
-          GITHUB_TOKEN: ${{github.token}}
+          GH_TOKEN: ${{ github.token }}
+          GH_NO_UPDATE_NOTIFIER: 1
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
