@@ -17,79 +17,68 @@ func TestGenerateNetpolCommand(t *testing.T) {
 
 type generateNetpolTestSuite struct {
 	suite.Suite
-	tmpOutFile string
-	tmpOutDir  string
-}
-
-func (d *generateNetpolTestSuite) SetupTest() {
-	d.tmpOutDir = d.T().TempDir()
-	d.tmpOutFile = d.T().TempDir() + "/out.yaml"
 }
 
 func (d *generateNetpolTestSuite) TestGenerateNetpol() {
-	testCmd := &cobra.Command{Use: "test"}
-	testCmd.Flags().String("output-dir", "", "")
-	testCmd.Flags().String("output-file", "", "")
-
 	cases := map[string]struct {
-		inputFolderPath        string
-		expectedConstructError error
-		expectedSynthError     error
-		expectedValidateError  error
-		strict                 bool
-		stopOnFirstErr         bool
-		outFile                string
-		outDir                 string
-		removeOutputPath       bool
+		inputFolderPath       string
+		expectedSynthError    error
+		expectedValidateError error
+		strict                bool
+		stopOnFirstErr        bool
+		outFile               string
+		outDir                string
+		removeOutputPath      bool
 	}{
 		"not existing inputFolderPath should raise 'os.ErrNotExist' error": {
-			inputFolderPath:        "/tmp/xxx",
-			expectedConstructError: nil,
-			expectedSynthError:     os.ErrNotExist,
+			inputFolderPath:    "/tmp/xxx",
+			expectedSynthError: os.ErrNotExist,
 		},
 		"happyPath": {
-			inputFolderPath:        "testdata/minimal",
-			expectedConstructError: nil,
-			expectedSynthError:     nil,
+			inputFolderPath:    "testdata/minimal",
+			expectedSynthError: nil,
 		},
 		"treating warnings as errors": {
-			inputFolderPath:        "testdata/empty-yamls",
-			expectedConstructError: nil,
-			expectedSynthError:     errNPGWarningsIndicator,
-			strict:                 true,
+			inputFolderPath:    "testdata/empty-yamls",
+			expectedSynthError: errNPGWarningsIndicator,
+			strict:             true,
 		},
 		"stopOnFistError": {
-			inputFolderPath:        "testdata/dirty",
-			expectedConstructError: nil,
-			expectedSynthError:     errNPGErrorsIndicator,
-			stopOnFirstErr:         true,
+			inputFolderPath:    "testdata/dirty",
+			expectedSynthError: errNPGErrorsIndicator,
+			stopOnFirstErr:     true,
 		},
 		"output should be written to a single file": {
-			inputFolderPath:        "testdata/minimal",
-			expectedConstructError: nil,
-			expectedSynthError:     nil,
-			outFile:                d.tmpOutFile,
-			removeOutputPath:       false,
+			inputFolderPath:    "testdata/minimal",
+			expectedSynthError: nil,
+			outFile:            d.T().TempDir() + "/out.yaml",
+			outDir:             "",
+			removeOutputPath:   false,
 		},
 		"output should be written to files in a directory": {
-			inputFolderPath:        "testdata/minimal",
-			expectedConstructError: nil,
-			expectedSynthError:     nil,
-			outDir:                 d.tmpOutDir,
-			removeOutputPath:       true,
+			inputFolderPath:    "testdata/minimal",
+			expectedSynthError: nil,
+			outFile:            "",
+			outDir:             d.T().TempDir(),
+			removeOutputPath:   true,
 		},
 		"should return error that the dir already exists": {
-			inputFolderPath:        "testdata/minimal",
-			expectedConstructError: nil,
-			expectedValidateError:  errox.AlreadyExists,
-			expectedSynthError:     nil,
-			outDir:                 d.tmpOutDir,
-			removeOutputPath:       false,
+			inputFolderPath:       "testdata/minimal",
+			expectedValidateError: errox.AlreadyExists,
+			expectedSynthError:    nil,
+			outFile:               "",
+			outDir:                d.T().TempDir(),
+			removeOutputPath:      false,
 		},
 	}
 
 	for name, tt := range cases {
+		tt := tt
 		d.Run(name, func() {
+			testCmd := &cobra.Command{Use: "test"}
+			testCmd.Flags().String("output-dir", "", "")
+			testCmd.Flags().String("output-file", "", "")
+
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			generateNetpolCmd := generateNetpolCommand{
 				offline:               true,
@@ -110,20 +99,15 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			}
 
 			generator, err := generateNetpolCmd.construct([]string{tt.inputFolderPath}, testCmd)
-			if tt.expectedConstructError != nil {
-				d.Require().Error(err)
-				d.Assert().ErrorIs(err, tt.expectedConstructError)
-			} else {
-				d.Assert().NoError(err)
-			}
+			d.Assert().NoError(err)
 
 			err = generateNetpolCmd.validate()
 			if tt.expectedValidateError != nil {
 				d.Require().Error(err)
 				d.Assert().ErrorIs(err, tt.expectedValidateError)
-			} else {
-				d.Assert().NoError(err)
+				return
 			}
+			d.Assert().NoError(err)
 
 			err = generateNetpolCmd.generateNetpol(generator)
 			if tt.expectedSynthError != nil {
