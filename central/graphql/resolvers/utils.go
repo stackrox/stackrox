@@ -400,3 +400,13 @@ func imageComponentsToNodeComponents(comps []*storage.ImageComponent) ([]*storag
 	}
 	return ret, nil
 }
+
+// FilterFieldFromRawQuery removes the given field from RawQuery
+func FilterFieldFromRawQuery(rq RawQuery, label search.FieldLabel) RawQuery {
+	return RawQuery{
+		Query: pointers.String(search.FilterFields(rq.String(), func(field string) bool {
+			return label.String() == field
+		})),
+		ScopeQuery: rq.ScopeQuery,
+	}
+}
