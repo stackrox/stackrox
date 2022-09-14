@@ -41,6 +41,7 @@ type HostPathPersistenceInstance struct {
 	NodeSelectorValue string
 }
 
+// HostPathPersistence wraps the instances of bind mounts for Central and Central DB
 type HostPathPersistence struct {
 	Central *HostPathPersistenceInstance
 	DB      *HostPathPersistenceInstance
