@@ -31,6 +31,14 @@ var (
 				return errors.Wrap(err,
 					"moving network_entities from rocksdb to postgres")
 			}
+			// Now that migrations are complete, turn the constraints back on
+			gormConfig := databases.GormDB.Config
+			gormConfig.DisableForeignKeyConstraintWhenMigrating = false
+			err := databases.GormDB.Apply(gormConfig)
+			if err != nil {
+				return errors.Wrap(err, "failed to turn on foreign key constraints")
+			}
+			pkgSchema.ApplySchemaForTable(context.Background(), databases.GormDB, schema.Table)
 			return nil
 		},
 	}
@@ -42,9 +50,16 @@ var (
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
+	// We need to migrate so turn off foreign key constraints
+	gormConfig := gormDB.Config
+	gormConfig.DisableForeignKeyConstraintWhenMigrating = true
+	err := gormDB.Apply(gormConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to turn off foreign key constraints")
+	}
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var networkEntities []*storage.NetworkEntity
-	err := walk(ctx, legacyStore, func(obj *storage.NetworkEntity) error {
+	err = walk(ctx, legacyStore, func(obj *storage.NetworkEntity) error {
 		networkEntities = append(networkEntities, obj)
 		if len(networkEntities) == batchSize {
 			if err := store.UpsertMany(ctx, networkEntities); err != nil {
