@@ -34,6 +34,13 @@ var (
 				return errors.Wrap(err,
 					"pruning cluster_health_statuses")
 			}
+			// Now that migrations are complete, turn the constraints back on
+			gormConfig := databases.GormDB.Config
+			gormConfig.DisableForeignKeyConstraintWhenMigrating = false
+			if err := databases.GormDB.Apply(gormConfig); err != nil {
+				return errors.Wrap(err, "failed to turn on foreign key constraints")
+			}
+			pkgSchema.ApplySchemaForTable(context.Background(), databases.GormDB, schema.Table)
 			return nil
 		},
 	}
@@ -69,6 +76,12 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	log.WriteToStderrf("Found %d images", result.RowsAffected)
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
+	// We need to migrate so turn off foreign key constraints
+	gormConfig := gormDB.Config
+	gormConfig.DisableForeignKeyConstraintWhenMigrating = true
+	if err := gormDB.Apply(gormConfig); err != nil {
+		return errors.Wrap(err, "failed to turn off foreign key constraints")
+	}
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var activeComponents []*storage.ActiveComponent
 	err := walk(ctx, legacyStore, func(obj *storage.ActiveComponent) error {

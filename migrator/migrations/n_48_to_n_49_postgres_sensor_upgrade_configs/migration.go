@@ -28,14 +28,6 @@ var (
 				return errors.Wrap(err,
 					"moving sensor_upgrade_configs from rocksdb to postgres")
 			}
-			// Now that migrations are complete, turn the constraints back on
-			gormConfig := databases.GormDB.Config
-			gormConfig.DisableForeignKeyConstraintWhenMigrating = false
-			err := databases.GormDB.Apply(gormConfig)
-			if err != nil {
-				return errors.Wrap(err, "failed to turn on foreign key constraints")
-			}
-			pkgSchema.ApplySchemaForTable(context.Background(), databases.GormDB, schema.Table)
 			return nil
 		},
 	}
@@ -47,13 +39,6 @@ var (
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(ctx, postgresDB)
-	// We need to migrate so turn off foreign key constraints
-	gormConfig := gormDB.Config
-	gormConfig.DisableForeignKeyConstraintWhenMigrating = true
-	err := gormDB.Apply(gormConfig)
-	if err != nil {
-		return errors.Wrap(err, "failed to turn off foreign key constraints")
-	}
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	obj, found, err := legacyStore.Get(ctx)
 	if err != nil {

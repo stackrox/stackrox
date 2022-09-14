@@ -55,15 +55,14 @@ var (
 				return errors.Wrap(err,
 				"pruning {{.Table|lowerCase}}")
 			}
-			{{- end}}
 			// Now that migrations are complete, turn the constraints back on
 			gormConfig := databases.GormDB.Config
 			gormConfig.DisableForeignKeyConstraintWhenMigrating = false
-			err := databases.GormDB.Apply(gormConfig)
-			if err != nil {
+			if err := databases.GormDB.Apply(gormConfig); err != nil {
 				return errors.Wrap(err, "failed to turn on foreign key constraints")
 			}
 			pkgSchema.ApplySchemaForTable(context.Background(), databases.GormDB, schema.Table)
+			{{- end}}
 			return nil
 		},
 	}
@@ -77,13 +76,14 @@ var (
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New({{if .Migration.SingletonStore}}ctx, {{end}}postgresDB)
+	{{- if gt (len .Schema.RelationshipsToDefineAsForeignKeys) 0 }}
 	// We need to migrate so turn off foreign key constraints
 	gormConfig := gormDB.Config
 	gormConfig.DisableForeignKeyConstraintWhenMigrating = true
-	err := gormDB.Apply(gormConfig)
-	if err != nil {
+	if err := gormDB.Apply(gormConfig); err != nil {
 		return errors.Wrap(err, "failed to turn off foreign key constraints")
 	}
+	{{- end }}
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	{{- if .Migration.SingletonStore}}
 	obj, found, err := legacyStore.Get(ctx)
@@ -102,7 +102,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	{{- /* Assume rocksdb and postgres agrees on if it should have GetAll function. Not acurate but works well. */}}
 	{{- if or $rocksDB (not .GetAll) }}
 	var {{.Table|lowerCamelCase}} []*{{.Type}}
-	err = walk(ctx, legacyStore, func(obj *{{.Type}}) error {
+	err := walk(ctx, legacyStore, func(obj *{{.Type}}) error {
 		{{.Table|lowerCamelCase}} = append({{.Table|lowerCamelCase}}, obj)
 		if len({{.Table|lowerCamelCase}}) == batchSize {
 			if err := store.UpsertMany(ctx, {{.Table|lowerCamelCase}}); err != nil {
