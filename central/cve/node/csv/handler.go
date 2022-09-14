@@ -1,10 +1,12 @@
 package csv
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/pkg/errors"
 	csvCommon "github.com/stackrox/rox/central/cve/common/csv"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
@@ -77,7 +79,7 @@ func newCSVResults(header []string, sort bool) csvResults {
 	}
 }
 
-func (c *csvResults) addRow(row nodeCveRow) {
+func (c *csvResults) addRow(row *nodeCveRow) {
 	// node cve, fixable, cvss score, env impact, impact score, nodes, node components, scanned time, published time, summary
 	value := []string{
 		row.cve,
@@ -181,5 +183,33 @@ func NodeCVECSVHandler() http.HandlerFunc {
 		}
 
 		output.Write(w, "node_cve_export")
+	}
+}
+
+func NodeCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery, paginatedQuery resolvers.PaginatedQuery) ([]*nodeCveRow, error) {
+	if csvHandler == nil {
+		return nil, errors.New("Handler not initialized")
+	}
+
+	ctx, err := csvHandler.GetScopeContext(c, query)
+	if err != nil {
+		log.Errorf("unable to determine resource scope for query %q: %v", query.String(), err)
+		return nil, err
+	}
+
+	res := csvHandler.GetResolver()
+	if res == nil {
+		log.Errorf("Unexpected value (nil) for resolver in Handler")
+		return nil, errors.New("Resolver not initialized in handler")
+	}
+	vulnResolvers, err := res.NodeVulnerabilities(ctx, paginatedQuery)
+	if err != nil {
+		log.Errorf("unable to get vulnerabilities for csv export: %v", err)
+		return nil, err
+	}
+
+	cveRows := make([]*nodeCveRow, 0, len(vulnResolvers))
+	for _, d := range vulnResolvers {
+		
 	}
 }
