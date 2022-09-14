@@ -39,13 +39,11 @@ func (s *imageFlavorTestSuite) getEnvShouldPanic() {
 
 func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 	testCases := map[string]struct {
-		expectedFlavor       ImageFlavor
-		shouldPanicOnRelease bool
-		shouldPanicAlways    bool
+		expectedFlavor    ImageFlavor
+		shouldPanicAlways bool
 	}{
 		"development_build": {
-			expectedFlavor:       DevelopmentBuildImageFlavor(),
-			shouldPanicOnRelease: true,
+			expectedFlavor: DevelopmentBuildImageFlavor(),
 		},
 		"stackrox.io": {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
@@ -60,8 +58,7 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 			shouldPanicAlways: true,
 		},
 		"": {
-			expectedFlavor:       DevelopmentBuildImageFlavor(),
-			shouldPanicOnRelease: true,
+			expectedFlavor: DevelopmentBuildImageFlavor(),
 		},
 	}
 
@@ -69,11 +66,6 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 		s.Run(envValue, func() {
 			s.envIsolator.Setenv(imageFlavorEnvName, envValue)
 			if testCase.shouldPanicAlways {
-				s.getEnvShouldPanic()
-				return
-			}
-
-			if testCase.shouldPanicOnRelease && buildinfo.ReleaseBuild {
 				s.getEnvShouldPanic()
 				return
 			}
