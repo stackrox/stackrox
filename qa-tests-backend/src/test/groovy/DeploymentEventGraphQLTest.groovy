@@ -6,7 +6,6 @@ import java.util.stream.Collectors
 import groups.GraphQL
 import objects.Deployment
 import services.GraphQLService
-import util.Timer
 
 import org.junit.experimental.categories.Category
 
@@ -111,15 +110,14 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
         String deploymentUid = DEPLOYMENT.deploymentUid
         assert deploymentUid != null
-        assert verifyDeploymentEvents(deploymentUid)
+        verifyDeploymentEvents(deploymentUid)
         String podUid = verifyPodEvents(deploymentUid)
         assert podUid != null
-        assert verifyContainerEvents(podUid)
+        verifyContainerEvents(podUid)
     }
 
-    private boolean verifyDeploymentEvents(String deploymentUid, int retries = 30, int interval = 4) {
-        Timer t = new Timer(retries, interval)
-        while (t.IsValid()) {
+    private void verifyDeploymentEvents(String deploymentUid, int retries = 30, int interval = 4) {
+        withRetry(retries, interval) {
             def depEvents = gqlService.Call(GET_DEPLOYMENT_EVENTS_OVERVIEW, [deploymentId: deploymentUid])
             assert depEvents.getCode() == 200
             log.info "return code " + depEvents.getCode()
@@ -132,22 +130,18 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
             assert events.numRestarts == 0
             assert events.numTerminations == 0
             assert events.numTotalPods == 1
-
-            return true
         }
-        log.info "Unable to get deployment event for $deploymentUid in ${t.SecondsSince()} seconds"
-        return false
     }
 
     private String verifyPodEvents(String deploymentUid, int retries = 30, int interval = 4) {
-        Timer t = new Timer(retries, interval)
-        while (t.IsValid()) {
+        def event = null
+        withRetry(retries, interval) {
             def podEvents = gqlService.Call(GET_POD_EVENTS, [podsQuery: "Deployment ID: " + deploymentUid])
             assert podEvents.getCode() == 200
             log.info "return code " + podEvents.getCode()
             assert podEvents.getValue().result != null
             assert podEvents.getValue().result.size() == 1
-            def event = podEvents.getValue().result.get(0)
+            event = podEvents.getValue().result.get(0)
             def pod = DEPLOYMENT.getPods().get(0)
             assert event.name == pod.name
             // No need to test start time, as it is tested in the non-groovy API tests.
@@ -157,16 +151,12 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
             assert procEvent.parentUid == 0
             assert procEvent.args == PROCESS_ARGS
             assert procEvent.whitelisted
-
-            return event.id
         }
-        log.info "Unable to get pod events for deployment $deploymentUid in ${t.SecondsSince()} seconds"
-        return null
+        return event?.id
     }
 
-    private boolean verifyContainerEvents(String podUid, int retries = 30, int interval = 4) {
-        Timer t = new Timer(retries, interval)
-        while (t.IsValid()) {
+    private void verifyContainerEvents(String podUid, int retries = 30, int interval = 4) {
+        withRetry(retries, interval) {
             def containerEvents = gqlService.Call(GET_CONTAINER_EVENTS, [containersQuery: "Pod ID: " + podUid])
             assert containerEvents.getCode() == 200
             log.info "return code " + containerEvents.getCode()
@@ -179,10 +169,6 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
             assert procEvent.parentUid == 0
             assert procEvent.args == PROCESS_ARGS
             assert procEvent.whitelisted
-
-            return true
         }
-        log.info "Unable to get container events for pod $podUid in ${t.SecondsSince()} seconds"
-        return false
     }
 }
