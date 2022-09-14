@@ -792,6 +792,7 @@ pr_has_label_in_body() {
 
 # get_pr_details() from GitHub and display the result. Exits 1 if not run in CI in a PR context.
 _PR_DETAILS=""
+_PR_DETAILS_CACHE_FILE="/tmp/PR_DETAILS_CACHE.json"
 get_pr_details() {
     local pull_request
     local org
@@ -801,7 +802,12 @@ get_pr_details() {
         echo "${_PR_DETAILS}"
         return
     fi
-
+    if [[ -e "${_PR_DETAILS_CACHE_FILE}" ]]; then
+        _PR_DETAILS="$(cat "${_PR_DETAILS_CACHE_FILE}")"
+        echo "${_PR_DETAILS}"
+        return
+    fi
+    
     _not_a_PR() {
         echo '{ "msg": "this is not a PR" }'
         exit 1
@@ -850,7 +856,7 @@ get_pr_details() {
         exit 2
     fi
     _PR_DETAILS="$pr_details"
-    echo "$pr_details"
+    echo "$pr_details" | tee "${_PR_DETAILS_CACHE_FILE}"
 }
 
 GATE_JOBS_CONFIG="$SCRIPTS_ROOT/scripts/ci/gate-jobs-config.json"
@@ -1068,25 +1074,10 @@ handle_nightly_runs() {
         die "Only for OpenShift CI"
     fi
 
-    if ! is_in_PR_context; then
-        info "Debug:"
-        echo "JOB_NAME: ${JOB_NAME:-}"
-        echo "JOB_NAME_SAFE: ${JOB_NAME_SAFE:-}"
-    fi
-
     local nightly_tag_prefix
     nightly_tag_prefix="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-"
     if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
         ci_export CIRCLE_TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
-    elif is_in_PR_context && pr_has_label "simulate-nightly-run"; then
-        local sha
-        if [[ -n "${PULL_PULL_SHA:-}" ]]; then
-            sha="${PULL_PULL_SHA}"
-        else
-            sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || die "Cannot find pull sha"
-            [[ "$sha" != "null" ]] || die "Cannot find pull sha"
-        fi
-        ci_export CIRCLE_TAG "${nightly_tag_prefix}${sha:0:8}"
     fi
 }
 
