@@ -73,7 +73,7 @@ central:
   persistence:
     {{- if and .HostPath .HostPath.Central }}
     hostPath: {{ .HostPath.Central.HostPath }}
-    {{ else if .External.Central }}
+    {{ else if and .External .External.Central }}
     persistentVolumeClaim:
       claimName: {{ .External.Central.Name | quote }}
       size: {{ printf "%dGi" .External.Central.Size | quote }}
@@ -127,7 +127,7 @@ central:
     persistence:
       {{- if and .HostPath .HostPath.DB }}
       hostPath: {{ .HostPath.DB.HostPath }}
-      {{ else if .External.DB }}
+      {{ else if and .External .External.DB }}
       persistentVolumeClaim:
         claimName: {{ .External.DB.Name | quote }}
         size: {{ printf "%dGi" .External.DB.Size | quote }}
