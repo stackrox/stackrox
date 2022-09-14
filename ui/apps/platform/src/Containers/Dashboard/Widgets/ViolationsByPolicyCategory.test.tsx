@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/extend-expect';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
 import { mockChartsWithoutAnimation } from 'test-utils/mocks/@patternfly/react-charts';
-import ViolationsByPolicyCategory from 'Containers/Dashboard/Widgets/ViolationsByPolicyCategory';
+import ViolationsByPolicyCategory from './ViolationsByPolicyCategory';
 
 jest.setTimeout(10000);
 
