@@ -182,9 +182,8 @@ operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(OPERATOR_SDK) $${OPERATOR_SDK_URL}
 
-# TODO(porridge): change back to kudobuilder release once https://github.com/kudobuilder/kuttl/issues/371 is fixed
-KUTTL_VERSION = 0.11.0-verbose-resource
-KUTTL_UPSTREAM = porridge
+KUTTL_VERSION = 0.13.0
+KUTTL_UPSTREAM = kudobuilder
 KUTTL ?= $(PROJECT_DIR)/bin/kubectl-kuttl-$(KUTTL_VERSION)
 .PHONY: kuttl
 kuttl: ## Download kuttl.
