@@ -866,29 +866,23 @@ gate_job() {
 
     info "Will determine whether to run: $job"
 
+    if ! is_in_PR_context; then
+        # When not in a PR context, the jobs to run are simply defined in openshift/release config.
+        info "$job will run because this is not in a PR context"
+        return
+    fi
+
+    if is_openshift_CI_rehearse_PR; then
+        info "$job will run because this is an openshift/release PR"
+        return
+    fi
+
     if [[ "$job_config" == "null" ]]; then
-        info "$job will run because there is no gating criteria for $job"
+        info "$job will run because there is no extra gating criteria for $job"
         return
     fi
 
-    local pr_details
-    local exitstatus=0
-    pr_details="$(get_pr_details)" || exitstatus="$?"
-
-    if [[ "$exitstatus" == "0" ]]; then
-        if is_openshift_CI_rehearse_PR; then
-            gate_openshift_release_rehearse_job "$job" "$pr_details"
-        else
-            gate_pr_job "$job_config" "$pr_details"
-        fi
-    elif [[ "$exitstatus" == "1" ]]; then
-        gate_merge_job "$job_config"
-    else
-        echo "ERROR: Could not determine if this is a PR versus a merge: $exitstatus"
-        echo "DEBUG: PR details: ${pr_details}"
-        info "$job will run despite this error"
-        return
-    fi
+    gate_pr_job "$job_config"
 }
 
 get_var_from_job_config() {
@@ -908,34 +902,11 @@ get_var_from_job_config() {
 
 gate_pr_job() {
     local job_config="$1"
-    local pr_details="$2"
 
-    local run_with_labels=()
-    local skip_with_label
     local run_with_changed_path
     local changed_path_to_ignore
-    local run_with_labels_from_json
-    run_with_labels_from_json="$(get_var_from_job_config run_with_labels "$job_config")"
-    if [[ -n "${run_with_labels_from_json}" ]]; then
-        mapfile -t run_with_labels <<<"${run_with_labels_from_json}"
-    fi
-    skip_with_label="$(get_var_from_job_config skip_with_label "$job_config")"
     run_with_changed_path="$(get_var_from_job_config run_with_changed_path "$job_config")"
     changed_path_to_ignore="$(get_var_from_job_config changed_path_to_ignore "$job_config")"
-
-    if [[ -n "$skip_with_label" ]]; then
-        if pr_has_label "${skip_with_label}" "${pr_details}"; then
-            info "$job will not run because the PR has label $skip_with_label"
-            exit 0
-        fi
-    fi
-
-    for run_with_label in "${run_with_labels[@]}"; do
-        if pr_has_label "${run_with_label}" "${pr_details}"; then
-            info "$job will run because the PR has label $run_with_label"
-            return
-        fi
-    done
 
     if [[ -n "${run_with_changed_path}" || -n "${changed_path_to_ignore}" ]]; then
         local diff_base
@@ -967,54 +938,6 @@ gate_pr_job() {
     fi
 
     info "$job will be skipped"
-    exit 0
-}
-
-gate_merge_job() {
-    local job_config="$1"
-
-    local run_on_master
-    local run_on_tags
-    run_on_master="$(get_var_from_job_config run_on_master "$job_config")"
-    run_on_tags="$(get_var_from_job_config run_on_tags "$job_config")"
-
-    local base_ref
-    base_ref="$(get_base_ref)" || {
-        info "Warning: error running get_base_ref():"
-        echo "${base_ref}"
-        info "will continue with tests."
-    }
-
-    if [[ "${base_ref}" == "master" && "${run_on_master}" == "true" ]]; then
-        info "$job will run because this is master and run_on_master==true"
-        return
-    fi
-
-    if is_tagged && [[ "${run_on_tags}" == "true" ]]; then
-        info "$job will run because the head of this branch is tagged and run_on_tags==true"
-        return
-    fi
-
-    info "$job will be skipped - neither master/run_on_master or tagged/run_on_tags"
-    exit 0
-}
-
-# gate_openshift_release_rehearse_job() - use the PR description to indicate if
-# the pj-rehearse job should run for configured jobs.
-gate_openshift_release_rehearse_job() {
-    local job="$1"
-    local pr_details="$2"
-
-    if [[ "$(jq -r '.body' <<<"$pr_details")" =~ open.the.gate.*$job ]]; then
-        info "$job will run because the gate was opened"
-        return
-    fi
-
-    cat << _EOH_
-$job will be skipped. If you want to run a gated job during openshift/release pj-rehearsal 
-update the PR description with:
-open the gate: $job
-_EOH_
     exit 0
 }
 
