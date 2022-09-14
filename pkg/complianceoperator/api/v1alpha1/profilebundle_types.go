@@ -51,7 +51,7 @@ type ProfileBundleStatus struct {
 	Conditions conditions.Conditions `json:"conditions,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ProfileBundle is the Schema for the profilebundles API
 // +kubebuilder:subresource:status
@@ -67,7 +67,7 @@ type ProfileBundle struct {
 	Status ProfileBundleStatus `json:"status,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ProfileBundleList contains a list of ProfileBundle
 type ProfileBundleList struct {

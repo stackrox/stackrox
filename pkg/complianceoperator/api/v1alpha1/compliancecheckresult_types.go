@@ -68,7 +68,7 @@ const (
 	CheckResultSeverityHigh    ComplianceCheckResultSeverity = "high"
 )
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ComplianceCheckResult represent a result of a single compliance "test"
 // +kubebuilder:resource:path=compliancecheckresults,scope=Namespaced,shortName=ccr;checkresults;checkresult
@@ -103,7 +103,7 @@ func (ccr *ComplianceCheckResult) IDToDNSFriendlyName() string {
 	return strings.ToLower(dnsFriendlyFixID)
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ComplianceCheckResultList contains a list of ComplianceCheckResult
 type ComplianceCheckResultList struct {
