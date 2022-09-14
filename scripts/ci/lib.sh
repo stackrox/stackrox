@@ -885,7 +885,7 @@ gate_job() {
         gate_merge_job "$job_config"
     else
         echo "ERROR: Could not determine if this is a PR versus a merge: $exitstatus"
-        echo "DEBUG: PR details: ${_PR_DETAILS}"
+        echo "DEBUG: PR details: ${pr_details}"
         info "$job will run despite this error"
         return
     fi
