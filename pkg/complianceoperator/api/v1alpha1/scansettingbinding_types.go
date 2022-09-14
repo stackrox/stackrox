@@ -12,7 +12,7 @@ type NamedObjectReference struct {
 	APIGroup string `json:"apiGroup,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ScanSettingBinding is the Schema for the scansettingbindings API
 // +k8s:openapi-gen=true
@@ -37,7 +37,7 @@ type ScanSettingBindingStatus struct {
 	OutputRef *corev1.TypedLocalObjectReference `json:"outputRef,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ScanSettingBindingList contains a list of ScanSettingBinding
 type ScanSettingBindingList struct {
