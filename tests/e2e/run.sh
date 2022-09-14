@@ -84,7 +84,7 @@ test_preamble() {
         cleanup_proxy_tests
         export MAIN_TAG="$MAIN_IMAGE_TAG"
     else
-        MAIN_TAG=$(make --quiet tag)
+        MAIN_TAG=$(make --quiet --no-print-directory tag)
         export MAIN_TAG
     fi
 

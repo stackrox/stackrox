@@ -9,7 +9,7 @@ fi
 load "${bats_helpers_root}/bats-support/load.bash"
 load "${bats_helpers_root}/bats-assert/load.bash"
 
-host_bin_platform="$(make --quiet host-bin-platform)"
+host_bin_platform="$(make --quiet --no-print-directory host-bin-platform)"
 
 tmp_roxctl="tmp/roxctl-bats/bin"
 test_data="$BATS_TEST_DIRNAME/../test-data"

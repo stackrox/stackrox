@@ -33,7 +33,7 @@ build_operator_bundle_and_binary() {
     # TODO(ROX-12347): get rid of or upstream this hack in a nicer way
     # Because the hack needs the directory to be named exactly the same as the image specification, this cannot be placed
     # in the "build/" directory.
-    bundle_source_parent="operator/$(make --quiet default-image-registry)"
+    bundle_source_parent="operator/$(make --quiet --no-print-directory default-image-registry)"
     mkdir -p "${bundle_source_parent}"
     cp -a operator/build/bundle "${bundle_source_parent}/stackrox-operator-bundle:v$(make --quiet --no-print-directory -C operator tag)"
 
