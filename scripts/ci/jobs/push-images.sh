@@ -67,7 +67,9 @@ push_images() {
     fi
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]] && [[ -n "${MAIN_IMAGE}" ]]; then
-        add_build_comment_to_pr
+        add_build_comment_to_pr || {
+            info "Could not add a comment to the PR"
+        }
     fi
 }
 
