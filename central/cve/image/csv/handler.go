@@ -65,12 +65,12 @@ type ImageCVERow struct {
 	CvssScore       string
 	EnvImpact       string
 	ImpactScore     string
-	deploymentCount string
-	imageCount      string
-	componentCount  string
-	scannedTime     string
-	publishedTime   string
-	summary         string
+	DeploymentCount string
+	ImageCount      string
+	ComponentCount  string
+	ScannedTime     string
+	PublishedTime   string
+	Summary         string
 }
 
 type csvResults struct {
@@ -91,12 +91,12 @@ func (c *csvResults) addRow(row *ImageCVERow) {
 		row.CvssScore,
 		row.EnvImpact,
 		row.ImpactScore,
-		row.deploymentCount,
-		row.imageCount,
-		row.componentCount,
-		row.scannedTime,
-		row.publishedTime,
-		row.summary,
+		row.DeploymentCount,
+		row.ImageCount,
+		row.ComponentCount,
+		row.ScannedTime,
+		row.PublishedTime,
+		row.Summary,
 	}
 
 	c.AddValue(value)
@@ -178,30 +178,30 @@ func ImageCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQ
 		if err != nil {
 			errorList.AddError(err)
 		}
-		dataRow.deploymentCount = fmt.Sprint(deploymentCount)
+		dataRow.DeploymentCount = fmt.Sprint(deploymentCount)
 		// Entity counts should be scoped to CVE only
 		imageCount, err := d.ImageCount(ctx, resolvers.RawQuery{})
 		if err != nil {
 			errorList.AddError(err)
 		}
-		dataRow.imageCount = fmt.Sprint(imageCount)
+		dataRow.ImageCount = fmt.Sprint(imageCount)
 		// Entity counts should be scoped to CVE only
 		componentCount, err := d.ImageComponentCount(ctx, resolvers.RawQuery{})
 		if err != nil {
 			errorList.AddError(err)
 		}
-		dataRow.componentCount = fmt.Sprint(componentCount)
+		dataRow.ComponentCount = fmt.Sprint(componentCount)
 		scannedTime, err := d.LastScanned(ctx)
 		if err != nil {
 			errorList.AddError(err)
 		}
-		dataRow.scannedTime = csv.FromGraphQLTime(scannedTime)
+		dataRow.ScannedTime = csv.FromGraphQLTime(scannedTime)
 		publishedTime, err := d.PublishedOn(ctx)
 		if err != nil {
 			errorList.AddError(err)
 		}
-		dataRow.publishedTime = csv.FromGraphQLTime(publishedTime)
-		dataRow.summary = d.Summary(ctx)
+		dataRow.PublishedTime = csv.FromGraphQLTime(publishedTime)
+		dataRow.Summary = d.Summary(ctx)
 
 		cveRows = append(cveRows, dataRow)
 		if err := errorList.ToError(); err != nil {

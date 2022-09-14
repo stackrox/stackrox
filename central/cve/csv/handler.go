@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
@@ -70,18 +71,18 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 
 type CVERow struct {
 	CVE             string
-	cveTypes        string
-	fixable         string
-	cvssScore       string
-	envImpact       string
-	impactScore     string
-	deploymentCount string
-	imageCount      string
-	nodeCount       string
-	componentCount  string
-	scannedTime     string
-	publishedTime   string
-	summary         string
+	CveTypes        string
+	Fixable         string
+	CvssScore       string
+	EnvImpact       string
+	ImpactScore     string
+	DeploymentCount string
+	ImageCount      string
+	NodeCount       string
+	ComponentCount  string
+	ScannedTime     string
+	PublishedTime   string
+	Summary         string
 }
 
 type csvResults struct {
@@ -95,21 +96,21 @@ func newCSVResults(header []string, sort bool) csvResults {
 }
 
 func (c *csvResults) addRow(row *CVERow) {
-	// cve, cveTypes, fixable, cvss score, env impact, impact score, deployments, images, nodes, components, scanned time, published time, summary
+	// cve, CveTypes, fixable, cvss score, env impact, impact score, deployments, images, nodes, components, scanned time, published time, summary
 	value := []string{
 		row.CVE,
-		row.cveTypes,
-		row.fixable,
-		row.cvssScore,
-		row.envImpact,
-		row.impactScore,
-		row.deploymentCount,
-		row.imageCount,
-		row.nodeCount,
-		row.componentCount,
-		row.scannedTime,
-		row.publishedTime,
-		row.summary,
+		row.CveTypes,
+		row.Fixable,
+		row.CvssScore,
+		row.EnvImpact,
+		row.ImpactScore,
+		row.DeploymentCount,
+		row.ImageCount,
+		row.NodeCount,
+		row.ComponentCount,
+		row.ScannedTime,
+		row.PublishedTime,
+		row.Summary,
 	}
 
 	c.AddValue(value)
@@ -173,54 +174,54 @@ func CVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery,
 			var errorList errorhelpers.ErrorList
 			dataRow := &CVERow{}
 			dataRow.CVE = d.CVE(ctx)
-			dataRow.cveTypes = strings.Join(d.VulnerabilityTypes(), " ")
+			dataRow.CveTypes = strings.Join(d.VulnerabilityTypes(), " ")
 			isFixable, err := d.IsFixable(ctx, rawQuery)
 			if err != nil {
 				errorList.AddError(err)
 			}
-			dataRow.fixable = strconv.FormatBool(isFixable)
-			dataRow.cvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
+			dataRow.Fixable = strconv.FormatBool(isFixable)
+			dataRow.CvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
 			envImpact, err := d.EnvImpact(ctx)
 			if err != nil {
 				errorList.AddError(err)
 			}
-			dataRow.envImpact = fmt.Sprintf("%.2f", envImpact*100)
-			dataRow.impactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
+			dataRow.EnvImpact = fmt.Sprintf("%.2f", envImpact*100)
+			dataRow.ImpactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
 			// Entity counts should be scoped to CVE only
 			deploymentCount, err := d.DeploymentCount(ctx, resolvers.RawQuery{})
 			if err != nil {
 				errorList.AddError(err)
 			}
-			dataRow.deploymentCount = fmt.Sprint(deploymentCount)
+			dataRow.DeploymentCount = fmt.Sprint(deploymentCount)
 			// Entity counts should be scoped to CVE only
 			imageCount, err := d.ImageCount(ctx, resolvers.RawQuery{})
 			if err != nil {
 				errorList.AddError(err)
 			}
-			dataRow.imageCount = fmt.Sprint(imageCount)
+			dataRow.ImageCount = fmt.Sprint(imageCount)
 			// Entity counts should be scoped to CVE only
 			nodeCount, err := d.NodeCount(ctx, resolvers.RawQuery{})
 			if err != nil {
 				errorList.AddError(err)
 			}
-			dataRow.nodeCount = fmt.Sprint(nodeCount)
+			dataRow.NodeCount = fmt.Sprint(nodeCount)
 			// Entity counts should be scoped to CVE only
 			componentCount, err := d.ComponentCount(ctx, resolvers.RawQuery{})
 			if err != nil {
 				errorList.AddError(err)
 			}
-			dataRow.componentCount = fmt.Sprint(componentCount)
+			dataRow.ComponentCount = fmt.Sprint(componentCount)
 			scannedTime, err := d.LastScanned(ctx)
 			if err != nil {
 				errorList.AddError(err)
 			}
-			dataRow.scannedTime = csv.FromGraphQLTime(scannedTime)
+			dataRow.ScannedTime = csv.FromGraphQLTime(scannedTime)
 			publishedTime, err := d.PublishedOn(ctx)
 			if err != nil {
 				errorList.AddError(err)
 			}
-			dataRow.publishedTime = csv.FromGraphQLTime(publishedTime)
-			dataRow.summary = d.Summary(ctx)
+			dataRow.PublishedTime = csv.FromGraphQLTime(publishedTime)
+			dataRow.Summary = d.Summary(ctx)
 
 			cveRows = append(cveRows, dataRow)
 			if err := errorList.ToError(); err != nil {
@@ -230,10 +231,32 @@ func CVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery,
 		return cveRows, nil
 	}
 
-	if !search.QueryHasFieldLabel(rawQuery.String(), search.CVEType) {
+	cveType := search.GetFieldValueFromQuery(rawQuery.String(), search.CVEType)
+	switch cveType {
+	case "":
 		return nil, errors.New("'CVE Type' filter required but not found in input query")
+	case storage.CVE_IMAGE_CVE.String():
+		imageCveRows, err := imageCveCsv.ImageCVECSVRows(c, query, rawQuery, paginatedQuery)
+		if err != nil {
+			return nil, err
+		}
+		return imageCVERowsToCVERows(imageCveRows), nil
+	case storage.CVE_NODE_CVE.String():
+		nodeCveRows, err := nodeCveCsv.NodeCVECSVRows(c, query, rawQuery, paginatedQuery)
+		if err != nil {
+			return nil, err
+		}
+		return nodeCVERowsToCVERows(nodeCveRows), nil
+	case storage.CVE_K8S_CVE.String(), storage.CVE_OPENSHIFT_CVE.String(), storage.CVE_ISTIO_CVE.String():
+		clusterCveRows, err := clusterCveCsv.ClusterCVECSVRows(c, query, rawQuery, paginatedQuery)
+		if err != nil {
+			return nil, err
+		}
+		return clusterCVERowsToCVERows(clusterCveRows), nil
+	default:
+		return nil, errors.Errorf("Unexpected value for 'CVE Type' filter. Value should be one of '%s', '%s', '%s', '%s', '%s'",
+			storage.CVE_IMAGE_CVE.String(), storage.CVE_NODE_CVE.String(), storage.CVE_K8S_CVE.String(), storage.CVE_OPENSHIFT_CVE.String(), storage.CVE_ISTIO_CVE.String())
 	}
-
 }
 
 func imageCVERowsToCVERows(imageCveRows []*imageCveCsv.ImageCVERow) []*CVERow {
@@ -241,14 +264,66 @@ func imageCVERowsToCVERows(imageCveRows []*imageCveCsv.ImageCVERow) []*CVERow {
 	for _, d := range imageCveRows {
 		dataRow := &CVERow{}
 		dataRow.CVE = d.CVE
+		dataRow.CveTypes = storage.CVE_IMAGE_CVE.String()
+		dataRow.Fixable = d.Fixable
+		dataRow.CvssScore = d.CvssScore
+		dataRow.EnvImpact = d.EnvImpact
+		dataRow.ImpactScore = d.ImpactScore
+		dataRow.DeploymentCount = d.DeploymentCount
+		dataRow.ImageCount = d.ImageCount
+		dataRow.NodeCount = "0"
+		dataRow.ComponentCount = d.ComponentCount
+		dataRow.ScannedTime = d.ScannedTime
+		dataRow.PublishedTime = d.PublishedTime
+		dataRow.Summary = d.Summary
 
+		cveRows = append(cveRows, dataRow)
 	}
+	return cveRows
 }
 
 func nodeCVERowsToCVERows(nodeCveRows []*nodeCveCsv.NodeCVERow) []*CVERow {
+	cveRows := make([]*CVERow, 0, len(nodeCveRows))
+	for _, d := range nodeCveRows {
+		dataRow := &CVERow{}
+		dataRow.CVE = d.CVE
+		dataRow.CveTypes = storage.CVE_NODE_CVE.String()
+		dataRow.Fixable = d.Fixable
+		dataRow.CvssScore = d.CvssScore
+		dataRow.EnvImpact = d.EnvImpact
+		dataRow.ImpactScore = d.ImpactScore
+		dataRow.DeploymentCount = "0"
+		dataRow.ImageCount = "0"
+		dataRow.NodeCount = d.NodeCount
+		dataRow.ComponentCount = d.ComponentCount
+		dataRow.ScannedTime = d.ScannedTime
+		dataRow.PublishedTime = d.PublishedTime
+		dataRow.Summary = d.Summary
 
+		cveRows = append(cveRows, dataRow)
+	}
+	return cveRows
 }
 
 func clusterCVERowsToCVERows(clusterCveRows []*clusterCveCsv.ClusterCVERow) []*CVERow {
+	cveRows := make([]*CVERow, 0, len(clusterCveRows))
+	for _, d := range clusterCveRows {
+		dataRow := &CVERow{}
+		dataRow.CVE = d.CVE
+		dataRow.CveTypes = d.CveTypes
+		dataRow.Fixable = d.Fixable
+		dataRow.CvssScore = d.CvssScore
+		dataRow.EnvImpact = d.EnvImpact
+		dataRow.ImpactScore = d.ImpactScore
+		dataRow.DeploymentCount = "0"
+		dataRow.ImageCount = "0"
+		dataRow.NodeCount = "0"
+		dataRow.ComponentCount = "0"
+		dataRow.ScannedTime = d.ScannedTime
+		dataRow.PublishedTime = d.PublishedTime
+		dataRow.Summary = d.Summary
 
+		cveRows = append(cveRows, dataRow)
+	}
+	return cveRows
 }

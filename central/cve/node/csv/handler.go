@@ -57,16 +57,16 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 }
 
 type NodeCVERow struct {
-	cve            string
-	fixable        string
-	cvssScore      string
-	envImpact      string
-	impactScore    string
-	nodeCount      string
-	componentCount string
-	scannedTime    string
-	publishedTime  string
-	summary        string
+	CVE            string
+	Fixable        string
+	CvssScore      string
+	EnvImpact      string
+	ImpactScore    string
+	NodeCount      string
+	ComponentCount string
+	ScannedTime    string
+	PublishedTime  string
+	Summary        string
 }
 
 type csvResults struct {
@@ -82,16 +82,16 @@ func newCSVResults(header []string, sort bool) csvResults {
 func (c *csvResults) addRow(row *NodeCVERow) {
 	// node cve, fixable, cvss score, env impact, impact score, nodes, node components, scanned time, published time, summary
 	value := []string{
-		row.cve,
-		row.fixable,
-		row.cvssScore,
-		row.envImpact,
-		row.impactScore,
-		row.nodeCount,
-		row.componentCount,
-		row.scannedTime,
-		row.publishedTime,
-		row.summary,
+		row.CVE,
+		row.Fixable,
+		row.CvssScore,
+		row.EnvImpact,
+		row.ImpactScore,
+		row.NodeCount,
+		row.ComponentCount,
+		row.ScannedTime,
+		row.PublishedTime,
+		row.Summary,
 	}
 
 	c.AddValue(value)
@@ -153,48 +153,48 @@ func NodeCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQu
 	for _, d := range vulnResolvers {
 		var errorList errorhelpers.ErrorList
 		dataRow := &NodeCVERow{}
-		dataRow.cve = d.CVE(ctx)
+		dataRow.CVE = d.CVE(ctx)
 		// query to IsFixable should not have Fixable field
 		rawQueryWithoutFixable := resolvers.FilterFieldFromRawQuery(rawQuery, search.Fixable)
 		isFixable, err := d.IsFixable(ctx, rawQueryWithoutFixable)
 		if err != nil {
 			errorList.AddError(err)
 		}
-		dataRow.fixable = strconv.FormatBool(isFixable)
-		dataRow.cvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
+		dataRow.Fixable = strconv.FormatBool(isFixable)
+		dataRow.CvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
 		envImpact, err := d.EnvImpact(ctx)
 		if err != nil {
 			errorList.AddError(err)
 		}
-		dataRow.envImpact = fmt.Sprintf("%.2f", envImpact*100)
-		dataRow.impactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
+		dataRow.EnvImpact = fmt.Sprintf("%.2f", envImpact*100)
+		dataRow.ImpactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
 		// Entity counts should be scoped to CVE only
 		nodeCount, err := d.NodeCount(ctx, resolvers.RawQuery{})
 		if err != nil {
 			errorList.AddError(err)
 		}
-		dataRow.nodeCount = fmt.Sprint(nodeCount)
+		dataRow.NodeCount = fmt.Sprint(nodeCount)
 		// Entity counts should be scoped to CVE only
 		componentCount, err := d.NodeComponentCount(ctx, resolvers.RawQuery{})
 		if err != nil {
 			errorList.AddError(err)
 		}
-		dataRow.componentCount = fmt.Sprint(componentCount)
+		dataRow.ComponentCount = fmt.Sprint(componentCount)
 		scannedTime, err := d.LastScanned(ctx)
 		if err != nil {
 			errorList.AddError(err)
 		}
-		dataRow.scannedTime = csv.FromGraphQLTime(scannedTime)
+		dataRow.ScannedTime = csv.FromGraphQLTime(scannedTime)
 		publishedTime, err := d.PublishedOn(ctx)
 		if err != nil {
 			errorList.AddError(err)
 		}
-		dataRow.publishedTime = csv.FromGraphQLTime(publishedTime)
-		dataRow.summary = d.Summary(ctx)
+		dataRow.PublishedTime = csv.FromGraphQLTime(publishedTime)
+		dataRow.Summary = d.Summary(ctx)
 
 		cveRows = append(cveRows, dataRow)
 		if err := errorList.ToError(); err != nil {
-			log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.cve, err)
+			log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.CVE, err)
 		}
 	}
 	return cveRows, nil
