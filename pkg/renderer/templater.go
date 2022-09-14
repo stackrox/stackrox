@@ -154,6 +154,26 @@ type Config struct {
 	EnablePodSecurityPolicies bool
 }
 
+// HasCentralHostPath returns if a Central is configured with host path
+func (c Config) HasCentralHostPath() bool {
+	return c.HostPath != nil && c.HostPath.Central != nil
+}
+
+// HasCentralDBHostPath returns if a Central DB is configured with host path
+func (c Config) HasCentralDBHostPath() bool {
+	return c.HostPath != nil && c.HostPath.DB != nil
+}
+
+// HasCentralExternal returns if a Central is configured with an external volume
+func (c Config) HasCentralExternal() bool {
+	return c.External != nil && c.External.Central != nil
+}
+
+// HasCentralDBExternal returns if a Central DB is configured with an external volume
+func (c Config) HasCentralDBExternal() bool {
+	return c.External != nil && c.External.DB != nil
+}
+
 func generateReadmeFile(c *Config, mode mode) (*zip.File, error) {
 	instructions, err := generateReadme(c, mode)
 	if err != nil {

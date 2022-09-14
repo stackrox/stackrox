@@ -51,7 +51,7 @@ central:
     {{- .GetConfigOverride "endpoints.yaml" | nindent 4 }}
   {{- end }}
 
-  {{- if .HostPath }}
+  {{- if .HasCentralHostPath }}
   {{- if .HostPath.Central.WithNodeSelector }}
   nodeSelector:
     {{ .HostPath.Central.NodeSelectorKey | quote }}: {{ .HostPath.Central.NodeSelectorValue | quote }}
@@ -71,9 +71,9 @@ central:
     {{- end }}
   {{- end }}
   persistence:
-    {{- if and .HostPath .HostPath.Central }}
+    {{- if and .HasCentralHostPath }}
     hostPath: {{ .HostPath.Central.HostPath }}
-    {{ else if and .External .External.Central }}
+    {{ else if .HasCentralExternal }}
     persistentVolumeClaim:
       claimName: {{ .External.Central.Name | quote }}
       size: {{ printf "%dGi" .External.Central.Size | quote }}
@@ -101,7 +101,7 @@ central:
 
   db:
     enabled: {{ .K8sConfig.EnableCentralDB }}
-    {{- if and .HostPath .HostPath.DB }}
+    {{- if .HasCentralDBHostPath }}
     {{- if .HostPath.DB.WithNodeSelector }}
     nodeSelector:
       {{ .HostPath.DB.NodeSelectorKey | quote }}: {{ .HostPath.DB.NodeSelectorValue | quote }}
@@ -125,9 +125,9 @@ central:
       {{- end }}
     {{- end }}
     persistence:
-      {{- if and .HostPath .HostPath.DB }}
+      {{- if .HasCentralDBHostPath }}
       hostPath: {{ .HostPath.DB.HostPath }}
-      {{ else if and .External .External.DB }}
+      {{ else if .HasCentralDBExternal }}
       persistentVolumeClaim:
         claimName: {{ .External.DB.Name | quote }}
         size: {{ printf "%dGi" .External.DB.Size | quote }}
