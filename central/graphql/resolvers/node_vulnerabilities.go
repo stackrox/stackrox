@@ -64,11 +64,7 @@ func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (
 		return nil, err
 	}
 	vuln, err := vulnLoader.FromID(ctx, string(*args.ID))
-	vulnResolver, err := resolver.wrapNodeCVEWithContext(ctx, vuln, true, err)
-	if err != nil {
-		return nil, err
-	}
-	return vulnResolver, nil
+	return resolver.wrapNodeCVEWithContext(ctx, vuln, true, err)
 }
 
 // NodeVulnerabilities resolves a set of vulnerabilities based on a query.

@@ -84,11 +84,7 @@ func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (Node
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
-	res, err := resolver.wrapNodeComponentWithContext(ctx, ret, true, err)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
+	return resolver.wrapNodeComponentWithContext(ctx, ret, true, err)
 }
 
 // NodeComponents returns node components that match the input query.

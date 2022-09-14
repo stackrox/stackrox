@@ -73,11 +73,7 @@ func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
-	vulnResolver, err := resolver.wrapClusterCVEWithContext(ctx, ret, true, err)
-	if err != nil {
-		return nil, err
-	}
-	return vulnResolver, nil
+	return resolver.wrapClusterCVEWithContext(ctx, ret, true, err)
 }
 
 // ClusterVulnerabilities resolves a set of image vulnerabilities for the input query
