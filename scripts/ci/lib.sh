@@ -1350,13 +1350,23 @@ EOF
 add_build_comment_to_pr() {
     info "Adding a comment with the build tag to the PR"
 
+    local pr_details
+    local exitstatus=0
+    pr_details="$(get_pr_details)" || exitstatus="$?"
+    if [[ "$exitstatus" != "0" ]]; then
+        echo "DEBUG: Unable to get the PR details from GitHub: $exitstatus"
+        echo "DEBUG: PR details: ${pr_details}"
+        info "Will continue without commenting on the PR"
+        return
+    fi
+
     # hub-comment is tied to Circle CI env
     local url
-    url=$(get_pr_details | jq -r '.html_url')
+    url=$(jq -r '.html_url' <<<"$pr_details")
     export CIRCLE_PULL_REQUEST="$url"
 
     local sha
-    sha=$(get_pr_details | jq -r '.head.sha')
+    sha=$(jq -r '.head.sha' <<<"$pr_details")
     sha=${sha:0:7}
     export _SHA="$sha"
 
