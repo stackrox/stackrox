@@ -66,7 +66,6 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 		}
 
 		standardIDs := standards.GetSupportedStandards()
-		fmt.Printf("Iterating over standards: %v", standardIDs)
 		clusterIDs, err := getClusterIDs(r.Context())
 		if err != nil {
 			httputil.WriteError(w, err)
@@ -137,6 +136,7 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 							}
 						}
 					}
+
 					for nodeKey, nodeValue := range d.GetNodeResults() {
 						node := d.GetDomain().GetNodes()[nodeKey]
 						for controlID, result := range nodeValue.GetControlResults() {
@@ -149,6 +149,27 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 								Cluster:    d.GetDomain().GetCluster().GetName(),
 								ObjectType: "Node",
 								ObjectName: node.GetName(),
+								Control:    controlName,
+								State:      stateToString(result.OverallState),
+								Evidence:   getMessageLines(result.GetEvidence()),
+							}
+							if err := arrayWriter.WriteObject(res); err != nil {
+								httputil.WriteError(w, err)
+								return
+							}
+						}
+					}
+					for machineKey, machineValue := range d.GetMachineConfigResults() {
+						for controlID, result := range machineValue.GetControlResults() {
+							controlName := controlID
+							if control, ok := controls[controlID]; ok {
+								controlName = control.GetName()
+							}
+							res := &splunkComplianceResult{
+								Standard:   standardName,
+								Cluster:    d.GetDomain().GetCluster().GetName(),
+								ObjectType: "Machine Config",
+								ObjectName: machineKey,
 								Control:    controlName,
 								State:      stateToString(result.OverallState),
 								Evidence:   getMessageLines(result.GetEvidence()),
