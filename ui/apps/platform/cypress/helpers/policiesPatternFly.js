@@ -5,16 +5,20 @@ import { visit } from './visit';
 
 // Navigation
 
+export const notifiersAlias = 'notifiers';
+export const searchMetadataOptionsAlias = 'search/metadata/options';
+export const policiesAlias = 'policies';
+
 const routeMatcherMap = {
-    notifiers: {
+    [notifiersAlias]: {
         method: 'GET',
         url: api.integrations.notifiers,
     },
-    'search/metadata/options': {
+    [searchMetadataOptionsAlias]: {
         method: 'GET',
         url: api.search.optionsCategories('POLICIES'),
     },
-    policies: {
+    [policiesAlias]: {
         method: 'GET',
         // Include empty search query to distinguish from intercept with search query.
         url: `${api.policies.policies}?query=`,
@@ -69,7 +73,7 @@ export function changePolicyStatusInTable({ policyName, statusPrev, actionText, 
     cy.intercept('PATCH', api.policies.policy).as('PATCH_policies/id');
     doPolicyRowAction(trSelector, actionText);
     cy.wait('@PATCH_policies/id');
-    cy.wait('@policies'); // assume alias from visitPolicies function call
+    cy.wait(`@${policiesAlias}`); // assume visitPolicies as a prerequisite
     cy.get(`${trSelector} td[data-label="Status"]:contains("${statusNext}")`);
 }
 
@@ -80,7 +84,7 @@ export function deletePolicyInTable({ policyName, actionText }) {
     doPolicyRowAction(trSelector, actionText);
     cy.get('[role="dialog"][aria-label="Confirm delete"] button:contains("Delete")').click();
     cy.wait('@DELETE_policies/id');
-    cy.wait('@policies'); // assume alias from visitPolicies function call
+    cy.wait(`@${policiesAlias}`); // assume visitPolicies as a prerequisite
 }
 
 export function searchPolicies(category, value) {
