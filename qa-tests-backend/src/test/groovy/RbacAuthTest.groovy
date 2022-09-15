@@ -183,7 +183,7 @@ spec:
     def "Verify token with multiple roles works as expected"() {
         when:
         "Create two roles for individual access"
-        def roles = ["Indicator", "ProcessWhitelist"].collect {
+        def roles = ["DeploymentExtension"].collect {
             Map<String, RoleOuterClass.Access> resourceToAccess = [
                     (it): RoleOuterClass.Access.READ_ACCESS
             ]
