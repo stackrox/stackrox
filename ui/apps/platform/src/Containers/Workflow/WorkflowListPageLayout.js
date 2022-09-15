@@ -45,10 +45,6 @@ const WorkflowListPageLayout = ({ location }) => {
     // set up cache-busting system that either the list or sidepanel can use to trigger list refresh
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    function customCsvExportHandler(fileName) {
-        return exportCvesAsCsv(fileName, workflowState);
-    }
-
     // Get the list / entity components
     const ListComponent = ListComponentMap[useCase];
     const EntityComponent = EntityComponentMap[useCase];
@@ -70,6 +66,10 @@ const WorkflowListPageLayout = ({ location }) => {
     const header = pluralize(entityLabels[pageListType]);
     const exportFilename = `${useCaseLabels[useCase]} ${pluralize(startCase(header))} Report`;
     const entityContext = {};
+
+    function customCsvExportHandler(fileName) {
+        return exportCvesAsCsv(fileName, workflowState, pageListType);
+    }
 
     if (selectedRow) {
         const { entityType, entityId } = selectedRow;
