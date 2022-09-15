@@ -113,7 +113,7 @@ dependencies {
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
-    implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
+    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.0"
 
     // Required to make codenarc work with JDK 14.
     // See https://github.com/gradle/gradle/issues/12646.
@@ -122,7 +122,7 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.10")
     }
 
-    implementation 'org.javers:javers-core:6.6.5'
+    implementation 'org.javers:javers-core:6.7.0'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
     implementation 'commons-codec:commons-codec:1.15'
