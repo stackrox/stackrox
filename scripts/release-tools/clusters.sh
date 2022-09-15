@@ -27,7 +27,10 @@ main() {
   PS3="Choose action: "
   RED='\033[0;31m'
   NC='\033[0m' # No Color
-  echo -e "${RED}WARNING:${NC} some of these scripts may be outdated, bleeding-edge, or not working. Read the code before you run them to be on the safe side."
+
+  echo -e "${RED}WARNING: this script is deprecated and will be removed on October 10, 2022.${NC}"
+  echo -e "${RED}WARNING: some of these scripts may be outdated, bleeding-edge, or not working. Read the code before you run them to be on the safe side.${NC}"
+
   select ans in "${MENU_OPTIONS[@]}"
   do
     exec_option "$ans"
@@ -38,7 +41,7 @@ exec_option() {
   local num_options="${#MENU_OPTIONS[@]}"
   local last_option="$((num_options-1))"
   case "$1" in
-    "${MENU_OPTIONS[$last_option]}"|"$((last_option+1))"|q|Q) exit 0;;&
+    "${MENU_OPTIONS[$last_option]}"|"$((last_option+1))"|q|Q) exit 0;;
     "${MENU_OPTIONS[0]}"|1)
         cluster_name="$(get_cluster_name openshift)"
         merge_kubeconfigs "$cluster_name" "$DEFAULT_KUBECONFIG"
@@ -263,40 +266,40 @@ create_long_running_cluster() {
   export CLUSTER_NAME
 
   echo "cluster_name= $CLUSTER_NAME"
-  
+
   status="$(check_cluster_status "$CLUSTER_NAME")"
-  
+
   if does_cluster_exist "$CLUSTER_NAME"; then
       echo "Unable to create cluster, it exists already"
   else
       infractl create gke-default $CLUSTER_NAME --lifespan 168h --arg nodes=5 --wait --slack-me
   fi
-  
+
   # Set your local kubectl context to the remote cluster once the above completes successfully.
   infractl get $CLUSTER_NAME --json | jq '.Connect' -r | bash
 
   echo "Connected to cluster"
-  
+
   export MAIN_IMAGE_TAG="${RELEASE}.${PATCH_NUMBER}-rc.${RC_NUMBER}"
   export API_ENDPOINT="localhost:8000"
-  
+
   export STORAGE=pvc # Backing storage
   export STORAGE_CLASS=faster # Runs on an SSD type
   export STORAGE_SIZE=100 # 100G
   export MONITORING_SUPPORT=true # Runs monitoring
   export LOAD_BALANCER=lb
-  
+
   toplevel_dir="$(git rev-parse --show-toplevel)"
   "$toplevel_dir/deploy/k8s/central.sh" # Launches central
   wait_for_pods_with_names central scanner
   echo "Launched central"
-  
+
   # Open port-forward to central, e.g. with
   kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
   sleep 60
-  
+
   export ROX_ADMIN_USERNAME=admin
-  
+
   export ROX_ADMIN_PASSWORD="$(cat "$toplevel_dir"/deploy/k8s/central-deploy/password)"
   export ROX_PASSWORD="$ROX_ADMIN_PASSWORD"
 
@@ -307,7 +310,7 @@ create_long_running_cluster() {
   kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
   kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD=long-running
   wait_for_pods_to_be_ready
-  
+
   kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
   wait_for_pods_to_be_ready
 
