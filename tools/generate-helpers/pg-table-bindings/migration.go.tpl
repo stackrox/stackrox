@@ -171,7 +171,6 @@ func prune(postgresDB *pgxpool.Pool) error {
 	deleteStmt := `DELETE FROM {{$table}} child WHERE NOT EXISTS
 		(SELECT * FROM {{$rel.OtherSchema.Table}} parent WHERE
 		{{range $idx2, $col := $rel.MappedColumnNames}}{{if $idx2}} AND {{end}}child.{{ $col.ColumnNameInThisSchema }} = parent.{{ $col.ColumnNameInOtherSchema }}{{end}})`
-	log.WriteToStderr(deleteStmt)
 	if _, err := postgresDB.Exec(ctx, deleteStmt); err != nil {
 		log.WriteToStderrf("failed to clean up orphaned data for %s", schema.Table)
 		return err
@@ -182,7 +181,6 @@ func prune(postgresDB *pgxpool.Pool) error {
 	deleteStmt = `DELETE FROM {{$child.Table}} child WHERE NOT EXISTS
 	(SELECT * FROM {{$childRel.OtherSchema.Table}} parent WHERE
 	{{range $idxChild2, $col := $childRel.MappedColumnNames}}{{if $idxChild2}} AND {{end}}child.{{ $col.ColumnNameInThisSchema }} = parent.{{ $col.ColumnNameInOtherSchema }}{{end}})`
-	log.WriteToStderr(deleteStmt)
 	if _, err := postgresDB.Exec(ctx, deleteStmt); err != nil {
 		log.WriteToStderrf("failed to clean up orphaned data for %s", schema.Table)
 		return err

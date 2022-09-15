@@ -93,7 +93,6 @@ func prune(postgresDB *pgxpool.Pool) error {
 	deleteStmt := `DELETE FROM cluster_health_statuses child WHERE NOT EXISTS
 		(SELECT * FROM clusters parent WHERE
 		child.Id = parent.Id)`
-	log.WriteToStderr(deleteStmt)
 	if _, err := postgresDB.Exec(ctx, deleteStmt); err != nil {
 		log.WriteToStderrf("failed to clean up orphaned data for %s", schema.Table)
 		return err

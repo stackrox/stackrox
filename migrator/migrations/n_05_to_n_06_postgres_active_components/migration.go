@@ -140,7 +140,6 @@ func prune(postgresDB *pgxpool.Pool) error {
 	ctx := sac.WithAllAccess(context.Background())
 	deleteStmt := `DELETE FROM active_components child WHERE NOT EXISTS 
 		(SELECT * from deployments parent WHERE child.deploymentid = parent.id)`
-	log.WriteToStderr(deleteStmt)
 	_, err := postgresDB.Exec(ctx, deleteStmt)
 	if err != nil {
 		log.WriteToStderrf("failed to clean up orphaned data for %s", schema.Table)
@@ -150,7 +149,6 @@ func prune(postgresDB *pgxpool.Pool) error {
 	// Now get the child
 	deleteStmt = `DELETE FROM active_components_active_contexts_slices child WHERE NOT EXISTS 
 		(SELECT * from active_components parent WHERE child.active_components_Id = parent.id)`
-	log.WriteToStderr(deleteStmt)
 	_, err = postgresDB.Exec(ctx, deleteStmt)
 	if err != nil {
 		log.WriteToStderr("failed to clean up orphaned data for active_components_active_contexts_slices")
