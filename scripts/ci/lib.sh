@@ -1174,6 +1174,24 @@ send_slack_notice_for_failures_on_merge() {
     fi
 
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
+    local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME:-missing}/${BUILD_ID:-missing}"
+
+    function slack_error() {
+        echo "ERROR: $1"
+        curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" << __EOM__
+{ "text": "*An error occurred dealing with a test failure:*\n\t- Test: ${log_url}.\n\t- $1." }
+__EOM__
+    }
+
+    function check_env() {
+        (
+            set +u
+            if [[ -z "$(eval echo "\$$1")" ]]; then
+                slack_error "An expected environment variable is unset/empty: $1"
+                return 1
+            fi
+        )
+    }
 
     if [[ -n "${JOB_SPEC:-}" ]]; then
         org=$(jq -r <<<"$JOB_SPEC" '.refs.org')
@@ -1182,26 +1200,42 @@ send_slack_notice_for_failures_on_merge() {
         org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org')
         repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo')
     else
-        echo "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
+        slack_error "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
         return 1
     fi
-    [[ "$org" != "null" ]] && [[ "$repo" != "null" ]] || return 1
-    local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${OPENSHIFT_BUILD_COMMIT}"
+
+    if [[ "$org" == "null" ]] || [[ "$repo" == "null" ]]; then
+        slack_error "Could not determine org and/or repo"
+        return 1
+    fi
+
+    check_env "PULL_BASE_SHA"
+    check_env "JOB_NAME_SAFE"
+    check_env "JOB_NAME"
+    check_env "BUILD_ID"
+
+    local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${PULL_BASE_SHA}"
+    local exitstatus=0
     local commit_details
-    commit_details=$(curl --retry 5 -sS "${commit_details_url}") || return 1
+    commit_details=$(curl --retry 5 -sS "${commit_details_url}") || exitstatus="$?"
+    if [[ "$exitstatus" != "0" ]]; then
+        slack_error "Cannot get commit details: ${commit_details}"
+        return 1
+    fi
 
     local job_name="${JOB_NAME_SAFE#merge-}"
 
     local commit_msg
-    commit_msg=$(jq -r <<<"$commit_details" '.commit.message') || return 1
+    commit_msg=$(jq -r <<<"$commit_details" '.commit.message') || exitstatus="$?"
     commit_msg="${commit_msg%%$'\n'*}" # use first line of commit msg
     local commit_url
-    commit_url=$(jq -r <<<"$commit_details" '.html_url') || return 1
+    commit_url=$(jq -r <<<"$commit_details" '.html_url') || exitstatus="$?"
     local author
-    author=$(jq -r <<<"$commit_details" '.commit.author.name') || return 1
-    [[ "$commit_msg" != "null" ]] && [[ "$commit_url" != "null" ]] && [[ "$author" != "null" ]] || return 1
-
-    local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
+    author=$(jq -r <<<"$commit_details" '.commit.author.name') || exitstatus="$?"
+    if [[ "$exitstatus" != "0" ]]; then
+        slack_error "Error parsing the commit details: ${commit_details}"
+        return 1
+    fi
 
     # shellcheck disable=SC2016
     local body='
@@ -1235,7 +1269,10 @@ send_slack_notice_for_failures_on_merge() {
 
     jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
        --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body" | \
-    curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" || {
+        slack_error "Error posting to Slack"
+        return 1
+    }
 }
 
 save_junit_failure() {
