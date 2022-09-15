@@ -143,15 +143,6 @@
 #    generate: null
 #    htpasswd: null
 #
-#  # The admin password setting for communication with central's DB.
-#  # When a value is set explicitly, this is always used, even on upgrade.
-#  # Otherwise, a password will be automatically generated if `generate` is set to true,
-#  # or left unset (null) and the Helm chart is being installed (as opposed to upgraded).
-#  # Should only be used when utilizing Postgres as central's DB
-#  dbPassword:
-#    value: null
-#    generate: null
-#
 #  resources:
 #    requests:
 #      memory: "4Gi"
