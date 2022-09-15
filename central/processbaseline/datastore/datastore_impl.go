@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	processBaselineSAC = sac.ForResource(resources.ProcessWhitelist)
+	processBaselineSAC = sac.ForResource(resources.DeploymentExtension)
 
 	genDuration = env.BaselineGenerationDuration.DurationSetting()
 )

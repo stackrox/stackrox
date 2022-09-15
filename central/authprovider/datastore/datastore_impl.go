@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	authProviderSAC = sac.ForResource(resources.AuthProvider)
+	authProviderSAC = sac.ForResource(resources.Access)
 )
 
 type datastoreImpl struct {

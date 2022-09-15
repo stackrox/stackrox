@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.SimpleAccessScopesSchema
-	targetResource = resources.Role
+	targetResource = resources.Access
 )
 
 type Store interface {

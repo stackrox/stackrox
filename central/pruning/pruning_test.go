@@ -518,15 +518,15 @@ func TestImagePruning(t *testing.T) {
 
 	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
 		[]permissions.ResourceWithAccess{
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Risk),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.DeploymentExtension),
 			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Alert),
 			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Deployment),
 			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Image),
-			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Risk),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.DeploymentExtension),
 		})
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
@@ -1081,8 +1081,8 @@ func TestAlertPruning(t *testing.T) {
 	}
 	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
 		[]permissions.ResourceWithAccess{
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
 			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Alert),

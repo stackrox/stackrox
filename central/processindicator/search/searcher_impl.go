@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	indicatorSACSearchHelper         = sac.ForResource(resources.Indicator).MustCreateSearchHelper(processindicators.OptionsMap)
-	indicatorSACPostgresSearchHelper = sac.ForResource(resources.Indicator).MustCreatePgSearchHelper()
+	indicatorSACSearchHelper         = sac.ForResource(resources.DeploymentExtension).MustCreateSearchHelper(processindicators.OptionsMap)
+	indicatorSACPostgresSearchHelper = sac.ForResource(resources.DeploymentExtension).MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides an intermediary implementation layer for ProcessStorage.

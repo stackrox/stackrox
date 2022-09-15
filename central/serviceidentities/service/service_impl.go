@@ -20,11 +20,11 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ServiceIdentity)): {
+		user.With(permissions.View(resources.Administration)): {
 			"/v1.ServiceIdentityService/GetServiceIdentities",
 			"/v1.ServiceIdentityService/GetAuthorities",
 		},
-		user.With(permissions.Modify(resources.ServiceIdentity)): {
+		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.ServiceIdentityService/CreateServiceIdentity",
 		},
 	})

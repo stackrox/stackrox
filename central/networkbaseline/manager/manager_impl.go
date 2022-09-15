@@ -48,7 +48,7 @@ const (
 var (
 	managerCtx = sac.WithAllAccess(context.Background())
 
-	networkBaselineSAC = sac.ForResource(resources.NetworkBaseline)
+	networkBaselineSAC = sac.ForResource(resources.DeploymentExtension)
 
 	log = logging.LoggerForModule()
 

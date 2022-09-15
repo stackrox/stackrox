@@ -50,7 +50,7 @@ func (s *processBaselineResultsDatastoreSACSuite) SetupSuite() {
 	}
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.ProcessWhitelist)
+		resources.DeploymentExtension)
 }
 
 func (s *processBaselineResultsDatastoreSACSuite) TearDownSuite() {

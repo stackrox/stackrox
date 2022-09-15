@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	riskSAC = sac.ForResource(resources.Risk)
+	riskSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 type datastoreImpl struct {

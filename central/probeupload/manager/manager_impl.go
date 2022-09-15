@@ -37,7 +37,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	probeUploadSAC = sac.ForResource(resources.ProbeUpload)
+	probeUploadSAC = sac.ForResource(resources.Administration)
 )
 
 type manager struct {

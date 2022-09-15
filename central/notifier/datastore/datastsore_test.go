@@ -24,9 +24,6 @@ type notifierDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	hasReadIntegrationsCtx  context.Context
-	hasWriteIntegrationsCtx context.Context
-
 	dataStore DataStore
 	storage   *storeMocks.MockStore
 
@@ -38,16 +35,8 @@ func (s *notifierDataStoreTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Notifier)))
-	s.hasReadIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Notifier)))
-	s.hasWriteIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
@@ -76,18 +65,10 @@ func (s *notifierDataStoreTestSuite) TestAllowsGet() {
 	s.NoError(err, "expected no error trying to read with permissions")
 	s.True(exists, "expected exists to be set to false")
 
-	_, exists, err = s.dataStore.GetNotifier(s.hasReadIntegrationsCtx, "notifier")
-	s.NoError(err, "expected no error trying to read with permissions")
-	s.True(exists, "expected exists to be set to false")
-
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(2)
 
 	_, exists, err = s.dataStore.GetNotifier(s.hasWriteCtx, "notifier")
 	s.NoError(err, "expected no error trying to read with permissions")
-	s.True(exists, "expected exists to be set to false")
-
-	_, exists, err = s.dataStore.GetNotifier(s.hasWriteIntegrationsCtx, "notifier")
-	s.NoError(err, "expected no error trying to read with Integration permissions")
 	s.True(exists, "expected exists to be set to false")
 }
 
@@ -122,16 +103,10 @@ func (s *notifierDataStoreTestSuite) TestAllowsGetMany() {
 	_, err := s.dataStore.GetNotifiers(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	_, err = s.dataStore.GetNotifiers(s.hasReadIntegrationsCtx)
-	s.NoError(err, "expected no error trying to read with permissions")
-
 	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil).Times(2)
 
 	_, err = s.dataStore.GetNotifiers(s.hasWriteCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
-
-	_, err = s.dataStore.GetNotifiers(s.hasWriteIntegrationsCtx)
-	s.NoError(err, "expected no error trying to read with Integration permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifiers() {
@@ -159,9 +134,6 @@ func (s *notifierDataStoreTestSuite) TestEnforcesAdd() {
 
 	_, err = s.dataStore.AddNotifier(s.hasReadCtx, &storage.Notifier{})
 	s.Error(err, "expected an error trying to write without permissions")
-
-	_, err = s.dataStore.AddNotifier(s.hasReadIntegrationsCtx, &storage.Notifier{})
-	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsAdd() {
@@ -170,9 +142,6 @@ func (s *notifierDataStoreTestSuite) TestAllowsAdd() {
 
 	_, err := s.dataStore.AddNotifier(s.hasWriteCtx, &storage.Notifier{})
 	s.NoError(err, "expected no error trying to write with permissions")
-
-	_, err = s.dataStore.AddNotifier(s.hasWriteIntegrationsCtx, &storage.Notifier{})
-	s.NoError(err, "expected no error trying to write with Integration permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestErrorOnAdd() {
@@ -190,9 +159,6 @@ func (s *notifierDataStoreTestSuite) TestEnforcesUpdate() {
 
 	err = s.dataStore.UpdateNotifier(s.hasReadCtx, &storage.Notifier{Id: "id"})
 	s.Error(err, "expected an error trying to write without permissions")
-
-	err = s.dataStore.UpdateNotifier(s.hasReadIntegrationsCtx, &storage.Notifier{Id: "id"})
-	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsUpdate() {
@@ -201,9 +167,6 @@ func (s *notifierDataStoreTestSuite) TestAllowsUpdate() {
 
 	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{Id: "id"})
 	s.NoError(err, "expected no error trying to write with permissions")
-
-	err = s.dataStore.UpdateNotifier(s.hasWriteIntegrationsCtx, &storage.Notifier{})
-	s.NoError(err, "expected no error trying to write with Integration permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestErrorOnUpdate() {
@@ -221,9 +184,6 @@ func (s *notifierDataStoreTestSuite) TestEnforcesRemove() {
 
 	err = s.dataStore.RemoveNotifier(s.hasReadCtx, "notifier")
 	s.Error(err, "expected an error trying to write without permissions")
-
-	err = s.dataStore.RemoveNotifier(s.hasReadIntegrationsCtx, "notifier")
-	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsRemove() {
@@ -231,7 +191,4 @@ func (s *notifierDataStoreTestSuite) TestAllowsRemove() {
 
 	err := s.dataStore.RemoveNotifier(s.hasWriteCtx, "notifier")
 	s.NoError(err, "expected no error trying to write with permissions")
-
-	err = s.dataStore.RemoveNotifier(s.hasWriteIntegrationsCtx, "notifier")
-	s.NoError(err, "expected no error trying to write with Integration permissions")
 }

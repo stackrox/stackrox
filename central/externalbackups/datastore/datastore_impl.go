@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	externalBkpSAC = sac.ForResource(resources.BackupPlugins)
+	externalBkpSAC = sac.ForResource(resources.Integration)
 )
 
 type datastoreImpl struct {

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	processBaselineSAC = sac.ForResource(resources.ProcessWhitelist)
+	processBaselineSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 type datastoreImpl struct {
@@ -29,7 +29,7 @@ func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID str
 	elevatedPreSACReadCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.ProcessWhitelist),
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		))
 	pWResults, exists, err := d.storage.Get(elevatedPreSACReadCtx, deploymentID)
 	if err != nil || !exists {
@@ -47,7 +47,7 @@ func (d *datastoreImpl) DeleteBaselineResults(ctx context.Context, deploymentID 
 	elevatedPreSACCheckCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.ProcessWhitelist),
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		))
 	pWResults, exists, err := d.storage.Get(elevatedPreSACCheckCtx, deploymentID)
 	if err != nil || !exists {

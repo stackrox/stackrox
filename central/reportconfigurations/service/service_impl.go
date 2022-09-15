@@ -31,7 +31,7 @@ var (
 			"/v1.ReportConfigurationService/GetReportConfiguration",
 			"/v1.ReportConfigurationService/CountReportConfigurations",
 		},
-		user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Notifier), permissions.View(resources.Role)): {
+		user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Access)): {
 			"/v1.ReportConfigurationService/PostReportConfiguration",
 			"/v1.ReportConfigurationService/UpdateReportConfiguration",
 		},

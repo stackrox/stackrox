@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	userSAC = sac.ForResource(resources.User)
+	userSAC = sac.ForResource(resources.Access)
 )
 
 type dataStoreImpl struct {

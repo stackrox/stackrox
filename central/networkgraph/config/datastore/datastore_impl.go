@@ -22,7 +22,7 @@ const (
 )
 
 var (
-	graphConfigSAC = sac.ForResource(resources.NetworkGraphConfig)
+	graphConfigSAC = sac.ForResource(resources.Administration)
 	log            = logging.LoggerForModule()
 )
 
@@ -39,7 +39,7 @@ func New(s store.Store) DataStore {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraphConfig),
+			sac.ResourceScopeKeys(resources.Administration),
 		))
 
 	if err := ds.initDefaultConfig(ctx); err != nil {

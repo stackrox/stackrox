@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	imageIntegrationSAC = sac.ForResource(resources.ImageIntegration)
+	imageIntegrationSAC = sac.ForResource(resources.Integration)
 )
 
 // searcherImpl provides an intermediary implementation layer for image integration.

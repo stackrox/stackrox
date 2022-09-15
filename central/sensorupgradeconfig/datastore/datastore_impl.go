@@ -14,7 +14,7 @@ type dataStore struct {
 }
 
 var (
-	sacHelper = sac.ForResource(resources.SensorUpgradeConfig)
+	sacHelper = sac.ForResource(resources.Administration)
 )
 
 func (d *dataStore) GetSensorUpgradeConfig(ctx context.Context) (*storage.SensorUpgradeConfig, error) {

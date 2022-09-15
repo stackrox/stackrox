@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	notifierSAC = sac.ForResource(resources.Notifier)
+	notifierSAC = sac.ForResource(resources.Integration)
 )
 
 // NotifierSet is a set that coordinates present policies and notifiers.

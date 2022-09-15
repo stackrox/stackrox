@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NotifiersSchema
-	targetResource = resources.Notifier
+	targetResource = resources.Integration
 )
 
 type Store interface {

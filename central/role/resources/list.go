@@ -77,51 +77,40 @@ var (
 	// To-be-deprecated resources. For now, the resources should still be used in favor of the newly
 	// introduced ones.
 
+	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	AllComments = newDeprecatedResourceMetadata("AllComments", permissions.GlobalScope,
 		Administration)
-	APIToken     = newDeprecatedResourceMetadata("APIToken", permissions.GlobalScope, Integration)
-	AuthProvider = newDeprecatedResourceMetadata("AuthProvider", permissions.GlobalScope,
-		Access)
-	BackupPlugins = newDeprecatedResourceMetadata("BackupPlugins", permissions.GlobalScope,
-		Integration)
-	ClusterCVE     = newDeprecatedResourceMetadata("ClusterCVE", permissions.ClusterScope, Cluster)
+	// Deprecated in 3.72 so cleanup should be done for 3.74.
+	ClusterCVE = newDeprecatedResourceMetadata("ClusterCVE", permissions.ClusterScope, Cluster)
+	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ComplianceRuns = newDeprecatedResourceMetadata("ComplianceRuns", permissions.ClusterScope,
 		Compliance)
+	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+	ComplianceRunSchedule = newDeprecatedResourceMetadata("ComplianceRunSchedule",
+		permissions.GlobalScope, Administration)
+	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	Config = newDeprecatedResourceMetadata("Config", permissions.GlobalScope,
 		Administration)
+	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	DebugLogs = newDeprecatedResourceMetadata("DebugLogs", permissions.GlobalScope,
 		Administration)
-	Group            = newDeprecatedResourceMetadata("Group", permissions.GlobalScope, Access)
-	ImageComponent   = newDeprecatedResourceMetadata("ImageComponent", permissions.NamespaceScope, Image)
-	ImageIntegration = newDeprecatedResourceMetadata("ImageIntegration",
-		permissions.GlobalScope, Integration)
-	Indicator = newDeprecatedResourceMetadata("Indicator", permissions.NamespaceScope,
-		DeploymentExtension)
-	Licenses        = newDeprecatedResourceMetadata("Licenses", permissions.GlobalScope, Access)
-	NetworkBaseline = newDeprecatedResourceMetadata("NetworkBaseline",
-		permissions.NamespaceScope, DeploymentExtension)
+	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	NetworkGraphConfig = newDeprecatedResourceMetadata("NetworkGraphConfig",
 		permissions.GlobalScope, Administration)
-	Notifier = newDeprecatedResourceMetadata("Notifier", permissions.GlobalScope,
-		Integration)
+	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ProbeUpload = newDeprecatedResourceMetadata("ProbeUpload", permissions.GlobalScope,
-		Administration)
-	ProcessWhitelist = newDeprecatedResourceMetadata("ProcessWhitelist",
-		permissions.NamespaceScope, DeploymentExtension)
-	Risk = newDeprecatedResourceMetadata("Risk", permissions.NamespaceScope,
-		DeploymentExtension)
-	Role          = newDeprecatedResourceMetadata("Role", permissions.GlobalScope, Access)
+		Administration) // To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ScannerBundle = newDeprecatedResourceMetadata("ScannerBundle",
 		permissions.GlobalScope, Administration)
+	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ScannerDefinitions = newDeprecatedResourceMetadata("ScannerDefinitions",
 		permissions.GlobalScope, Administration)
+	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	SensorUpgradeConfig = newDeprecatedResourceMetadata("SensorUpgradeConfig",
 		permissions.GlobalScope, Administration)
+	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ServiceIdentity = newDeprecatedResourceMetadata("ServiceIdentity",
 		permissions.GlobalScope, Administration)
-	SignatureIntegration = newDeprecatedResourceMetadata("SignatureIntegration",
-		permissions.GlobalScope, Integration)
-	User = newDeprecatedResourceMetadata("User", permissions.GlobalScope, Access)
 
 	// Internal Resources.
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)

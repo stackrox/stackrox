@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	groupSAC = sac.ForResource(resources.Group)
+	groupSAC = sac.ForResource(resources.Access)
 )
 
 type dataStoreImpl struct {

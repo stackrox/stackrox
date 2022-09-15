@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	imageIntegrationSAC = sac.ForResource(resources.ImageIntegration)
+	imageIntegrationSAC = sac.ForResource(resources.Integration)
 )
 
 type datastoreImpl struct {

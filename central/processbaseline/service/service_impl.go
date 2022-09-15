@@ -27,10 +27,10 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ProcessWhitelist)): {
+		user.With(permissions.View(resources.DeploymentExtension)): {
 			"/v1.ProcessBaselineService/GetProcessBaseline",
 		},
-		user.With(permissions.Modify(resources.ProcessWhitelist)): {
+		user.With(permissions.Modify(resources.DeploymentExtension)): {
 			"/v1.ProcessBaselineService/UpdateProcessBaselines",
 			"/v1.ProcessBaselineService/LockProcessBaselines",
 			"/v1.ProcessBaselineService/DeleteProcessBaselines",

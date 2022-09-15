@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.LogImbuesSchema
-	targetResource = resources.DebugLogs
+	targetResource = resources.Administration
 )
 
 type Store interface {

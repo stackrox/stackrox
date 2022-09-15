@@ -45,7 +45,7 @@ var (
 			"/v1.DeploymentService/ListDeploymentsWithProcessInfo",
 		},
 	})
-	baselineAndIndicatorAuth = user.With(permissions.View(resources.ProcessWhitelist), permissions.View(resources.Indicator))
+	baselineAndIndicatorAuth = user.With(permissions.View(resources.DeploymentExtension))
 )
 
 // serviceImpl provides APIs for deployments.

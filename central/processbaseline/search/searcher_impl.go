@@ -22,8 +22,8 @@ const (
 )
 
 var (
-	processBaselineSACSearchHelper         = sac.ForResource(resources.ProcessWhitelist).MustCreateSearchHelper(mappings.OptionsMap)
-	processBaselinePostgresSACSearchHelper = sac.ForResource(resources.ProcessWhitelist).MustCreatePgSearchHelper()
+	processBaselineSACSearchHelper         = sac.ForResource(resources.DeploymentExtension).MustCreateSearchHelper(mappings.OptionsMap)
+	processBaselinePostgresSACSearchHelper = sac.ForResource(resources.DeploymentExtension).MustCreatePgSearchHelper()
 )
 
 type searcherImpl struct {

@@ -36,7 +36,7 @@ func New(processBaselineStore store.Store, indexer index.Indexer) (Searcher, err
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.ProcessWhitelist)))
+			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 	if err := ds.buildIndex(ctx); err != nil {
 		return nil, err
 	}

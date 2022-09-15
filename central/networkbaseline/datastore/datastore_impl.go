@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	networkBaselineSAC = sac.ForResource(resources.NetworkBaseline)
+	networkBaselineSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 type dataStoreImpl struct {
@@ -134,7 +134,7 @@ func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentI
 	elevatedCheckForDeleteCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkBaseline),
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		))
 	for _, id := range deploymentIDs {
 		baseline, found, err := ds.storage.Get(elevatedCheckForDeleteCtx, id)

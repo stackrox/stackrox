@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	signatureSAC = sac.ForResource(resources.SignatureIntegration)
+	signatureSAC = sac.ForResource(resources.Integration)
 )
 
 const (

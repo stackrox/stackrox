@@ -30,7 +30,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ProbeUpload)): {
+		user.With(permissions.View(resources.Administration)): {
 			"/v1.ProbeUploadService/GetExistingProbes",
 		},
 	})

@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	roleSAC = sac.ForResource(resources.Role)
+	roleSAC = sac.ForResource(resources.Access)
 
 	log = logging.LoggerForModule()
 )

@@ -15,11 +15,7 @@ var (
 	once     sync.Once
 	instance PermissionChecker
 
-	multiResourceSAC = sac.ForResources(
-		sac.ForResource(resources.ImageIntegration),
-		sac.ForResource(resources.Notifier),
-		sac.ForResource(resources.BackupPlugins),
-	)
+	resourceSAC = sac.ForResource(resources.Integration)
 )
 
 func permissionCheckerSingleton() PermissionChecker {
@@ -30,41 +26,41 @@ func permissionCheckerSingleton() PermissionChecker {
 }
 
 func (permissionChecker) CountAllowed(ctx context.Context) (bool, error) {
-	return multiResourceSAC.ReadAllowedToAny(ctx)
+	return resourceSAC.ReadAllowed(ctx)
 }
 
 func (permissionChecker) ExistsAllowed(ctx context.Context) (bool, error) {
-	return multiResourceSAC.ReadAllowedToAny(ctx)
+	return resourceSAC.ReadAllowed(ctx)
 }
 
 func (permissionChecker) GetAllowed(ctx context.Context) (bool, error) {
-	return multiResourceSAC.ReadAllowedToAny(ctx)
+	return resourceSAC.ReadAllowed(ctx)
 }
 
 func (permissionChecker) UpsertAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return multiResourceSAC.WriteAllowedToAny(ctx)
+	return resourceSAC.WriteAllowed(ctx)
 }
 
 func (permissionChecker) UpsertManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return multiResourceSAC.WriteAllowedToAny(ctx)
+	return resourceSAC.WriteAllowed(ctx)
 }
 
 func (permissionChecker) DeleteAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return multiResourceSAC.WriteAllowedToAny(ctx)
+	return resourceSAC.WriteAllowed(ctx)
 }
 
 func (permissionChecker) GetIDsAllowed(ctx context.Context) (bool, error) {
-	return multiResourceSAC.ReadAllowedToAny(ctx)
+	return resourceSAC.ReadAllowed(ctx)
 }
 
 func (permissionChecker) GetManyAllowed(ctx context.Context) (bool, error) {
-	return multiResourceSAC.ReadAllowedToAny(ctx)
+	return resourceSAC.ReadAllowed(ctx)
 }
 
 func (permissionChecker) DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return multiResourceSAC.WriteAllowedToAny(ctx)
+	return resourceSAC.WriteAllowed(ctx)
 }
 
 func (permissionChecker) WalkAllowed(ctx context.Context) (bool, error) {
-	return multiResourceSAC.ReadAllowedToAny(ctx)
+	return resourceSAC.ReadAllowed(ctx)
 }

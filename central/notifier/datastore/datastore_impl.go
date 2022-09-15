@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	notifierSAC = sac.ForResource(resources.Notifier)
+	notifierSAC = sac.ForResource(resources.Integration)
 )
 
 type datastoreImpl struct {

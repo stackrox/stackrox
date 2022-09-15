@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	serviceIdentitiesSAC = sac.ForResource(resources.ServiceIdentity)
+	serviceIdentitiesSAC = sac.ForResource(resources.Administration)
 )
 
 type dataStoreImpl struct {

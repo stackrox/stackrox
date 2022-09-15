@@ -1,7 +1,7 @@
 {
     "resourceToAccess": {
         "Access": "NO_ACCESS",
-        "Administration": "NO_ACCESS",
+        "Administration": "READ_ACCESS",
         "Alert": "READ_ACCESS",
         "CVE": "NO_ACCESS",
         "Cluster": "READ_ACCESS",

@@ -56,7 +56,7 @@ func Singleton() DataStore {
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.Role)))
+				sac.ResourceScopeKeys(resources.Access)))
 		roles, permissionSets, accessScopes := getDefaultObjects()
 		utils.Must(roleStorage.UpsertMany(ctx, roles))
 		utils.Must(permissionSetStorage.UpsertMany(ctx, permissionSets))
@@ -98,12 +98,12 @@ var defaultRoles = map[string]roleAttributes{
 		idSuffix:    "scopemanager",
 		description: "For users: use it to create and modify scopes for the purpose of access control or vulnerability reporting",
 		resourceWithAccess: []permissions.ResourceWithAccess{
-			permissions.View(resources.AuthProvider),
+			permissions.View(resources.Access),
 			permissions.View(resources.Cluster),
 			permissions.View(resources.Namespace),
-			permissions.View(resources.Role),
-			permissions.Modify(resources.Role),
-			permissions.View(resources.AuthProvider),
+			permissions.View(resources.Access),
+			permissions.Modify(resources.Access),
+			permissions.View(resources.Access),
 			permissions.View(resources.Cluster),
 			permissions.View(resources.Namespace),
 		},
@@ -114,7 +114,7 @@ var defaultRoles = map[string]roleAttributes{
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Cluster),
 			permissions.Modify(resources.Cluster),
-			permissions.Modify(resources.ServiceIdentity),
+			permissions.Modify(resources.Administration),
 		},
 	},
 	rolePkg.VulnMgmtApprover: {
@@ -142,9 +142,9 @@ var vulnReportingDefaultRoles = map[string]roleAttributes{
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations
 			permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
-			permissions.View(resources.Role),                   // required for scopes
+			permissions.View(resources.Access),                 // required for scopes
 			permissions.View(resources.Image),                  // required to gather CVE data for the report
-			permissions.View(resources.Notifier),               // required for vuln report configurations
+			permissions.View(resources.Integration),            // required for vuln report configurations
 		},
 	},
 }

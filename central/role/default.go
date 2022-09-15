@@ -78,7 +78,7 @@ func IsDefaultAccessScope(id string) bool {
 func GetAnalystPermissions() []permissions.ResourceWithAccess {
 	resourceToAccess := resources.AllResourcesViewPermissions()
 	for i, resourceWithAccess := range resourceToAccess {
-		if resourceWithAccess.Resource.GetResource() == resources.DebugLogs.GetResource() {
+		if resourceWithAccess.Resource.GetResource() == resources.Administration.GetResource() {
 			return append(resourceToAccess[:i], resourceToAccess[i+1:]...)
 		}
 	}

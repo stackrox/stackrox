@@ -31,11 +31,11 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		or.SensorOrAuthorizer(user.With(permissions.View(resources.ImageIntegration))): {
+		or.SensorOrAuthorizer(user.With(permissions.View(resources.Integration))): {
 			"/v1.ImageIntegrationService/GetImageIntegration",
 			"/v1.ImageIntegrationService/GetImageIntegrations",
 		},
-		user.With(permissions.Modify(resources.ImageIntegration)): {
+		user.With(permissions.Modify(resources.Integration)): {
 			"/v1.ImageIntegrationService/PostImageIntegration",
 			"/v1.ImageIntegrationService/PutImageIntegration",
 			"/v1.ImageIntegrationService/TestImageIntegration",

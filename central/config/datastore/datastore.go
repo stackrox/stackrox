@@ -27,7 +27,7 @@ func New(store store.Store) DataStore {
 }
 
 var (
-	configSAC = sac.ForResource(resources.Config)
+	configSAC = sac.ForResource(resources.Administration)
 )
 
 type datastoreImpl struct {

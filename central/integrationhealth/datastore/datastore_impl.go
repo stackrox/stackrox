@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	imageSAC    = sac.ForResource(resources.ImageIntegration)
-	notifierSAC = sac.ForResource(resources.Notifier)
-	backupSAC   = sac.ForResource(resources.BackupPlugins)
+	imageSAC    = sac.ForResource(resources.Integration)
+	notifierSAC = sac.ForResource(resources.Integration)
+	backupSAC   = sac.ForResource(resources.Integration)
 )
 
 type datastoreImpl struct {

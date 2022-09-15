@@ -48,10 +48,10 @@ var (
 			"/v1.NetworkGraphService/DeleteExternalNetworkEntity",
 			"/v1.NetworkGraphService/PatchExternalNetworkEntity",
 		},
-		user.With(permissions.View(resources.NetworkGraphConfig)): {
+		user.With(permissions.View(resources.Administration)): {
 			"/v1.NetworkGraphService/GetNetworkGraphConfig",
 		},
-		user.With(permissions.Modify(resources.NetworkGraphConfig)): {
+		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.NetworkGraphService/PutNetworkGraphConfig",
 		},
 	})

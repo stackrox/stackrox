@@ -28,7 +28,7 @@ const (
 )
 
 var (
-	indicatorSAC = sac.ForResource(resources.Indicator)
+	indicatorSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 type datastoreImpl struct {

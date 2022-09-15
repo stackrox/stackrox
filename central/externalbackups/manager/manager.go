@@ -46,7 +46,7 @@ func New(reporter integrationhealth.Reporter) Manager {
 }
 
 var (
-	externalBkpSAC = sac.ForResource(resources.BackupPlugins)
+	externalBkpSAC = sac.ForResource(resources.Integration)
 )
 
 type managerImpl struct {

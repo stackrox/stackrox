@@ -34,7 +34,7 @@ func TestAllDefaultRolesAreCovered(t *testing.T) {
 	}
 }
 
-func TestAnalystRoleDoesNotContainDebugLogs(t *testing.T) {
+func TestAnalystRoleDoesNotContainAdministration(t *testing.T) {
 	analystRole, found := defaultRoles[role.Analyst]
 	// Analyst is one of the default roles.
 	assert.True(t, found)
@@ -44,7 +44,7 @@ func TestAnalystRoleDoesNotContainDebugLogs(t *testing.T) {
 	assert.Len(t, resourceToAccess, len(resources.ListAll())-1)
 	// Does not contain DebugLogs resource.
 	for _, resource := range resourceToAccess {
-		assert.NotEqual(t, resource.Resource.GetResource(), resources.DebugLogs.GetResource())
+		assert.NotEqual(t, resource.Resource.GetResource(), resources.Administration.GetResource())
 	}
 }
 
@@ -80,11 +80,11 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Role)))
+			sac.ResourceScopeKeys(resources.Access)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Role)))
+			sac.ResourceScopeKeys(resources.Access)))
 
 	s.initDataStore()
 }

@@ -71,11 +71,11 @@ var (
 	log = logging.LoggerForModule()
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.DebugLogs)): {
+		user.With(permissions.View(resources.Administration)): {
 			"/v1.DebugService/GetLogLevel",
 			"/v1.DebugService/StreamAuthzTraces",
 		},
-		user.With(permissions.Modify(resources.DebugLogs)): {
+		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.DebugService/SetLogLevel",
 		},
 	})
@@ -390,7 +390,7 @@ func (s *serviceImpl) getGroups(_ context.Context) (interface{}, error) {
 	accessGroupsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Group)))
+			sac.ResourceScopeKeys(resources.Access)))
 
 	return s.groupDataStore.GetAll(accessGroupsCtx)
 }
@@ -405,7 +405,7 @@ func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
 	accessRolesCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Role)))
+			sac.ResourceScopeKeys(resources.Access)))
 
 	roles, errGetRoles := s.roleDataStore.GetAllRoles(accessRolesCtx)
 	if errGetRoles != nil {
@@ -437,7 +437,7 @@ func (s *serviceImpl) getNotifiers(_ context.Context) (interface{}, error) {
 	accessNotifierCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Notifier)))
+			sac.ResourceScopeKeys(resources.Integration)))
 
 	return s.notifierDataStore.GetScrubbedNotifiers(accessNotifierCtx)
 }
@@ -446,7 +446,7 @@ func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 	accessConfigCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Config)))
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	return s.configDataStore.GetConfig(accessConfigCtx)
 }
@@ -456,17 +456,17 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 	customRoutes := []routes.CustomRoute{
 		{
 			Route:         "/debug/dump",
-			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDebugDump),
 		},
 		{
 			Route:         "/api/extensions/diagnostics",
-			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDiagnosticDump),
 		},
 		{
 			Route:         "/debug/versions.json",
-			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getVersionsJSON),
 		},
 	}

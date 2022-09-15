@@ -31,11 +31,11 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Notifier)): {
+		user.With(permissions.View(resources.Integration)): {
 			"/v1.NotifierService/GetNotifier",
 			"/v1.NotifierService/GetNotifiers",
 		},
-		user.With(permissions.Modify(resources.Notifier)): {
+		user.With(permissions.Modify(resources.Integration)): {
 			"/v1.NotifierService/PutNotifier",
 			"/v1.NotifierService/PostNotifier",
 			"/v1.NotifierService/TestNotifier",
