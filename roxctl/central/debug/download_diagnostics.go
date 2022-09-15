@@ -41,14 +41,14 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 			if urlParams != "" {
 				path = fmt.Sprintf("%s?%s", path, urlParams)
 			}
-			return zipdownload.GetZip(zipdownload.GetZipOptions{
+			return zipdownload.GetZip(cliEnvironment, zipdownload.GetZipOptions{
 				Path:       path,
 				Method:     http.MethodGet,
 				Timeout:    flags.Timeout(c),
 				BundleType: "diagnostic",
 				ExpandZip:  false,
 				OutputDir:  outputDir,
-			}, cliEnvironment.Logger())
+			})
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, diagnosticBundleDownloadTimeout)

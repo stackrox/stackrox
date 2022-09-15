@@ -3,15 +3,16 @@ package common
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
-	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	http1DowngradeClient "golang.stackrox.io/grpc-http1/client"
@@ -19,7 +20,7 @@ import (
 )
 
 // GetGRPCConnection gets a grpc connection to Central with the correct auth
-func GetGRPCConnection(logger logger.Logger) (*grpc.ClientConn, error) {
+func GetGRPCConnection(authMethod auth.Method, logger logger.Logger) (*grpc.ClientConn, error) {
 	endpoint, usePlaintext, err := flags.EndpointAndPlaintextSetting()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get endpoint for gRPC connection")
@@ -66,21 +67,17 @@ func GetGRPCConnection(logger logger.Logger) (*grpc.ClientConn, error) {
 		return nil, errox.InvalidArgs.New("cannot force HTTP/1 mode if direct gRPC is enabled")
 	}
 
-	if err := checkAuthParameters(); err != nil {
-		return nil, err
+	scheme := "https"
+	if usePlaintext {
+		scheme = "http"
 	}
-	if flags.Password() != "" {
-		opts.ConfigureBasicAuth(basic.DefaultUsername, flags.Password())
-	} else {
-		apiToken, err := retrieveAuthToken()
-		if err != nil {
-			printAuthHelp(logger)
-			return nil, err
-		}
-		if apiToken != "" {
-			opts.ConfigureTokenAuth(apiToken)
-		}
+	baseURL := fmt.Sprintf("%s://%s", scheme, endpoint)
+
+	creds, err := authMethod.GetCreds(baseURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not obtain credentials for %s", baseURL)
 	}
+	opts.PerRPCCreds = creds
 
 	connection, err := clientconn.GRPCConnection(common.Context(), mtls.CentralSubject, endpoint, opts, grpcDialOpts...)
 	return connection, errors.WithStack(err)

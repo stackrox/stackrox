@@ -28,14 +28,14 @@ func dumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cliEnvironment.Logger().InfofLn("Retrieving debug metrics. This may take a couple of minutes...")
 			path := fmt.Sprintf("/debug/dump?logs=%t", withLogs)
-			return zipdownload.GetZip(zipdownload.GetZipOptions{
+			return zipdownload.GetZip(cliEnvironment, zipdownload.GetZipOptions{
 				Path:       path,
 				Method:     http.MethodGet,
 				Timeout:    flags.Timeout(c),
 				BundleType: "debug",
 				ExpandZip:  false,
 				OutputDir:  outputDir,
-			}, cliEnvironment.Logger())
+			})
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, dumpTimeout)

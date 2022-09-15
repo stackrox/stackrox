@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/mocks"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -132,7 +131,7 @@ func (s *sensorGenerateTestSuite) SetupTest() {
 	testutils.SetExampleVersion(s.T())
 }
 
-var emptyGetBundle = func(params apiparams.ClusterZip, _ string, _ time.Duration, _ logger.Logger) error {
+var emptyGetBundle = func(_ environment.Environment, params apiparams.ClusterZip, _ string, _ time.Duration) error {
 	return nil
 }
 
@@ -227,7 +226,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 			generateCmd.continueIfExists = testCase.continueIfExistsFlag
 			generateCmd.cluster.Name = testCase.clusterName
 			getBundleCalled := false
-			generateCmd.getBundleFn = func(_ apiparams.ClusterZip, _ string, _ time.Duration, _ logger.Logger) error {
+			generateCmd.getBundleFn = func(_ environment.Environment, _ apiparams.ClusterZip, _ string, _ time.Duration) error {
 				getBundleCalled = true
 				return nil
 			}
@@ -363,7 +362,7 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 			}
 			generateCmd.timeout = time.Duration(5) * time.Second
 			var slimCollectorRequested *bool
-			generateCmd.getBundleFn = func(params apiparams.ClusterZip, _ string, _ time.Duration, _ logger.Logger) error {
+			generateCmd.getBundleFn = func(_ environment.Environment, params apiparams.ClusterZip, _ string, _ time.Duration) error {
 				slimCollectorRequested = params.SlimCollector
 				return nil
 			}

@@ -1,15 +1,23 @@
 package common
 
 import (
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/auth"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"golang.org/x/net/http2"
+)
+
+var (
+	http1NextProtos = []string{"http/1.1", "http/1.0"}
 )
 
 // RoxctlHTTPClient abstracts all HTTP-related functionalities required within roxctl
@@ -21,13 +29,13 @@ type RoxctlHTTPClient interface {
 
 type roxctlClientImpl struct {
 	http        *http.Client
-	a           Auth
+	authMethod  auth.Method
 	forceHTTP1  bool
 	useInsecure bool
 }
 
 // GetRoxctlHTTPClient returns a new instance of RoxctlHTTPClient with the given configuration
-func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure bool, log logger.Logger) (RoxctlHTTPClient, error) {
+func GetRoxctlHTTPClient(am auth.Method, timeout time.Duration, forceHTTP1 bool, useInsecure bool, log logger.Logger) (RoxctlHTTPClient, error) {
 	tlsConf, err := tlsConfigForCentral(log)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating TLS configuration for central")
@@ -49,11 +57,7 @@ func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure boo
 		Transport: transport,
 	}
 
-	auth, err := newAuth(log)
-	if err != nil {
-		return nil, err
-	}
-	return &roxctlClientImpl{http: client, a: auth, forceHTTP1: forceHTTP1, useInsecure: useInsecure}, nil
+	return &roxctlClientImpl{http: client, authMethod: am, forceHTTP1: forceHTTP1, useInsecure: useInsecure}, nil
 }
 
 // DoReqAndVerifyStatusCode executes a http.Request and verifies that the http.Response had the given status code
@@ -82,6 +86,25 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 
 // Do executes a http.Request
 func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
+	baseURL := req.URL.Scheme + "://" + req.URL.Host
+	creds, err := client.authMethod.GetCreds(baseURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "obtaining credentials for %s", baseURL)
+	}
+
+	if creds.RequireTransportSecurity() && req.URL.Scheme != "https" && !client.useInsecure {
+		return nil, errors.New("cannot use credentials in request to non-https endpoint, use --insecure to override")
+	}
+	md, err := creds.GetRequestMetadata(req.Context(), req.URL.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "could not inject authentication information")
+	}
+	if req.Header == nil {
+		req.Header = make(http.Header)
+	}
+	for k, v := range md {
+		req.Header.Set(k, v)
+	}
 	resp, err := client.http.Do(req)
 	return resp, errors.Wrap(err, "error when doing http request")
 }
@@ -103,10 +126,18 @@ func (client *roxctlClientImpl) NewReq(method string, path string, body io.Reade
 	if req.URL.Scheme != "https" && !client.useInsecure {
 		return nil, errox.InvalidArgs.Newf("URL %v uses insecure scheme %q, use --insecure flags to enable sending credentials", req.URL, req.URL.Scheme)
 	}
-	err = client.a.SetAuth(req)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not inject authentication information")
-	}
 
 	return req, nil
+}
+
+func getURL(path string) (string, error) {
+	endpoint, usePlaintext, err := flags.EndpointAndPlaintextSetting()
+	if err != nil {
+		return "", errors.Wrap(err, "could not get endpoint")
+	}
+	scheme := "https"
+	if usePlaintext {
+		scheme = "http"
+	}
+	return fmt.Sprintf("%s://%s/%s", scheme, endpoint, strings.TrimLeft(path, "/")), nil
 }

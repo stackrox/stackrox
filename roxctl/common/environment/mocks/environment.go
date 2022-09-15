@@ -6,11 +6,13 @@ package mocks
 
 import (
 	io0 "io"
+	url "net/url"
 	reflect "reflect"
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/stackrox/rox/roxctl/common"
+	auth "github.com/stackrox/rox/roxctl/common/auth"
 	io "github.com/stackrox/rox/roxctl/common/io"
 	logger "github.com/stackrox/rox/roxctl/common/logger"
 	grpc "google.golang.org/grpc"
@@ -37,6 +39,20 @@ func NewMockEnvironment(ctrl *gomock.Controller) *MockEnvironment {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEnvironment) EXPECT() *MockEnvironmentMockRecorder {
 	return m.recorder
+}
+
+// BaseURL mocks base method.
+func (m *MockEnvironment) BaseURL() *url.URL {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BaseURL")
+	ret0, _ := ret[0].(*url.URL)
+	return ret0
+}
+
+// BaseURL indicates an expected call of BaseURL.
+func (mr *MockEnvironmentMockRecorder) BaseURL() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BaseURL", reflect.TypeOf((*MockEnvironment)(nil).BaseURL))
 }
 
 // ColorWriter mocks base method.
@@ -70,33 +86,42 @@ func (mr *MockEnvironmentMockRecorder) ConnectNames() *gomock.Call {
 }
 
 // GRPCConnection mocks base method.
-func (m *MockEnvironment) GRPCConnection() (*grpc.ClientConn, error) {
+func (m *MockEnvironment) GRPCConnection(authOpt ...auth.Method) (*grpc.ClientConn, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GRPCConnection")
+	varargs := []interface{}{}
+	for _, a := range authOpt {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GRPCConnection", varargs...)
 	ret0, _ := ret[0].(*grpc.ClientConn)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GRPCConnection indicates an expected call of GRPCConnection.
-func (mr *MockEnvironmentMockRecorder) GRPCConnection() *gomock.Call {
+func (mr *MockEnvironmentMockRecorder) GRPCConnection(authOpt ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GRPCConnection", reflect.TypeOf((*MockEnvironment)(nil).GRPCConnection))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GRPCConnection", reflect.TypeOf((*MockEnvironment)(nil).GRPCConnection), authOpt...)
 }
 
 // HTTPClient mocks base method.
-func (m *MockEnvironment) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
+func (m *MockEnvironment) HTTPClient(timeout time.Duration, authOpt ...auth.Method) (common.RoxctlHTTPClient, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HTTPClient", timeout)
+	varargs := []interface{}{timeout}
+	for _, a := range authOpt {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HTTPClient", varargs...)
 	ret0, _ := ret[0].(common.RoxctlHTTPClient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // HTTPClient indicates an expected call of HTTPClient.
-func (mr *MockEnvironmentMockRecorder) HTTPClient(timeout interface{}) *gomock.Call {
+func (mr *MockEnvironmentMockRecorder) HTTPClient(timeout interface{}, authOpt ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HTTPClient", reflect.TypeOf((*MockEnvironment)(nil).HTTPClient), timeout)
+	varargs := append([]interface{}{timeout}, authOpt...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HTTPClient", reflect.TypeOf((*MockEnvironment)(nil).HTTPClient), varargs...)
 }
 
 // InputOutput mocks base method.

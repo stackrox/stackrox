@@ -2,6 +2,7 @@ package whoami
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -76,7 +77,11 @@ func (cmd *centralWhoAmICommand) whoami() error {
 
 	// Print user information.
 	cmd.env.Logger().PrintfLn("User:")
-	cmd.env.Logger().PrintfLn("  %s", auth.GetUserId())
+	friendlyUserName := auth.GetUserId()
+	if fname := auth.GetUserInfo().GetFriendlyName(); fname != "" {
+		friendlyUserName = fmt.Sprintf("%s <%s>", fname, auth.GetUserId())
+	}
+	cmd.env.Logger().PrintfLn("  %s", friendlyUserName)
 
 	// Print resource access information
 	cmd.printRoles(roles.GetRoles())
