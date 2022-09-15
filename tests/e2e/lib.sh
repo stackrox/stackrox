@@ -58,6 +58,7 @@ export_test_environment() {
     ci_export ROX_SEARCH_PAGE_UI "${ROX_SEARCH_PAGE_UI:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
     ci_export ROX_FRONTEND_VM_UPDATES "${ROX_FRONTEND_VM_UPDATES:-true}"
+    ci_export ROX_OBJECT_COLLECTIONS "${ROX_OBJECT_COLLECTIONS:-true}"
 }
 
 deploy_central() {
