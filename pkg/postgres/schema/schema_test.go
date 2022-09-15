@@ -7,8 +7,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -18,7 +16,6 @@ import (
 	pkgPostgres "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -28,9 +25,7 @@ import (
 )
 
 var (
-	addConstraintRegex = regexp.MustCompile(`ADD CONSTRAINT (\S+) `)
-	fKConstraintRegex  = regexp.MustCompile(`(\S+); Type: FK CONSTRAINT; `)
-	excludeFiles       = set.NewStringSet("all.go", "schema_test.go")
+	excludeFiles = set.NewStringSet("all.go", "schema_test.go")
 )
 
 type SchemaTestSuite struct {
@@ -133,50 +128,4 @@ func (s *SchemaTestSuite) getAllTestCases() []string {
 		testCases = append(testCases, strings.TrimSuffix(name, ".go"))
 	}
 	return testCases
-}
-
-func (s *SchemaTestSuite) getGormTableSchemas(schema *walker.Schema, createStmt *pkgPostgres.CreateStmts) map[string]string {
-	pgutils.CreateTableFromModel(s.ctx, s.gormDB, createStmt)
-	defer s.dropTableFromModel(createStmt)
-	tables := s.tablesForSchema(schema)
-
-	tableMap := make(map[string]string, len(tables))
-	for _, tbl := range tables {
-		tableMap[tbl] = s.dumpSchema(tbl)
-	}
-	return tableMap
-}
-
-func (s *SchemaTestSuite) dumpSchema(table string) string {
-	// Dump Postgres schema
-	cmd := exec.Command(`pg_dump`, `--schema-only`,
-		"-d", s.connConfig.Database,
-		"-h", s.connConfig.Host,
-		"-U", s.connConfig.User,
-		"-p", fmt.Sprintf("%d", s.connConfig.Port),
-		"-t", table,
-		"--no-password", // never prompt for password
-	)
-	cmd.Env = append(cmd.Env, fmt.Sprintf("PGPASSWORD=%s", s.connConfig.Password))
-	out, err := cmd.Output()
-	s.Require().NoError(err, fmt.Sprintf("Failed to get schema dump\n output: %s\n err: %v\n", out, err))
-	return fKConstraintRegex.ReplaceAllString(addConstraintRegex.ReplaceAllString(string(out), ""), "")
-}
-
-func (s *SchemaTestSuite) dropTableFromModel(createStmt *pkgPostgres.CreateStmts) {
-	err := s.gormDB.Migrator().DropTable(createStmt.GormModel)
-	s.Require().NoError(err)
-
-	for _, child := range createStmt.Children {
-		s.dropTableFromModel(child)
-	}
-	s.Require().False(s.gormDB.Migrator().HasTable(createStmt.GormModel))
-}
-
-func (s *SchemaTestSuite) tablesForSchema(schema *walker.Schema) []string {
-	tables := []string{schema.Table}
-	for _, child := range schema.Children {
-		s.tablesForSchema(child)
-	}
-	return tables
 }

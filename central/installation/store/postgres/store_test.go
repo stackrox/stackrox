@@ -8,7 +8,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -22,7 +21,7 @@ type InstallationInfosStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
-	pool        *pgxpool.Pool
+	testDB      *pgtest.TestPostgres
 }
 
 func TestInstallationInfosStore(t *testing.T) {
@@ -38,24 +37,12 @@ func (s *InstallationInfosStoreSuite) SetupTest() {
 		s.T().SkipNow()
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.Require().NoError(err)
-
-	Destroy(ctx, pool)
-
-	s.pool = pool
-	s.store = New(pool)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *InstallationInfosStoreSuite) TearDownTest() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
