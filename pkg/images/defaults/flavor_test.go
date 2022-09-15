@@ -39,8 +39,9 @@ func (s *imageFlavorTestSuite) getEnvShouldPanic() {
 
 func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 	testCases := map[string]struct {
-		expectedFlavor    ImageFlavor
-		shouldPanicAlways bool
+		expectedFlavor       ImageFlavor
+		shouldPanicOnRelease bool
+		shouldPanicAlways    bool
 	}{
 		"development_build": {
 			expectedFlavor: DevelopmentBuildImageFlavor(),
@@ -58,7 +59,8 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 			shouldPanicAlways: true,
 		},
 		"": {
-			expectedFlavor: DevelopmentBuildImageFlavor(),
+			expectedFlavor:       DevelopmentBuildImageFlavor(),
+			shouldPanicOnRelease: true,
 		},
 	}
 
@@ -66,6 +68,10 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 		s.Run(envValue, func() {
 			s.envIsolator.Setenv(imageFlavorEnvName, envValue)
 			if testCase.shouldPanicAlways {
+				s.getEnvShouldPanic()
+				return
+			}
+			if testCase.shouldPanicOnRelease && buildinfo.ReleaseBuild {
 				s.getEnvShouldPanic()
 				return
 			}
@@ -141,13 +147,11 @@ func (s *imageFlavorTestSuite) TestOpenSourceImageFlavorDevReleaseTags() {
 
 func (s *imageFlavorTestSuite) TestGetImageFlavorByName() {
 	testCases := map[string]struct {
-		expectedFlavor          ImageFlavor
-		expectedErrorNonRelease string
-		expectedErrorRelease    string
+		expectedFlavor ImageFlavor
+		expectedError  string
 	}{
 		"development_build": {
-			expectedFlavor:       DevelopmentBuildImageFlavor(),
-			expectedErrorRelease: "unexpected value 'development_build'",
+			expectedFlavor: DevelopmentBuildImageFlavor(),
 		},
 		"stackrox.io": {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
@@ -159,26 +163,23 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorByName() {
 			expectedFlavor: OpenSourceImageFlavor(),
 		},
 		"wrong_value": {
-			expectedErrorRelease:    "unexpected value 'wrong_value'",
-			expectedErrorNonRelease: "unexpected value 'wrong_value'",
+			expectedError: "unexpected value 'wrong_value'",
 		},
 		"": {
-			expectedErrorRelease:    "unexpected value ''",
-			expectedErrorNonRelease: "unexpected value ''",
+			expectedError: "unexpected value ''",
 		},
 	}
 
 	for flavorName, testCase := range testCases {
+		// It is intentional that the logic is tested for both release and non-release because previously there was a
+		// different logic depending on that. We can get rid of testing release/non-release after some time in case we
+		// see the logic remains the same.
 		for _, isRelease := range []bool{false, true} {
-			expectedError := testCase.expectedErrorNonRelease
-			if isRelease {
-				expectedError = testCase.expectedErrorRelease
-			}
 			s.Run(fmt.Sprintf("'%s'@isRelease=%t", flavorName, isRelease), func() {
 				flavor, err := GetImageFlavorByName(flavorName, isRelease)
-				if expectedError != "" {
+				if testCase.expectedError != "" {
 					s.Require().Error(err)
-					s.Contains(err.Error(), expectedError)
+					s.Contains(err.Error(), testCase.expectedError)
 				} else {
 					s.Equal(testCase.expectedFlavor, flavor)
 				}
@@ -187,7 +188,7 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorByName() {
 	}
 }
 
-func TestGetAllowedImageFlavorNames(t *testing.T) {
+func TestGetVisibleImageFlavorNames(t *testing.T) {
 	tests := []struct {
 		name      string
 		isRelease bool
@@ -198,7 +199,7 @@ func TestGetAllowedImageFlavorNames(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GetAllowedImageFlavorNames(tt.isRelease)
+			got := GetVisibleImageFlavorNames(tt.isRelease)
 			assert.EqualValues(t, tt.want, got)
 		})
 	}
