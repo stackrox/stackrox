@@ -80,8 +80,8 @@ assert_prompts_rhacs() {
   assert_prompts_development
   assert_flavor_prompt_development
   sleep 2 # due to frequent flakes of missing yaml files
-  assert_components_registry "$out_dir/central" "quay.io" "$any_version" 'main'
-  assert_components_registry "$out_dir/scanner" "quay.io" "$any_version" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/central" "quay.io/rhacs-eng" "$any_version" 'main'
+  assert_components_registry "$out_dir/scanner" "quay.io/rhacs-eng" "$any_version" 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development central generate interactive flavor=stackrox.io" {
