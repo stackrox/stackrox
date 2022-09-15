@@ -9,7 +9,7 @@ setup_file() {
     echo "Using yq version: '$(yq4.16 --version)'" >&3
     # as of Aug 2022, we run yq version 4.16.2
     # remove binaries from the previous runs
-    rm -f "${tmp_roxctl}"/roxctl*
+    [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
     echo "Testing roxctl version: '$(roxctl-release version)'" >&3
 }
 
