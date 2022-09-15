@@ -56,15 +56,16 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 	testbuildinfo.SetForTest(t)
 	testutils.SetVersion(t, testutils.GetExampleVersion(t))
 	imageFlavorCases := map[string]defaults.ImageFlavor{
-		"development": defaults.DevelopmentBuildImageFlavor(),
-		"stackrox":    defaults.StackRoxIOReleaseImageFlavor(),
-		"rhacs":       defaults.RHACSReleaseImageFlavor(),
-		"custom":      customFlavor(t),
+		"stackrox": defaults.StackRoxIOReleaseImageFlavor(),
+		"rhacs":    defaults.RHACSReleaseImageFlavor(),
+		"custom":   customFlavor(t),
 	}
 	if buildinfo.ReleaseBuild {
+		imageFlavorCases["development_build-release"] = defaults.DevelopmentBuildImageFlavor()
 		imageFlavorCases["opensource-release"] = defaults.OpenSourceImageFlavor()
 	} else {
-		imageFlavorCases["opensource-development"] = defaults.OpenSourceImageFlavor()
+		imageFlavorCases["development_build-non-release"] = defaults.DevelopmentBuildImageFlavor()
+		imageFlavorCases["opensource-non-release"] = defaults.OpenSourceImageFlavor()
 	}
 
 	for name, imageFlavor := range imageFlavorCases {
