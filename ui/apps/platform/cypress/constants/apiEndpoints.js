@@ -208,10 +208,15 @@ export const configMgmt = {
  * The following keys correspond to url list object in VulnManagementPage.js file.
  */
 
-const vulnMgmtEntityOp = {
+export const opnameForEntity = {
     clusters: 'getCluster',
     components: 'getComponent',
+    'image-components': 'getImageComponent',
+    'node-components': 'getComponent',
     cves: 'getCve',
+    'image-cves': 'getCve',
+    'node-cves': 'getCve',
+    'cluster-cves': 'getCve',
     deployments: 'getDeployment',
     images: 'getImage',
     namespaces: 'getNamespace',
@@ -219,7 +224,7 @@ const vulnMgmtEntityOp = {
     policies: 'getPolicy',
 };
 
-const vulnMgmtEntitiesOp = {
+export const opnameForEntities = {
     clusters: 'getClusters',
     components: 'getComponents',
     'image-components': 'getImageComponents',
@@ -235,10 +240,15 @@ const vulnMgmtEntitiesOp = {
     policies: 'getPolicies',
 };
 
-const vulnMgmtEntitiesPrefix = {
+export const opnamePrefixForPrimaryAndSecondaryEntities = {
     clusters: 'getCluster_',
     components: 'getComponentSubEntity',
+    'image-components': 'getComponentSubEntity',
+    'node-components': 'getNodeComponentSubEntity',
     cves: 'getCve',
+    'image-cves': 'getCve',
+    'node-cves': 'getCve',
+    'cluster-cves': 'getCve',
     deployments: 'getDeployment',
     images: 'getImage',
     namespaces: 'getNamespace',
@@ -248,12 +258,12 @@ const vulnMgmtEntitiesPrefix = {
 
 export const vulnMgmt = {
     // For example, graphqlEntity('clusters')
-    graphqlEntity: (key) => graphql(vulnMgmtEntityOp[key]),
+    graphqlEntity: (key) => graphql(opnameForEntity[key]),
     // For example, graphqlEntities('clusters')
-    graphqlEntities: (key) => graphql(vulnMgmtEntitiesOp[key]),
+    graphqlEntities: (key) => graphql(opnameForEntities[key]),
     // For example, graphqlEntities2('clusters', 'CVE')
     // prettier-ignore
-    graphqlEntities2: (key1, key2) => graphql(`${vulnMgmtEntitiesPrefix[key1]}${key2}`),
+    graphqlEntities2: (key1, key2) => graphql(`${opnamePrefixForPrimaryAndSecondaryEntities[key1]}${key2}`),
     graphqlOps: {
         getCves: 'getCves',
         getPolicies: 'getPolicies',
