@@ -1,7 +1,7 @@
 /*
  * Assert that each pair of adjacent items are in sorted order.
  * items might be DOM elements from cy.get(…) call.
- * callbackForPairOfSortedItems(itemA, itemB) is returned from create higher-order function below.
+ * callbackForPairOfSortedItems(itemA, itemB) is returned from higher-order function below.
  */
 export function assertSortedItems(items, callbackForPairOfSortedItems) {
     for (let indexB = 1; indexB < items.length; indexB += 1) {
