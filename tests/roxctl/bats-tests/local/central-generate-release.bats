@@ -5,10 +5,11 @@ load "../helpers.bash"
 out_dir=""
 
 setup_file() {
+  # remove binaries from the previous runs
+  rm -f "${tmp_roxctl}"/roxctl*
+
   echo "Testing roxctl version: '$(roxctl-release version)'" >&3
   command -v yq > /dev/null || skip "Tests in this file require yq"
-  # remove binaries from the previous runs
-  rm -f "$(roxctl-development-cmd)" "$(roxctl-development-release)"
 }
 
 setup() {
@@ -88,7 +89,7 @@ teardown() {
 }
 
 @test "roxctl-release central generate k8s should not support --central-db-image" {
-  run roxctl-development central generate k8s pvc --output-dir "$out_dir" --central-db-image example.com/central-db:1.2.5
+  run roxctl-release central generate k8s pvc --output-dir "$out_dir" --central-db-image example.com/central-db:1.2.5
   assert_failure
   assert_output --partial "unknown flag: --central-db-image"
 }

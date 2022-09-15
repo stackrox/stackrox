@@ -5,11 +5,12 @@ load "../helpers.bash"
 out_dir=""
 
 setup_file() {
+  # remove binaries from the previous runs
+  rm -f "${tmp_roxctl}"/roxctl*
+
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq > /dev/null || skip "Tests in this file require yq"
   command -v expect || skip "Tests in this file require expect"
-  # remove binaries from the previous runs
-  rm -f "$(roxctl-development-cmd)" "$(roxctl-development-release)"
 }
 
 setup() {

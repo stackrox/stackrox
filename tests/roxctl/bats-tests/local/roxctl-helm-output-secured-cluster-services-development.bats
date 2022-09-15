@@ -5,6 +5,9 @@ load "../helpers.bash"
 out_dir=""
 
 setup_file() {
+  # remove binaries from the previous runs
+  rm -f "${tmp_roxctl}"/roxctl*
+
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq || skip "Tests in this file require yq"
   assert_file_exist "$test_data/helm-output-secured-cluster-services/ca-config.yaml"
