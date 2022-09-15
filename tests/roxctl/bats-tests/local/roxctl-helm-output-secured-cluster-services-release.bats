@@ -44,58 +44,32 @@ teardown() {
   assert_components_registry "$out_dir/rendered" "registry.redhat.io" "$any_version" 'collector-slim' 'admission-controller' 'sensor'
 }
 
-@test "roxctl-release helm output secured-cluster-services --image-defaults=stackrox.io should use stackrox.io registry (default collector)" {
+@test "roxctl-release helm output secured-cluster-services --image-defaults=stackrox.io should use stackrox.io registry" {
   run roxctl-release helm output secured-cluster-services --image-defaults=stackrox.io --remove --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
   assert_components_registry "$out_dir/rendered" "stackrox.io" "$any_version" 'collector-slim' 'admission-controller' 'sensor'
-}
-
-@test "roxctl-release helm output secured-cluster-services --image-defaults=stackrox.io should use stackrox.io registry (fat collector)" {
-  run roxctl-release helm output secured-cluster-services --image-defaults=stackrox.io --remove --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME" "--set" "collector.slimMode=false"
   assert_components_registry "$out_dir/rendered" "stackrox.io" "$any_version" 'collector' 'admission-controller' 'sensor'
-}
-
-@test "roxctl-release helm output secured-cluster-services --image-defaults=stackrox.io should use stackrox.io registry (slim collector)" {
-  run roxctl-release helm output secured-cluster-services --image-defaults=stackrox.io --remove --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME" "--set" "collector.slimMode=true"
   assert_components_registry "$out_dir/rendered" "stackrox.io" "$any_version" 'collector-slim' 'admission-controller' 'sensor'
 }
 
-# RHACS
-
-@test "roxctl-release helm output secured-cluster-services --image-defaults=rhacs should use registry.redhat.io registry (default collector)" {
+@test "roxctl-release helm output secured-cluster-services --image-defaults=rhacs should use registry.redhat.io registry" {
   run roxctl-release helm output secured-cluster-services --image-defaults=rhacs --remove --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
   assert_components_registry "$out_dir/rendered" "registry.redhat.io" "$any_version" 'collector-slim' 'admission-controller' 'sensor'
-}
-
-@test "roxctl-release helm output secured-cluster-services --image-defaults=rhacs should use registry.redhat.io registry (slim collector)" {
-  run roxctl-release helm output secured-cluster-services --image-defaults=rhacs --remove --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Written Helm chart secured-cluster-services to directory"
-
-  helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME" "--set" "collector.slimMode=true"
-  assert_components_registry "$out_dir/rendered" "registry.redhat.io" "$any_version" 'collector-slim' 'admission-controller' 'sensor'
-}
-
-@test "roxctl-release helm output secured-cluster-services --image-defaults=rhacs should use registry.redhat.io registry (fat collector)" {
-  run roxctl-release helm output secured-cluster-services --image-defaults=rhacs --remove --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME" "--set" "collector.slimMode=false"
   assert_components_registry "$out_dir/rendered" "registry.redhat.io" "$any_version" 'collector' 'admission-controller' 'sensor'
+
+  helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME" "--set" "collector.slimMode=true"
+  assert_components_registry "$out_dir/rendered" "registry.redhat.io" "$any_version" 'collector-slim' 'admission-controller' 'sensor'
 }
