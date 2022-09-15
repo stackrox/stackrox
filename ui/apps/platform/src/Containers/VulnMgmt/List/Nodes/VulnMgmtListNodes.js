@@ -35,7 +35,7 @@ const nodeListUpdatedQuery = gql`
         results: nodes(query: $query, pagination: $pagination) {
             ...nodeFields
         }
-        count: nodeVulnerabilityCount(query: $query)
+        count: nodeCount(query: $query)
     }
     ${NODE_LIST_FRAGMENT_UPDATED}
 `;
