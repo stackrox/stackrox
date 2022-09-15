@@ -38,7 +38,7 @@ type storeImpl struct {
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(_ context.Context, db *pgxpool.Pool) Store {
+func New(db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}

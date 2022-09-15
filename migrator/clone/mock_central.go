@@ -340,7 +340,7 @@ func (m *mockCentral) setMigrationVersionPostgres(clone string, ver *versionPair
 	defer pool.Close()
 
 	ctx := sac.WithAllAccess(context.Background())
-	store := vStore.New(ctx, pool)
+	store := vStore.New(pool)
 
 	err := store.Upsert(ctx, &storage.Version{SeqNum: int32(ver.seqNum), Version: ver.version})
 	require.NoError(m.t, err)
@@ -376,7 +376,7 @@ func (m *mockCentral) getCloneVersion(clone string) (*migrations.MigrationVersio
 
 	ctx := sac.WithAllAccess(context.Background())
 
-	store := vStore.New(ctx, pool)
+	store := vStore.New(pool)
 
 	version, exists, err := store.Get(ctx)
 	if err != nil {
