@@ -13,6 +13,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -55,6 +56,7 @@ func createTableIfNotExist(ctx context.Context, db *pgxpool.Pool) {
 	if err != nil {
 		log.Panicf("Error creating version table: %v", err)
 	}
+	utils.CrashOnError(err)
 }
 
 func insertIntoVersions(ctx context.Context, tx pgx.Tx, obj *storage.Version) error {
