@@ -63,6 +63,7 @@ function RuleGroups({
             (group &&
                 'props' in group &&
                 'traits' in group.props &&
+                group?.props?.traits != null &&
                 group?.props?.traits?.mutabilityMode !== 'ALLOW_MUTATE')
         );
     }
