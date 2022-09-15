@@ -6,9 +6,11 @@
     pq.Array({{$field.Getter "obj"}}).(*pq.StringArray),
     {{- else -}}{{if eq $field.DataType "enumarray" -}}
     pq.Array(pgutils.ConvertEnumSliceToIntArray({{$field.Getter "obj"}})).(*pq.Int32Array),
+    {{- else -}}{{if eq $field.DataType "intarray" -}}
+    pq.Array({{$field.Getter "obj"}}).(*pq.Int32Array),
     {{- else -}}
     {{$field.Getter "obj"}},
-    {{- end -}}{{- end -}}{{- end -}}
+    {{- end }}{{end}}{{end}}{{end -}}
 {{- end}}
 
 {{- define "convertProtoToModel" }}
@@ -29,6 +31,11 @@
         return model, nil
     }
 
+    {{- range $idx, $child := $schema.Children }}
+        {{- template "convertProtoToModel" $child }}
+    {{- end }}
+
+    {{- if not $schema.Parent }}
     // Convert{{$schema.TypeName}}ToProto converts Gorm model `{{$schema.Table|upperCamelCase}}` to its protobuf type object
     func Convert{{$schema.TypeName}}ToProto(m *schema.{{$schema.Table|upperCamelCase}}) ({{$schema.Type}}, error) {
         var msg storage.{{$schema.TypeName}}
@@ -47,9 +54,6 @@
         assert.NoError(t, err)
         assert.Equal(t, obj, conv)
     }
-
-    {{- range $idx, $child := $schema.Children }}
-        {{- template "convertProtoToModel" $child }}
     {{- end }}
 {{- end}}
 package schema

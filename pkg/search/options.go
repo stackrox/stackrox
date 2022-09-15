@@ -284,7 +284,7 @@ var (
 	TestBool              = newFieldLabel("Test Bool")
 	TestUint64            = newFieldLabel("Test Uint64")
 	TestInt64             = newFieldLabel("Test Int64")
-	TestInt64Slice        = newFieldLabel("Test Int64 Slice")
+	TestInt32Slice        = newFieldLabel("Test Int32 Slice")
 	TestFloat             = newFieldLabel("Test Float")
 	TestLabels            = newFieldLabel("Test Labels")
 	TestTimestamp         = newFieldLabel("Test Timestamp")

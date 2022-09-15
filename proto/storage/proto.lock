@@ -14355,7 +14355,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test Int64 Slice\""
+                    "value": "search:\"Test Int32 Slice\""
                   }
                 ]
               },

@@ -16,6 +16,7 @@ const (
 	EnumArray   DataType = "enumarray"
 	Integer     DataType = "integer"
 	IntArray    DataType = "intarray"
+	Int64Array  DataType = "int64array"
 )
 
 // DataTypeToSQLType converts the internal representation to SQL

@@ -45,6 +45,17 @@ func ConvertImageFromProto(obj *storage.Image) (*schema.Images, error) {
 	return model, nil
 }
 
+// ConvertImageLayerFromProto converts a `*storage.ImageLayer` to Gorm model
+func ConvertImageLayerFromProto(obj *storage.ImageLayer, idx int, images_Id string) (*schema.ImagesLayers, error) {
+	model := &schema.ImagesLayers{
+		ImagesId:    images_Id,
+		Idx:         idx,
+		Instruction: obj.GetInstruction(),
+		Value:       obj.GetValue(),
+	}
+	return model, nil
+}
+
 // ConvertImageToProto converts Gorm model `Images` to its protobuf type object
 func ConvertImageToProto(m *schema.Images) (*storage.Image, error) {
 	var msg storage.Image
@@ -60,36 +71,6 @@ func TestImageSerialization(t *testing.T) {
 	m, err := ConvertImageFromProto(obj)
 	assert.NoError(t, err)
 	conv, err := ConvertImageToProto(m)
-	assert.NoError(t, err)
-	assert.Equal(t, obj, conv)
-}
-
-// ConvertImageLayerFromProto converts a `*storage.ImageLayer` to Gorm model
-func ConvertImageLayerFromProto(obj *storage.ImageLayer, idx int, images_Id string) (*schema.ImagesLayers, error) {
-	model := &schema.ImagesLayers{
-		ImagesId:    images_Id,
-		Idx:         idx,
-		Instruction: obj.GetInstruction(),
-		Value:       obj.GetValue(),
-	}
-	return model, nil
-}
-
-// ConvertImageLayerToProto converts Gorm model `ImagesLayers` to its protobuf type object
-func ConvertImageLayerToProto(m *schema.ImagesLayers) (*storage.ImageLayer, error) {
-	var msg storage.ImageLayer
-	if err := msg.Unmarshal(m.Serialized); err != nil {
-		return nil, err
-	}
-	return &msg, nil
-}
-
-func TestImageLayerSerialization(t *testing.T) {
-	obj := &storage.ImageLayer{}
-	assert.NoError(t, testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	m, err := ConvertImageLayerFromProto(obj)
-	assert.NoError(t, err)
-	conv, err := ConvertImageLayerToProto(m)
 	assert.NoError(t, err)
 	assert.Equal(t, obj, conv)
 }
