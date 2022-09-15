@@ -15,16 +15,7 @@ import (
 var (
 	// CreateTableNetworkEntitiesStmt holds the create statement for table `network_entities`.
 	CreateTableNetworkEntitiesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists network_entities (
-                   Info_Id varchar,
-                   Info_ExternalSource_Default bool,
-                   serialized bytea,
-                   PRIMARY KEY(Info_Id)
-               )
-               `,
 		GormModel: (*NetworkEntities)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

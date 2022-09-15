@@ -15,21 +15,7 @@ import (
 var (
 	// CreateTableNodeComponentsStmt holds the create statement for table `node_components`.
 	CreateTableNodeComponentsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists node_components (
-                   Id varchar,
-                   Name varchar,
-                   Version varchar,
-                   Priority integer,
-                   RiskScore numeric,
-                   TopCvss numeric,
-                   OperatingSystem varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*NodeComponents)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

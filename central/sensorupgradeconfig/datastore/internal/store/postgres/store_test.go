@@ -49,7 +49,7 @@ func (s *SensorUpgradeConfigsStoreSuite) SetupTest() {
 	Destroy(ctx, pool)
 
 	s.pool = pool
-	s.store = New(ctx, pool)
+	s.store = New(pool)
 }
 
 func (s *SensorUpgradeConfigsStoreSuite) TearDownTest() {

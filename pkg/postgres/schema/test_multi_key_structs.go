@@ -17,50 +17,11 @@ import (
 var (
 	// CreateTableTestMultiKeyStructsStmt holds the create statement for table `test_multi_key_structs`.
 	CreateTableTestMultiKeyStructsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists test_multi_key_structs (
-                   Key1 varchar,
-                   Key2 varchar,
-                   StringSlice text[],
-                   Bool bool,
-                   Uint64 integer,
-                   Int64 integer,
-                   Float numeric,
-                   Labels jsonb,
-                   Timestamp timestamp,
-                   Enum integer,
-                   Enums int[],
-                   String_ varchar,
-                   IntSlice int[],
-                   Oneofnested_Nested varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Key1, Key2)
-               )
-               `,
 		GormModel: (*TestMultiKeyStructs)(nil),
-		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
-				Table: `
-               create table if not exists test_multi_key_structs_nesteds (
-                   test_multi_key_structs_Key1 varchar,
-                   test_multi_key_structs_Key2 varchar,
-                   idx integer,
-                   Nested varchar,
-                   IsNested bool,
-                   Int64 integer,
-                   Nested2_Nested2 varchar,
-                   Nested2_IsNested bool,
-                   Nested2_Int64 integer,
-                   PRIMARY KEY(test_multi_key_structs_Key1, test_multi_key_structs_Key2, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (test_multi_key_structs_Key1, test_multi_key_structs_Key2) REFERENCES test_multi_key_structs(Key1, Key2) ON DELETE CASCADE
-               )
-               `,
 				GormModel: (*TestMultiKeyStructsNesteds)(nil),
-				Indexes: []string{
-					"create index if not exists testMultiKeyStructsNesteds_idx on test_multi_key_structs_nesteds using btree(idx)",
-				},
-				Children: []*postgres.CreateStmts{},
+				Children:  []*postgres.CreateStmts{},
 			},
 		},
 	}

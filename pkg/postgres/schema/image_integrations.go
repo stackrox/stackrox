@@ -15,17 +15,7 @@ import (
 var (
 	// CreateTableImageIntegrationsStmt holds the create statement for table `image_integrations`.
 	CreateTableImageIntegrationsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists image_integrations (
-                   Id varchar,
-                   Name varchar UNIQUE,
-                   ClusterId varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ImageIntegrations)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

@@ -17,24 +17,8 @@ import (
 var (
 	// CreateTableImageCveEdgesStmt holds the create statement for table `image_cve_edges`.
 	CreateTableImageCveEdgesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists image_cve_edges (
-                   Id varchar,
-                   FirstImageOccurrence timestamp,
-                   State integer,
-                   ImageId varchar,
-                   ImageCveId varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
-               )
-               `,
 		GormModel: (*ImageCveEdges)(nil),
-		Indexes: []string{
-			"create index if not exists imageCveEdges_ImageId on image_cve_edges using hash(ImageId)",
-			"create index if not exists imageCveEdges_ImageCveId on image_cve_edges using hash(ImageCveId)",
-		},
-		Children: []*postgres.CreateStmts{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ImageCveEdgesSchema is the go schema for table `image_cve_edges`.

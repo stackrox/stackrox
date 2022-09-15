@@ -15,40 +15,11 @@ import (
 var (
 	// CreateTableRoleBindingsStmt holds the create statement for table `role_bindings`.
 	CreateTableRoleBindingsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists role_bindings (
-                   Id varchar,
-                   Name varchar,
-                   Namespace varchar,
-                   ClusterId varchar,
-                   ClusterName varchar,
-                   ClusterRole bool,
-                   Labels jsonb,
-                   Annotations jsonb,
-                   RoleId varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*RoleBindings)(nil),
-		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
-				Table: `
-               create table if not exists role_bindings_subjects (
-                   role_bindings_Id varchar,
-                   idx integer,
-                   Kind integer,
-                   Name varchar,
-                   PRIMARY KEY(role_bindings_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (role_bindings_Id) REFERENCES role_bindings(Id) ON DELETE CASCADE
-               )
-               `,
 				GormModel: (*RoleBindingsSubjects)(nil),
-				Indexes: []string{
-					"create index if not exists roleBindingsSubjects_idx on role_bindings_subjects using btree(idx)",
-				},
-				Children: []*postgres.CreateStmts{},
+				Children:  []*postgres.CreateStmts{},
 			},
 		},
 	}

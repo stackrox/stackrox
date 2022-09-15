@@ -49,7 +49,7 @@ func (s *InstallationInfosStoreSuite) SetupTest() {
 	Destroy(ctx, pool)
 
 	s.pool = pool
-	s.store = New(ctx, pool)
+	s.store = New(pool)
 }
 
 func (s *InstallationInfosStoreSuite) TearDownTest() {

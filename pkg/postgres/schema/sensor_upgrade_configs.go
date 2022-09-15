@@ -13,14 +13,7 @@ import (
 var (
 	// CreateTableSensorUpgradeConfigsStmt holds the create statement for table `sensor_upgrade_configs`.
 	CreateTableSensorUpgradeConfigsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists sensor_upgrade_configs (
-                   serialized bytea
-                   
-               )
-               `,
 		GormModel: (*SensorUpgradeConfigs)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

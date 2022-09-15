@@ -13,16 +13,7 @@ import (
 var (
 	// CreateTableAuthProvidersStmt holds the create statement for table `auth_providers`.
 	CreateTableAuthProvidersStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists auth_providers (
-                   Id varchar,
-                   Name varchar UNIQUE,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*AuthProviders)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

@@ -41,7 +41,7 @@ func addDefaultConfigIfEmpty(d DataStore) error {
 func initialize() {
 	var storage store.Store
 	if features.PostgresDatastore.Enabled() {
-		storage = postgres.New(context.Background(), globaldb.GetPostgres())
+		storage = postgres.New(globaldb.GetPostgres())
 	} else {
 		storage = bolt.New(globaldb.GetGlobalDB())
 	}

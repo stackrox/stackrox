@@ -13,14 +13,7 @@ import (
 var (
 	// CreateTableVersionsStmt holds the create statement for table `versions`.
 	CreateTableVersionsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists versions (
-                   serialized bytea
-                   
-               )
-               `,
 		GormModel: (*Versions)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

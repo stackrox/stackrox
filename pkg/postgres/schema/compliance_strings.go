@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableComplianceStringsStmt holds the create statement for table `compliance_strings`.
 	CreateTableComplianceStringsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists compliance_strings (
-                   Id varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ComplianceStrings)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 
