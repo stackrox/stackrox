@@ -57,6 +57,7 @@ export const general = {
 export const search = {
     results: '/v1/search?query=*',
     options: '/v1/search/metadata/options*',
+    optionsCategories: (categories) => `/v1/search/metadata/options?categories=${categories}`,
     autocomplete: 'v1/search/autocomplete*',
     autocompleteBySearch: (searchObj, category) =>
         `v1/search/autocomplete?query=${searchObjToQuery(searchObj)}&categories=${category}`,
