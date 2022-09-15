@@ -106,31 +106,6 @@ const getIsLoadingUserRolePermissions = (state) => state.isLoading;
 
 // TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
 const replacedResourceMapping = new Map([
-    ['AllComments', 'Administration'],
-    ['APIToken', 'Integration'],
-    ['AuthProvider', 'Access'],
-    ['BackupPlugins', 'Integration'],
-    ['ComplianceRuns', 'Compliance'],
-    ['ComplianceRunSchedule', 'Administration'],
-    ['Config', 'Administration'],
-    ['DebugLogs', 'Administration'],
-    ['Group', 'Access'],
-    ['ImageIntegration', 'Integration'],
-    ['Indicator', 'DeploymentExtension'],
-    ['Licenses', 'Access'],
-    ['NetworkBaseline', 'DeploymentExtension'],
-    ['NetworkGraphConfig', 'Administration'],
-    ['Notifier', 'Integration'],
-    ['ProbeUpload', 'Administration'],
-    ['ProcessWhitelist', 'DeploymentExtension'],
-    ['Risk', 'DeploymentExtension'],
-    ['Role', 'Access'],
-    ['ScannerBundle', 'Administration'],
-    ['ScannerDefinitions', 'Administration'],
-    ['SensorUpgradeConfig', 'Administration'],
-    ['ServiceIdentity', 'Administration'],
-    ['SignatureIntegration', 'Integration'],
-    ['User', 'Access'],
 ]);
 
 /*

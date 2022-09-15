@@ -12,7 +12,7 @@
         "permissions": {
             "name": "Admin",
             "resourceToAccess": {
-                "User": "READ_WRITE_ACCESS"
+                "Access": "READ_WRITE_ACCESS"
             }
         },
         "roles": [
@@ -20,14 +20,14 @@
                 "name": "Admin",
                 "accessScopeId": "io.stackrox.authz.accessscope.unrestricted",
                 "resourceToAccess": {
-                    "User": "READ_WRITE_ACCESS"
+                    "Access": "READ_WRITE_ACCESS"
                 }
             },
             {
                 "name": "Analyst",
                 "accessScopeId": "io.stackrox.authz.accessscope.unrestricted",
                 "resourceToAccess": {
-                    "User": "READ_ACCESS"
+                    "Access": "READ_ACCESS"
                 }
             },
             {

@@ -27,7 +27,7 @@ const SystemConfigPage = (): ReactElement => {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     */
     const { hasReadWriteAccess } = usePermissions();
-    const hasReadWriteAccessForConfig = hasReadWriteAccess('Config');
+    const hasReadWriteAccessForConfig = hasReadWriteAccess('Administration');
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isDecommissionedClusterRetentionEnabled = isFeatureFlagEnabled(
         'ROX_DECOMMISSIONED_CLUSTER_RETENTION'

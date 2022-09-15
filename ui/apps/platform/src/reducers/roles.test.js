@@ -31,7 +31,7 @@ describe('userRolePermissions selector', () => {
             name: '',
             userRolePermissions: {
                 Deployment: 'READ_ACCESS',
-                ServiceIdentity: 'NO_ACCESS',
+                Administration: 'NO_ACCESS',
             },
         };
         const state = {
