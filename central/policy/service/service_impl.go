@@ -347,6 +347,8 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 	}
 
 	t := func(c concurrency.ErrorWaitable) (interface{}, error) {
+		// Copy over SAC scopes into background context
+		ctx := sac.CopyScopeCheckerCore(context.Background(), ctx)
 		return s.predicateBasedDryRunPolicy(ctx, c, request)
 	}
 
