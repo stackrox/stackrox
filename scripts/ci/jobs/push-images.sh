@@ -67,7 +67,9 @@ push_images() {
     fi
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]] && [[ -n "${MAIN_IMAGE}" ]]; then
-        add_build_comment_to_pr
+        add_build_comment_to_pr || {
+            info "Could not add a comment to the PR"
+        }
     fi
 }
 
@@ -100,13 +102,8 @@ slack_build_notice() {
         fi
     elif is_nightly_run; then
         build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*stackrox*night*"
-        if is_in_PR_context && pr_has_label "simulate-nightly-run"; then
-            # send to #slack-test when testing nightlies
-            webhook_url="${SLACK_MAIN_WEBHOOK}"
-        else
-            # send to #nightly-ci-runs
-            webhook_url="${NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK}"
-        fi
+        # send to #nightly-ci-runs
+        webhook_url="${NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK}"
     else
         die "unexpected"
     fi

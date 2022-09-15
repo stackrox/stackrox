@@ -6,18 +6,6 @@ import { disableFragmentWarnings } from '@apollo/client';
 // `cveFields` fragment that is dynamically used throughout Vuln Management
 disableFragmentWarnings();
 
-/**
- * Fix for test error "matchMedia not present, legacy browsers require a polyfill"
- * https://github.com/akiran/react-slick/issues/742
- */
-if (!window.matchMedia) {
-    window.matchMedia = () => ({
-        matches: false,
-        addListener() {},
-        removeListener() {},
-    });
-}
-
 class Spy {
     spy = null;
 

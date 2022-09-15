@@ -107,7 +107,7 @@ type ComplianceSuiteStatus struct {
 	Conditions conditions.Conditions `json:"conditions,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ComplianceSuite represents a set of scans that will be applied to the
 // cluster. These should help deployers achieve a certain compliance target.
@@ -126,7 +126,7 @@ type ComplianceSuite struct {
 	Status ComplianceSuiteStatus `json:"status,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ComplianceSuiteList contains a list of ComplianceSuite
 type ComplianceSuiteList struct {

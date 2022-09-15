@@ -3,6 +3,7 @@ package netpol
 import (
 	"os"
 
+	npguard "github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
@@ -12,14 +13,15 @@ import (
 
 type generateNetpolCommand struct {
 	// Properties that are bound to cobra flags.
-	offline          bool
-	folderPath       string
-	outputFolderPath string
-	outputFilePath   string
-	removeOutputPath bool
-	mergeMode        bool
-	splitMode        bool
-	stdoutMode       bool
+	offline               bool
+	stopOnFirstError      bool
+	treatWarningsAsErrors bool
+	inputFolderPath       string
+	outputFolderPath      string
+	outputFilePath        string
+	removeOutputPath      bool
+	mergeMode             bool
+	splitMode             bool
 
 	// injected or constructed values
 	env     environment.Environment
@@ -33,29 +35,37 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Use:  "netpol <folder-path>",
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := generateNetpolCmd.construct(args, c); err != nil {
+			synth, err := generateNetpolCmd.construct(args, c)
+			if err != nil {
 				return err
 			}
 			if err := generateNetpolCmd.validate(); err != nil {
 				return err
 			}
-			return generateNetpolCmd.generateNetpol()
+			return generateNetpolCmd.generateNetpol(synth)
 		},
 	}
+	c.Flags().BoolVar(&generateNetpolCmd.treatWarningsAsErrors, "strict", false, "treat warnings as errors")
+	c.Flags().BoolVar(&generateNetpolCmd.stopOnFirstError, "fail", false, "fail on the first encountered error")
 	c.Flags().BoolVar(&generateNetpolCmd.removeOutputPath, "remove", false, "remove the output path if it already exists")
 	c.Flags().StringVarP(&generateNetpolCmd.outputFolderPath, "output-dir", "d", "", "save generated policies into target folder - one file per policy")
 	c.Flags().StringVarP(&generateNetpolCmd.outputFilePath, "output-file", "f", "", "save and merge generated policies into a single yaml file")
 	return c
 }
 
-func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) error {
-	cmd.folderPath = args[0]
+func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) (netpolGenerator, error) {
+	cmd.inputFolderPath = args[0]
 	cmd.splitMode = c.Flags().Changed("output-dir")
 	cmd.mergeMode = c.Flags().Changed("output-file")
-	if !cmd.splitMode && !cmd.mergeMode {
-		cmd.stdoutMode = true
+
+	var opts []npguard.PoliciesSynthesizerOption
+	if cmd.env != nil && cmd.env.Logger() != nil {
+		opts = append(opts, npguard.WithLogger(newNpgLogger(cmd.env.Logger())))
 	}
-	return nil
+	if cmd.stopOnFirstError {
+		opts = append(opts, npguard.WithStopOnError())
+	}
+	return npguard.NewPoliciesSynthesizer(opts...), nil
 }
 
 func (cmd *generateNetpolCommand) validate() error {

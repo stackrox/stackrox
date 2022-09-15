@@ -24,14 +24,14 @@ require (
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
 	github.com/cloudflare/cfssl v1.6.2
 	github.com/containers/image/v5 v5.20.0
-	github.com/coreos/go-oidc/v3 v3.3.0
+	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/couchbase/moss v0.1.0 // indirect
 	github.com/dave/jennifer v1.5.1
 	github.com/deckarep/golang-set v1.8.0
 	github.com/dexidp/dex v0.0.0-20220607113954-3836196af2e7
 	github.com/docker/distribution v2.8.1+incompatible
-	github.com/docker/docker v20.10.17+incompatible
+	github.com/docker/docker v20.10.18+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/facebookincubator/nvdtools v0.1.4
@@ -40,7 +40,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v1.2.2
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/gofrs/uuid v4.2.0+incompatible
+	github.com/gofrs/uuid v4.3.0+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang/mock v1.6.0
@@ -71,7 +71,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/sys/mount v0.3.0 // indirect
-	github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220802140408-c0ab819afba6
+	github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220905143132-4bca39e41111
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
@@ -131,6 +131,7 @@ require (
 	k8s.io/kubelet v0.22.13
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/controller-runtime v0.11.2
+	sigs.k8s.io/controller-tools v0.8.0
 	sigs.k8s.io/e2e-framework v0.0.7
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -219,6 +220,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.11.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
+	github.com/gobuffalo/flect v0.2.4 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -416,7 +418,8 @@ replace (
 	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20220907150529-4ecbd2543f9e
 
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56
-	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
+	// we need https://github.com/fullsailor/pkcs7/pull/42 to be merged
+	github.com/fullsailor/pkcs7 => github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
 
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20220204234128-07f109db0819

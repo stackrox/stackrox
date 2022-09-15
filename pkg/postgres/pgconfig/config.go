@@ -18,8 +18,7 @@ const (
 
 	activeSuffix = "_active"
 
-	// TODO(ROX-12059):  Assuming capacity until we can figure out best way to determine that
-	// across the possible configurations which includes a managed Postgres.
+	// capacity - Minimum recommended Postgres capacity
 	capacity = 100 * size.GB
 )
 

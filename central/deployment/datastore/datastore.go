@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -37,6 +38,7 @@ import (
 )
 
 // DataStore is an intermediary to AlertStorage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
@@ -105,6 +107,42 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Po
 		storage = dackBoxStore.New(dacky, keyFence)
 	}
 	return newDataStore(storage, dacky, pool, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+}
+
+// NewTestDataStore allows for direct creation of the datastore for testing purposes
+func NewTestDataStore(t *testing.T, storage store.Store, graphProvider graph.Provider, pool *pgxpool.Pool,
+	bleveIndex bleve.Index, processIndex bleve.Index,
+	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
+	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
+	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
+	if t == nil {
+		return nil, errors.New("NewTestDataStore called without testing")
+	}
+	storage, err := cache.NewCachedStore(storage)
+	if err != nil {
+		return nil, err
+	}
+	var deploymentIndexer index.Indexer
+	var searcher search.Searcher
+	if features.PostgresDatastore.Enabled() {
+		deploymentIndexer = postgres.NewIndexer(pool)
+		searcher = search.NewV2(storage, deploymentIndexer)
+	} else {
+		deploymentIndexer = index.New(bleveIndex, processIndex)
+		searcher = search.New(storage,
+			graphProvider,
+			cveIndexer.New(bleveIndex),
+			componentCVEEdgeIndexer.New(bleveIndex),
+			componentIndexer.New(bleveIndex),
+			imageComponentEdgeIndexer.New(bleveIndex),
+			imageIndexer.New(bleveIndex),
+			deploymentIndexer,
+			imageCVEEdgeIndexer.New(bleveIndex))
+	}
+	ds := newDatastoreImpl(storage, deploymentIndexer, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+
+	ds.initializeRanker()
+	return ds, nil
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.

@@ -146,7 +146,8 @@ describe('Images at most risk dashboard widget', () => {
     });
 
     it('should contain a button that resets the widget options to default', async () => {
-        const { user } = setup();
+        setup();
+        const user = userEvent.setup({ skipHover: true });
 
         await user.click(await screen.findByLabelText('Options'));
         const [fixableCves, allCves, activeImages, allImages] = await screen.findAllByRole(
@@ -173,7 +174,6 @@ describe('Images at most risk dashboard widget', () => {
 
         const resetButton = await screen.findByLabelText('Revert to default options');
         await user.click(resetButton);
-        await user.unhover(resetButton); // Avoid displaying the tooltip, which leads to React errors on test exit
 
         expect(fixableCves).toHaveAttribute('aria-pressed', 'true');
         expect(allCves).toHaveAttribute('aria-pressed', 'false');

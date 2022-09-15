@@ -229,7 +229,7 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
             },
             {
                 Header: `Images`,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => (
                     <TableCountLink
@@ -241,7 +241,9 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
                 ),
                 id: deploymentSortFields.IMAGE_COUNT,
                 accessor: 'imageCount',
-                sortField: deploymentSortFields.IMAGE_COUNT,
+                // TODO: restore sorting on this field, see https://issues.redhat.com/browse/ROX-12548 for context
+                // sortField: componentSortFields.IMAGES,
+                sortable: false,
             },
             {
                 Header: `Risk Priority`,

@@ -171,7 +171,8 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
                 ),
                 id: namespaceSortFields.IMAGES,
                 accessor: 'imageCount',
-                sortField: namespaceSortFields.IMAGES,
+                // TODO: restore sorting on this field, see https://issues.redhat.com/browse/ROX-12548 for context
+                // sortField: componentSortFields.IMAGES,
                 sortable: false,
             },
             // @TODD, restore the Policy Counts column once its performance is improved,

@@ -465,6 +465,27 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 		},
+
+		"add managed service setting": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{Annotations: map[string]string{managedServicesAnnotation: "true"}},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"persistentVolumeClaim": map[string]interface{}{
+							"createClaim": false,
+						},
+					},
+				},
+				"env": map[string]interface{}{
+					"managedServices": true,
+				},
+			},
+		},
 	}
 
 	for name, tt := range tests {

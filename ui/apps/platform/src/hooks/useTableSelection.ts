@@ -55,7 +55,7 @@ function useTableSelection<T extends Base>(
     function getSelectedIds() {
         const ids: string[] = [];
         for (let i = 0; i < selected.length; i += 1) {
-            if (selected[i]) {
+            if (selected[i] && data[i]?.id) {
                 ids.push(data[i].id);
             }
         }

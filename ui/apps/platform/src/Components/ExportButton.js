@@ -21,7 +21,13 @@ const queryParamMap = {
 const complianceDownloadUrl = '/api/compliance/export/csv';
 
 function checkVulnMgmtSupport(page, type) {
-    return page === useCaseTypes.VULN_MANAGEMENT && type === entityTypes.CVE;
+    return (
+        page === useCaseTypes.VULN_MANAGEMENT &&
+        (type === entityTypes.CVE ||
+            type === entityTypes.IMAGE_CVE ||
+            type === entityTypes.NODE_CVE ||
+            type === entityTypes.CLUSTER_CVE)
+    );
 }
 
 function checkComplianceSupport(page, type) {

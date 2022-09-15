@@ -69,8 +69,14 @@ BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMA
 ifeq ($(UNAME_S),Darwin)
 ifeq ($(UNAME_M),arm64)
 	# TODO(ROX-12064) build these images in the CI pipeline
-	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.44-arm64
+	# Currently built on a GCP ARM instance off the rox-ci-image branch "cgorman-custom-arm"
+	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.46-arm64
 endif
+endif
+
+TARGET_ARCH := "amd64"
+ifeq ($(UNAME_M),arm64)
+TARGET_ARCH = "arm64"
 endif
 
 ifeq ($(UNAME_S),Darwin)
@@ -116,6 +122,11 @@ EASYJSON_BIN := $(GOBIN)/easyjson
 $(EASYJSON_BIN): deps
 	$(SILENT)echo "+ $@"
 	go install github.com/mailru/easyjson/easyjson
+
+CONTROLLER_GEN_BIN := $(GOBIN)/controller-gen
+$(CONTROLLER_GEN_BIN): deps
+	$(SILENT)echo "+ $@"
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen
 
 GOVERALLS_BIN := $(GOBIN)/goveralls
 $(GOVERALLS_BIN): deps
@@ -287,8 +298,14 @@ clean-easyjson-srcs:
 	@echo "+ $@"
 	$(SILENT)find . -name '*_easyjson.go' -exec rm {} \;
 
+COMPLIANCEOPERATOR_FILES = $(shell grep -R '+k8s:deepcopy-gen' pkg/complianceoperator/api/v1alpha1 -l)
+pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go: $(CONTROLLER_GEN_BIN) $(COMPLIANCEOPERATOR_FILES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(CONTROLLER_GEN_BIN) object:headerFile="tools/boilerplate.go.txt" paths="./pkg/complianceoperator/api/v1alpha1..."
+	# The generated source files might not comply with the current go formatting, so format them explicitly.
+	go fmt ./pkg/complianceoperator/api/v1alpha1/...
+
 .PHONY: go-generated-srcs
-go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
+go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN) pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go
 	@echo "+ $@"
 	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate -v -x ./...
 
@@ -343,12 +360,14 @@ endif
 
 .PHONY: build-prep
 build-prep: deps
-	mkdir -p bin/{darwin_amd64,linux_amd64,linux_ppc64le,linux_s390x,windows_amd64}
+	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
 .PHONY: cli-build
 cli-build: build-prep
 	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
 ifdef CI
@@ -357,6 +376,8 @@ endif
 
 .PHONY: cli
 cli: cli-build
+	# Workaround a bug on MacOS
+	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
@@ -557,6 +578,7 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
+		--build-arg TARGET_ARCH=$(TARGET_ARCH) \
 		--file image/rhel/Dockerfile.gen \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"

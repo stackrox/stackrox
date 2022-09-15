@@ -22,7 +22,7 @@ find_tag() {
 }
 
 # Seconds:
-TIME_LIMIT=1200
+TIME_LIMIT=2400
 INTERVAL=30
 
 # bash built-in variable
