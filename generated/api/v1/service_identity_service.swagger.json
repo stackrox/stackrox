@@ -152,6 +152,7 @@
         "UNKNOWN_SERVICE",
         "SENSOR_SERVICE",
         "CENTRAL_SERVICE",
+        "CENTRAL_DB_SERVICE",
         "REMOTE_SERVICE",
         "COLLECTOR_SERVICE",
         "MONITORING_UI_SERVICE",
@@ -162,7 +163,8 @@
         "SCANNER_DB_SERVICE",
         "ADMISSION_CONTROL_SERVICE"
       ],
-      "default": "UNKNOWN_SERVICE"
+      "default": "UNKNOWN_SERVICE",
+      "title": "Next available tag: 13"
     },
     "v1Authorities": {
       "type": "object",
