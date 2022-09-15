@@ -5,7 +5,7 @@ load "../helpers.bash"
 out_dir=""
 
 setup_file() {
-  echo "Testing roxctl version: '$(roxctl-development version)'" >&3
+  echo "Testing roxctl version: '$(roxctl-release version)'" >&3
   command -v yq || skip "Tests in this file require yq"
   assert_file_exist "$test_data/helm-output-secured-cluster-services/ca-config.yaml"
   assert_file_exist "$test_data/helm-output-secured-cluster-services/cluster-init-bundle.yaml"
@@ -20,10 +20,19 @@ teardown() {
   rm -rf "$out_dir"
 }
 
-@test "roxctl-release helm output secured-cluster-services --image-defaults=development_build should fail" {
+@test "roxctl-release helm output secured-cluster-services --image-defaults=development_build should use quay.io/rhacs-eng registry" {
   run roxctl-release helm output secured-cluster-services --image-defaults=development_build --remove --output-dir "$out_dir"
-  assert_failure
-  assert_output --partial "unexpected value 'development_build', allowed values are"
+  assert_success
+  assert_output --partial "Written Helm chart secured-cluster-services to directory"
+
+  helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
+  assert_components_registry "$out_dir/rendered" "quay.io/rhacs-eng" "$any_version" 'collector-slim' 'admission-controller' 'sensor'
+
+  helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME" "--set" "collector.slimMode=false"
+  assert_components_registry "$out_dir/rendered" "quay.io/rhacs-eng" "$any_version" 'collector' 'admission-controller' 'sensor'
+
+  helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME" "--set" "collector.slimMode=true"
+  assert_components_registry "$out_dir/rendered" "quay.io/rhacs-eng" "$any_version" 'collector-slim' 'admission-controller' 'sensor'
 }
 
 @test "roxctl-release helm output secured-cluster-services (default flavor) should use registry.redhat.io registry (default collector)" {
