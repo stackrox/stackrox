@@ -47,9 +47,7 @@ function NotFoundPage(): ReactElement {
 
 const AsyncSearchPage = asyncComponent(() => import('Containers/Search/SearchPage'));
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
-const AsyncDashboardPage = asyncComponent(
-    () => import('Containers/Dashboard/PatternFly/DashboardPage')
-);
+const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
 const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/ClustersPage'));
 const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/ClustersPage'));
