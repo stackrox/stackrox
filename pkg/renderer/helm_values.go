@@ -99,8 +99,10 @@ central:
     {{ end }}
   {{- end }}
 
+
+  {{- if .K8sConfig.EnableCentralDB }}
   db:
-    enabled: {{ .K8sConfig.EnableCentralDB }}
+    enabled: true
     {{- if .HasCentralDBHostPath }}
     {{- if .HostPath.DB.WithNodeSelector }}
     nodeSelector:
@@ -137,7 +139,7 @@ central:
       {{- else }}
       none: true
       {{- end }}
-
+  {{- end }}
 scanner:
   # IMPORTANT: If you do not wish to run StackRox Scanner, change the value on the following
   # line to "true".
@@ -311,12 +313,15 @@ central:
       {{- index .SecretsBase64Map "htpasswd" | b64dec | nindent 6 }}
   {{- end }}
 
+  {{- if .K8sConfig.EnableCentralDB }}
   {{- if ne (index .SecretsBase64Map "central-db-password") "" }}
   # Password for securing the communication between Central and its DB.
   # This password is not relevant to the user (unless for debugging purposes);
   # it merely acts as a pre-shared, random secret for securing the connection.
-  dbPassword:
-    value: {{ index .SecretsBase64Map "central-db-password" | b64dec }}
+  db:
+    password:
+      value: {{ index .SecretsBase64Map "central-db-password" | b64dec }}
+  {{- end }}
   {{- end }}
 
   {{- if ne (index .SecretsBase64Map "jwt-key.pem") "" }}
