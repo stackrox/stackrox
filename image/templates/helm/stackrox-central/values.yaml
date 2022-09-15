@@ -193,8 +193,8 @@
 #      # Specify a custom hostname if desired, otherwise accept the default from OpenShift.
 #      host: null
 #
+[< if .FeatureFlags.ROX_POSTGRES_DATASTORE >]
 #  db:
-#    # Central DB is currently a WIP and cannot be enabled outside of development
 #    enabled: false
 #
 #    # Preexisting signifies that a Postgres wire-compatible database has already been deployed and a Central DB pod
@@ -254,6 +254,7 @@
 #      size: null
 #    none: null
 #
+[<- end >]
 ## Configuration options relating to StackRox Scanner.
 #scanner:
 #  # If this is set to true, StackRox will be deployed without scanner. No other setting in this

@@ -38,9 +38,9 @@ defaults:
         port: null
       route:
         enabled: false
-
+[< if .FeatureFlags.ROX_POSTGRES_DATASTORE >]
     db:
-      enabled: [< .FeatureFlags.ROX_POSTGRES_DATASTORE >]
+      enabled: true
 
       preexisting: false
 
@@ -63,7 +63,7 @@ defaults:
         limits:
           memory: "8Gi"
           cpu: "4"
-
+[<- end >]
   scanner:
     disable: false
     replicas: 3
@@ -112,6 +112,8 @@ pvcDefaults:
   claimName: "stackrox-db"
   size: "100Gi"
 
+[< if .FeatureFlags.ROX_POSTGRES_DATASTORE >]
 dbPVCDefaults:
   claimName: "central-db"
   size: "100Gi"
+[< end >]
