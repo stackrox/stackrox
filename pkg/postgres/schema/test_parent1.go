@@ -16,34 +16,11 @@ import (
 var (
 	// CreateTableTestParent1Stmt holds the create statement for table `test_parent1`.
 	CreateTableTestParent1Stmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists test_parent1 (
-                   Id varchar,
-                   ParentId varchar,
-                   Val varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ParentId) REFERENCES test_grandparents(Id) ON DELETE CASCADE
-               )
-               `,
 		GormModel: (*TestParent1)(nil),
-		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
-				Table: `
-               create table if not exists test_parent1_childrens (
-                   test_parent1_Id varchar,
-                   idx integer,
-                   ChildId varchar,
-                   PRIMARY KEY(test_parent1_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (test_parent1_Id) REFERENCES test_parent1(Id) ON DELETE CASCADE
-               )
-               `,
 				GormModel: (*TestParent1Childrens)(nil),
-				Indexes: []string{
-					"create index if not exists testParent1Childrens_idx on test_parent1_childrens using btree(idx)",
-				},
-				Children: []*postgres.CreateStmts{},
+				Children:  []*postgres.CreateStmts{},
 			},
 		},
 	}

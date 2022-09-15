@@ -1,14 +1,12 @@
 {{define "schemaVar"}}{{.|upperCamelCase}}Schema{{end}}
 {{define "createTableStmtVar"}}CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
-{{define "commmaSeparatedColumnNamesFromField"}}{{range $idx, $field:= .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
-{{define "commaSeparatedColumnsInThisTable"}}{{range $idx, $columnNamePair := .}}{{if $idx}}, {{end}}{{$columnNamePair.ColumnNameInThisSchema}}{{end}}{{end}}
-{{define "commaSeparatedColumnsInOtherTable"}}{{range $idx, $columnNamePair := .}}{{if $idx}}, {{end}}{{$columnNamePair.ColumnNameInOtherSchema}}{{end}}{{end}}
 
 package schema
 
 import (
     "context"
     "fmt"
+    "reflect"
 
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
@@ -20,25 +18,7 @@ import (
 {{- define "createTableStmt" }}
 {{- $schema := . }}
 &postgres.CreateStmts{
-    Table: `
-               create table if not exists {{$schema.Table}} (
-               {{- range $idx, $field := $schema.DBColumnFields }}
-                   {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}}{{ if $schema.PrimaryKeys }},{{end}}
-               {{- end}}
-                   {{ if $schema.PrimaryKeys }}PRIMARY KEY({{template "commmaSeparatedColumnNamesFromField" $schema.PrimaryKeys }}){{end}}
-               {{- range $idx, $rel := $schema.RelationshipsToDefineAsForeignKeys -}},
-                   CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumnsInThisTable" $rel.MappedColumnNames}}) REFERENCES {{$rel.OtherSchema.Table}}({{template "commaSeparatedColumnsInOtherTable" $rel.MappedColumnNames}}) ON DELETE CASCADE
-               {{- end}}
-               )
-               `,
     GormModel: (*{{$schema.Table|upperCamelCase}})(nil),
-    Indexes: []string {
-                   {{- range $idx, $field := $schema.Fields}}
-                       {{- if $field.Options.Index}}
-                       "create index if not exists {{$schema.Table|lowerCamelCase}}_{{$field.ColumnName}} on {{$schema.Table}} using {{$field.Options.Index}}({{$field.ColumnName}})",
-                       {{- end}}
-                   {{- end}}
-                   },
     Children: []*postgres.CreateStmts{
      {{- range $idx, $child := $schema.Children }}
         {{- template "createTableStmt" $child }},

@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableNetworkpoliciesundodeploymentsStmt holds the create statement for table `networkpoliciesundodeployments`.
 	CreateTableNetworkpoliciesundodeploymentsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists networkpoliciesundodeployments (
-                   DeploymentId varchar,
-                   serialized bytea,
-                   PRIMARY KEY(DeploymentId)
-               )
-               `,
 		GormModel: (*Networkpoliciesundodeployments)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

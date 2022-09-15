@@ -13,16 +13,7 @@ import (
 var (
 	// CreateTablePermissionSetsStmt holds the create statement for table `permission_sets`.
 	CreateTablePermissionSetsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists permission_sets (
-                   Id varchar,
-                   Name varchar UNIQUE,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*PermissionSets)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

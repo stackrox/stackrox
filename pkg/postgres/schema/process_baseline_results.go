@@ -15,17 +15,7 @@ import (
 var (
 	// CreateTableProcessBaselineResultsStmt holds the create statement for table `process_baseline_results`.
 	CreateTableProcessBaselineResultsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists process_baseline_results (
-                   DeploymentId varchar,
-                   ClusterId varchar,
-                   Namespace varchar,
-                   serialized bytea,
-                   PRIMARY KEY(DeploymentId)
-               )
-               `,
 		GormModel: (*ProcessBaselineResults)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

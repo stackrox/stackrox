@@ -13,14 +13,7 @@ import (
 var (
 	// CreateTableInstallationInfosStmt holds the create statement for table `installation_infos`.
 	CreateTableInstallationInfosStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists installation_infos (
-                   serialized bytea
-                   
-               )
-               `,
 		GormModel: (*InstallationInfos)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

@@ -16,20 +16,7 @@ import (
 var (
 	// CreateTableNamespacesStmt holds the create statement for table `namespaces`.
 	CreateTableNamespacesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists namespaces (
-                   Id varchar,
-                   Name varchar,
-                   ClusterId varchar,
-                   ClusterName varchar,
-                   Labels jsonb,
-                   Annotations jsonb,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*Namespaces)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

@@ -15,18 +15,7 @@ import (
 var (
 	// CreateTableComplianceDomainsStmt holds the create statement for table `compliance_domains`.
 	CreateTableComplianceDomainsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists compliance_domains (
-                   Id varchar,
-                   Cluster_Id varchar,
-                   Cluster_Name varchar,
-                   Cluster_Labels jsonb,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ComplianceDomains)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

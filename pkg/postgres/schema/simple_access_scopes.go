@@ -13,16 +13,7 @@ import (
 var (
 	// CreateTableSimpleAccessScopesStmt holds the create statement for table `simple_access_scopes`.
 	CreateTableSimpleAccessScopesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists simple_access_scopes (
-                   Id varchar,
-                   Name varchar UNIQUE,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*SimpleAccessScopes)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

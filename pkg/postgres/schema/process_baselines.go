@@ -15,18 +15,7 @@ import (
 var (
 	// CreateTableProcessBaselinesStmt holds the create statement for table `process_baselines`.
 	CreateTableProcessBaselinesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists process_baselines (
-                   Id varchar,
-                   Key_DeploymentId varchar,
-                   Key_ClusterId varchar,
-                   Key_Namespace varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ProcessBaselines)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

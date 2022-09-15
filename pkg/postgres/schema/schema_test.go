@@ -87,7 +87,7 @@ func (s *SchemaTestSuite) TearDownSuite() {
 	conn.CloseGormDB(s.T(), s.gormDB)
 }
 
-func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
+func (s *SchemaTestSuite) TestTableNameSanity() {
 	type testCaseStruct struct {
 		name        string
 		createStmts *pkgPostgres.CreateStmts
@@ -98,15 +98,6 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 	}
 
 	for _, testCase := range testCases {
-		s.T().Run(fmt.Sprintf("check if %q schemas are equal", testCase.name), func(t *testing.T) {
-			schema := GetSchemaForTable(testCase.name)
-			gormSchemas := s.getGormTableSchemas(schema, testCase.createStmts)
-			pgutils.CreateTable(s.ctx, s.pool, testCase.createStmts)
-			for table, gormSchema := range gormSchemas {
-				sqlSchema := s.dumpSchema(table)
-				assert.Equal(t, sqlSchema, gormSchema)
-			}
-		})
 		s.T().Run(fmt.Sprintf("check if %q name is reversible", testCase.name), func(t *testing.T) {
 			// Gorm may have wrong behavior if the table name is not reversible.
 			schemaName := pgutils.NamingStrategy.SchemaName(testCase.name)

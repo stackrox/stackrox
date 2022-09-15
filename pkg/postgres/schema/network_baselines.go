@@ -15,17 +15,7 @@ import (
 var (
 	// CreateTableNetworkBaselinesStmt holds the create statement for table `network_baselines`.
 	CreateTableNetworkBaselinesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists network_baselines (
-                   DeploymentId varchar,
-                   ClusterId varchar,
-                   Namespace varchar,
-                   serialized bytea,
-                   PRIMARY KEY(DeploymentId)
-               )
-               `,
 		GormModel: (*NetworkBaselines)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

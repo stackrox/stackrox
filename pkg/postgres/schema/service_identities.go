@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableServiceIdentitiesStmt holds the create statement for table `service_identities`.
 	CreateTableServiceIdentitiesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists service_identities (
-                   SerialStr varchar,
-                   serialized bytea,
-                   PRIMARY KEY(SerialStr)
-               )
-               `,
 		GormModel: (*ServiceIdentities)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

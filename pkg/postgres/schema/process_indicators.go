@@ -15,30 +15,8 @@ import (
 var (
 	// CreateTableProcessIndicatorsStmt holds the create statement for table `process_indicators`.
 	CreateTableProcessIndicatorsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists process_indicators (
-                   Id varchar,
-                   DeploymentId varchar,
-                   ContainerName varchar,
-                   PodId varchar,
-                   PodUid varchar,
-                   Signal_ContainerId varchar,
-                   Signal_Name varchar,
-                   Signal_Args varchar,
-                   Signal_ExecFilePath varchar,
-                   Signal_Uid integer,
-                   ClusterId varchar,
-                   Namespace varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ProcessIndicators)(nil),
-		Indexes: []string{
-			"create index if not exists processIndicators_DeploymentId on process_indicators using hash(DeploymentId)",
-			"create index if not exists processIndicators_PodUid on process_indicators using hash(PodUid)",
-		},
-		Children: []*postgres.CreateStmts{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ProcessIndicatorsSchema is the go schema for table `process_indicators`.
