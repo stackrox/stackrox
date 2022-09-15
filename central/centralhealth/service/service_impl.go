@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/fsutils"
@@ -56,31 +57,40 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 			return nil, err
 		}
 
-		// Check Postgres remaining capacity
-		freeBytes, err := pgadmin.GetRemainingCapacity(adminConfig)
-		if err != nil {
-			return nil, err
-		}
-
-		currentDBBytes, err := pgadmin.GetDatabaseSize(adminConfig, migrations.GetCurrentClone())
-		if err != nil {
-			return nil, errors.Wrapf(err, "Fail to get database size %s", migrations.CurrentDatabase)
-		}
-		requiredBytes := int64(math.Ceil(float64(currentDBBytes) * (1.0 + capacityMarginFraction)))
-
-		var toBeFreedBytes int64
-		if pgadmin.CheckIfDBExists(adminConfig, migrations.PreviousDatabase) {
-			toBeFreedBytes, err = pgadmin.GetDatabaseSize(adminConfig, migrations.GetPreviousClone())
-			if err != nil {
-				return nil, errors.Wrapf(err, "Fail to get database size %s", migrations.PreviousDatabase)
+		var upgradeStatus *v1.CentralUpgradeStatus
+		// When using managed services, Postgres space is not a concern at this time.
+		if env.ManagedCentral.BooleanSetting() {
+			upgradeStatus = &v1.CentralUpgradeStatus{
+				Version:                 version.GetMainVersion(),
+				CanRollbackAfterUpgrade: true,
 			}
-		}
+		} else {
+			// Check Postgres remaining capacity
+			freeBytes, err := pgadmin.GetRemainingCapacity(adminConfig)
+			if err != nil {
+				return nil, err
+			}
 
-		upgradeStatus := &v1.CentralUpgradeStatus{
-			Version:                               version.GetMainVersion(),
-			CanRollbackAfterUpgrade:               freeBytes+toBeFreedBytes > requiredBytes,
-			SpaceAvailableForRollbackAfterUpgrade: freeBytes + toBeFreedBytes,
-			SpaceRequiredForRollbackAfterUpgrade:  requiredBytes,
+			currentDBBytes, err := pgadmin.GetDatabaseSize(adminConfig, migrations.GetCurrentClone())
+			if err != nil {
+				return nil, errors.Wrapf(err, "Fail to get database size %s", migrations.CurrentDatabase)
+			}
+			requiredBytes := int64(math.Ceil(float64(currentDBBytes) * (1.0 + capacityMarginFraction)))
+
+			var toBeFreedBytes int64
+			if pgadmin.CheckIfDBExists(adminConfig, migrations.PreviousDatabase) {
+				toBeFreedBytes, err = pgadmin.GetDatabaseSize(adminConfig, migrations.GetPreviousClone())
+				if err != nil {
+					return nil, errors.Wrapf(err, "Fail to get database size %s", migrations.PreviousDatabase)
+				}
+			}
+
+			upgradeStatus = &v1.CentralUpgradeStatus{
+				Version:                               version.GetMainVersion(),
+				CanRollbackAfterUpgrade:               freeBytes+toBeFreedBytes > requiredBytes,
+				SpaceAvailableForRollbackAfterUpgrade: freeBytes + toBeFreedBytes,
+				SpaceRequiredForRollbackAfterUpgrade:  requiredBytes,
+			}
 		}
 
 		// Get a short-lived connection for the purposes of checking the version of the replica.
