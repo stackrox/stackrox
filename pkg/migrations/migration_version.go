@@ -69,7 +69,7 @@ func Read(dbPath string) (*MigrationVersion, error) {
 func ReadVersionPostgres(pool *pgxpool.Pool) (*MigrationVersion, error) {
 	ctx := sac.WithAllAccess(context.Background())
 
-	store := vStore.New(ctx, pool)
+	store := vStore.New(pool)
 
 	version, exists, err := store.Get(ctx)
 	if err != nil {
@@ -119,7 +119,7 @@ func SetCurrentVersionPostgres(pool *pgxpool.Pool) {
 // SetVersionPostgres - sets the specified version in the postgres database
 func SetVersionPostgres(pool *pgxpool.Pool, updatedVersion *storage.Version) {
 	ctx := sac.WithAllAccess(context.Background())
-	store := vStore.New(ctx, pool)
+	store := vStore.New(pool)
 
 	err := store.Upsert(ctx, updatedVersion)
 	if err != nil {
