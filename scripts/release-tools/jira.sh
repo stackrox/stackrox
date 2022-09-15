@@ -19,7 +19,9 @@ main() {
   fi
   RED='\033[0;31m'
   NC='\033[0m' # No Color
-  echo -e "${RED}WARNING:${NC} some of these scripts may be outdated, bleeding-edge, or not working. Read the code before you run them to be on the safe side."
+  echo -e "${RED}WARNING: this script is deprecated and will be removed on October 10, 2022.${NC}"
+  echo -e "${RED}WARNING: some of these scripts may be outdated, bleeding-edge, or not working. Read the code before you run them to be on the safe side.${NC}"
+
   select ans in "${MENU_OPTIONS[@]}"
   do
     exec_option "$ans"
