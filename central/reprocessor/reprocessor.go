@@ -2,7 +2,6 @@ package reprocessor
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -177,7 +176,6 @@ func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
 	l.deploymentRiskLock.Lock()
 	defer l.deploymentRiskLock.Unlock()
 	l.deploymentRiskSet.AddAll(deploymentIDs...)
-	log.Debugf("adding deployments [%s] to risk reprocessing", strings.Join(deploymentIDs, ","))
 }
 
 // Start starts the enrich and detect loop.
@@ -565,8 +563,6 @@ func (l *loopImpl) riskLoop() {
 			l.deploymentRiskLock.Lock()
 			if l.deploymentRiskSet.Cardinality() > 0 {
 				// goroutine to ensure this is non-blocking.
-				log.Infof("reprocessing risk for deployments [%s]",
-					strings.Join(l.deploymentRiskSet.AsSlice(), ","))
 				go l.sendDeployments(l.deploymentRiskSet.AsSlice())
 				l.deploymentRiskSet.Clear()
 			}

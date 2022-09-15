@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/risk/multipliers/image"
 	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -59,7 +58,6 @@ type deploymentScorerImpl struct {
 
 // Score takes a deployment and evaluates its risk
 func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.Deployment, images []*storage.Risk) *storage.Risk {
-	debug.ROX12096(log.Infof, deployment.GetName(), "Scoring risk for deployment %q: %+v", deployment.GetName(), deployment)
 	imageRiskResults := make(map[string][]*storage.Risk_Result)
 	for _, risk := range images {
 		for _, result := range risk.GetResults() {
