@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/rbac/service"
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -100,14 +99,18 @@ func (resolver *Resolver) getFilteredSubjects(ctx context.Context, query *v1.Que
 		return nil, err
 	}
 
-	bindings, err := resolver.K8sRoleBindingStore.SearchRawRoleBindings(ctx, query)
+	// Subject return only users and groups, there is a separate resolver for service accounts.
+	subjectKindQ :=
+		search.NewQueryBuilder().AddExactMatches(search.SubjectKind, storage.SubjectKind_USER.String(), storage.SubjectKind_GROUP.String())
+	q := search.ConjunctionQuery(subjectKindQ.ProtoQuery(), query)
+
+	bindings, err := resolver.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	// Subject return only users and groups, there is a separate resolver for service accounts.
-	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
-	return service.GetFilteredSubjects(query, subjects)
+	// Since the query already just gets users and group, this is effectively just a way to ensure only unique roles are returned
+	return k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP), nil
 }
 
 func (resolver *subjectResolver) Type(ctx context.Context) (string, error) {
