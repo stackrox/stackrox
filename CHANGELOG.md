@@ -5,6 +5,13 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+- ROX-11937: The Splunk integration now processes all additional compliance standards of the compliance operator correctly.
+
 
 ## [3.72.0]
 
