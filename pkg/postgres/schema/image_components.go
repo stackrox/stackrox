@@ -15,22 +15,7 @@ import (
 var (
 	// CreateTableImageComponentsStmt holds the create statement for table `image_components`.
 	CreateTableImageComponentsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists image_components (
-                   Id varchar,
-                   Name varchar,
-                   Version varchar,
-                   Priority integer,
-                   Source integer,
-                   RiskScore numeric,
-                   TopCvss numeric,
-                   OperatingSystem varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ImageComponents)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableLogImbuesStmt holds the create statement for table `log_imbues`.
 	CreateTableLogImbuesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists log_imbues (
-                   Id varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*LogImbues)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

@@ -16,53 +16,14 @@ import (
 var (
 	// CreateTableSecretsStmt holds the create statement for table `secrets`.
 	CreateTableSecretsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists secrets (
-                   Id varchar,
-                   Name varchar,
-                   ClusterId varchar,
-                   ClusterName varchar,
-                   Namespace varchar,
-                   CreatedAt timestamp,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*Secrets)(nil),
-		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
-				Table: `
-               create table if not exists secrets_files (
-                   secrets_Id varchar,
-                   idx integer,
-                   Type integer,
-                   Cert_EndDate timestamp,
-                   PRIMARY KEY(secrets_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
-               )
-               `,
 				GormModel: (*SecretsFiles)(nil),
-				Indexes: []string{
-					"create index if not exists secretsFiles_idx on secrets_files using btree(idx)",
-				},
 				Children: []*postgres.CreateStmts{
 					&postgres.CreateStmts{
-						Table: `
-               create table if not exists secrets_files_registries (
-                   secrets_Id varchar,
-                   secrets_files_idx integer,
-                   idx integer,
-                   Name varchar,
-                   PRIMARY KEY(secrets_Id, secrets_files_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id, secrets_files_idx) REFERENCES secrets_files(secrets_Id, idx) ON DELETE CASCADE
-               )
-               `,
 						GormModel: (*SecretsFilesRegistries)(nil),
-						Indexes: []string{
-							"create index if not exists secretsFilesRegistries_idx on secrets_files_registries using btree(idx)",
-						},
-						Children: []*postgres.CreateStmts{},
+						Children:  []*postgres.CreateStmts{},
 					},
 				},
 			},

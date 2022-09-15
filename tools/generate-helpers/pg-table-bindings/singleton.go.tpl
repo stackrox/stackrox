@@ -63,19 +63,8 @@ type storeImpl struct {
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
-{{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
-{{- define "createTable" }}
-{{- $schema := . }}
-pgutils.CreateTable(ctx, db, {{template "createTableStmtVar" $schema}})
-{{- end }}
-
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-    {{- range $reference := .Schema.References }}
-    {{- template "createTable" $reference.OtherSchema }}
-    {{- end }}
-    {{- template "createTable" .Schema}}
-
+func New(db *pgxpool.Pool) Store {
     return &storeImpl{
         db: db,
     }

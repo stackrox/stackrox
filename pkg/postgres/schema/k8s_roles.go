@@ -15,22 +15,7 @@ import (
 var (
 	// CreateTableK8sRolesStmt holds the create statement for table `k8s_roles`.
 	CreateTableK8sRolesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists k8s_roles (
-                   Id varchar,
-                   Name varchar,
-                   Namespace varchar,
-                   ClusterId varchar,
-                   ClusterName varchar,
-                   ClusterRole bool,
-                   Labels jsonb,
-                   Annotations jsonb,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*K8sRoles)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

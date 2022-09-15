@@ -15,16 +15,7 @@ import (
 var (
 	// CreateTableTestChild1Stmt holds the create statement for table `test_child1`.
 	CreateTableTestChild1Stmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists test_child1 (
-                   Id varchar,
-                   Val varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*TestChild1)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

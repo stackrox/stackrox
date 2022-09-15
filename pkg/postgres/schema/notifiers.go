@@ -13,16 +13,7 @@ import (
 var (
 	// CreateTableNotifiersStmt holds the create statement for table `notifiers`.
 	CreateTableNotifiersStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists notifiers (
-                   Id varchar,
-                   Name varchar UNIQUE,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*Notifiers)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

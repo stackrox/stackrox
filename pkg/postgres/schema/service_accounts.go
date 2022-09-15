@@ -15,21 +15,7 @@ import (
 var (
 	// CreateTableServiceAccountsStmt holds the create statement for table `service_accounts`.
 	CreateTableServiceAccountsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists service_accounts (
-                   Id varchar,
-                   Name varchar,
-                   Namespace varchar,
-                   ClusterName varchar,
-                   ClusterId varchar,
-                   Labels jsonb,
-                   Annotations jsonb,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ServiceAccounts)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

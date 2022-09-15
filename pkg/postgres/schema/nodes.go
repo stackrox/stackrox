@@ -17,49 +17,11 @@ import (
 var (
 	// CreateTableNodesStmt holds the create statement for table `nodes`.
 	CreateTableNodesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists nodes (
-                   Id varchar,
-                   Name varchar,
-                   ClusterId varchar,
-                   ClusterName varchar,
-                   Labels jsonb,
-                   Annotations jsonb,
-                   JoinedAt timestamp,
-                   ContainerRuntime_Version varchar,
-                   OsImage varchar,
-                   LastUpdated timestamp,
-                   Scan_ScanTime timestamp,
-                   Components integer,
-                   Cves integer,
-                   FixableCves integer,
-                   Priority integer,
-                   RiskScore numeric,
-                   TopCvss numeric,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*Nodes)(nil),
-		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
-				Table: `
-               create table if not exists nodes_taints (
-                   nodes_Id varchar,
-                   idx integer,
-                   Key varchar,
-                   Value varchar,
-                   TaintEffect integer,
-                   PRIMARY KEY(nodes_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (nodes_Id) REFERENCES nodes(Id) ON DELETE CASCADE
-               )
-               `,
 				GormModel: (*NodesTaints)(nil),
-				Indexes: []string{
-					"create index if not exists nodesTaints_idx on nodes_taints using btree(idx)",
-				},
-				Children: []*postgres.CreateStmts{},
+				Children:  []*postgres.CreateStmts{},
 			},
 		},
 	}

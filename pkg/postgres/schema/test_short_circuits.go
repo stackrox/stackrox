@@ -16,17 +16,7 @@ import (
 var (
 	// CreateTableTestShortCircuitsStmt holds the create statement for table `test_short_circuits`.
 	CreateTableTestShortCircuitsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists test_short_circuits (
-                   Id varchar,
-                   ChildId varchar,
-                   G2GrandchildId varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*TestShortCircuits)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableComplianceOperatorCheckResultsStmt holds the create statement for table `compliance_operator_check_results`.
 	CreateTableComplianceOperatorCheckResultsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists compliance_operator_check_results (
-                   Id varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ComplianceOperatorCheckResults)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

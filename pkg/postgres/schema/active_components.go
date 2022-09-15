@@ -16,37 +16,11 @@ import (
 var (
 	// CreateTableActiveComponentsStmt holds the create statement for table `active_components`.
 	CreateTableActiveComponentsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists active_components (
-                   Id varchar,
-                   DeploymentId varchar,
-                   ComponentId varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (DeploymentId) REFERENCES deployments(Id) ON DELETE CASCADE
-               )
-               `,
 		GormModel: (*ActiveComponents)(nil),
-		Indexes: []string{
-			"create index if not exists activeComponents_DeploymentId on active_components using hash(DeploymentId)",
-		},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
-				Table: `
-               create table if not exists active_components_active_contexts_slices (
-                   active_components_Id varchar,
-                   idx integer,
-                   ContainerName varchar,
-                   ImageId varchar,
-                   PRIMARY KEY(active_components_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (active_components_Id) REFERENCES active_components(Id) ON DELETE CASCADE
-               )
-               `,
 				GormModel: (*ActiveComponentsActiveContextsSlices)(nil),
-				Indexes: []string{
-					"create index if not exists activeComponentsActiveContextsSlices_idx on active_components_active_contexts_slices using btree(idx)",
-				},
-				Children: []*postgres.CreateStmts{},
+				Children:  []*postgres.CreateStmts{},
 			},
 		},
 	}
