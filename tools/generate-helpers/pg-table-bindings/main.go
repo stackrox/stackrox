@@ -283,7 +283,7 @@ func main() {
 			"NoCopyFrom": props.NoCopyFrom,
 		}
 
-		if err := generateSchema(schema, searchCategory, searchScope, parsedReferences, props.SchemaDirectory); err != nil {
+		if err := generateSchema(schema, searchCategory, searchScope, parsedReferences, props.SchemaDirectory, !props.ConversionFuncs); err != nil {
 			return err
 		}
 		if props.ConversionFuncs {
@@ -354,12 +354,13 @@ func main() {
 	}
 }
 
-func generateSchema(s *walker.Schema, searchCategory string, searchScope []string, parsedReferences []parsedReference, dir string) error {
+func generateSchema(s *walker.Schema, searchCategory string, searchScope []string, parsedReferences []parsedReference, dir string, registerSchema bool) error {
 	templateMap := map[string]interface{}{
 		"Schema":         s,
 		"SearchCategory": searchCategory,
 		"References":     parsedReferences,
 		"SearchScope":    searchScope,
+		"RegisterSchema": registerSchema,
 	}
 
 	if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(dir, s.Table)); err != nil {
@@ -384,7 +385,7 @@ func getSchemaFileName(dir, table string) string {
 }
 
 func getConversionToolFileName(dir, table string) string {
-	return fmt.Sprintf("%s/internal/convert_%s_with_test.go", dir, table)
+	return fmt.Sprintf("%s/convert_%s_with_test.go", dir, table)
 }
 
 func newTemplate(tpl string) func(name string) *template.Template {

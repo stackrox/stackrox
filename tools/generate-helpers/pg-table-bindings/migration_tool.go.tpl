@@ -13,14 +13,15 @@
 
 {{- define "convertProtoToModel" }}
 {{- $schema := . }}
-    func convert{{$schema.TypeName}}FromProto(obj {{$schema.Type}}{{if $schema.Parent}}, idx int{{end}}{{ range $idx, $field := $schema.FieldsReferringToParent }}, {{$field.Name}} {{$field.Type}}{{end}}) (*schema.{{$schema.Table|upperCamelCase}}, error) {
+    // Convert{{$schema.TypeName}}FromProto converts a `{{$schema.Type}}` to Gorm model
+    func Convert{{$schema.TypeName}}FromProto(obj {{$schema.Type}}{{if $schema.Parent}}, idx int{{end}}{{ range $idx, $field := $schema.FieldsReferringToParent }}, {{$field.Name}} {{$field.Type}}{{end}}) (*schema.{{$schema.Table|upperCamelCase}}, error) {
         {{- if not $schema.Parent }}
-    	serialized, err := obj.Marshal()
-    	if err != nil {
-    		return nil, err
-    	}
+        serialized, err := obj.Marshal()
+        if err != nil {
+            return nil, err
+        }
         {{- end}}
-    	model := &schema.{{$schema.Table|upperCamelCase}}{
+        model := &schema.{{$schema.Table|upperCamelCase}}{
         {{- range $idx, $field := $schema.DBColumnFields }}
             {{$field.ColumnName|upperCamelCase}}: {{- template "convertField" $field}}
         {{- end}}
@@ -28,31 +29,30 @@
         return model, nil
     }
 
-    {{- if not $schema.Parent }}
-    func convert{{$schema.TypeName}}ToProto(m *schema.{{$schema.Table|upperCamelCase}}) ({{$schema.Type}}, error) {
-    	var msg storage.{{$schema.TypeName}}
-    	if err := msg.Unmarshal(m.Serialized); err != nil {
-        	return nil, err
+    // Convert{{$schema.TypeName}}ToProto converts Gorm model `{{$schema.Table|upperCamelCase}}` to its protobuf type object
+    func Convert{{$schema.TypeName}}ToProto(m *schema.{{$schema.Table|upperCamelCase}}) ({{$schema.Type}}, error) {
+        var msg storage.{{$schema.TypeName}}
+        if err := msg.Unmarshal(m.Serialized); err != nil {
+            return nil, err
         }
-    	return &msg, nil
+        return &msg, nil
     }
 
-    func Test{{$schema.TypeName}}Conversion(t *testing.T) {
-    	obj := &storage.{{$schema.TypeName}}{}
-    	assert.NoError(t, testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-       	m, err := convert{{$schema.TypeName}}FromProto(obj)
-       	assert.NoError(t, err)
-       	conv, err := convert{{$schema.TypeName}}ToProto(m)
-       	assert.NoError(t, err)
-       	assert.Equal(t, obj, conv)
+    func Test{{$schema.TypeName}}Serialization(t *testing.T) {
+        obj := &storage.{{$schema.TypeName}}{}
+        assert.NoError(t, testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+        m, err := Convert{{$schema.TypeName}}FromProto(obj)
+        assert.NoError(t, err)
+        conv, err := Convert{{$schema.TypeName}}ToProto(m)
+        assert.NoError(t, err)
+        assert.Equal(t, obj, conv)
     }
-    {{- end}}
 
     {{- range $idx, $child := $schema.Children }}
         {{- template "convertProtoToModel" $child }}
     {{- end }}
 {{- end}}
-package convert
+package schema
 
 import (
 	"github.com/gogo/protobuf/proto"
