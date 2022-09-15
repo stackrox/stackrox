@@ -38,3 +38,4 @@ Here are the steps to write migration script:
 
 10. Re-run `./scripts/k8s/local-port-forward.sh`
 11. Verify that migration worked correctly
+
