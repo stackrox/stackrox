@@ -218,6 +218,7 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 	if writeMemProfile {
 		writeMemoryProfile()
 	}
+	pprof.StopCPUProfile()
 	allMessages := fakeCentral.GetAllMessages()
 	dumpMessages(allMessages, startTime, endTime, outfile, outputFormat)
 	os.Exit(0)
@@ -259,7 +260,6 @@ func main() {
 		if err := pprof.StartCPUProfile(f); err != nil {
 			log.Fatal("could not start CPU profile: ", err)
 		}
-		defer pprof.StopCPUProfile()
 	}
 
 	startTime := time.Now()
