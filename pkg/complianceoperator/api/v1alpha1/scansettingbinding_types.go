@@ -1,8 +1,8 @@
 package v1alpha1
 
 import (
-	conditions "github.com/operator-framework/operator-sdk/pkg/status"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,7 +30,7 @@ type ScanSettingBinding struct {
 
 type ScanSettingBindingStatus struct {
 	// +optional
-	Conditions conditions.Conditions `json:"conditions,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 	// Reference to the object generated from this ScanSettingBinding
 	// +optional
 	// +nullable
@@ -47,27 +47,27 @@ type ScanSettingBindingList struct {
 }
 
 func (s *ScanSettingBindingStatus) SetConditionPending() {
-	s.Conditions.SetCondition(conditions.Condition{
+	meta.SetStatusCondition(&s.Conditions, metav1.Condition{
 		Type:    "Ready",
-		Status:  corev1.ConditionFalse,
+		Status:  metav1.ConditionFalse,
 		Reason:  "Pending",
 		Message: "The scan setting binding is waiting to be processed",
 	})
 }
 
 func (s *ScanSettingBindingStatus) SetConditionInvalid(msg string) {
-	s.Conditions.SetCondition(conditions.Condition{
+	meta.SetStatusCondition(&s.Conditions, metav1.Condition{
 		Type:    "Ready",
-		Status:  corev1.ConditionFalse,
+		Status:  metav1.ConditionFalse,
 		Reason:  "Invalid",
 		Message: msg,
 	})
 }
 
 func (s *ScanSettingBindingStatus) SetConditionReady() {
-	s.Conditions.SetCondition(conditions.Condition{
+	meta.SetStatusCondition(&s.Conditions, metav1.Condition{
 		Type:    "Ready",
-		Status:  corev1.ConditionTrue,
+		Status:  metav1.ConditionTrue,
 		Reason:  "Processed",
 		Message: "The scan setting binding was successfully processed",
 	})
