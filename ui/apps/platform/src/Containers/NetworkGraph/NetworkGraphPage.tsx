@@ -1,17 +1,65 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { Flex, FlexItem, PageSection } from '@patternfly/react-core';
 
-import parseURL from 'utils/URLParser';
+import useURLSearch from 'hooks/useURLSearch';
+import { fetchClustersAsArray } from 'services/ClustersService';
+import { Cluster } from 'types/cluster.proto';
+import ClusterSelect from './ClusterSelect';
+import NamespaceSelect from './NamespaceSelect';
+
+export type Namespace = {
+    metadata: {
+        id: string;
+        name: string;
+    };
+};
 
 function NetworkGraphPage() {
-    const location = useLocation();
-    const { pathname, search } = location.pathname;
+    const [clusters, setClusters] = React.useState<Cluster[]>([]);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const selectedClusterId = (searchFilter.Cluster as string) || '';
+    const selectedNamespaces = (searchFilter.Namespace as string[]) || [];
 
-    const workflowState = parseURL({ pathname, search });
+    React.useEffect(() => {
+        fetchClustersAsArray()
+            .then((data) => {
+                setClusters(data as Cluster[]);
+            })
+            .catch(() => {
+                // TODO
+            });
+    }, []);
+
+    function updateSelectedClusterId(selection) {
+        const newSearchFiliter = { ...searchFilter, Cluster: selection };
+        setSearchFilter(newSearchFiliter);
+    }
+
+    function updateSelectedNamespaces(selection) {
+        const newSearchFiliter = { ...searchFilter, Namespace: selection };
+        setSearchFilter(newSearchFiliter);
+    }
+
     return (
-        <div>
+        <PageSection variant="light" isFilled id="policies-table-loading">
             <h1>Network Graph</h1>
-        </div>
+            <Flex>
+                <FlexItem>
+                    <ClusterSelect
+                        clusters={clusters}
+                        selectedClusterId={selectedClusterId}
+                        setSelectedClusterId={updateSelectedClusterId}
+                    />
+                </FlexItem>
+                <FlexItem>
+                    <NamespaceSelect
+                        selectedClusterId={selectedClusterId}
+                        selectedNamespaces={selectedNamespaces}
+                        setSelectedNamespaces={updateSelectedNamespaces}
+                    />
+                </FlexItem>
+            </Flex>
+        </PageSection>
     );
 }
 
