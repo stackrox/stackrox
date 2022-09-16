@@ -23,7 +23,7 @@ teardown() {
 @test "roxctl-release helm output help-text should state default value for --image-defaults flag" {
   run roxctl-release helm output central-services -h
   assert_success
-  assert_line --regexp "--image-defaults.*\(stackrox.io, rhacs, opensource\).*default \"rhacs\""
+  assert_line --regexp "--image-defaults.*\(rhacs, opensource\).*default \"rhacs\""
 }
 
 @test "roxctl-release helm output central-services should use registry.redhat.io registry by default" {
@@ -72,7 +72,7 @@ teardown() {
 @test "roxctl-release helm output central-services --image-defaults='' should fail with unexpected value of --image-defaults" {
   run roxctl-release helm output central-services --image-defaults='' --output-dir "$out_dir"
   assert_failure
-  assert_line --regexp "ERROR:[[:space:]]+unable to get chart meta values: '--image-defaults': unexpected value '', allowed values are \[stackrox.io rhacs opensource\]"
+  assert_line --regexp "ERROR:[[:space:]]+unable to get chart meta values: '--image-defaults': unexpected value '', allowed values are \[rhacs opensource\]"
 }
 
 @test "roxctl-release helm output central-services --rhacs --image-defaults=stackrox.io should return error about --rhacs colliding with --image-defaults" {

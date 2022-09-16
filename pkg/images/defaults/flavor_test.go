@@ -195,7 +195,7 @@ func TestGetVisibleImageFlavorNames(t *testing.T) {
 		want      []string
 	}{
 		{"development", false, []string{"development_build", "stackrox.io", "rhacs", "opensource"}},
-		{"release", true, []string{"stackrox.io", "rhacs", "opensource"}},
+		{"release", true, []string{"rhacs", "opensource"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

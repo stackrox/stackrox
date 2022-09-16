@@ -34,9 +34,9 @@ var (
 			constructorFunc:         DevelopmentBuildImageFlavor,
 		},
 		{
-			// TODO(ROX-12434): hide me
+			// TODO(ROX-11642): This was just hidden in release builds but should go away completely.
 			imageFlavorName:         ImageFlavorNameStackRoxIORelease,
-			isVisibleInReleaseBuild: true,
+			isVisibleInReleaseBuild: false,
 			constructorFunc:         StackRoxIOReleaseImageFlavor,
 		},
 		{
