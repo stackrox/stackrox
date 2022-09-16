@@ -31,6 +31,7 @@ func readMapValue(val interface{}) map[string]string {
 }
 
 func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
+	log.Infof("Map query ctx: %+v", ctx)
 	// Negations in maps are a bit tricky, as are empty strings. We have to consider the following cases.
 	// Note that in everything below, query can be a regex, prefix or exact match query.
 	// = => it means we want a non-empty map
@@ -43,11 +44,24 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	// <keyQuery>=!<valueQuery> => it means we want one element in the map with key matching keyQuery and value NOT matching valueQuery
 	// !<keyQuery>=!<valueQuery> => NOT SUPPORTED
 	query := ctx.value
-	key, value := parseMapQuery(query)
+	if query == search.WildcardString {
+		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
+			Query: "true",
+		}, func(i interface{}) interface{} {
+			// If key is negated, no highlight value.
+			asMap := readMapValue(i)
+			results := make([]string, 0, len(asMap))
+			for k, v := range asMap {
+				results = append(results, fmt.Sprintf("%s=%s", k, v))
+			}
+			return results
+		}), nil
+	}
 
+	key, value := parseMapQuery(query)
 	keyNegated := stringutils.ConsumePrefix(&key, search.NegationPrefix)
 	// This is a special case where the query we construct becomes a (non) existence query
-	if value == "" && key != "" {
+	if value == "" && key != "" && !ctx.highlight {
 		var negationString string
 		if keyNegated {
 			negationString = "NOT "
