@@ -105,11 +105,10 @@ const getUserRolePermissionsError = (state) => state.error;
 const getIsLoadingUserRolePermissions = (state) => state.isLoading;
 
 // TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
-const replacedResourceMapping = new Map([
-]);
+const replacedResourceMapping = new Map([]);
 
 /*
- * Given resource string (for example, "APIToken") and role or permissionSet object,
+ * Given resource string (for example, "Integration") and role or permissionSet object,
  * return access level (for example, "READ_ACCESS").
  */
 const getAccessForPermission = (resource, userRolePermissionsArg) => {

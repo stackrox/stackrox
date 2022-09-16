@@ -58,7 +58,7 @@ export const oidcCallbackValues = {
 };
 
 export const defaultMinimalReadAccessResources = [
-    'Administration'
+    'Administration',
     'Alert',
     'Cluster',
     'Deployment',

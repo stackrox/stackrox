@@ -155,7 +155,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (resource == 'Administration') {
+                if (resource === 'Administration') {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
