@@ -1099,22 +1099,22 @@ func (s *IndexSuite) TestIntArrayHighlights() {
 			desc: "exact match",
 			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt32Slice, "-2").ProtoQuery(),
 			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
-				testStruct0: {"testmultikeystruct.int_slice": {"-2"}},
+				testStruct0: {"testmultikeystruct.int32_slice": {"-2"}},
 			},
 		},
 		{
 			desc: ">",
 			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt32Slice, ">5").ProtoQuery(),
 			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
-				testStruct1: {"testmultikeystruct.int_slice": {"7"}},
+				testStruct1: {"testmultikeystruct.int32_slice": {"7"}},
 			},
 		},
 		{
 			desc: ">=",
 			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt32Slice, ">=-2").ProtoQuery(),
 			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
-				testStruct0: {"testmultikeystruct.int_slice": {"-2"}},
-				testStruct1: {"testmultikeystruct.int_slice": {"7", "3"}},
+				testStruct0: {"testmultikeystruct.int32_slice": {"-2"}},
+				testStruct1: {"testmultikeystruct.int32_slice": {"7", "3"}},
 			},
 		},
 	})
