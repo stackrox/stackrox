@@ -26,7 +26,7 @@ teardown() {
   assert_line --regexp "--image-defaults.*\(stackrox.io, rhacs, opensource\).*default \"rhacs\""
 }
 
-@test "roxctl-release helm output central-services should use registry.redhat.io registry" {
+@test "roxctl-release helm output central-services should use registry.redhat.io registry by default" {
   run roxctl-release helm output central-services --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
@@ -55,10 +55,18 @@ teardown() {
   assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
 
-@test "roxctl-release helm output central-services --image-defaults=development_build should fail" {
+@test "roxctl-release helm output central-services --image-defaults=development_build should use quay.io/rhacs-eng registry" {
   run roxctl-release helm output central-services --image-defaults=development_build --output-dir "$out_dir"
-  assert_failure
-  assert_line --regexp "ERROR:[[:space:]]+unable to get chart meta values: '--image-defaults': unexpected value 'development_build', allowed values are \[stackrox.io rhacs opensource\]"
+  assert_success
+  assert_output --partial "Written Helm chart central-services to directory"
+  assert_helm_template_central_registry "$out_dir" 'quay.io/rhacs-eng' "$any_version" 'main' 'scanner' 'scanner-db'
+}
+
+@test "roxctl-release helm output central-services --image-defaults=opensource should use quay.io/stackrox-io registry" {
+  run roxctl-release helm output central-services --image-defaults=opensource --output-dir "$out_dir"
+  assert_success
+  assert_output --partial "Written Helm chart central-services to directory"
+  assert_helm_template_central_registry "$out_dir" 'quay.io/stackrox-io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release helm output central-services --image-defaults='' should fail with unexpected value of --image-defaults" {
