@@ -57,13 +57,12 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 			return nil, err
 		}
 
-		var upgradeStatus *v1.CentralUpgradeStatus
+		upgradeStatus := &v1.CentralUpgradeStatus{
+			Version: version.GetMainVersion(),
+		}
 		// When using managed services, Postgres space is not a concern at this time.
 		if env.ManagedCentral.BooleanSetting() {
-			upgradeStatus = &v1.CentralUpgradeStatus{
-				Version:                 version.GetMainVersion(),
-				CanRollbackAfterUpgrade: true,
-			}
+			upgradeStatus.CanRollbackAfterUpgrade = true
 		} else {
 			// Check Postgres remaining capacity
 			freeBytes, err := pgadmin.GetRemainingCapacity(adminConfig)
@@ -85,12 +84,9 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 				}
 			}
 
-			upgradeStatus = &v1.CentralUpgradeStatus{
-				Version:                               version.GetMainVersion(),
-				CanRollbackAfterUpgrade:               freeBytes+toBeFreedBytes > requiredBytes,
-				SpaceAvailableForRollbackAfterUpgrade: freeBytes + toBeFreedBytes,
-				SpaceRequiredForRollbackAfterUpgrade:  requiredBytes,
-			}
+			upgradeStatus.CanRollbackAfterUpgrade = freeBytes+toBeFreedBytes > requiredBytes
+			upgradeStatus.SpaceAvailableForRollbackAfterUpgrade = freeBytes + toBeFreedBytes
+			upgradeStatus.SpaceRequiredForRollbackAfterUpgrade = requiredBytes
 		}
 
 		// Get a short-lived connection for the purposes of checking the version of the replica.
