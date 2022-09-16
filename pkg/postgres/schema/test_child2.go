@@ -16,19 +16,7 @@ import (
 var (
 	// CreateTableTestChild2Stmt holds the create statement for table `test_child2`.
 	CreateTableTestChild2Stmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists test_child2 (
-                   Id varchar,
-                   ParentId varchar,
-                   GrandparentId varchar,
-                   Val varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ParentId) REFERENCES test_parent2(Id) ON DELETE CASCADE
-               )
-               `,
 		GormModel: (*TestChild2)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

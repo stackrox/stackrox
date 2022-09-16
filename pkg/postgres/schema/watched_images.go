@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableWatchedImagesStmt holds the create statement for table `watched_images`.
 	CreateTableWatchedImagesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists watched_images (
-                   Name varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Name)
-               )
-               `,
 		GormModel: (*WatchedImages)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

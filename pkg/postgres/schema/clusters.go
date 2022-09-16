@@ -15,17 +15,7 @@ import (
 var (
 	// CreateTableClustersStmt holds the create statement for table `clusters`.
 	CreateTableClustersStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists clusters (
-                   Id varchar,
-                   Name varchar UNIQUE,
-                   Labels jsonb,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*Clusters)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

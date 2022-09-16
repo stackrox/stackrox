@@ -16,23 +16,8 @@ import (
 var (
 	// CreateTableClusterCveEdgesStmt holds the create statement for table `cluster_cve_edges`.
 	CreateTableClusterCveEdgesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists cluster_cve_edges (
-                   Id varchar,
-                   IsFixable bool,
-                   FixedBy varchar,
-                   ClusterId varchar,
-                   CveId varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ClusterId) REFERENCES clusters(Id) ON DELETE CASCADE
-               )
-               `,
 		GormModel: (*ClusterCveEdges)(nil),
-		Indexes: []string{
-			"create index if not exists clusterCveEdges_CveId on cluster_cve_edges using hash(CveId)",
-		},
-		Children: []*postgres.CreateStmts{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ClusterCveEdgesSchema is the go schema for table `cluster_cve_edges`.

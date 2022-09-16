@@ -61,7 +61,7 @@ var (
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
-	store := pgStore.New({{if .Migration.SingletonStore}}ctx, {{end}}postgresDB)
+	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	{{- if .Migration.SingletonStore}}
 	obj, found, err := legacyStore.Get(ctx)

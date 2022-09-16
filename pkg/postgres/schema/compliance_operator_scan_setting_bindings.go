@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableComplianceOperatorScanSettingBindingsStmt holds the create statement for table `compliance_operator_scan_setting_bindings`.
 	CreateTableComplianceOperatorScanSettingBindingsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists compliance_operator_scan_setting_bindings (
-                   Id varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ComplianceOperatorScanSettingBindings)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

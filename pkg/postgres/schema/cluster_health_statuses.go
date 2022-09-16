@@ -17,22 +17,7 @@ import (
 var (
 	// CreateTableClusterHealthStatusesStmt holds the create statement for table `cluster_health_statuses`.
 	CreateTableClusterHealthStatusesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists cluster_health_statuses (
-                   Id varchar,
-                   SensorHealthStatus integer,
-                   CollectorHealthStatus integer,
-                   OverallHealthStatus integer,
-                   AdmissionControlHealthStatus integer,
-                   ScannerHealthStatus integer,
-                   LastContact timestamp,
-                   serialized bytea,
-                   PRIMARY KEY(Id),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (Id) REFERENCES clusters(Id) ON DELETE CASCADE
-               )
-               `,
 		GormModel: (*ClusterHealthStatuses)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 
