@@ -16,24 +16,7 @@ import (
 var (
 	// CreateTableNodeCvesStmt holds the create statement for table `node_cves`.
 	CreateTableNodeCvesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists node_cves (
-                   Id varchar,
-                   CveBaseInfo_Cve varchar,
-                   CveBaseInfo_PublishedOn timestamp,
-                   CveBaseInfo_CreatedAt timestamp,
-                   OperatingSystem varchar,
-                   Cvss numeric,
-                   Severity integer,
-                   ImpactScore numeric,
-                   Snoozed bool,
-                   SnoozeExpiry timestamp,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*NodeCves)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

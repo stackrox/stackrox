@@ -16,24 +16,7 @@ import (
 var (
 	// CreateTableClusterCvesStmt holds the create statement for table `cluster_cves`.
 	CreateTableClusterCvesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists cluster_cves (
-                   Id varchar,
-                   CveBaseInfo_Cve varchar,
-                   CveBaseInfo_PublishedOn timestamp,
-                   CveBaseInfo_CreatedAt timestamp,
-                   Cvss numeric,
-                   Severity integer,
-                   ImpactScore numeric,
-                   Snoozed bool,
-                   SnoozeExpiry timestamp,
-                   Type integer,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ClusterCves)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

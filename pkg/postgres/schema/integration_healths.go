@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableIntegrationHealthsStmt holds the create statement for table `integration_healths`.
 	CreateTableIntegrationHealthsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists integration_healths (
-                   Id varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*IntegrationHealths)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

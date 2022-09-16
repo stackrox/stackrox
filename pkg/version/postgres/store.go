@@ -16,8 +16,13 @@ import (
 )
 
 const (
-	getStmt    = "SELECT serialized FROM versions LIMIT 1"
-	deleteStmt = "DELETE FROM versions"
+	getStmt         = "SELECT serialized FROM versions LIMIT 1"
+	deleteStmt      = "DELETE FROM versions"
+	createTableStmt = `
+		CREATE TABLE IF NOT EXISTS versions (
+			serialized bytea
+		)
+	`
 )
 
 var (
@@ -39,10 +44,16 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableVersionsStmt)
-
+	createTableIfNotExist(ctx, db)
 	return &storeImpl{
 		db: db,
+	}
+}
+
+func createTableIfNotExist(ctx context.Context, db *pgxpool.Pool) {
+	_, err := db.Exec(ctx, createTableStmt)
+	if err != nil {
+		log.Panicf("Error creating version table: %v", err)
 	}
 }
 

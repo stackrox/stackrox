@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableGroupsStmt holds the create statement for table `groups`.
 	CreateTableGroupsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists groups (
-                   Props_Id varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Props_Id)
-               )
-               `,
 		GormModel: (*Groups)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

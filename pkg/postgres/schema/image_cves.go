@@ -16,24 +16,7 @@ import (
 var (
 	// CreateTableImageCvesStmt holds the create statement for table `image_cves`.
 	CreateTableImageCvesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists image_cves (
-                   Id varchar,
-                   CveBaseInfo_Cve varchar,
-                   CveBaseInfo_PublishedOn timestamp,
-                   CveBaseInfo_CreatedAt timestamp,
-                   OperatingSystem varchar,
-                   Cvss numeric,
-                   Severity integer,
-                   ImpactScore numeric,
-                   Snoozed bool,
-                   SnoozeExpiry timestamp,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ImageCves)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

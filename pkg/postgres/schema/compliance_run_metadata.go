@@ -16,18 +16,7 @@ import (
 var (
 	// CreateTableComplianceRunMetadataStmt holds the create statement for table `compliance_run_metadata`.
 	CreateTableComplianceRunMetadataStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists compliance_run_metadata (
-                   RunId varchar,
-                   StandardId varchar,
-                   ClusterId varchar,
-                   FinishTimestamp timestamp,
-                   serialized bytea,
-                   PRIMARY KEY(RunId)
-               )
-               `,
 		GormModel: (*ComplianceRunMetadata)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

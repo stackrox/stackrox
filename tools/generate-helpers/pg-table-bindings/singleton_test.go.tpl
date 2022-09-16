@@ -28,7 +28,7 @@ type {{$namePrefix}}StoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store Store
-	pool *pgxpool.Pool
+	testDB *pgtest.TestPostgres
 }
 
 func Test{{$namePrefix}}Store(t *testing.T) {
@@ -44,24 +44,12 @@ func (s *{{$namePrefix}}StoreSuite) SetupTest() {
 		s.T().SkipNow()
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.Require().NoError(err)
-
-	Destroy(ctx, pool)
-
-	s.pool = pool
-	s.store = New(ctx, pool)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 

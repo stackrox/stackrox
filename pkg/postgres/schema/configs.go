@@ -13,14 +13,7 @@ import (
 var (
 	// CreateTableConfigsStmt holds the create statement for table `configs`.
 	CreateTableConfigsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists configs (
-                   serialized bytea
-                   
-               )
-               `,
 		GormModel: (*Configs)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

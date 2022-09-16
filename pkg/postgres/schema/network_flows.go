@@ -15,28 +15,7 @@ var (
 	// The rest of the data is looked up as the graph is built from other sources.
 	// Serial flow_id allows for inserts and no updates to speed up writes dramatically
 	CreateTableNetworkFlowsStmt = &postgres.CreateStmts{
-		Table: `
-		create table if not exists network_flows (
-		    Flow_id bigserial,
-		    Props_SrcEntity_Type integer,
-		    Props_SrcEntity_Id varchar,
-		    Props_DstEntity_Type integer,
-		    Props_DstEntity_Id varchar,
-		    Props_DstPort integer,
-		    Props_L4Protocol integer,
-		    LastSeenTimestamp timestamp,
-		    ClusterId varchar,
-		    PRIMARY KEY(Flow_id)
-	    )
-        `,
 		GormModel: (*NetworkFlows)(nil),
-		Indexes: []string{
-			"create index if not exists network_flows_lastseentimestamp on network_flows using brin(lastseentimestamp) WITH (pages_per_range = 32)",
-			"create index if not exists network_flows_src on network_flows using btree(props_srcentity_Type, props_srcentity_Id, clusterid)",
-			"create index if not exists network_flows_dst on network_flows using btree(props_dstentity_Type, props_dstentity_Id, clusterid)",
-			"create index if not exists network_flows_cluster on network_flows using btree(clusterid)",
-		},
-		Children: []*postgres.CreateStmts{},
 		PostStmts: []string{
 			"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp ON public.network_flows USING brin (lastseentimestamp) WITH (pages_per_range='32')",
 		},

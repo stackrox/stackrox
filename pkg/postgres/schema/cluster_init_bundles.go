@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableClusterInitBundlesStmt holds the create statement for table `cluster_init_bundles`.
 	CreateTableClusterInitBundlesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists cluster_init_bundles (
-                   Id varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ClusterInitBundles)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

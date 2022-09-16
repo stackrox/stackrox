@@ -13,16 +13,7 @@ import (
 var (
 	// CreateTableSignatureIntegrationsStmt holds the create statement for table `signature_integrations`.
 	CreateTableSignatureIntegrationsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists signature_integrations (
-                   Id varchar,
-                   Name varchar UNIQUE,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*SignatureIntegrations)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

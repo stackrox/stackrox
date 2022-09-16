@@ -15,19 +15,7 @@ import (
 var (
 	// CreateTableRisksStmt holds the create statement for table `risks`.
 	CreateTableRisksStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists risks (
-                   Id varchar,
-                   Subject_Namespace varchar,
-                   Subject_ClusterId varchar,
-                   Subject_Type integer,
-                   Score numeric,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*Risks)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

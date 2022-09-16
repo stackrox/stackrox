@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableApiTokensStmt holds the create statement for table `api_tokens`.
 	CreateTableApiTokensStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists api_tokens (
-                   Id varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ApiTokens)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 
