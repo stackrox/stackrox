@@ -23,10 +23,4 @@ else
 fi
 
 # Running all bats test suites found in the directory
-echo "BATS_FLAGS   : ${BATS_FLAGS[@]}"
-echo "BATS_TESTS   : ${BATS_TESTS}"
-echo "TESTS_OUTPUT : $TESTS_OUTPUT"
-echo "BATS_TESTS   : $BATS_TESTS"
-
-set -x
-bats "${BATS_FLAGS[@]}" "${BATS_TESTS}"
+(set -x; bats "${BATS_FLAGS[@]}" "${BATS_TESTS}")
