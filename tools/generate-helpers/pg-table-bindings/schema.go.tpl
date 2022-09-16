@@ -58,12 +58,7 @@ var (
          {{- end }}
 
         {{- if .SearchCategory }}
-            {{- $ty := .Schema.Type }}
-            {{- /* TODO: [ROX-10206] Reconcile storage.ListAlert search terms with storage.Alert */ -}}
-            {{- if eq $ty "*storage.Alert"}}
-                {{- $ty = "*storage.ListAlert"}}
-            {{- end}}
-            schema.SetOptionsMap(search.Walk(v1.{{.SearchCategory}}, "{{.Schema.TypeName|lower}}", ({{$ty}})(nil)))
+            schema.SetOptionsMap(search.Walk(v1.{{.SearchCategory}}, "{{.Schema.TypeName|lower}}", ({{.Schema.Type}})(nil)))
             {{- if .SearchScope }}
             schema.SetSearchScope([]v1.SearchCategory{
             {{- range $category := .SearchScope }}

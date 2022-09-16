@@ -126,7 +126,7 @@ message Alert {
     repeated Violation        violations        = 5  [(gogoproto.moretags) = 'sensorhash:"ignore" search:"-"'];
     ProcessViolation          process_violation = 13 [(gogoproto.moretags) = 'search:"-"'];
 
-    Enforcement               enforcement       = 6 [(gogoproto.moretags) = 'search:"Enforcement"'];
+    Enforcement               enforcement       = 6;
 
     google.protobuf.Timestamp time              = 7 [(gogoproto.moretags) = 'sensorhash:"ignore" search:"Violation Time"'];
     google.protobuf.Timestamp first_occurred    = 10 [(gogoproto.moretags) = 'sensorhash:"ignore"'];
