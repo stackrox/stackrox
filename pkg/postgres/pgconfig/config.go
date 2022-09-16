@@ -13,13 +13,15 @@ import (
 )
 
 const (
-	// DBPasswordFile is the database password file
-	DBPasswordFile = "/run/secrets/stackrox.io/db-password/password"
-
 	activeSuffix = "_active"
 
 	// capacity - Minimum recommended Postgres capacity
 	capacity = 100 * size.GB
+)
+
+var (
+	// DBPasswordFile is the database password file. Do not override except when needed to run locally
+	DBPasswordFile = "/run/secrets/stackrox.io/db-password/password"
 )
 
 // GetPostgresConfig - gets the configuration used to connect to Postgres
