@@ -5,10 +5,11 @@ load "../helpers.bash"
 out_dir=""
 
 setup_file() {
+  # remove binaries from the previous runs
+  [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
+
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq > /dev/null || skip "Tests in this file require yq"
-  # remove binaries from the previous runs
-  rm -f "$(roxctl-development-cmd)" "$(roxctl-development-release)"
 }
 
 setup() {
@@ -22,8 +23,8 @@ teardown() {
 
 # DEV / K8S
 
-@test "roxctl-development central generate k8s should use quay.io registry" {
-  run_image_defaults_registry_test roxctl-development k8s 'quay.io' 'quay.io'
+@test "roxctl-development central generate k8s should use quay.io/rhacs-eng registry" {
+  run_image_defaults_registry_test roxctl-development k8s 'quay.io/rhacs-eng' 'quay.io/rhacs-eng'
 }
 
 @test "roxctl-development central generate k8s should respect customly-provided images" {
@@ -68,14 +69,18 @@ teardown() {
   run_image_defaults_registry_test roxctl-development k8s 'registry.redhat.io' 'registry.redhat.io' '--image-defaults' 'rhacs'
 }
 
-@test "roxctl-development roxctl central generate k8s --image-defaults=development should use quay.io registry" {
-  run_image_defaults_registry_test roxctl-development k8s 'quay.io' 'quay.io' '--image-defaults' 'development_build'
+@test "roxctl-development roxctl central generate k8s --image-defaults=development_build should use quay.io/rhacs-eng registry" {
+  run_image_defaults_registry_test roxctl-development k8s 'quay.io/rhacs-eng' 'quay.io/rhacs-eng' '--image-defaults' 'development_build'
+}
+
+@test "roxctl-development roxctl central generate k8s --image-defaults=opensource should use quay.io/stackrox-io registry" {
+  run_image_defaults_registry_test roxctl-development k8s 'quay.io/stackrox-io' 'quay.io/stackrox-io' '--image-defaults' 'opensource'
 }
 
 # DEV / OPENSHIFT
 
-@test "roxctl-development central generate openshift should use quay.io registry" {
-  run_image_defaults_registry_test roxctl-development openshift 'quay.io' 'quay.io'
+@test "roxctl-development central generate openshift should use quay.io/rhacs-eng registry" {
+  run_image_defaults_registry_test roxctl-development openshift 'quay.io/rhacs-eng' 'quay.io/rhacs-eng'
 }
 
 @test "roxctl-development central generate openshift should respect customly-provided images" {
@@ -114,8 +119,12 @@ teardown() {
   run_image_defaults_registry_test roxctl-development openshift 'registry.redhat.io' 'registry.redhat.io' '--image-defaults' 'rhacs'
 }
 
-@test "roxctl-development roxctl central generate openshift --image-defaults=development should use quay.io" {
-  run_image_defaults_registry_test roxctl-development openshift 'quay.io' 'quay.io' '--image-defaults' 'development_build'
+@test "roxctl-development roxctl central generate openshift --image-defaults=development_build should use quay.io/rhacs-eng" {
+  run_image_defaults_registry_test roxctl-development openshift 'quay.io/rhacs-eng' 'quay.io/rhacs-eng' '--image-defaults' 'development_build'
+}
+
+@test "roxctl-development roxctl central generate openshift --image-defaults=opensource should use quay.io/stackrox-io" {
+  run_image_defaults_registry_test roxctl-development openshift 'quay.io/stackrox-io' 'quay.io/stackrox-io' '--image-defaults' 'opensource'
 }
 
 @test "roxctl-development central generate k8s --debug should use the local directory" {
@@ -129,4 +138,3 @@ teardown() {
   assert_failure
   assert_output --partial "no such file or directory"
 }
-

@@ -14,9 +14,10 @@ import (
 type imageFlavorDescriptor struct {
 	// imageFlavorName is a value for both ROX_IMAGE_FLAVOR and for --image-defaults argument in roxctl.
 	imageFlavorName string
-	// isAllowedInReleaseBuild sets if given image flavor can (true) or shall not (false) be available when
-	// buildinfo.ReleaseBuild is true.
-	isAllowedInReleaseBuild bool
+	// isVisibleInReleaseBuild sets if the given image flavor shall (true) or shall not (false) be displayed to the user
+	// in cli help when buildinfo.ReleaseBuild is true. Note that the flavor can still be used even though it is not
+	// displayed.
+	isVisibleInReleaseBuild bool
 	// constructorFunc is a function that creates and populates the ImageFlavor struct according to selected
 	// ImageFlavorName.
 	constructorFunc func() ImageFlavor
@@ -29,22 +30,23 @@ var (
 	allImageFlavors = []imageFlavorDescriptor{
 		{
 			imageFlavorName:         ImageFlavorNameDevelopmentBuild,
-			isAllowedInReleaseBuild: false,
+			isVisibleInReleaseBuild: false,
 			constructorFunc:         DevelopmentBuildImageFlavor,
 		},
 		{
+			// TODO(ROX-11642): This was just hidden in release builds but should go away completely.
 			imageFlavorName:         ImageFlavorNameStackRoxIORelease,
-			isAllowedInReleaseBuild: true,
+			isVisibleInReleaseBuild: false,
 			constructorFunc:         StackRoxIOReleaseImageFlavor,
 		},
 		{
 			imageFlavorName:         ImageFlavorNameRHACSRelease,
-			isAllowedInReleaseBuild: true,
+			isVisibleInReleaseBuild: true,
 			constructorFunc:         RHACSReleaseImageFlavor,
 		},
 		{
 			imageFlavorName:         ImageFlavorNameOpenSource,
-			isAllowedInReleaseBuild: true,
+			isVisibleInReleaseBuild: true,
 			constructorFunc:         OpenSourceImageFlavor,
 		},
 	}
@@ -99,9 +101,17 @@ type ImageFlavor struct {
 }
 
 // DevelopmentBuildImageFlavor returns image values for `development_build` flavor.
-// Assumption: development_build flavor is never a release.
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
+	collectorTag := v.CollectorVersion + "-latest"
+	collectorSlimName := "collector"
+	collectorSlimTag := v.CollectorVersion + "-slim"
+	if buildinfo.ReleaseBuild {
+		v = version.GetAllVersionsUnified()
+		collectorTag = v.CollectorVersion
+		collectorSlimName = "collector-slim"
+		collectorSlimTag = v.CollectorVersion
+	}
 	return ImageFlavor{
 		MainRegistry:       "quay.io/rhacs-eng",
 		MainImageName:      "main",
@@ -111,9 +121,9 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 
 		CollectorRegistry:      "quay.io/rhacs-eng",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      v.CollectorVersion + "-latest",
-		CollectorSlimImageName: "collector",
-		CollectorSlimImageTag:  v.CollectorVersion + "-slim",
+		CollectorImageTag:      collectorTag,
+		CollectorSlimImageName: collectorSlimName,
+		CollectorSlimImageTag:  collectorSlimTag,
 
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
@@ -133,6 +143,7 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 }
 
 // StackRoxIOReleaseImageFlavor returns image values for `stackrox.io` flavor.
+// TODO(ROX-11642): remove stackrox.io flavor as stackrox.io image distribution is shut down.
 func StackRoxIOReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
@@ -245,50 +256,46 @@ func OpenSourceImageFlavor() ImageFlavor {
 	}
 }
 
-// GetAllowedImageFlavorNames returns a string slice with all accepted image flavor names for the given
-// release/development state.
-func GetAllowedImageFlavorNames(isReleaseBuild bool) []string {
+// GetVisibleImageFlavorNames returns a string slice with image flavor names that should be displayed to the user
+// depending on whether the code was compiled in release mode or not. Note that hidden flavors can still be used.
+func GetVisibleImageFlavorNames(isReleaseBuild bool) []string {
 	result := make([]string, 0, len(allImageFlavors))
 	for _, f := range allImageFlavors {
-		if f.isAllowedInReleaseBuild || !isReleaseBuild {
+		if f.isVisibleInReleaseBuild || !isReleaseBuild {
 			result = append(result, f.imageFlavorName)
 		}
 	}
 	return result
 }
 
-// CheckImageFlavorName returns error if image flavor name is unknown or not allowed for the selected type of build
-// (release==true, development==false), returns nil otherwise.
-func CheckImageFlavorName(imageFlavorName string, isReleaseBuild bool) error {
-	valids := GetAllowedImageFlavorNames(isReleaseBuild)
-	for _, v := range valids {
-		if imageFlavorName == v {
-			return nil
-		}
+// checkImageFlavorName returns error if the image flavor name is unknown (or empty), nil otherwise.
+func checkImageFlavorName(imageFlavorName string, isReleaseBuild bool) error {
+	if _, exists := imageFlavorMap[imageFlavorName]; exists {
+		return nil
 	}
-	return errors.Errorf("unexpected value '%s', allowed values are %v", imageFlavorName, valids)
+	return errors.Errorf("unexpected value '%s', allowed values are %v", imageFlavorName, GetVisibleImageFlavorNames(isReleaseBuild))
 }
 
 // GetImageFlavorByName returns ImageFlavor struct created for the provided flavorName if the name is valid, otherwise
 // it returns an error.
 func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, error) {
-	if err := CheckImageFlavorName(flavorName, isReleaseBuild); err != nil {
+	if err := checkImageFlavorName(flavorName, isReleaseBuild); err != nil {
 		return ImageFlavor{}, err
 	}
 
 	return getImageFlavorByName(flavorName), nil
 }
 
-// GetImageFlavorNameFromEnv returns the value of the environment variable (ROX_IMAGE_FLAVOR)
-// providing development_build as default if no RealeseBuild and environment variable not set
-// This function will panic if running a ReleaseBuild and ROX_IMAGE_FLAVOR is not available
+// GetImageFlavorNameFromEnv returns the value of the environment variable (ROX_IMAGE_FLAVOR) providing
+// development_build as the default if not a ReleaseBuild and the environment variable is not set.
+// This function will panic if running a ReleaseBuild and ROX_IMAGE_FLAVOR is not available.
 func GetImageFlavorNameFromEnv() string {
 	envValue := strings.TrimSpace(imageFlavorEnv())
 	if envValue == "" && !buildinfo.ReleaseBuild {
 		envValue = ImageFlavorNameDevelopmentBuild
-		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", imageFlavorEnvName, ImageFlavorNameDevelopmentBuild)
+		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", imageFlavorEnvName, envValue)
 	}
-	err := CheckImageFlavorName(envValue, buildinfo.ReleaseBuild)
+	err := checkImageFlavorName(envValue, buildinfo.ReleaseBuild)
 	if err != nil {
 		// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
 		// build-time constant.

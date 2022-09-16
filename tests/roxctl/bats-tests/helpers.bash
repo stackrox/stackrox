@@ -110,6 +110,7 @@ helm_template_secured_cluster() {
     "${extra_helm_args[@]}"
   )
 
+  rm -rf "$out_dir"
   run helm_template "$in_dir" "$out_dir" "${helm_args[@]}"
   assert_success
   assert_file_exist "$out_dir/stackrox-secured-cluster-services/templates/collector.yaml"
@@ -226,9 +227,12 @@ image_reference_regex() {
   local component="$2"
   local version="${3:-$any_version}"
 
-  case $registry_slug in
-    quay.io)
+  case "$registry_slug" in
+    quay.io/rhacs-eng)
       echo "quay\.io/rhacs-eng/$component:$version"
+      ;;
+    quay.io/stackrox-io)
+      echo "quay\.io/stackrox-io/$component:$version"
       ;;
     stackrox.io)
       if [[ "$component" == "collector" ]]; then

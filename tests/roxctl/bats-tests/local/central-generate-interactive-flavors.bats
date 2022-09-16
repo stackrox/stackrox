@@ -5,11 +5,12 @@ load "../helpers.bash"
 out_dir=""
 
 setup_file() {
+  # remove binaries from the previous runs
+  [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
+
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq > /dev/null || skip "Tests in this file require yq"
   command -v expect || skip "Tests in this file require expect"
-  # remove binaries from the previous runs
-  rm -f "$(roxctl-development-cmd)" "$(roxctl-development-release)"
 }
 
 setup() {
@@ -46,7 +47,7 @@ assert_flavor_prompt_development() {
 }
 
 assert_flavor_prompt_release() {
-  assert_line --partial 'Enter default container images settings (stackrox.io, rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "rhacs"):'
+  assert_line --partial 'Enter default container images settings (rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "rhacs"):'
 }
 
 assert_prompts_development() {
@@ -84,8 +85,8 @@ assert_prompts_rhacs() {
   assert_prompts_development
   assert_flavor_prompt_development
   sleep 2 # due to frequent flakes of missing yaml files
-  assert_components_registry "$out_dir/central" "quay.io" "$any_version" 'main'
-  assert_components_registry "$out_dir/scanner" "quay.io" "$any_version" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/central" "quay.io/rhacs-eng" "$any_version" 'main'
+  assert_components_registry "$out_dir/scanner" "quay.io/rhacs-eng" "$any_version" 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development central generate interactive flavor=stackrox.io" {
