@@ -415,5 +415,9 @@ export function addAuthInterceptors(authHttpErrorHandler): void {
  * @return {boolean} indicating whether the auth provider is immutable.
  */
 export function getIsAuthProviderImmutable(authProvider: AuthProvider): boolean {
-    return 'traits' in authProvider && authProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE';
+    return (
+        'traits' in authProvider &&
+        authProvider.traits != null &&
+        authProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE'
+    );
 }

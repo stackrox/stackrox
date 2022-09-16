@@ -13,9 +13,7 @@
             "loginUrl": "irrelevant",
             "validated": false,
             "active": false,
-            "traits": {
-                "mutabilityMode": "ALLOW_MUTATE"
-            }
+            "traits": null
         }
     ]
 }
