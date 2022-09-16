@@ -108,7 +108,12 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
-	return resolver.wrapImageComponentWithContext(ctx, ret, true, err)
+	res, err := resolver.wrapImageComponent(ret, true, err)
+	if err != nil {
+		return nil, err
+	}
+	res.ctx = ctx
+	return res, nil
 }
 
 // ImageComponents returns image components that match the input query.
@@ -138,8 +143,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 	}
 
 	// get values
-	comps, err := loader.FromQuery(ctx, query)
-	componentResolvers, err := resolver.wrapImageComponentsWithContext(ctx, comps, err)
+	componentResolvers, err := resolver.wrapImageComponents(loader.FromQuery(ctx, query))
 	if err != nil {
 		return nil, err
 	}
@@ -147,6 +151,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 	// cast as return type
 	ret := make([]ImageComponentResolver, 0, len(componentResolvers))
 	for _, res := range componentResolvers {
+		res.ctx = ctx
 		ret = append(ret, res)
 	}
 	return ret, nil
@@ -185,8 +190,8 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 Utility Functions
 */
 
-func (resolver *imageComponentResolver) imageComponentScopeContext() context.Context {
-	return scoped.Context(resolver.ctx, scoped.Scope{
+func (resolver *imageComponentResolver) withImageComponentScope(ctx context.Context) context.Context {
+	return scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    resolver.data.GetId(),
 	})
@@ -249,6 +254,255 @@ func queryWithImageIDRegexFilter(q string) string {
 		search.NewQueryBuilder().AddRegexes(search.ImageSHA, ".+").Query())
 }
 
+/*
+Sub Resolver Functions
+*/
+
+func (resolver *imageComponentResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ActiveState")
+	scopeQuery, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	deploymentID := getDeploymentScope(scopeQuery, resolver.ctx)
+	if deploymentID == "" {
+		return nil, nil
+	}
+
+	if resolver.data.GetSource() != storage.SourceType_OS {
+		return &activeStateResolver{
+			root:  resolver.root,
+			state: Undetermined,
+		}, nil
+	}
+	acID := acConverter.ComposeID(deploymentID, resolver.data.GetId())
+
+	var found bool
+	imageID := getImageIDFromQuery(scopeQuery)
+	if imageID == "" {
+		found, err = resolver.root.ActiveComponent.Exists(ctx, acID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
+		results, err := resolver.root.ActiveComponent.Search(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+		found = search.ResultsToIDSet(results).Contains(acID)
+	}
+	if !found {
+		return &activeStateResolver{
+			root:  resolver.root,
+			state: Inactive,
+		}, nil
+	}
+
+	return &activeStateResolver{
+		root:               resolver.root,
+		state:              Active,
+		activeComponentIDs: []string{acID},
+		imageScope:         imageID,
+	}, nil
+}
+
+func (resolver *imageComponentResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "DeploymentCount")
+	return resolver.root.DeploymentCount(resolver.withImageComponentScope(ctx), args)
+}
+
+func (resolver *imageComponentResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Deployments")
+	return resolver.root.Deployments(resolver.withImageComponentScope(ctx), args)
+}
+
+func (resolver *imageComponentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageCount")
+	return resolver.root.ImageCount(resolver.withImageComponentScope(ctx), args)
+}
+
+func (resolver *imageComponentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Images")
+	return resolver.root.Images(resolver.withImageComponentScope(ctx), args)
+}
+
+func (resolver *imageComponentResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCount")
+	return resolver.root.ImageVulnerabilityCount(resolver.withImageComponentScope(ctx), args)
+}
+
+func (resolver *imageComponentResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCounter")
+	return resolver.root.ImageVulnerabilityCounter(resolver.withImageComponentScope(ctx), args)
+}
+
+func (resolver *imageComponentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx)
+	if embeddedComponent == nil {
+		return resolver.root.ImageVulnerabilities(resolver.withImageComponentScope(ctx), args)
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	return getImageCVEResolvers(resolver.ctx, resolver.root, embeddedobjs.OSFromContext(resolver.ctx), embeddedComponent.GetVulns(), query)
+}
+
+func (resolver *imageComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "LastScanned")
+	ctx := resolver.ctx
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	if scanTime := embeddedobjs.LastScannedFromContext(ctx); scanTime != nil {
+		return timestamp(scanTime)
+	}
+
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	q := resolver.componentQuery()
+	q.Pagination = &v1.QueryPagination{
+		Limit:  1,
+		Offset: 0,
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.ImageScanTime.String(),
+				Reversed: true,
+			},
+		},
+	}
+
+	images, err := imageLoader.FromQuery(ctx, q)
+	if err != nil || len(images) == 0 {
+		return nil, err
+	} else if len(images) > 1 {
+		return nil, errors.New("multiple images matched for last scanned image component query")
+	}
+
+	return timestamp(images[0].GetScan().GetScanTime())
+}
+
+// Location returns the location of the component.
+func (resolver *imageComponentResolver) Location(ctx context.Context, args RawQuery) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Location")
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
+		return embeddedComponent.GetLocation(), nil
+	}
+
+	imageID := getImageIDFromScope(ctx, resolver.ctx)
+	if imageID == "" {
+		var err error
+		imageID, err = getImageIDFromIfImageShaQuery(ctx, resolver.root, args)
+		if err != nil {
+			return "", errors.Wrap(err, "could not determine component location")
+		}
+	}
+	if imageID == "" {
+		return "", nil
+	}
+
+	if !features.PostgresDatastore.Enabled() {
+		edgeID := edges.EdgeID{ParentID: imageID, ChildID: resolver.data.GetId()}.ToString()
+		edge, found, err := resolver.root.ImageComponentEdgeDataStore.Get(ctx, edgeID)
+		if err != nil || !found {
+			return "", err
+		}
+		return edge.GetLocation(), nil
+	}
+	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
+	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(ctx, query)
+	if err != nil || len(edges) == 0 {
+		return "", err
+	}
+	return edges[0].GetLocation(), nil
+}
+
+// PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
+func (resolver *imageComponentResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "PlottedImageVulnerabilities")
+	return resolver.root.PlottedImageVulnerabilities(resolver.withImageComponentScope(ctx), args)
+}
+
+func (resolver *imageComponentResolver) TopImageVulnerability(ctx context.Context) (ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopImageVulnerability")
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
+		var topVuln *storage.EmbeddedVulnerability
+		for _, vuln := range embeddedComponent.GetVulns() {
+			if topVuln == nil || vuln.GetCvss() > topVuln.GetCvss() {
+				topVuln = vuln
+			}
+		}
+		if topVuln == nil {
+			return nil, nil
+		}
+		return resolver.root.wrapImageCVE(
+			cveConverter.EmbeddedVulnerabilityToImageCVE(embeddedobjs.OSFromContext(resolver.ctx), topVuln), true, nil,
+		)
+	}
+
+	if !features.PostgresDatastore.Enabled() {
+		vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx)
+		if err != nil || vulnResolver == nil {
+			return nil, err
+		}
+		return vulnResolver, nil
+	}
+	return resolver.root.TopImageVulnerability(resolver.withImageComponentScope(ctx), RawQuery{})
+}
+
+func (resolver *imageComponentResolver) LayerIndex() (*int32, error) {
+	// Short path. Full image is embedded when image scan resolver is called.
+	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
+		w, ok := embeddedComponent.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
+		if !ok {
+			return nil, nil
+		}
+		v := w.LayerIndex
+		return &v, nil
+	}
+
+	scope, hasScope := scoped.GetScope(resolver.ctx)
+	if !hasScope || scope.Level != v1.SearchCategory_IMAGES {
+		return nil, nil
+	}
+	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, resolver.componentQuery())
+	if err != nil {
+		return nil, err
+	}
+	if len(edges) == 0 || len(edges) > 1 {
+		return nil, errors.Errorf("Unexpected number of image-component edge matched for image %s and component %s. Expected 1 edge.", scope.ID, resolver.data.GetId())
+	}
+
+	w, ok := edges[0].GetHasLayerIndex().(*storage.ImageComponentEdge_LayerIndex)
+	if !ok {
+		return nil, nil
+	}
+	v := w.LayerIndex
+	return &v, nil
+}
+
+func (resolver *imageComponentResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+	return nil
+}
+
+// Following are deprecated functions that are retained to allow UI time to migrate away from them
+
+func (resolver *imageComponentResolver) FixedIn(_ context.Context) string {
+	return resolver.data.GetFixedBy()
+}
+
 func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns []*storage.EmbeddedVulnerability, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
 	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
 	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
@@ -292,252 +546,4 @@ func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns 
 		pv: query.GetPagination(),
 	}.paginate(resolverI, nil)
 	return ret.([]ImageVulnerabilityResolver), err
-}
-
-/*
-Sub Resolver Functions
-*/
-
-func (resolver *imageComponentResolver) ActiveState(_ context.Context, args RawQuery) (*activeStateResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ActiveState")
-	scopeQuery, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-
-	deploymentID := getDeploymentScope(scopeQuery, resolver.ctx)
-	if deploymentID == "" {
-		return nil, nil
-	}
-
-	if resolver.data.GetSource() != storage.SourceType_OS {
-		return &activeStateResolver{
-			root:  resolver.root,
-			state: Undetermined,
-		}, nil
-	}
-	acID := acConverter.ComposeID(deploymentID, resolver.data.GetId())
-
-	var found bool
-	imageID := getImageIDFromQuery(scopeQuery)
-	if imageID == "" {
-		found, err = resolver.root.ActiveComponent.Exists(resolver.ctx, acID)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
-		results, err := resolver.root.ActiveComponent.Search(resolver.ctx, query)
-		if err != nil {
-			return nil, err
-		}
-		found = search.ResultsToIDSet(results).Contains(acID)
-	}
-	if !found {
-		return &activeStateResolver{
-			root:  resolver.root,
-			state: Inactive,
-		}, nil
-	}
-
-	return &activeStateResolver{
-		root:               resolver.root,
-		state:              Active,
-		activeComponentIDs: []string{acID},
-		imageScope:         imageID,
-	}, nil
-}
-
-func (resolver *imageComponentResolver) DeploymentCount(_ context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "DeploymentCount")
-	return resolver.root.DeploymentCount(resolver.imageComponentScopeContext(), args)
-}
-
-func (resolver *imageComponentResolver) Deployments(_ context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Deployments")
-	return resolver.root.Deployments(resolver.imageComponentScopeContext(), args)
-}
-
-func (resolver *imageComponentResolver) ImageCount(_ context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageCount")
-	return resolver.root.ImageCount(resolver.imageComponentScopeContext(), args)
-}
-
-func (resolver *imageComponentResolver) Images(_ context.Context, args PaginatedQuery) ([]*imageResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Images")
-	return resolver.root.Images(resolver.imageComponentScopeContext(), args)
-}
-
-func (resolver *imageComponentResolver) ImageVulnerabilityCount(_ context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCount")
-	return resolver.root.ImageVulnerabilityCount(resolver.imageComponentScopeContext(), args)
-}
-
-func (resolver *imageComponentResolver) ImageVulnerabilityCounter(_ context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCounter")
-	return resolver.root.ImageVulnerabilityCounter(resolver.imageComponentScopeContext(), args)
-}
-
-func (resolver *imageComponentResolver) ImageVulnerabilities(_ context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
-
-	// Short path. Full image is embedded when image scan resolver is called.
-	embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx)
-	if embeddedComponent == nil {
-		return resolver.root.ImageVulnerabilities(resolver.imageComponentScopeContext(), args)
-	}
-
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-	return getImageCVEResolvers(resolver.ctx, resolver.root, embeddedobjs.OSFromContext(resolver.ctx), embeddedComponent.GetVulns(), query)
-}
-
-func (resolver *imageComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "LastScanned")
-
-	// Short path. Full image is embedded when image scan resolver is called.
-	if scanTime := embeddedobjs.LastScannedFromContext(resolver.ctx); scanTime != nil {
-		return timestamp(scanTime)
-	}
-
-	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	q := resolver.componentQuery()
-	q.Pagination = &v1.QueryPagination{
-		Limit:  1,
-		Offset: 0,
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.ImageScanTime.String(),
-				Reversed: true,
-			},
-		},
-	}
-
-	images, err := imageLoader.FromQuery(resolver.ctx, q)
-	if err != nil || len(images) == 0 {
-		return nil, err
-	} else if len(images) > 1 {
-		return nil, errors.New("multiple images matched for last scanned image component query")
-	}
-
-	return timestamp(images[0].GetScan().GetScanTime())
-}
-
-// Location returns the location of the component.
-func (resolver *imageComponentResolver) Location(ctx context.Context, args RawQuery) (string, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Location")
-
-	// Short path. Full image is embedded when image scan resolver is called.
-	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
-		return embeddedComponent.GetLocation(), nil
-	}
-
-	imageID := getImageIDFromScope(ctx, resolver.ctx)
-	if imageID == "" {
-		var err error
-		imageID, err = getImageIDFromIfImageShaQuery(resolver.ctx, resolver.root, args)
-		if err != nil {
-			return "", errors.Wrap(err, "could not determine component location")
-		}
-	}
-	if imageID == "" {
-		return "", nil
-	}
-
-	if !features.PostgresDatastore.Enabled() {
-		edgeID := edges.EdgeID{ParentID: imageID, ChildID: resolver.data.GetId()}.ToString()
-		edge, found, err := resolver.root.ImageComponentEdgeDataStore.Get(resolver.ctx, edgeID)
-		if err != nil || !found {
-			return "", err
-		}
-		return edge.GetLocation(), nil
-	}
-	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
-	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, query)
-	if err != nil || len(edges) == 0 {
-		return "", err
-	}
-	return edges[0].GetLocation(), nil
-}
-
-// PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
-func (resolver *imageComponentResolver) PlottedImageVulnerabilities(_ context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "PlottedImageVulnerabilities")
-	return resolver.root.PlottedImageVulnerabilities(resolver.imageComponentScopeContext(), args)
-}
-
-func (resolver *imageComponentResolver) TopImageVulnerability(_ context.Context) (ImageVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopImageVulnerability")
-
-	// Short path. Full image is embedded when image scan resolver is called.
-	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
-		var topVuln *storage.EmbeddedVulnerability
-		for _, vuln := range embeddedComponent.GetVulns() {
-			if topVuln == nil || vuln.GetCvss() > topVuln.GetCvss() {
-				topVuln = vuln
-			}
-		}
-		if topVuln == nil {
-			return nil, nil
-		}
-		return resolver.root.wrapImageCVEWithContext(resolver.ctx,
-			cveConverter.EmbeddedVulnerabilityToImageCVE(embeddedobjs.OSFromContext(resolver.ctx), topVuln), true, nil,
-		)
-	}
-
-	if !features.PostgresDatastore.Enabled() {
-		vulnResolver, err := resolver.unwrappedTopVulnQuery(resolver.ctx)
-		if err != nil || vulnResolver == nil {
-			return nil, err
-		}
-		return vulnResolver, nil
-	}
-	return resolver.root.TopImageVulnerability(resolver.imageComponentScopeContext(), RawQuery{})
-}
-
-func (resolver *imageComponentResolver) LayerIndex() (*int32, error) {
-	// Short path. Full image is embedded when image scan resolver is called.
-	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
-		w, ok := embeddedComponent.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
-		if !ok {
-			return nil, nil
-		}
-		v := w.LayerIndex
-		return &v, nil
-	}
-
-	scope, hasScope := scoped.GetScope(resolver.ctx)
-	if !hasScope || scope.Level != v1.SearchCategory_IMAGES {
-		return nil, nil
-	}
-	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, resolver.componentQuery())
-	if err != nil {
-		return nil, err
-	}
-	if len(edges) == 0 || len(edges) > 1 {
-		return nil, errors.Errorf("Unexpected number of image-component edge matched for image %s and component %s. Expected 1 edge.", scope.ID, resolver.data.GetId())
-	}
-
-	w, ok := edges[0].GetHasLayerIndex().(*storage.ImageComponentEdge_LayerIndex)
-	if !ok {
-		return nil, nil
-	}
-	v := w.LayerIndex
-	return &v, nil
-}
-
-func (resolver *imageComponentResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
-	return nil
-}
-
-// Following are deprecated functions that are retained to allow UI time to migrate away from them
-
-func (resolver *imageComponentResolver) FixedIn(_ context.Context) string {
-	return resolver.data.GetFixedBy()
 }

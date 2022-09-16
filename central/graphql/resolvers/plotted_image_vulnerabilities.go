@@ -22,15 +22,13 @@ func init() {
 
 // PlottedImageVulnerabilitiesResolver returns the data required by top risky images scatter-plot on vuln mgmt dashboard
 type PlottedImageVulnerabilitiesResolver struct {
-	ctx     context.Context
 	root    *Resolver
 	all     []string
 	fixable int
 }
 
-func (resolver *Resolver) wrapPlottedImageVulnerabilitiesWithContext(ctx context.Context, all []string, fixable int) (*PlottedImageVulnerabilitiesResolver, error) {
+func (resolver *Resolver) wrapPlottedImageVulnerabilities(all []string, fixable int) (*PlottedImageVulnerabilitiesResolver, error) {
 	return &PlottedImageVulnerabilitiesResolver{
-		ctx:     ctx,
 		root:    resolver,
 		all:     all,
 		fixable: fixable,
@@ -46,7 +44,7 @@ func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args 
 			return nil, err
 		}
 
-		return resolver.wrapPlottedImageVulnerabilitiesWithContext(ctx, allCveIds, fixableCount)
+		return resolver.wrapPlottedImageVulnerabilities(allCveIds, fixableCount)
 	}
 
 	query, err := args.AsV1QueryOrEmpty()
@@ -80,7 +78,7 @@ func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args 
 		return nil, err
 	}
 
-	return resolver.wrapPlottedImageVulnerabilitiesWithContext(ctx, allCveIds, int(fixableCount))
+	return resolver.wrapPlottedImageVulnerabilities(allCveIds, int(fixableCount))
 }
 
 // BasicImageVulnerabilityCounter returns the ImageVulnerabilityCounter for scatter-plot with only total and fixable
@@ -94,10 +92,10 @@ func (resolver *PlottedImageVulnerabilitiesResolver) BasicImageVulnerabilityCoun
 }
 
 // ImageVulnerabilities returns the image vulnerabilities for top risky images scatter-plot
-func (resolver *PlottedImageVulnerabilitiesResolver) ImageVulnerabilities(_ context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+func (resolver *PlottedImageVulnerabilitiesResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	if len(resolver.all) == 0 {
 		return nil, nil
 	}
 	q := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.all...).Query()
-	return resolver.root.ImageVulnerabilities(resolver.ctx, PaginatedQuery{Query: &q, Pagination: args.Pagination})
+	return resolver.root.ImageVulnerabilities(ctx, PaginatedQuery{Query: &q, Pagination: args.Pagination})
 }
