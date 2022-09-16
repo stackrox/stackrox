@@ -28,13 +28,8 @@ var (
 
 	// TestMultiKeyStructsSchema is the go schema for table `test_multi_key_structs`.
 	TestMultiKeyStructsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("test_multi_key_structs")
-		if schema != nil {
-			return schema
-		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), "test_multi_key_structs")
+		schema := walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), "test_multi_key_structs")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "testmultikeystruct", (*storage.TestMultiKeyStruct)(nil)))
-		RegisterTable(schema, CreateTableTestMultiKeyStructsStmt)
 		return schema
 	}()
 )
