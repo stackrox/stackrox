@@ -7,7 +7,9 @@ import (
     "context"
     "fmt"
     "reflect"
+    "time"
 
+    "github.com/lib/pq"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/postgres"
@@ -33,11 +35,15 @@ var (
 
     // {{template "schemaVar" .Schema.Table}} is the go schema for table `{{.Schema.Table|lowerCase}}`.
     {{template "schemaVar" .Schema.Table}} = func() *walker.Schema {
+        {{- if .RegisterSchema }}
         schema := GetSchemaForTable("{{.Schema.Table}}")
         if schema != nil {
             return schema
         }
         schema = walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
+        {{- else}}
+        schema := walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
+        {{- end}}
 
         {{- if gt (len .References) 0 }}
 		referencedSchemas := map[string]*walker.Schema{
@@ -66,7 +72,9 @@ var (
             }...)
             {{- end }}
         {{- end }}
+        {{- if .RegisterSchema }}
         RegisterTable(schema, {{template "createTableStmtVar" .Schema }})
+        {{- end}}
         return schema
     }()
 )

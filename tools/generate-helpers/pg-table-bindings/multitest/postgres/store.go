@@ -98,12 +98,12 @@ func insertIntoTestMultiKeyStructs(ctx context.Context, batch *pgx.Batch, obj *s
 		obj.GetEnum(),
 		obj.GetEnums(),
 		obj.GetString_(),
-		obj.GetIntSlice(),
+		obj.GetInt32Slice(),
 		obj.GetOneofnested().GetNested(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO test_multi_key_structs (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, IntSlice, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, String_ = EXCLUDED.String_, IntSlice = EXCLUDED.IntSlice, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_multi_key_structs (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, Int32Slice, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, String_ = EXCLUDED.String_, Int32Slice = EXCLUDED.Int32Slice, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -172,7 +172,7 @@ func (s *storeImpl) copyFromTestMultiKeyStructs(ctx context.Context, tx pgx.Tx, 
 
 		"string_",
 
-		"intslice",
+		"int32slice",
 
 		"oneofnested_nested",
 
@@ -214,7 +214,7 @@ func (s *storeImpl) copyFromTestMultiKeyStructs(ctx context.Context, tx pgx.Tx, 
 
 			obj.GetString_(),
 
-			obj.GetIntSlice(),
+			obj.GetInt32Slice(),
 
 			obj.GetOneofnested().GetNested(),
 

@@ -356,26 +356,26 @@ func (s *IndexSuite) TestInt64() {
 
 func (s *IndexSuite) TestIntArray() {
 	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
-		s.IntSlice = []int64{-2, 5}
+		s.Int32Slice = []int32{-2, 5}
 	})
 	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
-		s.IntSlice = []int64{7, 3}
+		s.Int32Slice = []int32{7, 3}
 	})
 
 	s.runTestCases([]testCase{
 		{
 			desc:            "exact match",
-			q:               search.NewQueryBuilder().AddStrings(search.TestInt64Slice, "-2").ProtoQuery(),
+			q:               search.NewQueryBuilder().AddStrings(search.TestInt32Slice, "-2").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
 		},
 		{
 			desc:            ">",
-			q:               search.NewQueryBuilder().AddStrings(search.TestInt64Slice, ">5").ProtoQuery(),
+			q:               search.NewQueryBuilder().AddStrings(search.TestInt32Slice, ">5").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
 		},
 		{
 			desc:            ">=",
-			q:               search.NewQueryBuilder().AddStrings(search.TestInt64Slice, ">=-2").ProtoQuery(),
+			q:               search.NewQueryBuilder().AddStrings(search.TestInt32Slice, ">=-2").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
 		},
 	})
@@ -1088,33 +1088,33 @@ func (s *IndexSuite) TestFloatHighlights() {
 
 func (s *IndexSuite) TestIntArrayHighlights() {
 	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
-		s.IntSlice = []int64{-2, -5}
+		s.Int32Slice = []int32{-2, -5}
 	})
 	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
-		s.IntSlice = []int64{7, 3}
+		s.Int32Slice = []int32{7, 3}
 	})
 
 	s.runHighlightTestCases([]highlightTestCase{
 		{
 			desc: "exact match",
-			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt64Slice, "-2").ProtoQuery(),
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt32Slice, "-2").ProtoQuery(),
 			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
-				testStruct0: {"testmultikeystruct.int_slice": {"-2"}},
+				testStruct0: {"testmultikeystruct.int32_slice": {"-2"}},
 			},
 		},
 		{
 			desc: ">",
-			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt64Slice, ">5").ProtoQuery(),
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt32Slice, ">5").ProtoQuery(),
 			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
-				testStruct1: {"testmultikeystruct.int_slice": {"7"}},
+				testStruct1: {"testmultikeystruct.int32_slice": {"7"}},
 			},
 		},
 		{
 			desc: ">=",
-			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt64Slice, ">=-2").ProtoQuery(),
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt32Slice, ">=-2").ProtoQuery(),
 			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
-				testStruct0: {"testmultikeystruct.int_slice": {"-2"}},
-				testStruct1: {"testmultikeystruct.int_slice": {"7", "3"}},
+				testStruct0: {"testmultikeystruct.int32_slice": {"-2"}},
+				testStruct1: {"testmultikeystruct.int32_slice": {"7", "3"}},
 			},
 		},
 	})

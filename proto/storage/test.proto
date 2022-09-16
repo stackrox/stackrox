@@ -100,7 +100,11 @@ message TestMultiKeyStruct {
   repeated Enum enums                 = 11 [(gogoproto.moretags) = 'search:"Test Enum Slice"'];
 
   string string = 16 [(gogoproto.moretags) = 'search:"Test String"'];
-  repeated int64 int_slice = 17 [(gogoproto.moretags) = 'search:"Test Int64 Slice"'];
+
+  // repeated int64: currently unsupported
+  repeated int64 int_slice_deprecated = 17 [deprecated = true];
+
+  repeated int32 int32_slice = 18 [(gogoproto.moretags) = 'search:"Test Int32 Slice"'];
 
   message Embedded {
     string embedded = 1;
