@@ -35,7 +35,9 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		defer os.Remove(f.Name())
+		defer func() {
+			_ = os.Remove(f.Name())
+		}()
 		_, err = f.WriteString("local-pg-password")
 		if err != nil {
 			panic(err)
