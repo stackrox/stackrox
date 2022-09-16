@@ -1,8 +1,7 @@
 package v1alpha1
 
 import (
-	conditions "github.com/operator-framework/operator-sdk/pkg/status"
-	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -48,7 +47,7 @@ type ProfileBundleStatus struct {
 	// Defines the conditions for the ProfileBundle. Valid conditions are:
 	//  - Ready: Indicates if the ProfileBundle is Ready parsing or not.
 	// +optional
-	Conditions conditions.Conditions `json:"conditions,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -77,27 +76,27 @@ type ProfileBundleList struct {
 }
 
 func (s *ProfileBundleStatus) SetConditionPending() {
-	s.Conditions.SetCondition(conditions.Condition{
+	meta.SetStatusCondition(&s.Conditions, metav1.Condition{
 		Type:    "Ready",
-		Status:  corev1.ConditionFalse,
+		Status:  metav1.ConditionFalse,
 		Reason:  "Pending",
 		Message: "The profile bundle is waiting to be parsed",
 	})
 }
 
 func (s *ProfileBundleStatus) SetConditionInvalid() {
-	s.Conditions.SetCondition(conditions.Condition{
+	meta.SetStatusCondition(&s.Conditions, metav1.Condition{
 		Type:    "Ready",
-		Status:  corev1.ConditionFalse,
+		Status:  metav1.ConditionFalse,
 		Reason:  "Invalid",
 		Message: "Couldn't parse profile bundle",
 	})
 }
 
 func (s *ProfileBundleStatus) SetConditionReady() {
-	s.Conditions.SetCondition(conditions.Condition{
+	meta.SetStatusCondition(&s.Conditions, metav1.Condition{
 		Type:    "Ready",
-		Status:  corev1.ConditionTrue,
+		Status:  metav1.ConditionTrue,
 		Reason:  "Valid",
 		Message: "Profile bundle successfully parsed",
 	})

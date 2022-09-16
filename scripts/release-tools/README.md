@@ -1,3 +1,7 @@
+# DEPRECATION NOTICE
+
+:warning: The scripts are deprecated and will be removed on October 10, 2022. The functionality is now implemented by GitHub Actions.
+
 # Upstream Release Tools
 
 This directory contains a selection of scripts that automate selected mundane manual steps (a.k.a toil) in the upstream release process.

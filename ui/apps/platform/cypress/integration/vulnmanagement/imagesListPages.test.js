@@ -1,19 +1,27 @@
-import { url, selectors } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
+import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
 import {
-    hasExpectedHeaderColumns,
-    allChecksForEntities,
-    allCVECheck,
-    allFixableCheck,
-} from '../../helpers/vmWorkflowUtils';
-import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
+    getCountAndNounFromImageCVEsLinkResults,
+    verifyFixableCVEsLinkAndRiskAcceptanceTabs,
+    verifySecondaryEntities,
+    visitVulnerabilityManagementEntities,
+} from '../../helpers/vulnmanagement/entities';
 
-describe('Images list page and its entity detail page, related entities sub list validations ', () => {
+const entitiesKey = 'images';
+
+describe('Vulnerability Management Images', () => {
     withAuth();
 
-    // TODO(ROX-8674): Enable this test.
-    it.skip('should display all the columns and links expected in images list page', () => {
-        visitVulnerabilityManagementEntities('images');
+    before(function beforeHook() {
+        if (!hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+            this.skip();
+        }
+    });
+
+    it('should display table columns', () => {
+        visitVulnerabilityManagementEntities(entitiesKey);
 
         hasExpectedHeaderColumns([
             'Image',
@@ -23,49 +31,48 @@ describe('Images list page and its entity detail page, related entities sub list
             'Scan Time',
             'Image OS',
             'Image Status',
-            'Deployments',
-            'Components',
+            'Entities',
             'Risk Priority',
         ]);
-        cy.get(selectors.tableBodyColumn).each(($el) => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no deployments' && columnValue.includes('Deployment')) {
-                allChecksForEntities(url.list.images, 'deployment');
-            }
-            if (columnValue !== 'no components' && columnValue.includes('Component')) {
-                allChecksForEntities(url.list.images, 'component');
-            }
-            if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
-                cy.get(`${selectors.tableBodyColumn}:eq(0)`).click({ force: true });
+    });
 
-                cy.get('.pf-c-tabs .pf-c-tabs__item:eq(0):contains("Observed CVEs")').click({
-                    force: true,
-                    waitForAnimations: false,
-                });
+    //  TBD to be fixed after back end sorting is fixed
+    //  validateSort(selectors.riskScoreCol);
 
-                cy.get('.pf-c-tabs .pf-c-tabs__item:eq(1):contains("Deferred CVEs")').click({
-                    force: true,
-                    waitForAnimations: false,
-                });
+    // Argument 3 in verify functions is one-based index of column which has the links.
 
-                cy.get('.pf-c-tabs .pf-c-tabs__item:eq(2):contains("False positive CVEs")').click({
-                    force: true,
-                    waitForAnimations: false,
-                });
+    // Some tests might fail in local deployment.
 
-                // TODO fix the following test problem: Expected to find element: [data-testid="tabs"]
-                allFixableCheck(url.list.images);
-            }
-            if (columnValue !== 'no cves' && columnValue.includes('cve')) {
-                allCVECheck(url.list.images);
-            }
-        });
-        //  TBD to be fixed after back end sorting is fixed
-        //  validateSort(selectors.riskScoreCol);
+    it('should display links for all image CVEs', () => {
+        verifySecondaryEntities(
+            entitiesKey,
+            'image-cves',
+            2,
+            /^\d+ CVEs?$/,
+            getCountAndNounFromImageCVEsLinkResults
+        );
+    });
+
+    it('should display links for fixable image CVEs and also Risk Acceptance tabs', () => {
+        verifyFixableCVEsLinkAndRiskAcceptanceTabs(
+            entitiesKey,
+            'image-cves',
+            2,
+            /^\d+ Fixable$/,
+            getCountAndNounFromImageCVEsLinkResults
+        );
+    });
+
+    it('should display links for deployments', () => {
+        verifySecondaryEntities(entitiesKey, 'deployments', 8, /^\d+ deployments?$/);
+    });
+
+    it('should display links for image-components', () => {
+        verifySecondaryEntities(entitiesKey, 'image-components', 8, /^\d+ image components?$/);
     });
 
     it('should show entity icon, not back button, if there is only one item on the side panel stack', () => {
-        visitVulnerabilityManagementEntities('images');
+        visitVulnerabilityManagementEntities(entitiesKey);
 
         cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
         cy.wait(1000);

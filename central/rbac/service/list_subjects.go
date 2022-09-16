@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"sort"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
@@ -72,8 +73,8 @@ func getFilteredSubjectsByRoleBinding(rawQuery *v1.RawQuery, bindings []*storage
 type subjectSortAccessor func(s *storage.Subject) string
 
 var subjectSortAccessors = map[string]subjectSortAccessor{
-	search.SubjectKind.String(): func(s *storage.Subject) string { return s.GetKind().String() },
-	search.SubjectName.String(): func(s *storage.Subject) string { return s.GetName() },
+	strings.ToLower(search.SubjectKind.String()): func(s *storage.Subject) string { return s.GetKind().String() },
+	strings.ToLower(search.SubjectName.String()): func(s *storage.Subject) string { return s.GetName() },
 }
 
 func sortSubjects(query *v1.Query, subjects []*storage.Subject) error {
@@ -81,7 +82,7 @@ func sortSubjects(query *v1.Query, subjects []*storage.Subject) error {
 	if sortOptions := query.GetPagination().GetSortOptions(); len(sortOptions) > 0 {
 		accessors := make([]subjectSortAccessor, 0, len(sortOptions))
 		for _, s := range sortOptions {
-			accessor, ok := subjectSortAccessors[s.Field]
+			accessor, ok := subjectSortAccessors[strings.ToLower(s.Field)]
 			if !ok {
 				return errors.Errorf("sorting subjects by field %v is not supported", s.Field)
 			}

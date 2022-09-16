@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/extend-expect';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
 import { mockChartsWithoutAnimation } from 'test-utils/mocks/@patternfly/react-charts';
-import ViolationsByPolicyCategory from 'Containers/Dashboard/PatternFly/Widgets/ViolationsByPolicyCategory';
+import ViolationsByPolicyCategory from './ViolationsByPolicyCategory';
 
 jest.setTimeout(10000);
 
@@ -13,7 +13,7 @@ jest.mock('@patternfly/react-charts', () => mockChartsWithoutAnimation);
 jest.mock('hooks/useResizeObserver');
 
 // Mock the hook that handles the data fetching of alert counts
-jest.mock('Containers/Dashboard/PatternFly/hooks/useAlertGroups', () => {
+jest.mock('Containers/Dashboard/hooks/useAlertGroups', () => {
     function makeFixtureCounts(crit: number, high: number, med: number, low: number) {
         return [
             { severity: 'CRITICAL_SEVERITY', count: `${crit}` },
