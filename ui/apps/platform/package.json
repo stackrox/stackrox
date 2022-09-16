@@ -150,6 +150,7 @@
         "mocha": "^9.1.1",
         "mocha-junit-reporter": "^2.0.0",
         "mocha-multi-reporters": "^1.5.1",
+        "msw": "^0.47.3",
         "node-fetch": "^2.6.1",
         "npm-run-all": "^4.1.5",
         "postcss": "^8.3.4",
@@ -170,3 +171,4 @@
         "not op_mini all"
     ]
 }
+

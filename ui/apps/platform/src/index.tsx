@@ -45,6 +45,12 @@ const history = createHistory();
 const store = configureStore(undefined, history) as Store;
 const apolloClient = configureApollo();
 
+if (process.env.NODE_ENV === 'development') {
+    import('./services/mocks/browser')
+        .then(({ startMockServiceWorker }) => startMockServiceWorker())
+        .catch(console.error);
+}
+
 ReactDOM.render(
     <Provider store={store}>
         <ApolloProvider client={apolloClient}>
