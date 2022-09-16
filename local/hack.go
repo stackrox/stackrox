@@ -49,7 +49,7 @@ func main() {
 		}
 
 		// Uncomment this if you want every query run to be logged out to stdout of your postgres container
-		//pool.Exec(ctx, "SET log_statement = 'all'")
+		// pool.Exec(ctx, "SET log_statement = 'all'")
 	} else {
 		option.CentralOptions.DBPathBase = "local/database-restore/full"
 
@@ -59,7 +59,7 @@ func main() {
 		globalindex.SeparateIndexPath = filepath.Join(blevePath, "separate")
 	}
 
-	//Can start accessing _most_ singletons. Some singletons that access certificates will fail
+	// Can start accessing _most_ singletons. Some singletons that access certificates will fail
 	ds := datastore.Singleton()
 	count, err := ds.Count(sac.WithAllAccess(context.Background()), search.NewQueryBuilder().ProtoQuery())
 	if err != nil {
