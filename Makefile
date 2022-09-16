@@ -34,8 +34,6 @@ ROX_PRODUCT_BRANDING ?= STACKROX_BRANDING
 ROX_IMAGE_FLAVOR ?= $(shell \
 	if [[ "$(ROX_PRODUCT_BRANDING)" == "STACKROX_BRANDING" ]]; then \
 	  echo "opensource"; \
-	elif [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then \
-	  echo "stackrox.io"; \
 	else \
 	  echo "development_build"; \
 	fi)
