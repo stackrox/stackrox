@@ -31,7 +31,7 @@ func ConvertTestMultiKeyStructFromProto(obj *storage.TestMultiKeyStruct) (*schem
 		Enum:              obj.GetEnum(),
 		Enums:             pq.Array(pgutils.ConvertEnumSliceToIntArray(obj.GetEnums())).(*pq.Int32Array),
 		String:            obj.GetString_(),
-		IntSlice:          pq.Array(obj.GetIntSlice()).(*pq.Int32Array),
+		Int32Slice:        pq.Array(obj.GetInt32Slice()).(*pq.Int32Array),
 		OneofnestedNested: obj.GetOneofnested().GetNested(),
 		Serialized:        serialized,
 	}

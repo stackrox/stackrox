@@ -14349,8 +14349,20 @@
               },
               {
                 "id": 17,
-                "name": "int_slice",
+                "name": "int_slice_deprecated",
                 "type": "int64",
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 18,
+                "name": "int32_slice",
+                "type": "int32",
                 "is_repeated": true,
                 "options": [
                   {

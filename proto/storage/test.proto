@@ -101,7 +101,10 @@ message TestMultiKeyStruct {
 
   string string = 16 [(gogoproto.moretags) = 'search:"Test String"'];
 
-  repeated int32 int_slice = 17 [(gogoproto.moretags) = 'search:"Test Int32 Slice"'];
+  // repeated int64: currently unsupported
+  repeated int64 int_slice_deprecated = 17 [deprecated = true];
+
+  repeated int32 int32_slice = 18 [(gogoproto.moretags) = 'search:"Test Int32 Slice"'];
 
   message Embedded {
     string embedded = 1;

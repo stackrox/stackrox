@@ -53,7 +53,7 @@ type TestMultiKeyStructs struct {
 	Enum              storage.TestMultiKeyStruct_Enum `gorm:"column:enum;type:integer"`
 	Enums             *pq.Int32Array                  `gorm:"column:enums;type:int[]"`
 	String            string                          `gorm:"column:string_;type:varchar"`
-	IntSlice          *pq.Int32Array                  `gorm:"column:intslice;type:int[]"`
+	Int32Slice        *pq.Int32Array                  `gorm:"column:int32slice;type:int[]"`
 	OneofnestedNested string                          `gorm:"column:oneofnested_nested;type:varchar"`
 	Serialized        []byte                          `gorm:"column:serialized;type:bytea"`
 }
