@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
@@ -347,8 +348,7 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 	}
 
 	t := func(c concurrency.ErrorWaitable) (interface{}, error) {
-		// Copy over SAC scopes into background context
-		ctx := sac.CopyGlobalAccessScopeChecker(context.Background(), ctx)
+		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
 		return s.predicateBasedDryRunPolicy(ctx, c, request)
 	}
 

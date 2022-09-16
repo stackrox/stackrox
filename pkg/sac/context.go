@@ -37,8 +37,3 @@ func WithAllAccess(ctx context.Context) context.Context {
 func WithNoAccess(ctx context.Context) context.Context {
 	return WithGlobalAccessScopeChecker(ctx, denyAllScopeCheckerCore)
 }
-
-// CopyGlobalAccessScopeChecker from the source context to the destination context.
-func CopyGlobalAccessScopeChecker(dstCtx, srcCtx context.Context) context.Context {
-	return context.WithValue(dstCtx, globalAccessScopeContextKey{}, srcCtx.Value(globalAccessScopeContextKey{}))
-}
