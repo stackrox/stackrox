@@ -28,6 +28,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 - ROX-11937: The Splunk integration now processes all additional standards of the compliance operator (ocp4-cis & ocp4-cis-node) correctly.
 
+### Removed Features
+- ROX-6194: `ROX_WHITELIST_GENERATION_DURATION` env var is removed in favor of `ROX_BASELINE_GENERATION_DURATION`;
+  `DeploymentWithProcessInfo` items in `/v1/deploymentswithprocessinfo` endpoint response do not include
+  `whitelist_statuses` anymore.
+- ROX-11592: Support to Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field
+  being set in the `/v1/groups` endpoint have been removed.
+
 ## [3.72.0]
 
 ### Removed Features
