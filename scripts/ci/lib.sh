@@ -23,9 +23,9 @@ ci_export() {
 
     if command -v cci-export >/dev/null; then
         cci-export "$env_name" "$env_value"
-    else
-        export "$env_name"="$env_value"
     fi
+
+    export "$env_name"="$env_value"
 }
 
 ci_exit_trap() {
