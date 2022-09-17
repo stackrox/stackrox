@@ -21,8 +21,11 @@ Installation:
 
 ```shell
 mkdir -p "$HOME/bats-core/"
+git -C "$HOME/bats-core/" clone --depth=1 https://github.com/bats-core/bats-core
 git -C "$HOME/bats-core/" clone --depth=1 https://github.com/bats-core/bats-assert
 git -C "$HOME/bats-core/" clone --depth=1 https://github.com/bats-core/bats-support
+(cd "$HOME/bats-core/bats-core" && sudo ./install.sh "/usr/local")
+bats --version
 ```
 
 The helpers are installed correctly if the following tests are passing:
