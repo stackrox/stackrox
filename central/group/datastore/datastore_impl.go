@@ -30,11 +30,6 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 		return nil, nil
 	}
 
-	// TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
-	if props.GetId() == "" {
-		return ds.getByProps(ctx, props)
-	}
-
 	group, _, err := ds.storage.Get(ctx, props.GetId())
 	return group, err
 }
@@ -161,7 +156,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 
 	var idsToRemove []string
 	for _, group := range remove {
-		if err := ValidateGroup(group); err != nil {
+		if err := ValidateGroup(group, true); err != nil {
 			return errox.InvalidArgs.CausedBy(err)
 		}
 		groupID, err := ds.validateAndPrepGroupForDeleteNoLock(ctx, group.GetProps(), force)
@@ -214,7 +209,7 @@ func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authPr
 // Validate if the group is allowed to be added and prep the group before it is added to the db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, group *storage.Group) error {
-	if err := ValidateGroup(group); err != nil {
+	if err := ValidateGroup(group, false); err != nil {
 		return errox.InvalidArgs.CausedBy(err)
 	}
 
@@ -239,19 +234,8 @@ func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, g
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context, group *storage.Group,
 	force bool) error {
-	if err := ValidateGroup(group); err != nil {
+	if err := ValidateGroup(group, true); err != nil {
 		return errox.InvalidArgs.CausedBy(err)
-	}
-
-	// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
-	// can be removed and groups shall only be retrievable via their id.
-	if group.GetProps().GetId() == "" {
-		id, err := ds.findGroupIDByProps(ctx, group.GetProps())
-		if err != nil {
-			return err
-		}
-		// Use the id of the retrieved group to update
-		group.GetProps().Id = id
 	}
 
 	err := ds.validateMutableGroupIDNoLock(ctx, group.GetProps().GetId(), force)
@@ -276,22 +260,11 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateAndPrepGroupForDeleteNoLock(ctx context.Context, props *storage.GroupProperties,
 	force bool) (string, error) {
-	if err := ValidateProps(props); err != nil {
+	if err := ValidateProps(props, true); err != nil {
 		return "", errox.InvalidArgs.CausedBy(err)
 	}
 
 	propsID := props.GetId()
-
-	// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
-	// can be removed and groups shall only be retrievable via their id.
-	if propsID == "" {
-		id, err := ds.findGroupIDByProps(ctx, props)
-		if err != nil {
-			return "", err
-		}
-		// Use the id of the retrieved group to delete
-		propsID = id
-	}
 
 	if err := ds.validateMutableGroupIDNoLock(ctx, propsID, force); err != nil {
 		return "", err
@@ -343,7 +316,6 @@ func isDefaultGroup(props *storage.GroupProperties) bool {
 
 // getByProps returns a group matching the given properties if it exists from the store.
 // If more than one group is found matching the properties, an error will be returned.
-// TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
 func (ds *dataStoreImpl) getByProps(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
 	groups, err := ds.GetFiltered(ctx, func(p *storage.GroupProperties) bool {
 		return propertiesMatch(p, props)
@@ -363,21 +335,6 @@ func (ds *dataStoreImpl) getByProps(ctx context.Context, props *storage.GroupPro
 	}
 
 	return groups[0], nil
-}
-
-// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
-// can be removed and groups shall only be retrievable via their id.
-func (ds *dataStoreImpl) findGroupIDByProps(ctx context.Context, props *storage.GroupProperties) (string, error) {
-	group, err := ds.getByProps(ctx, props)
-	if err != nil {
-		return "", err
-	}
-	if group == nil {
-		return "", errox.NotFound.Newf("group config for (auth provider id=%s, key=%s, value=%s) does not exist",
-			props.GetAuthProviderId(), props.GetKey(), props.GetValue())
-	}
-
-	return group.GetProps().GetId(), nil
 }
 
 // getDefaultGroupForProps will check if the given properties are a default group and, if they are, search the

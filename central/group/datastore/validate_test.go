@@ -19,6 +19,7 @@ func TestValidate(t *testing.T) {
 					AuthProviderId: "Sentinel",
 					Key:            "le mot",
 					Value:          "tous a la Bastille!",
+					Id:             "id",
 				},
 				RoleName: "",
 			},
@@ -33,7 +34,7 @@ func TestValidate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Group.props.id must not be set",
+			name: "Group.props.id must be set",
 			group: &storage.Group{
 				Props: &storage.GroupProperties{
 					AuthProviderId: "Sentinel",
@@ -42,7 +43,7 @@ func TestValidate(t *testing.T) {
 				},
 				RoleName: "insurge",
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "Group.props.auth_provider_id must be set",
@@ -50,6 +51,7 @@ func TestValidate(t *testing.T) {
 				Props: &storage.GroupProperties{
 					Key:   "le mot",
 					Value: "tous a la Bastille!",
+					Id:    "id",
 				},
 				RoleName: "insurge",
 			},
@@ -61,6 +63,7 @@ func TestValidate(t *testing.T) {
 				Props: &storage.GroupProperties{
 					AuthProviderId: "Sentinel",
 					Value:          "tous a la Bastille!",
+					Id:             "id",
 				},
 				RoleName: "insurge",
 			},
@@ -105,7 +108,7 @@ func TestValidate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateGroup(tt.group); (err != nil) != tt.wantErr {
+			if err := ValidateGroup(tt.group, true); (err != nil) != tt.wantErr {
 				t.Errorf("validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
