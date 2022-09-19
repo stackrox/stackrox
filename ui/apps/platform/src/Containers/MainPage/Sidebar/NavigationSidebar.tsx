@@ -22,26 +22,20 @@ import {
     accessControlBasePathV2,
     systemConfigPath,
     systemHealthPath,
+    collectionsPath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
 
-const platformConfigurationPaths = [
-    clustersBasePath,
-    policyManagementBasePath,
-    integrationsPath,
-    accessControlBasePathV2,
-    systemConfigPath,
-    systemHealthPath,
-];
-
 type NavigationSidebarProps = {
     hasReadAccess: HasReadAccess;
-    // eslint-disable-next-line react/no-unused-prop-types
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
-function NavigationSidebar({ hasReadAccess }: NavigationSidebarProps): ReactElement {
+function NavigationSidebar({
+    hasReadAccess,
+    isFeatureFlagEnabled,
+}: NavigationSidebarProps): ReactElement {
     const location: Location = useLocation();
 
     const vulnerabilityManagementPaths = [vulnManagementPath];
@@ -53,6 +47,27 @@ function NavigationSidebar({ hasReadAccess }: NavigationSidebarProps): ReactElem
     }
     if (hasReadAccess('VulnerabilityReports')) {
         vulnerabilityManagementPaths.push(vulnManagementReportsPath);
+    }
+
+    const platformConfigurationPaths = [
+        clustersBasePath,
+        policyManagementBasePath,
+        integrationsPath,
+        accessControlBasePathV2,
+        systemConfigPath,
+        systemHealthPath,
+    ];
+
+    // TODO
+    // - This must be restricted based on permissions once the BE is in place https://issues.redhat.com/browse/ROX-12695
+    // - See also https://issues.redhat.com/browse/ROX-12619
+    if (isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS')) {
+        // Insert 'Collections' after 'Policy Management'
+        platformConfigurationPaths.splice(
+            platformConfigurationPaths.indexOf(policyManagementBasePath) + 1,
+            0,
+            collectionsPath
+        );
     }
 
     const Navigation = (

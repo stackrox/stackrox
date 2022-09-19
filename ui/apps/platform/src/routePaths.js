@@ -44,6 +44,7 @@ export const compliancePath = `${mainPath}/:context(compliance)`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
 export const systemHealthPathPF = `${mainPath}/system-health-pf`;
+export const collectionsPath = `${mainPath}/collections`;
 export const productDocsPath = '/docs/product';
 
 // Configuration Management
@@ -156,6 +157,7 @@ export const basePathToLabelMap = {
     [policyManagementBasePath]: 'Policy Management',
     [policiesBasePath]: 'Policy Management',
     [policyCategoriesPath]: 'Policy Categories',
+    [collectionsPath]: 'Collections',
     [integrationsPath]: 'Integrations',
     [accessControlPath]: 'Access Control',
     [accessControlBasePathV2]: 'Access Control',

@@ -26,6 +26,7 @@ import {
     vulnManagementReportsPath,
     configManagementPath,
     vulnManagementRiskAcceptancePath,
+    collectionsPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -92,6 +93,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
     const isSearchPageEnabled = isFeatureFlagEnabled('ROX_SEARCH_PAGE_UI');
+    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
 
@@ -113,6 +115,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={policyManagementBasePath} component={AsyncPolicyManagementPage} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
                     <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
+                    {isCollectionsEnabled && <Route path={collectionsPath} component={() => ''} />}
                     <Route path={riskPath} component={AsyncRiskPage} />
                     <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
                     {isSearchPageEnabled && <Route path={searchPath} component={AsyncSearchPage} />}
