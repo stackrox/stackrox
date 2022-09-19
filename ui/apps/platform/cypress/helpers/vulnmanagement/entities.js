@@ -172,9 +172,17 @@ export function interactAndWaitForVulnerabilityManagementEntities(
     entitiesKey,
     staticResponseForEntities
 ) {
+    /*
+     * Unlike visit function above, omit searchOptions request
+     * to support tests to sort the table by a column.
+     * By the way, the tests do not call this function for the click
+     * to restore initial sorting, because the response has been cached.
+     */
     const opname = opnameForEntities[entitiesKey];
     const requestConfig = {
-        routeMatcherMap: routeMatcherMapForOpnames(['searchOptions', opname]),
+        routeMatcherMap: {
+            [opname]: api.graphql(opname),
+        },
     };
     const staticResponseMap = staticResponseForEntities && { [opname]: staticResponseForEntities };
 
