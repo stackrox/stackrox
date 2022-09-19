@@ -90,7 +90,7 @@ export function scanCompliance() {
     cy.wait('@triggerScan');
     waitForResponses(requestConfig);
 
-    cy.get(selectors.scanButton).click().should('not.have.attr', 'disabled');
+    cy.get(selectors.scanButton).should('not.have.attr', 'disabled');
 }
 
 /*
