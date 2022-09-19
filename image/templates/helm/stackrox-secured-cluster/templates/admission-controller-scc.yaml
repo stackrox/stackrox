@@ -49,7 +49,26 @@ volumes:
 # "fake" document separator to aid GVK extraction heuristic
 ---
 {{- end }}
-
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-anyuid-scc
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "use-anyuid-scc") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "role" "use-anyuid-scc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - anyuid
+  verbs:
+  - use
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -57,6 +76,7 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "admission-control-use-scc") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "rolebinding" "admission-control-use-scc") | nindent 4 }}
 roleRef:
