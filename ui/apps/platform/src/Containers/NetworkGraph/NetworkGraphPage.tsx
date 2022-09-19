@@ -2,8 +2,8 @@ import React from 'react';
 import { Flex, FlexItem, PageSection } from '@patternfly/react-core';
 
 import useURLSearch from 'hooks/useURLSearch';
-import { fetchClustersAsArray } from 'services/ClustersService';
-import { Cluster } from 'types/cluster.proto';
+import useClusters from './useClusters';
+import useNamespaces from './useNamespaces';
 import ClusterSelect from './ClusterSelect';
 import NamespaceSelect from './NamespaceSelect';
 
@@ -15,20 +15,16 @@ export type Namespace = {
 };
 
 function NetworkGraphPage() {
-    const [clusters, setClusters] = React.useState<Cluster[]>([]);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const selectedClusterId = (searchFilter.Cluster as string) || '';
     const selectedNamespaces = (searchFilter.Namespace as string[]) || [];
 
-    React.useEffect(() => {
-        fetchClustersAsArray()
-            .then((data) => {
-                setClusters(data as Cluster[]);
-            })
-            .catch(() => {
-                // TODO
-            });
-    }, []);
+    const { clusters, error: clusterError, isLoading: isLoadingCluster } = useClusters();
+    const {
+        namespaces,
+        error: namespaceError,
+        loading: isLoadingNamespace,
+    } = useNamespaces(selectedClusterId);
 
     function updateSelectedClusterId(selection) {
         const newSearchFiliter = { ...searchFilter, Cluster: selection };
@@ -49,11 +45,13 @@ function NetworkGraphPage() {
                         clusters={clusters}
                         selectedClusterId={selectedClusterId}
                         setSelectedClusterId={updateSelectedClusterId}
+                        isLoading={isLoadingCluster}
+                        error={clusterError}
                     />
                 </FlexItem>
                 <FlexItem>
                     <NamespaceSelect
-                        selectedClusterId={selectedClusterId}
+                        namespaces={namespaces}
                         selectedNamespaces={selectedNamespaces}
                         setSelectedNamespaces={updateSelectedNamespaces}
                     />

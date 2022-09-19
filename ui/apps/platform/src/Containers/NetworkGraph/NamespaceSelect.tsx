@@ -2,7 +2,7 @@ import React, { useCallback, ChangeEvent } from 'react';
 import { Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import useNamespaceFilters from './useNamespaceFilters';
+// import useNamespaceFilters from './useNamespaceFilters';
 
 function filterElementsWithValueProp(
     filterValue: string,
@@ -17,24 +17,24 @@ function filterElementsWithValueProp(
     );
 }
 interface NamespaceSelectProps {
+    namespaces: any[];
     id?: string;
     isDisabled?: boolean;
     className?: string;
-    selectedClusterId?: string;
     selectedNamespaces: string[];
     setSelectedNamespaces: (namespaces: string[]) => void;
 }
 
 function NamespaceSelect({
+    namespaces = [],
     id = '',
     className = '',
     isDisabled = false,
-    selectedClusterId = '',
     selectedNamespaces,
     setSelectedNamespaces,
 }: NamespaceSelectProps) {
     const { isOpen, onToggle } = useSelectToggle();
-    const { loading, error, availableNamespaceFilters } = useNamespaceFilters(selectedClusterId);
+    // const { loading, error, availableNamespaceFilters } = useNamespaceFilters(selectedClusterId);
 
     function onSelect(e, selected) {
         const newSelection = selectedNamespaces.find((nsFilter) => nsFilter === selected)
@@ -47,11 +47,9 @@ function NamespaceSelect({
         (e: ChangeEvent<HTMLInputElement> | null, filterValue: string) =>
             filterElementsWithValueProp(
                 filterValue,
-                availableNamespaceFilters.map((nsFilter) => (
-                    <SelectOption key={nsFilter} value={nsFilter} />
-                ))
+                namespaces.map((nsFilter) => <SelectOption key={nsFilter} value={nsFilter} />)
             ),
-        [availableNamespaceFilters]
+        [namespaces]
     );
 
     // TODO Is there a more reliable way to set maxHeight here instead of hard coded px values?
@@ -64,13 +62,13 @@ function NamespaceSelect({
             onFilter={onFilter}
             className={`namespace-select ${className}`}
             placeholderText="Namespaces"
-            isDisabled={isDisabled || loading || Boolean(error)}
+            isDisabled={isDisabled}
             selections={selectedNamespaces}
             variant={SelectVariant.checkbox}
             maxHeight="275px"
             hasInlineFilter
         >
-            {availableNamespaceFilters.map((nsFilter) => (
+            {namespaces.map((nsFilter) => (
                 <SelectOption key={nsFilter} value={nsFilter} />
             ))}
         </Select>

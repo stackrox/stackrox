@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core';
+import { Select, SelectOption, Spinner } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Cluster } from 'types/cluster.proto';
@@ -10,6 +10,8 @@ type ClusterSelectProps = {
     clusters: Cluster[];
     selectedClusterId?: string;
     isDisabled?: boolean;
+    isLoading?: boolean;
+    error?: string;
 };
 
 const ClusterSelect = ({
@@ -18,6 +20,8 @@ const ClusterSelect = ({
     clusters,
     selectedClusterId = '',
     isDisabled = false,
+    isLoading = false,
+    error = '',
 }: ClusterSelectProps): ReactElement => {
     const { closeSelect, isOpen, onToggle } = useSelectToggle();
     function changeCluster(_e, clusterId) {
@@ -30,9 +34,15 @@ const ClusterSelect = ({
             id={id}
             isOpen={isOpen}
             onToggle={onToggle}
-            isDisabled={isDisabled || !clusters.length}
+            isDisabled={isDisabled || !!error || !clusters.length}
             selections={selectedClusterId}
-            placeholderText="Select a cluster"
+            placeholderText={
+                isLoading ? (
+                    <Spinner isSVG size="sm" aria-label="Contents of the small example" />
+                ) : (
+                    'Select a cluster'
+                )
+            }
             onSelect={changeCluster}
         >
             {clusters.map(({ id: clusterId, name }) => (
