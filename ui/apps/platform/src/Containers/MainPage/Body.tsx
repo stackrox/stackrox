@@ -98,6 +98,8 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
+    // TODO Implement permissions once https://issues.redhat.com/browse/ROX-12619 is merged
+    const hasCollectionsPermission = true; // hasReadAccess('TODO');
 
     return (
         <div
@@ -117,7 +119,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={policyManagementBasePath} component={AsyncPolicyManagementPage} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
                     <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
-                    {isCollectionsEnabled && (
+                    {isCollectionsEnabled && hasCollectionsPermission && (
                         <Route path={collectionsPath} component={AsyncCollectionsPage} />
                     )}
                     <Route path={riskPath} component={AsyncRiskPage} />
