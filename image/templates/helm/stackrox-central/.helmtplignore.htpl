@@ -13,5 +13,5 @@ templates/*
 [< end >]
 templates/keep.yaml
 [< if not .FeatureFlags.ROX_POSTGRES_DATASTORE >]
-templates/*db*
+templates/*central*db*
 [<- end >]
