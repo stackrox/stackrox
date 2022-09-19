@@ -6,16 +6,20 @@ import { visit } from './visit';
 
 // visit
 
+export const deploymentswithprocessinfoAlias = 'deploymentswithprocessinfo';
+export const deploymentscountAlias = 'deploymentscount';
+export const searchOptionsAlias = 'searchOptions';
+
 const routeMatcherMap = {
-    deploymentswithprocessinfo: {
+    [deploymentswithprocessinfoAlias]: {
         method: 'GET',
         url: api.risks.riskyDeployments,
     },
-    deploymentscount: {
+    [deploymentscountAlias]: {
         method: 'GET',
         url: api.risks.deploymentsCount,
     },
-    searchOptions: {
+    [searchOptionsAlias]: {
         method: 'POST',
         url: api.graphql('searchOptions'),
     },

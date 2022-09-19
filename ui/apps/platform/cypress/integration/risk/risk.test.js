@@ -1,11 +1,18 @@
 import { selectors as RiskPageSelectors } from '../../constants/RiskPage';
 import withAuth from '../../helpers/basicAuth';
 import {
+    deploymentswithprocessinfoAlias,
+    deploymentscountAlias,
     visitRiskDeployments,
     visitRiskDeploymentsWithSearchQuery,
     viewRiskDeploymentByName,
     viewRiskDeploymentInNetworkGraph,
 } from '../../helpers/risk';
+import {
+    assertSortedItems,
+    callbackForPairOfAscendingNumberValuesFromElements,
+    callbackForPairOfDescendingNumberValuesFromElements,
+} from '../../helpers/sort';
 
 describe('Risk page', () => {
     withAuth();
@@ -17,50 +24,79 @@ describe('Risk page', () => {
             cy.get(RiskPageSelectors.risk).should('have.class', 'pf-m-current');
         });
 
-        it('should sort priority in the table', () => {
+        it('should have table columns', () => {
             visitRiskDeployments();
 
-            const priorityColumnHeadingSelector = `${RiskPageSelectors.table.columnHeaders}:contains("Priority")`;
+            cy.get('.rt-th:contains("Name")');
+            cy.get('.rt-th:contains("Created")');
+            cy.get('.rt-th:contains("Cluster")');
+            cy.get('.rt-th:contains("Namespace")');
+            cy.get('.rt-th:contains("Priority")');
+        });
 
-            // Initial table state does not indicate that it is sorted ascending by priority.
+        it('should sort the Priority column', () => {
+            visitRiskDeployments();
+
+            const thSelector = '.rt-th:contains("Priority")';
+            const tdSelector = '.rt-td:nth-child(5)';
+
+            // 0. Initial table state does not indicate that it is sorted ascending by the Priority column.
             // TODO If possible, replace TableV2 with Table element in RiskTable component.
-            cy.get(priorityColumnHeadingSelector)
+            cy.get(thSelector)
                 .should('not.have.class', '-sort-asc')
                 .should('not.have.class', '-sort-desc');
 
-            // Sort ascending by priority.
-            cy.get(priorityColumnHeadingSelector).click();
+            // 1. Sort ascending by the Priority column.
+            cy.get(thSelector).click();
             cy.location('search').should(
                 'eq',
                 '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=false'
             );
-            // There is no request because response is sorted ascending.
 
-            // Sort descending by priority.
-            cy.get(priorityColumnHeadingSelector).click();
+            // There is no request because rows are already sorted ascending.
+
+            cy.get(thSelector).should('have.class', '-sort-asc');
+            cy.get(tdSelector).then((items) => {
+                assertSortedItems(items, callbackForPairOfAscendingNumberValuesFromElements);
+            });
+
+            // 2. Sort descending by the Priority column.
+            cy.get(thSelector).click();
             cy.location('search').should(
                 'eq',
                 '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=true'
             );
+
             // There is a request because of change in sorting.
-            cy.wait('@deploymentswithprocessinfo') // alias from visitRiskDeployments
+            cy.wait(`@${deploymentswithprocessinfoAlias}`)
                 .its('request.url')
                 .should('include', 'sortOption.field=Deployment%20Risk%20Priority')
                 .should('include', 'sortOption.reversed=true');
-            cy.get(priorityColumnHeadingSelector).should('have.class', '-sort-desc');
+            cy.wait(`@${deploymentscountAlias}`);
 
-            // Sort ascending by priority.
-            cy.get(priorityColumnHeadingSelector).click();
+            cy.get(thSelector).should('have.class', '-sort-desc');
+            cy.get(tdSelector).then((items) => {
+                assertSortedItems(items, callbackForPairOfDescendingNumberValuesFromElements);
+            });
+
+            // 3. Sort ascending by the Priority column.
+            cy.get(thSelector).click();
             cy.location('search').should(
                 'eq',
                 '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=false'
             );
+
             // There is a request because of change in sorting.
-            cy.wait('@deploymentswithprocessinfo') // alias from visitRiskDeployments
+            cy.wait(`@${deploymentswithprocessinfoAlias}`)
                 .its('request.url')
                 .should('include', 'sortOption.field=Deployment%20Risk%20Priority')
                 .should('include', 'sortOption.reversed=false');
-            cy.get(priorityColumnHeadingSelector).should('have.class', '-sort-asc');
+            cy.wait(`@${deploymentscountAlias}`);
+
+            cy.get(thSelector).should('have.class', '-sort-asc');
+            cy.get(tdSelector).then((items) => {
+                assertSortedItems(items, callbackForPairOfAscendingNumberValuesFromElements);
+            });
         });
 
         it('should open side panel for deployment', () => {
