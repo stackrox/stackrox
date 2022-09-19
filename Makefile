@@ -46,7 +46,7 @@ endif
 DOCS_IMAGE = $(DEFAULT_IMAGE_REGISTRY)/docs:$(shell make --quiet --no-print-directory docs-tag)
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
-
+GO_TEST_OUTPUT_PATH=$(CURDIR)/test-output/test.log
 GOPATH_VOLUME_NAME := stackrox-rox-gopath
 GOCACHE_VOLUME_NAME := stackrox-rox-gocache
 
@@ -487,7 +487,7 @@ go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
-		| tee test-output/test.log
+		| tee $(GO_TEST_OUTPUT_PATH)
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
 	for encoding in console json; do \
 		for level in debug info warn error fatal panic; do \
@@ -498,9 +498,10 @@ go-unit-tests: build-prep test-prep
 .PHONE: sensor-integration-test
 sensor-integration-test: build-prep test-prep
 	set -eo pipefail ; \
+	rm -rf  $(GO_TEST_OUTPUT_PATH); \
 	for package in $(shell git ls-files ./sensor/tests | grep '_test.go' | xargs -n 1 dirname | uniq | sort | sed -e 's/sensor\/tests\///'); do \
 		CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
-		| tee test-output/$$(echo $$package | sed -e 's/\//\_/').integration.log; \
+		| tee -a $(GO_TEST_OUTPUT_PATH); \
 	done \
 
 .PHONY: go-postgres-unit-tests
@@ -509,7 +510,7 @@ go-postgres-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
-		| tee test-output/test.log
+		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
 shell-unit-tests:
@@ -537,7 +538,7 @@ integration-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 -v \
 		$(shell go list ./... | grep  "registries\|scanners\|notifiers") \
-		| tee test-output/test.log
+		| tee $(GO_TEST_OUTPUT_PATH)
 
 generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 	$(BASE_DIR)/scripts/generate-junit-reports.sh
