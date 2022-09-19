@@ -18,17 +18,21 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import { collectionsPath } from 'routePaths';
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import { getCollectionCount, listCollections } from 'services/CollectionsService';
+import useURLSort from 'hooks/useURLSort';
 import CollectionsTable from './CollectionsTable';
 
 type CollectionsTablePageProps = {
     hasWriteAccessForCollections: boolean;
 };
 
+const sortOptions = {
+    sortFields: ['name', 'description', 'inUse'],
+    defaultSortOption: { field: 'name', direction: 'asc' } as const,
+};
+
 function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTablePageProps) {
-    const listQuery = useCallback(
-        () => listCollections({}, { field: 'name', reversed: false }, 0, 20),
-        []
-    );
+    const { sortOption, getSortParams } = useURLSort(sortOptions);
+    const listQuery = useCallback(() => listCollections({}, sortOption, 0, 20), [sortOption]);
     const { data: listData, loading: listLoading, error: listError } = useRestQuery(listQuery);
 
     const countQuery = useCallback(() => getCollectionCount({}), []);
@@ -61,6 +65,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
             <PageSection>
                 <CollectionsTable
                     collections={listData}
+                    getSortParams={getSortParams}
                     hasWriteAccess={hasWriteAccessForCollections}
                 />
             </PageSection>
