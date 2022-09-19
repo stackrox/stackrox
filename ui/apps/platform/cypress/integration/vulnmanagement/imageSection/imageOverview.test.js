@@ -1,19 +1,22 @@
-import { url, selectors } from '../../../constants/VulnManagementPage';
-import * as api from '../../../constants/apiEndpoints';
+import { selectors } from '../../../constants/VulnManagementPage';
 import withAuth from '../../../helpers/basicAuth';
+import { visitVulnerabilityManagementEntityInSidePanel } from '../../../helpers/vulnmanagement/entities';
+
+const entitiesKey = 'images';
 
 describe('Image Overview', () => {
     withAuth();
 
     it('should show a message when image scan data is incomplete', () => {
         // arrange
-        cy.intercept('POST', api.graphql(api.vulnMgmt.graphqlOps.getImage), {
-            fixture: 'images/vmImageOverview.json',
-        }).as('getImage');
+        const fixturePath = 'images/vmImageOverview.json';
 
         // act
-        cy.visit(url.sidepanel.image);
-        cy.wait('@getImage');
+        cy.fixture(fixturePath).then((body) => {
+            const { id } = body.data.result;
+            const staticResponse = { body };
+            visitVulnerabilityManagementEntityInSidePanel(entitiesKey, id, staticResponse);
+        });
 
         // assert
         cy.get(selectors.sidePanel1.scanDataMessage);
