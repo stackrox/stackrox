@@ -51,30 +51,54 @@ func (s *splunkComplianceAPITestSuite) TestCISDockerResults() {
 	// set up http mocks
 	req, err := http.NewRequest("GET", "/api/splunk/ta/compliance", nil)
 	require.NoError(s.T(), err)
-	rr := httptest.NewRecorder()
+	responseRecorder := httptest.NewRecorder()
 
 	// configure storage mocks
-	clusterIDs := []string{"testcluster"}
-	standardIDs := []string{"CIS_Docker_v1_2_0"}
+	clusterIDs := []string{"compliance-test-id"}
+	//standardIDs := []string{"CIS_Docker_v1_2_0"}
 	csPair := compliance.ClusterStandardPair{
-		ClusterID:  "testcluster",
+		ClusterID:  "compliance-test-id",
 		StandardID: "CIS_Docker_v1_2_0",
 	}
 	latestRunResultBatch := map[compliance.ClusterStandardPair]types.ResultsWithStatus{
 		csPair: {
 			LastSuccessfulResults: &storage.ComplianceRunResults{
+				// TODO: Add additional fields
+				Domain: &storage.ComplianceDomain{
+					Id: "compliance-test-id",
+					Cluster: &storage.Cluster{
+						Name: "compliance_test cluster",
+					},
+				},
 				DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 					"deployment1": {},
+				},
+				MachineConfigResults: map[string]*storage.ComplianceRunResults_EntityResults{
+					"ocp4-cis-node-master": {
+						ControlResults: map[string]*storage.ComplianceResultValue{
+							"ocp4-cis-node:file-owner-worker-kubeconfig": {
+								Evidence: []*storage.ComplianceResultValue_Evidence{{
+									State:   storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+									Message: "Pass for ocp4-cis-node-master-file-owner-worker-kubeconfig.",
+								}},
+								OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+							},
+						},
+					},
 				},
 			},
 		},
 	}
 
-	s.mockDS.EXPECT().GetLatestRunResultsBatch(s.hasReadCtx, clusterIDs, standardIDs, types.WithMessageStrings).Return(latestRunResultBatch, nil)
+	s.mockDS.EXPECT().GetLatestRunResultsBatch(req.Context(), clusterIDs, gomock.Any(), types.RequireMessageStrings).Return(latestRunResultBatch, nil).AnyTimes()
 
 	handler := NewComplianceHandler(s.mockDS)
-	handler.ServeHTTP(rr, req)
 
-	s.Equal(rr.Body.String(), "")
+	getClusterIDs = func(ctx context.Context) ([]string, error) {
+		return clusterIDs, nil
+	}
+	handler.ServeHTTP(responseRecorder, req)
+
+	s.Equal("", responseRecorder.Body.String())
 
 }
