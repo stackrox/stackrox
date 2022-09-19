@@ -5,6 +5,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useClusters from './useClusters';
 import useNamespaces from './useNamespaces';
 import ClusterSelect from './ClusterSelect';
+import EntityBreadcrumbs from './EntityBreadcrumbs';
 import NamespaceSelect from './NamespaceSelect';
 
 export type Namespace = {
@@ -38,6 +39,13 @@ function NetworkGraphPage() {
 
     return (
         <PageSection variant="light" isFilled id="policies-table-loading">
+            <EntityBreadcrumbs
+                clusters={clusters}
+                selectedClusterId={selectedClusterId}
+                setSelectedClusterId={updateSelectedClusterId}
+                isLoading={isLoadingCluster}
+                error={clusterError}
+            />
             <h1>Network Graph</h1>
             <Flex>
                 <FlexItem>
