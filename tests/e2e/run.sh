@@ -45,7 +45,10 @@ test_e2e() {
 
     info "Sensor k8s integration tests"
     make sensor-integration-test || touch FAIL
-    store_test_results "test-output/sensor-integration.log" "sensor-integration"
+    info "Saving junit XML report"
+    make generate-junit-reports || touch FAIL
+    store_test_results junit-reports reports
+    store_test_results "test-output/test.log" "sensor-integration"
     [[ ! -f FAIL ]] || die "e2e tests failed"
 
     setup_proxy_tests "localhost"
