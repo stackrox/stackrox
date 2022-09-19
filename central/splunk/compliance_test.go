@@ -179,7 +179,7 @@ func (s *splunkComplianceAPITestSuite) TestComplianceAPIResults() {
 	}
 
 	for _, result := range expectedCompliance {
-		//s.Contains(responseBody, result.expectedResult, "Response did not contain expected results", result.name)
+		// s.Contains(responseBody, result.expectedResult, "Response did not contain expected results", result.name)
 		s.Run(result.name, func() {
 			s.Contains(responseBody, result.expectedResult, "Response did not contain expected results")
 		})
