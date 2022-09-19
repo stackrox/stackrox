@@ -152,15 +152,36 @@ func (s *splunkComplianceAPITestSuite) TestComplianceAPIResults() {
 	}
 	handler.ServeHTTP(responseRecorder, req)
 
-	expectedResults := []string{
-		"{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Cluster\",\"objectName\":\"compliance-test-id\",\"control\":\"HIPAA_164:310_a_1\",\"state\":\"Pass\",\"evidence\":\"(Pass) Cluster has an image scanner in use\"}",
-		"{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"dep-ns1\",\"objectType\":\"Deployment\",\"objectName\":\"deployment1\",\"control\":\"5.6\",\"state\":\"Pass\",\"evidence\":\"(Pass) Container has no ssh process running\"}",
-		"{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Node\",\"objectName\":\"node1\",\"control\":\"1.1.2\",\"state\":\"N/A\",\"evidence\":\"(N/A) Node does not use Docker container runtime\"}",
-		"{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Machine Config\",\"objectName\":\"ocp4-cis-node-master\",\"control\":\"ocp4-cis-node:file-owner-worker-kubeconfig\",\"state\":\"Pass\",\"evidence\":\"(Pass) Pass for ocp4-cis-node-master-file-owner-worker-kubeconfig.\"}",
+	responseBody := responseRecorder.Body.String()
+
+	// Primarily, we want to ensure that all RunResults are handed to the SplunkAPI results.
+	// By testing the return format, we additionally ensure that the returned data is complete and well formatted.
+	expectedCompliance := []struct {
+		name           string
+		expectedResult string
+	}{
+		{
+			name:           "Cluster Results",
+			expectedResult: "{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Cluster\",\"objectName\":\"compliance-test-id\",\"control\":\"HIPAA_164:310_a_1\",\"state\":\"Pass\",\"evidence\":\"(Pass) Cluster has an image scanner in use\"}",
+		},
+		{
+			name:           "Deployment Results",
+			expectedResult: "{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"dep-ns1\",\"objectType\":\"Deployment\",\"objectName\":\"deployment1\",\"control\":\"5.6\",\"state\":\"Pass\",\"evidence\":\"(Pass) Container has no ssh process running\"}",
+		},
+		{
+			name:           "Node Results",
+			expectedResult: "{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Node\",\"objectName\":\"node1\",\"control\":\"1.1.2\",\"state\":\"N/A\",\"evidence\":\"(N/A) Node does not use Docker container runtime\"}",
+		},
+		{
+			name:           "Machine Config Results",
+			expectedResult: "{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Machine Config\",\"objectName\":\"ocp4-cis-node-master\",\"control\":\"ocp4-cis-node:file-owner-worker-kubeconfig\",\"state\":\"Pass\",\"evidence\":\"(Pass) Pass for ocp4-cis-node-master-file-owner-worker-kubeconfig.\"}",
+		},
 	}
 
-	for _, expResult := range expectedResults {
-		s.Contains(responseRecorder.Body.String(), expResult)
+	for _, result := range expectedCompliance {
+		//s.Contains(responseBody, result.expectedResult, "Response did not contain expected results", result.name)
+		s.Run(result.name, func() {
+			s.Contains(responseBody, result.expectedResult, "Response did not contain expected results")
+		})
 	}
-
 }
