@@ -306,38 +306,31 @@ describe('Entities single views', () => {
     it('should show the active state in Component overview when scoped under a deployment', () => {
         const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
         const entitiesKey1 = 'deployments';
+        const entitiesKey2 = usingVMUpdates ? 'image-components' : 'components';
         visitVulnerabilityManagementEntities(entitiesKey1);
 
         // click on the first deployment in the list
         interactAndWaitForVulnerabilityManagementEntity(() => {
-            // TODO Replace .eq(1) method with pseudo-selector?
-            // TODO Index 1 instead of 0 because row selector not limited to table body?
-            cy.get(`${selectors.tableRows}`).eq(1).click();
+            cy.get(`${selectors.tableBodyRows}:eq(0)`).click();
         }, entitiesKey1);
 
         // now, go to the components for that deployment
-        if (usingVMUpdates) {
-            interactAndWaitForVulnerabilityManagementSecondaryEntities(
-                () => {
-                    cy.get(selectors.imageComponentTileLink).click();
-                },
-                entitiesKey1,
-                'image-components'
-            );
-        } else {
-            interactAndWaitForVulnerabilityManagementSecondaryEntities(
-                () => {
-                    cy.get(selectors.componentTileLink).click();
-                },
-                entitiesKey1,
-                'components'
-            );
-        }
+        interactAndWaitForVulnerabilityManagementSecondaryEntities(
+            () => {
+                cy.get(
+                    usingVMUpdates ? selectors.imageComponentTileLink : selectors.componentTileLink
+                ).click();
+            },
+            entitiesKey1,
+            entitiesKey2
+        );
 
         // click on the first component in that list
-        // TODO Replace .eq(1) method with pseudo-selector?
-        // TODO Index 1 instead of 0 because row selector not limited to table body?
-        cy.get(`[data-testid="side-panel"] ${selectors.tableRows}`).eq(1);
+        // TODO Get value from cell in Active column to compare below?
+        // TODO How to assert only the following 3 values in the cells?
+        interactAndWaitForVulnerabilityManagementEntity(() => {
+            cy.get(`[data-testid="side-panel"] ${selectors.tableBodyRows}:eq(0)`).click();
+        }, entitiesKey2);
 
         cy.get(`[data-testid="Active status-value"]`)
             .invoke('text')
