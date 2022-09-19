@@ -323,6 +323,11 @@ metadata:
 apiVersion: authorization.openshift.io/v1
 kind: Role
 metadata:
+  name: use-nonroot-scc
+---
+apiVersion: authorization.openshift.io/v1
+kind: Role
+metadata:
   name: use-privileged-scc
 ---
 apiVersion: authorization.openshift.io/v1
@@ -399,6 +404,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: use-anyuid-scc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-nonroot-scc
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

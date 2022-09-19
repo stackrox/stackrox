@@ -49,17 +49,16 @@ volumes:
 
 {{- end }}
 
-# Despite the lack of 'anyuid' in this role, the name is kept as 'use-anyuid-scc' to avoid manual upgrade steps
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: use-anyuid-scc
+  name: use-nonroot-scc
   namespace: {{ ._rox._namespace }}
   labels:
-    {{- include "srox.labels" (list . "role" "use-anyuid-scc") | nindent 4 }}
+    {{- include "srox.labels" (list . "role" "use-nonroot-scc") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
-    {{- include "srox.annotations" (list . "role" "use-anyuid-scc") | nindent 4 }}
+    {{- include "srox.annotations" (list . "role" "use-nonroot-scc") | nindent 4 }}
 rules:
 - apiGroups:
   - security.openshift.io
@@ -84,7 +83,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: use-anyuid-scc
+  name: use-nonroot-scc
 subjects:
 - kind: ServiceAccount
   name: sensor
