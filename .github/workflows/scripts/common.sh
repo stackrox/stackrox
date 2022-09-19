@@ -55,8 +55,8 @@ if ! (return 0 2>/dev/null); then # called
     check_not_empty \
         SCRIPT \
         GITHUB_REPOSITORY \
-        main_branch
-    URL="/repos/$GITHUB_REPOSITORY/contents/.github/workflows/scripts/$SCRIPT.sh?ref=$main_branch"
+        GITHUB_REF_NAME
+    URL="/repos/$GITHUB_REPOSITORY/contents/.github/workflows/scripts/$SCRIPT.sh?ref=$GITHUB_REF_NAME"
     shift
     gh api -H "Accept: application/vnd.github.v3.raw" "$URL" | bash -s -- "$@"
 fi
