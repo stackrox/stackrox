@@ -57,7 +57,7 @@ func (suite *ReplayEventsSuite) SetupSuite() {
 		panic(err)
 	}
 	suite.fakeCentral = centralDebug.MakeFakeCentralWithInitialMessages(
-		message.SensorHello("1234"),
+		message.SensorHello("12345678-1234-1234-1234-123456789abc"),
 		message.ClusterConfig(),
 		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
