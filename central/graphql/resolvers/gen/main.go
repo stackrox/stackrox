@@ -90,12 +90,6 @@ var (
 				ParentType: reflect.TypeOf(storage.Node{}),
 				FieldName:  "Scan",
 			},
-			// TODO(ROX-6194): Remove this entirely after the deprecation cycle started with the 55.0 release.
-			{
-				ParentType: reflect.TypeOf(storage.Policy{}),
-				FieldName:  "Whitelists",
-			},
-
 			{
 				ParentType: reflect.TypeOf(storage.CVE{}),
 				FieldName:  "Cvss",

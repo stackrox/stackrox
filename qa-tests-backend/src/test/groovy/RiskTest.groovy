@@ -150,14 +150,6 @@ class RiskTest extends BaseSpecification {
         "not anomalous"
         !one.baselineStatusesList.get(0).anomalousProcessesExecuted
         !two.baselineStatusesList.get(0).anomalousProcessesExecuted
-
-        // TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
-        and:
-        "`.whitelistStatusesList` shall be identical to `.baselineStatusesList`"
-        assert one.whitelistStatusesList.size() == one.baselineStatusesList.size()
-        assert two.whitelistStatusesList.size() == two.baselineStatusesList.size()
-        assert one.whitelistStatusesList.get(0) == one.baselineStatusesList.get(0)
-        assert two.whitelistStatusesList.get(0) == two.baselineStatusesList.get(0)
     }
 
     // Skip for OpenShift, it does not reliably find all processes
@@ -246,14 +238,6 @@ class RiskTest extends BaseSpecification {
 
         and:
         after.get(withRiskIndex).baselineStatusesList.get(0).anomalousProcessesExecuted
-
-        // TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
-        and:
-        "`.whitelistStatusesList` shall be identical to `.baselineStatusesList`"
-        assert after.get(withRiskIndex).whitelistStatusesList.size() ==
-                after.get(withRiskIndex).baselineStatusesList.size()
-        assert after.get(withRiskIndex).whitelistStatusesList.get(0) ==
-                after.get(withRiskIndex).baselineStatusesList.get(0)
     }
 
     def "Risk changes when an anomalous process is added to the baseline"() {
@@ -315,14 +299,6 @@ class RiskTest extends BaseSpecification {
         assert risk(after.get(withRiskIndex).deployment) < riskBefore
 
         assert !after.get(withRiskIndex).baselineStatusesList.get(0).anomalousProcessesExecuted
-
-        // TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
-        and:
-        "`.whitelistStatusesList` shall be identical to `.baselineStatusesList`"
-        assert after.get(withRiskIndex).whitelistStatusesList.size() ==
-                after.get(withRiskIndex).baselineStatusesList.size()
-        assert after.get(withRiskIndex).whitelistStatusesList.get(0) ==
-                after.get(withRiskIndex).baselineStatusesList.get(0)
     }
 
     def debugBeforeAndAfter(
