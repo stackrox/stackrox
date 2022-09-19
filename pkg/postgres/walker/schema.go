@@ -65,6 +65,9 @@ type SchemaRelationship struct {
 	// NoConstraint indicates that this relationship is not enforced at the SQL
 	// level by a foreign key constraint.
 	NoConstraint bool
+
+	// DeleteRestrict indicates that this relationship should restrict deletion
+	DeleteRestrict bool
 }
 
 // ThisSchemaColumnNames generates the sequence of column names for this schema
@@ -342,9 +345,9 @@ func (s *Schema) ResolveReferences(schemaProvider func(messageTypeName string) *
 		fieldRef.OtherSchema = otherTable
 		fieldRef.ColumnName = columnNameInOtherSchema
 
-		addColumnPairToRelationshipsSlice(&s.References, s, otherTable, f.ColumnName, columnNameInOtherSchema, fieldRef.NoConstraint)
+		addColumnPairToRelationshipsSlice(&s.References, s, otherTable, f.ColumnName, columnNameInOtherSchema, fieldRef.NoConstraint, fieldRef.DeleteRestriction)
 		if !fieldRef.Directional {
-			addColumnPairToRelationshipsSlice(&otherTable.ReferencedBy, otherTable, s, columnNameInOtherSchema, f.ColumnName, fieldRef.NoConstraint)
+			addColumnPairToRelationshipsSlice(&otherTable.ReferencedBy, otherTable, s, columnNameInOtherSchema, f.ColumnName, fieldRef.NoConstraint, fieldRef.DeleteRestriction)
 		}
 	}
 
@@ -353,7 +356,7 @@ func (s *Schema) ResolveReferences(schemaProvider func(messageTypeName string) *
 	}
 }
 
-func addColumnPairToRelationshipsSlice(relationshipsSlice *[]SchemaRelationship, thisSchema, otherSchema *Schema, columnNameInThisSchema, columnNameInOtherSchema string, noConstraint bool) {
+func addColumnPairToRelationshipsSlice(relationshipsSlice *[]SchemaRelationship, thisSchema, otherSchema *Schema, columnNameInThisSchema, columnNameInOtherSchema string, noConstraint bool, deleteRestrict bool) {
 	refIdxToModify := -1
 	for i, ref := range *relationshipsSlice {
 		if ref.OtherSchema == otherSchema {
@@ -367,7 +370,7 @@ func addColumnPairToRelationshipsSlice(relationshipsSlice *[]SchemaRelationship,
 	}
 	// This is the first column mapping for this particular schema.
 	if refIdxToModify == -1 {
-		*relationshipsSlice = append(*relationshipsSlice, SchemaRelationship{OtherSchema: otherSchema, NoConstraint: noConstraint})
+		*relationshipsSlice = append(*relationshipsSlice, SchemaRelationship{OtherSchema: otherSchema, NoConstraint: noConstraint, DeleteRestrict: deleteRestrict})
 		refIdxToModify = len(*relationshipsSlice) - 1
 	}
 	(*relationshipsSlice)[refIdxToModify].MappedColumnNames = append((*relationshipsSlice)[refIdxToModify].MappedColumnNames, ColumnNamePair{
@@ -412,6 +415,9 @@ type foreignKeyRef struct {
 	ProtoBufField string
 	// If true, this column (foreign key) depends on a column in other table, but does not have a constraint.
 	NoConstraint bool
+
+	// If true, the constraint on this foreign key reference should restrict deletion
+	DeleteRestriction bool
 
 	// If true, this means that we only want to create a graph edge out from this field and not have it be bi-directional
 	Directional bool
