@@ -328,7 +328,7 @@ check-expected-go-version:
 .PHONY: build/Dockerfile.gen
 build/Dockerfile.gen: Dockerfile
 	mkdir -p build/
-	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g' < $< > $@
+	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,^FROM golang:,FROM $(GOLANG_IMAGE_PREFIX)golang:,' < $< > $@
 
 .PHONY: docker-build
 docker-build: build/Dockerfile.gen check-expected-go-version test smuggled-status-sh ## Build docker image with the operator.

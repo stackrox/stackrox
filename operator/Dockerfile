@@ -3,17 +3,24 @@ ARG roxpath=/workspace/src/github.com/stackrox/rox
 
 # NOTE 1: the following version needs to be in sync with the ../EXPECTED_GO_VERSION file.
 FROM golang:1.17.12 as builder
-# NOTE 2: Also, to keep CI from flakes, the above image needs to be mirrored into openshift CI registry and the CI
-# configured to use the mirrored image instead of the specification above.
-# This is because pulling from docker.io/library/... (which is what happens with a bare image specification above) is
-# subject to rate limits that our CI tends to hit, causing intermittent build failures.
+# NOTE 2: Also, the above image MUST be mirrored into openshift CI registry.
 #
-# Ideally, the mirroring and overrides for new image should be put in place first, and then once the above line is
-# updated, the old ones removed. But with some luck, doing it post-facto might also be possible without causing too
-# many failures, depending on the load.
-# See example PRs for how to achieve that:
-# - https://github.com/openshift/release/pull/31790/files
-# - https://github.com/openshift/release/pull/31791/files
+# Why?
+# This is because pulling from docker.io/library/... (which is what happens with a bare image specification above) is
+# subject to rate limits that our CI tends to hit, causing intermittent build failures. To prevent that, this file
+# processed in CI at build time to prefix the image specification with the CI registry.
+# See .openshift-ci/build/build-operator-artifacts.sh
+#
+# How?
+# The safe procedure is:
+# 1. Mirror docker.io/library/golang:x to quay.io/stackrox-io/ci:golang-x
+#    TODO(gavin-stackrox): how to do this?
+# 2. Set up supplemental ci image mirroring to mirror from quay.io/stackrox-io/ci:golang-x
+#    to registry.ci.openshift.org/stackrox/golang:x
+#    Example PR: https://github.com/openshift/release/pull/31790/files
+# 3. Wait for the image to actually get mirrored. See https://prow.ci.openshift.org/?job=*mirroring-supplemental-ci-images*
+# 4. Update the line above in this file.
+# 5. Clean up the old mirroring.
 
 # Build the manager binary
 ARG roxpath
