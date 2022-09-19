@@ -145,6 +145,7 @@ expect {
     send "\n"
   }
 }
+expect "Enter Central volume type*:" { send "pvc\n" }
 expect "Enter external volume name for Central*:" { send "\n" }
 expect "Enter external volume size in Gi for Central*:" { send "\n" }
 expect "Enter storage class name for Central (optional if you have a default StorageClass configured):" { send "\n" }
