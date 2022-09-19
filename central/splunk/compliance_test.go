@@ -19,8 +19,97 @@ import (
 
 // This file contains tests for the /compliance endpoint
 
+var (
+	clusterID  = "compliance-test-id"
+	clusterIDs = []string{clusterID}
+
+	csPair = compliance.ClusterStandardPair{
+		ClusterID:  clusterID,
+		StandardID: "CIS_Docker_v1_2_0",
+	}
+	latestRunResultBatch = map[compliance.ClusterStandardPair]types.ResultsWithStatus{
+		csPair: {
+			LastSuccessfulResults: &storage.ComplianceRunResults{
+				RunMetadata: &storage.ComplianceRunMetadata{
+					RunId:      "compliance-run-metadata-id",
+					StandardId: "CIS_Docker_v1_2_0",
+					ClusterId:  clusterID,
+				},
+				Domain: &storage.ComplianceDomain{
+					Id: "compliance-test-id",
+					Cluster: &storage.Cluster{
+						Name: clusterID,
+					},
+					Deployments: map[string]*storage.Deployment{
+						"deployment1": {
+							Id:        "deployment1",
+							Name:      "deployment1",
+							Namespace: "dep-ns1",
+						},
+					},
+					Nodes: map[string]*storage.Node{
+						"node1": {
+							Id:   "node1",
+							Name: "node1",
+						},
+					},
+				},
+				ClusterResults: &storage.ComplianceRunResults_EntityResults{
+					ControlResults: map[string]*storage.ComplianceResultValue{
+						"HIPAA_164:310_a_1": {
+							Evidence: []*storage.ComplianceResultValue_Evidence{{
+								State:   storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+								Message: "Cluster has an image scanner in use",
+							}},
+							OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+						},
+					},
+				},
+				DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
+					"deployment1": {
+						ControlResults: map[string]*storage.ComplianceResultValue{
+							"CIS_Docker_v1_2_0:5_6": {
+								Evidence: []*storage.ComplianceResultValue_Evidence{{
+									State:   storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+									Message: "Container has no ssh process running",
+								}},
+								OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+							},
+						},
+					},
+				},
+				NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
+					"node1": {
+						ControlResults: map[string]*storage.ComplianceResultValue{
+							"CIS_Docker_v1_2_0:1_1_2": {
+								Evidence: []*storage.ComplianceResultValue_Evidence{{
+									State:   storage.ComplianceState_COMPLIANCE_STATE_SKIP,
+									Message: "Node does not use Docker container runtime",
+								}},
+								OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
+							},
+						},
+					},
+				},
+				MachineConfigResults: map[string]*storage.ComplianceRunResults_EntityResults{
+					"ocp4-cis-node-master": {
+						ControlResults: map[string]*storage.ComplianceResultValue{
+							"ocp4-cis-node:file-owner-worker-kubeconfig": {
+								Evidence: []*storage.ComplianceResultValue_Evidence{{
+									State:   storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+									Message: "Pass for ocp4-cis-node-master-file-owner-worker-kubeconfig.",
+								}},
+								OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+)
+
 func TestSplunkComplianceAPI(t *testing.T) {
-	//t.Parallel()
 	suite.Run(t, &splunkComplianceAPITestSuite{})
 }
 
@@ -47,49 +136,13 @@ func (s *splunkComplianceAPITestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *splunkComplianceAPITestSuite) TestCISDockerResults() {
+func (s *splunkComplianceAPITestSuite) TestComplianceAPIResults() {
 	// set up http mocks
 	req, err := http.NewRequest("GET", "/api/splunk/ta/compliance", nil)
 	require.NoError(s.T(), err)
 	responseRecorder := httptest.NewRecorder()
 
-	// configure storage mocks
-	clusterIDs := []string{"compliance-test-id"}
-	//standardIDs := []string{"CIS_Docker_v1_2_0"}
-	csPair := compliance.ClusterStandardPair{
-		ClusterID:  "compliance-test-id",
-		StandardID: "CIS_Docker_v1_2_0",
-	}
-	latestRunResultBatch := map[compliance.ClusterStandardPair]types.ResultsWithStatus{
-		csPair: {
-			LastSuccessfulResults: &storage.ComplianceRunResults{
-				// TODO: Add additional fields
-				Domain: &storage.ComplianceDomain{
-					Id: "compliance-test-id",
-					Cluster: &storage.Cluster{
-						Name: "compliance_test cluster",
-					},
-				},
-				DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
-					"deployment1": {},
-				},
-				MachineConfigResults: map[string]*storage.ComplianceRunResults_EntityResults{
-					"ocp4-cis-node-master": {
-						ControlResults: map[string]*storage.ComplianceResultValue{
-							"ocp4-cis-node:file-owner-worker-kubeconfig": {
-								Evidence: []*storage.ComplianceResultValue_Evidence{{
-									State:   storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-									Message: "Pass for ocp4-cis-node-master-file-owner-worker-kubeconfig.",
-								}},
-								OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
+	// configure storage mock
 	s.mockDS.EXPECT().GetLatestRunResultsBatch(req.Context(), clusterIDs, gomock.Any(), types.RequireMessageStrings).Return(latestRunResultBatch, nil).AnyTimes()
 
 	handler := NewComplianceHandler(s.mockDS)
@@ -99,6 +152,15 @@ func (s *splunkComplianceAPITestSuite) TestCISDockerResults() {
 	}
 	handler.ServeHTTP(responseRecorder, req)
 
-	s.Equal("", responseRecorder.Body.String())
+	expectedResults := []string{
+		"{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Cluster\",\"objectName\":\"compliance-test-id\",\"control\":\"HIPAA_164:310_a_1\",\"state\":\"Pass\",\"evidence\":\"(Pass) Cluster has an image scanner in use\"}",
+		"{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"dep-ns1\",\"objectType\":\"Deployment\",\"objectName\":\"deployment1\",\"control\":\"5.6\",\"state\":\"Pass\",\"evidence\":\"(Pass) Container has no ssh process running\"}",
+		"{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Node\",\"objectName\":\"node1\",\"control\":\"1.1.2\",\"state\":\"N/A\",\"evidence\":\"(N/A) Node does not use Docker container runtime\"}",
+		"{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Machine Config\",\"objectName\":\"ocp4-cis-node-master\",\"control\":\"ocp4-cis-node:file-owner-worker-kubeconfig\",\"state\":\"Pass\",\"evidence\":\"(Pass) Pass for ocp4-cis-node-master-file-owner-worker-kubeconfig.\"}",
+	}
+
+	for _, expResult := range expectedResults {
+		s.Contains(responseRecorder.Body.String(), expResult)
+	}
 
 }

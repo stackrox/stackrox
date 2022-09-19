@@ -27,6 +27,21 @@ var (
 	}
 
 	log = logging.LoggerForModule()
+
+	getClusterIDs = func(ctx context.Context) ([]string, error) {
+		clusterDS := clusterDatastore.Singleton()
+
+		clusters, err := clusterDS.GetClusters(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		clusterIDs := make([]string, len(clusters))
+		for i, cluster := range clusters {
+			clusterIDs[i] = cluster.GetId()
+		}
+		return clusterIDs, nil
+	}
 )
 
 type splunkComplianceResult struct {
@@ -188,19 +203,4 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 			return
 		}
 	}
-}
-
-func getClusterIDs(ctx context.Context) ([]string, error) {
-	clusterDS := clusterDatastore.Singleton()
-
-	clusters, err := clusterDS.GetClusters(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	clusterIDs := make([]string, len(clusters))
-	for i, cluster := range clusters {
-		clusterIDs[i] = cluster.GetId()
-	}
-	return clusterIDs, nil
 }
