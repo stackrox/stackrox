@@ -7,7 +7,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 ### Removed Features
-- ROX-6194: `ROX_WHITELIST_GENERATION_DURATION` env var is removed in favour of `ROX_BASELINE_GENERATION_DURATION`;
+- ROX-6194: `ROX_WHITELIST_GENERATION_DURATION` env var is removed in favor of `ROX_BASELINE_GENERATION_DURATION`;
   `DeploymentWithProcessInfo` items in `/v1/deploymentswithprocessinfo` endpoint response do not include
   `whitelist_statuses` anymore.
 
