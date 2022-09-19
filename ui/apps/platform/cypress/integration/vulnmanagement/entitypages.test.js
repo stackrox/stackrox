@@ -211,7 +211,7 @@ describe('Entities single views', () => {
 
     it('should have filtered deployments list in 3rd level of side panel (namespaces -> policies -> deployments)', () => {
         const entitiesKey1 = 'namespaces';
-        visitVulnerabilityManagementEntities(entitiesKey1);
+        visitVulnerabilityManagementEntities('namespaces');
 
         const firstDeploymentCountLinkSelector = `${selectors.deploymentCountLink}:eq(0)`;
         interactAndWaitForVulnerabilityManagementSecondaryEntities(
@@ -239,7 +239,7 @@ describe('Entities single views', () => {
             .then((deploymentCountText) => {
                 interactAndWaitForVulnerabilityManagementEntity(() => {
                     cy.get(`${selectors.sidePanelTableBodyRows}:eq(0)`).click();
-                }, entitiesKey1);
+                }, 'policies');
 
                 cy.get(selectors.deploymentTileLink)
                     .invoke('text')
@@ -253,7 +253,7 @@ describe('Entities single views', () => {
                     () => {
                         cy.get(selectors.deploymentTileLink).click();
                     },
-                    entitiesKey1,
+                    'policies',
                     'deployments'
                 );
 
