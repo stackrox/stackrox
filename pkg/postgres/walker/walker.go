@@ -202,14 +202,14 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 				opts.Reference = &foreignKeyRef{}
 			}
 			opts.Reference.NoConstraint = true
-		case field == "delete-restrict":
+		case field == "restrict-delete":
 			if ignoreFKs {
 				continue
 			}
 			if opts.Reference == nil {
 				opts.Reference = &foreignKeyRef{}
 			}
-			opts.Reference.DeleteRestriction = true
+			opts.Reference.RestrictDelete = true
 		case field == "directional":
 			if ignoreFKs {
 				continue
