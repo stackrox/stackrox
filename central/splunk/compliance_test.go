@@ -37,17 +37,17 @@ var (
 				},
 				Domain: &storage.ComplianceDomain{
 					Id: "compliance-test-id",
-					Cluster: &storage.Cluster{
+					Cluster: &storage.ComplianceDomain_Cluster{
 						Name: clusterID,
 					},
-					Deployments: map[string]*storage.Deployment{
+					Deployments: map[string]*storage.ComplianceDomain_Deployment{
 						"deployment1": {
 							Id:        "deployment1",
 							Name:      "deployment1",
 							Namespace: "dep-ns1",
 						},
 					},
-					Nodes: map[string]*storage.Node{
+					Nodes: map[string]*storage.ComplianceDomain_Node{
 						"node1": {
 							Id:   "node1",
 							Name: "node1",
