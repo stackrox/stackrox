@@ -9,7 +9,6 @@ import { Empty, Pagination } from './types';
 
 const collectionsBaseUrl = '/v1/collections';
 const collectionsCountUrl = '/v1/collections/count';
-const collectionsSelectorsUrl = '/v1/collections/selectors';
 const collectionsDryRunUrl = '/v1/collections/dryrun';
 const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
 
@@ -50,7 +49,6 @@ type CollectionResponse = {
  * Fetch a paginated list of Collection objects
  */
 export function listCollections(
-    // TODO Verify with [BE] that search filter wlll use the typical format of `Collection:<collection_name>`
     searchFilter: SearchFilter,
     sortOption: ApiSortOption,
     page: number,
@@ -127,8 +125,8 @@ export function createCollection(
 }
 
 /**
- * Updates an existing collection object. 
- * 
+ * Updates an existing collection object.
+ *
  * @param id
  *      The ID of the collection to update
  * @param collection
@@ -136,15 +134,14 @@ export function createCollection(
  * @returns
  *      The updated collection object
  *
-TODO The server spec says this is a `post` instead of `put` - verify with [BE]
-*/
+ */
 export function updateCollection(
     id: string,
     collection: CollectionRequest
 ): CancellableRequest<CollectionResponse> {
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .put<CollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, { signal })
+            .post<CollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, { signal })
             .then((response) => response.data)
     );
 }
@@ -154,8 +151,6 @@ export function updateCollection(
  *
  * @param id
  *      The ID of the collection to delete
- TODO The server spec declares a request that takes an array of IDs, but then shows the request URL as containing
- the ID - verify with [BE]
  */
 export function deleteCollection(id: string): CancellableRequest<Empty> {
     return makeCancellableAxiosRequest((signal) =>
@@ -165,22 +160,9 @@ export function deleteCollection(id: string): CancellableRequest<Empty> {
     );
 }
 
-/**
- * Fetch the supported fields that can be used in collection selector rules
- TODO We may not need this function client side
- */
-export function getCollectionSelectors(): CancellableRequest<SelectorField[]> {
-    return makeCancellableAxiosRequest((signal) =>
-        axios
-            .get<GetCollectionSelectorsResponse>(collectionsSelectorsUrl, { signal })
-            .then((response) => response.data.selectors)
-    );
-}
-
 export type CollectionDryRunRequest = CollectionRequest & {
     options: {
         pagination: Pagination;
-        // TODO [Ask BE] What does this option mean?
         skipDeploymentMatching: boolean;
     };
 };
@@ -202,7 +184,9 @@ export type CollectionDryRunResponse = {
  * @param dryRunRequest.options.pagination
  *      Pagination options for the dry run deployment results
  * @param dryRunRequest.options.skipDeploymentMatching
-TODO ??? Add description for this ^ param
+ *      This flag will skip the resolution of matching deployments on the back end
+ *      in order to do more efficient error checking. Used in order to determine if
+ *      a config is valid, without returning a full data payload.
  *
  * @returns A list of deployments that are resolved by the collection.
  */
