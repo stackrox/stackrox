@@ -18,7 +18,6 @@ import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
 
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
-import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.Compliance
 import io.stackrox.proto.storage.Compliance.ComplianceAggregation.Result
