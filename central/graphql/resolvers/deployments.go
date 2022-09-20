@@ -500,7 +500,7 @@ func (resolver *deploymentResolver) ComplianceResults(ctx context.Context, args 
 	}
 	output := newBulkControlResults()
 	deploymentID := resolver.data.GetId()
-	output.addDeploymentData(resolver.root, runResults, func(d *storage.Deployment, _ *v1.ComplianceControl) bool {
+	output.addDeploymentData(resolver.root, runResults, func(d *storage.ComplianceDomain_Deployment, _ *v1.ComplianceControl) bool {
 		return d.GetId() == deploymentID
 	})
 

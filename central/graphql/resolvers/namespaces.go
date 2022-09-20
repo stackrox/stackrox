@@ -181,7 +181,7 @@ func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args R
 	}
 	output := newBulkControlResults()
 	nsID := resolver.data.GetMetadata().GetId()
-	output.addDeploymentData(resolver.root, runResults, func(d *storage.Deployment, _ *v1.ComplianceControl) bool {
+	output.addDeploymentData(resolver.root, runResults, func(d *storage.ComplianceDomain_Deployment, _ *v1.ComplianceControl) bool {
 		return d.GetNamespaceId() == nsID
 	})
 

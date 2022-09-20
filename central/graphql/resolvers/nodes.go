@@ -137,7 +137,7 @@ func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args RawQue
 	}
 	output := newBulkControlResults()
 	nodeID := resolver.data.GetId()
-	output.addNodeData(resolver.root, runResults, func(node *storage.Node, _ *v1.ComplianceControl) bool {
+	output.addNodeData(resolver.root, runResults, func(node *storage.ComplianceDomain_Node, _ *v1.ComplianceControl) bool {
 		return node.GetId() == nodeID
 	})
 	return *output, nil

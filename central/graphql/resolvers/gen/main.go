@@ -55,6 +55,9 @@ var (
 			reflect.TypeOf((*storage.TokenMetadata)(nil)),
 			reflect.TypeOf((*storage.VulnerabilityRequest_Scope)(nil)),
 			reflect.TypeOf((*storage.VulnerabilityRequest_CVEs)(nil)),
+			reflect.TypeOf((*storage.ComplianceDomain_Cluster)(nil)),
+			reflect.TypeOf((*storage.ComplianceDomain_Deployment)(nil)),
+			reflect.TypeOf((*storage.ComplianceDomain_Node)(nil)),
 
 			reflect.TypeOf((*v1.ComplianceRunScheduleInfo)(nil)),
 			reflect.TypeOf((*v1.ComplianceStandard)(nil)),

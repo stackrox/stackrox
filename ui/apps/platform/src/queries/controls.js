@@ -218,7 +218,7 @@ export const CONTROL_QUERY = gql`
                     scope
                 }
                 keys {
-                    ... on Node {
+                    ... on ComplianceDomain_Node {
                         clusterName
                         id
                         name
