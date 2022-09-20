@@ -75,13 +75,59 @@ export function visitVulnerabilityManagementDashboard() {
     cy.get('h1:contains("Vulnerability Management")');
 }
 
-const { opnameForEntity } = api; // TODO move here from apiEndpoints.js
+/*
+ * The following keys correspond to url list object in VulnManagementPage.js file.
+ */
 
-const { opnameForEntities } = api; // TODO move here from apiEndpoints.js
+const opnameForEntity = {
+    clusters: 'getCluster',
+    components: 'getComponent',
+    'image-components': 'getImageComponent',
+    'node-components': 'getComponent',
+    cves: 'getCve',
+    'image-cves': 'getCve',
+    'node-cves': 'getCve',
+    'cluster-cves': 'getCve',
+    deployments: 'getDeployment',
+    images: 'getImage',
+    namespaces: 'getNamespace',
+    nodes: 'getNode',
+    policies: 'getPolicy',
+};
 
-const { opnamePrefixForPrimaryAndSecondaryEntities } = api; // TODO move here from apiEndpoints.js
+const opnameForEntities = {
+    clusters: 'getClusters',
+    components: 'getComponents',
+    'image-components': 'getImageComponents',
+    'node-components': 'getNodeComponents',
+    cves: 'getCves',
+    'image-cves': 'getImageCves',
+    'node-cves': 'getNodeCves',
+    'cluster-cves': 'getClusterCves',
+    deployments: 'getDeployments',
+    images: 'getImages',
+    namespaces: 'getNamespaces',
+    nodes: 'getNodes',
+    policies: 'getPolicies',
+};
 
-const keyForEntity = {
+const opnamePrefixForPrimaryAndSecondaryEntities = {
+    clusters: 'getCluster_',
+    components: 'getComponentSubEntity',
+    'image-components': 'getComponentSubEntity',
+    'node-components': 'getNodeComponentSubEntity',
+    cves: 'getCve',
+    'image-cves': 'getCve',
+    'node-cves': 'getCve',
+    'cluster-cves': 'getCve',
+    deployments: 'getDeployment',
+    images: 'getImage',
+    namespaces: 'getNamespace',
+    nodes: 'getNode',
+    policies: 'getPolicy',
+};
+
+const typeOfEntity = {
     clusters: 'CLUSTER',
     components: 'COMPONENT',
     'image-components': 'IMAGE_COMPONENT',
@@ -101,7 +147,7 @@ const keyForEntity = {
  * For example, given 'deployments' and 'image' return: 'getDeploymentIMAGE'
  */
 function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
-    return `${opnamePrefixForPrimaryAndSecondaryEntities[entitiesKey1]}${keyForEntity[entitiesKey2]}`;
+    return `${opnamePrefixForPrimaryAndSecondaryEntities[entitiesKey1]}${typeOfEntity[entitiesKey2]}`;
 }
 
 /*
@@ -109,14 +155,94 @@ function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
  * For example, visitVulnerabilityManagementEntities('policies', '?s[Policy]=Fixable Severity at least Important')
  */
 export function visitVulnerabilityManagementEntities(entitiesKey, search = '') {
-    visit(`${url.list[entitiesKey]}${search}`, {
+    const requestConfig = {
         routeMatcherMap: routeMatcherMapForOpnames([
             'searchOptions',
             opnameForEntities[entitiesKey],
         ]),
-    });
+    };
+
+    visit(`${url.list[entitiesKey]}${search}`, requestConfig);
 
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+}
+
+export function interactAndWaitForVulnerabilityManagementEntities(
+    interactionCallback,
+    entitiesKey,
+    staticResponseForEntities
+) {
+    /*
+     * Unlike visit function above, omit searchOptions request
+     * to support tests to sort the table by a column.
+     * By the way, the tests do not call this function for the click
+     * to restore initial sorting, because the response has been cached.
+     */
+    const opname = opnameForEntities[entitiesKey];
+    const requestConfig = {
+        routeMatcherMap: {
+            [opname]: api.graphql(opname),
+        },
+    };
+    const staticResponseMap = staticResponseForEntities && { [opname]: staticResponseForEntities };
+
+    interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap);
+
+    cy.location('pathname').should('eq', url.list[entitiesKey]);
+    cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+}
+
+export function visitVulnerabilityManagementEntityInSidePanel(
+    entitiesKey,
+    entityId,
+    staticResponseForEntity
+) {
+    const pathname = url.list[entitiesKey];
+    const search = `?workflowState[0][t]=${typeOfEntity[entitiesKey]}&workflowState[0][i]=${entityId}`;
+    const opname = opnameForEntity[entitiesKey];
+    const requestConfig = {
+        routeMatcherMap: {
+            [opname]: api.graphql(opname),
+        },
+    };
+    const staticResponseMap = staticResponseForEntity && { [opname]: staticResponseForEntity };
+
+    visit(`${pathname}${search}`, requestConfig, staticResponseMap);
+}
+
+export function interactAndWaitForVulnerabilityManagementEntity(
+    interactionCallback,
+    entitiesKey,
+    staticResponseForEntity
+) {
+    const opname = opnameForEntity[entitiesKey];
+    const requestConfig = {
+        routeMatcherMap: {
+            [opname]: api.graphql(opname),
+        },
+    };
+    const staticResponseMap = staticResponseForEntity && { [opname]: staticResponseForEntity };
+
+    interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap);
+}
+
+export function interactAndWaitForVulnerabilityManagementSecondaryEntities(
+    interactionCallback,
+    entitiesKey1,
+    entitiesKey2,
+    staticResponseForSecondaryEntities
+) {
+    const opname = opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2);
+    const requestConfig = {
+        routeMatcherMap: {
+            [opname]: api.graphql(opname),
+        },
+    };
+    const staticResponseMap = staticResponseForSecondaryEntities && {
+        [opname]: staticResponseForSecondaryEntities,
+    };
+
+    interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap);
 }
 
 /*
@@ -213,7 +339,7 @@ export function verifySecondaryEntities(
 
             // Tilde because link might be under either Contains or Matches.
             // Match data-testid attribute of link to distinguish 1 IMAGE from 114 IMAGE COMPONENTS.
-            const relatedEntitiesSelector = `h2:contains("Related entities") ~ div ul li a[data-testid="${keyForEntity[entitiesKey2]}-tile-link"]:has('[data-testid="tileLinkSuperText"]:contains("${relatedEntitiesCount}")'):has('[data-testid="tile-link-value"]:contains("${relatedEntitiesNoun}")')`;
+            const relatedEntitiesSelector = `h2:contains("Related entities") ~ div ul li a[data-testid="${typeOfEntity[entitiesKey2]}-tile-link"]:has('[data-testid="tileLinkSuperText"]:contains("${relatedEntitiesCount}")'):has('[data-testid="tile-link-value"]:contains("${relatedEntitiesNoun}")')`;
             cy.get(relatedEntitiesSelector);
 
             // 4. Visit single page for primary entity.
