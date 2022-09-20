@@ -10,7 +10,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Features
 
 ### Technical Changes
-- ROX-11937: The Splunk integration now processes all additional compliance standards of the compliance operator correctly.
+- ROX-11937: The Splunk integration now processes all additional standards of the compliance operator (ocp4-cis & ocp4-cis-node) correctly.
 
 
 ## [3.72.0]
