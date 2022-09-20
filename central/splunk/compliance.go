@@ -27,21 +27,6 @@ var (
 	}
 
 	log = logging.LoggerForModule()
-
-	getClusterIDs = func(ctx context.Context) ([]string, error) {
-		clusterDS := clusterDatastore.Singleton()
-
-		clusters, err := clusterDS.GetClusters(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		clusterIDs := make([]string, len(clusters))
-		for i, cluster := range clusters {
-			clusterIDs[i] = cluster.GetId()
-		}
-		return clusterIDs, nil
-	}
 )
 
 type splunkComplianceResult struct {
@@ -73,6 +58,11 @@ func getMessageLines(evidence []*storage.ComplianceResultValue_Evidence) string 
 
 // NewComplianceHandler is an HTTP handler that outputs CSV exports of compliance data
 func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
+	return newComplianceHandler(complianceDS, getClusterIDs)
+}
+
+// Internal function that accepts an additional argument, getClusterIDs, that simplifies mocking in tests.
+func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(ctx context.Context) ([]string, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		arrayWriter := jsonutil.NewJSONArrayWriter(w)
 		if err := arrayWriter.Init(); err != nil {
@@ -203,4 +193,19 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 			return
 		}
 	}
+}
+
+func getClusterIDs(ctx context.Context) ([]string, error) {
+	clusterDS := clusterDatastore.Singleton()
+
+	clusters, err := clusterDS.GetClusters(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterIDs := make([]string, len(clusters))
+	for i, cluster := range clusters {
+		clusterIDs[i] = cluster.GetId()
+	}
+	return clusterIDs, nil
 }

@@ -142,16 +142,18 @@ func (s *splunkComplianceAPITestSuite) TestComplianceAPIResults() {
 	require.NoError(s.T(), err)
 	responseRecorder := httptest.NewRecorder()
 
+	// set up override for getClusterIDs
+	getMockClusterIDs := func(ctx context.Context) ([]string, error) {
+		return clusterIDs, nil
+	}
+
 	// configure storage mock
 	s.mockDS.EXPECT().GetLatestRunResultsBatch(req.Context(), clusterIDs, gomock.Any(), types.RequireMessageStrings).Return(latestRunResultBatch, nil).AnyTimes()
 
-	handler := NewComplianceHandler(s.mockDS)
+	// use internal function that accepts an additional parameter to simplify mocking/testing
+	handler := newComplianceHandler(s.mockDS, getMockClusterIDs)
 
-	getClusterIDs = func(ctx context.Context) ([]string, error) {
-		return clusterIDs, nil
-	}
 	handler.ServeHTTP(responseRecorder, req)
-
 	responseBody := responseRecorder.Body.String()
 
 	// Primarily, we want to ensure that all RunResults are handed to the SplunkAPI results.
