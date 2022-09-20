@@ -79,7 +79,8 @@ describe('Vulnerability Management Images', () => {
         // Do not assert because of potential timing problem: get td elements before table re-renders.
     });
 
-    it('should sort the Top CVSS column', () => {
+    // TODO Investigate whether not yet supported or incorrect field in payload.
+    it.skip('should sort the Top CVSS column', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Top CVSS")';
