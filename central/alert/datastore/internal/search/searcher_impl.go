@@ -53,7 +53,7 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 	return protoResults, nil
 }
 
-// SearchRawAlerts retrieves Alerts from the indexer and storage
+// SearchListAlerts retrieves list alerts from the indexer and storage
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
 	alerts, _, err := ds.searchListAlerts(ctx, q)
 	return alerts, err
