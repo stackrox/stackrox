@@ -106,7 +106,7 @@ class PostClusterTest(StoreArtifacts):
         collect_central_artifacts=True,
         check_stackrox_logs=False,
         artifact_destination_prefix=None,
-        add_test_result=False,
+        add_test_result=True,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_stackrox_logs = check_stackrox_logs
