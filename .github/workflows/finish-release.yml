@@ -75,21 +75,6 @@ jobs:
             tag-rc \
             "${{ needs.variables.outputs.release-patch }}"
 
-          # echo "::set-output name=report-file-name::gosec-$(git rev-parse --short HEAD).output"
-
-      # - name: Run Gosec security scanner
-      #   uses: securego/gosec@master
-      #   with:
-      #     args: "-no-fail -out ${{ steps.tag.outputs.report-file-name }} ./..."
-      # - run: |
-      #     cat <<EOF >> $GITHUB_STEP_SUMMARY
-      #     # gosec Report
-
-      #     \`\`\`
-      #     EOF
-      #     cat "$GITHUB_WORKSPACE/${{ steps.tag.outputs.report-file-name }}" >> $GITHUB_STEP_SUMMARY
-      #     echo '```' >> $GITHUB_STEP_SUMMARY
-
       - name: Create GitHub Release
         id: release
         if: env.DRY_RUN == 'false'
@@ -107,15 +92,6 @@ jobs:
             --repo "${{ github.repository }}" \
             --target "${{ needs.variables.outputs.branch }}")
           echo "::set-output name=url::$URL"
-
-      # - name: Attach gosec report
-      #   if: env.DRY_RUN == 'false'
-      #   env:
-      #     GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
-      #   run: |
-      #     gh release upload "${{ needs.variables.outputs.release-patch }}" \
-      #       --repo "${{ github.repository }}" \
-      #       "$GITHUB_WORKSPACE/${{ steps.tag.outputs.report-file-name }}"
 
       - run: |
           echo "Created GitHub release [${{ needs.variables.outputs.release-patch }}](${{ steps.release.outputs.url }})" >> $GITHUB_STEP_SUMMARY
