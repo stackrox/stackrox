@@ -106,11 +106,11 @@ class PostClusterTest(StoreArtifacts):
         collect_central_artifacts=True,
         check_stackrox_logs=False,
         artifact_destination_prefix=None,
-        add_test_output=False,
+        add_test_result=False,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_stackrox_logs = check_stackrox_logs
-        self._add_test_output = add_test_output
+        self._add_test_result = add_test_result
         self.k8s_namespaces = ["stackrox", "stackrox-operator", "proxies", "squid"]
         self.openshift_namespaces = [
             "openshift-dns",
@@ -121,7 +121,7 @@ class PostClusterTest(StoreArtifacts):
         ]
         self.collect_central_artifacts = collect_central_artifacts
 
-    def run(self, test_outputs=None):
+    def run(self, test_outputs=None, test_results=None):
         self.collect_collector_metrics()
         if self.collect_central_artifacts and self.wait_for_central_api():
             self.get_central_debug_dump()
@@ -130,8 +130,8 @@ class PostClusterTest(StoreArtifacts):
         self.collect_service_logs()
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
-        if self._add_test_output:
-            self.add_test_output()
+        if self._add_test_result:
+            self.add_test_result(test_results)
         self.store_artifacts(test_outputs)
         self.handle_run_failure()
 
@@ -209,13 +209,15 @@ class PostClusterTest(StoreArtifacts):
             timeout=PostTestsConstants.CHECK_TIMEOUT,
         )
 
-    def add_test_output(self):
+    def add_test_result(self, test_results):
         print("Storing operator test results in JUnit format")
-        self.run_with_best_effort(
-            ["scripts/ci/store-artifacts.sh", "store_test_results",
-             "operator/build/kuttl-test-artifacts"],
-            timeout=PostTestsConstants.ARTIFACTS_TIMEOUT,
-        )
+        for fromDir, toDir in test_results:
+            self.run_with_best_effort(
+                ["scripts/ci/store-artifacts.sh", "store_test_results",
+                 fromDir, toDir],
+                timeout=PostTestsConstants.ARTIFACTS_TIMEOUT,
+            )
+
 
 
 class CheckStackroxLogs(StoreArtifacts):
