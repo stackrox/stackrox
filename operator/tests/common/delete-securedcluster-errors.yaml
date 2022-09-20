@@ -293,7 +293,7 @@ metadata:
 apiVersion: authorization.openshift.io/v1
 kind: RoleBinding
 metadata:
-  name: sensor-use-scc
+  name: sensor-use-nonroot-scc
 ---
 apiVersion: authorization.openshift.io/v1
 kind: RoleBinding
@@ -378,7 +378,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: sensor-use-scc
+  name: sensor-use-nonroot-scc
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
