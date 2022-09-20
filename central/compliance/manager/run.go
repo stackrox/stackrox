@@ -32,8 +32,6 @@ type runInstance struct {
 	domain   framework.ComplianceDomain
 	standard *standards.Standard
 
-	schedule *scheduleInstance
-
 	ctx    context.Context
 	cancel context.CancelFunc
 
@@ -68,15 +66,6 @@ func (r *runInstance) Start(dataPromise dataPromise, resultsStore complianceDS.D
 
 func (r *runInstance) Run(dataPromise dataPromise, resultsStore complianceDS.DataStore) {
 	defer r.cancel()
-
-	if r.schedule != nil {
-		concurrency.WithLock(&r.schedule.mutex, func() {
-			r.schedule.lastRun = r
-		})
-		defer concurrency.WithLock(&r.schedule.mutex, func() {
-			r.schedule.lastFinishedRun = r
-		})
-	}
 
 	run, nodeResults, err := r.doRun(dataPromise)
 	defer concurrency.WithLock(&r.mutex, func() {
@@ -167,9 +156,6 @@ func (r *runInstance) ToProto() *v1.ComplianceRun {
 		FinishTime:   timeToProto(r.finishTime),
 		State:        r.status,
 		ErrorMessage: errorMessage,
-	}
-	if r.schedule != nil {
-		proto.ScheduleId = r.schedule.id
 	}
 	return proto
 }

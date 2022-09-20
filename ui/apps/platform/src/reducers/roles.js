@@ -111,7 +111,6 @@ const replacedResourceMapping = new Map([
     ['AuthProvider', 'Access'],
     ['BackupPlugins', 'Integration'],
     ['ComplianceRuns', 'Compliance'],
-    ['ComplianceRunSchedule', 'Administration'],
     ['Config', 'Administration'],
     ['DebugLogs', 'Administration'],
     ['Group', 'Access'],
