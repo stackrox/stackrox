@@ -102,10 +102,12 @@ echo
 echo "Open issues:"
 echo "$OPEN_ISSUES"
 
-if [ "$DRY_RUN" = "false" ]; then
+REPO_NAME="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+
+if [ "$DRY_RUN" = "false" ] && [ "$REPO_NAME" = "stackrox/stackrox" ]; then
     while read -r KEY; do
         comment_issue "$KEY"
-    done <<<"$OPEN_ISSUES"
+    done < <(cut -d " " -f 1 <<< "$OPEN_ISSUES")
 else
     exit 0
 fi
