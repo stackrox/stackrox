@@ -61,6 +61,8 @@ const AsyncPolicyManagementPage = asyncComponent(
     () => import('Containers/PolicyManagement/PolicyManagementPage')
 );
 
+const AsyncCollectionsPage = asyncComponent(() => import('Containers/Collections/CollectionsPage'));
+
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncAccessControlPageV2 = asyncComponent(
@@ -96,6 +98,8 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
+    // TODO Implement permissions once https://issues.redhat.com/browse/ROX-12619 is merged
+    const hasCollectionsPermission = true; // hasReadAccess('TODO');
 
     return (
         <div
@@ -115,7 +119,9 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={policyManagementBasePath} component={AsyncPolicyManagementPage} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
                     <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
-                    {isCollectionsEnabled && <Route path={collectionsPath} component={() => ''} />}
+                    {isCollectionsEnabled && hasCollectionsPermission && (
+                        <Route path={collectionsPath} component={AsyncCollectionsPage} />
+                    )}
                     <Route path={riskPath} component={AsyncRiskPage} />
                     <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
                     {isSearchPageEnabled && <Route path={searchPath} component={AsyncSearchPage} />}
