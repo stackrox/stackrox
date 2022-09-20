@@ -49,7 +49,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
                     uid
                     parentName
                     parentUid
-                    whitelisted
+                    inBaseline
                 }
             }
         }
@@ -72,7 +72,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
                     uid
                     parentName
                     parentUid
-                    whitelisted
+                    inBaseline
                 }
             }
         }
@@ -150,7 +150,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
             assert procEvent.parentName == PARENT_NAME
             assert procEvent.parentUid == 0
             assert procEvent.args == PROCESS_ARGS
-            assert procEvent.whitelisted
+            assert procEvent.inBaseline
         }
         return event?.id
     }
@@ -168,7 +168,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
             assert procEvent.parentName == PARENT_NAME
             assert procEvent.parentUid == 0
             assert procEvent.args == PROCESS_ARGS
-            assert procEvent.whitelisted
+            assert procEvent.inBaseline
         }
     }
 }
