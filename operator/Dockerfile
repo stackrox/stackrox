@@ -2,7 +2,7 @@
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 
 # NOTE 1: the following version needs to be in sync with the ../EXPECTED_GO_VERSION file.
-FROM golang:1.17.12 as builder
+FROM quay.io/stackrox-io/apollo-ci:stackrox-build-0.3.46 as builder
 # NOTE 2: Also, to keep CI from flakes, the above image needs to be mirrored into openshift CI registry and the CI
 # configured to use the mirrored image instead of the specification above.
 # This is because pulling from docker.io/library/... (which is what happens with a bare image specification above) is
