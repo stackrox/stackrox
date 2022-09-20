@@ -12,13 +12,17 @@ export GITHUB_ACTOR
 export GITHUB_REPOSITORY=stackrox/stackrox
 export GITHUB_SERVER_URL=https://github.com
 
-export main_branch=master
+main_branch="$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)"
+export main_branch
 
 if [ -z "$DRY_RUN" ]; then
     export DRY_RUN=true
 fi
 
 SCRIPTS_ROOT="$(git rev-parse --show-toplevel)/.github/workflows/scripts"
+
+CI="false" # true if running in GitHub context
+export CI
 
 # Supress shellcheck false warning:
 # shellcheck source=/dev/null
