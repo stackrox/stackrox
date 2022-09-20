@@ -75,6 +75,7 @@ var (
 			v1.SearchCategory_DEPLOYMENTS,
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
+			v1.SearchCategory_PROCESS_INDICATORS,
 		}...)
 		RegisterTable(schema, CreateTableDeploymentsStmt)
 		return schema
