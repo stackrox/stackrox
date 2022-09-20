@@ -9,6 +9,7 @@ export const loginPath = '/login';
 export const testLoginResultsPath = '/test-login-results';
 export const authResponsePrefix = '/auth/response/';
 
+export const breadcrumbPath = `${mainPath}/breadcrumb`;
 export const dashboardPath = `${mainPath}/dashboard`;
 export const networkBasePath = `${mainPath}/network`;
 export const networkPath = `${networkBasePath}/:deploymentId?/:externalType?`;

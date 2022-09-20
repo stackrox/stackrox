@@ -86,6 +86,7 @@ button.pf-c-toggle-group__button:disabled {
 .pf-c-empty-state__content svg,
 .pf-c-table__toggle-icon svg,
 .pf-c-expandable-section__toggle-icon svg,
+.pf-c-dropdown__toggle-icon svg,
 .pf-c-breadcrumb__item-divider svg {
     display: inline;
 }

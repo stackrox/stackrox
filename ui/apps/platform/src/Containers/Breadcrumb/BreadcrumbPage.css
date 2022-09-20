@@ -1,0 +1,29 @@
+.co-m-resource-icon {
+    background-color: #2b9af3;
+    border-radius: 20px;
+    color: var(--pf-global--palette--white);
+    display: inline-block;
+    flex-shrink: 0;
+    font-size: 14px;
+    line-height: 16px;
+    margin-right: 4px;
+    min-width: 18px;
+    padding: 1px 6px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.co-m-resource-daemonset,
+.co-m-resource-deployment,
+.co-m-resource-deploymentconfig,
+.co-m-resource-job,
+.co-m-resource-petset,
+.co-m-resource-replicaset,
+.co-m-resource-replicationcontroller {
+    background-color: #004080;
+}
+
+.co-m-resource-namespace,
+.co-m-resource-project {
+    background-color: #1e4f18;
+}
