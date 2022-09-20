@@ -20,6 +20,8 @@ const resourceDescriptions: Record<ResourceName, string> = {
     Cluster: 'Read: View secured clusters. Write: Add, modify, or delete secured clusters.',
     Compliance:
         'Read: View compliance standards, results, and runs. Write: Add, modify, or delete scheduled compliance runs.',
+    ComplianceRunSchedule:
+        'Read: View scheduled compliance runs. Write: Add, modify, or delete scheduled compliance runs.',
     ComplianceRuns:
         'Read: View recent compliance runs and their completion status. Write: Trigger compliance runs.',
     Config: 'Read: View options for data retention, security notices, and other related configurations. Write: Modify options for data retention, security notices, and other related configurations.',

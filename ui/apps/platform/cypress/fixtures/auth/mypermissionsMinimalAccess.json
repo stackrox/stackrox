@@ -30,6 +30,7 @@
         "AuthProvider": "NO_ACCESS",
         "BackupPlugins": "NO_ACCESS",
         "ComplianceRuns": "NO_ACCESS",
+        "ComplianceRunSchedule": "NO_ACCESS",
         "Config": "READ_ACCESS",
         "DebugLogs": "NO_ACCESS",
         "Group": "NO_ACCESS",
