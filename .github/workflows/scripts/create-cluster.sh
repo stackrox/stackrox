@@ -38,12 +38,17 @@ function infra_status_summary() {
     gh_summary <<EOF
 *$2*
 Infra status for '$1':
-\`\`\`$(cluster_info "$1")\`\`\`
+\`\`\`
+$(cluster_info "$1")
+\`\`\`
 
 EOF
 }
 
 case $(cluster_status "$CNAME") in
+"")
+    gh_summary "Cluster $CNAME doesn't exist."
+    ;;
 1)
     # Don't wait for the cluster being created, as another workflow could be
     # waiting for it.
@@ -75,7 +80,7 @@ case $(cluster_status "$CNAME") in
 esac
 
 # Creating a cluster
-echo "Will attempt to create the cluster"
+echo "Will attempt to create the cluster."
 
 OPTIONS=()
 if [ "$WAIT" = "true" ]; then

@@ -6,7 +6,24 @@
 gh_log() {
     local LEVEL="$1"
     shift
+    if [ "$CI" = "false" ]; then
+        case "$LEVEL" in
+        "debug")
+            printf "\e[1;90m"
+            ;;
+        "error")
+            printf "\e[1;31m"
+            ;;
+        "warning")
+            printf "\e[1;33m"
+            ;;
+        *)
+            printf "\e[1;32m"
+            ;;
+        esac
+    fi
     echo "::$LEVEL::$*"
+    if [ "$CI" = "false" ]; then printf "\e[0m"; fi
 }
 export -f gh_log
 
@@ -41,11 +58,13 @@ check_not_empty GITHUB_STEP_SUMMARY
 #     Markdown summary
 #     EOF
 gh_summary() {
+    if [ "$CI" = "false" ]; then printf "\e[94m"; fi
     if [ "$#" -eq 0 ]; then
         cat # for the data passed via the pipe
     else
         echo -e "$@" # for the data passed as arguments
     fi >>"$GITHUB_STEP_SUMMARY"
+    if [ "$CI" = "false" ]; then printf "\e[0m"; fi
 }
 export -f gh_summary
 
@@ -56,7 +75,9 @@ if ! (return 0 2>/dev/null); then # called
         SCRIPT \
         GITHUB_REPOSITORY \
         GITHUB_REF_NAME
+
     URL="/repos/$GITHUB_REPOSITORY/contents/.github/workflows/scripts/$SCRIPT.sh?ref=$GITHUB_REF_NAME"
     shift
+    gh_log debug "Executing '$SCRIPT.sh' from '$GITHUB_REPOSITORY' $GITHUB_REF_NAME branch with: ${*@Q}"
     gh api -H "Accept: application/vnd.github.v3.raw" "$URL" | bash -s -- "$@"
 fi

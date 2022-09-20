@@ -92,13 +92,6 @@ if [ -n "$PR_COMMITS" ]; then
     while read -r PR_COMMIT; do
         cherry_pick "$PR_COMMIT"
     done <<<"$PR_COMMITS"
-
-    if [ "$PICKED" -gt 0 ]; then
-        [ "$DRY_RUN" = "false" ] &&
-            git push
-
-        gh_summary "Cherry-picked commits have been pushed to the release branch."
-    fi
 fi
 
 # Replace % with %25, escape \n and " to pass as step output to Slack message.
