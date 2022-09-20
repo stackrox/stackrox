@@ -71,7 +71,7 @@ message ComplianceDomain {
         string id   = 1;
         string name = 2;
     }
-    Cluster cluster = 1 [(gogoproto.moretags) = 'sql:"ignore_pk,ignore_unique"'];
+    Cluster cluster = 1;
 
     // These must mirror the tags _exactly_ in node.proto for backwards compatibility
     message Node {
