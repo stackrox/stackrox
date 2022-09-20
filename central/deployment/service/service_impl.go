@@ -74,8 +74,6 @@ func (s *serviceImpl) fillBaselineResults(ctx context.Context, resp *v1.ListDepl
 				return err
 			}
 			depWithProc.BaselineStatuses = baselineResults.GetBaselineStatuses()
-			// TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
-			depWithProc.WhitelistStatuses = depWithProc.BaselineStatuses
 		}
 	}
 	return nil
