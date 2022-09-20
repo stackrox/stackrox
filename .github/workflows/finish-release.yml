@@ -100,7 +100,8 @@ jobs:
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             draft-release-notes \
             "${{ needs.variables.outputs.release-patch }}" \
-            "${{ needs.variables.outputs.branch }}"
+            "${{ needs.variables.outputs.branch }}" \
+            "RELEASE_NOTES_GENERATED.md"
           URL=$(gh release create "${{ needs.variables.outputs.release-patch }}" \
             --notes-file RELEASE_NOTES_GENERATED.md \
             --repo "${{ github.repository }}" \
