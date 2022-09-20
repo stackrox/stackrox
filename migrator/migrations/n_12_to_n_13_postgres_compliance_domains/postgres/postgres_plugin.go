@@ -81,13 +81,10 @@ func insertIntoComplianceDomains(ctx context.Context, batch *pgx.Batch, obj *sto
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetCluster().GetId(),
-		obj.GetCluster().GetName(),
-		obj.GetCluster().GetLabels(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_domains (Id, Cluster_Id, Cluster_Name, Cluster_Labels, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Cluster_Id = EXCLUDED.Cluster_Id, Cluster_Name = EXCLUDED.Cluster_Name, Cluster_Labels = EXCLUDED.Cluster_Labels, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_domains (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -107,12 +104,6 @@ func (s *storeImpl) copyFromComplianceDomains(ctx context.Context, tx pgx.Tx, ob
 
 		"id",
 
-		"cluster_id",
-
-		"cluster_name",
-
-		"cluster_labels",
-
 		"serialized",
 	}
 
@@ -128,12 +119,6 @@ func (s *storeImpl) copyFromComplianceDomains(ctx context.Context, tx pgx.Tx, ob
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
-
-			obj.GetCluster().GetId(),
-
-			obj.GetCluster().GetName(),
-
-			obj.GetCluster().GetLabels(),
 
 			serialized,
 		})

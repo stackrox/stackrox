@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -88,13 +87,10 @@ func insertIntoComplianceDomains(ctx context.Context, batch *pgx.Batch, obj *sto
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetCluster().GetId(),
-		obj.GetCluster().GetName(),
-		obj.GetCluster().GetLabels(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_domains (Id, Cluster_Id, Cluster_Name, Cluster_Labels, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Cluster_Id = EXCLUDED.Cluster_Id, Cluster_Name = EXCLUDED.Cluster_Name, Cluster_Labels = EXCLUDED.Cluster_Labels, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_domains (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -114,12 +110,6 @@ func (s *storeImpl) copyFromComplianceDomains(ctx context.Context, tx pgx.Tx, ob
 
 		"id",
 
-		"cluster_id",
-
-		"cluster_name",
-
-		"cluster_labels",
-
 		"serialized",
 	}
 
@@ -135,12 +125,6 @@ func (s *storeImpl) copyFromComplianceDomains(ctx context.Context, tx pgx.Tx, ob
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
-
-			obj.GetCluster().GetId(),
-
-			obj.GetCluster().GetName(),
-
-			obj.GetCluster().GetLabels(),
 
 			serialized,
 		})
@@ -228,8 +212,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ComplianceDomai
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ComplianceDomain) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "ComplianceDomain")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
-		ClusterID(obj.GetCluster().GetId())
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
@@ -242,16 +225,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ComplianceDo
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {
-		var deniedIds []string
-		for _, obj := range objs {
-			subScopeChecker := scopeChecker.ClusterID(obj.GetCluster().GetId())
-			if !subScopeChecker.IsAllowed() {
-				deniedIds = append(deniedIds, obj.GetId())
-			}
-		}
-		if len(deniedIds) != 0 {
-			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying complianceDomains with IDs [%s] was denied", strings.Join(deniedIds, ", "))
-		}
+		return sac.ErrResourceAccessDenied
 	}
 
 	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
@@ -556,18 +530,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ComplianceDomain) error) error {
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return err
-	}
 	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
