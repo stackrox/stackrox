@@ -12,5 +12,5 @@
 * **Log minor things**: print to `$GITHUB_STEP_SUMMARY` with markdown to describe
   the executed actions and suggest the next step;
 * **Support dry-run**: use the `DRY_RUN` environment variable to check for dry-run,
-  it holds `true` or `false` values.
+  it holds `true` or `false` values;
 * **Extract large scripts**: look in the `scripts` folder for examples;
