@@ -5012,6 +5012,24 @@ func (resolver *Resolver) wrapComplianceDomain_Clusters(values []*storage.Compli
 	return output, nil
 }
 
+func (resolver *Resolver) wrapComplianceDomain_ClusterWithContext(ctx context.Context, value *storage.ComplianceDomain_Cluster, ok bool, err error) (*complianceDomain_ClusterResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_ClusterResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_ClustersWithContext(ctx context.Context, values []*storage.ComplianceDomain_Cluster, err error) ([]*complianceDomain_ClusterResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_ClusterResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_ClusterResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
 func (resolver *complianceDomain_ClusterResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -5042,6 +5060,24 @@ func (resolver *Resolver) wrapComplianceDomain_Deployments(values []*storage.Com
 	output := make([]*complianceDomain_DeploymentResolver, len(values))
 	for i, v := range values {
 		output[i] = &complianceDomain_DeploymentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_DeploymentWithContext(ctx context.Context, value *storage.ComplianceDomain_Deployment, ok bool, err error) (*complianceDomain_DeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_DeploymentResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_DeploymentsWithContext(ctx context.Context, values []*storage.ComplianceDomain_Deployment, err error) ([]*complianceDomain_DeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_DeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_DeploymentResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5101,6 +5137,24 @@ func (resolver *Resolver) wrapComplianceDomain_Nodes(values []*storage.Complianc
 	output := make([]*complianceDomain_NodeResolver, len(values))
 	for i, v := range values {
 		output[i] = &complianceDomain_NodeResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_NodeWithContext(ctx context.Context, value *storage.ComplianceDomain_Node, ok bool, err error) (*complianceDomain_NodeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_NodeResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_NodesWithContext(ctx context.Context, values []*storage.ComplianceDomain_Node, err error) ([]*complianceDomain_NodeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_NodeResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_NodeResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
 }
