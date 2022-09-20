@@ -91,7 +91,7 @@ message Alert {
 
     message ProcessViolation {
         string                    message   = 1;
-        repeated ProcessIndicator processes = 2;
+        repeated ProcessIndicator processes = 2 [(gogoproto.moretags) = 'sql:"ignore-fks"'];
     }
 
     message Enforcement {
