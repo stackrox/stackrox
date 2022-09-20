@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -271,6 +272,14 @@ func getPool(postgresConfig *pgxpool.Config) *pgxpool.Pool {
 
 // getAvailablePostgresCapacity - retrieves the capacity for Postgres
 func getAvailablePostgresCapacity(postgresConfig *pgxpool.Config) (int64, error) {
+	// When using managed services, Postgres space is not a concern at this time.
+	if env.ManagedCentral.BooleanSetting() {
+		utils.Should(errors.New("unexpected call, cannot yet determine managed capacity.  Calculation is an estimate based on suggested size."))
+
+		// Cannot get managed services capacity via Postgres.  Assume size for now.
+		return pgconfig.GetPostgresCapacity(), nil
+	}
+
 	// Connect to database for admin functions
 	connectPool := GetAdminPool(postgresConfig)
 	// Close the admin connection pool
@@ -358,7 +367,6 @@ func getAvailablePostgresCapacity(postgresConfig *pgxpool.Config) (int64, error)
 
 	// Calculate the capacity based on blocks and block size.
 	availableCapacity := capacityBlocks * 1024
-	log.Infof("availableCapacity = %d", availableCapacity)
 
 	if err := tx.Commit(ctx); err != nil {
 		return 0, err
@@ -369,6 +377,14 @@ func getAvailablePostgresCapacity(postgresConfig *pgxpool.Config) (int64, error)
 
 // GetRemainingCapacity - retrieves the amount of space left in Postgres
 func GetRemainingCapacity(postgresConfig *pgxpool.Config) (int64, error) {
+	// When using managed services, Postgres space is not a concern at this time.
+	if env.ManagedCentral.BooleanSetting() {
+		utils.Should(errors.New("unexpected call, cannot yet determine managed capacity.  Calculation is an estimate based on suggested size."))
+
+		// Cannot get managed services capacity via Postgres.  Assume size for now.
+		return pgconfig.GetPostgresCapacity(), nil
+	}
+
 	// Connect to database for admin functions
 	connectPool := GetAdminPool(postgresConfig)
 	// Close the admin connection pool
@@ -385,19 +401,12 @@ func GetRemainingCapacity(postgresConfig *pgxpool.Config) (int64, error) {
 		return 0, err
 	}
 
-	var capacity int64
-	if env.ManagedCentral.BooleanSetting() {
-		// Cannot get managed services capacity via Postgres.  Assume size for now.
-		capacity = pgconfig.GetPostgresCapacity() - sizeUsed
-		log.Info("cannot yet determine managed capacity.  Calculation is an estimate based on suggested size.")
-	} else {
-		capacity, err = getAvailablePostgresCapacity(postgresConfig)
-		if err != nil {
-			log.Error(err)
-			// If we cannot calculate the capacity, assume it based on the recommended starting
-			// capacity
-			return pgconfig.GetPostgresCapacity() - sizeUsed, err
-		}
+	capacity, err := getAvailablePostgresCapacity(postgresConfig)
+	if err != nil {
+		log.Error(err)
+		// If we cannot calculate the capacity, assume it based on the recommended starting
+		// capacity
+		return pgconfig.GetPostgresCapacity() - sizeUsed, err
 	}
 
 	log.Infof("remaining capacity = %d", capacity)

@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/set"
@@ -374,6 +375,11 @@ func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 	if !currExists {
 		log.Warn("cannot find current replica for Postgres.  Indicates initial creation")
 		return false
+	}
+
+	// When using managed services, Postgres space is not a concern at this time.
+	if env.ManagedCentral.BooleanSetting() {
+		return true
 	}
 
 	availableBytes, err := pgadmin.GetRemainingCapacity(d.adminConfig)
