@@ -57,6 +57,9 @@ COPY operator/build/status.sh status.sh
 # This creates a git repo in workdir so that `git grep` command in build.sh can succeed and actually find //XDef-s.
 RUN git init && git add .
 
+# Needed with apollo-ci builder
+ENV CGO_LDFLAGS=""
+
 # Build the operator binary.
 RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build.sh operator
 # Copy the operator binary to a location from where it will be taken into the final image.
