@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Creates a tgz bundle of all binary artifacts needed for scanner-db-rhel
 
-set -euox pipefail
+set -euo pipefail
 
 die() {
     echo >&2 "$@"
