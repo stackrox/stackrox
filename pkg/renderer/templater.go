@@ -21,22 +21,34 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// ExternalPersistence holds the data for a volume that is already created (e.g. docker volume, PV, etc)
-type ExternalPersistence struct {
-	Name         string `json:"name,omitempty"`
-	StorageClass string `json:"storageClass,omitempty"`
-	Size         uint32 `json:"size,omitempty"`
+// ExternalPersistenceInstance holds the data for a volume that is already created (e.g. docker volume, PV, etc)
+type ExternalPersistenceInstance struct {
+	Name         string
+	StorageClass string
+	Size         uint32
 }
 
-// HostPathPersistence describes the parameters for a bind mount
-type HostPathPersistence struct {
+// ExternalPersistence is wrapper around the definitions for data held in a volume
+type ExternalPersistence struct {
+	Central *ExternalPersistenceInstance
+	DB      *ExternalPersistenceInstance
+}
+
+// HostPathPersistenceInstance describes the parameters for a bind mount
+type HostPathPersistenceInstance struct {
 	HostPath          string
 	NodeSelectorKey   string
 	NodeSelectorValue string
 }
 
+// HostPathPersistence wraps the instances of bind mounts for Central and Central DB
+type HostPathPersistence struct {
+	Central *HostPathPersistenceInstance
+	DB      *HostPathPersistenceInstance
+}
+
 // WithNodeSelector is a helper function for the templater that returns if node selectors are used
-func (h *HostPathPersistence) WithNodeSelector() bool {
+func (h *HostPathPersistenceInstance) WithNodeSelector() bool {
 	if h == nil {
 		return false
 	}
@@ -55,13 +67,6 @@ type CommonConfig struct {
 
 // PersistenceType describes the type of persistence
 type PersistenceType string
-
-// Types of persistence
-var (
-	PersistenceNone     = newPersistentType("none")
-	PersistenceHostpath = newPersistentType("hostpath")
-	PersistencePVC      = newPersistentType("pvc")
-)
 
 // StringToPersistentTypes is a map from the persistenttype string value to its object
 var StringToPersistentTypes = make(map[string]PersistenceType)
@@ -148,6 +153,26 @@ type Config struct {
 	HelmImage  *image.Image
 
 	EnablePodSecurityPolicies bool
+}
+
+// HasCentralHostPath returns if a Central is configured with host path
+func (c Config) HasCentralHostPath() bool {
+	return c.HostPath != nil && c.HostPath.Central != nil
+}
+
+// HasCentralDBHostPath returns if a Central DB is configured with host path
+func (c Config) HasCentralDBHostPath() bool {
+	return c.HostPath != nil && c.HostPath.DB != nil
+}
+
+// HasCentralExternal returns if a Central is configured with an external volume
+func (c Config) HasCentralExternal() bool {
+	return c.External != nil && c.External.Central != nil
+}
+
+// HasCentralDBExternal returns if a Central DB is configured with an external volume
+func (c Config) HasCentralDBExternal() bool {
+	return c.External != nil && c.External.DB != nil
 }
 
 func generateReadmeFile(c *Config, mode mode) (*zip.File, error) {

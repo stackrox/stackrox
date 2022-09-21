@@ -366,6 +366,16 @@
 #     podAnnotations: {}
 #     envVars: {}
 #
+[< if .FeatureFlags.ROX_POSTGRES_DATASTORE >]
+#     # Extra metadata for the central db deployment only.
+#     db:
+#       labels: {}
+#       annotations: {}
+#       podLabels: {}
+#       podAnnotations: {}
+#       envVars: {}
+#
+[<- end >]
 #   # Extra metadata for the scanner deployment only.
 #   scanner:
 #     labels: {}
