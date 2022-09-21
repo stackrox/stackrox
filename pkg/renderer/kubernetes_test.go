@@ -50,15 +50,19 @@ func (suite *renderSuite) TearDownSuite() {
 
 func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
 	c.HostPath = &HostPathPersistence{
-		HostPath: "/var/lib/stackrox",
+		Central: &HostPathPersistenceInstance{
+			HostPath: "/var/lib/stackrox",
+		},
 	}
 	_, err := Render(c, suite.testFlavor)
 	assert.NoError(t, err)
 
 	c.HostPath = &HostPathPersistence{
-		HostPath:          "/var/lib/stackrox",
-		NodeSelectorKey:   "key",
-		NodeSelectorValue: "value",
+		Central: &HostPathPersistenceInstance{
+			HostPath:          "/var/lib/stackrox",
+			NodeSelectorKey:   "key",
+			NodeSelectorValue: "value",
+		},
 	}
 	_, err = Render(c, suite.testFlavor)
 	assert.NoError(t, err)
@@ -66,14 +70,18 @@ func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
 
 func (suite *renderSuite) testWithPV(t *testing.T, c Config) {
 	c.External = &ExternalPersistence{
-		Name: "name",
+		Central: &ExternalPersistenceInstance{
+			Name: "name",
+		},
 	}
 	_, err := Render(c, suite.testFlavor)
 	assert.NoError(t, err)
 
 	c.External = &ExternalPersistence{
-		Name:         "name",
-		StorageClass: "storageClass",
+		Central: &ExternalPersistenceInstance{
+			Name:         "name",
+			StorageClass: "storageClass",
+		},
 	}
 	_, err = Render(c, suite.testFlavor)
 	assert.NoError(t, err)

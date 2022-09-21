@@ -12,15 +12,21 @@ metadata:
 data:
   central-config.yaml: |
     {{- ._rox.central._config | nindent 4 }}
-    {{- if ._rox.central.enableCentralDB }}
+[< if .FeatureFlags.ROX_POSTGRES_DATASTORE >]
+    {{- if ._rox.central.db.enabled }}
     centralDB:
+      {{- if ._rox.central.db.external }}
+      source: {{ ._rox.central.db.source.connectionString }} statement_timeout={{ ._rox.central.db.source.statementTimeoutMs }} pool_min_conns={{ ._rox.central.db.source.minConns }} pool_max_conns={{ ._rox.central.db.source.maxConns }}
+      {{- else }}
       source: >
         host=central-db.{{ .Release.Namespace }}.svc
         port=5432
         user=postgres
         sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }}
         sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
-        statement_timeout=600000
-        pool_min_conns=1
-        pool_max_conns=90
+        statement_timeout={{ ._rox.central.db.source.statementTimeoutMs }}
+        pool_min_conns={{ ._rox.central.db.source.minConns }}
+        pool_max_conns={{ ._rox.central.db.source.maxConns }}
+      {{- end }}
     {{- end }}
+[<- end >]

@@ -1,5 +1,7 @@
 {{- include "srox.init" . -}}
-{{ if ._rox.central.enableCentralDB -}}
+
+{{ if ._rox.central.db.enabled -}}
+{{ if not ._rox.central.db.external -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -63,7 +65,7 @@ spec:
       serviceAccountName: central-db
       initContainers:
       - name: init-db
-        image: {{ ._rox.central.dbImage.fullRef | quote }}
+        image: {{ ._rox.central.db.image.fullRef | quote }}
         env:
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
@@ -74,12 +76,14 @@ spec:
           mountPath: /var/lib/postgresql/data
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/secrets
+        resources:
+          {{- ._rox.central.db._resources | nindent 10 }}
         securityContext:
           runAsUser: 70
           runAsGroup: 70
       containers:
       - name: central-db
-        image: {{ ._rox.central.dbImage.fullRef | quote }}
+        image: {{ ._rox.central.db.image.fullRef | quote }}
         env:
         - name: POSTGRES_HOST_AUTH_METHOD
           value: "password"
@@ -90,16 +94,13 @@ spec:
           name: postgresql
           protocol: TCP
         resources:
-          limits:
-            cpu: "2"
-            memory: 4Gi
-          requests:
-            cpu: 200m
-            memory: 200Mi
+          {{- ._rox.central.db._resources | nindent 10 }}
         securityContext:
           runAsUser: 70
           runAsGroup: 70
         volumeMounts:
+        - name: config-volume
+          mountPath: /etc/stackrox.d/config/
         - mountPath: /var/lib/postgresql/data
           name: disk
         - name: central-db-tls-volume
@@ -110,12 +111,10 @@ spec:
         fsGroup: 70
       volumes:
       - name: disk
-        {{- if ._rox.central.persistence._pvcCfg }}
-        persistentVolumeClaim:
-          claimName: central-db
-        {{- else }}
-        emptyDir: {}
-        {{- end }}
+        {{- toYaml ._rox.central.db.persistence._volumeCfg | nindent 8 }}
+      - name: config-volume
+        configMap:
+          name: central-db-config
       - name: central-db-password
         secret:
           secretName: central-db-password
@@ -133,7 +132,7 @@ spec:
       - name: shared-memory
         emptyDir:
           medium: Memory
-          {{- /* Keep this in sync with shared_buffers in /Users/cong/go/src/github.com/stackrox/rox/image/postgres/postgresql.conf */}}
+          {{- /* Keep this in sync with shared_buffers in config/centraldb/postgresql.conf */}}
           sizeLimit: 2Gi
 ---
 apiVersion: v1
@@ -154,8 +153,9 @@ spec:
   selector:
     app: central-db
   type: ClusterIP
-{{- if ._rox.central._dbPassword }}
-{{- if not (kindIs "invalid" ._rox.central._dbPassword.value) }}
+{{- end }}
+{{- if ._rox.central.db._password }}
+{{- if not (kindIs "invalid" ._rox.central.db._password.value) }}
 ---
 apiVersion: v1
 kind: Secret
@@ -171,7 +171,7 @@ metadata:
 type: Opaque
 stringData:
   password: |
-    {{- ._rox.central._dbPassword.value | nindent 4 }}
+    {{- ._rox.central.db._password.value | nindent 4 }}
 {{- end }}
 {{- end }}
 {{- end }}

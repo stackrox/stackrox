@@ -23,30 +23,35 @@ const (
 	noteOpenShift3xCompatibilityMode = `NOTE: Deployment files are generated in OpenShift 3.x compatibility mode. Set the --openshift-version flag to 3 to suppress this note, or to 4 take advantage of OpenShift 4.x features.`
 )
 
-type persistentFlagsWrapper struct {
+type flagsWrapper struct {
 	*pflag.FlagSet
 }
 
-func (w *persistentFlagsWrapper) UInt32Var(p *uint32, name string, value uint32, usage string, groups ...string) {
+func (w *flagsWrapper) UInt32Var(p *uint32, name string, value uint32, usage string, groups ...string) {
 	w.FlagSet.Uint32Var(p, name, value, usage)
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
-func (w *persistentFlagsWrapper) StringVar(p *string, name, value, usage string, groups ...string) {
+func (w *flagsWrapper) StringVar(p *string, name, value, usage string, groups ...string) {
 	w.StringVarP(p, name, "", value, usage, groups...)
 }
 
-func (w *persistentFlagsWrapper) StringVarP(p *string, name, shorthand, value, usage string, groups ...string) {
+func (w *flagsWrapper) StringVarP(p *string, name, shorthand, value, usage string, groups ...string) {
 	w.FlagSet.StringVarP(p, name, shorthand, value, usage)
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
-func (w *persistentFlagsWrapper) BoolVar(p *bool, name string, value bool, usage string, groups ...string) {
+func (w *flagsWrapper) Uint32VarP(p *uint32, name, shorthand string, value uint32, usage string, groups ...string) {
+	w.FlagSet.Uint32VarP(p, name, shorthand, value, usage)
+	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
+}
+
+func (w *flagsWrapper) BoolVar(p *bool, name string, value bool, usage string, groups ...string) {
 	w.FlagSet.BoolVar(p, name, value, usage)
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
-func (w *persistentFlagsWrapper) Var(value pflag.Value, name, usage string, groups ...string) {
+func (w *flagsWrapper) Var(value pflag.Value, name, usage string, groups ...string) {
 	w.FlagSet.Var(value, name, usage)
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
@@ -83,7 +88,7 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	c.AddCommand(hostPathVolume(cliEnvironment))
 	c.AddCommand(noVolume(cliEnvironment))
 
-	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
+	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 	// Adds k8s specific flags
 	flags.AddImageDefaults(flagWrap.FlagSet, &k8sConfig.ImageFlavorName)
 
@@ -110,7 +115,7 @@ func newK8sConfig() *renderer.K8sConfig {
 func k8s(cliEnvironment environment.Environment) *cobra.Command {
 	k8sConfig := newK8sConfig()
 	c := k8sBasedOrchestrator(cliEnvironment, k8sConfig, "k8s", "Kubernetes", func() (storage.ClusterType, error) { return storage.ClusterType_KUBERNETES_CLUSTER, nil })
-	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
+	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (lb, np, none)", "central")
 
@@ -149,7 +154,7 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 		return clusterType, nil
 	})
 
-	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
+	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (route, lb, np, none)", "central")
 

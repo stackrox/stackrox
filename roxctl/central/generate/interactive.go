@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	orderedFlagGroupNames = []string{"central", "scanner"}
+	orderedFlagGroupNames = []string{"central", "central-db", "scanner"}
 )
 
 func readUserInput(prompt string) (string, error) {

@@ -42,7 +42,7 @@
 #data_directory = 'ConfigDir'		# use data in another directory
 					# (change requires restart)
 #hba_file = 'ConfigDir/pg_hba.conf'	# host-based authentication file
-hba_file = '/etc/pg_hba.conf'		# StackRox customized
+hba_file = '/etc/stackrox.d/config/pg_hba.conf'		# StackRox customized
 					# (change requires restart)
 #ident_file = 'ConfigDir/pg_ident.conf'	# ident configuration file
 					# (change requires restart)
