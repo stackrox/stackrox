@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/rockshelper"
@@ -14,8 +13,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// Non-replaced resources
 const (
-	// Non-replaced resources
 	Alert                            = "Alert"
 	CVE                              = "CVE"
 	Cluster                          = "Cluster"
@@ -41,6 +40,27 @@ const (
 	Version            = "Version"
 )
 
+// Future-replacement resources
+const (
+	Administration = "Administration"
+	Compliance     = "Compliance"
+)
+
+// To-be-replaced-later resources
+const (
+	AllComments           = "AllComments"
+	ComplianceRuns        = "ComplianceRuns"
+	ComplianceRunSchedule = "ComplianceRunSchedule"
+	Config                = "Config"
+	DebugLogs             = "DebugLogs"
+	NetworkGraphConfig    = "NetworkGraphConfig"
+	ProbeUpload           = "ProbeUpload"
+	ScannerBundle         = "ScannerBundle"
+	ScannerDefinitions    = "ScannerDefinitions"
+	SensorUpgradeConfig   = "SensorUpgradeConfig"
+	ServiceIdentity       = "ServiceIdentity"
+)
+
 var (
 	UnmigratedPermissionSets = []*storage.PermissionSet{
 		{
@@ -48,8 +68,8 @@ var (
 			Name:        "TestSet01",
 			Description: "PermissionSet with no resource that requires replacement",
 			ResourceToAccess: map[string]storage.Access{
-				resources.Access.String(): storage.Access_READ_ACCESS,
-				resources.Alert.String():  storage.Access_READ_WRITE_ACCESS,
+				Access: storage.Access_READ_ACCESS,
+				Alert:  storage.Access_READ_WRITE_ACCESS,
 			},
 		},
 		{
@@ -57,7 +77,7 @@ var (
 			Name:        "TestSet02",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is not yet set",
 			ResourceToAccess: map[string]storage.Access{
-				resources.NetworkBaseline.String(): storage.Access_READ_ACCESS,
+				NetworkBaseline: storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -65,8 +85,8 @@ var (
 			Name:        "TestSet03",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with lower access",
 			ResourceToAccess: map[string]storage.Access{
-				resources.DeploymentExtension.String(): storage.Access_NO_ACCESS,
-				resources.NetworkBaseline.String():     storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_NO_ACCESS,
+				NetworkBaseline:     storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -74,8 +94,8 @@ var (
 			Name:        "TestSet04",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with same access",
 			ResourceToAccess: map[string]storage.Access{
-				resources.DeploymentExtension.String(): storage.Access_READ_ACCESS,
-				resources.NetworkBaseline.String():     storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_READ_ACCESS,
+				NetworkBaseline:     storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -83,8 +103,8 @@ var (
 			Name:        "TestSet05",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with same access",
 			ResourceToAccess: map[string]storage.Access{
-				resources.DeploymentExtension.String(): storage.Access_READ_WRITE_ACCESS,
-				resources.NetworkBaseline.String():     storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_READ_WRITE_ACCESS,
+				NetworkBaseline:     storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -92,8 +112,8 @@ var (
 			Name:        "TestSet06",
 			Description: "PermissionSet with two replaced resources for which the replacement resource is not yet set",
 			ResourceToAccess: map[string]storage.Access{
-				resources.NetworkBaseline.String():  storage.Access_READ_WRITE_ACCESS,
-				resources.ProcessWhitelist.String(): storage.Access_READ_ACCESS,
+				NetworkBaseline:  storage.Access_READ_WRITE_ACCESS,
+				ProcessWhitelist: storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -101,9 +121,9 @@ var (
 			Name:        "TestSet07",
 			Description: "PermissionSet with two replaced resources for which the replacement resource is set with higher access",
 			ResourceToAccess: map[string]storage.Access{
-				resources.DeploymentExtension.String(): storage.Access_READ_WRITE_ACCESS,
-				resources.NetworkBaseline.String():     storage.Access_READ_ACCESS,
-				resources.ProcessWhitelist.String():    storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_READ_WRITE_ACCESS,
+				NetworkBaseline:     storage.Access_READ_ACCESS,
+				ProcessWhitelist:    storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -111,9 +131,9 @@ var (
 			Name:        "TestSet08",
 			Description: "PermissionSet with two replaced resources for which the replacement resource is set with access lower than one of the replaced resources",
 			ResourceToAccess: map[string]storage.Access{
-				resources.DeploymentExtension.String(): storage.Access_READ_ACCESS,
-				resources.NetworkBaseline.String():     storage.Access_READ_ACCESS,
-				resources.ProcessWhitelist.String():    storage.Access_READ_WRITE_ACCESS,
+				DeploymentExtension: storage.Access_READ_ACCESS,
+				NetworkBaseline:     storage.Access_READ_ACCESS,
+				ProcessWhitelist:    storage.Access_READ_WRITE_ACCESS,
 			},
 		},
 		{
@@ -121,9 +141,9 @@ var (
 			Name:        "TestSet09",
 			Description: "PermissionSet with two replaced resources for which the replacement resource is set with access lower than both replaced resources",
 			ResourceToAccess: map[string]storage.Access{
-				resources.DeploymentExtension.String(): storage.Access_NO_ACCESS,
-				resources.NetworkBaseline.String():     storage.Access_READ_ACCESS,
-				resources.ProcessWhitelist.String():    storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_NO_ACCESS,
+				NetworkBaseline:     storage.Access_READ_ACCESS,
+				ProcessWhitelist:    storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -131,9 +151,9 @@ var (
 			Name:        "TestSet10",
 			Description: "PermissionSet with two replaced resources for which the replacement resource is set with access lower than both replaced resources",
 			ResourceToAccess: map[string]storage.Access{
-				resources.DeploymentExtension.String(): storage.Access_NO_ACCESS,
-				resources.NetworkBaseline.String():     storage.Access_READ_WRITE_ACCESS,
-				resources.ProcessWhitelist.String():    storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_NO_ACCESS,
+				NetworkBaseline:     storage.Access_READ_WRITE_ACCESS,
+				ProcessWhitelist:    storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -142,63 +162,64 @@ var (
 			Description: "PermissionSet with access defined for all existing resource types",
 			ResourceToAccess: map[string]storage.Access{
 				// Replacing resources
-				resources.Access.String():              storage.Access_READ_ACCESS,
-				resources.Administration.String():      storage.Access_READ_ACCESS,
-				resources.Compliance.String():          storage.Access_NO_ACCESS,
-				resources.DeploymentExtension.String(): storage.Access_NO_ACCESS,
-				resources.Image.String():               storage.Access_NO_ACCESS,
-				resources.Integration.String():         storage.Access_READ_WRITE_ACCESS,
+				Access:              storage.Access_READ_ACCESS,
+				Administration:      storage.Access_READ_ACCESS,
+				Compliance:          storage.Access_NO_ACCESS,
+				DeploymentExtension: storage.Access_NO_ACCESS,
+				Image:               storage.Access_NO_ACCESS,
+				Integration:         storage.Access_READ_WRITE_ACCESS,
 				// Replaced resources
-				resources.AllComments.String():           storage.Access_NO_ACCESS,
-				resources.APIToken.String():              storage.Access_READ_WRITE_ACCESS,
-				resources.AuthProvider.String():          storage.Access_NO_ACCESS,
-				resources.BackupPlugins.String():         storage.Access_NO_ACCESS,
-				resources.ComplianceRuns.String():        storage.Access_READ_WRITE_ACCESS,
-				resources.ComplianceRunSchedule.String(): storage.Access_NO_ACCESS,
-				resources.Config.String():                storage.Access_READ_ACCESS,
-				resources.DebugLogs.String():             storage.Access_READ_WRITE_ACCESS,
-				resources.Group.String():                 storage.Access_NO_ACCESS,
-				resources.ImageComponent.String():        storage.Access_READ_ACCESS,
-				resources.ImageIntegration.String():      storage.Access_NO_ACCESS,
-				resources.Indicator.String():             storage.Access_READ_ACCESS,
-				resources.Licenses.String():              storage.Access_READ_ACCESS,
-				resources.NetworkBaseline.String():       storage.Access_READ_ACCESS,
-				resources.NetworkGraphConfig.String():    storage.Access_NO_ACCESS,
-				resources.Notifier.String():              storage.Access_READ_WRITE_ACCESS,
-				resources.ProbeUpload.String():           storage.Access_READ_WRITE_ACCESS,
-				resources.ProcessWhitelist.String():      storage.Access_READ_WRITE_ACCESS,
-				resources.Risk.String():                  storage.Access_READ_WRITE_ACCESS,
-				resources.Role.String():                  storage.Access_READ_WRITE_ACCESS,
-				resources.ScannerBundle.String():         storage.Access_NO_ACCESS,
-				resources.ScannerDefinitions.String():    storage.Access_READ_ACCESS,
-				resources.SensorUpgradeConfig.String():   storage.Access_READ_ACCESS,
-				resources.ServiceIdentity.String():       storage.Access_READ_ACCESS,
-				resources.SignatureIntegration.String():  storage.Access_NO_ACCESS,
-				resources.User.String():                  storage.Access_READ_WRITE_ACCESS,
+				APIToken:             storage.Access_READ_WRITE_ACCESS,
+				AuthProvider:         storage.Access_NO_ACCESS,
+				BackupPlugins:        storage.Access_NO_ACCESS,
+				Group:                storage.Access_NO_ACCESS,
+				ImageComponent:       storage.Access_READ_ACCESS,
+				ImageIntegration:     storage.Access_NO_ACCESS,
+				Indicator:            storage.Access_READ_ACCESS,
+				Licenses:             storage.Access_READ_ACCESS,
+				NetworkBaseline:      storage.Access_READ_ACCESS,
+				Notifier:             storage.Access_READ_WRITE_ACCESS,
+				ProcessWhitelist:     storage.Access_READ_WRITE_ACCESS,
+				Risk:                 storage.Access_READ_WRITE_ACCESS,
+				Role:                 storage.Access_READ_WRITE_ACCESS,
+				SignatureIntegration: storage.Access_NO_ACCESS,
+				User:                 storage.Access_READ_WRITE_ACCESS,
+				// To-be-replaced-later resources
+				AllComments:           storage.Access_NO_ACCESS,
+				ComplianceRuns:        storage.Access_READ_WRITE_ACCESS,
+				ComplianceRunSchedule: storage.Access_NO_ACCESS,
+				Config:                storage.Access_READ_ACCESS,
+				DebugLogs:             storage.Access_READ_WRITE_ACCESS,
+				NetworkGraphConfig:    storage.Access_NO_ACCESS,
+				ProbeUpload:           storage.Access_READ_WRITE_ACCESS,
+				ScannerBundle:         storage.Access_NO_ACCESS,
+				ScannerDefinitions:    storage.Access_READ_ACCESS,
+				SensorUpgradeConfig:   storage.Access_READ_ACCESS,
+				ServiceIdentity:       storage.Access_READ_ACCESS,
 				// Non-replaced resources
-				resources.Alert.String():                            storage.Access_NO_ACCESS,
-				resources.CVE.String():                              storage.Access_NO_ACCESS,
-				resources.Cluster.String():                          storage.Access_READ_WRITE_ACCESS,
-				resources.Deployment.String():                       storage.Access_READ_ACCESS,
-				resources.Detection.String():                        storage.Access_NO_ACCESS,
-				resources.K8sRole.String():                          storage.Access_NO_ACCESS,
-				resources.K8sRoleBinding.String():                   storage.Access_READ_ACCESS,
-				resources.K8sSubject.String():                       storage.Access_NO_ACCESS,
-				resources.Namespace.String():                        storage.Access_READ_WRITE_ACCESS,
-				resources.NetworkGraph.String():                     storage.Access_NO_ACCESS,
-				resources.NetworkPolicy.String():                    storage.Access_NO_ACCESS,
-				resources.Node.String():                             storage.Access_READ_ACCESS,
-				resources.Policy.String():                           storage.Access_READ_WRITE_ACCESS,
-				resources.Secret.String():                           storage.Access_READ_ACCESS,
-				resources.ServiceAccount.String():                   storage.Access_NO_ACCESS,
-				resources.VulnerabilityManagementApprovals.String(): storage.Access_READ_WRITE_ACCESS,
-				resources.VulnerabilityManagementRequests.String():  storage.Access_READ_WRITE_ACCESS,
-				resources.VulnerabilityReports.String():             storage.Access_READ_ACCESS,
-				resources.WatchedImage.String():                     storage.Access_READ_ACCESS,
+				Alert:                            storage.Access_NO_ACCESS,
+				CVE:                              storage.Access_NO_ACCESS,
+				Cluster:                          storage.Access_READ_WRITE_ACCESS,
+				Deployment:                       storage.Access_READ_ACCESS,
+				Detection:                        storage.Access_NO_ACCESS,
+				K8sRole:                          storage.Access_NO_ACCESS,
+				K8sRoleBinding:                   storage.Access_READ_ACCESS,
+				K8sSubject:                       storage.Access_NO_ACCESS,
+				Namespace:                        storage.Access_READ_WRITE_ACCESS,
+				NetworkGraph:                     storage.Access_NO_ACCESS,
+				NetworkPolicy:                    storage.Access_NO_ACCESS,
+				Node:                             storage.Access_READ_ACCESS,
+				Policy:                           storage.Access_READ_WRITE_ACCESS,
+				Secret:                           storage.Access_READ_ACCESS,
+				ServiceAccount:                   storage.Access_NO_ACCESS,
+				VulnerabilityManagementApprovals: storage.Access_READ_WRITE_ACCESS,
+				VulnerabilityManagementRequests:  storage.Access_READ_WRITE_ACCESS,
+				VulnerabilityReports:             storage.Access_READ_ACCESS,
+				WatchedImage:                     storage.Access_READ_ACCESS,
 				// Internal resources
-				resources.ComplianceOperator.String(): storage.Access_READ_ACCESS,
-				resources.InstallationInfo.String():   storage.Access_READ_ACCESS,
-				resources.Version.String():            storage.Access_READ_WRITE_ACCESS,
+				ComplianceOperator: storage.Access_READ_ACCESS,
+				InstallationInfo:   storage.Access_READ_ACCESS,
+				Version:            storage.Access_READ_WRITE_ACCESS,
 			},
 		},
 		{
@@ -207,63 +228,64 @@ var (
 			Description: "PermissionSet with access defined to read for all existing resource types except DebugLogs (Analyst)",
 			ResourceToAccess: map[string]storage.Access{
 				// Replacing resources
-				resources.Access.String():              storage.Access_READ_ACCESS,
-				resources.Administration.String():      storage.Access_READ_ACCESS,
-				resources.Compliance.String():          storage.Access_READ_ACCESS,
-				resources.DeploymentExtension.String(): storage.Access_READ_ACCESS,
-				resources.Image.String():               storage.Access_READ_ACCESS,
-				resources.Integration.String():         storage.Access_READ_ACCESS,
+				Access:              storage.Access_READ_ACCESS,
+				Administration:      storage.Access_READ_ACCESS,
+				Compliance:          storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_READ_ACCESS,
+				Image:               storage.Access_READ_ACCESS,
+				Integration:         storage.Access_READ_ACCESS,
 				// Replaced resources
-				resources.AllComments.String():           storage.Access_READ_ACCESS,
-				resources.APIToken.String():              storage.Access_READ_ACCESS,
-				resources.AuthProvider.String():          storage.Access_READ_ACCESS,
-				resources.BackupPlugins.String():         storage.Access_READ_ACCESS,
-				resources.ComplianceRuns.String():        storage.Access_READ_ACCESS,
-				resources.ComplianceRunSchedule.String(): storage.Access_READ_ACCESS,
-				resources.Config.String():                storage.Access_READ_ACCESS,
-				resources.DebugLogs.String():             storage.Access_NO_ACCESS,
-				resources.Group.String():                 storage.Access_READ_ACCESS,
-				resources.ImageComponent.String():        storage.Access_READ_ACCESS,
-				resources.ImageIntegration.String():      storage.Access_READ_ACCESS,
-				resources.Indicator.String():             storage.Access_READ_ACCESS,
-				resources.Licenses.String():              storage.Access_READ_ACCESS,
-				resources.NetworkBaseline.String():       storage.Access_READ_ACCESS,
-				resources.NetworkGraphConfig.String():    storage.Access_READ_ACCESS,
-				resources.Notifier.String():              storage.Access_READ_ACCESS,
-				resources.ProbeUpload.String():           storage.Access_READ_ACCESS,
-				resources.ProcessWhitelist.String():      storage.Access_READ_ACCESS,
-				resources.Risk.String():                  storage.Access_READ_ACCESS,
-				resources.Role.String():                  storage.Access_READ_ACCESS,
-				resources.ScannerBundle.String():         storage.Access_READ_ACCESS,
-				resources.ScannerDefinitions.String():    storage.Access_READ_ACCESS,
-				resources.SensorUpgradeConfig.String():   storage.Access_READ_ACCESS,
-				resources.ServiceIdentity.String():       storage.Access_READ_ACCESS,
-				resources.SignatureIntegration.String():  storage.Access_READ_ACCESS,
-				resources.User.String():                  storage.Access_READ_ACCESS,
+				APIToken:             storage.Access_READ_ACCESS,
+				AuthProvider:         storage.Access_READ_ACCESS,
+				BackupPlugins:        storage.Access_READ_ACCESS,
+				Group:                storage.Access_READ_ACCESS,
+				ImageComponent:       storage.Access_READ_ACCESS,
+				ImageIntegration:     storage.Access_READ_ACCESS,
+				Indicator:            storage.Access_READ_ACCESS,
+				Licenses:             storage.Access_READ_ACCESS,
+				NetworkBaseline:      storage.Access_READ_ACCESS,
+				Notifier:             storage.Access_READ_ACCESS,
+				ProcessWhitelist:     storage.Access_READ_ACCESS,
+				Risk:                 storage.Access_READ_ACCESS,
+				Role:                 storage.Access_READ_ACCESS,
+				SignatureIntegration: storage.Access_READ_ACCESS,
+				User:                 storage.Access_READ_ACCESS,
+				// To-be-replaced-later resources
+				AllComments:           storage.Access_READ_ACCESS,
+				ComplianceRuns:        storage.Access_READ_ACCESS,
+				ComplianceRunSchedule: storage.Access_READ_ACCESS,
+				Config:                storage.Access_READ_ACCESS,
+				DebugLogs:             storage.Access_NO_ACCESS,
+				NetworkGraphConfig:    storage.Access_READ_ACCESS,
+				ProbeUpload:           storage.Access_READ_ACCESS,
+				ScannerBundle:         storage.Access_READ_ACCESS,
+				ScannerDefinitions:    storage.Access_READ_ACCESS,
+				SensorUpgradeConfig:   storage.Access_READ_ACCESS,
+				ServiceIdentity:       storage.Access_READ_ACCESS,
 				// Non-replaced resources
-				resources.Alert.String():                            storage.Access_READ_ACCESS,
-				resources.CVE.String():                              storage.Access_READ_ACCESS,
-				resources.Cluster.String():                          storage.Access_READ_ACCESS,
-				resources.Deployment.String():                       storage.Access_READ_ACCESS,
-				resources.Detection.String():                        storage.Access_READ_ACCESS,
-				resources.K8sRole.String():                          storage.Access_READ_ACCESS,
-				resources.K8sRoleBinding.String():                   storage.Access_READ_ACCESS,
-				resources.K8sSubject.String():                       storage.Access_READ_ACCESS,
-				resources.Namespace.String():                        storage.Access_READ_ACCESS,
-				resources.NetworkGraph.String():                     storage.Access_READ_ACCESS,
-				resources.NetworkPolicy.String():                    storage.Access_READ_ACCESS,
-				resources.Node.String():                             storage.Access_READ_ACCESS,
-				resources.Policy.String():                           storage.Access_READ_ACCESS,
-				resources.Secret.String():                           storage.Access_READ_ACCESS,
-				resources.ServiceAccount.String():                   storage.Access_READ_ACCESS,
-				resources.VulnerabilityManagementApprovals.String(): storage.Access_READ_ACCESS,
-				resources.VulnerabilityManagementRequests.String():  storage.Access_READ_ACCESS,
-				resources.VulnerabilityReports.String():             storage.Access_READ_ACCESS,
-				resources.WatchedImage.String():                     storage.Access_READ_ACCESS,
+				Alert:                            storage.Access_READ_ACCESS,
+				CVE:                              storage.Access_READ_ACCESS,
+				Cluster:                          storage.Access_READ_ACCESS,
+				Deployment:                       storage.Access_READ_ACCESS,
+				Detection:                        storage.Access_READ_ACCESS,
+				K8sRole:                          storage.Access_READ_ACCESS,
+				K8sRoleBinding:                   storage.Access_READ_ACCESS,
+				K8sSubject:                       storage.Access_READ_ACCESS,
+				Namespace:                        storage.Access_READ_ACCESS,
+				NetworkGraph:                     storage.Access_READ_ACCESS,
+				NetworkPolicy:                    storage.Access_READ_ACCESS,
+				Node:                             storage.Access_READ_ACCESS,
+				Policy:                           storage.Access_READ_ACCESS,
+				Secret:                           storage.Access_READ_ACCESS,
+				ServiceAccount:                   storage.Access_READ_ACCESS,
+				VulnerabilityManagementApprovals: storage.Access_READ_ACCESS,
+				VulnerabilityManagementRequests:  storage.Access_READ_ACCESS,
+				VulnerabilityReports:             storage.Access_READ_ACCESS,
+				WatchedImage:                     storage.Access_READ_ACCESS,
 				// Internal resources
-				resources.ComplianceOperator.String(): storage.Access_READ_ACCESS,
-				resources.InstallationInfo.String():   storage.Access_READ_ACCESS,
-				resources.Version.String():            storage.Access_READ_ACCESS,
+				ComplianceOperator: storage.Access_READ_ACCESS,
+				InstallationInfo:   storage.Access_READ_ACCESS,
+				Version:            storage.Access_READ_ACCESS,
 			},
 		},
 	}
@@ -274,8 +296,8 @@ var (
 			Name:        "TestSet01",
 			Description: "PermissionSet with no resource that requires replacement",
 			ResourceToAccess: map[string]storage.Access{
-				resources.Access.String(): storage.Access_READ_ACCESS,
-				resources.Alert.String():  storage.Access_READ_WRITE_ACCESS,
+				Access: storage.Access_READ_ACCESS,
+				Alert:  storage.Access_READ_WRITE_ACCESS,
 			},
 		},
 		{
@@ -283,7 +305,7 @@ var (
 			Name:        "TestSet02",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is not yet set",
 			ResourceToAccess: map[string]storage.Access{
-				resources.DeploymentExtension.String(): storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -292,7 +314,7 @@ var (
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with lower access",
 			ResourceToAccess: map[string]storage.Access{
 				// Keeps the access of the replacing resource which is lower
-				resources.DeploymentExtension.String(): storage.Access_NO_ACCESS,
+				DeploymentExtension: storage.Access_NO_ACCESS,
 			},
 		},
 		{
@@ -300,7 +322,7 @@ var (
 			Name:        "TestSet04",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with same access",
 			ResourceToAccess: map[string]storage.Access{
-				resources.DeploymentExtension.String(): storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -309,7 +331,7 @@ var (
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with same access",
 			ResourceToAccess: map[string]storage.Access{
 				// Keep the access of the replaced resource which is lower
-				resources.DeploymentExtension.String(): storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -318,7 +340,7 @@ var (
 			Description: "PermissionSet with two replaced resources for which the replacement resource is not yet set",
 			ResourceToAccess: map[string]storage.Access{
 				// Keep the lowest access of the replaced resources
-				resources.DeploymentExtension.String(): storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -327,7 +349,7 @@ var (
 			Description: "PermissionSet with two replaced resources for which the replacement resource is set with higher access",
 			ResourceToAccess: map[string]storage.Access{
 				// Keep the access of the replaced resources which is lower
-				resources.DeploymentExtension.String(): storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -336,7 +358,7 @@ var (
 			Description: "PermissionSet with two replaced resources for which the replacement resource is set with access lower than one of the replaced resources",
 			ResourceToAccess: map[string]storage.Access{
 				// Keep the lowest access of the replaced resources
-				resources.DeploymentExtension.String(): storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -344,7 +366,7 @@ var (
 			Name:        "TestSet09",
 			Description: "PermissionSet with two replaced resources for which the replacement resource is set with access lower than both replaced resources",
 			ResourceToAccess: map[string]storage.Access{
-				resources.DeploymentExtension.String(): storage.Access_NO_ACCESS,
+				DeploymentExtension: storage.Access_NO_ACCESS,
 			},
 		},
 		{
@@ -352,7 +374,7 @@ var (
 			Name:        "TestSet10",
 			Description: "PermissionSet with two replaced resources for which the replacement resource is set with access lower than both replaced resources",
 			ResourceToAccess: map[string]storage.Access{
-				resources.DeploymentExtension.String(): storage.Access_NO_ACCESS,
+				DeploymentExtension: storage.Access_NO_ACCESS,
 			},
 		},
 		{
@@ -361,36 +383,48 @@ var (
 			Description: "PermissionSet with access defined for all existing resource types",
 			ResourceToAccess: map[string]storage.Access{
 				// Replacing resources
-				resources.Access.String():              storage.Access_NO_ACCESS,
-				resources.Administration.String():      storage.Access_NO_ACCESS,
-				resources.Compliance.String():          storage.Access_NO_ACCESS,
-				resources.DeploymentExtension.String(): storage.Access_NO_ACCESS,
-				resources.Image.String():               storage.Access_NO_ACCESS,
-				resources.Integration.String():         storage.Access_NO_ACCESS,
+				Access:              storage.Access_NO_ACCESS,
+				Administration:      storage.Access_NO_ACCESS,
+				Compliance:          storage.Access_NO_ACCESS,
+				DeploymentExtension: storage.Access_NO_ACCESS,
+				Image:               storage.Access_NO_ACCESS,
+				Integration:         storage.Access_NO_ACCESS,
+				// To-be-replaced-later resources
+				AllComments:           storage.Access_NO_ACCESS,
+				ComplianceRuns:        storage.Access_READ_WRITE_ACCESS,
+				ComplianceRunSchedule: storage.Access_NO_ACCESS,
+				Config:                storage.Access_READ_ACCESS,
+				DebugLogs:             storage.Access_READ_WRITE_ACCESS,
+				NetworkGraphConfig:    storage.Access_NO_ACCESS,
+				ProbeUpload:           storage.Access_READ_WRITE_ACCESS,
+				ScannerBundle:         storage.Access_NO_ACCESS,
+				ScannerDefinitions:    storage.Access_READ_ACCESS,
+				SensorUpgradeConfig:   storage.Access_READ_ACCESS,
+				ServiceIdentity:       storage.Access_READ_ACCESS,
 				// Non-replaced resources
-				resources.Alert.String():                            storage.Access_NO_ACCESS,
-				resources.CVE.String():                              storage.Access_NO_ACCESS,
-				resources.Cluster.String():                          storage.Access_READ_WRITE_ACCESS,
-				resources.Deployment.String():                       storage.Access_READ_ACCESS,
-				resources.Detection.String():                        storage.Access_NO_ACCESS,
-				resources.K8sRole.String():                          storage.Access_NO_ACCESS,
-				resources.K8sRoleBinding.String():                   storage.Access_READ_ACCESS,
-				resources.K8sSubject.String():                       storage.Access_NO_ACCESS,
-				resources.Namespace.String():                        storage.Access_READ_WRITE_ACCESS,
-				resources.NetworkGraph.String():                     storage.Access_NO_ACCESS,
-				resources.NetworkPolicy.String():                    storage.Access_NO_ACCESS,
-				resources.Node.String():                             storage.Access_READ_ACCESS,
-				resources.Policy.String():                           storage.Access_READ_WRITE_ACCESS,
-				resources.Secret.String():                           storage.Access_READ_ACCESS,
-				resources.ServiceAccount.String():                   storage.Access_NO_ACCESS,
-				resources.VulnerabilityManagementApprovals.String(): storage.Access_READ_WRITE_ACCESS,
-				resources.VulnerabilityManagementRequests.String():  storage.Access_READ_WRITE_ACCESS,
-				resources.VulnerabilityReports.String():             storage.Access_READ_ACCESS,
-				resources.WatchedImage.String():                     storage.Access_READ_ACCESS,
+				Alert:                            storage.Access_NO_ACCESS,
+				CVE:                              storage.Access_NO_ACCESS,
+				Cluster:                          storage.Access_READ_WRITE_ACCESS,
+				Deployment:                       storage.Access_READ_ACCESS,
+				Detection:                        storage.Access_NO_ACCESS,
+				K8sRole:                          storage.Access_NO_ACCESS,
+				K8sRoleBinding:                   storage.Access_READ_ACCESS,
+				K8sSubject:                       storage.Access_NO_ACCESS,
+				Namespace:                        storage.Access_READ_WRITE_ACCESS,
+				NetworkGraph:                     storage.Access_NO_ACCESS,
+				NetworkPolicy:                    storage.Access_NO_ACCESS,
+				Node:                             storage.Access_READ_ACCESS,
+				Policy:                           storage.Access_READ_WRITE_ACCESS,
+				Secret:                           storage.Access_READ_ACCESS,
+				ServiceAccount:                   storage.Access_NO_ACCESS,
+				VulnerabilityManagementApprovals: storage.Access_READ_WRITE_ACCESS,
+				VulnerabilityManagementRequests:  storage.Access_READ_WRITE_ACCESS,
+				VulnerabilityReports:             storage.Access_READ_ACCESS,
+				WatchedImage:                     storage.Access_READ_ACCESS,
 				// Internal resources
-				resources.ComplianceOperator.String(): storage.Access_READ_ACCESS,
-				resources.InstallationInfo.String():   storage.Access_READ_ACCESS,
-				resources.Version.String():            storage.Access_READ_WRITE_ACCESS,
+				ComplianceOperator: storage.Access_READ_ACCESS,
+				InstallationInfo:   storage.Access_READ_ACCESS,
+				Version:            storage.Access_READ_WRITE_ACCESS,
 			},
 		},
 		{
@@ -399,36 +433,48 @@ var (
 			Description: "PermissionSet with access defined to read for all existing resource types except DebugLogs (Analyst)",
 			ResourceToAccess: map[string]storage.Access{
 				// Replacing resources
-				resources.Access.String():              storage.Access_READ_ACCESS,
-				resources.Administration.String():      storage.Access_NO_ACCESS,
-				resources.Compliance.String():          storage.Access_READ_ACCESS,
-				resources.DeploymentExtension.String(): storage.Access_READ_ACCESS,
-				resources.Image.String():               storage.Access_READ_ACCESS,
-				resources.Integration.String():         storage.Access_READ_ACCESS,
+				Access:              storage.Access_READ_ACCESS,
+				Administration:      storage.Access_READ_ACCESS,
+				Compliance:          storage.Access_READ_ACCESS,
+				DeploymentExtension: storage.Access_READ_ACCESS,
+				Image:               storage.Access_READ_ACCESS,
+				Integration:         storage.Access_READ_ACCESS,
+				// To-be-replaced-later resources
+				AllComments:           storage.Access_READ_ACCESS,
+				ComplianceRuns:        storage.Access_READ_ACCESS,
+				ComplianceRunSchedule: storage.Access_READ_ACCESS,
+				Config:                storage.Access_READ_ACCESS,
+				DebugLogs:             storage.Access_NO_ACCESS,
+				NetworkGraphConfig:    storage.Access_READ_ACCESS,
+				ProbeUpload:           storage.Access_READ_ACCESS,
+				ScannerBundle:         storage.Access_READ_ACCESS,
+				ScannerDefinitions:    storage.Access_READ_ACCESS,
+				SensorUpgradeConfig:   storage.Access_READ_ACCESS,
+				ServiceIdentity:       storage.Access_READ_ACCESS,
 				// Non-replaced resources
-				resources.Alert.String():                            storage.Access_READ_ACCESS,
-				resources.CVE.String():                              storage.Access_READ_ACCESS,
-				resources.Cluster.String():                          storage.Access_READ_ACCESS,
-				resources.Deployment.String():                       storage.Access_READ_ACCESS,
-				resources.Detection.String():                        storage.Access_READ_ACCESS,
-				resources.K8sRole.String():                          storage.Access_READ_ACCESS,
-				resources.K8sRoleBinding.String():                   storage.Access_READ_ACCESS,
-				resources.K8sSubject.String():                       storage.Access_READ_ACCESS,
-				resources.Namespace.String():                        storage.Access_READ_ACCESS,
-				resources.NetworkGraph.String():                     storage.Access_READ_ACCESS,
-				resources.NetworkPolicy.String():                    storage.Access_READ_ACCESS,
-				resources.Node.String():                             storage.Access_READ_ACCESS,
-				resources.Policy.String():                           storage.Access_READ_ACCESS,
-				resources.Secret.String():                           storage.Access_READ_ACCESS,
-				resources.ServiceAccount.String():                   storage.Access_READ_ACCESS,
-				resources.VulnerabilityManagementApprovals.String(): storage.Access_READ_ACCESS,
-				resources.VulnerabilityManagementRequests.String():  storage.Access_READ_ACCESS,
-				resources.VulnerabilityReports.String():             storage.Access_READ_ACCESS,
-				resources.WatchedImage.String():                     storage.Access_READ_ACCESS,
+				Alert:                            storage.Access_READ_ACCESS,
+				CVE:                              storage.Access_READ_ACCESS,
+				Cluster:                          storage.Access_READ_ACCESS,
+				Deployment:                       storage.Access_READ_ACCESS,
+				Detection:                        storage.Access_READ_ACCESS,
+				K8sRole:                          storage.Access_READ_ACCESS,
+				K8sRoleBinding:                   storage.Access_READ_ACCESS,
+				K8sSubject:                       storage.Access_READ_ACCESS,
+				Namespace:                        storage.Access_READ_ACCESS,
+				NetworkGraph:                     storage.Access_READ_ACCESS,
+				NetworkPolicy:                    storage.Access_READ_ACCESS,
+				Node:                             storage.Access_READ_ACCESS,
+				Policy:                           storage.Access_READ_ACCESS,
+				Secret:                           storage.Access_READ_ACCESS,
+				ServiceAccount:                   storage.Access_READ_ACCESS,
+				VulnerabilityManagementApprovals: storage.Access_READ_ACCESS,
+				VulnerabilityManagementRequests:  storage.Access_READ_ACCESS,
+				VulnerabilityReports:             storage.Access_READ_ACCESS,
+				WatchedImage:                     storage.Access_READ_ACCESS,
 				// Internal resources
-				resources.ComplianceOperator.String(): storage.Access_READ_ACCESS,
-				resources.InstallationInfo.String():   storage.Access_READ_ACCESS,
-				resources.Version.String():            storage.Access_READ_ACCESS,
+				ComplianceOperator: storage.Access_READ_ACCESS,
+				InstallationInfo:   storage.Access_READ_ACCESS,
+				Version:            storage.Access_READ_ACCESS,
 			},
 		},
 	}

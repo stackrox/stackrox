@@ -41,6 +41,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Removed Features
 ### Deprecated Features
+- ROX-11101: Similar to what was announced in 3.71.0 for ROX-8520, more permissions for permission sets will be grouped for simplification. As a result, the following permissions will be deprecated in favor of a new permission:
+  - New permission `Administration` will deprecate the permissions `AllComments, ComplianceRunSchedule, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity`.
+  - The permission `Compliance` will deprecate the permission `ComplianceRuns`.
 ### Technical Changes
 - ROX-11101: As announced in 3.71.0 (ROX-8520), some permissions for permissionsets are being grouped for simplification. The deprecation process will remove and replace the deprecated permissions with the replacing permission as listed below. The access level granted to the replacing permission will be the lowest of its defined access level if any and the defined access levels for all the permissions it replaces.  
   - Permission `Access` deprecates and replaces the permissions `AuthPlugin, AuthProvider, Group, Licenses, Role, User`.

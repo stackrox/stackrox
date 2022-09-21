@@ -16,8 +16,6 @@ const (
 // Replacement resources
 const (
 	Access              = "Access"
-	Administration      = "Administration"
-	Compliance          = "Compliance"
 	DeploymentExtension = "DeploymentExtension"
 	Image               = "Image"
 	Integration         = "Integration"
@@ -25,32 +23,21 @@ const (
 
 // Replaced resources
 const (
-	AllComments           = "AllComments"
-	APIToken              = "APIToken"
-	AuthProvider          = "AuthProvider"
-	BackupPlugins         = "BackupPlugins"
-	ComplianceRuns        = "ComplianceRuns"
-	ComplianceRunSchedule = "ComplianceRunSchedule"
-	Config                = "Config"
-	DebugLogs             = "DebugLogs"
-	Group                 = "Group"
-	ImageComponent        = "ImageComponent"
-	ImageIntegration      = "ImageIntegration"
-	Indicator             = "Indicator"
-	Licenses              = "Licenses"
-	NetworkBaseline       = "NetworkBaseline"
-	NetworkGraphConfig    = "NetworkGraphConfig"
-	Notifier              = "Notifier"
-	ProbeUpload           = "ProbeUpload"
-	ProcessWhitelist      = "ProcessWhitelist"
-	Risk                  = "Risk"
-	Role                  = "Role"
-	ScannerBundle         = "ScannerBundle"
-	ScannerDefinitions    = "ScannerDefinitions"
-	SensorUpgradeConfig   = "SensorUpgradeConfig"
-	ServiceIdentity       = "ServiceIdentity"
-	SignatureIntegration  = "SignatureIntegration"
-	User                  = "User"
+	APIToken             = "APIToken"
+	AuthProvider         = "AuthProvider"
+	BackupPlugins        = "BackupPlugins"
+	Group                = "Group"
+	ImageComponent       = "ImageComponent"
+	ImageIntegration     = "ImageIntegration"
+	Indicator            = "Indicator"
+	Licenses             = "Licenses"
+	NetworkBaseline      = "NetworkBaseline"
+	Notifier             = "Notifier"
+	ProcessWhitelist     = "ProcessWhitelist"
+	Risk                 = "Risk"
+	Role                 = "Role"
+	SignatureIntegration = "SignatureIntegration"
+	User                 = "User"
 )
 
 var (
@@ -65,32 +52,21 @@ var (
 	prefix = []byte("permission_sets")
 
 	replacements = map[string]string{
-		AllComments:           Administration,
-		APIToken:              Integration,
-		AuthProvider:          Access,
-		BackupPlugins:         Integration,
-		ComplianceRuns:        Compliance,
-		ComplianceRunSchedule: Administration,
-		Config:                Administration,
-		DebugLogs:             Administration,
-		Group:                 Access,
-		ImageComponent:        Image,
-		ImageIntegration:      Integration,
-		Indicator:             DeploymentExtension,
-		Licenses:              Access,
-		NetworkBaseline:       DeploymentExtension,
-		NetworkGraphConfig:    Administration,
-		Notifier:              Integration,
-		ProbeUpload:           Administration,
-		ProcessWhitelist:      DeploymentExtension,
-		Risk:                  DeploymentExtension,
-		Role:                  Access,
-		ScannerBundle:         Administration,
-		ScannerDefinitions:    Administration,
-		SensorUpgradeConfig:   Administration,
-		ServiceIdentity:       Administration,
-		SignatureIntegration:  Integration,
-		User:                  Access,
+		APIToken:             Integration,
+		AuthProvider:         Access,
+		BackupPlugins:        Integration,
+		Group:                Access,
+		ImageComponent:       Image,
+		ImageIntegration:     Integration,
+		Indicator:            DeploymentExtension,
+		Licenses:             Access,
+		NetworkBaseline:      DeploymentExtension,
+		Notifier:             Integration,
+		ProcessWhitelist:     DeploymentExtension,
+		Risk:                 DeploymentExtension,
+		Role:                 Access,
+		SignatureIntegration: Integration,
+		User:                 Access,
 	}
 
 	readOpts  = gorocksdb.NewDefaultReadOptions()
