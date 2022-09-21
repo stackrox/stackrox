@@ -213,7 +213,7 @@ func main() {
 	}
 
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
-		message.SensorHello("12345678-1234-1234-1234-123456789abc"),
+		message.SensorHello("00000000-0000-4000-A000-000000000000"),
 		message.ClusterConfig(),
 		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
