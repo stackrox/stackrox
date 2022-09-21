@@ -20,12 +20,10 @@ defaults:
     image:
       name: [< required "" .ImageRemote >]
       tag: [< required "" .ImageTag >]
-    [<- if .FeatureFlags.ROX_POSTGRES_DATASTORE >]
     dbImage:
       name: [< required "" .CentralDBImageRemote >]
       tag: [< required "" .CentralDBImageTag >]
 
-    [<- end >]
 
     resources:
       requests:

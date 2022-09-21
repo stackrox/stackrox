@@ -44,6 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	if err != nil {
 		return err
 	}
+	log.WriteToStderrf("SHREWS -- policies migration %d", len(policies))
 	if len(policies) > 0 {
 		if err = store.UpsertMany(ctx, policies); err != nil {
 			log.WriteToStderrf("failed to persist policies to store %v", err)

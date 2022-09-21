@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/timeutil"
@@ -29,6 +30,7 @@ import (
 )
 
 var (
+	log        = logging.LoggerForModule()
 	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Cluster)): {
 			"/v1.ClustersService/GetClusters",
@@ -179,6 +181,7 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 
 // GetClusters returns the currently defined clusters.
 func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersRequest) (*v1.ClustersList, error) {
+	log.Infof("SHREWS -- GetClusters -- %v", req)
 	q, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "invalid query %q: %v", req.GetQuery(), err)
@@ -189,6 +192,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 		return nil, err
 	}
 
+	log.Infof("SHREWS -- GetClusters -- %v", clusters)
 	if !features.DecommissionedClusterRetention.Enabled() {
 		return &v1.ClustersList{
 			Clusters: clusters,

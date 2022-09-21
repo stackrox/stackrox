@@ -46,6 +46,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	var clusters []*storage.Cluster
 	err := walk(ctx, legacyStore, func(obj *storage.Cluster) error {
 		clusters = append(clusters, obj)
+		log.WriteToStderrf("SHREWS -- clusters migration %d", len(clusters))
 		if len(clusters) == batchSize {
 			if err := store.UpsertMany(ctx, clusters); err != nil {
 				log.WriteToStderrf("failed to persist clusters to store %v", err)
@@ -58,6 +59,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	if err != nil {
 		return err
 	}
+	log.WriteToStderrf("SHREWS -- clusters migration %d", len(clusters))
 	if len(clusters) > 0 {
 		if err = store.UpsertMany(ctx, clusters); err != nil {
 			log.WriteToStderrf("failed to persist clusters to store %v", err)

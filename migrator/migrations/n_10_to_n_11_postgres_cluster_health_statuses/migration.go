@@ -31,6 +31,17 @@ var (
 				return errors.Wrap(err,
 					"moving cluster_health_statuses from rocksdb to postgres")
 			}
+			if err := prune(databases.PostgresDB); err != nil {
+				return errors.Wrap(err,
+					"pruning cluster_health_statuses")
+			}
+			// Now that migrations are complete, turn the constraints back on
+			gormConfig := databases.GormDB.Config
+			gormConfig.DisableForeignKeyConstraintWhenMigrating = false
+			if err := databases.GormDB.Apply(gormConfig); err != nil {
+				return errors.Wrap(err, "failed to turn on foreign key constraints")
+			}
+			pkgSchema.ApplySchemaForTable(context.Background(), databases.GormDB, schema.Table)
 			return nil
 		},
 	}
@@ -42,6 +53,12 @@ var (
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
+	// We need to migrate so turn off foreign key constraints
+	gormConfig := gormDB.Config
+	gormConfig.DisableForeignKeyConstraintWhenMigrating = true
+	if err := gormDB.Apply(gormConfig); err != nil {
+		return errors.Wrap(err, "failed to turn off foreign key constraints")
+	}
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var clusterHealthStatuses []*storage.ClusterHealthStatus
 	err := walk(ctx, legacyStore, func(obj *storage.ClusterHealthStatus) error {
@@ -69,6 +86,19 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 
 func walk(ctx context.Context, s legacy.Store, fn func(obj *storage.ClusterHealthStatus) error) error {
 	return s.Walk(ctx, fn)
+}
+
+func prune(postgresDB *pgxpool.Pool) error {
+	ctx := sac.WithAllAccess(context.Background())
+	deleteStmt := `DELETE FROM cluster_health_statuses child WHERE NOT EXISTS
+		(SELECT * FROM clusters parent WHERE
+		child.Id = parent.Id)`
+	log.WriteToStderr(deleteStmt)
+	if _, err := postgresDB.Exec(ctx, deleteStmt); err != nil {
+		log.WriteToStderrf("failed to clean up orphaned data for %s", schema.Table)
+		return err
+	}
+	return nil
 }
 
 func init() {

@@ -2,6 +2,7 @@
 package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 {{- $ := . }}
 {{- $name := .TrimmedType|lowerCamelCase }}
+{{- $table := .Table|lowerCase }}
 {{ $boltDB := eq .Migration.MigrateFromDB "boltdb" }}
 {{ $dackbox := eq .Migration.MigrateFromDB "dackbox" }}
 {{ $rocksDB := or $dackbox (eq .Migration.MigrateFromDB "rocksdb") }}
@@ -49,6 +50,19 @@ var (
 				return errors.Wrap(err,
 					"moving {{.Table|lowerCase}} from rocksdb to postgres")
 			}
+			{{- if gt (len .Schema.RelationshipsToDefineAsForeignKeys) 0 }}
+			if err := prune(databases.PostgresDB); err != nil {
+				return errors.Wrap(err,
+				"pruning {{.Table|lowerCase}}")
+			}
+			// Now that migrations are complete, turn the constraints back on
+			gormConfig := databases.GormDB.Config
+			gormConfig.DisableForeignKeyConstraintWhenMigrating = false
+			if err := databases.GormDB.Apply(gormConfig); err != nil {
+				return errors.Wrap(err, "failed to turn on foreign key constraints")
+			}
+			pkgSchema.ApplySchemaForTable(context.Background(), databases.GormDB, schema.Table)
+			{{- end}}
 			return nil
 		},
 	}
@@ -62,6 +76,14 @@ var (
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
+	{{- if gt (len .Schema.RelationshipsToDefineAsForeignKeys) 0 }}
+	// We need to migrate so turn off foreign key constraints
+	gormConfig := gormDB.Config
+	gormConfig.DisableForeignKeyConstraintWhenMigrating = true
+	if err := gormDB.Apply(gormConfig); err != nil {
+		return errors.Wrap(err, "failed to turn off foreign key constraints")
+	}
+	{{- end }}
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	{{- if .Migration.SingletonStore}}
 	obj, found, err := legacyStore.Get(ctx)
@@ -142,6 +164,34 @@ func store_walk(ctx context.Context, s legacy.Store, fn func(obj *{{.Type}}) err
 	return nil
 }
 {{end}}
+{{- if gt (len (.Schema.RelationshipsToDefineAsForeignKeys)) 0 }}
+func prune(postgresDB *pgxpool.Pool) error {
+{{- range $idx, $rel := .Schema.RelationshipsToDefineAsForeignKeys }}
+	ctx := sac.WithAllAccess(context.Background())
+	deleteStmt := `DELETE FROM {{$table}} child WHERE NOT EXISTS
+		(SELECT * FROM {{$rel.OtherSchema.Table}} parent WHERE
+		{{range $idx2, $col := $rel.MappedColumnNames}}{{if $idx2}} AND {{end}}child.{{ $col.ColumnNameInThisSchema }} = parent.{{ $col.ColumnNameInOtherSchema }}{{end}})`
+	log.WriteToStderr(deleteStmt)
+	if _, err := postgresDB.Exec(ctx, deleteStmt); err != nil {
+		log.WriteToStderrf("failed to clean up orphaned data for %s", schema.Table)
+		return err
+	}
+{{- end}}
+{{- range $idxChild, $child := .Schema.Children }}
+	{{- range $idxChildForeign, $childRel := $child.RelationshipsToDefineAsForeignKeys }}
+	deleteStmt = `DELETE FROM {{$child.Table}} child WHERE NOT EXISTS
+	(SELECT * FROM {{$childRel.OtherSchema.Table}} parent WHERE
+	{{range $idxChild2, $col := $childRel.MappedColumnNames}}{{if $idxChild2}} AND {{end}}child.{{ $col.ColumnNameInThisSchema }} = parent.{{ $col.ColumnNameInOtherSchema }}{{end}})`
+	log.WriteToStderr(deleteStmt)
+	if _, err := postgresDB.Exec(ctx, deleteStmt); err != nil {
+		log.WriteToStderrf("failed to clean up orphaned data for %s", schema.Table)
+		return err
+	}
+	{{- end}}
+{{- end}}
+	return nil
+}
+{{- end}}
 
 func init() {
 	migrations.MustRegisterMigration(migration)

@@ -4,7 +4,6 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/features"
 	helmTemplate "github.com/stackrox/rox/pkg/helm/template"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/zip"
@@ -368,10 +367,10 @@ var (
 // based on the given config. The values are returned as a *zip.File slice, containing
 // two entries, one for `values-public.yaml`, and one for `values-private.yaml`.
 func renderNewHelmValues(c Config) ([]*zip.File, error) {
-	privateTemplate := privateValuesTemplate
-	if features.PostgresDatastore.Enabled() {
-		privateTemplate = privateValuesPostgresTemplate
-	}
+	// privateTemplate := privateValuesTemplate
+	// if features.PostgresDatastore.Enabled() {
+	privateTemplate := privateValuesPostgresTemplate
+	// }
 
 	publicValuesBytes, err := templates.ExecuteToBytes(publicValuesTemplate, &c)
 	if err != nil {

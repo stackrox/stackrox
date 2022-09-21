@@ -54,7 +54,7 @@ function hotload_binary {
   echo "**********"
   echo
 
-  binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux_amd64/${local_name}")
+  binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux/${local_name}")
   kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${binary_name}'","name":"'binary-${local_name}'"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"'binary-${local_name}'"}]}}}}'
   kubectl -n stackrox set env "deploy/$deployment" "ROX_HOTRELOAD=true"
 }
@@ -162,9 +162,9 @@ function launch_central {
 
     add_args -i "${MAIN_IMAGE}"
 
-    if [[ "${ROX_POSTGRES_DATASTORE}" == "true" && -n "${CENTRAL_DB_IMAGE}" ]]; then
-        add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
-    fi
+#    if [[ "${ROX_POSTGRES_DATASTORE}" == "true" && -n "${CENTRAL_DB_IMAGE}" ]]; then
+    add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
+#    fi
 
     add_args "--image-defaults=${ROXCTL_ROX_IMAGE_FLAVOR}"
 
@@ -372,11 +372,7 @@ function launch_central {
     # On some systems there's a race condition when port-forward connects to central but its pod then gets deleted due
     # to ongoing modifications to the central deployment. This port-forward dies and the script hangs "Waiting for
     # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
-    rollout_wait_timeout="3m"
-    if [[ "${IS_RACE_BUILD:-}" == "true" ]]; then
-      rollout_wait_timeout="9m"
-    fi
-    kubectl -n stackrox rollout status deploy/central --timeout="$rollout_wait_timeout"
+    kubectl -n stackrox rollout status deploy/central --timeout=6m
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
@@ -500,7 +496,6 @@ function launch_sensor {
         --set "clusterName=${CLUSTER}"
         --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
         --set "image.main.repository=${MAIN_IMAGE_REPO}"
-        --set "image.main.tag=${MAIN_IMAGE_TAG}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
         --set "env.openshift=$([[ "$ORCH" == "openshift" ]] && echo "true" || echo "false")"
       )

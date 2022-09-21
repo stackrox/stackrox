@@ -12,7 +12,6 @@ metadata:
 data:
   central-config.yaml: |
     {{- ._rox.central._config | nindent 4 }}
-    {{- if ._rox.central.enableCentralDB }}
     centralDB:
       source: >
         host=central-db.{{ .Release.Namespace }}.svc
@@ -23,4 +22,3 @@ data:
         statement_timeout=600000
         pool_min_conns=1
         pool_max_conns=90
-    {{- end }}
