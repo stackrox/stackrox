@@ -46,7 +46,13 @@ COPY operator/build/status.sh status.sh
 RUN git init && git add .
 
 # Needed with apollo-ci builder
+# TODO: remove once https://github.com/stackrox/rox-ci-image/pull/167 lands and the builder image is updated beyond
+# stackrox-build-0.3.48 version.
 ENV CGO_LDFLAGS=""
+
+# We've been historically building operator without CGO both upstream and downstream. The apollo-ci image has that
+# enabled by default, therefore we disable CGO here to keep doing the thing we used to.
+ENV CGO_ENABLED=0
 
 # Build the operator binary.
 RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build.sh operator
