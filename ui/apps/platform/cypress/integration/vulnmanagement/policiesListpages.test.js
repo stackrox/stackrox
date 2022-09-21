@@ -1,8 +1,14 @@
 import { selectors } from '../../constants/VulnManagementPage';
 import { selectors as policySelectors } from '../../constants/PoliciesPagePatternFly';
 import withAuth from '../../helpers/basicAuth';
+import {
+    assertSortedItems,
+    callbackForPairOfAscendingPolicySeverityValuesFromElements,
+    callbackForPairOfDescendingPolicySeverityValuesFromElements,
+} from '../../helpers/sort';
 import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
 import {
+    interactAndWaitForVulnerabilityManagementEntities,
     verifyFilteredSecondaryEntitiesLink,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
@@ -35,6 +41,40 @@ describe('Vulnerability Management Policies', () => {
             ],
             2 // skip 2 additional columns to account for checkbox column, and untitled Statuses column
         );
+    });
+
+    it('should sort the Severity column', () => {
+        visitVulnerabilityManagementEntities(entitiesKey);
+
+        const thSelector = '.rt-th:contains("Severity")';
+        const tdSelector = '.rt-td:nth-child(9)';
+
+        // 0. Initial table state indicates that the column is not sorted.
+        cy.get(thSelector)
+            .should('not.have.class', '-sort-asc')
+            .should('not.have.class', '-sort-desc');
+
+        // 1. Sort ascending by the column.
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(thSelector).click();
+        }, entitiesKey);
+        cy.location('search').should('eq', '?sort[0][id]=Severity&sort[0][desc]=false');
+
+        cy.get(thSelector).should('have.class', '-sort-asc');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfAscendingPolicySeverityValuesFromElements);
+        });
+
+        // 2. Sort descending by the column.
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(thSelector).click();
+        }, entitiesKey);
+        cy.location('search').should('eq', '?sort[0][id]=Severity&sort[0][desc]=true');
+
+        cy.get(thSelector).should('have.class', '-sort-desc');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
+        });
     });
 
     // Argument 3 in verify functions is one-based index of column which has the links.

@@ -13,8 +13,8 @@ import {
 } from '../../helpers/policiesPatternFly';
 import {
     assertSortedItems,
-    callbackForPairOfAscendingSeverityValuesFromElements,
-    callbackForPairOfDescendingSeverityValuesFromElements,
+    callbackForPairOfAscendingPolicySeverityValuesFromElements,
+    callbackForPairOfDescendingPolicySeverityValuesFromElements,
 } from '../../helpers/sort';
 import { visit } from '../../helpers/visit';
 import navSelectors from '../../selectors/navigation';
@@ -94,7 +94,7 @@ describe('Policies table', () => {
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
         cy.get(tdSelector).then((items) => {
-            assertSortedItems(items, callbackForPairOfAscendingSeverityValuesFromElements);
+            assertSortedItems(items, callbackForPairOfAscendingPolicySeverityValuesFromElements);
         });
 
         // 2. Sort descending by the Severity column.
@@ -112,7 +112,7 @@ describe('Policies table', () => {
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
         cy.get(tdSelector).then((items) => {
-            assertSortedItems(items, callbackForPairOfDescendingSeverityValuesFromElements);
+            assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
         });
 
         // 3. Sort ascending by the Severity column.
@@ -122,13 +122,7 @@ describe('Policies table', () => {
         cy.location('search').should('eq', '?sort[id]=Severity&sort[desc]=false');
         */
 
-        // There is no request because front-end sorting.
-        cy.wait(1000);
-
         cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
-        cy.get(tdSelector).then((items) => {
-            assertSortedItems(items, callbackForPairOfAscendingSeverityValuesFromElements);
-        });
     });
 
     it('should have expected status values', () => {
