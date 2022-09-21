@@ -235,7 +235,7 @@ test_upgrader() {
 install_metrics_server_and_deactivate() {
     info "Install the metrics server and deactivate it to reproduce ROX-4429"
 
-    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.8.2/components.yaml
+    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml
 
     echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
     local success=0
