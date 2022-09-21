@@ -3,7 +3,6 @@ import { Message } from '@stackrox/ui-components';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import ToggleSwitch from 'Components/ToggleSwitch';
-import FormFieldRequired from 'Components/forms/FormFieldRequired';
 import Select from 'Components/Select';
 import {
     labelClassName,
@@ -17,6 +16,7 @@ import {
 } from 'constants/form.constants';
 
 import { clusterTypeOptions, clusterTypes, runtimeOptions } from './cluster.helpers';
+import FormFieldRequired from './Components/FormFieldRequired';
 import HelmValueWarning from './Components/HelmValueWarning';
 
 // factory that returns a handler to normalize our generic Select component's return value
