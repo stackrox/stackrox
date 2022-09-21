@@ -34,7 +34,7 @@ class DiagnosticBundleTest extends BaseSpecification {
         RoleService.createRoleWithScopeAndPermissionSet(debugLogsReaderRoleName,
                 UNRESTRICTED_SCOPE_ID,
                 [
-                        "Administration": RoleOuterClass.Access.READ_ACCESS,
+                        "DebugLogs": RoleOuterClass.Access.READ_ACCESS,
                         "Cluster": RoleOuterClass.Access.READ_ACCESS,
                 ]
         )
@@ -42,7 +42,7 @@ class DiagnosticBundleTest extends BaseSpecification {
                 debugLogsReaderRoleName)
         Map<String, RoleOuterClass.Access> resourceToAccess =
                 [
-                        "Administration": RoleOuterClass.Access.NO_ACCESS,
+                        "DebugLogs": RoleOuterClass.Access.NO_ACCESS,
                         "Cluster": RoleOuterClass.Access.NO_ACCESS,
                 ]
 
