@@ -105,7 +105,19 @@ const getUserRolePermissionsError = (state) => state.error;
 const getIsLoadingUserRolePermissions = (state) => state.isLoading;
 
 // TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
-const replacedResourceMapping = new Map([]);
+const replacedResourceMapping = new Map([
+    ['AllComments', 'Administration'],
+    ['ComplianceRuns', 'Compliance'],
+    ['ComplianceRunSchedule', 'Administration'],
+    ['Config', 'Administration'],
+    ['DebugLogs', 'Administration'],
+    ['NetworkGraphConfig', 'Administration'],
+    ['ProbeUpload', 'Administration'],
+    ['ScannerBundle', 'Administration'],
+    ['ScannerDefinitions', 'Administration'],
+    ['SensorUpgradeConfig', 'Administration'],
+    ['ServiceIdentity', 'Administration'],
+]);
 
 /*
  * Given resource string (for example, "Integration") and role or permissionSet object,

@@ -25,7 +25,19 @@ const stateSelector = createStructuredSelector<{
 });
 
 // TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
-const replacedResourceMapping = new Map<ResourceName, string>([]);
+const replacedResourceMapping = new Map<ResourceName, string>([
+    ['AllComments', 'Administration'],
+    ['ComplianceRuns', 'Compliance'],
+    ['ComplianceRunSchedule', 'Administration'],
+    ['Config', 'Administration'],
+    ['DebugLogs', 'Administration'],
+    ['NetworkGraphConfig', 'Administration'],
+    ['ProbeUpload', 'Administration'],
+    ['ScannerBundle', 'Administration'],
+    ['ScannerDefinitions', 'Administration'],
+    ['SensorUpgradeConfig', 'Administration'],
+    ['ServiceIdentity', 'Administration'],
+]);
 
 const usePermissions = (): UsePermissionsResponse => {
     const { userRolePermissions, isLoadingPermissions } = useSelector(stateSelector);

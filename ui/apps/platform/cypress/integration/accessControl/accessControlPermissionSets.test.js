@@ -135,7 +135,7 @@ describe('Access Control Permission sets', () => {
         });
     });
 
-    it('direct link to default Analyst has all (but Administration) read and no write access', () => {
+    it('direct link to default Analyst has all (but DebugLogs) read and no write access', () => {
         visitPermissionSet('io.stackrox.authz.permissionset.analyst');
 
         cy.get(selectors.form.inputName).should('have.value', 'Analyst');
@@ -155,7 +155,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (resource === 'Administration') {
+                if (resource === 'DebugLogs') {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
@@ -301,7 +301,7 @@ describe('Access Control Permission sets', () => {
             getAccessLevelSelectForResource,
         } = selectors.form.permissionSet;
 
-        const resourcesLimited = ['Cluster', 'Administration'];
+        const resourcesLimited = ['Cluster', 'ServiceIdentity'];
 
         cy.get(selectors.form.permissionSet.tdResource).then(($tds) => {
             const resourceCount = String($tds.length);
@@ -346,17 +346,17 @@ describe('Access Control Permission sets', () => {
             'Read and Write Access'
         );
 
-        cy.get(getReadAccessIconForResource('Administration')).should(
+        cy.get(getReadAccessIconForResource('ServiceIdentity')).should(
             'have.attr',
             'aria-label',
             'permitted'
         );
-        cy.get(getWriteAccessIconForResource('Administration')).should(
+        cy.get(getWriteAccessIconForResource('ServiceIdentity')).should(
             'have.attr',
             'aria-label',
             'permitted'
         );
-        cy.get(getAccessLevelSelectForResource('Administration')).should(
+        cy.get(getAccessLevelSelectForResource('ServiceIdentity')).should(
             'contain',
             'Read and Write Access'
         );

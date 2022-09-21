@@ -56,7 +56,7 @@ function MainPage(): ReactElement {
         return <LoadingSection message="Loading..." />;
     }
 
-    const hasServiceIdentityWritePermission = hasReadWriteAccess('Administration');
+    const hasServiceIdentityWritePermission = hasReadWriteAccess('ServiceIdentity');
 
     return (
         <AppWrapper publicConfig={publicConfig}>

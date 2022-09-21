@@ -24,6 +24,17 @@
         "VulnerabilityManagementApprovals": "NO_ACCESS",
         "VulnerabilityManagementRequests": "NO_ACCESS",
         "VulnerabilityReports": "NO_ACCESS",
-        "WatchedImage": "NO_ACCESS"
+        "WatchedImage": "NO_ACCESS",
+        "AllComments": "NO_ACCESS",
+        "ComplianceRuns": "NO_ACCESS",
+        "ComplianceRunSchedule": "NO_ACCESS",
+        "Config": "NO_ACCESS",
+        "DebugLogs": "NO_ACCESS",
+        "NetworkGraphConfig": "NO_ACCESS",
+        "ProbeUpload": "NO_ACCESS",
+        "ScannerBundle": "NO_ACCESS",
+        "ScannerDefinitions": "NO_ACCESS",
+        "SensorUpgradeConfig": "NO_ACCESS",
+        "ServiceIdentity": "NO_ACCESS"
     }
 }

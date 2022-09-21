@@ -35,4 +35,15 @@ export type ResourceName =
     | 'VulnerabilityReports'
     | 'WatchedImage'
     // To-be-deprecated resources.
+    | 'AllComments'
+    | 'ComplianceRuns'
+    | 'ComplianceRunSchedule'
+    | 'Config'
+    | 'DebugLogs'
+    | 'NetworkGraphConfig'
+    | 'ProbeUpload'
+    | 'ScannerBundle'
+    | 'ScannerDefinitions'
+    | 'SensorUpgradeConfig'
+    | 'ServiceIdentity'
     ;
