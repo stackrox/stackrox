@@ -207,7 +207,7 @@ fast-central-build: central-build-nodeps
 .PHONY: central-build-nodeps
 central-build-nodeps:
 	@echo "+ $@"
-	CGO_CFLAGS="$(CGO_CFLAGS) $(ROCKSDB_CFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS) $(ROCKSDB_LDFLAGS)" $(GOBUILD) central
+	$(GOBUILD) central
 
 .PHONY: fast-central
 fast-central: deps
@@ -238,7 +238,7 @@ fast-migrator-build: migrator-build-nodeps
 .PHONY: migrator-build-nodeps
 migrator-build-nodeps:
 	@echo "+ $@"
-	CGO_CFLAGS="$(CGO_CFLAGS) $(ROCKSDB_CFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS) $(ROCKSDB_LDFLAGS)" $(GOBUILD) migrator
+	$(GOBUILD) migrator
 
 .PHONY: check-service-protos
 check-service-protos:
