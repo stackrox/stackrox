@@ -123,10 +123,11 @@ curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_
 
 # Install Postgres Client so central can initiate backups/restores
 # Get postgres RPMs directly
-postgres_major="14"
-pg_rhel_version="8.5"
-postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-${arch}"
-postgres_minor="14.2-1PGDG.rhel8.${arch}"
+postgres_major="13"
+pg_rhel_major="8"
+pg_rhel_minor="6"
+postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
+postgres_minor="13.8-1PGDG.rhel8.${arch}"
 
 curl -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
