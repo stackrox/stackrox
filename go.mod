@@ -86,8 +86,8 @@ require (
 	github.com/russellhaering/gosaml2 v0.8.0
 	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/sergi/go-diff v1.2.0
-	github.com/sigstore/cosign v1.8.1-0.20220530190726-3a43ddc93914
-	github.com/sigstore/sigstore v1.2.1-0.20220528141235-6d98e7d59dee
+	github.com/sigstore/cosign v1.12.1
+	github.com/sigstore/sigstore v1.4.2
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855
@@ -444,17 +444,6 @@ replace (
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.10-0.20220919093109-89f9785764c6
-	// github.com/sigstore/rekor is a transitive dep pulled in by cosign. The version pulled in by cosign is using
-	// a vulnerable go-tuf version
-	// (https://github.com/theupdateframework/go-tuf/security/advisories/GHSA-66x3-6cw3-v5gj).
-	// An upstream patch within rekor bumps this dep, once the upstream patch of rekor has landed within cosign, we can remove this
-	// replace redirective.
-	github.com/sigstore/rekor => github.com/sigstore/rekor v0.7.1-0.20220531123351-0c1de2a6239c
-	// sigstore/sigstore is used as a dependency within cosign and rekor. The version pulled in by cosign is using
-	// a vulnerable go-tuf version
-	// (https://github.com/theupdateframework/go-tuf/security/advisories/GHSA-66x3-6cw3-v5gj).
-	// Once the upstream patches and release has landed, we can remove this replace directive.
-	github.com/sigstore/sigstore => github.com/sigstore/sigstore v1.2.1-0.20220528141235-6d98e7d59dee
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 	// Our fork has a change exposing a method to do generic POST requests
