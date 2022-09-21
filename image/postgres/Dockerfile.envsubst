@@ -22,6 +22,7 @@ ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 
 COPY signatures/RPM-GPG-KEY-PGDG-13 /
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
+COPY scripts/init-entrypoint.sh /usr/local/bin/
 COPY --from=extracted_bundle /bundle/postgres.rpm /bundle/postgres-libs.rpm /bundle/postgres-server.rpm /bundle/postgres-contrib.rpm /tmp/
 COPY --from=extracted_bundle /bundle/etc/postgresql.conf /bundle/etc/pg_hba.conf /etc/
 

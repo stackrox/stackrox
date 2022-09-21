@@ -68,13 +68,7 @@ spec:
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
         command:
-        - /bin/sh
-        - -c
-        - |
-          # Initialize DB if it does not exist
-          if [ ! -s "$PGDATA/PG_VERSION" ]; then
-            initdb --auth-host=scram-sha-256 --auth-local=scram-sha-256 --pwfile /run/secrets/stackrox.io/secrets/password
-          fi
+        - init-entrypoint.sh
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
