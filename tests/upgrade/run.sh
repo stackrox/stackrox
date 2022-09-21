@@ -154,7 +154,7 @@ test_sensor_bundle() {
 test_upgrader() {
     info "Starting bin/upgrader tests"
 
-    install_metrics_server_and_deactivate
+    deactivate_metrics_server
 
     info "Creating a 'sensor-remote-new' cluster"
 
@@ -232,11 +232,10 @@ test_upgrader() {
     fi
 }
 
-install_metrics_server_and_deactivate() {
-    info "Install the metrics server and deactivate it to reproduce ROX-4429"
+deactivate_metrics_server() {
+    info "Deactivate the metrics server by scaling it to 0 in order to reproduce ROX-4429"
 
-    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml
-
+    # This should already be in the API resources
     echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
     local success=0
     for i in $(seq 1 10); do
@@ -248,8 +247,7 @@ install_metrics_server_and_deactivate() {
     done
     [[ "$success" -eq 1 ]]
 
-    ## Patch the metrics server to be unreachable
-    kubectl -n kube-system patch svc/metrics-server --type json -p '[{"op": "replace", "path": "/spec/selector", "value": {"k8s-app": "non-existent"}}]'
+    kubectl -n kube-system scale deploy -l k8s-app=metrics-server --replicas=0
 
     echo "Waiting for metrics.k8s.io to NOT be in kubectl API resources..."
     local success=0
