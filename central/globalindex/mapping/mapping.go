@@ -135,11 +135,15 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.ClustersSchema.OptionsMap,
 	)
 
+	// alerts has a reconciliation mechanism implemented in postgres mode in order to keep only search fields
+	// linked to the ListAlert type (goal is backward compatibility with the search strategy implemented on bleve.
+	alertSearchOptions := alertMapping.OptionsMap
+
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
 	// search document maps are also built off this map
 	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
 		v1.SearchCategory_ACTIVE_COMPONENT:        schema.ActiveComponentsSchema.OptionsMap,
-		v1.SearchCategory_ALERTS:                  schema.AlertsSchema.OptionsMap,
+		v1.SearchCategory_ALERTS:                  alertSearchOptions,
 		v1.SearchCategory_CLUSTER_VULN_EDGE:       clusterToVulnerabilitySearchOptions,
 		v1.SearchCategory_CLUSTER_VULNERABILITIES: clusterToVulnerabilitySearchOptions,
 		v1.SearchCategory_CLUSTERS:                schema.ClustersSchema.OptionsMap,
