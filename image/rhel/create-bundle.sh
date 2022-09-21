@@ -125,7 +125,6 @@ curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_
 # Get postgres RPMs directly
 postgres_major="13"
 pg_rhel_major="8"
-pg_rhel_minor="6"
 postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
 postgres_minor="13.8-1PGDG.rhel8.${arch}"
 
