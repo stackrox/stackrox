@@ -11,7 +11,6 @@ import (
 	complianceDataMocks "github.com/stackrox/rox/central/compliance/data/mocks"
 	complianceDSMocks "github.com/stackrox/rox/central/compliance/datastore/mocks"
 	"github.com/stackrox/rox/central/compliance/manager"
-	complianceMgrMocks "github.com/stackrox/rox/central/compliance/manager/mocks"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	deploymentDatastoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
@@ -33,7 +32,6 @@ type managerTestSuite struct {
 
 	mockCtrl            *gomock.Controller
 	standardRegistry    *standards.Registry
-	mockScheduleStore   *complianceMgrMocks.MockScheduleStore
 	mockClusterStore    *clusterDatastoreMocks.MockDataStore
 	mockNodeStore       *nodeDatastoreMocks.MockGlobalDataStore
 	mockDeploymentStore *deploymentDatastoreMocks.MockDataStore
@@ -85,8 +83,7 @@ func (s *managerTestSuite) TestExpandSelection_OneAll_OK() {
 		metadata.Standard{ID: "standard2"},
 	)
 	s.Require().NoError(err)
-	s.manager, err = manager.NewManager(s.standardRegistry, nil, nil, s.mockScheduleStore, s.mockClusterStore, s.mockNodeStore, s.mockDeploymentStore, s.mockPodStore, s.mockDataRepoFactory, s.mockScrapeFactory, s.mockResultsStore)
-	s.Require().NoError(err)
+	s.manager = manager.NewManager(s.standardRegistry, nil, nil, s.mockClusterStore, s.mockNodeStore, s.mockDeploymentStore, s.mockPodStore, s.mockDataRepoFactory, s.mockScrapeFactory, s.mockResultsStore)
 	pairs, err := s.manager.ExpandSelection(s.testCtx, "cluster1", manager.Wildcard)
 	s.NoError(err)
 	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{
@@ -106,8 +103,7 @@ func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
 		metadata.Standard{ID: "standard2"},
 	)
 	s.Require().NoError(err)
-	s.manager, err = manager.NewManager(s.standardRegistry, nil, nil, s.mockScheduleStore, s.mockClusterStore, s.mockNodeStore, s.mockDeploymentStore, s.mockPodStore, s.mockDataRepoFactory, s.mockScrapeFactory, s.mockResultsStore)
-	s.Require().NoError(err)
+	s.manager = manager.NewManager(s.standardRegistry, nil, nil, s.mockClusterStore, s.mockNodeStore, s.mockDeploymentStore, s.mockPodStore, s.mockDataRepoFactory, s.mockScrapeFactory, s.mockResultsStore)
 	pairs, err := s.manager.ExpandSelection(s.testCtx, manager.Wildcard, manager.Wildcard)
 	s.NoError(err)
 	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{
@@ -139,7 +135,6 @@ func (s *managerTestSuite) SetupTest() {
 	var err error
 	s.standardRegistry, err = standards.NewRegistry(nil, nil)
 	s.Require().NoError(err)
-	s.mockScheduleStore = complianceMgrMocks.NewMockScheduleStore(s.mockCtrl)
 	s.mockClusterStore = clusterDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.mockNodeStore = nodeDatastoreMocks.NewMockGlobalDataStore(s.mockCtrl)
 	s.mockDeploymentStore = deploymentDatastoreMocks.NewMockDataStore(s.mockCtrl)
@@ -147,9 +142,7 @@ func (s *managerTestSuite) SetupTest() {
 	s.mockScrapeFactory = scrapeMocks.NewMockScrapeFactory(s.mockCtrl)
 	s.mockResultsStore = complianceDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.mockScheduleStore.EXPECT().ListSchedules().AnyTimes().Return(nil, nil)
-	s.manager, err = manager.NewManager(s.standardRegistry, nil, nil, s.mockScheduleStore, s.mockClusterStore, s.mockNodeStore, s.mockDeploymentStore, s.mockPodStore, s.mockDataRepoFactory, s.mockScrapeFactory, s.mockResultsStore)
-	s.Require().NoError(err)
+	s.manager = manager.NewManager(s.standardRegistry, nil, nil, s.mockClusterStore, s.mockNodeStore, s.mockDeploymentStore, s.mockPodStore, s.mockDataRepoFactory, s.mockScrapeFactory, s.mockResultsStore)
 }
 
 func (s *managerTestSuite) TearDownTest() {

@@ -170,9 +170,6 @@
         "standardId": {
           "type": "string"
         },
-        "scheduleId": {
-          "type": "string"
-        },
         "startTime": {
           "type": "string",
           "format": "date-time"

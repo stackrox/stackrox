@@ -1,6 +1,5 @@
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceControl
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandard
-import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_WRITE_ACCESS
 import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuilder
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
@@ -18,7 +17,6 @@ import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
 
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
-import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.Compliance
 import io.stackrox.proto.storage.Compliance.ComplianceAggregation.Result
@@ -626,80 +624,6 @@ class ComplianceTest extends BaseSpecification {
     **  Remaining tests in the spec trigger new compliance runs. If you are adding tests that do not require a fresh
     **  compliance run, add them above this comment and use the compliance data in BASE_RESULTS.
     */
-
-    @Category(BAT)
-    // Schedules are not yet supported, so skipping this test for now.
-    // Once we fully support Compliance Run scheduling, we can reneable.
-    // Running this test now will expose ROX-1255
-    @IgnoreIf({ !Constants.SCHEDULES_SUPPORTED })
-    def "Verify compliance scheduling"() {
-        given:
-        "List of Standards"
-        List<ComplianceStandardMetadata> standards = ComplianceService.getComplianceStandards()
-
-        when:
-        "create a schedule"
-        ComplianceRunScheduleInfo info = ComplianceManagementService.addSchedule(
-                standards.get(0).id,
-                clusterId,
-                "* 4 * * *"
-        )
-        assert info
-        assert ComplianceManagementService.getSchedules().find { it.schedule.id == info.schedule.id }
-
-        and:
-        "verify schedule details"
-        Calendar nextRun = Calendar.getInstance(TimeZone.getTimeZone("GMT"))
-        nextRun.setTime(new Date(info.nextRunTime.seconds * 1000))
-        Calendar now = Calendar.getInstance(TimeZone.getTimeZone("GMT"))
-        now.get(Calendar.HOUR_OF_DAY) < 4 ?: now.add(Calendar.DAY_OF_YEAR, 1)
-        assert nextRun.get(Calendar.HOUR_OF_DAY) == 4
-        assert nextRun.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR)
-
-        and:
-        "update schedule"
-        int minute = now.get(Calendar.MINUTE)
-        int hour = now.get(Calendar.HOUR_OF_DAY)
-        if (minute < 59) {
-            minute++
-        } else {
-            minute = 0
-            hour++
-        }
-        String cron = "${minute} ${hour} * * *"
-        ComplianceRunScheduleInfo update = ComplianceManagementService.updateSchedule(
-                info.schedule.id,
-                standards.get(0).id,
-                clusterId,
-                cron
-        )
-        assert update
-
-        and:
-        "verify update"
-        assert ComplianceManagementService.getSchedules().find {
-            it.schedule.id == info.schedule.id && it.schedule.crontabSpec == cron
-        }
-
-        and:
-        "verify standard started on schedule"
-        log.info "Waiting for schedule to start..."
-        while (now.get(Calendar.MINUTE) < minute) {
-            sleep 1000
-            now = Calendar.getInstance(TimeZone.getTimeZone("GMT"))
-        }
-        long mostRecent = 0
-        ComplianceManagementService.getRecentRuns(standards.get(0).id).each {
-            if (it.startTime.seconds > mostRecent) {
-                mostRecent = it.startTime.seconds
-            }
-        }
-        assert mostRecent >= update.nextRunTime.seconds
-
-        then:
-        "delete schedule"
-        ComplianceManagementService.deleteSchedule(info.schedule.id)
-    }
 
     @Category([BAT])
     def "Verify checks based on Integrations"() {
