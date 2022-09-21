@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 	csvCommon "github.com/stackrox/rox/central/cve/common/csv"
@@ -123,7 +124,8 @@ func NodeCVECSVHandler() http.HandlerFunc {
 		for _, row := range cveRows {
 			output.addRow(row)
 		}
-		output.Write(w, "node_cve_export")
+		filename := time.Now().Format("node_cve_export_2006_01_02_15_04_05")
+		output.Write(w, filename)
 	}
 }
 

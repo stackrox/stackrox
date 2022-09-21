@@ -66,10 +66,10 @@ func FilterFields(query string, pred func(field string) bool) string {
 	return strings.Join(pairsToKeep, "+")
 }
 
-// GetFieldValueFromQuery returns the value associated with given field in the raw query. Returns empty string if the given field is not present in query.
-func GetFieldValueFromQuery(query string, label FieldLabel) string {
+// GetFieldValueFromQuery returns the value associated with given field in the raw query. The bool is true if given field is found in query, else false.
+func GetFieldValueFromQuery(query string, label FieldLabel) (string, bool) {
 	if query == "" {
-		return ""
+		return "", false
 	}
 	pairs := splitQuery(query)
 	for _, pair := range pairs {
@@ -78,10 +78,10 @@ func GetFieldValueFromQuery(query string, label FieldLabel) string {
 			continue
 		}
 		if key == label.String() {
-			return val
+			return val, true
 		}
 	}
-	return ""
+	return "", false
 }
 
 // Extracts "key", "value1,value2" from a string in the format key:value1,value2
