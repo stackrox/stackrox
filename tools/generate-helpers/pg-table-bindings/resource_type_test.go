@@ -77,6 +77,7 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.K8SRole{}, resourceType: directlyScoped},
 		{typ: &storage.K8SRoleBinding{}, resourceType: directlyScoped},
 		{typ: &storage.ReportConfiguration{}, resourceType: globallyScoped},
+		{typ: &storage.ResourceCollection{}, resourceType: indirectlyScoped},
 		{typ: &storage.Risk{}, resourceType: directlyScoped},
 		{typ: &storage.Role{}, resourceType: globallyScoped},
 		{typ: &storage.PermissionSet{}, resourceType: globallyScoped},
