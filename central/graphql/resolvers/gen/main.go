@@ -59,7 +59,6 @@ var (
 			reflect.TypeOf((*storage.ComplianceDomain_Deployment)(nil)),
 			reflect.TypeOf((*storage.ComplianceDomain_Node)(nil)),
 
-			reflect.TypeOf((*v1.ComplianceRunScheduleInfo)(nil)),
 			reflect.TypeOf((*v1.ComplianceStandard)(nil)),
 			reflect.TypeOf((*v1.GenerateTokenResponse)(nil)),
 			reflect.TypeOf((*v1.GetComplianceRunStatusesResponse)(nil)),
