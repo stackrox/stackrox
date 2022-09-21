@@ -202,9 +202,12 @@ ci-config-validate:
 	circleci config validate --org-slug gh/stackrox
 
 .PHONY: fast-central-build
-fast-central-build:
+fast-central-build: central-build-nodeps
+
+.PHONY: central-build-nodeps
+central-build-nodeps:
 	@echo "+ $@"
-	$(GOBUILD) central
+	CGO_CFLAGS="$(CGO_CFLAGS) $(ROCKSDB_CFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS) $(ROCKSDB_LDFLAGS)" $(GOBUILD) central
 
 .PHONY: fast-central
 fast-central: deps
@@ -230,9 +233,12 @@ fast-migrator:
 	docker run --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
 
 .PHONY: fast-migrator-build
-fast-migrator-build:
+fast-migrator-build: migrator-build-nodeps
+
+.PHONY: migrator-build-nodeps
+migrator-build-nodeps:
 	@echo "+ $@"
-	$(GOBUILD) migrator
+	CGO_CFLAGS="$(CGO_CFLAGS) $(ROCKSDB_CFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS) $(ROCKSDB_LDFLAGS)" $(GOBUILD) migrator
 
 .PHONY: check-service-protos
 check-service-protos:
@@ -444,8 +450,8 @@ else
 endif
 
 .PHONY: main-build-nodeps
-main-build-nodeps:
-	$(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
+main-build-nodeps: central-build-nodeps migrator-build-nodeps
+	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 ifndef CI
     CGO_ENABLED=0 $(GOBUILD) roxctl
