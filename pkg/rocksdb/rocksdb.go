@@ -13,6 +13,14 @@ import (
 	"go.uber.org/atomic"
 )
 
+// Make sure we link against the liblz4 compression library, as this is the compression algorithm
+// we want to use.
+// Note: older versions of github.com/tecbot/gorocksdb already add this to LDFLAGS, but more recent
+// ones do not.
+
+// #cgo LDFLAGS: -llz4
+import "C"
+
 // RocksDB is a wrapper around the base rocks DB, but implements synchronous close
 type RocksDB struct {
 	opsInProgress atomic.Uint32
@@ -101,6 +109,8 @@ func New(path string) (*RocksDB, error) {
 func GetRocksDBOptions() *gorocksdb.Options {
 	opts := gorocksdb.NewDefaultOptions()
 	opts.SetCreateIfMissing(true)
+	// IMPORTANT: If you change the compression algorithm here, be sure to also change the #cgo
+	// pragma directive in the import block to include the adequate library.
 	opts.SetCompression(gorocksdb.LZ4Compression)
 	opts.SetUseFsync(true)
 	return opts
