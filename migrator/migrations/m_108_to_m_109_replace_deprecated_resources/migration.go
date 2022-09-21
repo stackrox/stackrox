@@ -11,15 +11,20 @@ import (
 
 const (
 	batchSize = 500
+)
 
-	// Replacement resources
+// Replacement resources
+const (
 	Access              = "Access"
 	Administration      = "Administration"
 	Compliance          = "Compliance"
 	DeploymentExtension = "DeploymentExtension"
 	Image               = "Image"
 	Integration         = "Integration"
-	// Replaced resources
+)
+
+// Replaced resources
+const (
 	AllComments           = "AllComments"
 	APIToken              = "APIToken"
 	AuthProvider          = "AuthProvider"
@@ -99,14 +104,12 @@ func init() {
 func propagatePermission(resource string, accessLevel storage.Access, permissions map[string]storage.Access) storage.Access {
 	if _, found := permissions[resource]; !found {
 		return accessLevel
-	} else {
-		oldLevel := permissions[resource]
-		if accessLevel > oldLevel {
-			return oldLevel
-		} else {
-			return accessLevel
-		}
 	}
+	oldLevel := permissions[resource]
+	if accessLevel > oldLevel {
+		return oldLevel
+	}
+	return accessLevel
 }
 
 func migatePermissionSets(db *gorocksdb.DB) error {
