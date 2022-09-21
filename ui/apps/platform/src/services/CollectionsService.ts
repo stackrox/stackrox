@@ -7,10 +7,10 @@ import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationU
 import axios from './instance';
 import { Empty, Pagination } from './types';
 
-const collectionsBaseUrl = '/v1/collections';
-const collectionsCountUrl = '/v1/collections/count';
-const collectionsDryRunUrl = '/v1/collections/dryrun';
-const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
+export const collectionsBaseUrl = '/v1/collections';
+export const collectionsCountUrl = '/v1/collections/count';
+export const collectionsDryRunUrl = '/v1/collections/dryrun';
+export const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
 
 type CollectionResource = 'Cluster' | 'Namespace' | 'Deployment';
 
@@ -29,14 +29,14 @@ type ResourceSelector = {
     rules: SelectorRule[];
 };
 
-type CollectionRequest = {
+export type CollectionRequest = {
     name: string;
     description: string;
     resourceSelectors: ResourceSelector[];
     embeddedCollectionIds: string[];
 };
 
-type CollectionResponse = {
+export type CollectionResponse = {
     id: string;
     name: string;
     description: string;
