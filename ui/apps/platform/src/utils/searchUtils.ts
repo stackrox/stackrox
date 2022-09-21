@@ -199,6 +199,6 @@ export function getListQueryParams(
                 sortOption,
             },
         },
-        { arrayFormat: 'repeat', allowDots: true }
+        { allowDots: true }
     );
 }
