@@ -1,6 +1,5 @@
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceControl
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandard
-import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_WRITE_ACCESS
 import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuilder
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
