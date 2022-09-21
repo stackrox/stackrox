@@ -12,7 +12,7 @@ package storage;
 
 message ResourceCollection {
   message EmbeddedResourceCollection {
-    string id = 1 [(gogoproto.moretags) = 'sql:"fk(ResourceCollection:id),restrict-delete"'];
+    string id = 1;
   }
 
   string id                                                = 1 [(gogoproto.moretags) = 'sql:"pk"']; // primary key
@@ -24,16 +24,14 @@ message ResourceCollection {
   SlimUser updated_by                                      = 7;
   // `resource_selectors` resolve as disjunction (OR) with each-other and with selectors from `embedded_collections`. For MVP, the size of resource_selectors will at most be 1 from UX standpoint.
   repeated ResourceSelector resource_selectors             = 8;
-  repeated EmbeddedResourceCollection embedded_collections = 9;
+  repeated EmbeddedResourceCollection embedded_collections = 9 [(gogoproto.moretags) = 'sql:"fk(EmbeddedResourceCollection:id)"'];
 }
 
-// This is similar to storage.PolicySection.
 message ResourceSelector {
   // `rules` resolve as a conjunction (AND).
   repeated SelectorRule rules = 1;
 }
 
-// This is similar to storage.PolicyGroup.
 message SelectorRule {
   // `field_name` can be one of the following:
   // - Cluster
