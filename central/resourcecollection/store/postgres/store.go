@@ -96,6 +96,31 @@ func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.R
 	finalStr := "INSERT INTO collections (Id, Name, CreatedBy_Name, UpdatedBy_Name, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, CreatedBy_Name = EXCLUDED.CreatedBy_Name, UpdatedBy_Name = EXCLUDED.UpdatedBy_Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
+	var query string
+
+	for childIdx, child := range obj.GetEmbeddedCollections() {
+		if err := insertIntoCollectionsEmbeddedCollections(ctx, batch, child, obj.GetId(), childIdx); err != nil {
+			return err
+		}
+	}
+
+	query = "delete from collections_embedded_collections where collections_Id = $1 AND idx >= $2"
+	batch.Queue(query, obj.GetId(), len(obj.GetEmbeddedCollections()))
+	return nil
+}
+
+func insertIntoCollectionsEmbeddedCollections(ctx context.Context, batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collections_Id string, idx int) error {
+
+	values := []interface{}{
+		// parent primary keys start
+		collections_Id,
+		idx,
+		obj.GetId(),
+	}
+
+	finalStr := "INSERT INTO collections_embedded_collections (collections_Id, idx, Id) VALUES($1, $2, $3) ON CONFLICT(collections_Id, idx) DO UPDATE SET collections_Id = EXCLUDED.collections_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id"
+	batch.Queue(finalStr, values...)
+
 	return nil
 }
 
@@ -159,6 +184,61 @@ func (s *storeImpl) copyFromCollections(ctx context.Context, tx pgx.Tx, objs ...
 			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"collections"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
+
+		if err = s.copyFromCollectionsEmbeddedCollections(ctx, tx, obj.GetId(), obj.GetEmbeddedCollections()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, tx pgx.Tx, collections_Id string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"collections_id",
+
+		"idx",
+
+		"id",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			collections_Id,
+
+			idx,
+
+			obj.GetId(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"collections_embedded_collections"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -575,6 +655,12 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ResourceColle
 
 func dropTableCollections(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS collections CASCADE")
+	dropTableCollectionsEmbeddedCollections(ctx, db)
+
+}
+
+func dropTableCollectionsEmbeddedCollections(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS collections_embedded_collections CASCADE")
 
 }
 

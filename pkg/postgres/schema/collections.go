@@ -16,7 +16,12 @@ var (
 	// CreateTableCollectionsStmt holds the create statement for table `collections`.
 	CreateTableCollectionsStmt = &postgres.CreateStmts{
 		GormModel: (*Collections)(nil),
-		Children:  []*postgres.CreateStmts{},
+		Children: []*postgres.CreateStmts{
+			&postgres.CreateStmts{
+				GormModel: (*CollectionsEmbeddedCollections)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
+		},
 	}
 
 	// CollectionsSchema is the go schema for table `collections`.
@@ -33,7 +38,8 @@ var (
 )
 
 const (
-	CollectionsTableName = "collections"
+	CollectionsTableName                    = "collections"
+	CollectionsEmbeddedCollectionsTableName = "collections_embedded_collections"
 )
 
 // Collections holds the Gorm model for Postgres table `collections`.
@@ -43,4 +49,12 @@ type Collections struct {
 	CreatedByName string `gorm:"column:createdby_name;type:varchar"`
 	UpdatedByName string `gorm:"column:updatedby_name;type:varchar"`
 	Serialized    []byte `gorm:"column:serialized;type:bytea"`
+}
+
+// CollectionsEmbeddedCollections holds the Gorm model for Postgres table `collections_embedded_collections`.
+type CollectionsEmbeddedCollections struct {
+	CollectionsId  string      `gorm:"column:collections_id;type:varchar;primaryKey"`
+	Idx            int         `gorm:"column:idx;type:integer;primaryKey;index:collectionsembeddedcollections_idx,type:btree"`
+	Id             string      `gorm:"column:id;type:varchar"`
+	CollectionsRef Collections `gorm:"foreignKey:collections_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
