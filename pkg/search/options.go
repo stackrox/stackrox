@@ -284,6 +284,9 @@ var (
 	ComplianceRunID                = newFieldLabel("Compliance Run ID")
 	ComplianceRunFinishedTimestamp = newFieldLabel("Compliance Run Finished Timestamp")
 
+	// Resource Collection fields
+	CollectionName = newFieldLabel("Collection Name")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")
