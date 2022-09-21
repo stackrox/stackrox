@@ -15,7 +15,7 @@ data:
 [< if .FeatureFlags.ROX_POSTGRES_DATASTORE >]
     {{- if ._rox.central.db.enabled }}
     centralDB:
-      {{- if ._rox.central.db.preexisting }}
+      {{- if ._rox.central.db.external }}
       source: {{ ._rox.central.db.source.connectionString }} statement_timeout={{ ._rox.central.db.source.statementTimeoutMs }} pool_min_conns={{ ._rox.central.db.source.minConns }} pool_max_conns={{ ._rox.central.db.source.maxConns }}
       {{- else }}
       source: >

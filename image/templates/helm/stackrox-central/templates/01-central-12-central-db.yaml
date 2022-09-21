@@ -1,7 +1,7 @@
 {{- include "srox.init" . -}}
 
 {{ if ._rox.central.db.enabled -}}
-{{ if not ._rox.central.db.preexisting -}}
+{{ if not ._rox.central.db.external -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

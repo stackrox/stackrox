@@ -42,7 +42,7 @@ defaults:
     db:
       enabled: true
 
-      preexisting: false
+      external: false
 
       source:
         minConns: 10

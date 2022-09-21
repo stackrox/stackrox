@@ -41,7 +41,7 @@
 {{ if $centralDBCfg.enabled }}
 {{/* Always set up the password for Postgres if it is enabled */}}
 {{ include "srox.configurePassword" (list $ "central.db.password") }}
-{{ if not $centralDBCfg.preexisting }}
+{{ if not $centralDBCfg.external }}
 {{ include "srox.configureImage" (list $ $centralDBCfg.image) }}
 
 {{/* Central DB Service TLS Certificates */}}
@@ -79,7 +79,7 @@
     Central's DB PVC config setup
   */}}
 {{ $dbVolumeCfg := dict }}
-{{ if and $centralDBCfg.enabled (not $centralDBCfg.preexisting) }}
+{{ if and $centralDBCfg.enabled (not $centralDBCfg.external) }}
 {{ if $centralDBCfg.persistence.none }}
   {{ include "srox.warn" (list $ "You have selected no persistence backend. Every deletion of the StackRox Central DB pod will cause you to lose all your data. This is STRONGLY recommended against.") }}
   {{ $_ := set $dbVolumeCfg "emptyDir" dict }}
@@ -107,7 +107,7 @@
   {{ include "srox.fail" (printf "Invalid or no persistence configurations for central: [%s]" (join "," $allPersistenceMethods)) }}
 {{ end }}
 {{ $_ = set $centralCfg.persistence "_volumeCfg" $volumeCfg }}
-{{ if and $centralDBCfg.enabled (not $centralDBCfg.preexisting) }}
+{{ if and $centralDBCfg.enabled (not $centralDBCfg.external) }}
 {{ $_ = set $centralDBCfg.persistence "_volumeCfg" $dbVolumeCfg }}
 {{ end }}
 

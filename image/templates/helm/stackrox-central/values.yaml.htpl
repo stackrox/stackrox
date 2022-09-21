@@ -188,9 +188,9 @@
 #  db:
 #    enabled: false
 #
-#    # Preexisting signifies that a Postgres wire-compatible database has already been deployed and a Central DB pod
+#    # External signifies that a Postgres wire-compatible database has already been deployed and a Central DB pod
 #    # does not need to be deployed
-#    preexisting: false
+#    external: false
 #
 #    source:
 #      # ConnectionString should not be specified if the Central DB deployment is being managed by the helm chart
