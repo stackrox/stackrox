@@ -117,7 +117,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 			Central:      emptyNotDeletedCentral,
 			ExistingPVCs: nil,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultPVCName: verifyMultiple(ownedBy(emptyNotDeletedCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralPVCName: verifyMultiple(ownedBy(emptyNotDeletedCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
 			},
 		},
 
@@ -129,7 +129,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 			ExistingPVCs:  nil,
 			ExpectedError: "invalid persistence configuration, either hostPath oder persistentVolumeClaim must be set, not both",
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultPVCName: pvcNotCreatedVerifier,
+				DefaultCentralPVCName: pvcNotCreatedVerifier,
 			},
 		},
 
@@ -137,7 +137,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 			Central:      makeCentral(&platform.Persistence{HostPath: makeHostPathSpec("/tmp/hostpath")}),
 			ExistingPVCs: nil,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultPVCName: pvcNotCreatedVerifier,
+				DefaultCentralPVCName: pvcNotCreatedVerifier,
 			},
 		},
 
@@ -159,43 +159,43 @@ func TestReconcilePVCExtension(t *testing.T) {
 
 		"only-one-pvc-with-owner-ref-is-allowed": {
 			Central:       changedPVCNameCentral,
-			ExistingPVCs:  []*corev1.PersistentVolumeClaim{makePVC(changedPVCNameCentral, DefaultPVCName, defaultPVCSize, emptyStorageClass)},
+			ExistingPVCs:  []*corev1.PersistentVolumeClaim{makePVC(changedPVCNameCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass)},
 			ExpectedError: `Could not create PVC "stackrox-db-test" because the operator can only manage 1 PVC for Central. To fix this either reference a manually created PVC or remove the OwnerReference of the "stackrox-db" PVC.`,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultPVCName: verifyMultiple(ownedBy(changedPVCNameCentral)),
-				testPVCName:    pvcNotCreatedVerifier,
+				DefaultCentralPVCName: verifyMultiple(ownedBy(changedPVCNameCentral)),
+				testPVCName:           pvcNotCreatedVerifier,
 			},
 		},
 
 		"given-pvc-without-owner-ref-can-be-referenced": {
 			Central:      emptyNotDeletedCentral,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{{ObjectMeta: metav1.ObjectMeta{Name: DefaultPVCName, Namespace: "stackrox"}}},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{{ObjectMeta: metav1.ObjectMeta{Name: DefaultCentralPVCName, Namespace: "stackrox"}}},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultPVCName: verifyMultiple(notOwnedBy(emptyNotDeletedCentral)),
+				DefaultCentralPVCName: verifyMultiple(notOwnedBy(emptyNotDeletedCentral)),
 			},
 		},
 
 		"config-changes-on-pvcs-not-owned-by-the-operator-should-fail": {
 			Central:       notOwnedPVCConfigChangeCentral,
-			ExistingPVCs:  []*corev1.PersistentVolumeClaim{{ObjectMeta: metav1.ObjectMeta{Name: DefaultPVCName, Namespace: "stackrox"}}},
+			ExistingPVCs:  []*corev1.PersistentVolumeClaim{{ObjectMeta: metav1.ObjectMeta{Name: DefaultCentralPVCName, Namespace: "stackrox"}}},
 			ExpectedError: `Failed reconciling PVC "stackrox-db". Please remove the storageClassName and size properties from your spec, or change the name to allow the operator to create a new one with a different name.`,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultPVCName: verifyMultiple(notOwnedBy(notOwnedPVCConfigChangeCentral)),
+				DefaultCentralPVCName: verifyMultiple(notOwnedBy(notOwnedPVCConfigChangeCentral)),
 			},
 		},
 
 		"change-claim-name-to-a-not-operator-managed-pvc-should-be-reconciled": {
 			Central: referencedPVCCentral,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{
-				makePVC(referencedPVCCentral, DefaultPVCName, defaultPVCSize, emptyStorageClass),
+				makePVC(referencedPVCCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass),
 				{ObjectMeta: metav1.ObjectMeta{
 					Name:      testPVCName,
 					Namespace: "stackrox",
 				}},
 			},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultPVCName: verifyMultiple(ownedBy(referencedPVCCentral)),
-				testPVCName:    verifyMultiple(notOwnedBy(referencedPVCCentral)),
+				DefaultCentralPVCName: verifyMultiple(ownedBy(referencedPVCCentral)),
+				testPVCName:           verifyMultiple(notOwnedBy(referencedPVCCentral)),
 			},
 		},
 
@@ -203,28 +203,28 @@ func TestReconcilePVCExtension(t *testing.T) {
 			Central: deleteHostPathCentral,
 			Delete:  true,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{
-				makePVC(deleteHostPathCentral, DefaultPVCName, defaultPVCSize, emptyStorageClass),
+				makePVC(deleteHostPathCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass),
 				makePVC(deleteHostPathCentral, testPVCName, defaultPVCSize, emptyStorageClass),
 			},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultPVCName: notOwnedBy(deleteHostPathCentral),
-				testPVCName:    notOwnedBy(deleteHostPathCentral),
+				DefaultCentralPVCName: notOwnedBy(deleteHostPathCentral),
+				testPVCName:           notOwnedBy(deleteHostPathCentral),
 			},
 		},
 
 		"delete-central-should-remove-owner-reference": {
 			Central:      removedCentral,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(removedCentral, DefaultPVCName, defaultPVCSize, emptyStorageClass)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(removedCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass)},
 			Delete:       true,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultPVCName: verifyMultiple(notOwnedBy(removedCentral)),
+				DefaultCentralPVCName: verifyMultiple(notOwnedBy(removedCentral)),
 			},
 		},
 
 		"reconciliation-should-fail-with-multiple-operator-owned-PVCs": {
 			Central: emptyNotDeletedCentral,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{
-				makePVC(emptyNotDeletedCentral, DefaultPVCName, defaultPVCSize, emptyStorageClass),
+				makePVC(emptyNotDeletedCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass),
 				makePVC(emptyNotDeletedCentral, testPVCName, defaultPVCSize, emptyStorageClass),
 			},
 			ExpectedError: "multiple owned PVCs were found, please remove not used ones or delete their OwnerReferences. Found PVCs: stackrox-db, stackrox-db-test: operator is only allowed to have 1 owned PVC",
@@ -232,9 +232,9 @@ func TestReconcilePVCExtension(t *testing.T) {
 
 		"storage-class-is-not-reconciled-if-empty-storage-class-is-given": {
 			Central:      emptyNotDeletedCentral,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyNotDeletedCentral, DefaultPVCName, defaultPVCSize, "storage-class-name")},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyNotDeletedCentral, DefaultCentralPVCName, defaultPVCSize, "storage-class-name")},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultPVCName: verifyMultiple(withStorageClass("storage-class-name"), withSize(defaultPVCSize)),
+				DefaultCentralPVCName: verifyMultiple(withStorageClass("storage-class-name"), withSize(defaultPVCSize)),
 			},
 		},
 
@@ -242,8 +242,8 @@ func TestReconcilePVCExtension(t *testing.T) {
 			Central:      emptyNotDeletedCentral,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{{ObjectMeta: metav1.ObjectMeta{Name: testPVCName, Namespace: "stackrox"}}},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				testPVCName:    verifyMultiple(notOwnedBy(emptyNotDeletedCentral)),
-				DefaultPVCName: verifyMultiple(ownedBy(emptyNotDeletedCentral), withSize(resource.MustParse("100Gi")), withStorageClass(emptyStorageClass)),
+				testPVCName:           verifyMultiple(notOwnedBy(emptyNotDeletedCentral)),
+				DefaultCentralPVCName: verifyMultiple(ownedBy(emptyNotDeletedCentral), withSize(resource.MustParse("100Gi")), withStorageClass(emptyStorageClass)),
 			},
 		},
 	}

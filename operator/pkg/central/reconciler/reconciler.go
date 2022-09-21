@@ -30,7 +30,7 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralDBPasswordExtension(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(mgr.GetClient())),
-		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), extensions.DefaultPVCName)),
+		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), extensions.DefaultCentralPVCName)),
 	}
 	if features.PostgresDatastore.Enabled() {
 		opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), extensions.DefaultCentralDBPVCName)))

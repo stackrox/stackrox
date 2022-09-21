@@ -26,7 +26,7 @@ func ReconcileCentralDBPasswordExtension(client ctrlClient.Client) extensions.Re
 }
 
 func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
-	if !features.PostgresDatastore.Enabled() || c.Spec.Central.DB.Preexisting() {
+	if !features.PostgresDatastore.Enabled() || c.Spec.Central.DB.IsExternal() {
 		return nil
 	}
 	run := &reconcileCentralDBPasswordExtensionRun{

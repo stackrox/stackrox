@@ -164,7 +164,7 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ConnectionStringOverride *string `json:"connectionString,omitempty"`
 
-	// Configures how Central should store its persistent data. You can choose between using a persistent
+	// Configures how Central DB should store its persistent data. You can choose between using a persistent
 	// volume claim (recommended default), and a host path.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	Persistence *Persistence `json:"persistence,omitempty"`
@@ -173,8 +173,8 @@ type CentralDBSpec struct {
 	DeploymentSpec `json:",inline"`
 }
 
-// Preexisting ...
-func (c *CentralDBSpec) Preexisting() bool {
+// IsExternal specifies that the database should not be managed by the Operator
+func (c *CentralDBSpec) IsExternal() bool {
 	if c == nil {
 		return false
 	}

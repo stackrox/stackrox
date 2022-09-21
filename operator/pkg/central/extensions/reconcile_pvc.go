@@ -21,7 +21,9 @@ import (
 )
 
 const (
-	DefaultPVCName          = "stackrox-db"
+	// DefaultCentralPVCName is the default name for Central PVC
+	DefaultCentralPVCName = "stackrox-db"
+	// DefaultCentralDBPVCName is the default name for Central DB PVC
 	DefaultCentralDBPVCName = "central-db"
 )
 
