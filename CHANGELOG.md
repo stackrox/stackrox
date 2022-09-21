@@ -39,6 +39,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   `pods`, `events`, and `namespaces`. This fixes an issue when generating diagnostic bundles to now correctly include all relevant information within the namespace of central.
 - ROX-13265: Fix missing rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
 
+### Removed Features
+### Deprecated Features
+### Technical Changes
+- ROX-11101: As announced in 3.71.0 (ROX-8520), some permissions for permissionsets are being grouped for simplification. The deprecation process will remove and replace the deprecated permissions with the replacing permission as listed below. The access level granted to the replacing permission will be the lowest of its defined access level if any and the defined access levels for all the permissions it replaces.  
+  - Permission `Access` deprecates and replaces the permissions `AuthPlugin, AuthProvider, Group, Licenses, Role, User`.
+  - Permission `DeploymentExtension` deprecates and replaces the permissions `Indicator, NetworkBaseline, ProcessWhitelist, Risk`.
+  - Permission `Integration` deprecates and replaces the permissions `APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration`.
+  - Permission `Image` deprecates and replaces the permission `ImageComponent`.
+
 ## [3.72.0]
 
 ### Removed Features

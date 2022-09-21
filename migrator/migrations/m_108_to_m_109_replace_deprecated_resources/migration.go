@@ -4,6 +4,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/tecbot/gorocksdb"
 )
@@ -91,13 +92,19 @@ var (
 	writeOpts = gorocksdb.NewDefaultWriteOptions()
 )
 
-func propagatePermission(resource string, accessLevel storage.Access, permissions map[string]storage.Access) {
+func init() {
+	migrations.MustRegisterMigration(migration)
+}
+
+func propagatePermission(resource string, accessLevel storage.Access, permissions map[string]storage.Access) storage.Access {
 	if _, found := permissions[resource]; !found {
-		permissions[resource] = accessLevel
+		return accessLevel
 	} else {
 		oldLevel := permissions[resource]
 		if accessLevel > oldLevel {
-			permissions[resource] = accessLevel
+			return oldLevel
+		} else {
+			return accessLevel
 		}
 	}
 }
@@ -106,27 +113,28 @@ func migatePermissionSets(db *gorocksdb.DB) error {
 	it := db.NewIterator(readOpts)
 	defer it.Close()
 	wb := gorocksdb.NewWriteBatch()
+	defer wb.Destroy()
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		permissions := &storage.PermissionSet{}
 		if err := proto.Unmarshal(it.Value().Data(), permissions); err != nil {
 			return errors.Wrap(err, "unable to unmarshal permission set")
 		}
 		// Copy the permission set, removing the deprecated resource permissions, and keeping the
-		// highest access level between that of deprecated resource and their replacement
+		// lowest access level between that of deprecated resource and their replacement
 		// for the replacement resource.
-		newPermissionSet := &storage.PermissionSet{}
-		newPermissionSet.Id = permissions.GetId()
-		newPermissionSet.Name = permissions.GetName()
-		newPermissionSet.Description = permissions.GetDescription()
-		if len(permissions.GetResourceToAccess()) > 0 {
-			newPermissionSet.ResourceToAccess = make(map[string]storage.Access)
+		newPermissionSet := &storage.PermissionSet{
+			Id:               permissions.GetId(),
+			Name:             permissions.GetName(),
+			Description:      permissions.GetDescription(),
+			ResourceToAccess: make(map[string]storage.Access, len(permissions.GetResourceToAccess())),
 		}
 		for resource, accessLevel := range permissions.GetResourceToAccess() {
 			newResource := resource
 			if _, found := replacements[resource]; found {
 				newResource = replacements[resource]
 			}
-			propagatePermission(newResource, accessLevel, newPermissionSet.ResourceToAccess)
+			newPermissionSet.ResourceToAccess[newResource] =
+				propagatePermission(newResource, accessLevel, newPermissionSet.ResourceToAccess)
 		}
 		data, err := proto.Marshal(newPermissionSet)
 		if err != nil {
