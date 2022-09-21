@@ -1,24 +1,54 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Button, ButtonVariant, Truncate, Bullseye, Text } from '@patternfly/react-core';
+import {
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+    Pagination,
+    Button,
+    ButtonVariant,
+    Truncate,
+    SearchInput,
+    Bullseye,
+    Text,
+} from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 import { TableComposable, TableVariant, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import debounce from 'lodash/debounce';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useTableSelection from 'hooks/useTableSelection';
-import { CollectionResponse } from 'services/CollectionsService';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { GetSortParams } from 'hooks/useURLSort';
+import { CollectionResponse } from 'services/CollectionsService';
+import { SearchFilter } from 'types/search';
 import { collectionsPath } from 'routePaths';
 
 export type CollectionsTableProps = {
     collections: CollectionResponse[];
+    collectionsCount: number;
+    pagination: UseURLPaginationResult;
+    searchFilter: SearchFilter;
+    setSearchFilter: (searchFilter: SearchFilter) => void;
     getSortParams: GetSortParams;
     hasWriteAccess: boolean;
 };
 
-function CollectionsTable({ collections, getSortParams, hasWriteAccess }: CollectionsTableProps) {
+// TODO We are using this value elsewhere in the app - extract to a central location?
+const TYPING_DELAY = 800;
+
+function CollectionsTable({
+    collections,
+    collectionsCount,
+    pagination,
+    searchFilter,
+    setSearchFilter,
+    getSortParams,
+    hasWriteAccess,
+}: CollectionsTableProps) {
     const history = useHistory();
+    const { page, perPage, setPage, setPerPage } = pagination;
     const { selected, allRowsSelected, onSelect, onSelectAll } = useTableSelection(collections);
     const hasCollections = collections.length > 0;
 
@@ -40,8 +70,39 @@ function CollectionsTable({ collections, getSortParams, hasWriteAccess }: Collec
         });
     }
 
+    const onSearchInputChange = useMemo(
+        () => debounce((value: string) => setSearchFilter({ Collection: value }), TYPING_DELAY),
+        [setSearchFilter]
+    );
+
+    const searchValue = Array.isArray(searchFilter.Collection)
+        ? searchFilter.Collection.join('+')
+        : searchFilter.Collection;
+
     return (
         <>
+            <Toolbar>
+                <ToolbarContent>
+                    <ToolbarItem variant="search-filter" className="pf-u-flex-grow-1">
+                        <SearchInput
+                            aria-label="Search by name"
+                            placeholder="Search by name..."
+                            value={searchValue}
+                            onChange={onSearchInputChange}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            isCompact
+                            itemCount={collectionsCount}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
             <TableComposable variant={TableVariant.compact}>
                 <Thead>
                     <Tr>
@@ -76,7 +137,7 @@ function CollectionsTable({ collections, getSortParams, hasWriteAccess }: Collec
                                         icon={SearchIcon}
                                     >
                                         <Text>Clear all filters and try again.</Text>
-                                        <Button variant="link" onClick={() => {}}>
+                                        <Button variant="link" onClick={() => setSearchFilter({})}>
                                             Clear all filters
                                         </Button>
                                     </EmptyStateTemplate>
