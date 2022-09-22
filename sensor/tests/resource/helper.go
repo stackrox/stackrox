@@ -61,6 +61,8 @@ func objByKind(kind string) k8s.Object {
 		return &v1.ServiceAccount{}
 	case "NetworkPolicy":
 		return &v13.NetworkPolicy{}
+	case "Service":
+		return &v1.Service{}
 	default:
 		log.Fatalf("unrecognized resource kind %s\n", kind)
 		return nil
