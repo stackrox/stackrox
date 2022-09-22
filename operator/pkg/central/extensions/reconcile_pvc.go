@@ -27,16 +27,17 @@ const (
 )
 
 var (
-	maxOwnedPVCs = func() int {
-		if features.PostgresDatastore.Enabled() {
-			return 2
-		}
-		return 1
-	}()
+	maxOwnedPVCs         = 1
 	errMultipleOwnedPVCs = errors.Errorf("operator is only allowed to have %d owned PVC(s)", maxOwnedPVCs)
 
 	defaultPVCSize = resource.MustParse("100Gi")
 )
+
+func init() {
+	if features.PostgresDatastore.Enabled() {
+		maxOwnedPVCs = 2
+	}
+}
 
 // ReconcilePVCExtension reconciles PVCs created by the operator
 func ReconcilePVCExtension(client ctrlClient.Client, defaultClaimName string) extensions.ReconcileExtension {
