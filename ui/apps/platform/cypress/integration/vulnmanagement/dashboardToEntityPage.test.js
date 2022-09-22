@@ -64,6 +64,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         const entitiesKey = 'images';
         const widgetHeading = 'Top Riskiest Images';
+
         verifyItemLinkToEntityPage(
             entitiesKey,
             getItemTextSelectorForWidget(widgetHeading),
@@ -76,6 +77,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         const entitiesKey = 'components'; // page makes singular request for components instead of node-components
         const widgetHeading = 'Top Riskiest Node Components';
+
         selectTopRiskiestOption(widgetHeading);
         verifyItemLinkToEntityPage(
             entitiesKey,
@@ -89,6 +91,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         const entitiesKey = 'image-components';
         const widgetHeading = 'Top Riskiest Image Components';
+
         selectTopRiskiestOption(widgetHeading);
         verifyItemLinkToEntityPage(
             entitiesKey,
@@ -102,6 +105,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         const entitiesKey = 'nodes';
         const widgetHeading = 'Top Riskiest Nodes';
+
         selectTopRiskiestOption(widgetHeading);
         verifyItemLinkToEntityPage(
             entitiesKey,
@@ -115,6 +119,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         const entitiesKey = 'policies';
         const widgetHeading = 'Frequently Violated Policies';
+
         verifyItemLinkToEntityPage(
             entitiesKey,
             getItemTextSelectorForWidget(widgetHeading),
@@ -127,6 +132,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         const entitiesKey = 'cves'; // page makes singular request for cves instead of image-cves
         const widgetHeading = 'Recently Detected Image Vulnerabilities';
+
         verifyItemLinkToEntityPage(
             entitiesKey,
             getItemTextSelectorForWidget(widgetHeading),
@@ -139,6 +145,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         const entitiesKey = 'cves'; // page makes singular request for cves instead of image-cves
         const widgetHeading = 'Most Common Image Vulnerabilities';
+
         verifyItemLinkToEntityPage(
             entitiesKey,
             getItemTextSelectorForWidget(widgetHeading, '.rv-xy-plot__series--label text'),
@@ -151,6 +158,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         const entitiesKey = 'deployments';
         const widgetHeading = 'Deployments With Most Severe Policy Violations';
+
         verifyItemLinkToEntityPage(
             entitiesKey,
             getItemTextSelectorForWidget(widgetHeading),
@@ -163,6 +171,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         const entitiesKey = 'clusters';
         const widgetHeading = 'Clusters With Most Orchestrator & Istio Vulnerabilities';
+
         verifyItemLinkToEntityPage(
             entitiesKey,
             getItemTextSelectorForWidget(widgetHeading, 'li > div > div > div'),
