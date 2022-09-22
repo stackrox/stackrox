@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	basicAuthProvider "github.com/stackrox/rox/pkg/auth/authproviders/basic"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	basicAuthn "github.com/stackrox/rox/pkg/grpc/authn/basic"
@@ -90,7 +89,7 @@ func RegisterAuthProviderOrPanic(ctx context.Context, mgr *basicAuthn.Manager, r
 
 	// For managed services, we do not want to show the basic auth provider for login purposes. The default auth
 	// in that context will be the sso.redhat.com auth provider.
-	if env.ManagedCentral.BooleanSetting() && buildinfo.ReleaseBuild {
+	if env.ManagedCentral.BooleanSetting() {
 		options = append(options, authproviders.WithVisibility(storage.Traits_HIDDEN))
 	}
 

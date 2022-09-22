@@ -454,12 +454,12 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 		{
 			Route:         "/debug/dump",
 			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
-			ServerHandler: http.HandlerFunc(s.getDebugDump),
+			ServerHandler: httputil.NotImplementedOnManagedServices(http.HandlerFunc(s.getDebugDump)),
 		},
 		{
 			Route:         "/api/extensions/diagnostics",
 			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
-			ServerHandler: http.HandlerFunc(s.getDiagnosticDump),
+			ServerHandler: httputil.NotImplementedOnManagedServices(http.HandlerFunc(s.getDiagnosticDump)),
 		},
 		{
 			Route:         "/debug/versions.json",
