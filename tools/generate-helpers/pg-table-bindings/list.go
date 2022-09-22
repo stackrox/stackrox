@@ -54,7 +54,7 @@ func init() {
 		&storage.ProcessBaselineResults{}:                       resources.ProcessWhitelist,
 		&storage.ProcessBaseline{}:                              resources.ProcessWhitelist,
 		&storage.ProcessIndicator{}:                             resources.Indicator,
-		&storage.ResourceCollection{}:                           resources.Image, // TODO change this
+		&storage.ResourceCollection{}:                           resources.WorkflowAdministration,
 		&storage.ReportConfiguration{}:                          resources.VulnerabilityReports,
 		&storage.SimpleAccessScope{}:                            resources.Role,
 		&storage.StoredLicenseKey{}:                             resources.Licenses,

@@ -14,7 +14,6 @@ type Store interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error)
 
-	DryRun(context.Context, *storage.ResourceCollection) error
 	Upsert(context.Context, *storage.ResourceCollection) error
 	Delete(ctx context.Context, id string) error
 }

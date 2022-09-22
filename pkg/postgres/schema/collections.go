@@ -45,7 +45,7 @@ const (
 // Collections holds the Gorm model for Postgres table `collections`.
 type Collections struct {
 	Id            string `gorm:"column:id;type:varchar;primaryKey"`
-	Name          string `gorm:"column:name;type:varchar"`
+	Name          string `gorm:"column:name;type:varchar;unique"`
 	CreatedByName string `gorm:"column:createdby_name;type:varchar"`
 	UpdatedByName string `gorm:"column:updatedby_name;type:varchar"`
 	Serialized    []byte `gorm:"column:serialized;type:bytea"`

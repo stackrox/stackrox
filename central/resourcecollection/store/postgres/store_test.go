@@ -97,7 +97,7 @@ func (s *CollectionsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundResourceCollection)
-	s.NoError(store.Delete(withNoAccessCtx, resourceCollection.GetId()))
+	s.ErrorIs(store.Delete(withNoAccessCtx, resourceCollection.GetId()), sac.ErrResourceAccessDenied)
 
 	var resourceCollections []*storage.ResourceCollection
 	for i := 0; i < 200; i++ {
