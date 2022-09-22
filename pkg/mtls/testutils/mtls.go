@@ -24,5 +24,6 @@ func LoadTestMTLSCerts(envIsolator *envisolator.EnvIsolator) error {
 	envIsolator.Setenv(mtls.CAKeyFileEnvName, path.Join(centralCertsDir, "ca-key.pem"))
 	envIsolator.Setenv(mtls.CertFilePathEnvName, path.Join(centralCertsDir, "leaf-cert.pem"))
 	envIsolator.Setenv(mtls.KeyFileEnvName, path.Join(centralCertsDir, "leaf-key.pem"))
+	// tests
 	return nil
 }
