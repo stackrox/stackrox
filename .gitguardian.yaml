@@ -1,4 +1,0 @@
-secrets:
-  ignored-paths:
-  - 'qa-tests-backend/artifacts/tls-challenge-test/nginx-lb-certs/*-key.pem'
-  - 'pkg/mtls/testutils/testdata/central-certs/*-key.pem'
