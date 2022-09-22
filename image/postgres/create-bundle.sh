@@ -39,7 +39,7 @@ fi
 postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
 postgres_major="13"
 pg_rhel_major="8"
-pg_rhel_minor="5"
+pg_rhel_minor="6"
 pg_rhel_version="${pg_rhel_major}.${pg_rhel_minor}"
 
 if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
@@ -64,10 +64,7 @@ fi
 # Dockerfile.
 
 # Get postgres RPMs directly
-postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-${arch}"
-if [[ ${arch} != "x86_64" ]]; then
-  postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
-fi
+postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
 
 curl -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
