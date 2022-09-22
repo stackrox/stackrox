@@ -390,6 +390,20 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 		shouldFail  bool
 		expectedErr error
 	}{
+		"read access to both ServiceIdentity and Integration should allow read access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.Integration))),
+			access: storage.Access_READ_ACCESS,
+		},
+		"read access to both ServiceIdentity and Integration should not allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.Integration))),
+			access:      storage.Access_READ_WRITE_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
 		"read access to both Administration and Integration should allow read access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -404,10 +418,10 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,
 		},
-		"read access to only Administration should not allow read access": {
+		"read access to only ServiceIdentity should not allow read access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.Administration))),
+				sac.ResourceScopeKeys(resources.ServiceIdentity))),
 			access:      storage.Access_READ_ACCESS,
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,
@@ -423,13 +437,20 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 		"write access to both should allow write access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
+				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.Integration))),
 			access: storage.Access_READ_WRITE_ACCESS,
 		},
-		"write access to only Administration should not allow write access": {
+		"write access to both replacing resources should allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
+			access: storage.Access_READ_WRITE_ACCESS,
+		},
+		"write access to only ServiceIdentity should not allow write access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.Administration))),
+				sac.ResourceScopeKeys(resources.ServiceIdentity))),
 			access:      storage.Access_READ_WRITE_ACCESS,
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,

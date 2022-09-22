@@ -12,7 +12,7 @@ import (
 
 // CheckAccess returns nil if requested access level is granted in context.
 func CheckAccess(ctx context.Context, access storage.Access) error {
-	helper := sac.ForResources(sac.ForResource(resources.Administration), sac.ForResource(resources.Integration))
+	helper := sac.ForResources(sac.ForResource(resources.ServiceIdentity), sac.ForResource(resources.Integration))
 	if allowed, err := helper.AccessAllowedToAll(ctx, access); err != nil {
 		return errors.Wrap(err, "checking access")
 	} else if !allowed {

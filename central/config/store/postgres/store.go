@@ -28,7 +28,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ConfigsSchema
-	targetResource = resources.Administration
+	targetResource = resources.Config
 )
 
 type Store interface {

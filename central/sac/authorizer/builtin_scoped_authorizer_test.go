@@ -435,13 +435,13 @@ func TestEffectiveAccessScope(t *testing.T) {
 		{
 			name:      "Access to replaced resource (read-only) for unrestricted scope gives unrestricted scope tree for the resource and any access (case read cluster)",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, rolePkg.AccessScopeIncludeAll)},
-			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Compliance),
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.ComplianceRuns),
 			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
 		},
 		{
 			name:      "Access to replaced resource (read-write) for unrestricted scope gives unrestricted scope tree for the resource and any access (case write cluster)",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, rolePkg.AccessScopeIncludeAll)},
-			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Compliance),
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.ComplianceRuns),
 			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
 		},
 		{
@@ -576,13 +576,13 @@ func TestEffectiveAccessScope(t *testing.T) {
 		{
 			name:      "Access to specific replaced resource (read-only) for namespace scope gives namespace scope tree for the resource and any access (case read cluster)",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Namespace())},
-			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Compliance),
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.ComplianceRuns),
 			resultEAS: oneNamespaceEffectiveScope,
 		},
 		{
 			name:      "Access to specific replaced resource (read-write) for namespace scope gives namespace scope tree for the resource and any access (case write cluster)",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Namespace())},
-			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Compliance),
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.ComplianceRuns),
 			resultEAS: oneNamespaceEffectiveScope,
 		},
 		{
@@ -601,14 +601,14 @@ func TestEffectiveAccessScope(t *testing.T) {
 			name: "Access to specific replaced resource (read-only) for mixed scope gives union scope tree for the resource and any access (case read cluster)",
 			roles: []permissions.ResolvedRole{
 				role(complianceEdit, withAccessTo1Namespace()), role(complianceEdit, withAccessTo2Cluster())},
-			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Compliance),
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.ComplianceRuns),
 			resultEAS: mixedEffectiveScope,
 		},
 		{
 			name: "Access to specific replaced resource (read-write) for mixed scope gives union scope tree for the resource and any access (case write cluster)",
 			roles: []permissions.ResolvedRole{
 				role(complianceEdit, withAccessTo1Namespace()), role(complianceEdit, withAccessTo2Cluster())},
-			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Compliance),
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.ComplianceRuns),
 			resultEAS: mixedEffectiveScope,
 		},
 		{

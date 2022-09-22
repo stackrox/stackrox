@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ServiceIdentitiesSchema
-	targetResource = resources.Administration
+	targetResource = resources.ServiceIdentity
 )
 
 type Store interface {

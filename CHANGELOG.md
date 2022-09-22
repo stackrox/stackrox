@@ -39,9 +39,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   `pods`, `events`, and `namespaces`. This fixes an issue when generating diagnostic bundles to now correctly include all relevant information within the namespace of central.
 - ROX-13265: Fix missing rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
 
-### Technical Changes
-- ROX-11101: The Analyst permission set which used to have read access on all permissions except the now deprecated `DebugLogs` permission now has read access to all permissions except `Administration`.
-
 ## [3.72.0]
 
 ### Removed Features

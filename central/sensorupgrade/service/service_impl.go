@@ -23,10 +23,10 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Administration)): {
+		user.With(permissions.View(resources.SensorUpgradeConfig)): {
 			"/v1.SensorUpgradeService/GetSensorUpgradeConfig",
 		},
-		user.With(permissions.Modify(resources.Administration)): {
+		user.With(permissions.Modify(resources.SensorUpgradeConfig)): {
 			"/v1.SensorUpgradeService/UpdateSensorUpgradeConfig",
 		},
 		user.With(permissions.Modify(resources.Cluster)): {

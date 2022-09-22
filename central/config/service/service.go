@@ -26,11 +26,11 @@ var (
 		allow.Anonymous(): {
 			"/v1.ConfigService/GetPublicConfig",
 		},
-		user.With(permissions.View(resources.Administration)): {
+		user.With(permissions.View(resources.Config)): {
 			"/v1.ConfigService/GetConfig",
 			"/v1.ConfigService/GetPrivateConfig",
 		},
-		user.With(permissions.Modify(resources.Administration)): {
+		user.With(permissions.Modify(resources.Config)): {
 			"/v1.ConfigService/PutConfig",
 		},
 	})

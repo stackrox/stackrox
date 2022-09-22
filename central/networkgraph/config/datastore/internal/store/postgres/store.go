@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NetworkGraphConfigsSchema
-	targetResource = resources.Administration
+	targetResource = resources.NetworkGraphConfig
 )
 
 type Store interface {

@@ -23,7 +23,7 @@ var (
 			"/v1.IntegrationHealthService/GetImageIntegrations",
 			"/v1.IntegrationHealthService/GetNotifiers",
 		},
-		user.With(permissions.View(resources.Administration)): {
+		user.With(permissions.View(resources.ScannerDefinitions)): {
 			"/v1.IntegrationHealthService/GetVulnDefinitionsInfo",
 		},
 	})
