@@ -31,7 +31,7 @@ class PostTestsConstants:
 
 
 class NullPostTest:
-    def run(self, test_outputs=None):
+    def run(self, test_outputs=None, test_results=None):
         pass
 
 
@@ -76,7 +76,7 @@ class StoreArtifacts(RunWithBestEffortMixin):
         self.artifact_destination_prefix = artifact_destination_prefix
         self.data_to_store = []
 
-    def run(self, test_outputs=None):
+    def run(self, test_outputs=None, test_results=None):
         self.store_artifacts(test_outputs)
         self.handle_run_failure()
 
@@ -234,7 +234,7 @@ class CheckStackroxLogs(StoreArtifacts):
         self._check_for_errors_in_stackrox_logs = check_for_errors_in_stackrox_logs
         self.central_is_responsive = False
 
-    def run(self, test_outputs=None):
+    def run(self, test_outputs=None, test_results=None):
         self.central_is_responsive = self.wait_for_central_api()
         if self.central_is_responsive:
             self.collect_stackrox_logs()
@@ -302,7 +302,7 @@ class FinalPost(StoreArtifacts):
             self.data_to_store.append(PostTestsConstants.QA_SPOCK_RESULTS)
         self._handle_e2e_progress_failures = handle_e2e_progress_failures
 
-    def run(self, test_outputs=None):
+    def run(self, test_outputs=None, test_results=None):
         self.store_artifacts()
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()
