@@ -15,7 +15,7 @@ var (
 func SuppressCVEReqToVulnReq(request *v1.SuppressCVERequest, createdAt *types.Timestamp) *storage.VulnerabilityRequest {
 	d, err := types.DurationFromProto(request.GetDuration())
 	if err != nil {
-		log.Errorf("could not create vulnerability request for CVE(s) %v", request.GetIds())
+		log.Errorf("could not create vulnerability request for CVE(s) %v", request.GetCves())
 		return nil
 	}
 
@@ -30,7 +30,7 @@ func SuppressCVEReqToVulnReq(request *v1.SuppressCVERequest, createdAt *types.Ti
 		},
 		Entities: &storage.VulnerabilityRequest_Cves{
 			Cves: &storage.VulnerabilityRequest_CVEs{
-				Ids: request.GetIds(),
+				Ids: request.GetCves(),
 			},
 		},
 		Req: &storage.VulnerabilityRequest_DeferralReq{
@@ -57,7 +57,7 @@ func UnSuppressCVEReqToVulnReq(request *v1.UnsuppressCVERequest) *storage.Vulner
 		},
 		Entities: &storage.VulnerabilityRequest_Cves{
 			Cves: &storage.VulnerabilityRequest_CVEs{
-				Ids: request.GetIds(),
+				Ids: request.GetCves(),
 			},
 		},
 	}

@@ -18,6 +18,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   `DeploymentWithProcessInfo` items in `/v1/deploymentswithprocessinfo` endpoint response do not include
   `whitelist_statuses` anymore.
 
+### Removed Features
+- `ids` field in `/v1/cves/suppress` and `/v1/cves/unsuppress` API payload renamed to `cves`.
+### Deprecated Features
+### Technical Changes
+
 ## [3.72.0]
 
 ### Removed Features

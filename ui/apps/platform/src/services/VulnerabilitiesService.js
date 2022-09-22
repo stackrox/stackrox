@@ -41,7 +41,7 @@ function getBaseCveUrl(cveType) {
  */
 export function suppressVulns(cveType, cveNames, duration = 0) {
     const baseUrl = getBaseCveUrl(cveType);
-    return axios.patch(`${baseUrl}/suppress`, { ids: cveNames, duration });
+    return axios.patch(`${baseUrl}/suppress`, { cves: cveNames, duration });
 }
 
 /**
@@ -52,7 +52,7 @@ export function suppressVulns(cveType, cveNames, duration = 0) {
  */
 export function unsuppressVulns(cveType, cveNames) {
     const baseUrl = getBaseCveUrl(cveType);
-    return axios.patch(`${baseUrl}/unsuppress`, { ids: cveNames });
+    return axios.patch(`${baseUrl}/unsuppress`, { cves: cveNames });
 }
 
 export function getCvesInCsvFormat(
