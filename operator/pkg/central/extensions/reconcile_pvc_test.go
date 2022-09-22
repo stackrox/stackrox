@@ -127,7 +127,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 				PersistentVolumeClaim: &platform.PersistentVolumeClaim{},
 			}),
 			ExistingPVCs:  nil,
-			ExpectedError: "invalid persistence configuration, either hostPath oder persistentVolumeClaim must be set, not both",
+			ExpectedError: "invalid persistence configuration, either hostPath or persistentVolumeClaim must be set, not both",
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				DefaultCentralPVCName: pvcNotCreatedVerifier,
 			},
@@ -160,7 +160,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 		"only-one-pvc-with-owner-ref-is-allowed": {
 			Central:       changedPVCNameCentral,
 			ExistingPVCs:  []*corev1.PersistentVolumeClaim{makePVC(changedPVCNameCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass)},
-			ExpectedError: `Could not create PVC "stackrox-db-test" because the operator can only manage 1 PVC for Central. To fix this either reference a manually created PVC or remove the OwnerReference of the "stackrox-db" PVC.`,
+			ExpectedError: `Could not create PVC "stackrox-db-test" because the operator can only manage 1 PVC(s) for Central. To fix this either reference a manually created PVC or remove the OwnerReference of the extraneous PVC.`,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				DefaultCentralPVCName: verifyMultiple(ownedBy(changedPVCNameCentral)),
 				testPVCName:           pvcNotCreatedVerifier,
@@ -227,7 +227,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 				makePVC(emptyNotDeletedCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass),
 				makePVC(emptyNotDeletedCentral, testPVCName, defaultPVCSize, emptyStorageClass),
 			},
-			ExpectedError: "multiple owned PVCs were found, please remove not used ones or delete their OwnerReferences. Found PVCs: stackrox-db, stackrox-db-test: operator is only allowed to have 1 owned PVC",
+			ExpectedError: "too many owned PVCs were found, please remove not used ones or delete their OwnerReferences. Found PVCs: stackrox-db, stackrox-db-test: operator is only allowed to have 1 owned PVC(s)",
 		},
 
 		"storage-class-is-not-reconciled-if-empty-storage-class-is-given": {
@@ -340,16 +340,17 @@ func makePVC(owner *platform.Central, name string, size resource.Quantity, stora
 			},
 		},
 	}
-
 }
 
 func newReconcilePVCExtensionRun(c *platform.Central, client ctrlClient.Client) reconcilePVCExtensionRun {
 	return reconcilePVCExtensionRun{
-		ctx:        context.Background(),
-		namespace:  "stackrox",
-		client:     client,
-		centralObj: c,
-		log:        logr.Discard(),
+		ctx:              context.Background(),
+		namespace:        "stackrox",
+		client:           client,
+		centralObj:       c,
+		defaultClaimName: DefaultCentralPVCName,
+		persistence:      c.Spec.Central.GetPersistence(),
+		log:              logr.Discard(),
 	}
 }
 

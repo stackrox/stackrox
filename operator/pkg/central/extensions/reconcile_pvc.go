@@ -3,7 +3,6 @@ package extensions
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -107,7 +106,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	if err != nil {
 		return err
 	}
-	if len(ownedPVCs) == maxOwnedPVCs && ownedPVCs[claimName] == nil {
+	if len(ownedPVCs) == maxOwnedPVCs && pvc == nil {
 		return errors.Errorf(
 			"Could not create PVC %q because the operator can only manage %d PVC(s) for Central. To fix this either reference a manually created PVC or remove the OwnerReference of the extraneous PVC.", claimName, maxOwnedPVCs)
 	}
@@ -246,13 +245,12 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCs() (map[string]*corev1.Pers
 	}
 
 	ownedPVCs := make(map[string]*corev1.PersistentVolumeClaim)
+	var names []string
+	for _, item := range pvcList {
+		names = append(names, item.GetName())
+		ownedPVCs[item.GetName()] = item
+	}
 	if len(pvcList) > maxOwnedPVCs {
-		var names []string
-		for _, item := range pvcList {
-			names = append(names, item.GetName())
-			ownedPVCs[item.GetName()] = item
-		}
-		sort.Strings(names)
 		return nil, errors.Wrapf(errMultipleOwnedPVCs,
 			"too many owned PVCs were found, please remove not used ones or delete their OwnerReferences. Found PVCs: %s", strings.Join(names, ", "))
 	}
