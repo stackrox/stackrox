@@ -1,202 +1,172 @@
-import { url, selectors } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
+import {
+    interactAndWaitForVulnerabilityManagementEntity,
+    visitVulnerabilityManagementDashboard,
+} from '../../helpers/vulnmanagement/entities';
 
-function validatePresenceOfTabsAndLinks(selector, relatedEntities) {
-    cy.get(selector).each(($el, i) => {
-        if (relatedEntities[i] === 'Policies' || relatedEntities[i] === 'POLICIES') {
-            expect($el.text()).contains(
-                relatedEntities[i] || 'policy' || 'POLICY',
-                'expected text is displayed'
-            );
-        } else {
-            expect($el.text()).contains(relatedEntities[i], 'expected text is displayed');
-        }
-    });
-}
-
-function validateRelatedEntitiesValuesWithTabsHeaders(entityName) {
-    cy.get(selectors.getTileLink(entityName))
+function verifyItemLinkToEntityPage(entitiesKey, itemTextSelector, getHeaderTextFromItemText) {
+    cy.get(itemTextSelector)
         .invoke('text')
-        .then((value) => {
-            cy.get(selectors.getAllClickableTileLinks(entityName)).click();
-            cy.get(selectors.tabHeader)
-                .invoke('text')
-                .then((text) => {
-                    expect(parseInt(text, 10)).to.equals(
-                        parseInt(value, 10),
-                        `number of ${entityName}(s) in the list matches the overview tab tile link`
-                    );
-                });
+        .then((itemText) => {
+            const headerText = getHeaderTextFromItemText(itemText);
+
+            interactAndWaitForVulnerabilityManagementEntity(() => {
+                cy.get(itemTextSelector).click();
+            }, entitiesKey);
+
+            cy.get(`${selectors.entityPageHeader}:contains("${headerText}")`);
         });
 }
 
-function validateWithAParentSelector(
-    entityName,
-    urlToVerify,
-    topRowSelector,
-    rowIndex,
-    tabLinksList,
-    tileLinksList
+function getItemTextSelectorForWidget(
+    widgetHeading,
+    itemTextSelector = '[data-testid="numbered-list-item-name"]'
 ) {
-    cy.visit(url.dashboard);
-    cy.get(topRowSelector)
-        .eq(rowIndex)
-        .invoke('text')
-        .then((value) => {
-            // trim the first 3 chars from the front of the text, to get the image name to compare in the detail view
-            //   e.g., "1. k8s.gcr.io/coredns:1.3.1" trimmed becomes "k8s.gcr.io/coredns:1.3.1"
-            let rowText;
-            if (entityName === 'image') {
-                rowText = value.slice(2, value.length - 1).trimLeft();
-            }
-            if (entityName === 'cve') {
-                rowText = value
-                    .slice(2, value.length - 1)
-                    .split('/')[0]
-                    .trimLeft()
-                    .trimRight();
-            }
-            cy.get(topRowSelector).eq(rowIndex).click();
-            cy.url().should('contain', urlToVerify);
-            cy.get('[data-testid="header-text"]').should('have.text', rowText);
-            validatePresenceOfTabsAndLinks(selectors.tabLinks, tabLinksList);
-            validatePresenceOfTabsAndLinks(selectors.allTileLinks, tileLinksList);
-            for (let i = 0; i < tileLinksList.length; i += 1) {
-                cy.get(selectors.tabLinks).find(`:contains('Overview')`).click();
-                validateRelatedEntitiesValuesWithTabsHeaders(tileLinksList[i]);
-            }
-        });
+    return `[data-testid="widget"]:contains("${widgetHeading}") ${itemTextSelector}:eq(0)`;
 }
 
-function validateWithActualSelector(
-    entityName,
-    urlToVerify,
-    topRowSelector,
-    tabLinksList,
-    tileLinksList
-) {
-    cy.visit(url.dashboard);
-    cy.get(topRowSelector)
-        .invoke('text')
-        .then((value) => {
-            // trim the first 3 chars from the front of the text, to get the image name to compare in the detail view
-            //   e.g., "1. k8s.gcr.io/coredns:1.3.1" trimmed becomes "k8s.gcr.io/coredns:1.3.1"
-            let rowText;
-            if (entityName === 'image') {
-                rowText = value.slice(2, value.length - 1).trimLeft();
-            }
-            if (entityName === 'cve') {
-                rowText = value
-                    .slice(2, value.length - 1)
-                    .split('/')[0]
-                    .trimLeft()
-                    .trimRight();
-            }
-            cy.get(topRowSelector).click();
-            cy.url().should('contain', urlToVerify);
-            cy.get('[data-testid="header-text"]').should('have.text', rowText);
-            validatePresenceOfTabsAndLinks(selectors.tabLinks, tabLinksList);
-            validatePresenceOfTabsAndLinks(selectors.allTileLinks, tileLinksList);
-            for (let i = 0; i < tileLinksList.length; i += 1) {
-                cy.get(selectors.tabLinks).find(`:contains('Overview')`).click();
-                validateRelatedEntitiesValuesWithTabsHeaders(tileLinksList[i]);
-            }
-        });
+function getHeaderTextFromItemTextWithColonSeparators(itemText) {
+    const [, itemTextAfterNumberBeforeSlash] = /^\d+\.([^:]+):.*$/.exec(itemText);
+    return itemTextAfterNumberBeforeSlash.trim();
 }
 
-// @TODO: enable debugging test failures for sorting by priority
-describe.skip('Vuln Management Dashboard Page To Entity Page Navigation Validation', () => {
+function getHeaderTextFromItemTextWithSlashSeparators(itemText) {
+    const [, itemTextAfterNumberBeforeSlash] = /^\d+\.([^/]+)\/.*$/.exec(itemText);
+    return itemTextAfterNumberBeforeSlash.trim();
+}
+
+function getHeaderTextFromItemTextWithoutSeparators(itemText) {
+    const [, itemTextAfterNumber] = /^\d+\.(.+)$/.exec(itemText);
+    return itemTextAfterNumber.trim();
+}
+
+function selectTopRiskiestOption(optionText) {
+    const widgetSelector = selectors.getWidget('Top Riskiest');
+    cy.get(`${widgetSelector} .react-select__control`).click();
+    cy.get(`${widgetSelector} .react-select__option:contains("${optionText}")`).click();
+}
+
+describe('Vulnerability Management Dashboard', () => {
     withAuth();
 
-    it('validate data consistency for top riskiest images widget data row onwards', () => {
-        cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('Top Riskiest Images')).find(selectors.viewAllButton).click();
-        cy.get(selectors.numCVEColLink)
-            .eq(2)
-            .invoke('text')
-            .then((value) => {
-                if (value === 'No CVEs') {
-                    validateWithAParentSelector(
-                        'image',
-                        url.list.image,
-                        selectors.dataRowLink,
-                        0,
-                        [
-                            'Overview',
-                            'deployments',
-                            'components',
-                            'CVES',
-                            'Fixable CVEs',
-                            'Dockerfile',
-                        ],
-                        ['DEPLOYMENT', 'COMPONENT']
-                    );
-                } else {
-                    validateWithAParentSelector(
-                        'image',
-                        url.list.image,
-                        selectors.dataRowLink,
-                        0,
-                        [
-                            'Overview',
-                            'deployments',
-                            'components',
-                            'CVES',
-                            'Fixable CVEs',
-                            'Dockerfile',
-                        ],
-                        ['DEPLOYMENT', 'COMPONENT', 'CVE']
-                    );
-                }
-            });
+    before(function beforeHook() {
+        if (!hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+            this.skip();
+        }
     });
 
-    it('validate data consistency for most common vulnerabilities widget data row onwards', () => {
-        validateWithActualSelector(
-            'cve',
-            url.list.cve,
-            selectors.topMostRowMCV,
-            ['Overview', 'components', 'images', 'deployments'],
-            ['COMPONENT', 'IMAGE', 'DEPLOYMENT']
+    // Some tests might fail in local deployment.
+
+    it('has link from Top Riskiest Images widget to image page', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'images';
+        const widgetHeading = 'Top Riskiest Images';
+        verifyItemLinkToEntityPage(
+            entitiesKey,
+            getItemTextSelectorForWidget(widgetHeading),
+            getHeaderTextFromItemTextWithoutSeparators
         );
     });
 
-    it('validate data consistency for recently detected vulnerabilities widget data row onwards', () => {
-        validateWithActualSelector(
-            'cve',
-            url.list.cve,
-            selectors.topMostRowRDV,
-            ['Overview', 'components', 'images', 'deployments'],
-            ['COMPONENT', 'IMAGE', 'DEPLOYMENT']
+    it('has link from Top Riskiest Node Components widget to node component page', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'components'; // page makes singular request for components instead of node-components
+        const widgetHeading = 'Top Riskiest Node Components';
+        selectTopRiskiestOption(widgetHeading);
+        verifyItemLinkToEntityPage(
+            entitiesKey,
+            getItemTextSelectorForWidget(widgetHeading),
+            getHeaderTextFromItemTextWithColonSeparators
         );
     });
 
-    it('validate data consistency for frequently violated policies widget data row onwards', () => {
-        validateWithActualSelector(
-            'cve',
-            url.list.policy,
-            selectors.topMostRowFVP,
-            ['Overview', 'deployments'],
-            ['DEPLOYMENT']
+    it('has link from Top Riskiest Image Components widget to image component page', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'image-components';
+        const widgetHeading = 'Top Riskiest Image Components';
+        selectTopRiskiestOption(widgetHeading);
+        verifyItemLinkToEntityPage(
+            entitiesKey,
+            getItemTextSelectorForWidget(widgetHeading),
+            getHeaderTextFromItemTextWithColonSeparators
         );
     });
 
-    it('validate data consistency for deployments with most severe policy violations widget data row onwards', () => {
-        validateWithActualSelector(
-            'cve',
-            url.list.deployment,
-            selectors.topMostRowMSPV,
+    it('has link from Top Riskiest Nodes widget to node page', () => {
+        visitVulnerabilityManagementDashboard();
 
-            [
-                'Overview',
-                'images',
-                'components',
-                'failing policies',
-                'CVES',
-                'Policies',
-                'Fixable CVEs',
-            ],
-            ['POLICIES', 'IMAGE', 'COMPONENT', 'CVE']
+        const entitiesKey = 'nodes';
+        const widgetHeading = 'Top Riskiest Nodes';
+        selectTopRiskiestOption(widgetHeading);
+        verifyItemLinkToEntityPage(
+            entitiesKey,
+            getItemTextSelectorForWidget(widgetHeading),
+            getHeaderTextFromItemTextWithoutSeparators
+        );
+    });
+
+    it('has link from Frequently Violated Policies widget to policy page', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'policies';
+        const widgetHeading = 'Frequently Violated Policies';
+        verifyItemLinkToEntityPage(
+            entitiesKey,
+            getItemTextSelectorForWidget(widgetHeading),
+            getHeaderTextFromItemTextWithSlashSeparators
+        );
+    });
+
+    it('has link from Recently Detected Image Vulnerabilities widget to vulnerability page', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'cves'; // page makes singular request for cves instead of image-cves
+        const widgetHeading = 'Recently Detected Image Vulnerabilities';
+        verifyItemLinkToEntityPage(
+            entitiesKey,
+            getItemTextSelectorForWidget(widgetHeading),
+            getHeaderTextFromItemTextWithSlashSeparators
+        );
+    });
+
+    it('has link from Most Common Image Vulnerabilities widget to vulnerability page', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'cves'; // page makes singular request for cves instead of image-cves
+        const widgetHeading = 'Most Common Image Vulnerabilities';
+        verifyItemLinkToEntityPage(
+            entitiesKey,
+            getItemTextSelectorForWidget(widgetHeading, '.rv-xy-plot__series--label text'),
+            getHeaderTextFromItemTextWithSlashSeparators
+        );
+    });
+
+    it('has link from Deployments With Most Severe Policy Violations widget to deployment page', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'deployments';
+        const widgetHeading = 'Deployments With Most Severe Policy Violations';
+        verifyItemLinkToEntityPage(
+            entitiesKey,
+            getItemTextSelectorForWidget(widgetHeading),
+            getHeaderTextFromItemTextWithoutSeparators
+        );
+    });
+
+    it('has link from Clusters With Most Orchestrator & Istio Vulnerabilities to cluster page', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'clusters';
+        const widgetHeading = 'Clusters With Most Orchestrator & Istio Vulnerabilities';
+        verifyItemLinkToEntityPage(
+            entitiesKey,
+            getItemTextSelectorForWidget(widgetHeading, 'li > div > div > div'),
+            (itemText) => itemText
         );
     });
 });
