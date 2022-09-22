@@ -44,7 +44,7 @@ describe('Vulnerability Management Deployments', () => {
                 'Images',
                 'Risk Priority',
             ]);
-            const pathname = '/main/vulnerability-management/deploytments';
+            const pathname = '/main/vulnerability-management/deployments';
             cy.get(selectors.tableBodyColumn).each(($el) => {
                 const columnValue = $el.text().toLowerCase();
                 if (columnValue !== 'no failing policies' && columnValue.includes('polic')) {
