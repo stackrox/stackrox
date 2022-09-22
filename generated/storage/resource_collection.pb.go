@@ -166,6 +166,7 @@ func (m *ResourceCollection) Clone() *ResourceCollection {
 }
 
 type ResourceCollection_EmbeddedResourceCollection struct {
+	// 'id' is searchable to force a separate table
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Embedded Collection ID",hidden`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

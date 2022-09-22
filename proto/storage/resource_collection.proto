@@ -12,7 +12,7 @@ package storage;
 
 message ResourceCollection {
   message EmbeddedResourceCollection {
-    // this is searchable to force a separate table
+    // 'id' is searchable to force a separate table
     string id = 1 [(gogoproto.moretags) = 'search:"Embedded Collection ID",hidden'];
   }
 
