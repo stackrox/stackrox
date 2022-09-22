@@ -12,12 +12,12 @@ export const collectionsCountUrl = '/v1/collections/count';
 export const collectionsDryRunUrl = '/v1/collections/dryrun';
 export const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
 
-type CollectionResource = 'Cluster' | 'Namespace' | 'Deployment';
+type SelectorEntityType = 'Cluster' | 'Namespace' | 'Deployment';
 
 type SelectorField =
-    | `${CollectionResource}`
-    | `${CollectionResource} Label`
-    | `${CollectionResource} Annotation`;
+    | `${SelectorEntityType}`
+    | `${SelectorEntityType} Label`
+    | `${SelectorEntityType} Annotation`;
 
 type SelectorRule = {
     fieldName: SelectorField;
