@@ -34,7 +34,7 @@ func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n strin
 	return lastMessage
 }
 
-func GetLastAlertsWithDeploymentId(messages []*central.MsgFromSensor, id string) *central.MsgFromSensor {
+func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
 	for i := len(messages) - 1; i >= 0; i-- {
 		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id {
@@ -47,7 +47,7 @@ func GetLastAlertsWithDeploymentId(messages []*central.MsgFromSensor, id string)
 
 func assertLastDeploymentHasPortExposure(t *testing.T, messages []*central.MsgFromSensor, ports []*storage.PortConfig, alerts []*storage.Alert) {
 	lastNginxDeploymentUpdate := GetLastMessageWithDeploymentName(messages, "nginx-deployment")
-	lastNginxDeploymentAlerts := GetLastAlertsWithDeploymentId(messages, lastNginxDeploymentUpdate.GetEvent().GetDeployment().GetId())
+	lastNginxDeploymentAlerts := GetLastAlertsWithDeploymentID(messages, lastNginxDeploymentUpdate.GetEvent().GetDeployment().GetId())
 	require.NotNil(t, lastNginxDeploymentUpdate, "should have found a message for nginx-deployment")
 	require.NotNil(t, lastNginxDeploymentAlerts, "should have found an alert for nginx-deployment")
 	deployment := lastNginxDeploymentUpdate.GetEvent().GetDeployment()
