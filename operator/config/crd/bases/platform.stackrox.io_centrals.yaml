@@ -93,7 +93,7 @@ spec:
                         - name
                         type: object
                       persistence:
-                        description: Configures how Central should store its persistent
+                        description: Configures how Central DB should store its persistent
                           data. You can choose between using a persistent volume claim
                           (recommended default), and a host path.
                         properties:
