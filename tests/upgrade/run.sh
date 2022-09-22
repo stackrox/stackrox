@@ -84,6 +84,7 @@ preamble() {
     case "$(uname -m)" in
         x86_64) TEST_HOST_PLATFORM="${host_os}_amd64" ;;
         aarch64) TEST_HOST_PLATFORM="${host_os}_arm64" ;;
+        arm64) TEST_HOST_PLATFORM="${host_os}_arm64" ;;
         ppc64le) TEST_HOST_PLATFORM="${host_os}_ppc64le" ;;
         s390x) TEST_HOST_PLATFORM="${host_os}_s390x" ;;
         *) die "Unknown architecture" ;;
