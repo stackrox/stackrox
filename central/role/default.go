@@ -82,5 +82,5 @@ func GetAnalystPermissions() []permissions.ResourceWithAccess {
 			return append(resourceToAccess[:i], resourceToAccess[i+1:]...)
 		}
 	}
-	panic("DebugLogs resource was not found amongst all resources.")
+	panic("Administration resource was not found amongst all resources.")
 }

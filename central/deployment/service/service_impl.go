@@ -45,7 +45,7 @@ var (
 			"/v1.DeploymentService/ListDeploymentsWithProcessInfo",
 		},
 	})
-	baselineAndIndicatorAuth = user.With(permissions.View(resources.DeploymentExtension))
+	deploymentExtensionAuth = user.With(permissions.View(resources.DeploymentExtension))
 )
 
 // serviceImpl provides APIs for deployments.
@@ -69,7 +69,7 @@ func (s *serviceImpl) baselineResultsForDeployment(ctx context.Context, deployme
 }
 
 func (s *serviceImpl) fillBaselineResults(ctx context.Context, resp *v1.ListDeploymentsWithProcessInfoResponse) error {
-	if err := baselineAndIndicatorAuth.Authorized(ctx, ""); err == nil {
+	if err := deploymentExtensionAuth.Authorized(ctx, ""); err == nil {
 		for _, depWithProc := range resp.Deployments {
 			baselineResults, err := s.baselineResultsForDeployment(ctx, depWithProc.GetDeployment())
 			if err != nil {

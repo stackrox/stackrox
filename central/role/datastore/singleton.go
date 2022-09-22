@@ -101,11 +101,7 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.View(resources.Access),
 			permissions.View(resources.Cluster),
 			permissions.View(resources.Namespace),
-			permissions.View(resources.Access),
 			permissions.Modify(resources.Access),
-			permissions.View(resources.Access),
-			permissions.View(resources.Cluster),
-			permissions.View(resources.Namespace),
 		},
 	},
 	rolePkg.SensorCreator: {

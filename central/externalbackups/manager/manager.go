@@ -46,7 +46,7 @@ func New(reporter integrationhealth.Reporter) Manager {
 }
 
 var (
-	externalBkpSAC = sac.ForResource(resources.Integration)
+	integrationSAC = sac.ForResource(resources.Integration)
 )
 
 type managerImpl struct {
@@ -71,7 +71,7 @@ func renderExternalBackupFromProto(backup *storage.ExternalBackup) (types.Extern
 }
 
 func (m *managerImpl) Upsert(ctx context.Context, backup *storage.ExternalBackup) error {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -98,7 +98,7 @@ func (m *managerImpl) Upsert(ctx context.Context, backup *storage.ExternalBackup
 }
 
 func (m *managerImpl) Test(ctx context.Context, backup *storage.ExternalBackup) error {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -123,7 +123,7 @@ func (m *managerImpl) getBackup(id string) (*backupInfo, error) {
 }
 
 func (m *managerImpl) Backup(ctx context.Context, id string) error {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -145,7 +145,7 @@ func (m *managerImpl) Backup(ctx context.Context, id string) error {
 }
 
 func (m *managerImpl) Remove(ctx context.Context, id string) {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil || !ok {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil || !ok {
 		return
 	}
 

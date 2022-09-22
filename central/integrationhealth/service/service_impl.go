@@ -29,7 +29,6 @@ var (
 	})
 )
 
-// ImageIntegrationService is the struct that manages the ImageIntegration API
 type serviceImpl struct {
 	v1.UnimplementedIntegrationHealthServiceServer
 
@@ -74,7 +73,7 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, empty *v1.Empty) (*v1.Ge
 	}, nil
 }
 
-// GetBackups returns the health status for all configured external backup integrations.
+// GetBackupPlugins returns the health status for all configured external backup integrations.
 func (s *serviceImpl) GetBackupPlugins(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
 	healthData, err := s.datastore.GetBackupPlugins(ctx)
 	if err != nil {

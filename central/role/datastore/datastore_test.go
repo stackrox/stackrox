@@ -42,7 +42,7 @@ func TestAnalystRoleDoesNotContainAdministration(t *testing.T) {
 	resourceToAccess := analystRole.resourceWithAccess
 	// Contains all resources except one.
 	assert.Len(t, resourceToAccess, len(resources.ListAll())-1)
-	// Does not contain DebugLogs resource.
+	// Does not contain Administration resource.
 	for _, resource := range resourceToAccess {
 		assert.NotEqual(t, resource.Resource.GetResource(), resources.Administration.GetResource())
 	}

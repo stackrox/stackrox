@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	authProviderSAC = sac.ForResource(resources.Access)
+	accessSAC = sac.ForResource(resources.Access)
 )
 
 type datastoreImpl struct {
@@ -30,7 +30,7 @@ func (b *datastoreImpl) GetAllAuthProviders(ctx context.Context) ([]*storage.Aut
 
 // AddAuthProvider adds an auth provider into bolt.
 func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error {
-	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -49,7 +49,7 @@ func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *stora
 
 // UpdateAuthProvider upserts an auth provider into bolt.
 func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error {
-	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -67,7 +67,7 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 
 // RemoveAuthProvider removes an auth provider from bolt.
 func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, id string, force bool) error {
-	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

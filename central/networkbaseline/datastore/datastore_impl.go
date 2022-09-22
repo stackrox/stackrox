@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	networkBaselineSAC = sac.ForResource(resources.DeploymentExtension)
+	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 type dataStoreImpl struct {
@@ -170,11 +170,11 @@ func (ds *dataStoreImpl) allowed(
 	access storage.Access,
 	baseline *storage.NetworkBaseline,
 ) (bool, error) {
-	return networkBaselineSAC.ScopeChecker(ctx, access).ForNamespaceScopedObject(baseline).IsAllowed(), nil
+	return deploymentExtensionSAC.ScopeChecker(ctx, access).ForNamespaceScopedObject(baseline).IsAllowed(), nil
 }
 
 func (ds *dataStoreImpl) Walk(ctx context.Context, f func(baseline *storage.NetworkBaseline) error) error {
-	if ok, err := networkBaselineSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return nil

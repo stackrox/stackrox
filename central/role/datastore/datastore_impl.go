@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	roleSAC = sac.ForResource(resources.Access)
+	accessSAC = sac.ForResource(resources.Access)
 
 	log = logging.LoggerForModule()
 )
@@ -31,7 +31,7 @@ type dataStoreImpl struct {
 }
 
 func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Role, bool, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, false, err
 	}
 
@@ -39,7 +39,7 @@ func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Rol
 }
 
 func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
 
@@ -63,7 +63,7 @@ func (ds *dataStoreImpl) getAllRolesNoScopeCheck(ctx context.Context) ([]*storag
 }
 
 func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error {
-	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 	if err := rolePkg.ValidateRole(role); err != nil {
@@ -89,7 +89,7 @@ func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error 
 }
 
 func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) error {
-	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 	if err := rolePkg.ValidateRole(role); err != nil {
@@ -115,7 +115,7 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 }
 
 func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
-	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 	if err := verifyNotDefaultRole(name); err != nil {
@@ -134,7 +134,7 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 //                                                                            //
 
 func (ds *dataStoreImpl) GetPermissionSet(ctx context.Context, id string) (*storage.PermissionSet, bool, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, false, err
 	}
 
@@ -142,7 +142,7 @@ func (ds *dataStoreImpl) GetPermissionSet(ctx context.Context, id string) (*stor
 }
 
 func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.PermissionSet, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
 
@@ -162,7 +162,7 @@ func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.P
 }
 
 func (ds *dataStoreImpl) AddPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error {
-	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 	if err := rolePkg.ValidatePermissionSet(permissionSet); err != nil {
@@ -190,7 +190,7 @@ func (ds *dataStoreImpl) AddPermissionSet(ctx context.Context, permissionSet *st
 }
 
 func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error {
-	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 	if err := rolePkg.ValidatePermissionSet(permissionSet); err != nil {
@@ -218,7 +218,7 @@ func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet 
 }
 
 func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) error {
-	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 
@@ -260,7 +260,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 //                                                                            //
 
 func (ds *dataStoreImpl) GetAccessScope(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, false, err
 	}
 
@@ -268,7 +268,7 @@ func (ds *dataStoreImpl) GetAccessScope(ctx context.Context, id string) (*storag
 }
 
 func (ds *dataStoreImpl) GetAllAccessScopes(ctx context.Context) ([]*storage.SimpleAccessScope, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
 
@@ -288,7 +288,7 @@ func (ds *dataStoreImpl) GetAllAccessScopes(ctx context.Context) ([]*storage.Sim
 }
 
 func (ds *dataStoreImpl) AddAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error {
-	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 	if err := rolePkg.ValidateSimpleAccessScope(scope); err != nil {
@@ -316,7 +316,7 @@ func (ds *dataStoreImpl) AddAccessScope(ctx context.Context, scope *storage.Simp
 }
 
 func (ds *dataStoreImpl) UpdateAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error {
-	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 	if err := rolePkg.ValidateSimpleAccessScope(scope); err != nil {
@@ -344,7 +344,7 @@ func (ds *dataStoreImpl) UpdateAccessScope(ctx context.Context, scope *storage.S
 }
 
 func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error {
-	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 
@@ -383,7 +383,7 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 }
 
 func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (permissions.ResolvedRole, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
 

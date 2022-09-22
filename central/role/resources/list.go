@@ -74,9 +74,6 @@ var (
 	WatchedImage           = newResourceMetadata("WatchedImage", permissions.GlobalScope)
 	WorkflowAdministration = newResourceMetadata("WorkflowAdministration", permissions.GlobalScope)
 
-	// To-be-deprecated resources. For now, the resources should still be used in favor of the newly
-	// introduced ones.
-
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	AllComments = newDeprecatedResourceMetadata("AllComments", permissions.GlobalScope,
 		Administration)
@@ -85,9 +82,6 @@ var (
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ComplianceRuns = newDeprecatedResourceMetadata("ComplianceRuns", permissions.ClusterScope,
 		Compliance)
-	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
-	ComplianceRunSchedule = newDeprecatedResourceMetadata("ComplianceRunSchedule",
-		permissions.GlobalScope, Administration)
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	Config = newDeprecatedResourceMetadata("Config", permissions.GlobalScope,
 		Administration)

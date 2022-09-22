@@ -92,7 +92,7 @@ func (s *serviceIdentityDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestAllowsAdd() {
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.AddServiceIdentity(s.hasWriteCtx, &storage.ServiceIdentity{})
 	s.NoError(err, "expected no error trying to write with permissions")

@@ -22,8 +22,8 @@ const (
 )
 
 var (
-	graphConfigSAC = sac.ForResource(resources.Administration)
-	log            = logging.LoggerForModule()
+	administrationSAC = sac.ForResource(resources.Administration)
+	log               = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -80,7 +80,7 @@ func (d *datastoreImpl) initDefaultConfig(ctx context.Context) error {
 }
 
 func (d *datastoreImpl) GetNetworkGraphConfig(ctx context.Context) (*storage.NetworkGraphConfig, error) {
-	if ok, err := graphConfigSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, sac.ErrResourceAccessDenied
@@ -97,7 +97,7 @@ func (d *datastoreImpl) GetNetworkGraphConfig(ctx context.Context) (*storage.Net
 }
 
 func (d *datastoreImpl) UpdateNetworkGraphConfig(ctx context.Context, config *storage.NetworkGraphConfig) error {
-	if ok, err := graphConfigSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

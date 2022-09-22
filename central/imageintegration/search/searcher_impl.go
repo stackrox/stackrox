@@ -6,18 +6,12 @@ import (
 	"github.com/stackrox/rox/central/imageintegration/index"
 	imageIntegrationMapping "github.com/stackrox/rox/central/imageintegration/index/mappings"
 	"github.com/stackrox/rox/central/imageintegration/store"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/sortfields"
-)
-
-var (
-	imageIntegrationSAC = sac.ForResource(resources.Integration)
 )
 
 // searcherImpl provides an intermediary implementation layer for image integration.

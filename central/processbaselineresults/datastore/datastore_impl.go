@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	processBaselineSAC = sac.ForResource(resources.DeploymentExtension)
+	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 type datastoreImpl struct {
@@ -18,7 +18,7 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) UpsertBaselineResults(ctx context.Context, results *storage.ProcessBaselineResults) error {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(results).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(results).IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -36,7 +36,7 @@ func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID str
 		return nil, err
 	}
 
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(pWResults).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(pWResults).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -54,7 +54,7 @@ func (d *datastoreImpl) DeleteBaselineResults(ctx context.Context, deploymentID 
 		return err
 	}
 
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(pWResults).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(pWResults).IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 

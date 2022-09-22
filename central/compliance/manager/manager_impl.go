@@ -41,8 +41,7 @@ var (
 
 	scrapeDataDeps = []string{"HostScraped"}
 
-	complianceRunSAC         = sac.ForResource(resources.ComplianceRuns)
-	complianceRunScheduleSAC = sac.ForResource(resources.Administration)
+	complianceRunSAC = sac.ForResource(resources.ComplianceRuns)
 )
 
 type manager struct {

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	notifierSAC = sac.ForResource(resources.Integration)
+	integrationSAC = sac.ForResource(resources.Integration)
 )
 
 // NotifierSet is a set that coordinates present policies and notifiers.
@@ -110,7 +110,7 @@ func (p *notifierSetImpl) RemoveNotifier(ctx context.Context, id string) {
 
 // GetNotifier gets a notifier from the set.
 func (p *notifierSetImpl) GetNotifier(ctx context.Context, id string) notifiers.Notifier {
-	if ok, err := notifierSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil
 	}
 

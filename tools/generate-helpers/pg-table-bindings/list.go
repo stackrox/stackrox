@@ -40,6 +40,7 @@ func init() {
 		&storage.ImageCVE{}:                                     resources.Image,
 		&storage.ImageCVEEdge{}:                                 resources.Image,
 		&storage.ImageIntegration{}:                             resources.Integration,
+		&storage.IntegrationHealth{}:                            resources.Integration,
 		&storage.K8SRoleBinding{}:                               resources.K8sRoleBinding,
 		&storage.K8SRole{}:                                      resources.K8sRole,
 		&storage.LogImbue{}:                                     resources.Administration,

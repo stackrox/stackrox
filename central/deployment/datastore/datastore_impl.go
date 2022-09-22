@@ -30,7 +30,7 @@ import (
 
 var (
 	deploymentsSAC = sac.ForResource(resources.Deployment)
-	indicatorSAC   = sac.ForResource(resources.DeploymentExtension)
+	extensionSAC   = sac.ForResource(resources.DeploymentExtension)
 )
 
 type datastoreImpl struct {

@@ -81,7 +81,7 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TestAllowsUpdate() {
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.UpsertSensorUpgradeConfig(s.hasWriteCtx, &storage.SensorUpgradeConfig{})
 	s.NoError(err, "expected no error trying to write with permissions")

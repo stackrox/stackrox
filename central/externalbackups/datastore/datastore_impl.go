@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	externalBkpSAC = sac.ForResource(resources.Integration)
+	integrationSAC = sac.ForResource(resources.Integration)
 )
 
 type datastoreImpl struct {
@@ -18,7 +18,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) ListBackups(ctx context.Context) ([]*storage.ExternalBackup, error) {
-	if ok, err := externalBkpSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -28,7 +28,7 @@ func (ds *datastoreImpl) ListBackups(ctx context.Context) ([]*storage.ExternalBa
 }
 
 func (ds *datastoreImpl) GetBackup(ctx context.Context, id string) (*storage.ExternalBackup, bool, error) {
-	if ok, err := externalBkpSAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, false, err
 	}
 
@@ -36,7 +36,7 @@ func (ds *datastoreImpl) GetBackup(ctx context.Context, id string) (*storage.Ext
 }
 
 func (ds *datastoreImpl) UpsertBackup(ctx context.Context, backup *storage.ExternalBackup) error {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -46,7 +46,7 @@ func (ds *datastoreImpl) UpsertBackup(ctx context.Context, backup *storage.Exter
 }
 
 func (ds *datastoreImpl) RemoveBackup(ctx context.Context, id string) error {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

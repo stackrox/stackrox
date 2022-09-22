@@ -28,7 +28,7 @@ const (
 )
 
 var (
-	indicatorSAC = sac.ForResource(resources.DeploymentExtension)
+	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 type datastoreImpl struct {
@@ -43,7 +43,7 @@ type datastoreImpl struct {
 }
 
 func checkReadAccess(ctx context.Context, indicator *storage.ProcessIndicator) (bool, error) {
-	return indicatorSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(indicator).IsAllowed(), nil
+	return deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(indicator).IsAllowed(), nil
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -87,7 +87,7 @@ func (ds *datastoreImpl) GetProcessIndicators(ctx context.Context, ids []string)
 }
 
 func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ...*storage.ProcessIndicator) error {
-	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -113,7 +113,7 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
-	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -123,7 +123,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.Proces
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []string) error {
-	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -153,7 +153,7 @@ func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) err
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id string) error {
-	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
