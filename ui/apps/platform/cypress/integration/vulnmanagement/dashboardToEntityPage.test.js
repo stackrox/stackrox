@@ -135,7 +135,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         verifyItemLinkToEntityPage(
             entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading),
+            getItemTextSelectorForWidget(widgetHeading, '.rv-xy-plot__series--label text'),
             getHeaderTextFromItemTextWithSlashSeparators
         );
     });
