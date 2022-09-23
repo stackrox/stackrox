@@ -231,10 +231,11 @@
         "UP_TO_DATE",
         "MANUAL_UPGRADE_REQUIRED",
         "AUTO_UPGRADE_POSSIBLE",
-        "SENSOR_VERSION_HIGHER"
+        "SENSOR_VERSION_HIGHER",
+        "NOT_ALLOWED"
       ],
       "default": "UNSET",
-      "description": " - SENSOR_VERSION_HIGHER: SENSOR_VERSION_HIGHER occurs when we detect that the sensor\nis running a newer version than this Central. This is unexpected,\nbut can occur depending on the patches a customer does.\nIn this case, we will NOT automatically \"upgrade\" the sensor,\nsince that would be a downgrade, even if the autoupgrade setting is\non. The user will be allowed to manually trigger the upgrade, but they are\nstrongly discouraged from doing so without upgrading Central first, since this\nis an unsupported configuration."
+      "description": " - SENSOR_VERSION_HIGHER: SENSOR_VERSION_HIGHER occurs when we detect that the sensor\nis running a newer version than this Central. This is unexpected,\nbut can occur depending on the patches a customer does.\nIn this case, we will NOT automatically \"upgrade\" the sensor,\nsince that would be a downgrade, even if the autoupgrade setting is\non. The user will be allowed to manually trigger the upgrade, but they are\nstrongly discouraged from doing so without upgrading Central first, since this\nis an unsupported configuration.\n - NOT_ALLOWED: NOT_ALLOWED occurs when due to some configuration, auto-upgrades are not allowed.\nThis will happen on managed services environment, where central images are frequentely\nupgraded but there's no released image for sensor to be upgraded to."
     },
     "ClusterUpgradeStatusUpgradeProcessStatus": {
       "type": "object",

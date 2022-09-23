@@ -510,10 +510,6 @@ func (c *sensorConnection) CheckAutoUpgradeSupport() error {
 	if c.sensorHello.GetHelmManagedConfigInit() != nil && !c.sensorHello.GetHelmManagedConfigInit().GetNotHelmManaged() {
 		return errors.New("cluster is Helm-managed and does not support auto upgrades; use 'helm upgrade' or a Helm-aware CD pipeline for upgrades")
 	}
-
-	if env.ManagedCentral.BooleanSetting() {
-		return errors.New("clusters connected to managed central do not support auto upgrades")
-	}
 	return nil
 }
 

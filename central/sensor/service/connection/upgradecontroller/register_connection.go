@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -50,6 +51,10 @@ func (u *upgradeController) watchConnection(sensorCtx context.Context, conn Sens
 func determineUpgradabilityFromVersionInfoAndConn(sensorVersion string, conn SensorConn) (storage.ClusterUpgradeStatus_Upgradability, string) {
 	if sensorVersion == "" {
 		return storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED, "sensor is from an old version that doesn't support auto-upgrade"
+	}
+
+	if env.ManagedCentral.BooleanSetting() {
+		return storage.ClusterUpgradeStatus_NOT_ALLOWED, "sensor is connected to a managed central"
 	}
 
 	if sensorVersion == version.GetMainVersion() {

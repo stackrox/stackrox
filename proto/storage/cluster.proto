@@ -187,6 +187,10 @@ message ClusterUpgradeStatus {
         // strongly discouraged from doing so without upgrading Central first, since this
         // is an unsupported configuration.
         SENSOR_VERSION_HIGHER   = 4;
+		// NOT_ALLOWED occurs when due to some configuration, auto-upgrades are not allowed.
+		// This will happen on managed services environment, where central images are frequentely
+		// upgraded but there's no released image for sensor to be upgraded to.
+		NOT_ALLOWED = 5;
     }
 
     Upgradability   upgradability                = 1;
