@@ -196,7 +196,7 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 			if ignoreFKs {
 				continue
 			}
-			// This column depends on a column in other table, but does not have a explicit referential constraint.
+			// This column depends on a column in other table, but does not have an explicit referential constraint.
 			// i.e. a column without `REFERENCES other_table(col)` part.
 			if opts.Reference == nil {
 				opts.Reference = &foreignKeyRef{}
