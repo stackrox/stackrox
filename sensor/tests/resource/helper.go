@@ -39,6 +39,10 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
+const (
+	DefaultNamespace string = "sensor-integration"
+)
+
 // YamlTestFile is a test file in YAML
 type YamlTestFile struct {
 	Kind string
@@ -156,7 +160,7 @@ func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
 
 // RunWithResources - runs with resources
 func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallback) {
-	_, removeNamespace, err := createTestNs(context.Background(), c.r, "sensor-integration")
+	_, removeNamespace, err := createTestNs(context.Background(), c.r, DefaultNamespace)
 	defer utils.IgnoreError(removeNamespace)
 	if err != nil {
 		c.t.Fatalf("failed to create namespace: %s", err)
@@ -165,7 +169,7 @@ func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallba
 	fileToObj := map[string]k8s.Object{}
 	for _, file := range files {
 		obj := objByKind(file.Kind)
-		removeFn, err := c.ApplyFile(context.Background(), "sensor-integration", file, obj)
+		removeFn, err := c.ApplyFile(context.Background(), DefaultNamespace, file, obj)
 		if err != nil {
 			c.t.Fatalf("fail to apply resource: %s", err)
 		}
@@ -183,7 +187,7 @@ func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallba
 // RunBare - runs bare
 func (c *TestContext) RunBare(name string, testCase TestCallback) {
 	c.t.Run(name, func(t *testing.T) {
-		_, removeNamespace, err := createTestNs(context.Background(), c.r, "sensor-integration")
+		_, removeNamespace, err := createTestNs(context.Background(), c.r, DefaultNamespace)
 		defer utils.IgnoreError(removeNamespace)
 		if err != nil {
 			t.Fatalf("failed to create namespace: %s", err)
@@ -353,9 +357,21 @@ func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error
 // GetLastMessageWithDeploymentName - gets the last message by deployment name
 func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, name string) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
-	for i := len(messages) - 1; i > 0; i-- {
+	for i := len(messages) - 1; i >= 0; i-- {
 		deployment := messages[i].GetEvent().GetDeployment()
 		if deployment.GetName() == name && deployment.GetNamespace() == ns {
+			lastMessage = messages[i]
+			break
+		}
+	}
+	return lastMessage
+}
+
+// GetLastAlertsWithDeploymentID - gets the last AlertResults by deployment ID
+func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string) *central.MsgFromSensor {
+	var lastMessage *central.MsgFromSensor
+	for i := len(messages) - 1; i >= 0; i-- {
+		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id {
 			lastMessage = messages[i]
 			break
 		}

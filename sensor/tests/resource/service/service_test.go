@@ -17,39 +17,17 @@ import (
 
 var (
 	NginxDeployment          = resource.YamlTestFile{Kind: "Deployment", File: "nginx.yaml"}
-	NginxPod                 = resource.YamlTestFile{Kind: "Deployment", File: "nginx-pod.yaml"}
+	NginxPod                 = resource.YamlTestFile{Kind: "Pod", File: "nginx-pod.yaml"}
 	NginxServiceClusterIP    = resource.YamlTestFile{Kind: "Service", File: "nginx-service-cluster-ip.yaml"}
 	NginxServiceNodePort     = resource.YamlTestFile{Kind: "Service", File: "nginx-service-node-port.yaml"}
 	NginxServiceLoadBalancer = resource.YamlTestFile{Kind: "Service", File: "nginx-service-load-balancer.yaml"}
 )
 
-func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n string) *central.MsgFromSensor {
-	var lastMessage *central.MsgFromSensor
-	for i := len(messages) - 1; i >= 0; i-- {
-		if messages[i].GetEvent().GetDeployment().GetName() == n {
-			lastMessage = messages[i]
-			break
-		}
-	}
-	return lastMessage
-}
-
-func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string) *central.MsgFromSensor {
-	var lastMessage *central.MsgFromSensor
-	for i := len(messages) - 1; i >= 0; i-- {
-		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id {
-			lastMessage = messages[i]
-			break
-		}
-	}
-	return lastMessage
-}
-
-func assertLastDeploymentHasPortExposure(t *testing.T, messages []*central.MsgFromSensor, ports []*storage.PortConfig, alerts []*storage.Alert) {
-	lastNginxDeploymentUpdate := GetLastMessageWithDeploymentName(messages, "nginx-deployment")
-	lastNginxDeploymentAlerts := GetLastAlertsWithDeploymentID(messages, lastNginxDeploymentUpdate.GetEvent().GetDeployment().GetId())
-	require.NotNil(t, lastNginxDeploymentUpdate, "should have found a message for nginx-deployment")
-	require.NotNil(t, lastNginxDeploymentAlerts, "should have found an alert for nginx-deployment")
+func assertLastDeploymentHasPortExposure(t *testing.T, messages []*central.MsgFromSensor, name string, ports []*storage.PortConfig, alerts []*storage.Alert) {
+	lastNginxDeploymentUpdate := resource.GetLastMessageWithDeploymentName(messages, resource.DefaultNamespace, name)
+	lastNginxDeploymentAlerts := resource.GetLastAlertsWithDeploymentID(messages, lastNginxDeploymentUpdate.GetEvent().GetDeployment().GetId())
+	require.NotNilf(t, lastNginxDeploymentUpdate, "should have found a message for %s", name)
+	require.NotNilf(t, lastNginxDeploymentAlerts, "should have found an alert for %s", name)
 	deployment := lastNginxDeploymentUpdate.GetEvent().GetDeployment()
 	actualAlerts := lastNginxDeploymentAlerts.GetEvent().GetAlertResults().GetAlerts()
 	for _, expectedAlert := range alerts {
@@ -124,6 +102,7 @@ func (s *DeploymentExposureSuite) Test_ClusterIpPermutation() {
 			assertLastDeploymentHasPortExposure(
 				t,
 				testC.GetFakeCentral().GetAllMessages(),
+				"nginx-deployment",
 				[]*storage.PortConfig{
 					{
 						Protocol:      "TCP",
@@ -156,6 +135,7 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
 			assertLastDeploymentHasPortExposure(
 				t,
 				testC.GetFakeCentral().GetAllMessages(),
+				"nginx-deployment",
 				[]*storage.PortConfig{
 					{
 						Protocol:      "TCP",
@@ -196,6 +176,7 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 			assertLastDeploymentHasPortExposure(
 				t,
 				testC.GetFakeCentral().GetAllMessages(),
+				"nginx-deployment",
 				[]*storage.PortConfig{
 					{
 						Protocol:      "TCP",
@@ -235,6 +216,7 @@ func (s *DeploymentExposureSuite) Test_NoExposure() {
 			assertLastDeploymentHasPortExposure(
 				t,
 				testC.GetFakeCentral().GetAllMessages(),
+				"nginx-deployment",
 				[]*storage.PortConfig{
 					{
 						Protocol:      "TCP",
@@ -249,12 +231,12 @@ func (s *DeploymentExposureSuite) Test_NoExposure() {
 }
 
 func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
-	s.testContext.RunBare("Update permission level", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		deleteDep, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", NginxDeployment)
+	s.testContext.RunBare("Update Port Exposure", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		deleteDep, err := testC.ApplyFileNoObject(context.Background(), resource.DefaultNamespace, NginxDeployment)
 		defer utils.IgnoreError(deleteDep)
 		require.NoError(t, err)
 
-		deleteService, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", NginxServiceNodePort)
+		deleteService, err := testC.ApplyFileNoObject(context.Background(), resource.DefaultNamespace, NginxServiceNodePort)
 		defer utils.IgnoreError(deleteService)
 		require.NoError(t, err)
 
@@ -264,6 +246,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 		assertLastDeploymentHasPortExposure(
 			t,
 			testC.GetFakeCentral().GetAllMessages(),
+			"nginx-deployment",
 			[]*storage.PortConfig{
 				{
 					Protocol:      "TCP",
@@ -298,6 +281,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 		assertLastDeploymentHasPortExposure(
 			t,
 			testC.GetFakeCentral().GetAllMessages(),
+			"nginx-deployment",
 			[]*storage.PortConfig{
 				{
 					Protocol:      "TCP",
@@ -314,14 +298,15 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 func (s *DeploymentExposureSuite) Test_NodePortPermutationWithPod() {
 	s.testContext.RunWithResourcesPermutation(
 		[]resource.YamlTestFile{
-			NginxDeployment,
+			NginxPod,
 			NginxServiceNodePort,
-		}, "NodePort", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		}, "PodNodePort", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
 			time.Sleep(2 * time.Second)
 			assertLastDeploymentHasPortExposure(
 				t,
 				testC.GetFakeCentral().GetAllMessages(),
+				"nginx-rogue",
 				[]*storage.PortConfig{
 					{
 						Protocol:      "TCP",
