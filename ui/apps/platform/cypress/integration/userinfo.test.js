@@ -113,8 +113,8 @@ describe('User Info', () => {
             cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`).click();
 
             // check that read is allowed and write is forbidden
-            cy.get(userPageSelectors.permissionsTable.allowedIcon('User', 'read'));
-            cy.get(userPageSelectors.permissionsTable.forbiddenIcon('User', 'write'));
+            cy.get(userPageSelectors.permissionsTable.allowedIcon('Access', 'read'));
+            cy.get(userPageSelectors.permissionsTable.forbiddenIcon('Access', 'write'));
         });
 
         it('should properly highlight current nav item', () => {
@@ -149,10 +149,10 @@ describe('User Info', () => {
             cy.get(userPageSelectors.userName).should('contain.text', 'admin');
             cy.get(userPageSelectors.authProviderName).should('contain.text', 'Basic');
 
-            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'read'))
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('Access', 'read'))
                 .should('contain.text', 'Admin')
                 .should('not.contain.text', 'Analyst');
-            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'write'))
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('Access', 'write'))
                 .should('contain.text', 'Admin')
                 .should('not.contain.text', 'Analyst');
         });
@@ -165,10 +165,10 @@ describe('User Info', () => {
             cy.get(userPageSelectors.userName).should('contain.text', 'ai');
             cy.get(userPageSelectors.authProviderName).should('contain.text', 'My OIDC Provider');
 
-            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'read'))
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('Access', 'read'))
                 .should('contain.text', 'Admin')
                 .should('contain.text', 'Analyst');
-            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'write'))
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('Access', 'write'))
                 .should('contain.text', 'Admin')
                 .should('not.contain.text', 'Analyst');
         });

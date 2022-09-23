@@ -18,7 +18,7 @@ function AccessControl(): ReactElement {
     // TODO is read access required for all routes in improved Access Control?
     // TODO Is write access required anywhere in classic Access Control?
     const { hasReadAccess } = usePermissions();
-    const hasReadAccessForAuthProvider = hasReadAccess('AuthProvider');
+    const hasReadAccessForAuthProvider = hasReadAccess('Access');
 
     return (
         <>
