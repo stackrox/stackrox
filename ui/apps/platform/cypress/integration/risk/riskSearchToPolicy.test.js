@@ -1,10 +1,17 @@
-import { selectors as riskSelectors, url as riskUrl } from '../../constants/RiskPage';
-import { selectors as policySelectors } from '../../constants/PoliciesPage';
-import { url as policiesUrl } from '../../constants/PoliciesPagePatternFly';
-import { hasFeatureFlag } from '../../helpers/features';
+import { selectors as riskSelectors } from '../../constants/RiskPage';
 import withAuth from '../../helpers/basicAuth';
 
-describe('Risk search to new policy', () => {
+const riskUrl = '/main/risk';
+const policiesUrl = '/main/policy-management/policies';
+const policySelectors = {
+    nextButton: '.btn:contains("Next")',
+    booleanPolicySection: {
+        policyFieldCard: '[data-testid="policy-field-card"]',
+    },
+    toast: '.toast-selector',
+};
+
+describe.skip('Risk search to new policy', () => {
     withAuth();
 
     const navigateToPolicy = (url) => {
@@ -17,12 +24,6 @@ describe('Risk search to new policy', () => {
         });
         cy.get(policySelectors.nextButton).click();
     };
-
-    before(function beforeHook() {
-        if (hasFeatureFlag('ROX_POLICIES_PATTERNFLY')) {
-            this.skip();
-        }
-    });
 
     it('should create a policy with a multiselect field, like Add Capabilities', () => {
         navigateToPolicy(`${riskUrl}?s[Add%20Capabilities]=NET_BIND_SERVICE`);
