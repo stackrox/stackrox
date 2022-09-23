@@ -231,6 +231,10 @@ test_upgrader() {
         kubectl -n stackrox get deploy/sensor -o yaml
         exit 1
     fi
+
+    # It's important to re-activate the metrics server because it might place a finalizer on namespaces. If it isn't
+    # active, namespaces might get stuck in the Terminating state.
+    activate_metrics_server
 }
 
 deactivate_metrics_server() {
@@ -268,6 +272,27 @@ deactivate_metrics_server() {
     rm -f stdout.out stderr.out
 
     info "deactivated"
+}
+
+activate_metrics_server() {
+    info "Activating the previously deactivated metrics server"
+
+    # Ideally we would restore the previous replica count, but 1 works just fine
+    kubectl -n kube-system scale deploy -l k8s-app=metrics-server --replicas=1
+
+    echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
+    local success=0
+    # shellcheck disable=SC2034
+    for i in $(seq 1 10); do
+        if kubectl api-resources 2>&1 | sed -e 's/^/out: /' | grep metrics.k8s.io; then
+            success=1
+            break
+        fi
+        sleep 5
+    done
+    [[ "$success" -eq 1 ]]
+
+    info "activated"
 }
 
 deploy_sensor_via_upgrader() {
