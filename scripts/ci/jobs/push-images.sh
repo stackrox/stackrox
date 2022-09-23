@@ -27,7 +27,7 @@ push_images() {
     fi
 
     if is_release_version "$tag"; then
-        check_docs "${tag}"
+        check_docs "${tag}" false
         check_scanner_and_collector_versions
     else
         info "Not checking docs/ & version files for non releases"
