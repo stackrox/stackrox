@@ -81,7 +81,7 @@ function AuthProviders(): ReactElement {
         userRolePermissions,
         availableProviderTypes,
     } = useSelector(authProviderState);
-    const hasWriteAccess = getHasReadWritePermission('AuthProvider', userRolePermissions);
+    const hasWriteAccess = getHasReadWritePermission('Access', userRolePermissions);
 
     const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
 

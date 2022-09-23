@@ -45,8 +45,8 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
     const hasImageReadAccess = hasReadAccess('Image');
-    const hasAccessScopeReadAccess = hasReadAccess('Role');
-    const hasNotifierIntegrationReadAccess = hasReadAccess('Notifier');
+    const hasAccessScopeReadAccess = hasReadAccess('Access');
+    const hasNotifierIntegrationReadAccess = hasReadAccess('Integration');
     const canWriteReports =
         hasVulnReportWriteAccess &&
         hasImageReadAccess &&

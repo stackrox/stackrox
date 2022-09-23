@@ -83,8 +83,8 @@ function ReportingTablePanel({
 
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
-    const hasAccessScopeWriteAccess = hasReadWriteAccess('AuthProvider');
-    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Notifier');
+    const hasAccessScopeWriteAccess = hasReadWriteAccess('Access');
+    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Integration');
     const canWriteReports =
         hasVulnReportWriteAccess && hasAccessScopeWriteAccess && hasNotifierIntegrationWriteAccess;
 
