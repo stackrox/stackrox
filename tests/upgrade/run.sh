@@ -84,6 +84,7 @@ preamble() {
     case "$(uname -m)" in
         x86_64) TEST_HOST_PLATFORM="${host_os}_amd64" ;;
         aarch64) TEST_HOST_PLATFORM="${host_os}_arm64" ;;
+        arm64) TEST_HOST_PLATFORM="${host_os}_arm64" ;;
         ppc64le) TEST_HOST_PLATFORM="${host_os}_ppc64le" ;;
         s390x) TEST_HOST_PLATFORM="${host_os}_s390x" ;;
         *) die "Unknown architecture" ;;
@@ -154,7 +155,7 @@ test_sensor_bundle() {
 test_upgrader() {
     info "Starting bin/upgrader tests"
 
-    install_metrics_server_and_deactivate
+    deactivate_metrics_server
 
     info "Creating a 'sensor-remote-new' cluster"
 
@@ -230,13 +231,16 @@ test_upgrader() {
         kubectl -n stackrox get deploy/sensor -o yaml
         exit 1
     fi
+
+    # It's important to re-activate the metrics server because it might place a finalizer on namespaces. If it isn't
+    # active, namespaces might get stuck in the Terminating state.
+    activate_metrics_server
 }
 
-install_metrics_server_and_deactivate() {
-    info "Install the metrics server and deactivate it to reproduce ROX-4429"
+deactivate_metrics_server() {
+    info "Deactivate the metrics server by scaling it to 0 in order to reproduce ROX-4429"
 
-    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.6/components.yaml
-
+    # This should already be in the API resources
     echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
     local success=0
     for i in $(seq 1 10); do
@@ -248,8 +252,7 @@ install_metrics_server_and_deactivate() {
     done
     [[ "$success" -eq 1 ]]
 
-    ## Patch the metrics server to be unreachable
-    kubectl -n kube-system patch svc/metrics-server --type json -p '[{"op": "replace", "path": "/spec/selector", "value": {"k8s-app": "non-existent"}}]'
+    kubectl -n kube-system scale deploy -l k8s-app=metrics-server --replicas=0
 
     echo "Waiting for metrics.k8s.io to NOT be in kubectl API resources..."
     local success=0
@@ -269,6 +272,27 @@ install_metrics_server_and_deactivate() {
     rm -f stdout.out stderr.out
 
     info "deactivated"
+}
+
+activate_metrics_server() {
+    info "Activating the previously deactivated metrics server"
+
+    # Ideally we would restore the previous replica count, but 1 works just fine
+    kubectl -n kube-system scale deploy -l k8s-app=metrics-server --replicas=1
+
+    echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
+    local success=0
+    # shellcheck disable=SC2034
+    for i in $(seq 1 10); do
+        if kubectl api-resources 2>&1 | sed -e 's/^/out: /' | grep metrics.k8s.io; then
+            success=1
+            break
+        fi
+        sleep 5
+    done
+    [[ "$success" -eq 1 ]]
+
+    info "activated"
 }
 
 deploy_sensor_via_upgrader() {
