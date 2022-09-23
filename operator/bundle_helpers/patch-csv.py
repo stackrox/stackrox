@@ -98,7 +98,7 @@ def parse_args():
                         nargs='+', help='Replacement directives for the RBAC proxy image',
                         default=[])
     parser.add_argument("--add-supported-arch", action='append', required=False,
-                        help='Enable additional operator architecture via CSV labels (may be passed multiple times)',
+                        help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
     return parser.parse_args()
 
