@@ -234,7 +234,7 @@ func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*cent
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "../../../../tools/local-sensor/certs/caKey.pem"))
 
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
-		message.SensorHello("1234"),
+		message.SensorHello("00000000-0000-4000-A000-000000000000"),
 		message.ClusterConfig(),
 		message.PolicySync(config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
