@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/logging/persistentlog"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -30,6 +31,7 @@ import (
 
 func main() {
 	startProfilingServer()
+
 	if err := run(); err != nil {
 		log.WriteToStderrf("Migrator failed: %s", err)
 		os.Exit(1)
@@ -49,8 +51,21 @@ func startProfilingServer() {
 	}()
 }
 
+func startPersistentLogListener() {
+	persistentReader := persistentlog.NewReader()
+	start, err := persistentReader.StartReader(context.Background())
+	if err != nil {
+		log.WriteToStderrf("Failed to start persistent log reader %v", err)
+		// TODO: Report health
+	} else if !start {
+		// It shouldn't get here unless Sensor mistakenly sends a start event to a non-master node
+		log.WriteToStderrf("Persistent log reader did not start because persistent logs do not exist on this node")
+	}
+}
+
 func run() error {
 	log.WriteToStderr("In migrator.run()")
+
 	conf := config.GetConfig()
 	if conf == nil {
 		log.WriteToStderrf("cannot get central configuration. Skipping migrator")
@@ -154,6 +169,10 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 		}
 		// Close when needed
 		defer postgreshelper.Close()
+
+		// Here temporary to get working
+		pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.PersistentLogsTableName)
+		startPersistentLogListener()
 
 		ver, err := migrations.ReadVersionPostgres(pgPool)
 		if err != nil {
