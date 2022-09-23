@@ -40,6 +40,7 @@ import (
 )
 
 const (
+	// DefaultNamespace - the default namespace used to create the resources
 	DefaultNamespace string = "sensor-integration"
 )
 
