@@ -71,6 +71,11 @@ function NavigationSidebar({
         );
     }
 
+    // TODO remove this temporary extra config menu item when the PF network graph goes live in the main menu
+    if (isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY')) {
+        platformConfigurationPaths.push(networkPathPF);
+    }
+
     const Navigation = (
         <Nav id="nav-primary-simple">
             <NavList id="nav-list-simple">
@@ -80,17 +85,13 @@ function NavigationSidebar({
                     title={basePathToLabelMap[dashboardPath]}
                 />
                 <LeftNavItem
-                    isActive={location.pathname.includes(networkBasePath)}
+                    isActive={
+                        location.pathname.includes(networkBasePath) &&
+                        !location.pathname.includes(networkPathPF)
+                    }
                     path={networkBasePath}
                     title={basePathToLabelMap[networkBasePath]}
                 />
-                {isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY') && (
-                    <LeftNavItem
-                        isActive={location.pathname.includes(networkPathPF)}
-                        path={networkPathPF}
-                        title={basePathToLabelMap[networkPathPF]}
-                    />
-                )}
                 <LeftNavItem
                     isActive={location.pathname.includes(violationsBasePath)}
                     path={violationsBasePath}
