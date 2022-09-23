@@ -2,7 +2,6 @@ import com.google.protobuf.util.JsonFormat
 import com.jayway.restassured.RestAssured
 import groovy.json.JsonSlurper
 import groups.BAT
-import groups.COMPATIBILITY
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.storage.NotifierOuterClass.Notifier
 import org.junit.experimental.categories.Category
@@ -12,7 +11,7 @@ import spock.lang.Unroll
 import util.Env
 import util.Timer
 
-@Category(BAT, COMPATIBILITY)
+@Category(BAT)
 class AuditScrubbingTest extends BaseSpecification {
 
     static private final String BASIC_AUTH_PROVIDER_ID = "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
