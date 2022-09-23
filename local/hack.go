@@ -20,12 +20,14 @@ func main() {
 	if features.PostgresDatastore.Enabled() {
 
 		// PREREQUISITES TO RUNNING POSTGRES
-		// 1. Get a SQL dump of DB that has the data you want]
-		//    kubectl exec -ti -n=stackrox $(kubectl get pod -n=stackrox -l app=central-db --output 'jsonpath={.items..metadata.name}') -- sh -c '/usr/bin/pg_dumpall' > local/central_active.sql
+		// 1. Get a SQL dump of DB that has the data you want
+		//    kubectl exec -ti -n=stackrox $(kubectl get pod -n=stackrox -l app=central-db --output 'jsonpath={.items..metadata.name}') -- \
+		//    sh -c "export PGPASSWORD=$(kubectl get secret -n=stackrox central-db-password --output 'jsonpath={.data.password}' | base64 -D); \
+		//    /usr/bin/pg_dump -Ftar central_active -f /tmp/central_active3.tar"; kubectl cp -n=stackrox $(kubectl get pod -n=stackrox -l app=central-db --output 'jsonpath={.items..metadata.name}'):/tmp/central_active3.tar local/central_active3.tar
 		// 2. Run a docker container with postgres:
 		//   docker run -it -p 5432:5432 -e POSTGRES_USER=local-postgres -e POSTGRES_PASSWORD=local-pg-password postgres:14.2-alpine
-		// 3. Restore the SQL dump from #1 to this local DB
-		//   cat local/central_active.sql |  docker exec -i $(docker ps -lq) sh -c 'PGPASSWORD=local-pg-password psql -h localhost -U local-postgres -p 5432'
+		// 3. Restore the SQL dump from #1 to this local DB (ignore the error it prints)
+		//   docker exec -i $(docker ps -lq) sh -c 'PGPASSWORD=local-pg-password pg_restore -h localhost -U local-postgres -p 5432 --create --clean --no-owner -d postgres' < local/central_active3.tar
 		// 4. Go to pkg/config/config.go, and update the variable "defaultDBSource" to:
 		//		host=localhost port=5432 user=local-postgres sslmode=disable statement_timeout=600000 pool_min_conns=1 pool_max_conns=90 client_encoding=UTF-8
 		// TODO: Expose a nicer way to set the DB connection without having to manually modify it
