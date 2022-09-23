@@ -168,6 +168,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/osutils"
+	"github.com/stackrox/rox/pkg/postgres/persistentlog"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/premain"
@@ -330,6 +331,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 			roleDataStore.Singleton(),
 			configDS.Singleton(),
 			notifierDS.Singleton(),
+			persistentlog.Singleton(),
 		),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),

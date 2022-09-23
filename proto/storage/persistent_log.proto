@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+package storage;
+
+message PersistentLog {
+  google.protobuf.Timestamp timestamp = 1 [(gogoproto.moretags) = 'sql:"index"'];
+  string                     log       = 2;
+}

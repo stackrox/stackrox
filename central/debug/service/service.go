@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -41,6 +42,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
+	logStore "github.com/stackrox/rox/pkg/postgres/persistentlog/store"
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -98,7 +100,7 @@ type Service interface {
 func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemetryGatherer *gatherers.RoxGatherer,
 	store store.Store, authzTraceSink observe.AuthzTraceSink, authProviderRegistry authproviders.Registry,
 	groupDataStore groupDS.DataStore, roleDataStore roleDS.DataStore, configDataStore configDS.DataStore,
-	notifierDataStore notifierDS.DataStore) Service {
+	notifierDataStore notifierDS.DataStore, persistentLogStore logStore.Store) Service {
 	return &serviceImpl{
 		clusters:             clusters,
 		sensorConnMgr:        sensorConnMgr,
@@ -110,6 +112,7 @@ func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemet
 		roleDataStore:        roleDataStore,
 		configDataStore:      configDataStore,
 		notifierDataStore:    notifierDataStore,
+		persistentLogStore:   persistentLogStore,
 	}
 }
 
@@ -124,6 +127,7 @@ type serviceImpl struct {
 	roleDataStore        roleDS.DataStore
 	configDataStore      configDS.DataStore
 	notifierDataStore    notifierDS.DataStore
+	persistentLogStore   logStore.Store
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -317,12 +321,18 @@ func getGoroutines(zipWriter *zip.Writer) error {
 	return p.WriteTo(w, 2)
 }
 
-func getLogs(zipWriter *zip.Writer) error {
+func getLogs(ctx context.Context, zipWriter *zip.Writer, persistentLogStore logStore.Store) error {
 	if err := getLogFile(zipWriter, "central.log", logging.LoggingPath); err != nil {
 		return err
 	}
-	if err := getLogFile(zipWriter, "migration.log", logging.PersistentLoggingPath); err != nil {
-		return err
+	if features.PostgresDatastore.Enabled() {
+		if err := getPersistentLog(ctx, zipWriter, "migration.log", persistentLogStore); err != nil {
+			return err
+		}
+	} else {
+		if err := getLogFile(zipWriter, "migration.log", logging.PersistentLoggingPath); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -340,6 +350,25 @@ func getLogFile(zipWriter *zip.Writer, targetPath string, sourcePath string) err
 
 	_, err = io.Copy(w, logFile)
 	return err
+}
+
+func getPersistentLog(ctx context.Context, zipWriter *zip.Writer, targetPath string, persistentLogStore logStore.Store) error {
+	w, err := zipWriter.Create(targetPath)
+	if err != nil {
+		return err
+	}
+
+	err = persistentLogStore.Walk(ctx, func(obj *storage.PersistentLog) error {
+		if _, err := io.WriteString(w, obj.Log); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getVersion(zipWriter *zip.Writer) error {
@@ -558,7 +587,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 
 	// Get logs last to also catch logs made during creation of diag bundle.
 	if opts.logs == localLogs {
-		if err := getLogs(zipWriter); err != nil {
+		if err := getLogs(ctx, zipWriter, s.persistentLogStore); err != nil {
 			log.Error(err)
 		}
 	}
