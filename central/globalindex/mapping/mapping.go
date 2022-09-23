@@ -149,7 +149,7 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_CLUSTERS:                schema.ClustersSchema.OptionsMap,
 		v1.SearchCategory_COMPLIANCE_STANDARD:     index.StandardOptions,
 		v1.SearchCategory_COMPLIANCE_CONTROL:      index.ControlOptions,
-		v1.SearchCategory_COMPONENT_VULN_EDGE:     schema.ImageComponentCveEdgesSchema.OptionsMap,
+		v1.SearchCategory_COMPONENT_VULN_EDGE:     imageToVulnerabilitySearchOptions,
 		v1.SearchCategory_DEPLOYMENTS:             deploymentsCustomSearchOptions,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE:    imageToVulnerabilitySearchOptions,
 		v1.SearchCategory_IMAGE_COMPONENTS:        imageToVulnerabilitySearchOptions,
@@ -175,7 +175,6 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_SERVICE_ACCOUNTS:        schema.ServiceAccountsSchema.OptionsMap,
 		v1.SearchCategory_SUBJECTS:                subjectMapping.OptionsMap,
 		v1.SearchCategory_VULN_REQUEST:            schema.VulnerabilityRequestsSchema.OptionsMap,
-		// v1.SearchCategory_VULNERABILITIES:       cveSearchOptions,
 	}
 
 	return entityOptionsMap
