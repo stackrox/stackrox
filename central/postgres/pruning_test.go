@@ -10,20 +10,10 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
-)
-
-const (
-	activeDB  = migrations.CurrentDatabase
-	restoreDB = migrations.RestoreDatabase
-	tempDB    = "central_temp"
-
-	// Database with no typical connections that will be used as a template in a create
-	adminDB = "template1"
 )
 
 type PostgresPruningSuite struct {
@@ -39,12 +29,13 @@ func TestPruning(t *testing.T) {
 
 func (s *PostgresPruningSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
 	if !features.PostgresDatastore.Enabled() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
+
+	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
 	s.testDB = pgtest.ForT(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
