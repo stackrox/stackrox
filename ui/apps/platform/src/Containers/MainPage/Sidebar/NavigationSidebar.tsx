@@ -9,6 +9,7 @@ import {
     basePathToLabelMap,
     dashboardPath,
     networkBasePath,
+    networkPathPF,
     violationsBasePath,
     complianceBasePath,
     vulnManagementPath,
@@ -83,6 +84,13 @@ function NavigationSidebar({
                     path={networkBasePath}
                     title={basePathToLabelMap[networkBasePath]}
                 />
+                {isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY') && (
+                    <LeftNavItem
+                        isActive={location.pathname.includes(networkPathPF)}
+                        path={networkPathPF}
+                        title={basePathToLabelMap[networkPathPF]}
+                    />
+                )}
                 <LeftNavItem
                     isActive={location.pathname.includes(violationsBasePath)}
                     path={violationsBasePath}
