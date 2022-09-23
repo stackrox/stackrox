@@ -141,7 +141,7 @@ export function updateCollection(
 ): CancellableRequest<CollectionResponse> {
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .post<CollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, { signal })
+            .put<CollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, { signal })
             .then((response) => response.data)
     );
 }
