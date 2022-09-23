@@ -588,6 +588,8 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	}
 
 	queryStr := query.AsSQL()
+	log.Info(queryStr)
+	log.Info(query.Data)
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
 		debug.PrintStack()

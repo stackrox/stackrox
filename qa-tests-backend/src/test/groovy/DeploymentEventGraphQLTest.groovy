@@ -136,7 +136,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
     private String verifyPodEvents(String deploymentUid, int retries = 30, int interval = 4) {
         def event = null
         withRetry(retries, interval) {
-            def podEvents = gqlService.Call(GET_POD_EVENTS, [podsQuery: "Deployment ID: " + deploymentUid])
+            def podEvents = gqlService.Call(GET_POD_EVENTS, [podsQuery: "Deployment ID:" + deploymentUid])
             assert podEvents.getCode() == 200
             log.info "return code " + podEvents.getCode()
             assert podEvents.getValue().result != null
@@ -157,7 +157,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
     private void verifyContainerEvents(String podUid, int retries = 30, int interval = 4) {
         withRetry(retries, interval) {
-            def containerEvents = gqlService.Call(GET_CONTAINER_EVENTS, [containersQuery: "Pod ID: " + podUid])
+            def containerEvents = gqlService.Call(GET_CONTAINER_EVENTS, [containersQuery: "Pod ID:" + podUid])
             assert containerEvents.getCode() == 200
             log.info "return code " + containerEvents.getCode()
             assert containerEvents.getValue().result != null

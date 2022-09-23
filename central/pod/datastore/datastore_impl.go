@@ -163,7 +163,12 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 func (ds *datastoreImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "SearchRawPods")
-
+	count, err := ds.Count(sac.WithAllAccess(context.Background()), pkgSearch.EmptyQuery())
+	if err != nil {
+		return nil, err
+	}
+	log.Infof("Total Pods: %d", count)
+	log.Info(q)
 	return ds.podSearcher.SearchRawPods(ctx, q)
 }
 
