@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/migrations/internal"
 	"github.com/stackrox/rox/pkg/utils"
@@ -44,7 +44,7 @@ func CurrentPath() string {
 
 // GetCurrentClone - returns the current clone
 func GetCurrentClone() string {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return CurrentDatabase
 	}
 	return Current
@@ -52,7 +52,7 @@ func GetCurrentClone() string {
 
 // GetBackupClone - returns the backup clone
 func GetBackupClone() string {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return BackupDatabase
 	}
 	return BackupClone
@@ -60,7 +60,7 @@ func GetBackupClone() string {
 
 // GetPreviousClone - returns the previous clone
 func GetPreviousClone() string {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return PreviousDatabase
 	}
 	return PreviousClone
@@ -68,7 +68,7 @@ func GetPreviousClone() string {
 
 // GetRestoreClone - returns the restore clone
 func GetRestoreClone() string {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return RestoreDatabase
 	}
 	return RestoreClone

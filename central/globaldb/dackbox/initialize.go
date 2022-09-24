@@ -37,7 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 )
 
 type bucketRef struct {
@@ -77,7 +77,7 @@ var (
 )
 
 func init() {
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		migratedBuckets := []bucketRef{
 			{
 				bucket:   imagecomponentEdgeDackBox.Bucket,

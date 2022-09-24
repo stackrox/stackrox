@@ -3,7 +3,7 @@ package fixtures
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 )
 
@@ -1102,7 +1102,7 @@ func GetScopedNode1(nodeID string, clusterID string) *storage.Node {
 		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 7.5},
 		Notes:         nil,
 	}
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		converter.FillV2NodeVulnerabilities(node)
 	}
 	return node
@@ -1152,7 +1152,7 @@ func GetScopedNode2(nodeID string, clusterID string) *storage.Node {
 		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 7.8},
 		Notes:         nil,
 	}
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		converter.FillV2NodeVulnerabilities(node)
 	}
 	return node

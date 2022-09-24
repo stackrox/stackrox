@@ -15,8 +15,8 @@ import (
 	signatureIntegrationDataStore "github.com/stackrox/rox/central/signatureintegration/datastore"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/suppressor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/metrics"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
@@ -42,7 +42,7 @@ var (
 func initialize() {
 	var imageCVESuppressor imageEnricher.CVESuppressor
 	var nodeCVESuppressor nodeEnricher.CVESuppressor
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		imageCVESuppressor = imageCVEDataStore.Singleton()
 		nodeCVESuppressor = nodeCVEDataStore.Singleton()
 	} else {

@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
@@ -37,7 +37,7 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool := s.dackboxTestStore.GetPostgresPool()
 		s.imageCVEStore, err = imageCVEDataStore.GetTestPostgresDataStore(s.T(), pool)
 		s.Require().NoError(err)
@@ -72,7 +72,7 @@ func (s *cveDataStoreSACTestSuite) TearDownSuite() {
 // scan data.
 // This helper is here to ease testing against the various datastore flavours.
 func getImageCVEID(cve string) string {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return cve + "#crime-stories"
 	}
 	return cve
@@ -83,7 +83,7 @@ func getImageCVEID(cve string) string {
 // scan data.
 // This helper is here to ease testing against the various datastore flavours.
 func getNodeCVEID(cve string) string {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return cve + "#Linux"
 	}
 	return cve
@@ -618,7 +618,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVECount() {
 	s.Require().NoError(err)
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
+			if env.PostgresDatastoreEnabled.BooleanSetting() {
 				s.T().Skip("Skipping image count tests on postgres for now")
 			}
 			testCtx := s.imageTestContexts[c.contextKey]

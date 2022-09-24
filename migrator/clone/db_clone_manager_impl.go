@@ -4,7 +4,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 )
 
 // dbCloneManagerImpl - scans and manage database clones within central.
@@ -44,14 +44,14 @@ func (d *dbCloneManagerImpl) Scan() error {
 	err := d.dbmRocks.Scan()
 	if err != nil {
 		// If our focus is Postgres, just log the error and ignore Rocks
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			log.Warn(err)
 		} else {
 			return err
 		}
 	}
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		err = d.dbmPostgres.Scan()
 		if err != nil {
 			return err
@@ -68,7 +68,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 	var migrateFromRocks bool
 	var err error
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// Get the version of the Rocks Current so Postgres manager can use that info
 		// to determine what clone it needs to migrate.
 		rocksVersion := d.dbmRocks.GetVersion(rocksdb.CurrentClone)
@@ -92,7 +92,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 	// Get the RocksDB clone we are migrating
 	clone, clonePath, err := d.dbmRocks.GetCloneToMigrate()
 	if err != nil {
-		if !features.PostgresDatastore.Enabled() || migrateFromRocks {
+		if !env.PostgresDatastoreEnabled.BooleanSetting() || migrateFromRocks {
 			return "", "", "", err
 		}
 		log.Warnf("unable to determine Rocks clone.  Continuing with postgres.  %v", err)
@@ -103,7 +103,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 
 // Persist - replaces current clone with upgraded one.
 func (d *dbCloneManagerImpl) Persist(cloneName string, pgClone string, persistBoth bool) error {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// We need to persist the Rocks previous, so it is there in case of a rollback.  In the case of
 		// an upgrade that will generate a previous, the Temp Clone will be the one RocksDB persists.
 		// During the persist operation the Current clone will move to Previous and Temp will move to Current.

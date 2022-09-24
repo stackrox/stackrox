@@ -21,7 +21,7 @@ import (
 	{{ if $dackbox}}"github.com/stackrox/rox/pkg/dackbox/concurrency"{{end}}
 	{{ if $dackbox}}"github.com/stackrox/rox/pkg/dackbox"{{end}}
 	{{ if $dackbox}}rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"{{end}}
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	{{ if $rocksDB}}"github.com/stackrox/rox/pkg/rocksdb"{{end}}
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -48,8 +48,8 @@ var _ suite.TearDownTestSuite = (*postgresMigrationSuite)(nil)
 
 func (s *postgresMigrationSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
-	if !features.PostgresDatastore.Enabled() {
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}

@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/integrationhealth/store/postgres"
 	"github.com/stackrox/rox/central/integrationhealth/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -15,7 +15,7 @@ var (
 )
 
 func initialize() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		ad = New(postgres.New(globaldb.GetPostgres()))
 	} else {
 		ad = New(rocksdb.New(globaldb.GetRocksDB()))

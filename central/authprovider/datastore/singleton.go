@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/central/authprovider/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -17,7 +17,7 @@ var (
 // Singleton returns the sole instance of the DataStore service.
 func Singleton() authproviders.Store {
 	once.Do(func() {
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			soleInstance = New(postgres.New(globaldb.GetPostgres()))
 		} else {
 			soleInstance = New(bolt.New(globaldb.GetGlobalDB()))

@@ -11,7 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -45,7 +45,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool := s.dackboxTestStore.GetPostgresPool()
 		s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
 		s.Require().NoError(err)
@@ -79,7 +79,7 @@ func getVulnerabilityID(vulnerability *storage.EmbeddedVulnerability, os string)
 func getEdgeID(component *storage.EmbeddedNodeScanComponent, vulnerability *storage.EmbeddedVulnerability, os string) string {
 	componentID := getComponentID(component, os)
 	vulnerabilityID := getVulnerabilityID(vulnerability, os)
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return postgres.IDFromPks([]string{componentID, vulnerabilityID})
 	}
 	return edges.EdgeID{ParentID: componentID, ChildID: vulnerabilityID}.ToString()

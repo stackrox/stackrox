@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -46,7 +46,7 @@ type networkPolicySACSuite struct {
 
 func (s *networkPolicySACSuite) SetupSuite() {
 	var err error
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		ctx := context.Background()
 		src := pgtest.GetConnectionString(s.T())
 		cfg, err := pgxpool.ParseConfig(src)
@@ -72,7 +72,7 @@ func (s *networkPolicySACSuite) SetupSuite() {
 }
 
 func (s *networkPolicySACSuite) TearDownSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pool.Close()
 	} else {
 		s.Require().NoError(s.engine.Close())

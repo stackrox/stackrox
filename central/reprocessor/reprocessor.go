@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -63,7 +62,7 @@ var (
 func Singleton() Loop {
 	once.Do(func() {
 		var dackboxIndexQueue queue.WaitableQueue
-		if !features.PostgresDatastore.Enabled() {
+		if !env.PostgresDatastoreEnabled.BooleanSetting() {
 			dackboxIndexQueue = dackbox.GetIndexQueue()
 		}
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
@@ -288,7 +287,7 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 			defer wg.Add(-1)
 			if individualReprocessFunc(id) {
 				nReprocessed.Inc()
-				if !features.PostgresDatastore.Enabled() {
+				if !env.PostgresDatastoreEnabled.BooleanSetting() {
 					l.waitForIndexing()
 				}
 			}
@@ -330,7 +329,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		}
 	}
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		l.waitForIndexing()
 	}
 

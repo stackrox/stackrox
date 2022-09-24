@@ -29,7 +29,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -48,7 +48,7 @@ func initialize() {
 	var indexer index.Indexer
 	var err error
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		clusterStorage = clusterPostgres.New(globaldb.GetPostgres())
 		clusterHealthStorage = clusterHealthPostgres.New(globaldb.GetPostgres())
 		indexer = clusterPostgres.NewIndexer(globaldb.GetPostgres())

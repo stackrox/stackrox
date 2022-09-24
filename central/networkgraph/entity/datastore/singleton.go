@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/sensor/service/connection"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -23,7 +23,7 @@ func Singleton() EntityDataStore {
 	once.Do(func() {
 		var storage store.EntityStore
 		var err error
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			storage = postgres.New(globaldb.GetPostgres())
 		} else {
 			storage, err = rocksdb.New(globaldb.GetRocksDB())

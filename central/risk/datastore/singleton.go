@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -24,7 +24,7 @@ var (
 func initialize() {
 	var storage store.Store
 	var indexer index.Indexer
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {

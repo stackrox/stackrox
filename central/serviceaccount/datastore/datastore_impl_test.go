@@ -15,7 +15,7 @@ import (
 	serviceAccountSearch "github.com/stackrox/rox/central/serviceaccount/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	rocksdbHelper "github.com/stackrox/rox/pkg/rocksdb"
@@ -46,7 +46,7 @@ type ServiceAccountDataStoreTestSuite struct {
 
 func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 	var err error
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(suite.T())
 		suite.Require().NotNil(pgtestbase)
 		suite.pool = pgtestbase.Pool
@@ -74,7 +74,7 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) TearDownSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.pool.Close()
 	} else {
 		rocksdbtest.TearDownRocksDB(suite.db)
