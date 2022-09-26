@@ -26,9 +26,8 @@ message K8sRole {
     string cluster_id                       = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden"'];
     string cluster_name                     = 5 [(gogoproto.moretags) = 'search:"Cluster"'];
     bool cluster_role                       = 6 [(gogoproto.moretags) = 'search:"Cluster Role"'];
-    // TODO(ROX-6895): "Label" search term is ambiguous.
-    map<string, string> labels              = 7 [(gogoproto.moretags) = 'search:"Label"'];
-    map<string, string> annotations         = 8 [(gogoproto.moretags) = 'search:"Annotation"'];
+    map<string, string> labels              = 7 [(gogoproto.moretags) = 'search:"Role Label"'];
+    map<string, string> annotations         = 8 [(gogoproto.moretags) = 'search:"Role Annotation"'];
     google.protobuf.Timestamp created_at    = 9;
 
     repeated PolicyRule rules               = 10;
@@ -53,9 +52,8 @@ message K8sRoleBinding {
     string cluster_id                       = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden"'];
     string cluster_name                     = 5 [(gogoproto.moretags) = 'search:"Cluster"'];
     bool cluster_role                       = 6 [(gogoproto.moretags) = 'search:"Cluster Role"'];
-    // TODO(ROX-6895): "Label" search term is ambiguous.
-    map<string, string> labels              = 7 [(gogoproto.moretags) = 'search:"Label"'];
-    map<string, string> annotations         = 8 [(gogoproto.moretags) = 'search:"Annotation"'];
+    map<string, string> labels              = 7 [(gogoproto.moretags) = 'search:"Role Binding Label"'];
+    map<string, string> annotations         = 8 [(gogoproto.moretags) = 'search:"Role Binding Annotation"'];
     google.protobuf.Timestamp created_at    = 9;
 
     repeated Subject subjects               = 10;
