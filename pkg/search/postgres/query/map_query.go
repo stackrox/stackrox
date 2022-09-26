@@ -47,7 +47,6 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 			Query: "true",
 		}, func(i interface{}) interface{} {
-			// If key is negated, no highlight value.
 			asMap := readMapValue(i)
 			results := make([]string, 0, len(asMap))
 			for k, v := range asMap {
