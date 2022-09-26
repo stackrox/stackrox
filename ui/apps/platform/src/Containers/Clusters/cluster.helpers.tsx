@@ -286,6 +286,10 @@ const upgradeStates: UpgradeStates = {
         type: 'failure',
         actionText: 'Retry upgrade',
     },
+    NOT_ALLOWED: {
+        displayValue: 'Auto-upgrade not possible',
+        type: 'intervention'
+    },
     unknown: {
         displayValue: 'Unknown upgrade state. Contact Support.',
         type: 'intervention',
