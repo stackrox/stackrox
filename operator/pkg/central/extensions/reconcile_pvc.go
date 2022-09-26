@@ -258,7 +258,7 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentClaimName() (*cor
 		}
 		sort.Strings(names)
 		return nil, errors.Wrapf(errMultipleOwnedPVCs,
-			"too many owned PVCs were found for %s, please remove not used ones or delete their OwnerReferences. Found PVCs: %s", r.defaultClaimName, strings.Join(names, ", "))
+			"multiple owned PVCs were found for %s, please remove not used ones or delete their OwnerReferences. Found PVCs: %s", r.defaultClaimName, strings.Join(names, ", "))
 	}
 
 	return filtered[0], nil

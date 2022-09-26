@@ -227,7 +227,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 				makePVC(emptyNotDeletedCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass),
 				makePVC(emptyNotDeletedCentral, testPVCName, defaultPVCSize, emptyStorageClass),
 			},
-			ExpectedError: "too many owned PVCs were found for stackrox-db, please remove not used ones or delete their OwnerReferences. Found PVCs: stackrox-db, stackrox-db-test: operator is only allowed to have 1 owned PVC",
+			ExpectedError: "multiple PVCs were found for stackrox-db, please remove not used ones or delete their OwnerReferences. Found PVCs: stackrox-db, stackrox-db-test: operator is only allowed to have 1 owned PVC",
 		},
 
 		"storage-class-is-not-reconciled-if-empty-storage-class-is-given": {
