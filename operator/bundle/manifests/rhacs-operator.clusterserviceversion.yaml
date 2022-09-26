@@ -104,6 +104,9 @@ spec:
           and a host path.
         displayName: Persistence
         path: central.persistence
+      - description: Settings for Central DB, which is responsible for data persistence.
+        displayName: Central DB Settings
+        path: central.db
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
@@ -133,6 +136,85 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: External specifies that the database should not be managed by
+          the Operator and is externally managed
+        displayName: External
+        path: central.db.external
+      - description: Specify a secret that contains the password in the "password"
+          data item. If omitted, the operator will auto-generate a DB password and
+          store it in the "password" item in the "central-db-password" secret.
+        displayName: Administrator Password
+        path: central.db.passwordSecret
+      - description: Specify a connection string that corresponds to an existing database.
+          If set, the operator will not manage Central DB
+        displayName: Connection String Override
+        path: central.db.connectionString
+      - description: Configures how Central DB should store its persistent data. You
+          can choose between using a persistent volume claim (recommended default),
+          and a host path.
+        displayName: Persistence
+        path: central.db.persistence
+      - description: Allows overriding the default resource settings for this component.
+          Please consult the documentation for an overview of default resource requirements
+          and a sizing guide.
+        displayName: Resources
+        path: central.db.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: If you want this component to only run on specific nodes, you
+          can configure a node selector here.
+        displayName: Node Selector
+        path: central.db.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: central.db.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: Disable admin password generation. Do not use this for first-time
+          installations, as you will have no way to perform initial setup and configuration
+          of alternative authentication methods.
+        displayName: Password Generation Disabled
+        path: central.db.passwordGenerationDisabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: The name of the referenced secret.
+        displayName: Name
+        path: central.db.passwordSecret.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
+          storage location of persistent data. Recommended for most users.
+        displayName: Persistent volume claim
+        path: central.db.persistence.persistentVolumeClaim
+      - description: Stores persistent data on a directory on the host. This is not
+          recommended, and should only be used together with a node selector (only
+          available in YAML view).
+        displayName: Host path
+        path: central.db.persistence.hostPath
+      - description: The path on the host running Central.
+        displayName: Path
+        path: central.db.persistence.hostPath.path
+      - description: The name of the PVC to manage persistent data. If no PVC with
+          the given name exists, it will be created. Defaults to "stackrox-db" if
+          not set.
+        displayName: Claim Name
+        path: central.db.persistence.persistentVolumeClaim.claimName
+      - description: The size of the persistent volume when created through the claim.
+          If a claim was automatically created, this can be used after the initial
+          deployment to resize (grow) the volume (only supported by some storage class
+          controllers).
+        displayName: Size
+        path: central.db.persistence.persistentVolumeClaim.size
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The name of the storage class to use for the PVC. If your cluster
+          is not configured with a default storage class, you must select a value
+          here.
+        displayName: Storage Class
+        path: central.db.persistence.persistentVolumeClaim.storageClassName
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:StorageClass
       - description: The name of the referenced secret.
         displayName: Name
         path: central.defaultTLSSecret.name

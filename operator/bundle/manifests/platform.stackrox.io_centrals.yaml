@@ -58,6 +58,161 @@ spec:
                     required:
                     - name
                     type: object
+                  db:
+                    description: Settings for Central DB, which is responsible for
+                      data persistence.
+                    properties:
+                      connectionString:
+                        description: Specify a connection string that corresponds
+                          to an existing database. If set, the operator will not manage
+                          Central DB
+                        type: string
+                      external:
+                        description: External specifies that the database should not
+                          be managed by the Operator and is externally managed
+                        type: boolean
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: If you want this component to only run on specific
+                          nodes, you can configure a node selector here.
+                        type: object
+                      passwordGenerationDisabled:
+                        description: Disable admin password generation. Do not use
+                          this for first-time installations, as you will have no way
+                          to perform initial setup and configuration of alternative
+                          authentication methods.
+                        type: boolean
+                      passwordSecret:
+                        description: Specify a secret that contains the password in
+                          the "password" data item. If omitted, the operator will
+                          auto-generate a DB password and store it in the "password"
+                          item in the "central-db-password" secret.
+                        properties:
+                          name:
+                            description: The name of the referenced secret.
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      persistence:
+                        description: Configures how Central DB should store its persistent
+                          data. You can choose between using a persistent volume claim
+                          (recommended default), and a host path.
+                        properties:
+                          hostPath:
+                            description: Stores persistent data on a directory on
+                              the host. This is not recommended, and should only be
+                              used together with a node selector (only available in
+                              YAML view).
+                            properties:
+                              path:
+                                description: The path on the host running Central.
+                                type: string
+                            type: object
+                          persistentVolumeClaim:
+                            description: Uses a Kubernetes persistent volume claim
+                              (PVC) to manage the storage location of persistent data.
+                              Recommended for most users.
+                            properties:
+                              claimName:
+                                default: stackrox-db
+                                description: The name of the PVC to manage persistent
+                                  data. If no PVC with the given name exists, it will
+                                  be created. Defaults to "stackrox-db" if not set.
+                                type: string
+                              size:
+                                description: The size of the persistent volume when
+                                  created through the claim. If a claim was automatically
+                                  created, this can be used after the initial deployment
+                                  to resize (grow) the volume (only supported by some
+                                  storage class controllers).
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                type: string
+                              storageClassName:
+                                description: The name of the storage class to use
+                                  for the PVC. If your cluster is not configured with
+                                  a default storage class, you must select a value
+                                  here.
+                                type: string
+                            type: object
+                        type: object
+                      resources:
+                        description: Allows overriding the default resource settings
+                          for this component. Please consult the documentation for
+                          an overview of default resource requirements and a sizing
+                          guide.
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                        type: object
+                      tolerations:
+                        description: If you want this component to only run on specific
+                          nodes, you can configure tolerations of tainted nodes.
+                        items:
+                          description: The pod this Toleration is attached to tolerates
+                            any taint that matches the triple <key,value,effect> using
+                            the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: Effect indicates the taint effect to match.
+                                Empty means match all taint effects. When specified,
+                                allowed values are NoSchedule, PreferNoSchedule and
+                                NoExecute.
+                              type: string
+                            key:
+                              description: Key is the taint key that the toleration
+                                applies to. Empty means match all taint keys. If the
+                                key is empty, operator must be Exists; this combination
+                                means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: Operator represents a key's relationship
+                                to the value. Valid operators are Exists and Equal.
+                                Defaults to Equal. Exists is equivalent to wildcard
+                                for value, so that a pod can tolerate all taints of
+                                a particular category.
+                              type: string
+                            tolerationSeconds:
+                              description: TolerationSeconds represents the period
+                                of time the toleration (which must be of effect NoExecute,
+                                otherwise this field is ignored) tolerates the taint.
+                                By default, it is not set, which means tolerate the
+                                taint forever (do not evict). Zero and negative values
+                                will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: Value is the taint value the toleration
+                                matches to. If the operator is Exists, the value should
+                                be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
+                    required:
+                    - external
+                    type: object
                   defaultTLSSecret:
                     description: By default, Central will only serve an internal TLS
                       certificate, which means that you will need to handle TLS termination

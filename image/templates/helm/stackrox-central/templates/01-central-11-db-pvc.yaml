@@ -47,6 +47,7 @@ metadata:
   name: central-db
   namespace: {{ .Release.Namespace }}
   labels:
+    "target.pvc.stackrox.io": "Central DB"
     {{- include "srox.labels" (list . "persistentvolumeclaim" "central-db") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "persistentvolumeclaim" "central-db") | nindent 4 }}

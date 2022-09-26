@@ -47,6 +47,19 @@ spec:
           password and store it in the "password" item in the "central-htpasswd" secret.
         displayName: Administrator Password
         path: central.adminPasswordSecret
+      - description: External specifies that the database should not be managed by
+          the Operator and is externally managed
+        displayName: External
+        path: central.db.external
+      - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
+          storage location of persistent data. Recommended for most users.
+        displayName: Persistent volume claim
+        path: central.db.persistence.persistentVolumeClaim
+      - description: The name of the PVC to manage persistent data. If no PVC with
+          the given name exists, it will be created. Defaults to "stackrox-db" if
+          not set.
+        displayName: Claim Name
+        path: central.db.persistence.persistentVolumeClaim.claimName
       - displayName: Enabled
         path: central.exposure.loadBalancer.enabled
       - displayName: Enabled
@@ -100,6 +113,19 @@ spec:
           settings in this section will have no effect.
         displayName: Scanner Component
         path: scanner.scannerComponent
+      - description: Specify a secret that contains the password in the "password"
+          data item. If omitted, the operator will auto-generate a DB password and
+          store it in the "password" item in the "central-db-password" secret.
+        displayName: Administrator Password
+        path: central.db.passwordSecret
+      - description: The size of the persistent volume when created through the claim.
+          If a claim was automatically created, this can be used after the initial
+          deployment to resize (grow) the volume (only supported by some storage class
+          controllers).
+        displayName: Size
+        path: central.db.persistence.persistentVolumeClaim.size
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
       - description: Here you can configure if you want to expose central through
           a node port, a load balancer, or an OpenShift route.
         displayName: Exposure
@@ -147,6 +173,17 @@ spec:
           be configured to match this value.
         displayName: Default Replicas
         path: scanner.analyzer.scaling.replicas
+      - description: Specify a connection string that corresponds to an existing database.
+          If set, the operator will not manage Central DB
+        displayName: Connection String Override
+        path: central.db.connectionString
+      - description: The name of the storage class to use for the PVC. If your cluster
+          is not configured with a default storage class, you must select a value
+          here.
+        displayName: Storage Class
+        path: central.db.persistence.persistentVolumeClaim.storageClassName
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:StorageClass
       - description: By default, Central will only serve an internal TLS certificate,
           which means that you will need to handle TLS termination at the ingress
           or load balancer level. If you want to terminate TLS in Central and serve
@@ -186,6 +223,11 @@ spec:
         path: scanner.db
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
+      - description: Configures how Central DB should store its persistent data. You
+          can choose between using a persistent volume claim (recommended default),
+          and a host path.
+        displayName: Persistence
+        path: central.db.persistence
       - description: Configures monitoring endpoint for Central. The monitoring endpoint
           allows other services to collect metrics from Central, provided in Prometheus
           compatible format.
@@ -214,6 +256,9 @@ spec:
         path: imagePullSecrets
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Settings for Central DB, which is responsible for data persistence.
+        displayName: Central DB Settings
+        path: central.db
       - description: Customizations to apply on all Central Services components.
         displayName: Customizations
         path: customize
@@ -228,10 +273,25 @@ spec:
           recommended, and should only be used together with a node selector (only
           available in YAML view).
         displayName: Host path
+        path: central.db.persistence.hostPath
+      - description: The path on the host running Central.
+        displayName: Path
+        path: central.db.persistence.hostPath.path
+      - description: Stores persistent data on a directory on the host. This is not
+          recommended, and should only be used together with a node selector (only
+          available in YAML view).
+        displayName: Host path
         path: central.persistence.hostPath
       - description: The path on the host running Central.
         displayName: Path
         path: central.persistence.hostPath.path
+      - description: Allows overriding the default resource settings for this component.
+          Please consult the documentation for an overview of default resource requirements
+          and a sizing guide.
+        displayName: Resources
+        path: central.db.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
@@ -256,6 +316,10 @@ spec:
       - description: If you want this component to only run on specific nodes, you
           can configure a node selector here.
         displayName: Node Selector
+        path: central.db.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure a node selector here.
+        displayName: Node Selector
         path: central.nodeSelector
       - description: If you want this component to only run on specific nodes, you
           can configure a node selector here.
@@ -265,6 +329,12 @@ spec:
           can configure a node selector here.
         displayName: Node Selector
         path: scanner.db.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: central.db.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
       - description: If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
         displayName: Tolerations
@@ -293,6 +363,18 @@ spec:
       - description: The name of the referenced secret.
         displayName: Name
         path: central.adminPasswordSecret.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Disable admin password generation. Do not use this for first-time
+          installations, as you will have no way to perform initial setup and configuration
+          of alternative authentication methods.
+        displayName: Password Generation Disabled
+        path: central.db.passwordGenerationDisabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: The name of the referenced secret.
+        displayName: Name
+        path: central.db.passwordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
       - description: The name of the referenced secret.
