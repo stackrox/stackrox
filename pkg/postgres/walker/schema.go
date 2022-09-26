@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -400,6 +401,7 @@ type PostgresOptions struct {
 	Unique                 bool
 	IgnorePrimaryKey       bool
 	IgnoreUniqueConstraint bool
+	IgnoreSearchLabels     set.StringSet
 	Reference              *foreignKeyRef
 
 	// Which database type will be used to store this value
