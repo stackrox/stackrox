@@ -1,30 +1,32 @@
 import React from 'react';
 import { FileText, List } from 'react-feather';
-import { connect } from 'react-redux';
 
-import { actions } from 'reducers/pdfDownload';
 import exportPDF from 'services/PDFExportService';
 import downloadCSV from 'services/CSVDownloadService';
 import Menu, { MenuOption } from 'Components/Menu';
-import { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
 
 type ExportMenuProps = {
     fileName: string;
     pdfId?: string;
     csvEndpoint?: string;
     csvQueryString?: string;
-    startExportingPDF: RequestAction;
-    finishExportingPDF: SuccessAction;
 };
 
-const ExportMenu = ({
-    fileName,
-    pdfId,
-    csvEndpoint,
-    csvQueryString = '',
-    startExportingPDF,
-    finishExportingPDF,
-}: ExportMenuProps) => {
+const ExportMenu = ({ fileName, pdfId, csvEndpoint, csvQueryString = '' }: ExportMenuProps) => {
+    /* Hide change from Redux action creator functions to useState functions.
+     * Because its only use in event timeline modal does not seem to need a double backdrop,
+     * omit setIsExporting arg and comment out calls.
+     * Too bad, so sad: MenuOption does not support isDisabled or isLoading properties
+     */
+    const startExportingPDF = () => {
+        // setIsExporting(true);
+        return { type: '', params: undefined };
+    };
+    const finishExportingPDF = () => {
+        // setIsExporting(false);
+        return { type: '', response: undefined, params: undefined };
+    };
+
     const options: MenuOption[] = [];
     if (pdfId) {
         options.push({
@@ -59,9 +61,4 @@ const ExportMenu = ({
     );
 };
 
-const mapDispatchToProps = {
-    startExportingPDF: actions.fetchPdf.request,
-    finishExportingPDF: actions.fetchPdf.success,
-};
-
-export default connect(null, mapDispatchToProps)(ExportMenu);
+export default ExportMenu;
