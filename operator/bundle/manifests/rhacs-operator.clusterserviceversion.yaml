@@ -22,8 +22,6 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.19.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     support: Red Hat
-  labels:
-    operatorframework.io/arch.amd64: supported
   name: rhacs-operator.v0.0.1
   namespace: placeholder
 spec:
