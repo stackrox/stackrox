@@ -292,7 +292,6 @@ func main() {
 		}
 
 		if err := generateSchema(schema, searchCategory, searchScope, filteredReferences, props.SchemaDirectory, !props.ConversionFuncs); err != nil {
-			//if err := generateSchema(schema, searchCategory, searchScope, parsedReferences, props.SchemaDirectory, !props.ConversionFuncs); err != nil {
 			return err
 		}
 		if props.ConversionFuncs {
