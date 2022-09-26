@@ -31,7 +31,6 @@ func readMapValue(val interface{}) map[string]string {
 }
 
 func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
-	log.Infof("Map query ctx: %+v", ctx)
 	// Negations in maps are a bit tricky, as are empty strings. We have to consider the following cases.
 	// Note that in everything below, query can be a regex, prefix or exact match query.
 	// = => it means we want a non-empty map
