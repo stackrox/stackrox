@@ -20,12 +20,13 @@ function verifyItemLinkToEntityPage(entitiesKey, itemTextSelector, getHeaderText
         });
 }
 
-function getItemTextSelectorForWidget(
-    widgetHeading,
-    itemTextSelector = '[data-testid="numbered-list-item-name"]'
-) {
+function getItemTextSelectorForWidget(widgetHeading, itemTextSelector) {
     return `[data-testid="widget"]:contains("${widgetHeading}") ${itemTextSelector}:eq(0)`;
 }
+
+const itemTextSelectorForNumberedList = '[data-testid="numbered-list-item-name"]';
+const itemTextSelectorForLabelText = '.rv-xy-plot__series--label text';
+const itemTextSelectorForClusters = 'li > div > div > div';
 
 function getHeaderTextFromItemTextWithColonSeparators(itemText) {
     const [, itemTextAfterNumberBeforeSlash] = /^\d+\.([^:]+):.*$/.exec(itemText);
@@ -67,7 +68,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         verifyItemLinkToEntityPage(
             entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading),
+            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForNumberedList),
             getHeaderTextFromItemTextWithoutSeparators
         );
     });
@@ -81,7 +82,7 @@ describe('Vulnerability Management Dashboard', () => {
         selectTopRiskiestOption(widgetHeading);
         verifyItemLinkToEntityPage(
             entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading),
+            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForNumberedList),
             getHeaderTextFromItemTextWithColonSeparators
         );
     });
@@ -95,7 +96,7 @@ describe('Vulnerability Management Dashboard', () => {
         selectTopRiskiestOption(widgetHeading);
         verifyItemLinkToEntityPage(
             entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading),
+            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForNumberedList),
             getHeaderTextFromItemTextWithColonSeparators
         );
     });
@@ -109,7 +110,7 @@ describe('Vulnerability Management Dashboard', () => {
         selectTopRiskiestOption(widgetHeading);
         verifyItemLinkToEntityPage(
             entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading),
+            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForNumberedList),
             getHeaderTextFromItemTextWithoutSeparators
         );
     });
@@ -122,7 +123,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         verifyItemLinkToEntityPage(
             entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading),
+            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForLabelText),
             getHeaderTextFromItemTextWithSlashSeparators
         );
     });
@@ -135,20 +136,21 @@ describe('Vulnerability Management Dashboard', () => {
 
         verifyItemLinkToEntityPage(
             entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading, '.rv-xy-plot__series--label text'),
+            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForNumberedList),
             getHeaderTextFromItemTextWithSlashSeparators
         );
     });
 
-    it('has link from Most Common Image Vulnerabilities widget to vulnerability page', () => {
+    // Vulnerability graphQL resolver is not support on postgres. Use Image/Node/ClusterVulnerability resolver.
+    it.skip('has link from Most Common Image Vulnerabilities widget to vulnerability page', () => {
         visitVulnerabilityManagementDashboard();
 
-        const entitiesKey = 'cves'; // page makes singular request for cves instead of image-cves
+        const entitiesKey = 'image-cves';
         const widgetHeading = 'Most Common Image Vulnerabilities';
 
         verifyItemLinkToEntityPage(
             entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading, '.rv-xy-plot__series--label text'),
+            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForLabelText),
             getHeaderTextFromItemTextWithSlashSeparators
         );
     });
@@ -161,7 +163,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         verifyItemLinkToEntityPage(
             entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading),
+            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForNumberedList),
             getHeaderTextFromItemTextWithoutSeparators
         );
     });
@@ -174,7 +176,7 @@ describe('Vulnerability Management Dashboard', () => {
 
         verifyItemLinkToEntityPage(
             entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading, 'li > div > div > div'),
+            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForClusters),
             (itemText) => itemText
         );
     });
