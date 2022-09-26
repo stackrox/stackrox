@@ -60,6 +60,7 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 	)
 }
 
+// ImageCVERow represents a row in Image CVE csv export
 type ImageCVERow struct {
 	CVE             string
 	Fixable         string
@@ -134,6 +135,7 @@ func ImageCVECSVHandler() http.HandlerFunc {
 	}
 }
 
+// ImageCVECSVRows returns data rows for Image CVE csv export
 func ImageCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery, paginatedQuery resolvers.PaginatedQuery) ([]*ImageCVERow, error) {
 	if csvHandler == nil {
 		return nil, errors.New("Handler not initialized")

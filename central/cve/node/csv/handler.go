@@ -57,6 +57,7 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 	)
 }
 
+// NodeCVERow represents a row in Node CVE csv export
 type NodeCVERow struct {
 	CVE            string
 	Fixable        string
@@ -129,6 +130,7 @@ func NodeCVECSVHandler() http.HandlerFunc {
 	}
 }
 
+// NodeCVECSVRows returns data rows for Node CVE csv export
 func NodeCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery, paginatedQuery resolvers.PaginatedQuery) ([]*NodeCVERow, error) {
 	if csvHandler == nil {
 		return nil, errors.New("Handler not initialized")

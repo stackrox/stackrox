@@ -56,6 +56,7 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 	)
 }
 
+// ClusterCVERow represents a row in cluster CVE csv export
 type ClusterCVERow struct {
 	CVE           string
 	CveTypes      string
@@ -128,6 +129,7 @@ func ClusterCVECSVHandler() http.HandlerFunc {
 	}
 }
 
+// ClusterCVECSVRows returns data rows for Cluster CVE csv export
 func ClusterCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery, paginatedQuery resolvers.PaginatedQuery) ([]*ClusterCVERow, error) {
 	if csvHandler == nil {
 		return nil, errors.New("Handler not initialized")
