@@ -11,12 +11,10 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func parseMapQuery(label string) (string, string) {
-	spl := strings.SplitN(label, "=", 2)
-	if len(spl) < 2 {
-		return spl[0], ""
-	}
-	return spl[0], spl[1]
+func parseMapQuery(label string) (string, string, bool) {
+	hasEquals := strings.Contains(label, "=")
+	key, value := stringutils.Split2(label, "=")
+	return key, value, hasEquals
 }
 
 func readMapValue(val interface{}) map[string]string {
@@ -56,10 +54,10 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		}), nil
 	}
 
-	key, value := parseMapQuery(query)
+	key, value, hasEquals := parseMapQuery(query)
 	keyNegated := stringutils.ConsumePrefix(&key, search.NegationPrefix)
 	// This is a special case where the query we construct becomes a (non) existence query
-	if value == "" && key != "" && !ctx.highlight {
+	if value == "" && key != "" && hasEquals {
 		var negationString string
 		if keyNegated {
 			negationString = "NOT "
