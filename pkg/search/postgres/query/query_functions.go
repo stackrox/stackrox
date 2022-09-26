@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -76,7 +75,8 @@ func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field
 	// Special case: wildcard
 	if stringutils.MatchesAny(value, pkgSearch.WildcardString, pkgSearch.NullString) {
 		if len(qe.SelectedFields) != 1 {
-			return nil, errors.Errorf("query entry for type %s had no selected fields", sqlDataType)
+			// If there are no selected fields, then no post transform needs to be used
+			return handleExistenceQueries(ctx, nil), nil
 		}
 		return handleExistenceQueries(ctx, qe.SelectedFields[0].PostTransform), nil
 	}
