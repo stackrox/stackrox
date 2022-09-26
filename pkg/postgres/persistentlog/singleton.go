@@ -1,6 +1,8 @@
 package persistentlog
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/persistentlog/store"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -19,7 +21,7 @@ func initialize() {
 	if err != nil {
 		return
 	}
-	logStore = store.New(pgadmin.GetAdminPool(config))
+	logStore = store.New(context.Background(), pgadmin.GetAdminPool(config))
 }
 
 // Singleton provides the interface for non-service external interaction.

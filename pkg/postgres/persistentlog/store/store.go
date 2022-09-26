@@ -28,6 +28,14 @@ const (
 	WHERE timestamp between $1 and $2`
 	deleteStmt = "DELETE FROM persistent_logs WHERE timestamp < $1"
 	walkStmt   = "SELECT log, timestamp FROM persistent_logs"
+
+	createTableStmt = `
+		CREATE TABLE IF NOT EXISTS persistent_logs (
+			log_id bigserial,
+			log text,
+			timestamp timestamp
+		)
+	`
 )
 
 var (
@@ -49,6 +57,21 @@ type persistentLogStoreImpl struct {
 	db *pgxpool.Pool
 }
 
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	createTableIfNotExist(ctx, db)
+	return &persistentLogStoreImpl{
+		db: db,
+	}
+}
+
+func createTableIfNotExist(ctx context.Context, db *pgxpool.Pool) {
+	_, err := db.Exec(ctx, createTableStmt)
+	if err != nil {
+		log.Panicf("Error creating version table: %v", err)
+	}
+}
+
 func (s *persistentLogStoreImpl) insertIntoPersistentLog(ctx context.Context, tx pgx.Tx, obj *storage.PersistentLog) error {
 
 	values := []interface{}{
@@ -64,13 +87,6 @@ func (s *persistentLogStoreImpl) insertIntoPersistentLog(ctx context.Context, tx
 	}
 
 	return nil
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
-	return &persistentLogStoreImpl{
-		db: db,
-	}
 }
 
 func (s *persistentLogStoreImpl) upsert(ctx context.Context, objs ...*storage.PersistentLog) error {
@@ -265,7 +281,7 @@ func Destroy(ctx context.Context, db *pgxpool.Pool) {
 // CreateTableAndNewStore returns a new Store instance for testing
 func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, persistentLogsTable)
-	return New(db)
+	return New(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

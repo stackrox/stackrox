@@ -31,6 +31,7 @@ import (
 
 func main() {
 	startProfilingServer()
+	startPersistentLogListener()
 
 	if err := run(); err != nil {
 		log.WriteToStderrf("Migrator failed: %s", err)
@@ -169,10 +170,6 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 		}
 		// Close when needed
 		defer postgreshelper.Close()
-
-		// Here temporary to get working
-		pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.PersistentLogsTableName)
-		startPersistentLogListener()
 
 		ver, err := migrations.ReadVersionPostgres(pgPool)
 		if err != nil {
