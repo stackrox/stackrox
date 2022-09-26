@@ -68,6 +68,10 @@ spec:
                           to an existing database. If set, the operator will not manage
                           Central DB
                         type: string
+                      external:
+                        description: External specifies that the database should not
+                          be managed by the Operator and is externally managed
+                        type: boolean
                       nodeSelector:
                         additionalProperties:
                           type: string
@@ -207,6 +211,8 @@ spec:
                               type: string
                           type: object
                         type: array
+                    required:
+                    - external
                     type: object
                   defaultTLSSecret:
                     description: By default, Central will only serve an internal TLS

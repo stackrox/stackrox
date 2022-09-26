@@ -149,10 +149,14 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 
 // CentralDBSpec defines settings for the "central db" component.
 type CentralDBSpec struct {
+	// External specifies that the database should not be managed by the Operator and is externally managed
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="External",order=1
+	External bool `json:"external"`
+
 	// Specify a secret that contains the password in the "password" data item.
 	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
 	// in the "central-db-password" secret.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=2
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
 	// Disable admin password generation. Do not use this for first-time installations,
@@ -161,12 +165,12 @@ type CentralDBSpec struct {
 	PasswordGenerationDisabled *bool `json:"passwordGenerationDisabled,omitempty"`
 
 	// Specify a connection string that corresponds to an existing database. If set, the operator will not manage Central DB
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	ConnectionStringOverride *string `json:"connectionString,omitempty"`
 
 	// Configures how Central DB should store its persistent data. You can choose between using a persistent
 	// volume claim (recommended default), and a host path.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Persistence *Persistence `json:"persistence,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
@@ -178,7 +182,7 @@ func (c *CentralDBSpec) IsExternal() bool {
 	if c == nil {
 		return false
 	}
-	return c.ConnectionStringOverride != nil
+	return c.External
 }
 
 // GetPersistence returns the persistence for Central DB

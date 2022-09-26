@@ -3,6 +3,7 @@ package extensions
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -10,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	utils "github.com/stackrox/rox/operator/pkg/utils"
-	"github.com/stackrox/rox/pkg/features"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -24,20 +24,15 @@ const (
 	DefaultCentralPVCName = "stackrox-db"
 	// DefaultCentralDBPVCName is the default name for Central DB PVC
 	DefaultCentralDBPVCName = "central-db"
+
+	pvcAnnotationKey = "pvc.stackrox.io"
 )
 
 var (
-	maxOwnedPVCs         = 1
-	errMultipleOwnedPVCs = errors.Errorf("operator is only allowed to have %d owned PVC(s)", maxOwnedPVCs)
+	errMultipleOwnedPVCs = errors.New("operator is only allowed to have 1 owned PVC")
 
 	defaultPVCSize = resource.MustParse("100Gi")
 )
-
-func init() {
-	if features.PostgresDatastore.Enabled() {
-		maxOwnedPVCs = 2
-	}
-}
 
 // ReconcilePVCExtension reconciles PVCs created by the operator
 func ReconcilePVCExtension(client ctrlClient.Client, defaultClaimName string) extensions.ReconcileExtension {
@@ -103,13 +98,15 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 		pvc = nil
 	}
 
-	ownedPVCs, err := r.getUniqueOwnedPVCs()
+	ownedPVC, err := r.getUniqueOwnedPVCsForCurrentClaimName()
 	if err != nil {
 		return err
 	}
-	if len(ownedPVCs) == maxOwnedPVCs && pvc == nil {
-		return errors.Errorf(
-			"Could not create PVC %q because the operator can only manage %d PVC(s) for Central. To fix this either reference a manually created PVC or remove the OwnerReference of the extraneous PVC.", claimName, maxOwnedPVCs)
+	if ownedPVC != nil {
+		if ownedPVC.GetName() != claimName && pvc == nil {
+			return errors.Errorf(
+				"Could not create PVC %q because the operator can only manage 1 PVC for %s. To fix this either reference a manually created PVC or remove the OwnerReference of the %q PVC.", claimName, r.defaultClaimName, ownedPVC.GetName())
+		}
 	}
 
 	// The reconciliation loop should fail if a PVC should be reconciled which is not owned by the operator.
@@ -234,7 +231,7 @@ func (r *reconcilePVCExtensionRun) getOwnedPVC() ([]*corev1.PersistentVolumeClai
 	return ownedPVCs, nil
 }
 
-func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCs() (map[string]*corev1.PersistentVolumeClaim, error) {
+func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentClaimName() (*corev1.PersistentVolumeClaim, error) {
 	pvcList, err := r.getOwnedPVC()
 	if err != nil {
 		return nil, err
@@ -245,16 +242,24 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCs() (map[string]*corev1.Pers
 		return nil, nil
 	}
 
-	ownedPVCs := make(map[string]*corev1.PersistentVolumeClaim)
-	var names []string
-	for _, item := range pvcList {
-		names = append(names, item.GetName())
-		ownedPVCs[item.GetName()] = item
+	// Filter PVC List by current PVC Claim Name
+	filtered := pvcList[:0]
+	for _, pvc := range pvcList {
+		if val, ok := pvc.Annotations[pvcAnnotationKey]; !ok && r.defaultClaimName == DefaultCentralPVCName {
+			filtered = append(filtered, pvc)
+		} else if val == r.defaultClaimName {
+			filtered = append(filtered, pvc)
+		}
 	}
-	if len(pvcList) > maxOwnedPVCs {
+	if len(pvcList) > 1 {
+		var names []string
+		for _, item := range pvcList {
+			names = append(names, item.GetName())
+		}
+		sort.Strings(names)
 		return nil, errors.Wrapf(errMultipleOwnedPVCs,
-			"too many owned PVCs were found, please remove not used ones or delete their OwnerReferences. Found PVCs: %s", strings.Join(names, ", "))
+			"too many owned PVCs were found for %s, please remove not used ones or delete their OwnerReferences. Found PVCs: %s", r.defaultClaimName, strings.Join(names, ", "))
 	}
 
-	return ownedPVCs, nil
+	return filtered[0], nil
 }
