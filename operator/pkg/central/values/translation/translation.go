@@ -190,9 +190,9 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 	cv.SetBoolValue("enabled", true)
-	cv.SetBoolValue("external", c.External)
+	cv.SetBoolValue("external", c.IsExternal())
 
-	if c.External && c.ConnectionStringOverride != nil {
+	if c.IsExternal() && c.ConnectionStringOverride != nil {
 		cv.SetError(errors.New("if external is set to true, connection string override must also be set"))
 	}
 

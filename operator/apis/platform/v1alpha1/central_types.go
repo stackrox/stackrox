@@ -151,7 +151,7 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 type CentralDBSpec struct {
 	// External specifies that the database should not be managed by the Operator and is externally managed
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="External",order=1
-	External bool `json:"external"`
+	External *bool `json:"external"`
 
 	// Specify a secret that contains the password in the "password" data item.
 	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
@@ -182,7 +182,10 @@ func (c *CentralDBSpec) IsExternal() bool {
 	if c == nil {
 		return false
 	}
-	return c.External
+	if c.External == nil {
+		return false
+	}
+	return *c.External
 }
 
 // GetPersistence returns the persistence for Central DB
