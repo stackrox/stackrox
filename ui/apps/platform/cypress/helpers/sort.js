@@ -85,36 +85,70 @@ export function getStringValueFromElement(element) {
     return element?.innerText;
 }
 
-const severityValues = ['Low', 'Medium', 'High', 'Critical'];
+const policySeverityValues = ['Low', 'Medium', 'High', 'Critical'];
 
-export function isValidSeverityValue(value) {
-    return typeof value === 'string' && severityValues.includes(value);
+export function isValidPolicySeverityValue(value) {
+    return typeof value === 'string' && policySeverityValues.includes(value);
 }
 
-export function isPairOfAscendingSeverityValues(valueA, valueB) {
-    const indexA = severityValues.indexOf(valueA);
-    const indexB = severityValues.indexOf(valueB);
+export function isPairOfAscendingPolicySeverityValues(valueA, valueB) {
+    const indexA = policySeverityValues.indexOf(valueA);
+    const indexB = policySeverityValues.indexOf(valueB);
     return indexA !== -1 && indexA <= indexB;
 }
 
-export function isPairOfDescendingSeverityValues(valueA, valueB) {
-    const indexA = severityValues.indexOf(valueA);
-    const indexB = severityValues.indexOf(valueB);
+export function isPairOfDescendingPolicySeverityValues(valueA, valueB) {
+    const indexA = policySeverityValues.indexOf(valueA);
+    const indexB = policySeverityValues.indexOf(valueB);
     return indexA >= indexB && indexB !== -1;
 }
 
-export const callbackForPairOfAscendingSeverityValuesFromElements =
+export const callbackForPairOfAscendingPolicySeverityValuesFromElements =
     createCallbackForPairOfSortedItems(
-        'notAscendingSeverityValuesFromElements',
+        'notAscendingPolicySeverityValuesFromElements',
         getStringValueFromElement,
-        isValidSeverityValue,
-        isPairOfAscendingSeverityValues
+        isValidPolicySeverityValue,
+        isPairOfAscendingPolicySeverityValues
     );
 
-export const callbackForPairOfDescendingSeverityValuesFromElements =
+export const callbackForPairOfDescendingPolicySeverityValuesFromElements =
     createCallbackForPairOfSortedItems(
-        'notDescendingSeverityValuesFromElements',
+        'notDescendingPolicySeverityValuesFromElements',
         getStringValueFromElement,
-        isValidSeverityValue,
-        isPairOfDescendingSeverityValues
+        isValidPolicySeverityValue,
+        isPairOfDescendingPolicySeverityValues
+    );
+
+const vulnerabilitySeverityValues = ['Low', 'Moderate', 'Important', 'Critical'];
+
+export function isValidVulnerabilitySeverityValue(value) {
+    return typeof value === 'string' && vulnerabilitySeverityValues.includes(value);
+}
+
+export function isPairOfAscendingVulnerabilitySeverityValues(valueA, valueB) {
+    const indexA = vulnerabilitySeverityValues.indexOf(valueA);
+    const indexB = vulnerabilitySeverityValues.indexOf(valueB);
+    return indexA !== -1 && indexA <= indexB;
+}
+
+export function isPairOfDescendingVulnerabilitySeverityValues(valueA, valueB) {
+    const indexA = vulnerabilitySeverityValues.indexOf(valueA);
+    const indexB = vulnerabilitySeverityValues.indexOf(valueB);
+    return indexA >= indexB && indexB !== -1;
+}
+
+export const callbackForPairOfAscendingVulnerabilitySeverityValuesFromElements =
+    createCallbackForPairOfSortedItems(
+        'notAscendingVulnerabilitySeverityValuesFromElements',
+        getStringValueFromElement,
+        isValidVulnerabilitySeverityValue,
+        isPairOfAscendingVulnerabilitySeverityValues
+    );
+
+export const callbackForPairOfDescendingVulnerabilitySeverityValuesFromElements =
+    createCallbackForPairOfSortedItems(
+        'notDescendingVulnerabilitySeverityValuesFromElements',
+        getStringValueFromElement,
+        isValidVulnerabilitySeverityValue,
+        isPairOfDescendingVulnerabilitySeverityValues
     );

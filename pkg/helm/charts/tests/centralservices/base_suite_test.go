@@ -59,12 +59,13 @@ central:
   exposure:
     loadBalancer:
       enabled: true
-  enableCentralDB: true
-  dbPassword:
-    value: "central db password"
-  dbServiceTLS:
-    cert: "central db cert"
-    key: "central db key"
+  db:
+    enabled: true
+    password:
+      value: "password"
+    serviceTLS:
+      cert: "central db tls cert pem"
+      key: "central db tls key pem"
 scanner:
   dbPassword:
     value: "db password"
@@ -98,7 +99,8 @@ central:
   exposure:
     loadBalancer:
       enabled: true
-  enableCentralDB: true
+  db:
+    enabled: true
 enableOpenShiftMonitoring: true
 system:
     enablePodSecurityPolicies: true

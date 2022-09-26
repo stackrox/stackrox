@@ -29,7 +29,6 @@ import (
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
-	complianceManager "github.com/stackrox/rox/central/compliance/manager"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
@@ -294,9 +293,6 @@ func ensureDB(ctx context.Context) {
 }
 
 func startServices() {
-	if err := complianceManager.Singleton().Start(); err != nil {
-		log.Panicf("could not start compliance manager: %v", err)
-	}
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()

@@ -1,6 +1,6 @@
 module github.com/stackrox/rox
 
-go 1.17
+go 1.18
 
 // CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
 // directive at the bottom of the file as well.
@@ -118,14 +118,14 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/postgres v1.3.9
+	gorm.io/driver/postgres v1.3.10
 	gorm.io/gorm v1.23.9
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.2
-	k8s.io/api v0.23.11
-	k8s.io/apimachinery v0.23.11
-	k8s.io/apiserver v0.23.10
-	k8s.io/client-go v0.23.11
+	k8s.io/api v0.23.12
+	k8s.io/apimachinery v0.23.12
+	k8s.io/apiserver v0.23.12
+	k8s.io/client-go v0.23.12
 	k8s.io/kubectl v0.23.11
 	k8s.io/kubelet v0.22.13
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
@@ -396,7 +396,7 @@ require (
 	gotest.tools/v3 v3.1.0 // indirect
 	k8s.io/apiextensions-apiserver v0.23.5 // indirect
 	k8s.io/cli-runtime v0.23.11 // indirect
-	k8s.io/component-base v0.23.11 // indirect
+	k8s.io/component-base v0.23.12 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf // indirect
 	knative.dev/pkg v0.0.0-20220325200448-1f7514acd0c2 // indirect

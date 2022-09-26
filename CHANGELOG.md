@@ -6,17 +6,27 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 ### Removed Features
+- ROX-6194: `ROX_WHITELIST_GENERATION_DURATION` env var is removed in favor of `ROX_BASELINE_GENERATION_DURATION`;
+  `DeploymentWithProcessInfo` items in `/v1/deploymentswithprocessinfo` endpoint response do not include
+  `whitelist_statuses` anymore.
+- `Label` and `Annotation` search options are removed. Use the following search options:
+  - **Resource | Deprecated Search Option | New Search Option**
+  - Node | Label | Node Label
+  - Node | Annotation | Node Annotation
+  - Namespace | Label | Namespace Label
+  - Deployment | Label | Deployment Label
+  - ServiceAccount | Label | Service Account Label
+  - ServiceAccount | Annotation | Service Account Annotation
+  - K8sRole | Label | Role Label
+  - K8sRole | Annotation | Role Annotation
+  - K8sRoleBinding | Label | Role Binding Label
+  - K8sRoleAnnotation | Annotation | Role Binding Annotation
+- `ids` field in `/v1/cves/suppress` and `/v1/cves/unsuppress` API payload renamed to `cves`.
 
 ### Deprecated Features
 
 ### Technical Changes
 - ROX-11937: The Splunk integration now processes all additional standards of the compliance operator (ocp4-cis & ocp4-cis-node) correctly.
-
-
-### Removed Features
-- ROX-6194: `ROX_WHITELIST_GENERATION_DURATION` env var is removed in favor of `ROX_BASELINE_GENERATION_DURATION`;
-  `DeploymentWithProcessInfo` items in `/v1/deploymentswithprocessinfo` endpoint response do not include
-  `whitelist_statuses` anymore.
 
 ## [3.72.0]
 

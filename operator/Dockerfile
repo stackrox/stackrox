@@ -1,19 +1,7 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 
-# NOTE 1: the following version needs to be in sync with the ../EXPECTED_GO_VERSION file.
-FROM golang:1.17.12 as builder
-# NOTE 2: Also, to keep CI from flakes, the above image needs to be mirrored into openshift CI registry and the CI
-# configured to use the mirrored image instead of the specification above.
-# This is because pulling from docker.io/library/... (which is what happens with a bare image specification above) is
-# subject to rate limits that our CI tends to hit, causing intermittent build failures.
-#
-# Ideally, the mirroring and overrides for new image should be put in place first, and then once the above line is
-# updated, the old ones removed. But with some luck, doing it post-facto might also be possible without causing too
-# many failures, depending on the load.
-# See example PRs for how to achieve that:
-# - https://github.com/openshift/release/pull/31790/files
-# - https://github.com/openshift/release/pull/31791/files
+FROM quay.io/stackrox-io/apollo-ci:${BUILD_IMAGE_VERSION} as builder
 
 # Build the manager binary
 ARG roxpath
@@ -56,6 +44,10 @@ COPY operator/build/status.sh status.sh
 
 # This creates a git repo in workdir so that `git grep` command in build.sh can succeed and actually find //XDef-s.
 RUN git init && git add .
+
+# We've been historically building operator without CGO both upstream and downstream. The apollo-ci image has that
+# enabled by default, therefore we disable CGO here to keep doing the thing we used to.
+ENV CGO_ENABLED=0
 
 # Build the operator binary.
 RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build.sh operator

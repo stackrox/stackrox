@@ -47,7 +47,7 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, rbac_proxy_replacements):
+def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, rbac_proxy_replacements):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -68,6 +68,12 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     first_x, first_y, first_z = (int(c) for c in first_version.split('-', maxsplit=1)[0].split('.'))
     # An olm.skipRange doesn't hurt if it references non-existing versions.
     csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {x}.{y-1}.0 < {version}'
+
+    # multi-arch
+    if "labels" not in csv_doc["metadata"]:
+        csv_doc["metadata"]["labels"] = {}
+    for arch in extra_supported_arches:
+        csv_doc["metadata"]["labels"][f"operatorframework.io/arch.{arch}"] = "supported"
 
     if (x, y, z) > (first_x, first_y, first_z):
         if z == 0:
@@ -91,6 +97,9 @@ def parse_args():
     parser.add_argument("--replace-rbac-proxy", required=False, metavar='original-tag:replacement-image',
                         nargs='+', help='Replacement directives for the RBAC proxy image',
                         default=[])
+    parser.add_argument("--add-supported-arch", action='append', required=False,
+                        help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
+                        default=[])
     return parser.parse_args()
 
 
@@ -102,6 +111,7 @@ def main():
               version=args.use_version,
               first_version=args.first_version,
               no_related_images=args.no_related_images,
+              extra_supported_arches=args.add_supported_arch,
               rbac_proxy_replacements={
                     tag: img
                     for tag, img in (spec.split(':', maxsplit=1) for spec in args.replace_rbac_proxy)

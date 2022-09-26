@@ -37,8 +37,10 @@ if [[ $(uname -m) == "arm64" ]]; then
   dnf_list_args=('--nogpgcheck')
 fi
 postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
-postgres_major="14"
-pg_rhel_version="8.5"
+postgres_major="13"
+pg_rhel_major="8"
+pg_rhel_minor="6"
+pg_rhel_version="${pg_rhel_major}.${pg_rhel_minor}"
 
 if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
     dnf install --disablerepo='*' -y "${postgres_repo_url}"
@@ -61,10 +63,8 @@ fi
 # would be otherwise downloaded or included via a COPY command in the
 # Dockerfile.
 
-cp -p "${INPUT_ROOT}"/*.conf "${bundle_root}/etc/"
-
 # Get postgres RPMs directly
-postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-${arch}"
+postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
 
 curl -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"

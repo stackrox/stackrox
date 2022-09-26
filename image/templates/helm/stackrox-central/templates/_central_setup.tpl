@@ -8,10 +8,10 @@
 {{ $env := $._rox.env }}
 {{ $_ := set $ "_rox" $._rox }}
 {{ $centralCfg := $._rox.central }}
+{{ $centralDBCfg := $._rox.central.db }}
 
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ $centralCfg.image) }}
-{{ include "srox.configureImage" (list $ $centralCfg.dbImage) }}
 
 {{/* Admin password */}}
 {{ include "srox.configurePassword" (list $ "central.adminPassword" "admin") }}
@@ -38,12 +38,16 @@
 {{ end }}
 
 {{/* Central DB password */}}
-{{ if $centralCfg.enableCentralDB }}
-{{ include "srox.configurePassword" (list $ "central.dbPassword") }}
+{{ if $centralDBCfg.enabled }}
+{{/* Always set up the password for Postgres if it is enabled */}}
+{{ include "srox.configurePassword" (list $ "central.db.password") }}
+{{ if not $centralDBCfg.external }}
+{{ include "srox.configureImage" (list $ $centralDBCfg.image) }}
 
 {{/* Central DB Service TLS Certificates */}}
 {{ $centralDBCertSpec := dict "CN" "CENTRAL_DB_SERVICE: Central DB" "dnsBase" "central-db" }}
-{{ include "srox.configureCrypto" (list $ "central.dbServiceTLS" $centralDBCertSpec) }}
+{{ include "srox.configureCrypto" (list $ "central.db.serviceTLS" $centralDBCertSpec) }}
+{{ end }}
 {{ end }}
 
 {{/*
@@ -71,11 +75,41 @@
   {{ end }}
 {{ end }}
 
+{{/*
+    Central's DB PVC config setup
+  */}}
+{{ $dbVolumeCfg := dict }}
+{{ if and $centralDBCfg.enabled (not $centralDBCfg.external) }}
+{{ if $centralDBCfg.persistence.none }}
+  {{ include "srox.warn" (list $ "You have selected no persistence backend. Every deletion of the StackRox Central DB pod will cause you to lose all your data. This is STRONGLY recommended against.") }}
+  {{ $_ := set $dbVolumeCfg "emptyDir" dict }}
+{{ end }}
+{{ if $centralDBCfg.persistence.hostPath }}
+  {{ if not $centralDBCfg.nodeSelector }}
+    {{ include "srox.warn" (list $ "You have selected host path persistence, but not specified a node selector. This is unlikely to work reliably.") }}
+  {{ end }}
+  {{ $_ := set $dbVolumeCfg "hostPath" (dict "path" $centralDBCfg.persistence.hostPath) }}
+{{ end }}
+{{/* Configure PVC if either any of the settings in `centralDB.persistence.persistentVolumeClaim` are provided,
+     or no other persistence backend has been configured yet. */}}
+{{ if or (not (deepEqual $._rox._configShape.central.db.persistence.persistentVolumeClaim $centralDBCfg.persistence.persistentVolumeClaim)) (not $dbVolumeCfg) }}
+  {{ $dbPVCCfg := $centralDBCfg.persistence.persistentVolumeClaim }}
+  {{ $_ := include "srox.mergeInto" (list $dbPVCCfg $._rox._defaults.dbPVCDefaults (dict "createClaim" $.Release.IsInstall)) }}
+  {{ $_ = set $dbVolumeCfg "persistentVolumeClaim" (dict "claimName" $dbPVCCfg.claimName) }}
+  {{ if $dbPVCCfg.createClaim }}
+    {{ $_ = set $centralDBCfg.persistence "_pvcCfg" $dbPVCCfg }}
+  {{ end }}
+{{ end }}
+{{ end }}
+
 {{ $allPersistenceMethods := keys $volumeCfg | sortAlpha }}
 {{ if ne (len $allPersistenceMethods) 1 }}
   {{ include "srox.fail" (printf "Invalid or no persistence configurations for central: [%s]" (join "," $allPersistenceMethods)) }}
 {{ end }}
 {{ $_ = set $centralCfg.persistence "_volumeCfg" $volumeCfg }}
+{{ if and $centralDBCfg.enabled (not $centralDBCfg.external) }}
+{{ $_ = set $centralDBCfg.persistence "_volumeCfg" $dbVolumeCfg }}
+{{ end }}
 
 {{/* Endpoint configuration */}}
 {{ include "srox.configureCentralEndpoints" $._rox.central }}

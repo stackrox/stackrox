@@ -318,20 +318,14 @@ smuggled-status-sh:
 		"$${smuggled_status_sh}" ;\
 	)
 
-.PHONY: check-expected-go-version
-check-expected-go-version:
-	$(SILENT)expected=$$(head -n 1 ../EXPECTED_GO_VERSION | sed 's/go//'); \
-	actual=$$(grep '^FROM golang' Dockerfile | awk '{print $$2}' | cut -d: -f2); \
-	[ "$${expected}" = "$${actual}" ] || { echo "../EXPECTED_GO_VERSION $${expected}, Dockerfile $${actual}; please update to match"; exit 1; }
-
 # Force re-building the file to make sure the current environment is correctly reflected.
 .PHONY: build/Dockerfile.gen
 build/Dockerfile.gen: Dockerfile
 	mkdir -p build/
-	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g' < $< > $@
+	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen check-expected-go-version test smuggled-status-sh ## Build docker image with the operator.
+docker-build: build/Dockerfile.gen test smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
 		-t ${IMG} \
 		-f $< \
@@ -448,9 +442,9 @@ bundle-post-process: operator-sdk ## Post-process CSV file to include correct op
 		--first-version 3.62.0 `# 3.62.0 is the first operator version ever released` \
 		--operator-image $(IMG) \
 		--no-related-images \
+		--add-supported-arch amd64 \
 		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
-	| sed 's,replaces: rhacs-operator.v3.66.0,replaces: rhacs-operator.v3.66.1,' > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
-# TODO(ROX-8618): make the above sed on `replaces:` line generic (quick hack to address ROX-8630)
+		> build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 

@@ -160,10 +160,10 @@ func (mr *MockDataStoreMockRecorder) SearchRawCVEs(ctx, q interface{}) *gomock.C
 }
 
 // Suppress mocks base method.
-func (m *MockDataStore) Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error {
+func (m *MockDataStore) Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, start, duration}
-	for _, a := range ids {
+	for _, a := range cves {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Suppress", varargs...)
@@ -172,17 +172,17 @@ func (m *MockDataStore) Suppress(ctx context.Context, start *types.Timestamp, du
 }
 
 // Suppress indicates an expected call of Suppress.
-func (mr *MockDataStoreMockRecorder) Suppress(ctx, start, duration interface{}, ids ...interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Suppress(ctx, start, duration interface{}, cves ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, start, duration}, ids...)
+	varargs := append([]interface{}{ctx, start, duration}, cves...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Suppress", reflect.TypeOf((*MockDataStore)(nil).Suppress), varargs...)
 }
 
 // Unsuppress mocks base method.
-func (m *MockDataStore) Unsuppress(ctx context.Context, ids ...string) error {
+func (m *MockDataStore) Unsuppress(ctx context.Context, cves ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx}
-	for _, a := range ids {
+	for _, a := range cves {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Unsuppress", varargs...)
@@ -191,9 +191,9 @@ func (m *MockDataStore) Unsuppress(ctx context.Context, ids ...string) error {
 }
 
 // Unsuppress indicates an expected call of Unsuppress.
-func (mr *MockDataStoreMockRecorder) Unsuppress(ctx interface{}, ids ...interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Unsuppress(ctx interface{}, cves ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, ids...)
+	varargs := append([]interface{}{ctx}, cves...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsuppress", reflect.TypeOf((*MockDataStore)(nil).Unsuppress), varargs...)
 }
 

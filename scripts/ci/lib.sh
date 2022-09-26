@@ -1119,14 +1119,6 @@ validate_expected_go_version() {
         echo "Got unexpected go version ${roxctl_go_version} (wanted ${expected_go_version})"
         exit 1
     fi
-
-    # Ensure that the Go version is up-to-date in go.mod as well.
-    # Note that the patch version is not specified in go.mod.
-    [[ "${expected_go_version}" =~ ^go(1\.[0-9]{2})(\.[0-9]+)?$ ]]
-    go_version="${BASH_REMATCH[1]}"
-
-    go mod edit -go "${go_version}"
-    git diff --exit-code -- go.mod
 }
 
 store_qa_test_results() {

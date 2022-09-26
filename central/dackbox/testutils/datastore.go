@@ -257,6 +257,7 @@ func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 	if features.PostgresDatastore.Enabled() {
 		s.pgtestbase.Teardown(t)
 	} else {
+		s.waitForIndexing()
 		err = s.bleveIndex.Close()
 		if err != nil {
 			return err
