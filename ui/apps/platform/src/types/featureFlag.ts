@@ -10,4 +10,5 @@ export type FeatureFlagEnvVar =
     | 'ROX_SEARCH_PAGE_UI'
     | 'ROX_SYSTEM_HEALTH_PF'
     | 'ROX_FRONTEND_VM_UPDATES'
+    | 'ROX_NETWORK_GRAPH_PATTERNFLY'
     ;

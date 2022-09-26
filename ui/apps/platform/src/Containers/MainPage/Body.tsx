@@ -6,6 +6,7 @@ import {
     mainPath,
     dashboardPath,
     networkPath,
+    networkPathPF,
     violationsPath,
     compliancePath,
     clustersPathWithParam,
@@ -50,6 +51,9 @@ const AsyncSearchPage = asyncComponent(() => import('Containers/Search/SearchPag
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
+const AsyncNetworkGraphPage = asyncComponent(
+    () => import('Containers/NetworkGraph/NetworkGraphPage')
+);
 const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/ClustersPage'));
 const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/ClustersPage'));
 const AsyncIntegrationsPage = asyncComponent(
@@ -96,6 +100,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
     const isSearchPageEnabled = isFeatureFlagEnabled('ROX_SEARCH_PAGE_UI');
     const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
+    const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
     // TODO Implement permissions once https://issues.redhat.com/browse/ROX-12619 is merged
@@ -113,6 +118,9 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={dashboardPath} component={AsyncDashboardPage} />
                     <Route path={networkPath} component={AsyncNetworkPage} />
+                    {isNetworkGraphPatternflyEnabled && (
+                        <Route path={networkPathPF} component={AsyncNetworkGraphPage} />
+                    )}
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />
                     <Route path={integrationsPath} component={AsyncIntegrationsPage} />
