@@ -286,7 +286,7 @@ func main() {
 		// remove any self references
 		filteredReferences := make([]parsedReference, 0, len(parsedReferences))
 		for _, ref := range parsedReferences {
-			if ref.Table != ref.Table {
+			if ref.Table != props.Table {
 				filteredReferences = append(filteredReferences, ref)
 			}
 		}
