@@ -70,6 +70,8 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {x}.{y-1}.0 < {version}'
 
     # multi-arch
+    if "labels" not in csv_doc["metadata"]:
+        csv_doc["metadata"]["labels"] = {}
     for arch in extra_supported_arches:
         csv_doc["metadata"]["labels"][f"operatorframework.io/arch.{arch}"] = "supported"
 
@@ -96,7 +98,7 @@ def parse_args():
                         nargs='+', help='Replacement directives for the RBAC proxy image',
                         default=[])
     parser.add_argument("--add-supported-arch", action='append', required=False,
-                        help='Add label to CSV for an additional operator (may be passed multiple times)',
+                        help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
     return parser.parse_args()
 
