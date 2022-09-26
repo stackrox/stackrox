@@ -283,7 +283,16 @@ func main() {
 			"NoCopyFrom": props.NoCopyFrom,
 		}
 
-		if err := generateSchema(schema, searchCategory, searchScope, parsedReferences, props.SchemaDirectory, !props.ConversionFuncs); err != nil {
+		// remove any self references
+		filteredReferences := make([]parsedReference, 0, len(parsedReferences))
+		for _, ref := range parsedReferences {
+			if ref.Table != ref.Table {
+				filteredReferences = append(filteredReferences, ref)
+			}
+		}
+
+		if err := generateSchema(schema, searchCategory, searchScope, filteredReferences, props.SchemaDirectory, !props.ConversionFuncs); err != nil {
+			//if err := generateSchema(schema, searchCategory, searchScope, parsedReferences, props.SchemaDirectory, !props.ConversionFuncs); err != nil {
 			return err
 		}
 		if props.ConversionFuncs {

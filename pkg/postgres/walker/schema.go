@@ -68,6 +68,10 @@ type SchemaRelationship struct {
 
 	// RestrictDelete indicates that this relationship should restrict deletion rather than cascade
 	RestrictDelete bool
+
+	// CycleReference indicates that this relationship is a self reference
+	// this is necessary because parent references and self references would otherwise be named the same
+	CycleReference bool
 }
 
 // ThisSchemaColumnNames generates the sequence of column names for this schema
@@ -196,7 +200,8 @@ func (s *Schema) RelationshipsToDefineAsForeignKeys() []SchemaRelationship {
 		out = append(out, s.getParentRelationship())
 	}
 	for _, ref := range s.References {
-		if !ref.NoConstraint {
+		if !ref.NoConstraint && s.Table != ref.OtherSchema.Table {
+			ref.CycleReference = true
 			out = append(out, ref)
 		}
 	}
