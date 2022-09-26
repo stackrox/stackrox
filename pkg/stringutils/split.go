@@ -62,7 +62,7 @@ func GetAfterLast(str, sep string) string {
 // GetBetween gets the string between the two passed strings, otherwise it returns the empty string
 func GetBetween(str, start, end string) string {
 	startIdx := strings.Index(str, start)
-	if startIdx == -1 || startIdx == len(str)-1 {
+	if startIdx == -1 || startIdx == len(str)-len(start) {
 		return ""
 	}
 	offset := startIdx + len(start)
