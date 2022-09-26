@@ -333,8 +333,7 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "description": "TODO(ROX-6895): \"Label\" search term is ambiguous."
+          }
         },
         "annotations": {
           "type": "object",
@@ -380,8 +379,7 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "description": "TODO(ROX-6895): \"Label\" search term is ambiguous."
+          }
         },
         "annotations": {
           "type": "object",

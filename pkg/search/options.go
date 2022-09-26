@@ -24,8 +24,6 @@ var (
 	ClusterID    = newFieldLabel("Cluster ID")
 	ClusterLabel = newFieldLabel("Cluster Label")
 	ClusterScope = newFieldLabel("Cluster Scope")
-	Label        = newFieldLabel("Label")
-	PodLabel     = newFieldLabel("Pod Label")
 
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")
@@ -99,7 +97,7 @@ var (
 	AllowPrivilegeEscalation     = newFieldLabel("Allow Privilege Escalation")
 	AppArmorProfile              = newFieldLabel("AppArmor Profile")
 	AutomountServiceAccountToken = newFieldLabel("Automount Service Account Token")
-	Annotation                   = newFieldLabel("Annotation")
+	DeploymentAnnotation         = newFieldLabel("Deployment Annotation")
 	CPUCoresLimit                = newFieldLabel("CPU Cores Limit")
 	CPUCoresRequest              = newFieldLabel("CPU Cores Request")
 	ContainerID                  = newFieldLabel("Container ID")
@@ -107,6 +105,7 @@ var (
 	ContainerName                = newFieldLabel("Container Name")
 	DeploymentID                 = newFieldLabel("Deployment ID")
 	DeploymentName               = newFieldLabel("Deployment")
+	DeploymentLabel              = newFieldLabel("Deployment Label")
 	DeploymentType               = newFieldLabel("Deployment Type")
 	DropCapabilities             = newFieldLabel("Drop Capabilities")
 	EnvironmentKey               = newFieldLabel("Environment Key")
@@ -146,6 +145,8 @@ var (
 	SeccompProfileType            = newFieldLabel("Seccomp Profile Type")
 	ServiceAccountName            = newFieldLabel("Service Account")
 	ServiceAccountPermissionLevel = newFieldLabel("Service Account Permission Level")
+	ServiceAccountLabel           = newFieldLabel("Service Account Label")
+	ServiceAccountAnnotation      = newFieldLabel("Service Account Annotation")
 	Created                       = newFieldLabel("Created")
 	VolumeName                    = newFieldLabel("Volume Name")
 	VolumeSource                  = newFieldLabel("Volume Source")
@@ -164,9 +165,10 @@ var (
 	Tag            = newFieldLabel("Tag")
 
 	// Pod Search fields
-	PodUID  = newFieldLabel("Pod UID")
-	PodID   = newFieldLabel("Pod ID")
-	PodName = newFieldLabel("Pod Name")
+	PodUID   = newFieldLabel("Pod UID")
+	PodID    = newFieldLabel("Pod ID")
+	PodName  = newFieldLabel("Pod Name")
+	PodLabel = newFieldLabel("Pod Label")
 
 	// ProcessIndicator Search fields
 	ProcessID        = newFieldLabel("Process ID")
@@ -197,20 +199,27 @@ var (
 	OperatingSystem  = newFieldLabel("Operating System")
 	ContainerRuntime = newFieldLabel("Container Runtime")
 	NodeJoinTime     = newFieldLabel("Node Join Time")
+	NodeLabel        = newFieldLabel("Node Label")
+	NodeAnnotation   = newFieldLabel("Node Annotation")
 
 	// Namespace Search Fields
 	NamespaceID         = newFieldLabel("Namespace ID")
 	Namespace           = newFieldLabel("Namespace")
 	NamespaceAnnotation = newFieldLabel("Namespace Annotation")
+	NamespaceLabel      = newFieldLabel("Namespace Label")
 
 	// Role Search Fields
-	RoleID      = newFieldLabel("Role ID")
-	RoleName    = newFieldLabel("Role")
-	ClusterRole = newFieldLabel("Cluster Role")
+	RoleID         = newFieldLabel("Role ID")
+	RoleName       = newFieldLabel("Role")
+	RoleLabel      = newFieldLabel("Role Label")
+	RoleAnnotation = newFieldLabel("Role Annotation")
+	ClusterRole    = newFieldLabel("Cluster Role")
 
 	// Role Binding Search Fields
-	RoleBindingID   = newFieldLabel("Role Binding ID")
-	RoleBindingName = newFieldLabel("Role Binding")
+	RoleBindingID         = newFieldLabel("Role Binding ID")
+	RoleBindingName       = newFieldLabel("Role Binding")
+	RoleBindingLabel      = newFieldLabel("Role Binding Label")
+	RoleBindingAnnotation = newFieldLabel("Role Binding Annotation")
 
 	// Subject search fields
 	SubjectKind = newFieldLabel("Subject Kind")
