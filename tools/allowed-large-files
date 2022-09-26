@@ -22,6 +22,7 @@ pkg/docker/types/types_easyjson.go
 pkg/fixtures/image.go
 pkg/mitre/files/mitre.json
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
+pkg/search/postgres/index_test.go
 pkg/sliceutils/gen-builtins-generic.go
 proto/storage/proto.lock
 qa-tests-backend/artifacts/**/*
