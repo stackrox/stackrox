@@ -1430,7 +1430,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				for deploymentID, processes := range c.expectedProcessViolations {
 					expectedProcesses := set.NewStringSet(sliceutils.Map(processes, func(p *storage.ProcessIndicator) string {
 						return p.GetId()
-					}).([]string)...)
+					})...)
 					deployment := suite.deployments[deploymentID]
 
 					for _, process := range suite.deploymentsToIndicators[deploymentID] {
@@ -1868,9 +1868,9 @@ func policyWithSingleKeyValue(fieldName, value string, negate bool) *storage.Pol
 }
 
 func policyWithSingleFieldAndValues(fieldName string, values []string, negate bool, op storage.BooleanOperator) *storage.Policy {
-	return policyWithGroups(storage.EventSource_NOT_APPLICABLE, &storage.PolicyGroup{FieldName: fieldName, Values: sliceutils.Map(values, func(val *string) *storage.PolicyValue {
-		return &storage.PolicyValue{Value: *val}
-	}).([]*storage.PolicyValue), Negate: negate, BooleanOperator: op})
+	return policyWithGroups(storage.EventSource_NOT_APPLICABLE, &storage.PolicyGroup{FieldName: fieldName, Values: sliceutils.Map(values, func(val string) *storage.PolicyValue {
+		return &storage.PolicyValue{Value: val}
+	}), Negate: negate, BooleanOperator: op})
 }
 
 func processBaselineMessage(dep *storage.Deployment, baseline bool, privileged bool, processNames ...string) []*storage.Alert_Violation {

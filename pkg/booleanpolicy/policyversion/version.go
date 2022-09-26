@@ -38,7 +38,7 @@ var (
 
 	// versionRanks maps known versions to their sequence numbers. Note that
 	// the sequence number may vary among different builds.
-	versionRanks = utils.Invert(versions[:]).(map[string]int)
+	versionRanks = utils.InvertSlice(versions[:])
 )
 
 // CurrentVersion is the current version of boolean policies that is handled
