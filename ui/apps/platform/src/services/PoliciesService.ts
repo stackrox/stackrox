@@ -6,11 +6,10 @@ import { addBrandedTimestampToString } from 'utils/dateUtils';
 import { transformPolicyCriteriaValuesToStrings } from 'utils/policyUtils';
 
 import axios from './instance';
+import { Empty } from './types';
 
 const baseUrl = '/v1/policies';
 const policyCategoriesUrl = '/v1/policyCategories';
-
-type Empty = Record<string, never>;
 
 /*
  * Get a policy. Policy is a superset of ListPolicy.
