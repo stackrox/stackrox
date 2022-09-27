@@ -128,7 +128,6 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    // TODO 
     it.skip('has link from Recently Detected Image Vulnerabilities widget to vulnerability page', () => {
         visitVulnerabilityManagementDashboard();
 
