@@ -58,3 +58,17 @@ func GetAfterLast(str, sep string) string {
 	}
 	return p2
 }
+
+// GetBetween gets the string between the two passed strings, otherwise it returns the empty string
+func GetBetween(str, start, end string) string {
+	startIdx := strings.Index(str, start)
+	if startIdx == -1 || startIdx == len(str)-len(start) {
+		return ""
+	}
+	offset := startIdx + len(start)
+	endIdx := strings.Index(str[offset:], end)
+	if endIdx == -1 {
+		return ""
+	}
+	return str[offset : offset+endIdx]
+}
