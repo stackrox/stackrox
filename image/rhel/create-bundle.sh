@@ -79,6 +79,7 @@ cp "${INPUT_ROOT}/static-bin/debug"                    "${OUTPUT_DIR}/scripts"
 # command in the Dockerfile.
 
 cp -p "${INPUT_ROOT}/bin/migrator"          "${bundle_root}/stackrox/bin/"
+cp -p "${INPUT_ROOT}/bin/logwatcher"          "${bundle_root}/stackrox/bin/"
 cp -p "${INPUT_ROOT}/bin/central"           "${bundle_root}/stackrox/"
 cp -p "${INPUT_ROOT}/bin/compliance"        "${bundle_root}/stackrox/bin/"
 cp -p "${INPUT_ROOT}/bin/roxctl"*           "${bundle_root}/assets/downloads/cli/"

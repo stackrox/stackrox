@@ -17,6 +17,7 @@ import (
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
+	"github.com/stackrox/rox/pkg/postgres/persistentlog"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -43,7 +44,8 @@ func Singleton() GarbageCollector {
 			vulnReqDataStore.Singleton(),
 			serviceAccountDataStore.Singleton(),
 			k8sRoleDataStore.Singleton(),
-			k8srolebindingStore.Singleton())
+			k8srolebindingStore.Singleton(),
+			persistentlog.Singleton())
 	})
 	return gc
 }

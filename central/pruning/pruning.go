@@ -27,6 +27,8 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	persistentLogsStore "github.com/stackrox/rox/pkg/postgres/persistentlog/store"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -69,7 +71,8 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	vulnReqs vulnReqDataStore.DataStore,
 	serviceAccts serviceAccountDataStore.DataStore,
 	k8sRoles k8sRoleDataStore.DataStore,
-	k8sRoleBindings roleBindingDataStore.DataStore) GarbageCollector {
+	k8sRoleBindings roleBindingDataStore.DataStore,
+	persistentLogs persistentLogsStore.Store) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
@@ -87,6 +90,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		serviceAccts:    serviceAccts,
 		k8sRoles:        k8sRoles,
 		k8sRoleBindings: k8sRoleBindings,
+		persistentlogs:  persistentLogs,
 		stopSig:         concurrency.NewSignal(),
 		stoppedSig:      concurrency.NewSignal(),
 	}
@@ -109,6 +113,7 @@ type garbageCollectorImpl struct {
 	serviceAccts    serviceAccountDataStore.DataStore
 	k8sRoles        k8sRoleDataStore.DataStore
 	k8sRoleBindings roleBindingDataStore.DataStore
+	persistentlogs  persistentLogsStore.Store
 	stopSig         concurrency.Signal
 	stoppedSig      concurrency.Signal
 }
@@ -136,6 +141,11 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeExpiredVulnRequests()
 	if features.DecommissionedClusterRetention.Enabled() {
 		g.collectClusters(pvtConfig)
+	}
+
+	if features.PostgresDatastore.Enabled() {
+		deletionPeriod := time.Now().Add(-1 * logging.PersistentRetentionPeriod)
+		g.persistentlogs.DeleteBefore(pruningCtx, protoconv.MustConvertTimeToTimestamp(deletionPeriod))
 	}
 
 	log.Info("[Pruning] Finished garbage collection cycle")

@@ -240,6 +240,19 @@ migrator-build-nodeps:
 	@echo "+ $@"
 	$(GOBUILD) migrator
 
+.PHONY: fast-logwatcher
+fast-logwatcher:
+	@echo "+ $@"
+	docker run --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-logwatcher-build
+
+.PHONY: fast-logwatcher-build
+fast-logwatcher-build: logwatcher-build-nodeps
+
+.PHONY: logwatcher-build-nodeps
+logwatcher-build-nodeps:
+	@echo "+ $@"
+	$(GOBUILD) logwatcher
+
 .PHONY: check-service-protos
 check-service-protos:
 	@echo "+ $@"
@@ -450,7 +463,7 @@ else
 endif
 
 .PHONY: main-build-nodeps
-main-build-nodeps: central-build-nodeps migrator-build-nodeps
+main-build-nodeps: central-build-nodeps migrator-build-nodeps logwatcher-build-nodeps
 	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 ifndef CI
@@ -626,6 +639,7 @@ ifneq ($(HOST_OS),linux)
 endif
 	cp bin/$(HOST_OS)_amd64/roxctl image/bin/roxctl-$(HOST_OS)-amd64
 endif
+	cp bin/linux_$(GOARCH)/logwatcher image/bin/logwatcher
 	cp bin/linux_$(GOARCH)/migrator image/bin/migrator
 	cp bin/linux_$(GOARCH)/kubernetes        image/bin/kubernetes-sensor
 	cp bin/linux_$(GOARCH)/upgrader          image/bin/sensor-upgrader

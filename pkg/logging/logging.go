@@ -30,6 +30,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -54,6 +55,9 @@ const (
 
 	// PostgresPersistentLoggingPath is the additional logs on persistent storage for migration related logs.
 	PostgresPersistentLoggingPath = "/var/log/stackrox/migration_log.txt"
+
+	// PersistentRetentionPeriod is the amount of time to keep persistent logs in the database.  (1 week)
+	PersistentRetentionPeriod = 10 * time.Minute //7 * 24 * time.Hour
 
 	// defaultLevel is the default log level.
 	defaultLevel = zapcore.InfoLevel

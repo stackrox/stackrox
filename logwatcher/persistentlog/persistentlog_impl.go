@@ -12,22 +12,10 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/persistentlog/store"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
 	log = logging.LoggerForModule()
-
-	// stagesAllowList is the set of stages that will be sent.
-	// Currently only `ResponseComplete` ("The response body has been completed, and no more bytes will be sent.") OR
-	// `Panic` ("Events generated when a panic occurred.") are supported
-	stagesAllowList = set.NewFrozenStringSet("ResponseComplete", "Panic")
-
-	// resourceTypesAllowList is set of resources that will be sent.
-	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps")
-
-	// verbsDenyList is the set of verbs that will NOT be sent if encountered.
-	verbsDenyList = set.NewFrozenStringSet("WATCH", "LIST")
 )
 
 type persistentLogReaderImpl struct {

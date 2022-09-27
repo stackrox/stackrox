@@ -359,7 +359,7 @@ func getPersistentLog(ctx context.Context, zipWriter *zip.Writer, targetPath str
 	}
 
 	err = persistentLogStore.Walk(ctx, func(obj *storage.PersistentLog) error {
-		if _, err := io.WriteString(w, obj.Log); err != nil {
+		if _, err := io.WriteString(w, obj.Log+"\n"); err != nil {
 			return err
 		}
 		return nil
