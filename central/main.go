@@ -165,9 +165,11 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	persistentLogListener "github.com/stackrox/rox/pkg/logging/persistentlog"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/osutils"
+	"github.com/stackrox/rox/pkg/postgres/persistentlog"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/premain"
@@ -227,6 +229,10 @@ func runSafeMode() {
 
 func main() {
 	premain.StartMain()
+
+	if features.PostgresDatastore.Enabled() {
+		startPersistentLogListener()
+	}
 
 	conf := config.GetConfig()
 	if conf == nil || conf.Maintenance.SafeMode {
@@ -330,6 +336,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 			roleDataStore.Singleton(),
 			configDS.Singleton(),
 			notifierDS.Singleton(),
+			persistentlog.Singleton(),
 		),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
@@ -816,4 +823,16 @@ func waitForTerminationSignal() {
 		osutils.Restart()
 	}
 	log.Info("Central terminated")
+}
+
+func startPersistentLogListener() {
+	persistentReader := persistentLogListener.NewReader()
+	start, err := persistentReader.StartReader(context.Background())
+	if err != nil {
+		log.Error("Failed to start persistent log reader %v", err)
+		// TODO: Report health
+	} else if !start {
+		// It shouldn't get here unless Sensor mistakenly sends a start event to a non-master node
+		log.Error("Persistent log reader did not start because persistent logs do not exist on this node")
+	}
 }
