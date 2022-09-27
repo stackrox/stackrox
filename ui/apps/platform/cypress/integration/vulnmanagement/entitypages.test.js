@@ -172,43 +172,6 @@ describe('Entities single views', () => {
         );
     });
 
-    // test skipped because we are not currently showing the Policy (count) column, until and if performance can be improved
-    it.skip('should have consistent policy count number from namespace list to policy sublist for a specific namespace', () => {
-        const entitiesKey1 = 'namespaces';
-        const entitiesKey2 = 'policies';
-        visitVulnerabilityManagementEntities(entitiesKey1);
-
-        cy.get(selectors.policyCountLink)
-            .eq(2)
-            .invoke('text')
-            .then((policyCountText) => {
-                interactAndWaitForVulnerabilityManagementEntity(() => {
-                    cy.get(selectors.tableBodyRows).eq(2).click();
-                }, entitiesKey1);
-                cy.get(selectors.policyTileLink)
-                    .invoke('text')
-                    .then((relatedPolicyCountText) => {
-                        expect(relatedPolicyCountText.toLowerCase().trim()).to.equal(
-                            policyCountText.replace(' ', '')
-                        );
-                    });
-
-                interactAndWaitForVulnerabilityManagementSecondaryEntities(
-                    () => {
-                        cy.get(selectors.policyTileLink).click();
-                    },
-                    entitiesKey1,
-                    entitiesKey2
-                );
-
-                cy.get(selectors.entityRowHeader, { timeout: 1000 })
-                    .invoke('text')
-                    .then((paginationText) => {
-                        expect(paginationText).to.equal(policyCountText);
-                    });
-            });
-    });
-
     it('should have filtered deployments list in 3rd level of side panel (namespaces -> policies -> deployments)', () => {
         const entitiesKey1 = 'namespaces';
         visitVulnerabilityManagementEntities('namespaces');
