@@ -128,10 +128,11 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('has link from Recently Detected Image Vulnerabilities widget to vulnerability page', () => {
+    // TODO 
+    it.skip('has link from Recently Detected Image Vulnerabilities widget to vulnerability page', () => {
         visitVulnerabilityManagementDashboard();
 
-        const entitiesKey = 'cves'; // page makes singular request for cves instead of image-cves
+        const entitiesKey = 'cves'; // TODO enable test when we decide whether request will be getCve or getImageCve
         const widgetHeading = 'Recently Detected Image Vulnerabilities';
 
         verifyItemLinkToEntityPage(
@@ -145,7 +146,7 @@ describe('Vulnerability Management Dashboard', () => {
     it.skip('has link from Most Common Image Vulnerabilities widget to vulnerability page', () => {
         visitVulnerabilityManagementDashboard();
 
-        const entitiesKey = 'image-cves';
+        const entitiesKey = 'image-cves'; // TODO enable test when we decide whether request will be getCve or getImageCve
         const widgetHeading = 'Most Common Image Vulnerabilities';
 
         verifyItemLinkToEntityPage(
