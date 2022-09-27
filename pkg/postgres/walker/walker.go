@@ -50,7 +50,7 @@ func (c context) childContext(name string, searchDisabled bool, opts PostgresOpt
 		ignorePK:           c.ignorePK || opts.IgnorePrimaryKey,
 		ignoreUnique:       c.ignoreUnique || opts.IgnoreUniqueConstraint,
 		ignoreFKs:          c.ignoreFKs || opts.IgnoreChildFKs,
-		ignoreSearchLabels: c.ignoreSearchLabels.Clone().Union(opts.IgnoreSearchLabels),
+		ignoreSearchLabels: c.ignoreSearchLabels.Union(opts.IgnoreSearchLabels),
 	}
 }
 

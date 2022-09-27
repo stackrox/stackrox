@@ -66,9 +66,9 @@ func GetBetween(str, start, end string) string {
 		return ""
 	}
 	offset := startIdx + len(start)
-	endIdx := strings.Index(str[startIdx+len(start):], end)
+	endIdx := strings.Index(str[offset:], end)
 	if endIdx == -1 {
 		return ""
 	}
-	return str[startIdx+len(start) : offset+endIdx]
+	return str[offset : offset+endIdx]
 }
