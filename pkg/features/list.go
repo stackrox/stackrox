@@ -18,9 +18,6 @@ var (
 	// SystemHealthPatternFly enables the Pattern Fly version of System Health page. (used in the front-end app only)
 	SystemHealthPatternFly = registerFeature("Enable Pattern Fly version of System Health page", "ROX_SYSTEM_HEALTH_PF", false)
 
-	// PostgresDatastore enables Postgres datastore.
-	PostgresDatastore = registerFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", false)
-
 	// FrontendVMUpdates enables Frontend VM Updates.
 	FrontendVMUpdates = registerFeature("Enable Frontend VM Updates", "ROX_FRONTEND_VM_UPDATES", false)
 
