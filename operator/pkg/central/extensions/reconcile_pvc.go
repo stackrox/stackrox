@@ -175,6 +175,9 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(r.centralObj, r.centralObj.GroupVersionKind()),
 			},
+			Annotations: map[string]string{
+				pvcAnnotationKey: string(r.target),
+			},
 		},
 
 		Spec: corev1.PersistentVolumeClaimSpec{
@@ -277,6 +280,7 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentTarget() (*corev1
 			names = append(names, item.GetName())
 		}
 		sort.Strings(names)
+
 		return nil, errors.Wrapf(errMultipleOwnedPVCs,
 			"multiple owned PVCs were found for %s, please remove not used ones or delete their OwnerReferences. Found PVCs: %s", r.target, strings.Join(names, ", "))
 	}

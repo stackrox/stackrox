@@ -49,7 +49,6 @@ metadata:
   labels:
     {{- include "srox.labels" (list . "persistentvolumeclaim" "central-db") | nindent 4 }}
   annotations:
-    "target.pvc.stackrox.io": "Central DB"
     {{- include "srox.annotations" (list . "persistentvolumeclaim" "central-db") | nindent 4 }}
     "helm.sh/hook": "pre-install,pre-upgrade"
     "helm.sh/resource-policy": keep
