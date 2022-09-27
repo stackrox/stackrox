@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -17,12 +18,13 @@ var (
 )
 
 type context struct {
-	getter         string
-	column         string
-	searchDisabled bool
-	ignorePK       bool
-	ignoreUnique   bool
-	ignoreFKs      bool
+	getter             string
+	column             string
+	searchDisabled     bool
+	ignorePK           bool
+	ignoreUnique       bool
+	ignoreFKs          bool
+	ignoreSearchLabels set.StringSet
 }
 
 func (c context) Getter(name string) string {
@@ -42,12 +44,13 @@ func (c context) Column(name string) string {
 
 func (c context) childContext(name string, searchDisabled bool, opts PostgresOptions) context {
 	return context{
-		getter:         c.Getter(name),
-		column:         c.Column(name),
-		searchDisabled: c.searchDisabled || searchDisabled,
-		ignorePK:       c.ignorePK || opts.IgnorePrimaryKey,
-		ignoreUnique:   c.ignoreUnique || opts.IgnoreUniqueConstraint,
-		ignoreFKs:      c.ignoreFKs || opts.IgnoreChildFKs,
+		getter:             c.Getter(name),
+		column:             c.Column(name),
+		searchDisabled:     c.searchDisabled || searchDisabled,
+		ignorePK:           c.ignorePK || opts.IgnorePrimaryKey,
+		ignoreUnique:       c.ignoreUnique || opts.IgnoreUniqueConstraint,
+		ignoreFKs:          c.ignoreFKs || opts.IgnoreChildFKs,
+		ignoreSearchLabels: c.ignoreSearchLabels.Union(opts.IgnoreSearchLabels),
 	}
 }
 
@@ -170,7 +173,15 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 			// if this is an embedded entity with a primary key of its own, we do not want to use it as a
 			// primary key since the owning entity's primary key is what we'd like to use
 			opts.IgnorePrimaryKey = true
-
+		case strings.HasPrefix(field, "ignore_labels"):
+			csvLabels := stringutils.GetBetween(field, "(", ")")
+			if len(csvLabels) == 0 {
+				panic("field has empty ignore_labels. Either add labels to ignore or remove")
+			}
+			if opts.IgnoreSearchLabels != nil {
+				opts.IgnoreSearchLabels = set.NewStringSet()
+			}
+			opts.IgnoreSearchLabels.AddAll(strings.Split(csvLabels, ",")...)
 		case field == "id":
 			opts.ID = true
 		case field == "pk":
@@ -186,7 +197,7 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 			if ignoreFKs {
 				continue
 			}
-			typeName, ref := stringutils.Split2(field[strings.Index(field, "(")+1:strings.Index(field, ")")], ":")
+			typeName, ref := stringutils.Split2(stringutils.GetBetween(field, "(", ")"), ":")
 			if opts.Reference == nil {
 				opts.Reference = &foreignKeyRef{}
 			}
@@ -250,6 +261,11 @@ func getSearchOptions(ctx context, searchTag string) (SearchField, []DerivedSear
 		}, nil
 	}
 	field := stringutils.GetUpTo(searchTag, ",")
+	if ctx.ignoreSearchLabels.Contains(field) {
+		return SearchField{
+			Ignored: ignored,
+		}, nil
+	}
 
 	var derivedSearchFields []DerivedSearchField
 	derivedSearchFieldsMap := search.GetFieldsDerivedFrom(field)

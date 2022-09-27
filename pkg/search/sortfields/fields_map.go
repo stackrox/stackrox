@@ -2,6 +2,7 @@ package sortfields
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -11,14 +12,6 @@ type SortFieldMapper func(option *v1.QuerySortOption) []*v1.QuerySortOption
 var (
 	// SortFieldsMap represents the mapping from searchable fields to sort field helper function
 	SortFieldsMap = map[search.FieldLabel]SortFieldMapper{
-		search.PolicyName: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
-			return []*v1.QuerySortOption{
-				{
-					Field:    search.SORTPolicyName.String(),
-					Reversed: option.GetReversed(),
-				},
-			}
-		},
 		search.ImageName: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
 				{
@@ -43,14 +36,6 @@ var (
 				},
 				{
 					Field:    search.ComponentVersion.String(),
-					Reversed: option.GetReversed(),
-				},
-			}
-		},
-		search.LifecycleStage: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
-			return []*v1.QuerySortOption{
-				{
-					Field:    search.SORTLifecycleStage.String(),
 					Reversed: option.GetReversed(),
 				},
 			}
@@ -89,3 +74,24 @@ var (
 		},
 	}
 )
+
+func init() {
+	if !features.PostgresDatastore.Enabled() {
+		SortFieldsMap[search.LifecycleStage] = func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+			return []*v1.QuerySortOption{
+				{
+					Field:    search.SORTLifecycleStage.String(),
+					Reversed: option.GetReversed(),
+				},
+			}
+		}
+		SortFieldsMap[search.PolicyName] = func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+			return []*v1.QuerySortOption{
+				{
+					Field:    search.SORTPolicyName.String(),
+					Reversed: option.GetReversed(),
+				},
+			}
+		}
+	}
+}
