@@ -31,7 +31,6 @@ import util.NetworkGraphUtil
 
 import org.junit.AssumptionViolatedException
 import org.junit.experimental.categories.Category
-import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Unroll
 
@@ -427,7 +426,6 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Autocomplete on #category resources using the #tokenName token returns #numResults results"() {
         when:
         "Search is called using a token without view access to Deployments"

@@ -57,7 +57,6 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.ProcessWhitelist),
 		),
 	)
-
 	var err error
 
 	if features.PostgresDatastore.Enabled() {

@@ -7,6 +7,13 @@ import services.SearchService
 import spock.lang.Unroll
 
 class AutocompleteTest extends BaseSpecification {
+    private static final SearchCategory VULNERABILITY_SEARCH_CATEGORY =
+        isPostgresRun() ?
+            SearchCategory.IMAGE_VULNERABILITIES :
+            SearchCategory.VULNERABILITIES
+
+    private static final String GROUP_AUTOCOMPLETE = isPostgresRun() ? "GROUP" : "group"
+
     @Category([BAT])
     def "Verify Autocomplete: #query #category #contains"() {
         when:
@@ -23,12 +30,12 @@ class AutocompleteTest extends BaseSpecification {
         where:
         "Data inputs are: "
         query                 | category                   | contains
+
         "Subject:system:auth" | []                         | "system:authenticated"
         "Subject:system:auth" | [SearchCategory.SUBJECTS]  | "system:authenticated"
-
-        "Subject Kind:GROUP"  | []                         | "group"
-        "Subject Kind:group"  | []                         | "group"
-        "Subject Kind:gr"     | []                         | "group"
+        "Subject Kind:GROUP"  | []                         | GROUP_AUTOCOMPLETE
+        "Subject Kind:group"  | []                         | GROUP_AUTOCOMPLETE
+        "Subject Kind:gr"     | []                         | GROUP_AUTOCOMPLETE
     }
 
     @Unroll
@@ -49,7 +56,7 @@ class AutocompleteTest extends BaseSpecification {
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.IMAGES                | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
-        SearchCategory.VULNERABILITIES       | ["Cluster", "Deployment",
+        VULNERABILITY_SEARCH_CATEGORY        | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.IMAGE_COMPONENTS      | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
