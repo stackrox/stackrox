@@ -172,3 +172,33 @@ export function flattenFilterValue<UndefinedFallback>(
     }
     return [value];
 }
+
+/**
+ * Function to convert the standard list API pagination and query parameters into a
+ * URL query string.
+ *
+ * @param searchFilter The `SearchFilter` to apply to the list query
+ * @param sortOption The field to sort results by and whether to sort ascending or descending
+ * @param page The page offset to return
+ * @param pageSize The number of items per page
+ */
+export function getListQueryParams(
+    searchFilter: SearchFilter,
+    sortOption: ApiSortOption,
+    page: number,
+    pageSize: number
+): string {
+    const offset = page > 0 ? page * pageSize : 0;
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    return qs.stringify(
+        {
+            query,
+            pagination: {
+                offset,
+                limit: pageSize,
+                sortOption,
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+}
