@@ -7,10 +7,10 @@ function install_golang_1_17_12 {
   # Default path to 'go' is /usr/local/go/bin/go
   # But ACS requires 1.17.12 which will be installed at $HOME/go/bin/go1.17.12
 
-  if ! go version | grep 'go1.17.12' &> /dev/null; then
-    echo "Installing go v1.17.12"
-    go install golang.org/dl/go1.17.12@latest
-    ln -sf "$HOME/go/bin/go1.17.12" "$HOME/go/bin/go"
+  if ! go version | grep 'go1.18.4' &> /dev/null; then
+    echo "Installing go v1.18.4"
+    go install golang.org/dl/go1.18.4@latest
+    ln -sf "$HOME/go/bin/go1.18.4" "$HOME/go/bin/go"
     path_prepend "$HOME/go/bin/"
   fi
 
