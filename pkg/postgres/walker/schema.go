@@ -200,8 +200,10 @@ func (s *Schema) RelationshipsToDefineAsForeignKeys() []SchemaRelationship {
 		out = append(out, s.getParentRelationship())
 	}
 	for _, ref := range s.References {
-		if !ref.NoConstraint && s.Table != ref.OtherSchema.Table {
-			ref.CycleReference = true
+		if !ref.NoConstraint {
+			if s.Parent != nil && s.Parent.Table == ref.OtherSchema.Table {
+				ref.CycleReference = true
+			}
 			out = append(out, ref)
 		}
 	}

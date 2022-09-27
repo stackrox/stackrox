@@ -125,6 +125,9 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     for i := 0; i < 200; i++ {
         {{$name}} := &{{.Type}}{}
         s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+        {{- if .Cycle}}
+        {{$name}}.{{.EmbeddedFK}} = {{$name}}.{{.ReferencedField}}
+        {{- end}}
         {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
     }
 

@@ -103,6 +103,7 @@ func (s *CollectionsStoreSuite) TestStore() {
 	for i := 0; i < 200; i++ {
 		resourceCollection := &storage.ResourceCollection{}
 		s.NoError(testutils.FullInit(resourceCollection, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		resourceCollection.EmbeddedCollections[0].Id = resourceCollection.Id
 		resourceCollections = append(resourceCollections, resourceCollection)
 	}
 
