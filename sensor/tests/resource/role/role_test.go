@@ -58,10 +58,9 @@ func (s *RoleDependencySuite) Test_PermutationTest() {
 			NginxRole,
 			NginxRoleBinding,
 		}, "Role Dependency", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-			testC.LastDeploymentStateWithTimeout("nginx-deployment",
+			testC.LastDeploymentState("nginx-deployment",
 				assertPermissionLevel(storage.PermissionLevel_ELEVATED_IN_NAMESPACE),
-				"Permission level has to be elevated in namespace",
-				3*time.Second)
+				"Permission level has to be elevated in namespace")
 			testC.GetFakeCentral().ClearReceivedBuffer()
 		},
 	)
