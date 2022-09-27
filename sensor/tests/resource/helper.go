@@ -229,6 +229,71 @@ func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
 	}
 }
 
+type AssertFunc func(deployment *storage.Deployment) bool
+
+func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, message string) {
+	c.LastDeploymentStateWithTimeout(name, assertion, message, 3*time.Second)
+}
+
+func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
+	timer := time.NewTimer(timeout)
+	for {
+		select {
+		case <-timer.C:
+			c.t.Fatalf("timeout reached waiting for state: %s", message)
+		default:
+			messages := c.GetFakeCentral().GetAllMessages()
+			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, "sensor-integration", name)
+			deployment := lastDeploymentUpdate.GetEvent().GetDeployment()
+			if deployment != nil && assertion(deployment) {
+				// Assertion matched the case. We can return here without failing the test case
+				return
+			}
+		}
+	}
+}
+
+type AlertAssertFunc func(alertResults *central.AlertResults) bool
+
+func (c *TestContext) LastViolationState(name string, assertion AlertAssertFunc, message string) {
+	c.LastViolationStateForDeployment(name, assertion, message, 3 * time.Second)
+}
+
+func (c *TestContext) LastViolationStateForDeployment(name string, assertion AlertAssertFunc, message string, timeout time.Duration) {
+	timer := time.NewTimer(timeout)
+	for {
+		select {
+		case <-timer.C:
+			c.t.Fatalf("timeout reached waiting for violation state: %s", message)
+		default:
+			messages := c.GetFakeCentral().GetAllMessages()
+			alerts := GetAllAlertsForDeploymentName(messages, name)
+			if len(alerts) == 0 {
+				continue
+			}
+			lastViolationState := alerts[len(alerts)-1]
+			if assertion(lastViolationState.GetEvent().GetAlertResults()) {
+				// Assertion matched the case. We can return here without failing the test case
+				return
+			}
+		}
+	}
+
+}
+
+func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name string) []*central.MsgFromSensor {
+	var selected []*central.MsgFromSensor
+	for _, m := range messages {
+		for _, alert := range m.GetEvent().GetAlertResults().GetAlerts() {
+			if alert.GetDeployment().GetName() == name {
+				selected = append(selected, m)
+				break
+			}
+		}
+	}
+	return selected
+}
+
 // CentralConfig allows tests to inject ACS policies in the tests
 type CentralConfig struct {
 	InitialSystemPolicies []*storage.Policy

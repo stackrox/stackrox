@@ -2,7 +2,6 @@ package networkpolicy
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/sensor/tests/resource"
@@ -36,7 +35,6 @@ func (s *NetworkPolicySuite) SetupSuite() {
 }
 
 func (s *NetworkPolicySuite) TearDownTest() {
-	// Clear any messages received in fake central during the test run
 	s.testContext.GetFakeCentral().ClearReceivedBuffer()
 }
 
@@ -44,25 +42,26 @@ var (
 	ingressNetpolViolationName = "Deployments should have at least one ingress Network Policy"
 )
 
+func checkIfAlertsHaveViolation(result *central.AlertResults, name string) bool {
+	alerts := result.GetAlerts()
+	if len(alerts) == 0 {
+		return false
+	}
+	for _, alert := range result.GetAlerts() {
+		if alert.GetPolicy().GetName() == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *NetworkPolicySuite) Test_DeploymentShouldNotHaveViolation() {
 	s.testContext.RunWithResources([]resource.YamlTestFile{
 		NginxDeployment, NetpolAllow443,
 	}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		// Test context already takes care of creating and destroying resources
-		time.Sleep(2 * time.Second)
-
-		messages := testC.GetFakeCentral().GetAllMessages()
-
-		alerts := getAllAlertsForDeploymentName(messages, "nginx-deployment")
-		lastViolationState := alerts[len(alerts)-1]
-		var hasViolation bool
-		for _, alert := range lastViolationState.GetEvent().GetAlertResults().GetAlerts() {
-			if alert.GetPolicy().GetName() == ingressNetpolViolationName {
-				hasViolation = true
-				break
-			}
-		}
-		s.Require().False(hasViolation, "Should not have violation %s, but found in last violation state")
+		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) bool {
+			return !checkIfAlertsHaveViolation(result, ingressNetpolViolationName)
+		}, "Should not have a violation")
 	})
 }
 
@@ -70,33 +69,9 @@ func (s *NetworkPolicySuite) Test_DeploymentShouldHaveViolation() {
 	s.testContext.RunWithResources([]resource.YamlTestFile{
 		NginxDeployment,
 	}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		// Test context already takes care of creating and destroying resources
-		time.Sleep(2 * time.Second)
-
-		messages := testC.GetFakeCentral().GetAllMessages()
-
-		alerts := getAllAlertsForDeploymentName(messages, "nginx-deployment")
-		lastViolationState := alerts[len(alerts)-1]
-		var hasViolation bool
-		for _, alert := range lastViolationState.GetEvent().GetAlertResults().GetAlerts() {
-			if alert.GetPolicy().GetName() == ingressNetpolViolationName {
-				hasViolation = true
-				break
-			}
-		}
-		s.Require().True(hasViolation, "Should have violation %s, but not found in last violation state")
+		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) bool {
+			return checkIfAlertsHaveViolation(result, ingressNetpolViolationName)
+		}, "Should have a violation")
 	})
 }
 
-func getAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name string) []*central.MsgFromSensor {
-	var selected []*central.MsgFromSensor
-	for _, m := range messages {
-		for _, alert := range m.GetEvent().GetAlertResults().GetAlerts() {
-			if alert.GetDeployment().GetName() == name {
-				selected = append(selected, m)
-				break
-			}
-		}
-	}
-	return selected
-}
