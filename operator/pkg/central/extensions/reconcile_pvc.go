@@ -45,18 +45,21 @@ var (
 	defaultPVCSize = resource.MustParse("100Gi")
 )
 
+func getPersistenceByClaimName(central *platform.Central, claim string) *platform.Persistence {
+	switch claim {
+	case DefaultCentralPVCName:
+		return central.Spec.Central.GetPersistence()
+	case DefaultCentralDBPVCName:
+		return central.Spec.Central.DB.GetPersistence()
+	default:
+		panic("unknown default claim name")
+	}
+}
+
 // ReconcilePVCExtension reconciles PVCs created by the operator
 func ReconcilePVCExtension(client ctrlClient.Client, target PVCTarget, defaultClaimName string) extensions.ReconcileExtension {
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
-		var persistence *platform.Persistence
-		switch defaultClaimName {
-		case DefaultCentralPVCName:
-			persistence = central.Spec.Central.DB.GetPersistence()
-		case DefaultCentralDBPVCName:
-			persistence = central.Spec.Central.DB.GetPersistence()
-		default:
-			panic("unknown default claim name")
-		}
+		persistence := getPersistenceByClaimName(central, defaultClaimName)
 		return reconcilePVC(ctx, central, persistence, target, defaultClaimName, client, log)
 	}
 	return wrapExtension(fn, client)
@@ -254,11 +257,6 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentTarget() (*corev1
 		return nil, err
 	}
 
-	// If no previously created managed PVC was found everything is ok.
-	if len(pvcList) == 0 {
-		return nil, nil
-	}
-
 	// Filter PVC List by current PVC Claim Name
 	filtered := make([]*corev1.PersistentVolumeClaim, 0, len(pvcList))
 	for _, pvc := range pvcList {
@@ -269,9 +267,13 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentTarget() (*corev1
 			filtered = append(filtered, pvc)
 		}
 	}
-	if len(pvcList) > 1 {
+	// If no previously created managed PVC was found everything is ok.
+	if len(filtered) == 0 {
+		return nil, nil
+	}
+	if len(filtered) > 1 {
 		var names []string
-		for _, item := range pvcList {
+		for _, item := range filtered {
 			names = append(names, item.GetName())
 		}
 		sort.Strings(names)

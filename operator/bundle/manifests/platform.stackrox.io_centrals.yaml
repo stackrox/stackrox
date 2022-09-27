@@ -69,7 +69,7 @@ spec:
                         type: string
                       external:
                         description: External specifies that the database should not
-                          be managed by the Operator and is externally managed
+                          be managed by the Operator and is externally managed.
                         type: boolean
                       nodeSelector:
                         additionalProperties:
@@ -78,10 +78,10 @@ spec:
                           nodes, you can configure a node selector here.
                         type: object
                       passwordGenerationDisabled:
-                        description: Disable admin password generation. Do not use
-                          this for first-time installations, as you will have no way
-                          to perform initial setup and configuration of alternative
-                          authentication methods.
+                        description: Disable database password generation. Do not
+                          use this for first-time installations in which the operator
+                          is managing Central DB as Central will have no way to connect
+                          to the database.
                         type: boolean
                       passwordSecret:
                         description: Specify a secret that contains the password in

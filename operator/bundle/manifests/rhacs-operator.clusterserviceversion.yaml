@@ -137,7 +137,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
       - description: External specifies that the database should not be managed by
-          the Operator and is externally managed
+          the Operator and is externally managed.
         displayName: External
         path: central.db.external
       - description: Specify a secret that contains the password in the "password"
@@ -171,9 +171,9 @@ spec:
         path: central.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: Disable admin password generation. Do not use this for first-time
-          installations, as you will have no way to perform initial setup and configuration
-          of alternative authentication methods.
+      - description: Disable database password generation. Do not use this for first-time
+          installations in which the operator is managing Central DB as Central will
+          have no way to connect to the database.
         displayName: Password Generation Disabled
         path: central.db.passwordGenerationDisabled
         x-descriptors:
