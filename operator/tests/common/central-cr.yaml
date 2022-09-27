@@ -15,6 +15,7 @@ spec:
     adminPasswordSecret:
       name: admin-pass
     db:
+      external: false
       resources:
         requests:
           memory: 1Gi
