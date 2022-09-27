@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import pluralize from 'pluralize';
 import startCase from 'lodash/startCase';
@@ -8,6 +8,7 @@ import PageHeader from 'Components/PageHeader';
 import { PageBody } from 'Components/Panel';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import ExportButton from 'Components/ExportButton';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import configMgmtPaginationContext, {
     MAIN_PAGINATION_PARAMS,
     SIDEPANEL_PAGINATION_PARAMS,
@@ -25,6 +26,7 @@ import EntityList from './EntityList';
 import SidePanel from '../SidePanel/SidePanel';
 
 const ListPage = ({ match, location, history }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const { isDarkMode } = useTheme();
     const useCaseEntityMap = getUseCaseEntityMap();
 
@@ -64,6 +66,8 @@ const ListPage = ({ match, location, history }) => {
                             type={pageEntityListType}
                             page="configManagement"
                             pdfId="capture-list"
+                            isExporting={isExporting}
+                            setIsExporting={setIsExporting}
                         />
                     </div>
                     <div className="flex items-center pl-2">
@@ -95,6 +99,7 @@ const ListPage = ({ match, location, history }) => {
                     </configMgmtPaginationContext.Provider>
                 </searchContext.Provider>
             </PageBody>
+            {isExporting && <BackdropExporting />}
         </workflowStateContext.Provider>
     );
 };

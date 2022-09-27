@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
 
@@ -16,6 +16,7 @@ import InfoWidget from 'Components/InfoWidget';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import Loader from 'Components/Loader';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import ResourceTabs from 'Components/ResourceTabs';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
@@ -54,6 +55,7 @@ const NodePage = ({
     query,
     sidePanelMode,
 }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
     return (
         <Query query={NODE_QUERY} variables={{ id: entityId }}>
@@ -214,6 +216,8 @@ const NodePage = ({
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
+                                    isExporting={isExporting}
+                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={id}
@@ -228,6 +232,7 @@ const NodePage = ({
                             </>
                         )}
                         {contents}
+                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}
