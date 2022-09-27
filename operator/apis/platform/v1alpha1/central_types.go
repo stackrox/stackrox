@@ -149,6 +149,9 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 
 // CentralDBEnabled returns a bool if CentralDBSpec is not nil
 func (c *CentralComponentSpec) CentralDBEnabled() bool {
+	if c == nil {
+		return false
+	}
 	return c.DB != nil
 }
 
