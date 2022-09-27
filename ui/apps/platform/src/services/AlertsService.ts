@@ -3,7 +3,7 @@ import queryString from 'qs';
 import { Alert, ListAlert } from 'Containers/Violations/types/violationTypes';
 
 import { ApiSortOption, SearchFilter } from 'types/search';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 
@@ -83,19 +83,7 @@ export function fetchAlerts(
     page: number,
     pageSize: number
 ): CancellableRequest<ListAlert[]> {
-    const offset = page > 0 ? page * pageSize : 0;
-    const query = getRequestQueryStringForSearchFilter(searchFilter);
-    const params = queryString.stringify(
-        {
-            query,
-            pagination: {
-                offset,
-                limit: pageSize,
-                sortOption,
-            },
-        },
-        { arrayFormat: 'repeat', allowDots: true }
-    );
+    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`, { signal })
