@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -62,7 +61,7 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
-	if features.PostgresDatastore.Enabled() && !r.centralObj.Spec.Central.DB.IsExternal() {
+	if r.centralObj.Spec.Central.CentralDBEnabled() && !r.centralObj.Spec.Central.DB.IsExternal() {
 		if err := r.ReconcileSecret(ctx, "central-db-tls", !shouldDelete, r.validateCentralDBTLSData, r.generateCentralDBTLSData, true); err != nil {
 			return errors.Wrap(err, "reconciling central-db-tls secret")
 		}

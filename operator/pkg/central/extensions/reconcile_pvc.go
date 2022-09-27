@@ -48,11 +48,15 @@ var (
 // ReconcilePVCExtension reconciles PVCs created by the operator
 func ReconcilePVCExtension(client ctrlClient.Client, target PVCTarget, defaultClaimName string) extensions.ReconcileExtension {
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
-		persistence := central.Spec.Central.Persistence
-		if defaultClaimName == DefaultCentralDBPVCName {
+		var persistence *platform.Persistence
+		switch defaultClaimName {
+		case DefaultCentralPVCName:
 			persistence = central.Spec.Central.DB.GetPersistence()
+		case DefaultCentralDBPVCName:
+			persistence = central.Spec.Central.DB.GetPersistence()
+		default:
+			panic("unknown default claim name")
 		}
-
 		return reconcilePVC(ctx, central, persistence, target, defaultClaimName, client, log)
 	}
 	return wrapExtension(fn, client)
@@ -256,7 +260,7 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentTarget() (*corev1
 	}
 
 	// Filter PVC List by current PVC Claim Name
-	filtered := pvcList[:0]
+	filtered := make([]*corev1.PersistentVolumeClaim, 0, len(pvcList))
 	for _, pvc := range pvcList {
 		// If the target annotation is empty, default to Central for backwards compatibility
 		if val, ok := pvc.Annotations[pvcAnnotationKey]; !ok && r.target == PVCTargetCentral {

@@ -9,7 +9,6 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/types"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/renderer"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -26,7 +25,7 @@ func ReconcileCentralDBPasswordExtension(client ctrlClient.Client) extensions.Re
 }
 
 func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
-	if !features.PostgresDatastore.Enabled() || c.Spec.Central.DB.IsExternal() {
+	if !c.Spec.Central.CentralDBEnabled() || c.Spec.Central.DB.IsExternal() {
 		return nil
 	}
 	run := &reconcileCentralDBPasswordExtensionRun{

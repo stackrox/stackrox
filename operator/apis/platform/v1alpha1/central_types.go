@@ -147,9 +147,14 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 	return pointer.BoolPtrDerefOr(c.AdminPasswordGenerationDisabled, false)
 }
 
+// CentralDBEnabled returns a bool if CentralDBSpec is not nil
+func (c *CentralComponentSpec) CentralDBEnabled() bool {
+	return c.DB != nil
+}
+
 // CentralDBSpec defines settings for the "central db" component.
 type CentralDBSpec struct {
-	// External specifies that the database should not be managed by the Operator and is externally managed
+	// External specifies that the database should not be managed by the Operator and is externally managed.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="External",order=1
 	External *bool `json:"external"`
 
@@ -159,8 +164,8 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=2
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
-	// Disable admin password generation. Do not use this for first-time installations,
-	// as you will have no way to perform initial setup and configuration of alternative authentication methods.
+	// Disable database password generation. Do not use this for first-time installations in which the operator
+	// is managing Central DB as Central will have no way to connect to the database.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	PasswordGenerationDisabled *bool `json:"passwordGenerationDisabled,omitempty"`
 

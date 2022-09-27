@@ -45,10 +45,10 @@ metadata:
   name: {{ $claimName }}
   namespace: {{ .Release.Namespace }}
   labels:
-    "target.pvc.stackrox.io": "Central"
     {{- include "srox.labels" (list . "persistentvolumeclaim" $claimName) | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "persistentvolumeclaim" $claimName) | nindent 4 }}
+    "target.pvc.stackrox.io": "Central"
     "helm.sh/hook": "pre-install,pre-upgrade"
     "helm.sh/resource-policy": keep
     "helm.sh/hook-delete-policy": never

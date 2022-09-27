@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
-	"github.com/stackrox/rox/pkg/features"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -73,12 +72,6 @@ func translate(c platform.Central) (chartutil.Values, error) {
 	}
 
 	centralValues := getCentralComponentValues(centralSpec)
-	if features.PostgresDatastore.Enabled() {
-		if c.Spec.Central.DB == nil {
-			return nil, errors.Errorf("%s is enabled, but no Central DB spec is specified", features.PostgresDatastore.EnvVar())
-		}
-		centralValues.AddChild("db", getCentralDBComponentValues(c.Spec.Central.DB))
-	}
 	v.AddChild("central", centralValues)
 
 	if c.Spec.Scanner != nil {
@@ -184,6 +177,11 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 		}
 		cv.AddChild("exposure", &exposure)
 	}
+
+	if c.CentralDBEnabled() {
+		cv.AddChild("db", getCentralDBComponentValues(c.DB))
+	}
+
 	return &cv
 }
 
