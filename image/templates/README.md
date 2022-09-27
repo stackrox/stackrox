@@ -38,6 +38,26 @@ Meta templating does the following:
  - Merge files from `./shared/*` into both charts
  - Renders `.htpl` files based on passed values, see `pkg/helm/charts/meta.go`
 
+#### .helmtplignore.htpl file
+
+To ignore files at the meta templating stage you can add them to the `.helmtplignore.htpl` located in each chart's 
+root directory. The ignored files will never appear in the resulting helm chart used by users.
+This is useful to exclude files, for example for a feature which is not yet released.
+You can also add conditions to the file like checking for feature flags.
+
+#### Feature Flags
+
+To access the feature flags you can use `.FeatureFlags.ROX_FLAG_NAME`. The feature flags work the same as in the StackRox
+project itself too. You can find all [meta values here](https://github.com/stackrox/stackrox/blob/master/pkg/helm/charts/meta.go#L11-L11).
+
+Example:
+
+```
+[< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
+  // code here is only rendered to the Helm chart if the feature flag is true.
+[< end >]
+```
+
 ### Workflow
 
 This example shows how to work with the `stackrox central services` chart.
