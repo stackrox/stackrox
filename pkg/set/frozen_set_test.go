@@ -39,22 +39,22 @@ func assertFrozenSetContainsExactly(t *testing.T, fs FrozenStringSet, elements .
 
 func TestFrozenStringSet(t *testing.T) {
 	elements := []string{"a", "bcd"}
-	fs := NewFrozenStringSet(elements...)
+	fs := NewFrozenSet(elements...)
 	assertFrozenSetContainsExactly(t, fs, elements...)
 
-	emptyFS := NewFrozenStringSet()
+	emptyFS := NewFrozenSet[string]()
 	assertFrozenSetContainsExactly(t, emptyFS)
 }
 
 func TestFrozenStringSetAfterFreeze(t *testing.T) {
-	set := NewStringSet()
+	set := NewSet[string]()
 	set.Add("a")
 	set.Add("apple")
 	fs := set.Freeze()
 
 	assertFrozenSetContainsExactly(t, fs, "a", "apple")
 
-	emptySet := NewStringSet()
+	emptySet := NewSet[string]()
 	emptyFS := emptySet.Freeze()
 	assertFrozenSetContainsExactly(t, emptyFS)
 }
