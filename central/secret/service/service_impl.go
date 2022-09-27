@@ -113,7 +113,7 @@ func (s *serviceImpl) ListSecrets(ctx context.Context, request *v1.RawQuery) (*v
 	}
 
 	// Fill in pagination.
-	paginated.FillPagination(parsedQuery, request.Pagination, maxSecretsReturned)
+	paginated.FillPagination(parsedQuery, request.GetPagination(), maxSecretsReturned)
 
 	secrets, err := s.secrets.SearchListSecrets(ctx, parsedQuery)
 	if err != nil {
