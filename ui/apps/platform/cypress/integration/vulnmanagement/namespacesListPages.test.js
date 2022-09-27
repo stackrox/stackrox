@@ -1,6 +1,6 @@
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
-import { url, selectors } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -44,22 +44,23 @@ describe('Vulnerability Management Namespaces', () => {
                 'Latest Violation',
                 'Risk Priority',
             ]);
+            const pathname = '/main/vulnerability-management/namespaces';
             cy.get(selectors.tableBodyColumn).each(($el) => {
                 const columnValue = $el.text().toLowerCase();
                 if (!columnValue.includes('no') && columnValue.includes('polic')) {
-                    allChecksForEntities(url.list.namespaces, 'polic');
+                    allChecksForEntities(pathname, 'polic');
                 }
                 if (columnValue !== 'no images' && columnValue.includes('image')) {
-                    allChecksForEntities(url.list.namespaces, 'image');
+                    allChecksForEntities(pathname, 'image');
                 }
                 if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
-                    allChecksForEntities(url.list.namespaces, 'deployment');
+                    allChecksForEntities(pathname, 'deployment');
                 }
                 if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
-                    allFixableCheck(url.list.namespaces);
+                    allFixableCheck(pathname);
                 }
                 if (columnValue !== 'no cves' && columnValue.includes('cve')) {
-                    allCVECheck(url.list.namespaces);
+                    allCVECheck(pathname);
                 }
             });
         });
