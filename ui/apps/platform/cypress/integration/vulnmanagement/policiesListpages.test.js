@@ -1,5 +1,5 @@
 import { selectors } from '../../constants/VulnManagementPage';
-import { selectors as policySelectors } from '../../constants/PoliciesPagePatternFly';
+import { selectors as policySelectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     assertSortedItems,
