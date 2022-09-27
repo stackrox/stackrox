@@ -22,7 +22,6 @@ import { selectors as routeSelectors } from './routes';
 import network, { selectors as networkSelectors } from './network/reducer';
 import groups, { selectors as groupsSelectors } from './groups';
 import attributes, { selectors as attributesSelectors } from './attributes';
-import pdfDownload, { selectors as pdfDownloadSelectors } from './pdfDownload';
 import systemConfig, { selectors as systemConfigSelectors } from './systemConfig';
 
 // Reducers
@@ -46,7 +45,6 @@ const appReducer = combineReducers({
     network,
     groups,
     attributes,
-    pdfDownload,
     systemConfig,
 });
 
@@ -82,7 +80,6 @@ const getMetadata = (state) => getApp(state).metadata;
 const getNetwork = (state) => getApp(state).network;
 const getRuleGroups = (state) => getApp(state).groups;
 const getAttributes = (state) => getApp(state).attributes;
-const getPdfDownload = (state) => getApp(state).pdfDownload;
 const getSystemConfig = (state) => getApp(state).systemConfig;
 
 const boundSelectors = {
@@ -105,7 +102,6 @@ const boundSelectors = {
     ...bindSelectors(getNetwork, networkSelectors),
     ...bindSelectors(getRuleGroups, groupsSelectors),
     ...bindSelectors(getAttributes, attributesSelectors),
-    ...bindSelectors(getPdfDownload, pdfDownloadSelectors),
     ...bindSelectors(getSystemConfig, systemConfigSelectors),
 };
 

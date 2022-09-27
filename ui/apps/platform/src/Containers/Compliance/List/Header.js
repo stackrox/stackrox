@@ -11,7 +11,7 @@ import ScanButton from 'Containers/Compliance/ScanButton';
 import { standardLabels } from 'messages/standards';
 import useCaseTypes from 'constants/useCaseTypes';
 
-const ListHeader = ({ entityType, searchComponent, standard }) => {
+const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsExporting }) => {
     const standardId = findKey(standardLabels, (key) => key === standard);
 
     const headerText = standardId
@@ -45,6 +45,8 @@ const ListHeader = ({ entityType, searchComponent, standard }) => {
                                 page={useCaseTypes.COMPLIANCE}
                                 pdfId="capture-list"
                                 tableOptions={tableOptions}
+                                isExporting={isExporting}
+                                setIsExporting={setIsExporting}
                             />
                         </div>
                     </div>
@@ -57,6 +59,8 @@ ListHeader.propTypes = {
     searchComponent: PropTypes.element,
     entityType: PropTypes.string.isRequired,
     standard: PropTypes.string,
+    isExporting: PropTypes.bool.isRequired,
+    setIsExporting: PropTypes.func.isRequired,
 };
 
 ListHeader.defaultProps = {

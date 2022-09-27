@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { useRouteMatch, useLocation } from 'react-router-dom';
 import pluralize from 'pluralize';
 
@@ -7,6 +7,7 @@ import { DEPLOYMENT_QUERY } from 'queries/deployment';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import URLService from 'utils/URLService';
 import ResourceTabs from 'Components/ResourceTabs';
@@ -43,6 +44,7 @@ const DeploymentPage = ({
     query,
     sidePanelMode,
 }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
     const match = useRouteMatch();
     const location = useLocation();
@@ -157,6 +159,8 @@ const DeploymentPage = ({
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
+                                    isExporting={isExporting}
+                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={id}
@@ -167,6 +171,7 @@ const DeploymentPage = ({
                             </>
                         )}
                         {contents}
+                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}

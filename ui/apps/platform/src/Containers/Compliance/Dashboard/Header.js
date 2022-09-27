@@ -9,7 +9,7 @@ import entityTypes from 'constants/entityTypes';
 import useCaseTypes from 'constants/useCaseTypes';
 import Tile from './Tile';
 
-const ComplianceDashboardHeader = ({ classes, bgStyle }) => {
+const ComplianceDashboardHeader = ({ classes, bgStyle, isExporting, setIsExporting }) => {
     const { isDarkMode } = useTheme();
     const darkModeClasses = `${
         isDarkMode ? 'text-base-600 hover:bg-primary-200' : 'text-base-100 hover:bg-primary-800'
@@ -42,6 +42,8 @@ const ComplianceDashboardHeader = ({ classes, bgStyle }) => {
                                 type="ALL"
                                 page={useCaseTypes.COMPLIANCE}
                                 pdfId="capture-dashboard"
+                                isExporting={isExporting}
+                                setIsExporting={setIsExporting}
                             />
                         </div>
                     </div>
@@ -54,6 +56,8 @@ const ComplianceDashboardHeader = ({ classes, bgStyle }) => {
 ComplianceDashboardHeader.propTypes = {
     classes: PropTypes.string,
     bgStyle: PropTypes.shape({}),
+    isExporting: PropTypes.bool.isRequired,
+    setIsExporting: PropTypes.func.isRequired,
 };
 
 ComplianceDashboardHeader.defaultProps = {
