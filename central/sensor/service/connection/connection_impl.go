@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -54,7 +55,7 @@ type sensorConnection struct {
 	networkBaselineMgr common.NetworkBaselineManager
 
 	sensorHello  *central.SensorHello
-	capabilities centralsensor.SensorCapabilitySet
+	capabilities set.Set[centralsensor.SensorCapability]
 }
 
 func newConnection(sensorHello *central.SensorHello,
@@ -430,7 +431,7 @@ func (c *sensorConnection) getAuditLogSyncMsg(ctx context.Context) (*central.Msg
 	}, nil
 }
 
-func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer, connectionCapabilities centralsensor.SensorCapabilitySet) error {
+func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer, connectionCapabilities set.Set[centralsensor.SensorCapability]) error {
 	// Synchronously send the config to ensure syncing before Sensor marks the connection as Central reachable
 	msg, err := c.getClusterConfigMsg(ctx)
 	if err != nil {
