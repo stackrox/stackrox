@@ -249,6 +249,8 @@ spec:
           {{ else -}}
           image: {{ ._rox.scanner.dbImage.fullRef | quote }}
           {{ end -}}
+          command: ["docker-entrypoint.sh"]
+          args: ["init", "postgres", "-c", "config_file=/etc/postgresql.conf"]
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
