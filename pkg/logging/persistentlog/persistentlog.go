@@ -20,7 +20,7 @@ type Reader interface {
 // NewReader returns a new instance of Reader
 func NewReader() Reader {
 	return &persistentLogReaderImpl{
-		logPath:            logging.PersistentLoggingPath,
+		logPath:            logging.PostgresPersistentLoggingPath,
 		stopC:              concurrency.NewSignal(),
 		persistentLogStore: persistentlog.Singleton(),
 	}
