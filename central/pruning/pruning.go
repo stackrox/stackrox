@@ -143,6 +143,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		postgres.PruneActiveComponents(pruningCtx, globaldb.GetPostgres())
 		postgres.PruneClusterHealthStatuses(pruningCtx, globaldb.GetPostgres())
+		postgres.PruneStaleNetworkFlows(pruningCtx, globaldb.GetPostgres())
 	}
 
 	log.Info("[Pruning] Finished garbage collection cycle")
