@@ -4,55 +4,6 @@ import tableSelectors from '../selectors/table';
 import scopeSelectors from '../helpers/scopeSelectors';
 import navigationSelectors from '../selectors/navigation';
 
-const baseURL = '/main/vulnerability-management';
-
-export const url = {
-    dashboard: baseURL,
-    list: {
-        policies: `${baseURL}/policies`,
-        clusters: `${baseURL}/clusters`,
-        namespaces: `${baseURL}/namespaces`,
-        deployments: `${baseURL}/deployments`,
-        images: `${baseURL}/images`,
-        nodes: `${baseURL}/nodes`,
-        components: `${baseURL}/components`,
-        'image-components': `${baseURL}/image-components`,
-        'node-components': `${baseURL}/node-components`,
-        cves: `${baseURL}/cves`,
-        'image-cves': `${baseURL}/image-cves`,
-        'node-cves': `${baseURL}/node-cves`,
-        'cluster-cves': `${baseURL}/cluster-cves`,
-        image: `${baseURL}/image`,
-        cve: `${baseURL}/cve`,
-        policy: `${baseURL}/policy`,
-        deployment: `${baseURL}/deployment`,
-    },
-    reporting: {
-        list: `${baseURL}/reports`,
-        create: `${baseURL}/reports?action=create`,
-    },
-};
-
-/*
- * Headings on entities pages: uppercase style hides the inconsistencies.
- * The keys correspond to url list object above.
- */
-export const headingPlural = {
-    clusters: 'clusters',
-    components: 'components',
-    'image-components': 'image components',
-    'node-components': 'node components',
-    cves: 'CVES',
-    'image-cves': 'Image CVES',
-    'node-cves': 'Node CVES',
-    'cluster-cves': 'Platform CVES',
-    deployments: 'deployments',
-    images: 'images',
-    namespaces: 'namespaces',
-    nodes: 'nodes',
-    policies: 'policies',
-};
-
 export const vmHomePageSelectors = {
     // TODO: remove this selector, after at least one sub-menu is added to Vuln Mgmt menu
     vulnManagementNavLink: `${navigationSelectors.navLinks}:contains("Vulnerability Management")`,
@@ -128,13 +79,6 @@ export const sidePanelListEntityPageSelectors = {
 };
 
 export const dashboardSelectors = {
-    topRiskyItems: {
-        select: {
-            input: '[data-testid="widget"] .react-select__control',
-            value: '[data-testid="widget"] .react-select__single-value',
-            options: '[data-testid="widget"] .react-select__option',
-        },
-    },
     getMenuListItem: (name) => {
         return `[data-testid="menu-list"] [data-testid="${name}"]`;
     },

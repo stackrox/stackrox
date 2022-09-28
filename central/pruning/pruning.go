@@ -10,11 +10,13 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
+	"github.com/stackrox/rox/central/postgres"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -136,6 +138,10 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeExpiredVulnRequests()
 	if features.DecommissionedClusterRetention.Enabled() {
 		g.collectClusters(pvtConfig)
+	}
+	if features.PostgresDatastore.Enabled() {
+		postgres.PruneActiveComponents(pruningCtx, globaldb.GetPostgres())
+		postgres.PruneClusterHealthStatuses(pruningCtx, globaldb.GetPostgres())
 	}
 
 	log.Info("[Pruning] Finished garbage collection cycle")

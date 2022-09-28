@@ -1,5 +1,6 @@
 import { PolicyCategory } from 'types/policy.proto';
 import axios from './instance';
+import { Empty } from './types';
 
 const policyCategoriesUrl = '/v1/policycategories';
 
@@ -37,5 +38,3 @@ export function renamePolicyCategory(id: string, newCategoryName: string): Promi
 export function deletePolicyCategory(id: string): Promise<Empty> {
     return axios.delete<Empty>(`${policyCategoriesUrl}/${id}`).then((response) => response.data);
 }
-
-type Empty = Record<string, never>;

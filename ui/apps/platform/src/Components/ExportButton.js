@@ -45,6 +45,8 @@ class ExportButton extends Component {
         customCsvExportHandler: PropTypes.func,
         page: PropTypes.string,
         disabled: PropTypes.bool,
+        isExporting: PropTypes.bool.isRequired,
+        setIsExporting: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
@@ -138,6 +140,8 @@ class ExportButton extends Component {
                                 tableOptions={this.props.tableOptions}
                                 fileName={fileName}
                                 pdfTitle={headerText}
+                                isExporting={this.props.isExporting}
+                                setIsExporting={this.props.setIsExporting}
                             />
                             {this.isCsvSupported() && (
                                 <Button

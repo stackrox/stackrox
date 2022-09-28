@@ -5,6 +5,7 @@ import {
     convertSortToGraphQLFormat,
     convertSortToRestFormat,
     searchOptionsToSearchFilter,
+    getListQueryParams,
 } from './searchUtils';
 
 describe('searchUtils', () => {
@@ -306,6 +307,74 @@ describe('searchUtils', () => {
                     { value: 'HIGH_SEVERITY', label: 'HIGH_SEVERITY' },
                 ])
             ).toEqual({ Severity: ['LOW_SEVERITY', 'HIGH_SEVERITY'] });
+        });
+    });
+
+    describe('getListQueryParams', () => {
+        it('should include all provided parameters in the query string', () => {
+            expect(
+                getListQueryParams(
+                    { Deployment: ['visa-processor', 'scanner'] },
+                    { field: 'Name', reversed: false },
+                    0,
+                    20
+                )
+            ).toEqual(
+                [
+                    'query=Deployment%3Avisa-processor%2Cscanner',
+                    'pagination.offset=0',
+                    'pagination.limit=20',
+                    'pagination.sortOption.field=Name',
+                    'pagination.sortOption.reversed=false',
+                ].join('&')
+            );
+        });
+
+        it('should include pagination parameters when the search filter is empty', () => {
+            expect(getListQueryParams({}, { field: 'Name', reversed: false }, 0, 20)).toEqual(
+                [
+                    'query=',
+                    'pagination.offset=0',
+                    'pagination.limit=20',
+                    'pagination.sortOption.field=Name',
+                    'pagination.sortOption.reversed=false',
+                ].join('&')
+            );
+        });
+
+        it('should ensure that negative pages result in an offset of 0', () => {
+            expect(getListQueryParams({}, { field: 'Name', reversed: false }, -1, 20)).toContain(
+                'pagination.offset=0'
+            );
+            expect(getListQueryParams({}, { field: 'Name', reversed: false }, -100, 20)).toContain(
+                'pagination.offset=0'
+            );
+            expect(
+                getListQueryParams({}, { field: 'Name', reversed: false }, -Infinity, 20)
+            ).toContain('pagination.offset=0');
+        });
+
+        it('should ensure that the offset is always a multiple of the page number', () => {
+            const testValues = [
+                [1, 10],
+                [3, 10],
+                [5, 5],
+                [10, 3],
+                [10, 1],
+            ];
+
+            testValues.forEach(([page, pageSize]) => {
+                const params = getListQueryParams(
+                    {},
+                    { field: 'Name', reversed: false },
+                    page,
+                    pageSize
+                );
+                const [, offsetParam] = params.match(/pagination.offset=(\d+)/);
+                expect(offsetParam).not.toBe('');
+                const offset = parseInt(offsetParam, 10);
+                expect(offset % page).toBe(0);
+            });
         });
     });
 });

@@ -71,7 +71,8 @@ type WhereClause struct {
 // NewFalseQuery always returns false
 func NewFalseQuery() *QueryEntry {
 	return &QueryEntry{Where: WhereClause{
-		Query: "false",
+		Query:            "false",
+		equivalentGoFunc: func(_ interface{}) bool { return false },
 	}}
 }
 

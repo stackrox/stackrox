@@ -7,6 +7,7 @@ import PageHeader from 'Components/PageHeader';
 import EntityTabs from 'Components/workflow/EntityTabs';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import ExportButton from 'Components/ExportButton';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import parseURL from 'utils/URLParser';
@@ -25,6 +26,7 @@ import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowEntityPageLayout = ({ location }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const { isDarkMode } = useTheme();
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
@@ -133,6 +135,8 @@ const WorkflowEntityPageLayout = ({ location }) => {
                                 disabled={!!sidePanelEntityId}
                                 pdfId={pdfId}
                                 customCsvExportHandler={customCsvExportHandler}
+                                isExporting={isExporting}
+                                setIsExporting={setIsExporting}
                             />
                         </div>
                         <div className="flex items-center">
@@ -173,6 +177,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
                     </SidePanelAnimatedArea>
                 </div>
             </div>
+            {isExporting && <BackdropExporting />}
         </workflowStateContext.Provider>
     );
 };

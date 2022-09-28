@@ -135,3 +135,29 @@ func TestGetAfterLast(t *testing.T) {
 		})
 	}
 }
+
+func TestGetBetween(t *testing.T) {
+	for _, testCase := range []struct {
+		s        string
+		start    string
+		end      string
+		expected string
+	}{
+		{"", "", "", ""},
+		{"hello", "", "", ""},
+		{"(", "(", ")", ""},
+		{"((", "(", "(", ""},
+		{"(abc(", "(", "(", "abc"},
+		{"()", "(", ")", ""},
+		{")", "(", ")", ""},
+		{"(abc)", "(", ")", "abc"},
+		{"(abc)(abc)", "(", ")", "abc"},
+		{"def(abc)def", "(", ")", "abc"},
+		{"(((abc))", "(((", "))", "abc"},
+	} {
+		c := testCase
+		t.Run(fmt.Sprintf("str=%s,start=%s,end=%s", c.s, c.start, c.end), func(t *testing.T) {
+			assert.Equal(t, c.expected, GetBetween(c.s, c.start, c.end))
+		})
+	}
+}

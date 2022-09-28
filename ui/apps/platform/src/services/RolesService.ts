@@ -1,4 +1,5 @@
 import axios from './instance';
+import { Empty } from './types';
 
 const resourcesUrl = '/v1/resources';
 
@@ -45,7 +46,7 @@ export function fetchRolesAsArray(): Promise<Role[]> {
 /*
  * Create entity and return empty object (unlike most create requests).
  */
-export function createRole(entity: Role): Promise<Record<string, never>> {
+export function createRole(entity: Role): Promise<Empty> {
     const { name } = entity;
     return axios.post(`${rolesUrl}/${name}`, entity);
 }
@@ -53,7 +54,7 @@ export function createRole(entity: Role): Promise<Record<string, never>> {
 /**
  * Update entity and return empty object.
  */
-export function updateRole(entity: Role): Promise<Record<string, never>> {
+export function updateRole(entity: Role): Promise<Empty> {
     const { name } = entity;
     return axios.put(`${rolesUrl}/${name}`, entity);
 }
@@ -61,7 +62,7 @@ export function updateRole(entity: Role): Promise<Record<string, never>> {
 /*
  * Delete entity which has name and return empty object.
  */
-export function deleteRole(name: string): Promise<Record<string, never>> {
+export function deleteRole(name: string): Promise<Empty> {
     return axios.delete(`${rolesUrl}/${name}`);
 }
 
@@ -104,7 +105,7 @@ export function createPermissionSet(entity: PermissionSet): Promise<PermissionSe
 /*
  * Update entity and return empty object.
  */
-export function updatePermissionSet(entity: PermissionSet): Promise<Record<string, never>> {
+export function updatePermissionSet(entity: PermissionSet): Promise<Empty> {
     const { id } = entity;
     return axios.put(`${permissionSetsUrl}/${id}`, entity);
 }
@@ -112,6 +113,6 @@ export function updatePermissionSet(entity: PermissionSet): Promise<Record<strin
 /*
  * Delete entity which has id and return empty object.
  */
-export function deletePermissionSet(id: string): Promise<Record<string, never>> {
+export function deletePermissionSet(id: string): Promise<Empty> {
     return axios.delete(`${permissionSetsUrl}/${id}`);
 }
