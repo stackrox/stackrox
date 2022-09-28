@@ -74,4 +74,3 @@ func (s *NetworkPolicySuite) Test_DeploymentShouldHaveViolation() {
 		}, "Should have a violation")
 	})
 }
-

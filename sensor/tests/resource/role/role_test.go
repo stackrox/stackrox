@@ -3,7 +3,6 @@ package role
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
