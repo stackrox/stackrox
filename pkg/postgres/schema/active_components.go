@@ -53,11 +53,10 @@ const (
 
 // ActiveComponents holds the Gorm model for Postgres table `active_components`.
 type ActiveComponents struct {
-	Id             string      `gorm:"column:id;type:varchar;primaryKey"`
-	DeploymentId   string      `gorm:"column:deploymentid;type:varchar;index:activecomponents_deploymentid,type:hash"`
-	ComponentId    string      `gorm:"column:componentid;type:varchar"`
-	Serialized     []byte      `gorm:"column:serialized;type:bytea"`
-	DeploymentsRef Deployments `gorm:"foreignKey:deploymentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	Id           string `gorm:"column:id;type:varchar;primaryKey"`
+	DeploymentId string `gorm:"column:deploymentid;type:varchar;index:activecomponents_deploymentid,type:hash"`
+	ComponentId  string `gorm:"column:componentid;type:varchar"`
+	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
 
 // ActiveComponentsActiveContextsSlices holds the Gorm model for Postgres table `active_components_active_contexts_slices`.
