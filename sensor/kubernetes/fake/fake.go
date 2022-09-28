@@ -85,14 +85,33 @@ type WorkloadManager struct {
 	networkManager      manager.Manager
 }
 
+// WorkloadManagerConfig WorkloadManager's configuration
+type WorkloadManagerConfig struct {
+	workloadFile string
+	client       client.Interface
+}
+
+// ConfigDefaults default configuration
+func ConfigDefaults() *WorkloadManagerConfig {
+	return &WorkloadManagerConfig{
+		workloadFile: workloadPath,
+	}
+}
+
+// WithWorkloadFile configures the WorkloadManagerConfig's WorkloadFile field
+func (c *WorkloadManagerConfig) WithWorkloadFile(file string) *WorkloadManagerConfig {
+	c.workloadFile = file
+	return c
+}
+
 // Client returns the mock client
 func (w *WorkloadManager) Client() client.Interface {
 	return w.client
 }
 
 // NewWorkloadManager returns a fake kubernetes client interface that will be managed with the passed Workload
-func NewWorkloadManager() *WorkloadManager {
-	data, err := os.ReadFile(workloadPath)
+func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
+	data, err := os.ReadFile(config.workloadFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
