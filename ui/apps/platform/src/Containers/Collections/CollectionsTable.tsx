@@ -78,6 +78,9 @@ function CollectionsTable({
         [setSearchFilter]
     );
 
+    // Currently, it is not expected that the value of `searchFilter.Collection` will
+    // be an array even though it would valid. This is a safeguard for future code
+    // changes that might change this assumption.
     const searchValue = Array.isArray(searchFilter.Collection)
         ? searchFilter.Collection.join('+')
         : searchFilter.Collection;
