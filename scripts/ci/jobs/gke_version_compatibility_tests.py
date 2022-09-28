@@ -4,7 +4,7 @@
 Run version compatibility tests
 """
 import os
-from compatibility_test import compatibility_test
+from compatibility_test import make_compatibility_test_runner
 from clusters import GKECluster
 
 # set required test parameters
