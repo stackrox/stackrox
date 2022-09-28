@@ -8,16 +8,23 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useTableSelection from 'hooks/useTableSelection';
 import { CollectionResponse } from 'services/CollectionsService';
+import { GetSortParams } from 'hooks/useURLSort';
 import { collectionsPath } from 'routePaths';
 
 export type CollectionsTableProps = {
     collections: CollectionResponse[];
+    getSortParams: GetSortParams;
     hasWriteAccess: boolean;
 };
 
-function CollectionsTable({ collections, hasWriteAccess }: CollectionsTableProps) {
+function CollectionsTable({ collections, getSortParams, hasWriteAccess }: CollectionsTableProps) {
     const history = useHistory();
     const { selected, allRowsSelected, onSelect, onSelectAll } = useTableSelection(collections);
+    const hasCollections = collections.length > 0;
+
+    function getEnabledSortParams(field: string) {
+        return hasCollections ? getSortParams(field) : undefined;
+    }
 
     function onEditCollection(id: string) {
         history.push({
@@ -46,18 +53,20 @@ function CollectionsTable({ collections, hasWriteAccess }: CollectionsTableProps
                                 }}
                             />
                         )}
-                        <Th modifier="wrap" width={25}>
+                        <Th modifier="wrap" width={25} sort={getEnabledSortParams('name')}>
                             Collection
                         </Th>
-                        <Th modifier="wrap">Description</Th>
-                        <Th modifier="wrap" width={10}>
+                        <Th modifier="wrap" sort={getEnabledSortParams('description')}>
+                            Description
+                        </Th>
+                        <Th modifier="wrap" width={10} sort={getEnabledSortParams('inUse')}>
                             In use
                         </Th>
                         <Th aria-label="Row actions" />
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {collections.length === 0 && (
+                    {hasCollections || (
                         <Tr>
                             <Td colSpan={hasWriteAccess ? 5 : 3}>
                                 <Bullseye>
