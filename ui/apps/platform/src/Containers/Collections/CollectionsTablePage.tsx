@@ -21,7 +21,6 @@ import { getCollectionCount, listCollections } from 'services/CollectionsService
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import CollectionsTable from './CollectionsTable';
 
 type CollectionsTablePageProps = {
@@ -51,13 +50,6 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
     const isLoading = !isDataAvailable && (listLoading || countLoading);
     const loadError = listError || countError;
 
-    useEffectAfterFirstRender(() => {
-        // Prevent viewing a page beyond the maximum page count
-        if (typeof countData !== 'undefined' && page > Math.ceil(countData / perPage)) {
-            setPage(1);
-        }
-    }, [countData, perPage, setPage]);
-
     let pageContent = (
         <PageSection variant="light" isFilled>
             <Bullseye>
@@ -84,7 +76,10 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                     collectionsCount={countData}
                     pagination={pagination}
                     searchFilter={searchFilter}
-                    setSearchFilter={setSearchFilter}
+                    setSearchFilter={(value) => {
+                        setPage(1);
+                        setSearchFilter(value);
+                    }}
                     getSortParams={getSortParams}
                     hasWriteAccess={hasWriteAccessForCollections}
                 />
