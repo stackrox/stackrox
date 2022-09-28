@@ -4,6 +4,8 @@
 Run version compatibility tests
 """
 import os
+from compatibility_test import compatibility_test
+from clusters import GKECluster
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
