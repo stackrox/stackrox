@@ -1,16 +1,16 @@
 import React, { useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
+    Bullseye,
+    Button,
+    ButtonVariant,
+    Pagination,
+    SearchInput,
+    Text,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    Pagination,
-    Button,
-    ButtonVariant,
     Truncate,
-    SearchInput,
-    Bullseye,
-    Text,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 import { TableComposable, TableVariant, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -35,8 +35,7 @@ export type CollectionsTableProps = {
     hasWriteAccess: boolean;
 };
 
-// TODO We are using this value elsewhere in the app - extract to a central location?
-const TYPING_DELAY = 800;
+const SEARCH_INPUT_REQUEST_DELAY = 800;
 
 function CollectionsTable({
     collections,
@@ -71,7 +70,11 @@ function CollectionsTable({
     }
 
     const onSearchInputChange = useMemo(
-        () => debounce((value: string) => setSearchFilter({ Collection: value }), TYPING_DELAY),
+        () =>
+            debounce(
+                (value: string) => setSearchFilter({ Collection: value }),
+                SEARCH_INPUT_REQUEST_DELAY
+            ),
         [setSearchFilter]
     );
 
@@ -86,7 +89,7 @@ function CollectionsTable({
                     <ToolbarItem variant="search-filter" className="pf-u-flex-grow-1">
                         <SearchInput
                             aria-label="Search by name"
-                            placeholder="Search by name..."
+                            placeholder="Search by name"
                             value={searchValue}
                             onChange={onSearchInputChange}
                         />
