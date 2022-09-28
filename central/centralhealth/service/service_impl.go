@@ -90,7 +90,7 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 		}
 
 		// Get a short-lived connection for the purposes of checking the version of the replica.
-		pool := pgadmin.GetClonePool(adminConfig, migrations.GetPreviousClone())
+		pool := pgconfig.GetClonePool(adminConfig, migrations.GetPreviousClone())
 		defer pool.Close()
 
 		// Get rollback to version

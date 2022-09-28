@@ -143,7 +143,7 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 func (m *mockCentral) upgradeDB(path, clone, pgClone string) {
 	if features.PostgresDatastore.Enabled() {
 		if pgadmin.CheckIfDBExists(m.adminConfig, pgClone) {
-			pool := pgadmin.GetClonePool(m.adminConfig, pgClone)
+			pool := pgconfig.GetClonePool(m.adminConfig, pgClone)
 			defer pool.Close()
 
 			cloneVer, err := migrations.ReadVersionPostgres(pool)
@@ -240,7 +240,7 @@ func (m *mockCentral) runCentral() {
 
 	if features.PostgresDatastore.Enabled() {
 		if version.CompareVersions(version.GetMainVersion(), "3.0.57.0") >= 0 {
-			pool := pgadmin.GetClonePool(m.adminConfig, migrations.GetCurrentClone())
+			pool := pgconfig.GetClonePool(m.adminConfig, migrations.GetCurrentClone())
 
 			migrations.SetCurrentVersionPostgres(pool)
 			pool.Close()
@@ -336,7 +336,7 @@ func (m *mockCentral) setMigrationVersion(path string, ver *versionPair) {
 }
 
 func (m *mockCentral) setMigrationVersionPostgres(clone string, ver *versionPair) {
-	pool := pgadmin.GetClonePool(m.tp.Config(), clone)
+	pool := pgconfig.GetClonePool(m.tp.Config(), clone)
 	defer pool.Close()
 
 	ctx := sac.WithAllAccess(context.Background())
@@ -355,7 +355,7 @@ func (m *mockCentral) verifyMigrationVersion(dbPath string, ver *versionPair) {
 }
 
 func (m *mockCentral) verifyMigrationVersionPostgres(clone string, ver *versionPair) {
-	pool := pgadmin.GetClonePool(m.adminConfig, clone)
+	pool := pgconfig.GetClonePool(m.adminConfig, clone)
 	defer pool.Close()
 
 	migVer, err := migrations.ReadVersionPostgres(pool)
@@ -425,7 +425,7 @@ func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
 		}
 
 		// Connect to different database for admin functions
-		connectPool := pgadmin.GetAdminPool(m.adminConfig)
+		connectPool := pgconfig.GetAdminPool(m.adminConfig)
 		// Close the admin connection pool
 		defer connectPool.Close()
 

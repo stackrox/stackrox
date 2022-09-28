@@ -2,24 +2,20 @@ package store
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"gorm.io/gorm"
 )
 
 // The PersistentLogs store is custom as it utilizes insert only techniques and is relatively simple
 const (
-	persistentLogsTable = pkgSchema.PersistentLogsTableName
+	persistentLogsTable = "persistent_logs"
 
 	countStmt = "SELECT COUNT(*) FROM persistent_logs"
 
@@ -36,10 +32,6 @@ const (
 			timestamp timestamp
 		)
 	`
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Store stores all the persistent logs.
@@ -77,7 +69,7 @@ func (s *persistentLogStoreImpl) insertIntoPersistentLog(ctx context.Context, tx
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetLog(),
-		pgutils.NilOrTime(obj.GetTimestamp()),
+		nilOrTime(obj.GetTimestamp()),
 	}
 
 	finalStr := "INSERT INTO persistent_logs (log, timestamp) VALUES($1, $2)"
@@ -90,7 +82,7 @@ func (s *persistentLogStoreImpl) insertIntoPersistentLog(ctx context.Context, tx
 }
 
 func (s *persistentLogStoreImpl) upsert(ctx context.Context, objs ...*storage.PersistentLog) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "PersistentLogs")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
 	}
@@ -118,14 +110,14 @@ func (s *persistentLogStoreImpl) upsert(ctx context.Context, objs ...*storage.Pe
 }
 
 func (s *persistentLogStoreImpl) Upsert(ctx context.Context, obj *storage.PersistentLog) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "PersistentLogs")
+	//defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "PersistentLogs")
 
 	return s.upsert(ctx, obj)
 }
 
 // Count returns the number of objects in the store
 func (s *persistentLogStoreImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "PersistentLogs")
+	//defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "PersistentLogs")
 
 	row := s.db.QueryRow(ctx, countStmt)
 	var count int
@@ -137,9 +129,9 @@ func (s *persistentLogStoreImpl) Count(ctx context.Context) (int, error) {
 
 // Get returns the object, if it exists from the store
 func (s *persistentLogStoreImpl) Get(ctx context.Context, startTime, endTime *types.Timestamp) ([]*storage.PersistentLog, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
+	//defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -147,9 +139,9 @@ func (s *persistentLogStoreImpl) Get(ctx context.Context, startTime, endTime *ty
 
 	// We can discuss this a bit, but this statement should only ever return 1 row.  Doing it this way allows
 	// us to use the readRows function
-	rows, err := conn.Query(ctx, getStmt, pgutils.NilOrTime(startTime), pgutils.NilOrTime(endTime))
+	rows, err := conn.Query(ctx, getStmt, nilOrTime(startTime), nilOrTime(endTime))
 	if err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
+		return nil, false, errNilIfNoRows(err)
 	}
 	defer rows.Close()
 
@@ -161,8 +153,8 @@ func (s *persistentLogStoreImpl) Get(ctx context.Context, startTime, endTime *ty
 	return logs, true, nil
 }
 
-func (s *persistentLogStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
+func (s *persistentLogStoreImpl) acquireConn(ctx context.Context) (*pgxpool.Conn, func(), error) {
+	//defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -178,7 +170,7 @@ func (s *persistentLogStoreImpl) readRows(rows pgx.Rows) ([]*storage.PersistentL
 		var timestamp *time.Time
 
 		if err := rows.Scan(&logText, &timestamp); err != nil {
-			return nil, pgutils.ErrNilIfNoRows(err)
+			return nil, errNilIfNoRows(err)
 		}
 
 		var ts *types.Timestamp
@@ -194,21 +186,21 @@ func (s *persistentLogStoreImpl) readRows(rows pgx.Rows) ([]*storage.PersistentL
 		logs = append(logs, logEntry)
 	}
 
-	log.Debugf("Read returned %d flows", len(logs))
+	//log.Debugf("Read returned %d flows", len(logs))
 	return logs, nil
 }
 
 // DeleteBefore removes the specified ID from the store
 func (s *persistentLogStoreImpl) DeleteBefore(ctx context.Context, timestamp *types.Timestamp) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+	//defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
 	}
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt, pgutils.NilOrTime(timestamp)); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, nilOrTime(timestamp)); err != nil {
 		return err
 	}
 	return nil
@@ -218,7 +210,7 @@ func (s *persistentLogStoreImpl) DeleteBefore(ctx context.Context, timestamp *ty
 func (s *persistentLogStoreImpl) Walk(ctx context.Context, fn func(obj *storage.PersistentLog) error) error {
 	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+		return errNilIfNoRows(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -248,20 +240,20 @@ func (s *persistentLogStoreImpl) Walk(ctx context.Context, fn func(obj *storage.
 
 // GetAllPersistentLogs returns the object, if it exists from the store, timestamp and error
 func (s *persistentLogStoreImpl) GetAllPersistentLogs(ctx context.Context) ([]*storage.PersistentLog, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
+	//defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
 
 	var rows pgx.Rows
 	var err error
 
 	rows, err = s.db.Query(ctx, walkStmt)
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, errNilIfNoRows(err)
 	}
 	defer rows.Close()
 
 	flows, err := s.readRows(rows)
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, errNilIfNoRows(err)
 	}
 
 	return flows, nil
@@ -280,8 +272,27 @@ func Destroy(ctx context.Context, db *pgxpool.Pool) {
 
 // CreateTableAndNewStore returns a new Store instance for testing
 func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, persistentLogsTable)
+	//pkgSchema.ApplySchemaForTable(ctx, gormDB, persistentLogsTable)
 	return New(ctx, db)
+}
+
+// NilOrTime allows for a proto timestamp to be stored a timestamp type in Postgres
+func nilOrTime(t *types.Timestamp) *time.Time {
+	if t == nil {
+		return nil
+	}
+	ts, err := types.TimestampFromProto(t)
+	if err != nil {
+		return nil
+	}
+	return &ts
+}
+
+func errNilIfNoRows(err error) error {
+	if err == pgx.ErrNoRows {
+		return nil
+	}
+	return err
 }
 
 //// Stubs for satisfying legacy interfaces

@@ -6,7 +6,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -23,7 +22,7 @@ var (
 	once   sync.Once
 	config *Config
 
-	log = logging.CreatePersistentLogger(logging.CurrentModule(), 0)
+	//log = logging.CreatePersistentLogger(logging.CurrentModule(), 0)
 )
 
 // Compaction defines the compaction configuration
@@ -141,7 +140,7 @@ func GetConfig() *Config {
 		config, err = readConfig()
 		if err != nil {
 			config = nil
-			log.Errorf("Error reading config file: %v", err)
+			//log.Errorf("Error reading config file: %v", err)
 		}
 	})
 	return config

@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/routes"
-	"github.com/stackrox/rox/pkg/logging/persistentlog"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -31,7 +30,6 @@ import (
 
 func main() {
 	startProfilingServer()
-	startPersistentLogListener()
 
 	if err := run(); err != nil {
 		log.WriteToStderrf("Migrator failed: %s", err)
@@ -50,18 +48,6 @@ func startProfilingServer() {
 			log.WriteToStderrf("Closing profiling server: %v", err)
 		}
 	}()
-}
-
-func startPersistentLogListener() {
-	persistentReader := persistentlog.NewReader()
-	start, err := persistentReader.StartReader(context.Background())
-	if err != nil {
-		log.WriteToStderrf("Failed to start persistent log reader %v", err)
-		// TODO: Report health
-	} else if !start {
-		// It shouldn't get here unless Sensor mistakenly sends a start event to a non-master node
-		log.WriteToStderrf("Persistent log reader did not start because persistent logs do not exist on this node")
-	}
 }
 
 func run() error {

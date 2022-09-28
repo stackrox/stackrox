@@ -2,21 +2,21 @@
 //
 // This package supports runtime configuration via the following
 // environment variables:
-//   * LOGLEVEL supporting the following values (case insensitive), order is indicative of importance:
-//     * fatal
-//     * panic
-//     * error
-//     * warn
-//     * info
-//     * debug
-//   * LOGENCODING supporting the following values:
-//     * json
-//     * console
-//   * MODULE_LOGLEVELS supporting ,-separated module=level pairs, e.g.: grpc=debug,kubernetes=warn
-//   * MAX_LOG_LINE_QUOTA in the format max/duration_in_seconds, e.g.: 100/10
-//   * PERSISTENT_LOG supporting the following values for additional log file on persistent storage
-//     * true
-//     * false
+//   - LOGLEVEL supporting the following values (case insensitive), order is indicative of importance:
+//   - fatal
+//   - panic
+//   - error
+//   - warn
+//   - info
+//   - debug
+//   - LOGENCODING supporting the following values:
+//   - json
+//   - console
+//   - MODULE_LOGLEVELS supporting ,-separated module=level pairs, e.g.: grpc=debug,kubernetes=warn
+//   - MAX_LOG_LINE_QUOTA in the format max/duration_in_seconds, e.g.: 100/10
+//   - PERSISTENT_LOG supporting the following values for additional log file on persistent storage
+//   - true
+//   - false
 //
 // LOGLEVEL semantics follow common conventions, i.e., any log message with a level less than the
 // currently set log level will be discarded.
@@ -30,9 +30,12 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/persistentlog"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -50,6 +53,12 @@ const (
 
 	// PersistentLoggingPath is the additional logs on persistent storage for migration related logs.
 	PersistentLoggingPath = "/var/lib/stackrox/migration_log/log.txt"
+
+	// PostgresPersistentLoggingPath is the additional logs on persistent storage for migration related logs.
+	PostgresPersistentLoggingPath = "/var/log/stackrox/migration_log.txt"
+
+	// PersistentRetentionPeriod is the amount of time to keep persistent logs in the database.  (1 week)
+	PersistentRetentionPeriod = 10 * time.Minute //7 * 24 * time.Hour
 
 	// defaultLevel is the default log level.
 	defaultLevel = zapcore.InfoLevel
@@ -191,7 +200,11 @@ func init() {
 	// such that we can easily propagate changes to log levels.
 	addOutput(&config, LoggingPath)
 	if strings.ToLower(os.Getenv(persistentLogEnvVar)) == "true" {
-		addOutput(&config, PersistentLoggingPath)
+		if features.PostgresDatastore.Enabled() {
+			addOutput(&config, PostgresPersistentLoggingPath)
+		} else {
+			addOutput(&config, PersistentLoggingPath)
+		}
 	}
 
 	if buildinfo.ReleaseBuild {
@@ -218,7 +231,11 @@ func init() {
 	defaultLevelsByModule, defaultLevelsByModuleParsingErrs := parseDefaultModuleLevels(os.Getenv("MODULE_LOGLEVELS"))
 
 	// Use direct calls to CreateLogger in this function, as New/NewOrGet/CurrentModule().Logger() refer to thisModuleLogger.
-	thisModuleLogger = CreateLogger(ModuleForName(thisModule), 0)
+	if strings.ToLower(os.Getenv(persistentLogEnvVar)) == "true" {
+		thisModuleLogger = CreatePersistentLogger(ModuleForName(thisModule), 0)
+	} else {
+		thisModuleLogger = CreateLogger(ModuleForName(thisModule), 0)
+	}
 	if !initLevelValid && initLevelStr != "" {
 		thisModuleLogger.Warnf("Invalid LOGLEVEL value '%s', defaulting to %s", initLevelStr, LabelForLevelOrInvalid(logLevel))
 	}
@@ -234,7 +251,11 @@ func init() {
 		}
 	}
 
-	rootLogger = CreateLogger(ModuleForName("root logger"), 0)
+	if strings.ToLower(os.Getenv(persistentLogEnvVar)) == "true" {
+		rootLogger = CreatePersistentLogger(ModuleForName("root logger"), 0)
+	} else {
+		rootLogger = CreateLogger(ModuleForName("root logger"), 0)
+	}
 }
 
 func addOutput(config *zap.Config, path string) {
@@ -380,7 +401,37 @@ func CreateLogger(module *Module, skip int) *Logger {
 // Skip allows to specify how much layers of nested calls we will skip during logging.
 func CreatePersistentLogger(module *Module, skip int) *Logger {
 	lc := config
-	addOutput(&lc, PersistentLoggingPath)
+	// TODO:  Clean this up a lot
+	if features.PostgresDatastore.Enabled() {
+		addOutput(&lc, PostgresPersistentLoggingPath)
+		//fileEncoder := zapcore.NewJSONEncoder(lc.EncoderConfig)
+		logFile, _ := os.OpenFile(LoggingPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		writer := zapcore.AddSync(logFile)
+
+		consoleEncoder := zapcore.NewConsoleEncoder(lc.EncoderConfig)
+		consoleWriter := zapcore.AddSync(os.Stdout)
+
+		postgresSync := zapcore.AddSync(persistentlog.New())
+
+		core := zapcore.NewTee(
+			zapcore.NewCore(consoleEncoder, writer, defaultLevel),
+			zapcore.NewCore(consoleEncoder, consoleWriter, defaultLevel),
+			zapcore.NewCore(consoleEncoder, postgresSync, defaultLevel),
+		)
+
+		logger := zap.New(core, zap.AddCallerSkip(skip), zap.AddStacktrace(zapcore.ErrorLevel))
+
+		result := &Logger{
+			SugaredLogger: logger.Named(module.name).Sugar(),
+			module:        module,
+		}
+
+		runtime.SetFinalizer(result, (*Logger).finalize)
+
+		return result
+	} else {
+		addOutput(&lc, PersistentLoggingPath)
+	}
 	return createLoggerWithConfig(&lc, module, skip)
 }
 

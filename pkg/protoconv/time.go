@@ -5,12 +5,11 @@ import (
 
 	gogoTimestamp "github.com/gogo/protobuf/types"
 	golangTimestamp "github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+//var (
+//	log = logging.LoggerForModule()
+//)
 
 // ConvertGoGoProtoTimeToGolangProtoTime converts the Gogo Timestamp to the golang protobuf timestamp
 func ConvertGoGoProtoTimeToGolangProtoTime(gogo *gogoTimestamp.Timestamp) *golangTimestamp.Timestamp {
@@ -50,7 +49,7 @@ func ConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
 func ConvertTimeToTimestampOrNil(goTime time.Time) *gogoTimestamp.Timestamp {
 	t, err := gogoTimestamp.TimestampProto(goTime)
 	if err != nil {
-		log.Error(err)
+		//log.Error(err)
 		return nil
 	}
 	return t

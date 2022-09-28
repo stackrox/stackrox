@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -47,7 +48,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 		switch name := clone; {
 		case knownClones.Contains(name):
 			// Get a short-lived connection for the purposes of checking the version of the clone.
-			pool := pgadmin.GetClonePool(d.adminConfig, name)
+			pool := pgconfig.GetClonePool(d.adminConfig, name)
 
 			ver, err := migrations.ReadVersionPostgres(pool)
 			if err != nil {
@@ -302,7 +303,7 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 
 func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) error {
 	// Connect to different database for admin functions
-	connectPool := pgadmin.GetAdminPool(d.adminConfig)
+	connectPool := pgconfig.GetAdminPool(d.adminConfig)
 	// Close the admin connection pool
 	defer connectPool.Close()
 
@@ -404,7 +405,7 @@ func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 // GetCurrentVersion -- gets the version of the current clone
 func (d *dbCloneManagerImpl) GetCurrentVersion() *migrations.MigrationVersion {
 	// Get a short-lived connection for the purposes of checking the version of the clone.
-	pool := pgadmin.GetClonePool(d.adminConfig, CurrentClone)
+	pool := pgconfig.GetClonePool(d.adminConfig, CurrentClone)
 
 	ver, err := migrations.ReadVersionPostgres(pool)
 	if err != nil {

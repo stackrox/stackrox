@@ -42,7 +42,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
-	logStore "github.com/stackrox/rox/pkg/postgres/persistentlog/store"
+	logStore "github.com/stackrox/rox/pkg/persistentlog/store"
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -359,7 +359,7 @@ func getPersistentLog(ctx context.Context, zipWriter *zip.Writer, targetPath str
 	}
 
 	err = persistentLogStore.Walk(ctx, func(obj *storage.PersistentLog) error {
-		if _, err := io.WriteString(w, obj.Log); err != nil {
+		if _, err := io.WriteString(w, obj.Log+"\n"); err != nil {
 			return err
 		}
 		return nil

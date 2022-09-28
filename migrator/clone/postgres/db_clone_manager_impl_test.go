@@ -160,7 +160,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 	dbm := New("", s.config, s.sourceMap)
 
 	// Set central_active in the future and have no previous
-	pool := pgadmin.GetClonePool(s.config, migrations.GetCurrentClone())
+	pool := pgconfig.GetClonePool(s.config, migrations.GetCurrentClone())
 	futureVersion := &storage.Version{
 		SeqNum:        int32(futureVer.seqNum),
 		Version:       futureVer.version,
@@ -177,7 +177,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 
 	// Create a previous and set its version to current one
 	pgtest.CreateDatabase(s.T(), migrations.PreviousDatabase)
-	pool = pgadmin.GetClonePool(s.config, migrations.PreviousDatabase)
+	pool = pgconfig.GetClonePool(s.config, migrations.PreviousDatabase)
 	verForPrevClone := &storage.Version{
 		SeqNum:        int32(currVer.seqNum),
 		Version:       currVer.version,
@@ -190,7 +190,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 	s.EqualError(dbm.Scan(), metadata.ErrForceUpgradeDisabled)
 
 	// Set previous clone version so it doesn't match current sw version
-	pool = pgadmin.GetClonePool(s.config, migrations.PreviousDatabase)
+	pool = pgconfig.GetClonePool(s.config, migrations.PreviousDatabase)
 	verForPrevClone = &storage.Version{
 		SeqNum:        int32(currVer.seqNum),
 		Version:       preVer.version,
@@ -216,7 +216,7 @@ func (s *PostgresCloneManagerSuite) TestScanRestoreFromFuture() {
 	dbm := New("", s.config, s.sourceMap)
 
 	// Set central_active in the future and have no previous
-	pool := pgadmin.GetClonePool(s.config, migrations.RestoreDatabase)
+	pool := pgconfig.GetClonePool(s.config, migrations.RestoreDatabase)
 	futureVersion := &storage.Version{
 		SeqNum:        int32(futureVer.seqNum),
 		Version:       futureVer.version,
@@ -255,7 +255,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
 
 	// Set central_active in the future and have no previous
-	pool := pgadmin.GetClonePool(s.config, migrations.GetCurrentClone())
+	pool := pgconfig.GetClonePool(s.config, migrations.GetCurrentClone())
 	currVersion := &storage.Version{
 		SeqNum:        int32(currVer.seqNum),
 		Version:       currVer.version,
@@ -335,7 +335,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneCurrentCurrent() {
 	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
 
 	// Set central_active in the future and have no previous
-	pool := pgadmin.GetClonePool(s.config, migrations.GetCurrentClone())
+	pool := pgconfig.GetClonePool(s.config, migrations.GetCurrentClone())
 	currVersion := &storage.Version{
 		SeqNum:        int32(currVer.seqNum),
 		Version:       currVer.version,
@@ -364,7 +364,7 @@ func (s *PostgresCloneManagerSuite) TestGetClonePrevious() {
 	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
 
 	// Set central_active in the future and have no previous
-	pool := pgadmin.GetClonePool(s.config, migrations.GetCurrentClone())
+	pool := pgconfig.GetClonePool(s.config, migrations.GetCurrentClone())
 	futureVersion := &storage.Version{
 		SeqNum:        int32(futureVer.seqNum),
 		Version:       futureVer.version,
@@ -374,7 +374,7 @@ func (s *PostgresCloneManagerSuite) TestGetClonePrevious() {
 	pool.Close()
 
 	// Set previous to the current version to simulate a rollback
-	pool = pgadmin.GetClonePool(s.config, migrations.PreviousDatabase)
+	pool = pgconfig.GetClonePool(s.config, migrations.PreviousDatabase)
 	currVersion := &storage.Version{
 		SeqNum:        int32(currVer.seqNum),
 		Version:       currVer.version,
