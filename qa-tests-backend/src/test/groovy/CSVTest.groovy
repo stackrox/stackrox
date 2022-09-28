@@ -187,6 +187,10 @@ class CSVTest extends BaseSpecification {
         return "COMPONENT ID:" + getComponentId() + "+Fixable:true"
     }
 
+    def getCVETypeImageQuery() {
+        return "CVE Type:IMAGE_CVE+"
+    }
+
     @Category(BAT)
     def "Verify CVE CSV data scoped by entity is correct"() {
         when:
@@ -282,7 +286,7 @@ class CSVTest extends BaseSpecification {
                 scopeQuery: "",
                 vulnQuery : "Fixable:true",
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
-        ] | "Image Sha:sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f+Fixable:true"
+        ] | getCVETypeImageQuery() + "Image Sha:sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f+Fixable:true"
         FIXABLE_CVES_IN_COMPONENT_QUERY | FIXABLE_CVES_IN_COMPONENT_POSTGRES_QUERY   | [
                 // openssl 1.0.1k-3+deb8u5
                 id        : getComponentId(),
@@ -290,14 +294,14 @@ class CSVTest extends BaseSpecification {
                 scopeQuery: "",
                 vulnQuery : "Fixable:true",
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
-        ] | getComponentQuery()
+        ] | getCVETypeImageQuery() + getComponentQuery()
         FIXABLE_CVES_IN_DEPLOYMENT_QUERY | FIXABLE_CVES_IN_DEPLOYMENT_POSTGRES_QUERY | [
                 id        : CVE_DEPLOYMENT.deploymentUid,
                 query: "",
                 scopeQuery: "",
                 vulnQuery : "Fixable:true",
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
-        ] | "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
+        ] | getCVETypeImageQuery() + "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
     }
 
     @EqualsAndHashCode(includeFields = true)
