@@ -1,0 +1,41 @@
+{
+  "id": "251136ca-c92c-4474-a2c7-4949c71b745f",
+  "name": "Process Targeting Kubernetes Service Endpoint",
+  "description": "Detects misuse of the Kubernetes Service API endpoint",
+  "rationale": "A pod communicating to a Kubernetes API from via command line is highly irregular",
+  "remediation": "Look for open ports that may allow remote execution. Remove network utilities like curl and wget that allow these connections. Consider a firewall deny ingress firewall rule to the node serving the API",
+  "categories": [
+    "Kubernetes"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Arguments",
+          "values": [
+            {
+              "value": "https://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|\\$.?KUBERNETES_(PORT_443_TCP_ADDR|SERVICE_HOST).?)(:443)?/apis?/(v1(beta.)?/)?(.*\\.k8s\\.io|clusterrole.*|role.*|networkpolicies|cronjobs|certificate.*|podsecurity.*|secrets.*)"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0007",
+      "techniques": [
+        "T1613"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

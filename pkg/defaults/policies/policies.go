@@ -43,7 +43,7 @@ func DefaultPolicies() ([]*storage.Policy, error) {
 			continue
 		}
 
-		p, err := readPolicyFile(filepath.Join(policiesDir, f.Name()))
+		p, err := ReadPolicyFile(filepath.Join(policiesDir, f.Name()))
 		if err != nil {
 			errList.AddError(err)
 			continue
@@ -64,7 +64,8 @@ func DefaultPolicies() ([]*storage.Policy, error) {
 	return policies, errList.ToError()
 }
 
-func readPolicyFile(path string) (*storage.Policy, error) {
+// ReadPolicyFile reads a policy from the file with path
+func ReadPolicyFile(path string) (*storage.Policy, error) {
 	contents, err := policiesFS.ReadFile(path)
 	// We must be able to read the embedded files.
 	utils.CrashOnError(err)

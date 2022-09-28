@@ -1,0 +1,43 @@
+{
+  "id": "a05e063b-f37f-4d36-99f3-7ff0cb2b3ba8",
+  "name": "Linux Group Add Execution",
+  "description": "Detects when the 'addgroup' or 'groupadd' binary is executed, which can be used to add a new linux group.",
+  "rationale": "Groups added in run time can be used to take ownership of files and processes",
+  "remediation": "Consider using a base image that doesn't have a shell such as SCRATCH or gcr.io/distroless. If not, modify your Dockerfile to use the exec form of CMD/ENTRYPOINT ([\"using braces\"]) instead of the shell form (no braces)",
+  "categories": [
+    "System Modification",
+    "Privileges"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "addgroup|groupadd"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0003",
+      "techniques": [
+        "T1098",
+        "T1136"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

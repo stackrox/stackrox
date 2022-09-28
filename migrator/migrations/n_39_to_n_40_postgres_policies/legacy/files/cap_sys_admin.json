@@ -1,0 +1,32 @@
+{
+  "id": "30e8cb50-d93f-42a1-b022-ec7de7ab7b65",
+  "name": "CAP_SYS_ADMIN capability added",
+  "description": "Alert on deployments with containers escalating with CAP_SYS_ADMIN",
+  "rationale": "CAP_SYS_ADMIN grants an elevated level of privilege to a container that may not be necessary. https://lwn.net/Articles/486306/ explains what CAP_SYS_ADMIN does and points to possible alternatives.",
+  "remediation": "Ensure that the container really needs the CAP_SYS_ADMIN capability or use a userspace derivative.",
+  "categories": [
+    "Privileges"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Add Capabilities",
+          "values": [
+            {
+              "value": "SYS_ADMIN"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

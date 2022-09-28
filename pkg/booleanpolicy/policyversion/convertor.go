@@ -9,6 +9,12 @@ import (
 // EnsureConvertedToLatest converts the given policy to the latest version (as defined by CurrentVersion), if it isn't already
 // The policy is modified in place.
 func EnsureConvertedToLatest(p *storage.Policy) error {
+	return EnsureConvertedTo(p, CurrentVersion())
+}
+
+// EnsureConvertedTo converts the given policy to requested version
+// The policy is modified in place.
+func EnsureConvertedTo(p *storage.Policy, toVersion PolicyVersion) error {
 	if p == nil {
 		return errors.New("nil policy")
 	}
@@ -27,16 +33,20 @@ func EnsureConvertedToLatest(p *storage.Policy) error {
 		p.PolicyVersion = version1_1
 	}
 
-	// If it's not the latest version, delegate to the upgrader
-	// CurrentVersion should always be the latest, thus this will always involve an upgrade.
-	if !IsCurrentVersion(ver) {
-		if err := upgradePolicyTo(p, CurrentVersion()); err != nil {
+	switch diff := Compare(ver, toVersion); {
+	case diff > 0:
+		// No downgrade
+		utils.CrashOnError(errors.Errorf("Unexpected version %s, cannot downgrade policy version to %s", ver.String(), toVersion.String()))
+	case diff < 0:
+		// If it's blow the requested version, delegate to the upgrader
+		if err := upgradePolicyTo(p, toVersion); err != nil {
 			return err
 		}
+	default:
 	}
 
-	if p.PolicyVersion != CurrentVersion().String() {
-		return errors.Errorf("converted to version %q, while latest is %q", p.PolicyVersion, CurrentVersion().String())
+	if p.PolicyVersion != toVersion.String() {
+		return errors.Errorf("converted from version %q to version %q", p.PolicyVersion, toVersion.String())
 	}
 	return nil
 }
