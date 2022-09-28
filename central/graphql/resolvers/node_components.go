@@ -25,7 +25,6 @@ func init() {
 		schema.AddExtraResolvers("NodeComponent", []string{
 			"fixedIn: String!",
 			"lastScanned: Time",
-			"license: License",
 			"location(query: String): String!",
 			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
 			"nodeCount(query: String, scopeQuery: String): Int!",
@@ -50,7 +49,6 @@ type NodeComponentResolver interface {
 	FixedIn(ctx context.Context) string
 	Id(ctx context.Context) graphql.ID
 	LastScanned(ctx context.Context) (*graphql.Time, error)
-	License(ctx context.Context) (*licenseResolver, error)
 	Location(ctx context.Context, args RawQuery) (string, error)
 	Name(ctx context.Context) string
 	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
@@ -218,12 +216,6 @@ func (resolver *nodeComponentResolver) LastScanned(_ context.Context) (*graphql.
 	}
 
 	return timestamp(nodes[0].GetScan().GetScanTime())
-}
-
-// License of the node component
-func (resolver *nodeComponentResolver) License(_ context.Context) (*licenseResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "License")
-	return nil, nil
 }
 
 // Location of the node component.
