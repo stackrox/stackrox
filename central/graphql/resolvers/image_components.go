@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
+        "github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	acConverter "github.com/stackrox/rox/central/activecomponent/converter"
 	cveConverter "github.com/stackrox/rox/central/cve/converter/utils"
@@ -58,7 +58,7 @@ func init() {
 
 // ImageComponentResolver represents a generic resolver of image component fields.
 // Values may come from either an embedded component context, or a top level component context.
-// NOTE: This list is and should remain alphabetically ordered
+// NOTE: This list is and should remain alphabetically ordered.
 type ImageComponentResolver interface {
 	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
