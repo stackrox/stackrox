@@ -43,6 +43,10 @@ var (
 )
 
 func checkIfAlertsHaveViolation(result *central.AlertResults, name string) bool {
+	if result == nil {
+		return false
+	}
+
 	alerts := result.GetAlerts()
 	if len(alerts) == 0 {
 		return false
@@ -59,6 +63,10 @@ func (s *NetworkPolicySuite) Test_DeploymentShouldNotHaveViolation() {
 	s.testContext.RunWithResources([]resource.YamlTestFile{
 		NginxDeployment, NetpolAllow443,
 	}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		// There's a caveat to this test: the state HAS a violation at the beginning, but
+		// it disappears once re-sync kicks-in and processes the relationship betwee the network policy
+		// and this deployment. Therefore, this test passes as is, but the opposite assertion would also
+		// pass. e.g. "check if there IS an alert", because there will be a state where the alert is there.
 		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) bool {
 			return !checkIfAlertsHaveViolation(result, ingressNetpolViolationName)
 		}, "Should not have a violation")

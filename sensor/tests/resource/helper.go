@@ -245,11 +245,12 @@ func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, mes
 // that state until `timeout` the test fails.
 func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(10 * time.Millisecond)
 	for {
 		select {
 		case <-timer.C:
 			c.t.Fatalf("timeout reached waiting for state: %s", message)
-		default:
+		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, "sensor-integration", name)
 			deployment := lastDeploymentUpdate.GetEvent().GetDeployment()
@@ -273,18 +274,19 @@ func (c *TestContext) LastViolationState(name string, assertion AlertAssertFunc,
 // until `timeout` the test fails.
 func (c *TestContext) LastViolationStateWithTimeout(name string, assertion AlertAssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(10 * time.Millisecond)
 	for {
 		select {
 		case <-timer.C:
 			c.t.Fatalf("timeout reached waiting for violation state: %s", message)
-		default:
+		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			alerts := GetAllAlertsForDeploymentName(messages, name)
-			if len(alerts) == 0 {
-				continue
+			var lastViolationState *central.AlertResults
+			if len(alerts) > 0 {
+				lastViolationState = alerts[len(alerts)-1].GetEvent().GetAlertResults()
 			}
-			lastViolationState := alerts[len(alerts)-1]
-			if assertion(lastViolationState.GetEvent().GetAlertResults()) {
+			if assertion(lastViolationState) {
 				// Assertion matched the case. We can return here without failing the test case
 				return
 			}
