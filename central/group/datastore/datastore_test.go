@@ -88,15 +88,15 @@ func (s *groupDataStoreTestSuite) TestEnforcesGet() {
 func (s *groupDataStoreTestSuite) TestAllowsGet() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil)
 
-	_, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: "1"})
+	_, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
 	s.NoError(err, "expected no error trying to read with permissions")
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(2)
 
-	_, err = s.dataStore.Get(s.hasWriteCtx, &storage.GroupProperties{Id: "1"})
+	_, err = s.dataStore.Get(s.hasWriteCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	_, err = s.dataStore.Get(s.hasWriteAccessCtx, &storage.GroupProperties{Id: "1"})
+	_, err = s.dataStore.Get(s.hasWriteAccessCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
 	s.NoError(err, "expected no error trying to read with Access permissions")
 }
 
@@ -105,9 +105,26 @@ func (s *groupDataStoreTestSuite) TestGet() {
 	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil)
 
 	// Test that can fetch by id
-	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId()})
+	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId(),
+		AuthProviderId: group.GetProps().GetAuthProviderId()})
 	s.NoError(err)
 	s.Equal(group, g)
+}
+
+func (s *groupDataStoreTestSuite) TestGetWithoutID() {
+	group := fixtures.GetGroup()
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Times(0)
+
+	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{
+		Id:             "",
+		Traits:         nil,
+		AuthProviderId: group.GetProps().GetAuthProviderId(),
+		Key:            group.GetProps().GetKey(),
+		Value:          group.GetProps().GetValue(),
+	})
+	s.Error(err)
+	s.ErrorIs(err, errox.InvalidArgs)
+	s.Nil(g)
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesGetAll() {

@@ -30,6 +30,10 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 		return nil, nil
 	}
 
+	if err := ValidateProps(props, true); err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
+
 	group, _, err := ds.storage.Get(ctx, props.GetId())
 	return group, err
 }
