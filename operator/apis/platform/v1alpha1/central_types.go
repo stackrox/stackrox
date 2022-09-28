@@ -115,6 +115,7 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	Persistence *Persistence `json:"persistence,omitempty"`
 
+	// NOTE: Central DB is in technical preview.
 	// Settings for Central DB, which is responsible for data persistence.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Central DB Settings"
 	DB *CentralDBSpec `json:"db,omitempty"`
@@ -157,14 +158,10 @@ func (c *CentralComponentSpec) CentralDBEnabled() bool {
 
 // CentralDBSpec defines settings for the "central db" component.
 type CentralDBSpec struct {
-	// External specifies that the database should not be managed by the Operator and is externally managed.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="External",order=1
-	External *bool `json:"external"`
-
 	// Specify a secret that contains the password in the "password" data item.
 	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
 	// in the "central-db-password" secret.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=2
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
 	// Disable database password generation. Do not use this for first-time installations in which the operator
@@ -172,13 +169,13 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	PasswordGenerationDisabled *bool `json:"passwordGenerationDisabled,omitempty"`
 
-	// Specify a connection string that corresponds to an existing database. If set, the operator will not manage Central DB
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	// Specify a connection string that corresponds to an existing database. If set, the operator will not manage Central DB.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ConnectionStringOverride *string `json:"connectionString,omitempty"`
 
 	// Configures how Central DB should store its persistent data. You can choose between using a persistent
 	// volume claim (recommended default), and a host path.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	Persistence *Persistence `json:"persistence,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
@@ -190,10 +187,7 @@ func (c *CentralDBSpec) IsExternal() bool {
 	if c == nil {
 		return false
 	}
-	if c.External == nil {
-		return false
-	}
-	return *c.External
+	return c.ConnectionStringOverride != nil
 }
 
 // GetPersistence returns the persistence for Central DB

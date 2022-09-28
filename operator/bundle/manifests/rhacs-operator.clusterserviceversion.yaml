@@ -104,7 +104,8 @@ spec:
           and a host path.
         displayName: Persistence
         path: central.persistence
-      - description: Settings for Central DB, which is responsible for data persistence.
+      - description: 'NOTE: Central DB is in technical preview. Settings for Central
+          DB, which is responsible for data persistence.'
         displayName: Central DB Settings
         path: central.db
       - description: Allows overriding the default resource settings for this component.
@@ -136,17 +137,13 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: External specifies that the database should not be managed by
-          the Operator and is externally managed.
-        displayName: External
-        path: central.db.external
       - description: Specify a secret that contains the password in the "password"
           data item. If omitted, the operator will auto-generate a DB password and
           store it in the "password" item in the "central-db-password" secret.
         displayName: Administrator Password
         path: central.db.passwordSecret
       - description: Specify a connection string that corresponds to an existing database.
-          If set, the operator will not manage Central DB
+          If set, the operator will not manage Central DB.
         displayName: Connection String Override
         path: central.db.connectionString
       - description: Configures how Central DB should store its persistent data. You

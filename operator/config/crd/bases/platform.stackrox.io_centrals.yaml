@@ -60,18 +60,14 @@ spec:
                     - name
                     type: object
                   db:
-                    description: Settings for Central DB, which is responsible for
-                      data persistence.
+                    description: 'NOTE: Central DB is in technical preview. Settings
+                      for Central DB, which is responsible for data persistence.'
                     properties:
                       connectionString:
                         description: Specify a connection string that corresponds
                           to an existing database. If set, the operator will not manage
-                          Central DB
+                          Central DB.
                         type: string
-                      external:
-                        description: External specifies that the database should not
-                          be managed by the Operator and is externally managed.
-                        type: boolean
                       nodeSelector:
                         additionalProperties:
                           type: string
@@ -211,8 +207,6 @@ spec:
                               type: string
                           type: object
                         type: array
-                    required:
-                    - external
                     type: object
                   defaultTLSSecret:
                     description: By default, Central will only serve an internal TLS

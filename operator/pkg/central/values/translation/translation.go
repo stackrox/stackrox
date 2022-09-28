@@ -71,8 +71,7 @@ func translate(c platform.Central) (chartutil.Values, error) {
 		centralSpec = &platform.CentralComponentSpec{}
 	}
 
-	centralValues := getCentralComponentValues(centralSpec)
-	v.AddChild("central", centralValues)
+	v.AddChild("central", getCentralComponentValues(centralSpec))
 
 	if c.Spec.Scanner != nil {
 		v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner))
@@ -188,10 +187,9 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 	cv.SetBoolValue("enabled", true)
-	cv.SetBoolValue("external", c.IsExternal())
 
-	if c.IsExternal() && c.ConnectionStringOverride != nil {
-		cv.SetError(errors.New("if external is set to true, connection string override must also be set"))
+	if c.ConnectionStringOverride != nil && c.PasswordSecret == nil {
+		cv.SetError(errors.New("if connection string override is set, then a password secret must also be set"))
 	}
 
 	if c.ConnectionStringOverride != nil {
