@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -791,13 +790,13 @@ func RunCursorQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Q
 }
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database
-func RunDeleteRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) error {
+func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) error {
 	query, err := standardizeQueryAndPopulatePath(q, schema, DELETE)
 	if err != nil || query == nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), query.AsSQL(), query.Data...)
+	_, err = db.Exec(ctx, query.AsSQL(), query.Data...)
 	if err != nil {
 		return errors.Wrapf(err, "could not delete from %q", schema.Table)
 	}
