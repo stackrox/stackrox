@@ -629,7 +629,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     {{- end}}
     )
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 {{- end}}
 
@@ -676,7 +676,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
         query,
     )
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 {{- end}}
 
@@ -911,7 +911,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
         search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
     )
 
-    return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+    return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 {{- end }}
 {{- end }}
