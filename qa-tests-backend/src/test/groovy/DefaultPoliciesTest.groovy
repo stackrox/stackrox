@@ -1,5 +1,8 @@
 import static Services.getPolicies
 import static Services.waitForViolation
+
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
+
 import common.Constants
 import groups.BAT
 import groups.SMOKE
@@ -71,6 +74,12 @@ class DefaultPoliciesTest extends BaseSpecification {
             "webhookserver - Kubernetes Actions: Port Forward to Pod",
     ]
 
+    static final private String STRUTS_IMG = "quay.io/rhacs-eng/qa:struts-app"
+    static final private String SSL_TERMINATOR_IMG = "quay.io/rhacs-eng/qa:ssl-terminator"
+    static final private String NGINX_LATEST_IMG = "nginx"
+    static final private String NGINX_1_10_IMG = "quay.io/rhacs-eng/qa:docker-io-nginx-1-10"
+    static final private String GCR_NGINX_IMG = "us.gcr.io/stackrox-ci/nginx:1.11.1"
+
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
             .setImage("quay.io/rhacs-eng/qa:struts-app")
@@ -127,6 +136,16 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         gcrId = GCRImageIntegration.createDefaultIntegration()
         assert gcrId != ""
+
+        ImageService.clearImageCaches()
+        for (Deployment deployment : DEPLOYMENTS) {
+            ImageService.deleteImages(
+                    SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${deployment.getImage()}").build(),
+                    true)
+        }
+        ImageService.deleteImages(
+                SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${STRUTS_DEPLOYMENT.getImage()}").build(),
+                true)
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         orchestrator.createService(new Service(STRUTS_DEPLOYMENT))
