@@ -36,23 +36,23 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
     // as the URL parameters do not change
     const setValue = useCallback(
         (newValue: QueryValue, historyAction: Action = 'push') => {
-            const previousQuery = getQueryObject(location.search) || {};
-            const newQueryString = getQueryString({
+            const previousQuery = getQueryObject(history.location.search) || {};
+            const newQuery = {
                 ...previousQuery,
                 [keyPrefix]: newValue,
-            });
+            };
 
             // If the value passed in is `undefined`, don't display it in the URL at all
             if (typeof newValue === 'undefined') {
-                delete newQueryString[keyPrefix];
+                delete newQuery[keyPrefix];
             }
 
             // Do not change history states if setter is called with current value
             if (!isEqual(previousQuery[keyPrefix], newValue)) {
-                history[historyAction]({ search: newQueryString });
+                history[historyAction]({ search: getQueryString(newQuery) });
             }
         },
-        [keyPrefix, history, location.search]
+        [keyPrefix, history]
     );
 
     const nextValue = getQueryObject(location.search)[keyPrefix] || defaultValue;
