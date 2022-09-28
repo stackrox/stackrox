@@ -4,7 +4,7 @@
 Run QA e2e tests against a given cluster.
 """
 from pre_tests import PreSystemTests
-from ci_tests import QaE2eTestPart1, QaE2eTestPart2, QaE2eDBBackupRestoreTest, QaE2eTestCompatibility
+from ci_tests import QaE2eTestPart1, QaE2eTestPart2, QaE2eDBBackupRestoreTest
 from post_tests import PostClusterTest, CheckStackroxLogs, FinalPost
 from runners import ClusterTestSetsRunner
 
@@ -28,14 +28,6 @@ def make_qa_e2e_test_runner(cluster):
                 "post_test": PostClusterTest(
                     check_stackrox_logs=True,
                     artifact_destination_prefix="part-2",
-                ),
-            },
-            {
-                "name": "version compatibility tests",
-                "test": QaE2eTestCompatibility(),
-                "post_test": PostClusterTest(
-                    check_stackrox_logs=True,
-                    artifact_destination_prefix="compatibility",
                 ),
             },
             {
