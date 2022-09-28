@@ -1,4 +1,5 @@
 import com.google.protobuf.util.JsonFormat
+import groups.COMPATIBILITY
 import groovy.io.FileType
 import groups.Upgrade
 import io.grpc.StatusRuntimeException
@@ -43,7 +44,7 @@ class UpgradesTest extends BaseSpecification {
             }
         }"""
 
-    @Category(Upgrade)
+    @Category(COMPATIBILITY, Upgrade)
     def "Verify cluster has listen on exec/pf webhook turned on"() {
         expect:
         "Migrated clusters to have admissionControllerEvents set to true"
@@ -52,7 +53,7 @@ class UpgradesTest extends BaseSpecification {
         assert(cluster.getAdmissionControllerEvents() == true)
     }
 
-    @Category(Upgrade)
+    @Category(COMPATIBILITY, Upgrade)
     def "Verify cluster has disable audit logs set to true"() {
         expect:
         "Migrated k8s clusters to have disableAuditLogs set to true"
@@ -61,7 +62,7 @@ class UpgradesTest extends BaseSpecification {
         assert(cluster.getDynamicConfig().getDisableAuditLogs() == true)
     }
 
-    @Category(Upgrade)
+    @Category(COMPATIBILITY, Upgrade)
     def "Verify that summary API returns non-zero values on upgrade"() {
         expect:
         "Summary API returns non-zero values on upgrade"
@@ -75,7 +76,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Upgrade)
+    @Category(COMPATIBILITY, Upgrade)
     def "verify that we find the correct number of #resourceType for query"() {
         when:
         "Fetch the #resourceType from GraphQL"
@@ -112,7 +113,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Upgrade)
+    @Category(COMPATIBILITY, Upgrade)
     def "verify that we find the correct number of compliance results"() {
         when:
         "Fetch the compliance results by #unit from GraphQL"
@@ -194,7 +195,7 @@ class UpgradesTest extends BaseSpecification {
         }
     }
 
-    @Category(Upgrade)
+    @Category(COMPATIBILITY, Upgrade)
     def "Verify upgraded policies match default policy set"() {
         given:
         "Default policies in code"

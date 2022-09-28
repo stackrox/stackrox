@@ -5,6 +5,7 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
 import common.Constants
 import groups.BAT
+import groups.COMPATIBILITY
 import groups.SMOKE
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
@@ -162,7 +163,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, SMOKE])
+    @Category([BAT, SMOKE, COMPATIBILITY])
     def "Verify policy #policyName is triggered" (String policyName, String deploymentName,
                                                   String testId) {
         when:
@@ -227,7 +228,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Curl in Image"                                 | STRUTS         | "C948"
     }
 
-    @Category([BAT, SMOKE])
+    @Category([BAT, SMOKE, COMPATIBILITY])
     def "Verify that Kubernetes Dashboard violation is generated"() {
         given:
         "Orchestrator is K8S"
@@ -507,7 +508,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return total
     }
 
-    @Category(BAT)
+    @Category(BAT, COMPATIBILITY)
     def "Verify that alert counts API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()
@@ -541,7 +542,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return m
     }
 
-    @Category(BAT)
+    @Category(BAT, COMPATIBILITY)
     def "Verify that alert groups API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()

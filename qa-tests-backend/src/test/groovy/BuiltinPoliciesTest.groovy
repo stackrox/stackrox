@@ -1,6 +1,7 @@
 import static Services.getPolicies
 import static Services.waitForViolation
 import groups.BAT
+import groups.COMPATIBILITY
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
 import objects.Deployment
 import objects.SecretKeyRef
@@ -103,7 +104,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Category([BAT, COMPATIBILITY])
     def "Verify policy '#policyName' is triggered"(String policyName, String deploymentName) {
         when:
         "An existing policy"

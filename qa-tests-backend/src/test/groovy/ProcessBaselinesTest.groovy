@@ -8,6 +8,7 @@ import services.AlertService
 import services.ClusterService
 
 import groups.BAT
+import groups.COMPATIBILITY
 
 import io.stackrox.proto.storage.ProcessBaselineOuterClass
 import objects.Deployment
@@ -430,7 +431,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Category(BAT, COMPATIBILITY)
     def "Processes come in after baseline deleted by API for #deploymentName"() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }

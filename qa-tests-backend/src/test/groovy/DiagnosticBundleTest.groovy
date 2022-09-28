@@ -2,6 +2,7 @@ import static com.jayway.restassured.RestAssured.given
 import com.jayway.restassured.config.RestAssuredConfig
 import com.jayway.restassured.config.SSLConfig
 import groups.BAT
+import groups.COMPATIBILITY
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.storage.RoleOuterClass
 import io.stackrox.proto.storage.RoleOuterClass.Role
@@ -13,7 +14,7 @@ import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
 
-@Category(BAT)
+@Category(BAT, COMPATIBILITY)
 class DiagnosticBundleTest extends BaseSpecification {
 
     @Shared

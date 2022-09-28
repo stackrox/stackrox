@@ -14,6 +14,7 @@ import io.stackrox.proto.storage.ScopeOuterClass.Scope
 import common.Constants
 import groups.BAT
 import groups.SMOKE
+import groups.COMPATIBILITY
 import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
