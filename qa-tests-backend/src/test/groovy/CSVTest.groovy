@@ -286,7 +286,8 @@ class CSVTest extends BaseSpecification {
                 scopeQuery: "",
                 vulnQuery : "Fixable:true",
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
-        ] | getCVETypeImageQuery() + "Image Sha:sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f+Fixable:true"
+        ] | getCVETypeImageQuery()
+            + "Image Sha:sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f+Fixable:true"
         FIXABLE_CVES_IN_COMPONENT_QUERY | FIXABLE_CVES_IN_COMPONENT_POSTGRES_QUERY   | [
                 // openssl 1.0.1k-3+deb8u5
                 id        : getComponentId(),
