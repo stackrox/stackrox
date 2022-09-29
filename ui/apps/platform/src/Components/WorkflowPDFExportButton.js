@@ -1,15 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import dateFns from 'date-fns';
 import computedStyleToInlineStyle from 'computed-style-to-inline-style';
 import Button from 'Components/Button';
-import { selectors } from 'reducers';
-import { actions } from 'reducers/pdfDownload';
 import { enhanceWordBreak } from 'utils/pdfUtils';
 import { getProductBranding } from 'constants/productBranding';
 
@@ -38,13 +34,12 @@ class WorkflowPDFExportButton extends Component {
             marginType: PropTypes.string,
         }),
         fileName: PropTypes.string,
-        setPDFRequestState: PropTypes.func,
-        setPDFSuccessState: PropTypes.func,
-        pdfLoadingStatus: PropTypes.bool,
         onClick: PropTypes.func,
         className: PropTypes.string,
         tableOptions: PropTypes.shape({}),
         pdfTitle: PropTypes.string,
+        isExporting: PropTypes.bool.isRequired,
+        setIsExporting: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
@@ -56,9 +51,6 @@ class WorkflowPDFExportButton extends Component {
         },
         tableOptions: null,
         fileName: 'export',
-        setPDFRequestState: null,
-        setPDFSuccessState: null,
-        pdfLoadingStatus: false,
         onClick: null,
         className: '',
         pdfTitle: '',
@@ -128,9 +120,8 @@ class WorkflowPDFExportButton extends Component {
     };
 
     saveFn = () => {
-        const { id, options, fileName, setPDFRequestState, setPDFSuccessState, onClick } =
-            this.props;
-        setPDFRequestState();
+        const { id, options, fileName, setIsExporting, onClick } = this.props;
+        setIsExporting(true);
         if (onClick) {
             onClick();
         }
@@ -287,7 +278,7 @@ class WorkflowPDFExportButton extends Component {
                 });
                 element.removeChild(header);
                 doc.save(`${fileName}.pdf`);
-                setPDFSuccessState();
+                setIsExporting(false);
             });
         }, 0);
     };
@@ -295,8 +286,8 @@ class WorkflowPDFExportButton extends Component {
     render() {
         return (
             <Button
-                isLoading={this.props.pdfLoadingStatus}
-                disabled={this.props.pdfLoadingStatus}
+                isLoading={this.props.isExporting}
+                disabled={this.props.isExporting}
                 dataTestId="download-pdf-button"
                 className={this.props.className}
                 text="DOWNLOAD PAGE AS PDF"
@@ -306,13 +297,4 @@ class WorkflowPDFExportButton extends Component {
     }
 }
 
-const mapStateToProps = createStructuredSelector({
-    pdfLoadingStatus: selectors.getPdfLoadingStatus,
-});
-
-const mapDispatchToProps = {
-    setPDFRequestState: actions.fetchPdf.request,
-    setPDFSuccessState: actions.fetchPdf.success,
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(WorkflowPDFExportButton);
+export default WorkflowPDFExportButton;

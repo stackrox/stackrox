@@ -16,7 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -61,7 +61,7 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
 		s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 	}
@@ -217,7 +217,7 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
 		s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 	}
@@ -271,7 +271,7 @@ func (suite *AlertReindexSuite) SetupTest() {
 }
 
 func (suite *AlertReindexSuite) TestReconciliationFullReindex() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return
 	}
 
@@ -299,7 +299,7 @@ func (suite *AlertReindexSuite) TestReconciliationFullReindex() {
 }
 
 func (suite *AlertReindexSuite) TestReconciliationPartialReindex() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return
 	}
 	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)

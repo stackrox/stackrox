@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -20,6 +21,8 @@ const (
 
 	// capacity - Minimum recommended Postgres capacity
 	capacity = 100 * size.GB
+
+	connectTimeout = 15 * time.Second
 )
 
 // GetPostgresConfig - gets the configuration used to connect to Postgres
@@ -36,6 +39,7 @@ func GetPostgresConfig() (map[string]string, *pgxpool.Config, error) {
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Could not parse postgres config")
 	}
+	config.ConnConfig.ConnectTimeout = connectTimeout
 
 	sourceMap, err := ParseSource(source)
 	if err != nil {

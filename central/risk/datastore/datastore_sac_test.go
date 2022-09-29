@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/risk/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -45,7 +45,7 @@ type riskDatastoreSACSuite struct {
 
 func (s *riskDatastoreSACSuite) SetupSuite() {
 	var err error
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(s.T())
 		s.Require().NotNil(pgtestbase)
 		s.pool = pgtestbase.Pool
@@ -68,7 +68,7 @@ func (s *riskDatastoreSACSuite) SetupSuite() {
 }
 
 func (s *riskDatastoreSACSuite) TearDownSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pool.Close()
 	} else {
 		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))

@@ -10,7 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
 )
@@ -43,7 +43,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ComponentCVEEdge, bool, error) {
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		filteredIDs, err := ds.filterReadable(ctx, []string{id})
 		if err != nil || len(filteredIDs) != 1 {
 			return nil, false, err
@@ -58,7 +58,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.Component
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		filteredIDs, err := ds.filterReadable(ctx, []string{id})
 		if err != nil || len(filteredIDs) != 1 {
 			return false, err

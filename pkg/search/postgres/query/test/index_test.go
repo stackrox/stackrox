@@ -12,8 +12,9 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -43,9 +44,9 @@ func TestSingleIndex(t *testing.T) {
 
 func (s *SingleIndexSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres index tests")
 		s.T().SkipNow()
 	}
@@ -181,5 +182,159 @@ func (s *SingleIndexSuite) TestSearchAfter() {
 			s.Equal(testCase.results, search.ResultsToIDs(results))
 		})
 	}
+}
 
+func (s *SingleIndexSuite) TestAutocomplete() {
+	obj := getStruct(10)
+	obj.StringSlice = []string{"Hey", "Hello", "whats up"}
+	obj.Uint64 = 150
+	obj.Labels = map[string]string{
+		"key1": "val1",
+		"key2": "val2",
+		"key3": "val2",
+	}
+	obj.Enum = storage.TestSingleKeyStruct_ENUM2
+	obj.Enums = []storage.TestSingleKeyStruct_Enum{
+		storage.TestSingleKeyStruct_ENUM0,
+		storage.TestSingleKeyStruct_ENUM1,
+	}
+	s.NoError(s.store.Upsert(ctx, obj))
+
+	optionsMap := schema.TestSingleKeyStructsSchema.OptionsMap
+	for _, testCase := range []struct {
+		field       search.FieldLabel
+		queryString string
+		regexQuery  bool
+		results     []string
+	}{
+		{
+			field:       search.TestName,
+			queryString: search.WildcardString,
+			regexQuery:  false,
+			results:     []string{"name-10"},
+		},
+		{
+			field:       search.TestName,
+			queryString: "name-",
+			regexQuery:  true,
+			results:     []string{"name-10"},
+		},
+		{
+			field:       search.TestName,
+			queryString: "nope",
+			regexQuery:  false,
+		},
+		{
+			field:       search.TestStringSlice,
+			queryString: search.WildcardString,
+			regexQuery:  false,
+			results:     []string{"Hey", "Hello", "whats up"},
+		},
+		{
+			field:       search.TestStringSlice,
+			queryString: "He.*",
+			regexQuery:  true,
+			results:     []string{"Hey", "Hello"},
+		},
+		{
+			field:       search.TestStringSlice,
+			queryString: "Hello",
+			regexQuery:  true,
+			results:     []string{"Hello"},
+		},
+		{
+			field:       search.TestStringSlice,
+			queryString: "nope",
+			regexQuery:  false,
+		},
+		{
+			field:       search.TestEnum,
+			queryString: search.WildcardString,
+			regexQuery:  false,
+			results:     []string{"ENUM2"},
+		},
+		{
+			field:       search.TestEnum,
+			queryString: "ENUM",
+			regexQuery:  false,
+			results:     []string{"ENUM2"},
+		},
+		{
+			field:       search.TestEnum,
+			queryString: "nope",
+			regexQuery:  false,
+		},
+		{
+			field:       search.TestEnumSlice,
+			queryString: search.WildcardString,
+			regexQuery:  false,
+			results:     []string{"ENUM0", "ENUM1"},
+		},
+		{
+			field:       search.TestEnumSlice,
+			queryString: "ENUM",
+			regexQuery:  false,
+			results:     []string{"ENUM0", "ENUM1"},
+		},
+		{
+			field:       search.TestEnumSlice,
+			queryString: "ENUM1",
+			regexQuery:  false,
+			results:     []string{"ENUM1"},
+		},
+		{
+			field:       search.TestEnumSlice,
+			queryString: "no",
+			regexQuery:  false,
+		},
+		{
+			field:       search.TestLabels,
+			queryString: search.WildcardString,
+			regexQuery:  false,
+			results:     []string{"key1=val1", "key2=val2", "key3=val2"},
+		},
+		{
+			field:       search.TestLabels,
+			queryString: "key",
+			regexQuery:  false,
+			results:     []string{"key1=val1", "key2=val2", "key3=val2"},
+		},
+		{
+			field:       search.TestLabels,
+			queryString: "key1",
+			regexQuery:  false,
+			results:     []string{"key1=val1"},
+		},
+		{
+			field:       search.TestLabels,
+			queryString: "=val",
+			regexQuery:  false,
+			results:     []string{"key1=val1", "key2=val2", "key3=val2"},
+		},
+		{
+			field:       search.TestLabels,
+			queryString: "=val1",
+			regexQuery:  false,
+			results:     []string{"key1=val1"},
+		},
+	} {
+		s.Run(fmt.Sprintf("%s-%s", testCase.field, testCase.queryString), func() {
+			qb := search.NewQueryBuilder()
+			if testCase.regexQuery {
+				qb.AddRegexesHighlighted(testCase.field, testCase.queryString)
+			} else {
+				qb.AddStringsHighlighted(testCase.field, testCase.queryString)
+			}
+			results, err := s.indexer.Search(ctx, qb.ProtoQuery())
+			s.NoError(err)
+			if len(testCase.results) > 0 {
+				s.Require().Len(results, 1)
+
+				field := optionsMap.MustGet(testCase.field.String())
+				s.ElementsMatch(testCase.results, results[0].Matches[field.FieldPath])
+			} else {
+				s.Len(results, 0)
+			}
+		})
+	}
 }

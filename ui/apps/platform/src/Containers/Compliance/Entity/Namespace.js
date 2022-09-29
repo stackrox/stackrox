@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import pluralize from 'pluralize';
 
 import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
@@ -16,6 +16,7 @@ import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import PageNotFound from 'Components/PageNotFound';
 import isGQLLoading from 'utils/gqlLoading';
 import Loader from 'Components/Loader';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import entityTypes from 'constants/entityTypes';
@@ -54,6 +55,7 @@ const NamespacePage = ({
     query,
     sidePanelMode,
 }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
@@ -183,6 +185,8 @@ const NamespacePage = ({
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
+                                    isExporting={isExporting}
+                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={id}
@@ -193,6 +197,7 @@ const NamespacePage = ({
                             </>
                         )}
                         {contents}
+                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}

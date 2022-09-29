@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -37,9 +37,9 @@ func TestAlertsIndex(t *testing.T) {
 
 func (s *AlertsIndexSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres index tests")
 		s.T().SkipNow()
 	}
@@ -58,7 +58,7 @@ func (s *AlertsIndexSuite) SetupTest() {
 }
 
 func (s *AlertsIndexSuite) TearDownTest() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()

@@ -9,7 +9,15 @@ import ExportButton from 'Components/ExportButton';
 import useCaseTypes from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 
-const EntityHeader = ({ entityType, listEntityType, entityName, entityId, searchComponent }) => {
+const EntityHeader = ({
+    entityType,
+    listEntityType,
+    entityName,
+    entityId,
+    searchComponent,
+    isExporting,
+    setIsExporting,
+}) => {
     const header = entityName || 'Loading...';
     const subHeader = toLower(entityType);
     let exportFilename = listEntityType
@@ -41,6 +49,8 @@ const EntityHeader = ({ entityType, listEntityType, entityName, entityId, search
                                 page={useCaseTypes.COMPLIANCE}
                                 id={entityId}
                                 pdfId={pdfId}
+                                isExporting={isExporting}
+                                setIsExporting={setIsExporting}
                             />
                         </>
                     </div>
@@ -56,6 +66,8 @@ EntityHeader.propTypes = {
     entityName: PropTypes.string,
     entityId: PropTypes.string,
     searchComponent: PropTypes.node,
+    isExporting: PropTypes.bool.isRequired,
+    setIsExporting: PropTypes.func.isRequired,
 };
 
 EntityHeader.defaultProps = {

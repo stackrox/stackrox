@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/central/policy/store/boltdb"
 	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
 	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -28,7 +28,7 @@ func initialize() {
 	var storage policyStore.Store
 	var indexer index.Indexer
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storage = policyPostgres.New(globaldb.GetPostgres())
 		indexer = policyPostgres.NewIndexer(globaldb.GetPostgres())
 		addDefaults(storage)

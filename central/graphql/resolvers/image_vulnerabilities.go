@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/vulnerabilityrequest/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -64,7 +64,7 @@ type ImageVulnerabilityResolver interface {
 // ImageVulnerability returns a vulnerability of the given id
 func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerability")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.imageVulnerabilityV2(ctx, args)
 	}
 
@@ -91,7 +91,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 // ImageVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		query := withImageCveTypeFiltering(q.String())
 		return resolver.imageVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 	}
@@ -132,7 +132,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 // ImageVulnerabilityCount returns count of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		query := withImageCveTypeFiltering(args.String())
 		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 	}
@@ -161,7 +161,7 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 // ImageVulnerabilityCounter returns a VulnerabilityCounterResolver for the input query
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		query := withImageCveTypeFiltering(args.String())
 		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
 	}
@@ -273,7 +273,7 @@ func imageCveToVulnerabilityWithSeverity(in []*storage.ImageCVE) []Vulnerability
 }
 
 func (resolver *imageCVEResolver) withImageVulnerabilityScope(ctx context.Context) context.Context {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return scoped.Context(ctx, scoped.Scope{
 			ID:    resolver.data.GetId(),
 			Level: v1.SearchCategory_IMAGE_VULNERABILITIES,

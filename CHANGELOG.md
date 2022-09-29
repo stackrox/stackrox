@@ -22,6 +22,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - K8sRoleBinding | Label | Role Binding Label
   - K8sRoleAnnotation | Annotation | Role Binding Annotation
 - `ids` field in `/v1/cves/suppress` and `/v1/cves/unsuppress` API payload renamed to `cves`.
+- ROX-11592: Support to Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field
+  being set in the `/v1/groups` endpoint have been removed.
 
 ### Deprecated Features
 

@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/central/imagecveedge/search"
 	"github.com/stackrox/rox/central/imagecveedge/store"
 	"github.com/stackrox/rox/central/imagecveedge/store/dackbox"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -31,7 +31,7 @@ func initialize() {
 	var indexer imageCVEEdgeIndexer.Indexer
 	var searcher search.Searcher
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 		searcher = search.NewV2(storage, indexer)

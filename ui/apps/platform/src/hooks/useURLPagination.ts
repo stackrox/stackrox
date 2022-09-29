@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import useURLParameter from './useURLParameter';
 
-type UseURLPaginationResult = {
+export type UseURLPaginationResult = {
     page: number;
     perPage: number;
     setPage: (page: number) => void;

@@ -37,7 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -97,7 +97,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.ei = envisolator.NewEnvIsolator(suite.T())
 	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skip dackbox tests if postgres is enabled")
 		suite.T().SkipNow()
 	}
@@ -263,7 +263,7 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsGet() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesGetAll() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skipping enforces get all test in postgres mode")
 	}
 	suite.clusters.EXPECT().GetMany(gomock.Any(), []string{}).Return(nil, nil, nil)
@@ -290,7 +290,7 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsGetAll() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesCount() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skipping search test in postgres mode")
 	}
 	suite.clusters.EXPECT().Count(suite.hasWriteCtx).Times(0)
@@ -408,7 +408,7 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsUpdateClusterStatus() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesSearch() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skipping search test in postgres mode")
 	}
 	suite.indexer.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)

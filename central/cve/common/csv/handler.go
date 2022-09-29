@@ -13,7 +13,7 @@ import (
 	nsMappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	deploymentMappings "github.com/stackrox/rox/pkg/search/options/deployments"
@@ -33,7 +33,7 @@ var (
 )
 
 func init() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		NamespaceOnlyOptionsMap = search.Difference(schema.NamespacesSchema.OptionsMap, schema.ClustersSchema.OptionsMap)
 		DeploymentOnlyOptionsMap = search.Difference(
 			schema.DeploymentsSchema.OptionsMap,

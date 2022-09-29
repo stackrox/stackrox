@@ -70,6 +70,40 @@ test('should read/write scoped string value in URL parameter without changing ex
     expect(params.get('bogusKey')).toBeNull();
 });
 
+test('should allow multiple sequential parameter updates without data loss', async () => {
+    let params;
+    let testLocation;
+
+    const { result } = renderHook(
+        () => [useURLParameter('key1', 'oldValue1'), useURLParameter('key2', undefined)],
+        {
+            initialProps: {
+                children: [],
+                onRouteRender: ({ location }) => {
+                    testLocation = location;
+                },
+                initialEntries: ['?key1=oldValue1'],
+            },
+            wrapper: Wrapper,
+        }
+    );
+
+    params = new URLSearchParams(testLocation.search);
+    expect(params.get('key1')).toBe('oldValue1');
+    expect(params.get('key2')).toBe(null);
+
+    act(() => {
+        const [[, setParam1], [, setParam2]] = result.current;
+        setParam1('newValue1');
+        setParam2('newValue2');
+    });
+    params = new URLSearchParams(testLocation.search);
+    expect(result.current[0][0]).toBe('newValue1');
+    expect(result.current[1][0]).toBe('newValue2');
+    expect(params.get('key1')).toBe('newValue1');
+    expect(params.get('key2')).toBe('newValue2');
+});
+
 test('should read/write scoped complex object in URL parameter without changing existing URL parameters', async () => {
     let params: URLSearchParams;
     let testLocation;

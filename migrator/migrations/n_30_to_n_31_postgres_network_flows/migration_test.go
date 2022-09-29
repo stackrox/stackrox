@@ -16,7 +16,7 @@ import (
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/postgres"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -43,8 +43,8 @@ var _ suite.TearDownTestSuite = (*postgresMigrationSuite)(nil)
 
 func (s *postgresMigrationSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
-	if !features.PostgresDatastore.Enabled() {
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}

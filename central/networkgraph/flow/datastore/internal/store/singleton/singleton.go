@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/common"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -19,7 +19,7 @@ var (
 // information.
 func Singleton() store.ClusterStore {
 	once.Do(func() {
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			instance = postgres.NewClusterStore(globaldb.GetPostgres())
 		} else {
 			instance = rocksdb.NewClusterStore(globaldb.GetRocksDB())

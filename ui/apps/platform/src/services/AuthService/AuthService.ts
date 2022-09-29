@@ -6,6 +6,7 @@ import queryString from 'qs';
 
 import { Role } from 'services/RolesService';
 
+import { Empty } from 'services/types';
 import AccessTokenManager from './AccessTokenManager';
 import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,
@@ -168,7 +169,7 @@ export function saveAuthProvider(authProvider: AuthProvider): string | Promise<A
  *
  * @returns {Promise} promise which is fullfilled when the request is complete TODO verify return empty object
  */
-export function deleteAuthProvider(authProviderId: string): Promise<Record<string, never>> {
+export function deleteAuthProvider(authProviderId: string): Promise<Empty> {
     if (!authProviderId) {
         throw new Error('Auth provider ID must be defined');
     }

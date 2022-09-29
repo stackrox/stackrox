@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -54,7 +54,7 @@ func TestCloneMigration(t *testing.T) {
 
 func TestCloneMigrationRocksToPostgres(t *testing.T) {
 	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		currVer = releaseVer
 		doTestCloneMigrationToPostgres(t, true)
 		currVer = devVer
@@ -177,13 +177,13 @@ func createAndRunCentralStartRocks(t *testing.T, ver *versionPair, runBoth bool)
 	mock.setVersion = setVersion
 	mock.setVersion(t, ver)
 	// First get a Rocks up and current.  This way when we do the next upgrade we should get a previous rocks.
-	require.NoError(t, os.Setenv(features.PostgresDatastore.EnvVar(), strconv.FormatBool(false)))
+	require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
 
 	mock.runMigrator("", "")
 	mock.runCentral()
 
 	// Turn Postgres back on
-	require.NoError(t, os.Setenv(features.PostgresDatastore.EnvVar(), strconv.FormatBool(true)))
+	require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(true)))
 	return mock
 }
 
@@ -341,7 +341,7 @@ func doTestForceRollbackFailure(t *testing.T) {
 		return
 	}
 	var forceRollbackClone string
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		forceRollbackClone = postgres.CurrentClone
 	} else {
 		forceRollbackClone = rocksdb.CurrentClone
@@ -403,7 +403,7 @@ func doTestForceRollbackFailure(t *testing.T) {
 
 			var dbm DBCloneManager
 
-			if features.PostgresDatastore.Enabled() {
+			if env.PostgresDatastoreEnabled.BooleanSetting() {
 				source := pgtest.GetConnectionString(t)
 				sourceMap, _ := pgconfig.ParseSource(source)
 				config, err := pgxpool.ParseConfig(source)
@@ -426,7 +426,7 @@ func doTestForceRollbackFailure(t *testing.T) {
 }
 
 func TestForceRollbackRocksToPostgresFailure(t *testing.T) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		currVer = releaseVer
 		doTestForceRollbackRocksToPostgresFailure(t)
 		currVer = devVer
@@ -443,7 +443,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 		return
 	}
 	var forceRollbackClone string
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		forceRollbackClone = postgres.CurrentClone
 	} else {
 		forceRollbackClone = rocksdb.CurrentClone
@@ -505,7 +505,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 
 			var dbm DBCloneManager
 
-			if features.PostgresDatastore.Enabled() {
+			if env.PostgresDatastoreEnabled.BooleanSetting() {
 				source := pgtest.GetConnectionString(t)
 				sourceMap, _ := pgconfig.ParseSource(source)
 				config, err := pgxpool.ParseConfig(source)
@@ -619,7 +619,7 @@ func doTestRollback(t *testing.T) {
 // TestRollbackPostgresToRocks - set of tests that will test rolling back to Rocks from Postgres.
 func TestRollbackPostgresToRocks(t *testing.T) {
 	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		currVer = releaseVer
 		doTestRollbackPostgresToRocks(t)
 		currVer = devVer
@@ -704,14 +704,14 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
 
 			// Turn Postgres back off so we will rollback to Rocks
-			require.NoError(t, os.Setenv(features.PostgresDatastore.EnvVar(), strconv.FormatBool(false)))
+			require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
 
 			mock.rollbackCentral(c.toVersion, "", "")
 			mock.upgradeCentral(c.fromVersion, "")
 
 			// We turned off Postgres.  That means we are testing
 			// rollback from Postgres to Rocks.  So we need to turn Postgres back on for the next run.
-			require.NoError(t, os.Setenv(features.PostgresDatastore.EnvVar(), strconv.FormatBool(true)))
+			require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(true)))
 		})
 	}
 }

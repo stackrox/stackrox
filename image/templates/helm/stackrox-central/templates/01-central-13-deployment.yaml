@@ -108,6 +108,10 @@ spec:
         - name: ROX_MANAGED_CENTRAL
           value: "true"
         {{- end }}
+        {{- if ._rox.central.db.enabled }}
+        - name: ROX_POSTGRES_DATASTORE
+          value: "true"
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
         volumeMounts:
         - name: varlog

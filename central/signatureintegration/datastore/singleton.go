@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	"github.com/stackrox/rox/central/signatureintegration/store/postgres"
 	"github.com/stackrox/rox/central/signatureintegration/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -21,7 +21,7 @@ var (
 func Singleton() DataStore {
 	once.Do(func() {
 		var storage store.SignatureIntegrationStore
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			storage = postgres.New(globaldb.GetPostgres())
 		} else {
 			var err error

@@ -1,11 +1,13 @@
-import * as api from '../../../constants/apiEndpoints';
-import { url, selectors } from '../../../constants/VulnManagementPage';
+import { selectors } from '../../../constants/VulnManagementPage';
 import withAuth from '../../../helpers/basicAuth';
 import { getHelperElementByLabel, getInputByLabel } from '../../../helpers/formHelpers';
-import { visit } from '../../../helpers/visit';
 import {
+    accessScopesAlias,
+    interactAndWaitToCreate,
+    notifiersAlias,
     visitVulnerabilityReporting,
     visitVulnerabilityReportingFromLeftNav,
+    visitVulnerabilityReportingToCreate,
 } from '../../../helpers/vulnmanagement/reporting';
 import navigationSelectors from '../../../selectors/navigation';
 
@@ -15,8 +17,6 @@ describe('Vulnmanagement reports', () => {
     describe('creating a report', () => {
         it('should go from left navigation', () => {
             visitVulnerabilityReportingFromLeftNav();
-
-            cy.location('pathname').should('eq', url.reporting.list);
         });
 
         it('should go to url and select item in nav bar', () => {
@@ -32,12 +32,10 @@ describe('Vulnmanagement reports', () => {
         it('should navigate to the Create Report view by button', () => {
             visitVulnerabilityReporting();
 
-            cy.intercept('GET', api.accessScopes.list).as('getSimpleAccessScopes');
-            cy.intercept('GET', api.integrations.notifiers).as('getNotifiers');
-            cy.get(selectors.reportSection.createReportLink).click();
-            cy.wait(['@getSimpleAccessScopes', '@getNotifiers']);
+            interactAndWaitToCreate(() => {
+                cy.get(selectors.reportSection.createReportLink).click();
+            });
 
-            cy.location('pathname').should('eq', url.reporting.list);
             cy.location('search').should('eq', '?action=create');
 
             cy.get('h1:contains("Create an image vulnerability report")');
@@ -54,14 +52,16 @@ describe('Vulnmanagement reports', () => {
         });
 
         it('should navigate to the Create Report view by url', () => {
-            cy.intercept('GET', api.accessScopes.list, {
-                fixture: 'scopes/resourceScopes.json',
-            }).as('getSimpleAccessScopes');
-            cy.intercept('GET', api.integrations.notifiers, {
-                fixture: 'integrations/notifiers.json',
-            }).as('getNotifiers');
-            visit(`${url.reporting.list}?action=create`);
-            cy.wait(['@getSimpleAccessScopes', '@getNotifiers']);
+            const staticResponseMap = {
+                [accessScopesAlias]: {
+                    fixture: 'scopes/resourceScopes.json',
+                },
+                [notifiersAlias]: {
+                    fixture: 'integrations/notifiers.json',
+                },
+            };
+
+            visitVulnerabilityReportingToCreate(staticResponseMap);
 
             cy.get('h1:contains("Create an image vulnerability report")');
 

@@ -8,13 +8,13 @@ require github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581
 
 require (
 	cloud.google.com/go/compute v1.10.0
-	cloud.google.com/go/containeranalysis v0.4.0
-	cloud.google.com/go/storage v1.26.0
+	cloud.google.com/go/containeranalysis v0.6.0
+	cloud.google.com/go/storage v1.27.0
 	github.com/BurntSushi/toml v1.2.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/PagerDuty/go-pagerduty v1.5.1
+	github.com/PagerDuty/go-pagerduty v1.6.0
 	github.com/RoaringBitmap/roaring v1.2.1
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.16.0
@@ -104,29 +104,29 @@ require (
 	go.uber.org/atomic v1.10.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220824171710-5757bc0c5503
-	golang.org/x/net v0.0.0-20220909164309-bea034e7d591
+	golang.org/x/net v0.0.0-20220927171203-f486391704dc
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.12
-	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.96.0
-	google.golang.org/genproto v0.0.0-20220915135415-7fd63a7952de
+	golang.stackrox.io/grpc-http1 v0.2.5
+	google.golang.org/api v0.98.0
+	google.golang.org/genproto v0.0.0-20220926165614-551eb538f295
 	google.golang.org/grpc v1.49.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.3.10
-	gorm.io/gorm v1.23.9
+	gorm.io/gorm v1.23.10
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.2
 	k8s.io/api v0.23.12
 	k8s.io/apimachinery v0.23.12
 	k8s.io/apiserver v0.23.12
 	k8s.io/client-go v0.23.12
-	k8s.io/kubectl v0.23.11
+	k8s.io/kubectl v0.23.12
 	k8s.io/kubelet v0.22.15
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/controller-runtime v0.11.2
@@ -137,7 +137,7 @@ require (
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
-	cloud.google.com/go v0.102.1 // indirect
+	cloud.google.com/go v0.104.0 // indirect
 	cloud.google.com/go/iam v0.3.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
@@ -234,7 +234,7 @@ require (
 	github.com/google/trillian v1.4.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.1.0 // indirect
-	github.com/googleapis/gax-go/v2 v2.4.0 // indirect
+	github.com/googleapis/gax-go/v2 v2.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
@@ -395,7 +395,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.1.0 // indirect
 	k8s.io/apiextensions-apiserver v0.23.5 // indirect
-	k8s.io/cli-runtime v0.23.11 // indirect
+	k8s.io/cli-runtime v0.23.12 // indirect
 	k8s.io/component-base v0.23.12 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf // indirect

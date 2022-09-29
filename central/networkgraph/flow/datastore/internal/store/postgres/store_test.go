@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -25,11 +25,11 @@ func TestNetworkflowStore(t *testing.T) {
 func (s *NetworkflowStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	} else {
-		s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+		s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	}
 }
 

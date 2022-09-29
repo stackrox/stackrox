@@ -10,6 +10,7 @@ import {
 } from 'types/clusterService.proto';
 import axios from './instance';
 import { cluster as clusterSchema } from './schemas';
+import { Empty } from './types';
 
 const clustersUrl = '/v1/clusters';
 const clusterDefaultsUrl = '/v1/cluster-defaults';
@@ -120,21 +121,21 @@ export function saveAutoUpgradeConfig(config: AutoUpgradeConfig): Promise<AutoUp
 /**
  * Manually start a sensor upgrade given the cluster ID.
  */
-export function upgradeCluster(id: string): Promise<Record<string, never>> {
+export function upgradeCluster(id: string): Promise<Empty> {
     return axios.post(`${manualUpgradeUrl}/${id}`);
 }
 
 /**
  * Start a cluster cert rotation.
  */
-export function rotateClusterCerts(id: string): Promise<Record<string, never>> {
+export function rotateClusterCerts(id: string): Promise<Empty> {
     return axios.post(`${upgradesUrl}/rotateclustercerts/${id}`);
 }
 
 /**
  * Manually start a sensor upgrade for an array of clusters.
  */
-export function upgradeClusters(ids = []): Promise<Record<string, never>[]> {
+export function upgradeClusters(ids = []): Promise<Empty[]> {
     return Promise.all(ids.map((id) => upgradeCluster(id)));
 }
 
@@ -152,14 +153,14 @@ export function fetchCluster(id: string) {
 /**
  * Deletes cluster given the cluster ID. Returns an empty object.
  */
-export function deleteCluster(id: string): Promise<Record<string, never>> {
+export function deleteCluster(id: string): Promise<Empty> {
     return axios.delete(`${clustersUrl}/${id}`);
 }
 
 /**
  * Deletes clusters given a list of cluster IDs.
  */
-export function deleteClusters(ids: string[] = []): Promise<Record<string, never>[]> {
+export function deleteClusters(ids: string[] = []): Promise<Empty[]> {
     return Promise.all(ids.map((id) => deleteCluster(id)));
 }
 

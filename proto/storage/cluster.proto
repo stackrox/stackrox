@@ -258,7 +258,7 @@ message AuditLogFileState {
 }
 
 message ClusterHealthStatus {
-    string                    id                               = 9 [(gogoproto.moretags) = 'sql:"pk,fk(Cluster:id)"'];
+    string                    id                               = 9 [(gogoproto.moretags) = 'sql:"pk,fk(Cluster:id),no-fk-constraint"'];
     enum HealthStatusLabel {
         UNINITIALIZED = 0;
         // Only collector can have unavailable status
