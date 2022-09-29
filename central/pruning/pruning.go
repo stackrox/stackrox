@@ -27,6 +27,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -139,7 +140,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	if features.DecommissionedClusterRetention.Enabled() {
 		g.collectClusters(pvtConfig)
 	}
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		postgres.PruneActiveComponents(pruningCtx, globaldb.GetPostgres())
 		postgres.PruneClusterHealthStatuses(pruningCtx, globaldb.GetPostgres())
 	}
