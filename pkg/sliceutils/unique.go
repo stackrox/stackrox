@@ -7,7 +7,9 @@ func Unique[T comparable](slice []T) []T {
 
 	seenElems := make(map[T]struct{})
 	for _, elem := range slice {
-		if _, ok := seenElems[elem]; ok {
+		preNumElems := len(seenElems)
+		seenElems[elem] = struct{}{}
+		if len(seenElems) == preNumElems { // not added
 			continue
 		}
 		out = append(out, elem)
