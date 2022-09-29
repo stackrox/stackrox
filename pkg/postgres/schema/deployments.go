@@ -106,7 +106,7 @@ type Deployments struct {
 	ClusterId                     string                  `gorm:"column:clusterid;type:varchar"`
 	ClusterName                   string                  `gorm:"column:clustername;type:varchar"`
 	Annotations                   map[string]string       `gorm:"column:annotations;type:jsonb"`
-	Priority                      int64                   `gorm:"column:priority;type:integer"`
+	Priority                      int64                   `gorm:"column:priority;type:bigint"`
 	ImagePullSecrets              *pq.StringArray         `gorm:"column:imagepullsecrets;type:text[]"`
 	ServiceAccount                string                  `gorm:"column:serviceaccount;type:varchar"`
 	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`

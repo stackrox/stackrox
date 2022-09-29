@@ -360,12 +360,15 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			case reflect.Uint8:
 				schema.AddFieldWithType(field, Bytes, opts)
 				continue
-			case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
+			case reflect.Int32:
 				if typeIsEnum(elemType) {
 					schema.AddFieldWithType(field, EnumArray, opts)
 				} else {
 					schema.AddFieldWithType(field, IntArray, opts)
 				}
+				continue
+			case reflect.Uint32, reflect.Uint64, reflect.Int64:
+				schema.AddFieldWithType(field, BigIntArray, opts)
 				continue
 			}
 
@@ -385,12 +388,14 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type)
 		case reflect.Uint8:
 			schema.AddFieldWithType(field, Bytes, opts)
-		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
+		case reflect.Int32:
 			if typeIsEnum(structField.Type) {
 				schema.AddFieldWithType(field, Enum, opts)
 			} else {
 				schema.AddFieldWithType(field, Integer, opts)
 			}
+		case reflect.Uint32, reflect.Uint64, reflect.Int64:
+			schema.AddFieldWithType(field, BigInteger, opts)
 		case reflect.Float32, reflect.Float64:
 			schema.AddFieldWithType(field, Numeric, opts)
 		case reflect.Interface:
