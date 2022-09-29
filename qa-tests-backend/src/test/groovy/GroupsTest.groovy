@@ -95,7 +95,7 @@ class GroupsTest extends BaseSpecification {
                 matchedGroup = grp.roleName["QAGroupTest-".length()..-1]
             }
         } catch (StatusRuntimeException ex) {
-            if (ex.status.code != Status.Code.NOT_FOUND) {
+            if (ex.status.code != Status.Code.NOT_FOUND && (authProviderId == null && ex.status.code != Status.Code.INVALID_ARGUMENT)) {
                 throw ex
             }
         }
