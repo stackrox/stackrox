@@ -36,6 +36,12 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
     // as the URL parameters do not change
     const setValue = useCallback(
         (newValue: QueryValue, historyAction: Action = 'push') => {
+            // Note that we use the version of `location` on `history` here, since it is mutable (compared
+            // to the immutable `location` when used directly.) In this case, we aren't looking
+            // for a reference change to trigger a rerender, we are looking for the current up-to-date
+            // location search parameters.
+            //
+            // https://v5.reactrouter.com/web/api/history/history-is-mutable
             const previousQuery = getQueryObject(history.location.search) || {};
             const newQuery = {
                 ...previousQuery,
