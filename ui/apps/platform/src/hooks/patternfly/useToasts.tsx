@@ -19,16 +19,16 @@ function useToasts(): UseToasts {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
     function getUniqueId() {
-        return new Date().getTime();
+        return new Date().getTime() + Math.random();
     }
 
     function addToast(title, variant = 'default' as AlertVariantType, children) {
         const key = getUniqueId();
-        setToasts([...toasts, { title, variant, key, children }]);
+        setToasts((prevToasts) => [{ title, variant, key, children }, ...prevToasts]);
     }
 
     function removeToast(key) {
-        setToasts([...toasts.filter((el) => el.key !== key)]);
+        setToasts((prevToasts) => [...prevToasts.filter((el) => el.key !== key)]);
     }
 
     return {
