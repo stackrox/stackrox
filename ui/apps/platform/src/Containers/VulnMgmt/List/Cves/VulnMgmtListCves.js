@@ -296,7 +296,7 @@ const VulnMgmtCves = ({
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const usesPostgres = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const workflowState = useContext(workflowStateContext);
 
@@ -567,7 +567,7 @@ const VulnMgmtCves = ({
                 totalResults={totalResults}
                 query={cveQuery}
                 queryOptions={queryOptions}
-                idAttribute={usesPostgres ? 'id' : 'cve'}
+                idAttribute={showVMUpdates ? 'id' : 'cve'}
                 entityListType={cveType}
                 getTableColumns={getCveTableColumns}
                 selectedRowId={selectedRowId}
