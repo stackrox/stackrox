@@ -1,12 +1,8 @@
 package pgutils
 
 import (
-	"io"
-	"net"
-
 	"github.com/jackc/pgconn"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -38,7 +34,6 @@ var transientPGCodes = set.NewFrozenStringSet(
 	"57P01", // admin_shutdown
 	"57P02", // crash_shutdown
 	"57P03", // cannot_connect_now
-	"57P04", // database_dropped
 	"57P05", // idle_session_timeout
 
 	// Class 58 — System Error (errors external to PostgreSQL itself)
@@ -51,8 +46,6 @@ func isTransientError(err error) bool {
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
 		return transientPGCodes.Contains(pgErr.Code)
 	}
-	if netErr := (*net.OpError)(nil); errors.As(err, &netErr) {
-		return netErr.Temporary() || netErr.Timeout()
-	}
-	return errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe)
+	// Assume all other errors are transient
+	return false
 }

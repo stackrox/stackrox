@@ -26,8 +26,8 @@ func RetryExecQuery(fn func() error) error {
 // that fails with Transient errors
 func RetryQuery[T any](fn func() (T, error)) (T, error) {
 	// Run query immediately
-	if T, err := fn(); err == nil || !isTransientError(err) {
-		return T, err
+	if val, err := fn(); err == nil || !isTransientError(err) {
+		return val, err
 	}
 
 	expirationTimer := time.NewTimer(timeout)
