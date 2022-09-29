@@ -115,9 +115,9 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	Persistence *Persistence `json:"persistence,omitempty"`
 
-	// NOTE: Central DB is in technical preview.
+	// NOTE: Central DB is in technical preview
 	// Settings for Central DB, which is responsible for data persistence.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Central DB Settings"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Central DB Settings (Technical Preview)"
 	DB *CentralDBSpec `json:"db,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
@@ -243,8 +243,6 @@ type PersistentVolumeClaim struct {
 	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
 	// created. Defaults to "stackrox-db" if not set.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
-	//+kubebuilder:validation:Default=stackrox-db
-	//+kubebuilder:default=stackrox-db
 	ClaimName *string `json:"claimName,omitempty"`
 
 	// The size of the persistent volume when created through the claim. If a claim was automatically created,

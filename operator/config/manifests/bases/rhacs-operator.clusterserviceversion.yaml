@@ -252,9 +252,9 @@ spec:
         path: imagePullSecrets
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: 'NOTE: Central DB is in technical preview. Settings for Central
-          DB, which is responsible for data persistence.'
-        displayName: Central DB Settings
+      - description: 'NOTE: Central DB is in technical preview and will become the
+          Settings for Central DB, which is responsible for data persistence.'
+        displayName: Central DB Settings (Technical Preview)
         path: central.db
       - description: Customizations to apply on all Central Services components.
         displayName: Customizations
