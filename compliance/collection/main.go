@@ -202,6 +202,7 @@ func main() {
 
 	stoppedSig := concurrency.NewSignal()
 	go manageStream(ctx, cli, &stoppedSig)
+	go manageNodescanLoop(ctx, cli)
 
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
@@ -212,4 +213,61 @@ func main() {
 	cancel()
 	stoppedSig.Wait()
 	log.Info("Successfully closed Sensor communication")
+}
+
+func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			client, _, err := initializeStream(ctx, cli)
+			if err != nil {
+				if ctx.Err() != nil {
+					continue
+				}
+				log.Fatalf("error initializing stream to sensor: %v", err)
+			}
+			if err := runTimedScan(client); err != nil {
+				log.Errorf("error running recv: %v", err)
+			}
+		}
+	}
+}
+
+func runTimedScan(client sensor.ComplianceService_CommunicateClient) error {
+	f := func() { scanNode(client) }
+	timer := time.AfterFunc(10*time.Second, f)
+	defer timer.Stop()
+	time.Sleep(5 * time.Second)
+	return nil
+}
+
+func scanNode(client sensor.ComplianceService_CommunicateClient) error {
+	log.Warnf("Sending data to sensor!")
+	return client.Send(&sensor.MsgFromCompliance{
+		Node: getNode(),
+		Msg: &sensor.MsgFromCompliance_NodeScan{
+			NodeScan: &storage.NodeScan{
+				OperatingSystem: "Fake RHEL",
+				Components: []*storage.EmbeddedNodeScanComponent{
+					{
+						Name:    "Fake Component",
+						Version: "4.2",
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "CVE-2042-1",
+								},
+								SetFixedBy: &storage.NodeVulnerability_FixedBy{
+									FixedBy: "4.2.1",
+								},
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+				},
+			},
+		},
+	})
 }
