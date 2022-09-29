@@ -124,6 +124,9 @@ type properties struct {
 
 	// Generate conversion functions with schema
 	ConversionFuncs bool
+
+	// Indicates that there is a foreign key cycle relationship. Should be defined as <Embedded FK Field>:<Referenced Field>
+	Cycle string
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -199,6 +202,7 @@ func main() {
 	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from, including \"rocksdb\", \"dackbox\" and \"boltdb\"")
 	c.Flags().IntVar(&props.MigrateSeq, "migration-seq", 0, "the unique sequence number to migrate to Postgres")
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
+	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, of the form <foreign_key>:<referenced_field>")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if (props.MigrateSeq == 0) != (props.MigrateFrom == "") {
@@ -266,6 +270,15 @@ func main() {
 			}
 		}
 
+		var embeddedFK, referencedField string
+		if props.Cycle != "" {
+			if strings.Contains(props.Cycle, ":") {
+				embeddedFK, referencedField = stringutils.Split2(props.Cycle, ":")
+			} else {
+				log.Fatalf("cycle flag passed with invalid form (%s)", props.Cycle)
+			}
+		}
+
 		templateMap := map[string]interface{}{
 			"Type":              props.Type,
 			"TrimmedType":       trimmedType,
@@ -280,10 +293,21 @@ func main() {
 				permissionCheckerEnabled: permissionCheckerEnabled,
 				schema:                   schema,
 			},
-			"NoCopyFrom": props.NoCopyFrom,
+			"NoCopyFrom":      props.NoCopyFrom,
+			"Cycle":           embeddedFK != "" && referencedField != "",
+			"EmbeddedFK":      embeddedFK,
+			"ReferencedField": referencedField,
 		}
 
-		if err := generateSchema(schema, searchCategory, searchScope, parsedReferences, props.SchemaDirectory, !props.ConversionFuncs); err != nil {
+		// remove any self references
+		filteredReferences := make([]parsedReference, 0, len(parsedReferences))
+		for _, ref := range parsedReferences {
+			if ref.Table != props.Table {
+				filteredReferences = append(filteredReferences, ref)
+			}
+		}
+
+		if err := generateSchema(schema, searchCategory, searchScope, filteredReferences, props.SchemaDirectory, !props.ConversionFuncs); err != nil {
 			return err
 		}
 		if props.ConversionFuncs {
