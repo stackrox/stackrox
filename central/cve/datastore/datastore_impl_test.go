@@ -23,7 +23,7 @@ import (
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	queueMocks "github.com/stackrox/rox/pkg/dackbox/utils/queue/mocks"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -52,7 +52,7 @@ type CVEDataStoreSuite struct {
 }
 
 func (suite *CVEDataStoreSuite) SetupSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skip non-postgres store tests")
 		suite.T().SkipNow()
 	}

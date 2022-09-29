@@ -3,7 +3,7 @@ package scancomponent
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 )
 
 // ScanComponent is the interface which encompasses potentially vulnerable components of entites
@@ -32,7 +32,7 @@ func NewFromNodeComponent(comp *storage.EmbeddedNodeScanComponent) ScanComponent
 		name:    comp.GetName(),
 		version: comp.GetVersion(),
 	}
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		for _, vuln := range comp.GetVulnerabilities() {
 			ret.vulns = append(ret.vulns, cvss.NewFromNodeVulnerability(vuln))
 		}

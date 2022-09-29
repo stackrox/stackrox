@@ -12,7 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 )
@@ -47,7 +47,7 @@ func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexe
 func NewForTestOnly(t *testing.T, db *pgxpool.Pool) (DataStore, error) {
 	testutils.MustBeInTest(t)
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, nil
 	}
 	storage := postgres.New(db)

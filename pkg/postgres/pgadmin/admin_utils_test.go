@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -39,12 +39,12 @@ func TestRestore(t *testing.T) {
 func (s *PostgresRestoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
 
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	ctx := sac.WithAllAccess(context.Background())
 

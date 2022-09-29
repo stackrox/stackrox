@@ -16,7 +16,7 @@ import (
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -51,9 +51,9 @@ type DeploymentPostgresDataStoreTestSuite struct {
 
 func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}

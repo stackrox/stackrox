@@ -39,7 +39,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -551,7 +550,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	ds.removeK8SRoles(ctx, cluster)
 	ds.removeRoleBindings(ctx, cluster)
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		if err := ds.clusterCVEDataStore.DeleteClusterCVEsInternal(ctx, cluster.GetId()); err != nil {
 			log.Errorf("Failed to delete cluster cves for cluster %q: %v ", cluster.GetId(), err)
 		}

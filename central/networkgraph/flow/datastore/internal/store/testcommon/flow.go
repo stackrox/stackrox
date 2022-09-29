@@ -6,7 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
@@ -85,7 +85,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.ElementsMatch(readFlows, flows)
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 	}
 
@@ -94,7 +94,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.ElementsMatch(readFlows, flows[1:])
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 	}
 
@@ -103,7 +103,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.ElementsMatch(readFlows, flows[2:])
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 	}
 
@@ -133,7 +133,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.ElementsMatch(actualFlows, flows[1:])
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 	}
 
@@ -146,7 +146,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.ElementsMatch(actualFlows, flows)
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 	}
 
@@ -163,7 +163,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.ElementsMatch(node1Flows, flows[:1])
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 	}
 }
@@ -172,7 +172,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	t1 := time.Now().Add(-5 * time.Minute)
 	t2 := time.Now()
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// Round the timestamps to the microsecond
 		t1 = t1.Truncate(1000)
 		t2 = t2.Truncate(1000)
@@ -235,7 +235,7 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	// Skipping this one out for right now.  Currently the only use of that function is to delete flows
 	// outside the orphan time window.  That is much easier more efficient to deal with in SQL than
 	// looping through all the flows and applying that function.
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		err = suite.tested.RemoveMatchingFlows(context.Background(), nil, func(flow *storage.NetworkFlow) bool {
 			return flow.LastSeenTimestamp.Compare(protoconv.ConvertTimeToTimestamp(t2)) == 0
 		})

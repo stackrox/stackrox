@@ -10,7 +10,7 @@ import (
 	rdbStore "github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -42,7 +42,7 @@ var _ interface {
 } = (*NetworkBaselineDataStoreTestSuite)(nil)
 
 func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		ctx := context.Background()
 		source := pgtest.GetConnectionString(suite.T())
 		config, err := pgxpool.ParseConfig(source)
@@ -63,7 +63,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
 }
 
 func (suite *NetworkBaselineDataStoreTestSuite) TearDownSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.pool.Close()
 	} else {
 		err := rocksdb.CloseAndRemove(suite.engine)

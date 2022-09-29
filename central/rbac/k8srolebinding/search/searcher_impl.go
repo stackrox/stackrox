@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -38,7 +38,7 @@ func (ds *searcherImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]
 
 // Search returns the raw search results from the query.
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return k8sRoleBindingsSACPostgresSearchHelper.Apply(ds.index.Search)(ctx, q)
 	}
 	return k8sRoleBindingsSACSearchHelper.Apply(ds.index.Search)(ctx, q)
@@ -46,7 +46,7 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 
 // Count returns the number of search results from the query.
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return k8sRoleBindingsSACPostgresSearchHelper.ApplyCount(ds.index.Count)(ctx, q)
 	}
 	return k8sRoleBindingsSACSearchHelper.ApplyCount(ds.index.Count)(ctx, q)

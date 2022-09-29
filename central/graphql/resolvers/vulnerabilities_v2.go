@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -193,7 +193,7 @@ func (resolver *cVEResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error
 }
 
 func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("vulnerabilityV2 not supported on postgres.")
 	}
 	vulnResolver, err := resolver.unwrappedVulnerabilityV2(ctx, args)
@@ -204,7 +204,7 @@ func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args IDQuery) (Vu
 }
 
 func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("vulnerabilitiesV2 not supported on postgres.")
 	}
 	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
@@ -303,7 +303,7 @@ func (resolver *Resolver) unwrappedVulnerabilityV2(ctx context.Context, args IDQ
 }
 
 func (resolver *Resolver) unwrappedVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]*cVEResolver, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
 	}
 	if err := readCVEs(ctx); err != nil {
@@ -340,7 +340,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 }
 
 func (resolver *Resolver) unwrappedVulnerabilitiesV2Query(ctx context.Context, query *v1.Query) ([]*cVEResolver, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
 	}
 	vulnLoader, err := loaders.GetCVELoader(ctx)
@@ -408,7 +408,7 @@ func (resolver *Resolver) vulnerabilityCountV2(ctx context.Context, args RawQuer
 }
 
 func (resolver *Resolver) vulnerabilityCountV2Query(ctx context.Context, query *v1.Query) (int32, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return 0, errors.New("attempted to invoke legacy datastores with postgres enabled")
 	}
 	vulnLoader, err := loaders.GetCVELoader(ctx)
@@ -443,7 +443,7 @@ func (resolver *Resolver) vulnCounterV2(ctx context.Context, args RawQuery) (*Vu
 }
 
 func (resolver *Resolver) vulnCounterV2Query(ctx context.Context, query *v1.Query) (*VulnerabilityCounterResolver, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
 	}
 	vulnLoader, err := loaders.GetCVELoader(ctx)
@@ -764,7 +764,7 @@ func (resolver *cVEResolver) ImageComponentCount(ctx context.Context, args RawQu
 // NodeComponents are the node components that contain the CVE/Vulnerability.
 func (resolver *cVEResolver) NodeComponents(_ context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponents")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("unexpected access to legacy component datastore with postgres enabled")
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
@@ -774,7 +774,7 @@ func (resolver *cVEResolver) NodeComponents(_ context.Context, args PaginatedQue
 // NodeComponentCount is the number of node components that contain the CVE/Vulnerability.
 func (resolver *cVEResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponentCount")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return 0, errors.New("unexpected access to legacy component datastore with postgres enabled")
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())

@@ -2,7 +2,7 @@ package sortfields
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -76,7 +76,7 @@ var (
 )
 
 func init() {
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		SortFieldsMap[search.LifecycleStage] = func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
 				{

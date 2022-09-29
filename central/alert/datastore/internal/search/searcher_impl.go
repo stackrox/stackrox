@@ -12,7 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -138,7 +138,7 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	var filteredSearcher search.Searcher
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// Make the UnsafeSearcher safe.
 		filteredSearcher = alertPosgresSACSearchHelper.FilteredSearcher(unsafeSearcher)
 	} else {

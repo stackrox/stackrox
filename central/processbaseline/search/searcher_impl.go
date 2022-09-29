@@ -10,7 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -33,7 +33,7 @@ type searcherImpl struct {
 }
 
 func (s *searcherImpl) buildIndex(ctx context.Context) error {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil
 	}
 	defer debug.FreeOSMemory()
@@ -66,7 +66,7 @@ func (s *searcherImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Quer
 		results []search.Result
 		err     error
 	)
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		results, err = processBaselinePostgresSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
 	} else {
 		results, err = processBaselineSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
@@ -96,7 +96,7 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	var filteredSearcher search.Searcher
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		filteredSearcher = processBaselinePostgresSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the
 		// UnsafeSearcher safe.
 	} else {

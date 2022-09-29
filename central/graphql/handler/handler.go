@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -22,7 +21,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	queryTracerEnabled    = features.PostgresDatastore.Enabled() && env.PostgresQueryTracer.BooleanSetting()
+	queryTracerEnabled    = env.PostgresDatastoreEnabled.BooleanSetting() && env.PostgresQueryTracer.BooleanSetting()
 	graphQLQueryThreshold = env.PostgresQueryTracerGraphQLThreshold.DurationSetting()
 )
 

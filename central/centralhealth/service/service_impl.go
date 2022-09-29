@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/role"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -50,7 +49,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetUpgradeStatus returns the upgrade status for Central.
 func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v1.GetUpgradeStatusResponse, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// Get Postgres config data
 		_, adminConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {

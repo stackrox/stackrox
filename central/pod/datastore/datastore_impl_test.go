@@ -12,7 +12,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/pod/store/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
@@ -52,7 +52,7 @@ func (suite *PodDataStoreTestSuite) SetupTest() {
 	suite.filter = filter.NewFilter(5, []int{5, 4, 3, 2, 1})
 
 	var err error
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 		suite.storage.EXPECT().GetKeysToIndex(ctx).Return(nil, nil)
 	}
@@ -226,7 +226,7 @@ func (suite *PodDataStoreTestSuite) TestRemovePod() {
 }
 
 func (suite *PodDataStoreTestSuite) TestReconciliationFullReindex() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return
 	}
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(true, nil)
@@ -251,7 +251,7 @@ func (suite *PodDataStoreTestSuite) TestReconciliationFullReindex() {
 }
 
 func (suite *PodDataStoreTestSuite) TestReconciliationPartialReindex() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return
 	}
 	suite.storage.EXPECT().GetKeysToIndex(ctx).Return([]string{"A", "B", "C"}, nil)

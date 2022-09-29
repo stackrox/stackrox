@@ -28,7 +28,7 @@ import (
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -53,7 +53,7 @@ type ImageDataStoreTestSuite struct {
 }
 
 func (suite *ImageDataStoreTestSuite) SetupSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skip dackbox tests if postgres is enabled")
 		suite.T().SkipNow()
 	}
