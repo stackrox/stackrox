@@ -108,19 +108,19 @@ jobs:
         if: env.DRY_RUN == 'false' && steps.check.outputs.open-issues != ''
         run: |
           set -u
-          if ! http_code=$(gh api --silent -X POST \
+          if ! RESPONSE=$(gh api -X POST \
             "repos/${{github.repository}}/milestones" \
             -f "title"="${{needs.variables.outputs.next-milestone}}" \
             2>&1); then
-
-            if grep "HTTP 422" <<< "$http_code"; then
+            if grep "HTTP 422" <<< "$RESPONSE"; then
               echo "Milestone ${{needs.variables.outputs.next-milestone}} already exists." >> $GITHUB_STEP_SUMMARY
             else
-              echo "::error::Couldn't create milestone ${{needs.variables.outputs.next-milestone}}: $http_code"
+              echo "::error::Couldn't create milestone ${{needs.variables.outputs.next-milestone}}: $RESPONSE"
               exit 1
             fi
           else
-            echo "Milestone ${{needs.variables.outputs.next-milestone}} has been created." >> $GITHUB_STEP_SUMMARY
+            NEXT_MILESTONE_URL=$(echo ${RESPONSE} | jq -r '.html_url')
+            echo ":arrow_right: Close the newly created [milestone ${{ needs.variables.outputs.next-milestone }}](${NEXT_MILESTONE_URL}) when ready, or delete it when finishing the release." >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Move open PRs
