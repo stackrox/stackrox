@@ -1,5 +1,5 @@
 import * as api from '../../constants/apiEndpoints';
-import { selectors, url } from '../../constants/PoliciesPagePatternFly';
+import { selectors, url } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import { generateNameWithDate } from '../../helpers/formHelpers';
 import {
@@ -10,7 +10,7 @@ import {
     searchPolicies,
     visitPolicies,
     visitPoliciesFromLeftNav,
-} from '../../helpers/policiesPatternFly';
+} from '../../helpers/policies';
 import {
     assertSortedItems,
     callbackForPairOfAscendingPolicySeverityValuesFromElements,

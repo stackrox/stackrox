@@ -12,7 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -44,7 +44,7 @@ type vulnsStore interface {
 func Singleton() CVEUnsuppressLoop {
 
 	once.Do(func() {
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			// TODO: Attach cluster CVE store.
 			loop = NewLoop(imageCVEDataStore.Singleton(), nodeCVEDataStore.Singleton(), clusterCVEDataStore.Singleton())
 		} else {
@@ -130,7 +130,7 @@ func getCVEsWithExpiredSuppressState(cveStore vulnsStore) ([]string, error) {
 		return nil, err
 	}
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		cves := make([]string, 0, len(results))
 		for _, res := range results {
 			cve, _ := cve.IDToParts(res.ID)

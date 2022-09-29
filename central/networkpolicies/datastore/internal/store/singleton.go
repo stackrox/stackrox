@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -15,7 +15,7 @@ var (
 )
 
 func initialize() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		as = postgres.New(globaldb.GetPostgres())
 	} else {
 		as = bolt.New(globaldb.GetGlobalDB())

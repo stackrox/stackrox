@@ -1,5 +1,5 @@
 import * as api from '../constants/apiEndpoints';
-import { selectors, url as policiesUrl } from '../constants/PoliciesPagePatternFly';
+import { selectors, url as policiesUrl } from '../constants/PoliciesPage';
 import { visitFromLeftNavExpandable } from './nav';
 import { visit } from './visit';
 

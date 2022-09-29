@@ -40,7 +40,7 @@ import (
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -98,7 +98,7 @@ type deploymentDatastoreSACSuite struct {
 
 func (s *deploymentDatastoreSACSuite) SetupSuite() {
 	var err error
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(s.T())
 		s.Require().NotNil(pgtestbase)
 		s.pool = pgtestbase.Pool
@@ -150,7 +150,7 @@ func (s *deploymentDatastoreSACSuite) SetupSuite() {
 }
 
 func (s *deploymentDatastoreSACSuite) TearDownSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pool.Close()
 	} else {
 		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
@@ -183,7 +183,7 @@ func (s *deploymentDatastoreSACSuite) deleteNamespace(namespaceID string) {
 }
 
 func (s *deploymentDatastoreSACSuite) waitForIndexing() {
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		// Some cases need to wait for dackbox indexing to complete.
 		doneSignal := concurrency.NewSignal()
 		s.indexQ.PushSignal(&doneSignal)
@@ -421,7 +421,7 @@ func (s *deploymentDatastoreSACSuite) TestGetDeploymentIDs() {
 			fetchedIDs, getErr := s.datastore.GetDeploymentIDs(ctx)
 			s.Require().NoError(getErr)
 			// Note: the behaviour change may impact policy dry runs if the requester does not have full namespace scope.
-			if features.PostgresDatastore.Enabled() {
+			if env.PostgresDatastoreEnabled.BooleanSetting() {
 				s.ElementsMatch(fetchedIDs, c.ExpectedDeploymentIDs)
 			} else {
 				s.ElementsMatch(fetchedIDs, pushedIDs)

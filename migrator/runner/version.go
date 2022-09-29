@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
@@ -75,7 +75,7 @@ func getCurrentSeqNum(databases *types.Databases) (int, error) {
 	// If Rocks and Bolt are passed into this function when Postgres is enabled, that means
 	// we are in a state where we need to migrate Rocks to Postgres.  In this case the Rocks
 	// sequence number will take precedence and drive the migrations
-	if features.PostgresDatastore.Enabled() && databases.RocksDB == nil && databases.BoltDB == nil {
+	if env.PostgresDatastoreEnabled.BooleanSetting() && databases.RocksDB == nil && databases.BoltDB == nil {
 		return getCurrentSeqNumPostgres(databases)
 	}
 
@@ -115,7 +115,7 @@ func updateVersion(databases *types.Databases, newVersion *storage.Version) erro
 	// NOTE:  The +1 is because CurrentDBVersionSeqNumWithoutPostgres returns with a -1 that
 	// is needed for the migrations themselves.
 	if int(newVersion.GetSeqNum()) > migrations.CurrentDBVersionSeqNumWithoutPostgres()+1 {
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			migrations.SetVersionPostgres(databases.PostgresDB, newVersion)
 			return nil
 		}

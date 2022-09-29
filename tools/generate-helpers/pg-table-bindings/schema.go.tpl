@@ -82,7 +82,7 @@ var (
         {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"column:{{$field.ColumnName|lowerCase}};type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{if $field.Options.Index}};index:{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}},type:{{$field.Options.Index}}{{end}}"`
     {{- end}}
     {{- range $idx, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
-        {{$rel.OtherSchema.Table|upperCamelCase}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"foreignKey:{{ (concatWith $rel.ThisSchemaColumnNames ",") | lowerCase}};references:{{ (concatWith $rel.OtherSchemaColumnNames ",")|lowerCase}};belongsTo;constraint:OnDelete:{{ if $rel.RestrictDelete }}RESTRICT{{ else }}CASCADE{{ end }}"`
+        {{$rel.OtherSchema.Table|upperCamelCase}}{{if $rel.CycleReference}}Cycle{{end}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"foreignKey:{{ (concatWith $rel.ThisSchemaColumnNames ",") | lowerCase}};references:{{ (concatWith $rel.OtherSchemaColumnNames ",")|lowerCase}};belongsTo;constraint:OnDelete:{{ if $rel.RestrictDelete }}RESTRICT{{ else }}CASCADE{{ end }}"`
     {{- end}}
     }
     {{- range $idx, $child := $schema.Children }}

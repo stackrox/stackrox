@@ -18,6 +18,8 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import { collectionsPath } from 'routePaths';
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import { getCollectionCount, listCollections } from 'services/CollectionsService';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import CollectionsTable from './CollectionsTable';
 
@@ -31,13 +33,19 @@ const sortOptions = {
 };
 
 function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTablePageProps) {
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const pagination = useURLPagination(20);
+    const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams } = useURLSort(sortOptions);
-    const listQuery = useCallback(() => listCollections({}, sortOption, 0, 20), [sortOption]);
+
+    const listQuery = useCallback(
+        () => listCollections(searchFilter, sortOption, page - 1, perPage),
+        [searchFilter, sortOption, page, perPage]
+    );
     const { data: listData, loading: listLoading, error: listError } = useRestQuery(listQuery);
 
-    const countQuery = useCallback(() => getCollectionCount({}), []);
+    const countQuery = useCallback(() => getCollectionCount(searchFilter), [searchFilter]);
     const { data: countData, loading: countLoading, error: countError } = useRestQuery(countQuery);
-
     const isDataAvailable = typeof listData !== 'undefined' && typeof countData !== 'undefined';
     const isLoading = !isDataAvailable && (listLoading || countLoading);
     const loadError = listError || countError;
@@ -65,6 +73,13 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
             <PageSection>
                 <CollectionsTable
                     collections={listData}
+                    collectionsCount={countData}
+                    pagination={pagination}
+                    searchFilter={searchFilter}
+                    setSearchFilter={(value) => {
+                        setPage(1);
+                        setSearchFilter(value);
+                    }}
                     getSortParams={getSortParams}
                     hasWriteAccess={hasWriteAccessForCollections}
                 />

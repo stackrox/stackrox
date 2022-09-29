@@ -27,7 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -64,7 +64,7 @@ func New(nsStore store.Store, graphProvider graph.Provider, indexer index.Indexe
 		namespaceRanker: namespaceRanker,
 		idMapStorage:    idMapStorage,
 	}
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		ds.formattedSearcher = formatSearcherV2(indexer, namespaceRanker)
 	} else {
 		ds.formattedSearcher = formatSearcher(indexer, graphProvider, namespaceRanker)
@@ -143,7 +143,7 @@ func (b *datastoreImpl) buildIndex(ctx context.Context) error {
 	if b.idMapStorage != nil {
 		b.idMapStorage.OnNamespaceAdd(namespaces...)
 	}
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		log.Info("[STARTUP] Successfully initialized namespaces")
 		return nil
 	}

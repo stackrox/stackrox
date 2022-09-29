@@ -65,6 +65,7 @@ import (
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -236,7 +237,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 
 	var pool *pgxpool.Pool
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool = globaldb.GetPostgresTest(t)
 	}
 	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
@@ -284,7 +285,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
 	var pool *pgxpool.Pool
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool = globaldb.GetPostgresTest(t)
 	}
 	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())

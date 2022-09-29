@@ -15,7 +15,7 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -33,7 +33,7 @@ func initialize() {
 	var keyFence concurrency.KeyFence
 	var bleveIndex, processIndex bleve.Index
 	var pool *pgxpool.Pool
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool = globaldb.GetPostgres()
 	} else {
 		dackBox = globalDackBox.GetGlobalDackBox()

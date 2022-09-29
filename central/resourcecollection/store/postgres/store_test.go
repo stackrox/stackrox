@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -30,9 +30,9 @@ func TestCollectionsStore(t *testing.T) {
 
 func (s *CollectionsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
@@ -103,6 +103,7 @@ func (s *CollectionsStoreSuite) TestStore() {
 	for i := 0; i < 200; i++ {
 		resourceCollection := &storage.ResourceCollection{}
 		s.NoError(testutils.FullInit(resourceCollection, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		resourceCollection.EmbeddedCollections[0].Id = resourceCollection.Id
 		resourceCollections = append(resourceCollections, resourceCollection)
 	}
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -82,7 +82,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 	}
 
 	currClone, currExists := d.cloneMap[CurrentClone]
-	if !currExists && !features.PostgresDatastore.Enabled() {
+	if !currExists && !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return errors.Errorf("Cannot find database at %s", filepath.Join(d.basePath, CurrentClone))
 	}
 	if currExists && (currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0) {
@@ -149,7 +149,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, error) {
 
 	currClone, currExists := d.cloneMap[CurrentClone]
 	// If our focus is Postgres, and there is no Rocks current, then we can ignore Rocks
-	if !currExists && features.PostgresDatastore.Enabled() {
+	if !currExists && env.PostgresDatastoreEnabled.BooleanSetting() {
 		log.Warn("cannot find current clone for RocksDB")
 		return "", "", nil
 	}
@@ -257,7 +257,7 @@ func (d *dbCloneManagerImpl) rollbackEnabled() bool {
 	currClone, currExists := d.cloneMap[CurrentClone]
 	if !currExists {
 		// If our focus is Postgres, just log the error and ignore Rocks as that likely means no PVC
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			log.Warn("cannot find current clone for RocksDB")
 		} else {
 			utils.Should(errors.New("cannot find current clone"))
@@ -272,7 +272,7 @@ func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 	currClone, currExists := d.cloneMap[CurrentClone]
 	if !currExists {
 		// If our focus is Postgres, just log the error and ignore Rocks
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			log.Warn("cannot find current clone for RocksDB")
 		} else {
 			utils.Should(errors.New("cannot find current clone"))
@@ -310,7 +310,7 @@ func (d *dbCloneManagerImpl) GetCurrentCloneCreationTime() time.Time {
 	path := d.getPath(CurrentClone)
 	fileInfo, err := os.Lstat(path)
 	if err != nil {
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			return time.Time{}
 		}
 		log.Panicf("Unable to find current DB path: %v", err)

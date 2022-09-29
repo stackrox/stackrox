@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processbaseline/index/mappings"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -45,7 +45,7 @@ type processBaselineSACTestSuite struct {
 
 func (s *processBaselineSACTestSuite) SetupSuite() {
 	var err error
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(s.T())
 		s.Require().NotNil(pgtestbase)
 		s.pool = pgtestbase.Pool
@@ -68,7 +68,7 @@ func (s *processBaselineSACTestSuite) SetupSuite() {
 }
 
 func (s *processBaselineSACTestSuite) TearDownSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pool.Close()
 	} else {
 		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))

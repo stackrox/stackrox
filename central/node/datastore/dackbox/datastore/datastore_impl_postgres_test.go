@@ -26,7 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/cve"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -60,9 +60,9 @@ type NodePostgresDataStoreTestSuite struct {
 
 func (suite *NodePostgresDataStoreTestSuite) SetupSuite() {
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	suite.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skip postgres tests")
 		suite.T().SkipNow()
 	}

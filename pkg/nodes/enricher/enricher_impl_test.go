@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -148,10 +148,10 @@ func TestEnricherFlow(t *testing.T) {
 
 func TestEnricherFlowWithPostgres(t *testing.T) {
 	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	defer envIsolator.RestoreAll()
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		t.Skip("Skip postgres store tests")
 		t.SkipNow()
 	}
@@ -347,10 +347,10 @@ func TestFillScanStats(t *testing.T) {
 
 func TestFillScanStatsWithPostgres(t *testing.T) {
 	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	defer envIsolator.RestoreAll()
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		t.Skip("Skip postgres store tests")
 		t.SkipNow()
 	}
