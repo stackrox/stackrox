@@ -105,12 +105,12 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperti
 
 func (s *serviceImpl) BatchUpdate(ctx context.Context, req *v1.GroupBatchUpdateRequest) (*v1.Empty, error) {
 	for _, group := range req.GetPreviousGroups() {
-		if err := datastore.ValidateGroup(group, true); err != nil {
+		if err := datastore.ValidateGroup(group); err != nil {
 			return nil, errox.InvalidArgs.CausedBy(err)
 		}
 	}
 	for _, group := range req.GetRequiredGroups() {
-		if err := datastore.ValidateGroup(group, false); err != nil {
+		if err := datastore.ValidateGroup(group); err != nil {
 			return nil, errox.InvalidArgs.CausedBy(err)
 		}
 	}

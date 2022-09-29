@@ -16,11 +16,11 @@ const groupIDPrefix = "io.stackrox.authz.group."
 // A group must fulfill the following:
 //	- have valid properties (validated via ValidateProps).
 //	- have a role name set.
-func ValidateGroup(group *storage.Group, requireID bool) error {
+func ValidateGroup(group *storage.Group) error {
 	if group.GetProps() == nil {
 		return errors.New("group properties must be set")
 	}
-	if err := ValidateProps(group.GetProps(), requireID); err != nil {
+	if err := ValidateProps(group.GetProps()); err != nil {
 		return errors.Wrap(err, "invalid group properties")
 	}
 	if group.GetRoleName() == "" {
@@ -33,10 +33,8 @@ func ValidateGroup(group *storage.Group, requireID bool) error {
 // A property must fulfill the following:
 //	- have an auth provider ID.
 // 	- if no key is given, no value shall be given.
-func ValidateProps(props *storage.GroupProperties, requireID bool) error {
-	if requireID && props.GetId() == "" {
-		return errors.Errorf("group ID must be set in {%s}", proto.MarshalTextString(props))
-	}
+func ValidateProps(props *storage.GroupProperties) error {
+	// TODO(ROX-11592): Once retrieving properties by their ID is fully deprecated, require IDs and validate this here.
 	if props.GetAuthProviderId() == "" {
 		return errors.Errorf("authprovider ID must be set in {%s}", proto.MarshalTextString(props))
 	}

@@ -88,15 +88,15 @@ func (s *groupDataStoreTestSuite) TestEnforcesGet() {
 func (s *groupDataStoreTestSuite) TestAllowsGet() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil)
 
-	_, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
+	_, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: "1"})
 	s.NoError(err, "expected no error trying to read with permissions")
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(2)
 
-	_, err = s.dataStore.Get(s.hasWriteCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
+	_, err = s.dataStore.Get(s.hasWriteCtx, &storage.GroupProperties{Id: "1"})
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	_, err = s.dataStore.Get(s.hasWriteAccessCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
+	_, err = s.dataStore.Get(s.hasWriteAccessCtx, &storage.GroupProperties{Id: "1"})
 	s.NoError(err, "expected no error trying to read with Access permissions")
 }
 
@@ -105,23 +105,38 @@ func (s *groupDataStoreTestSuite) TestGet() {
 	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil)
 
 	// Test that can fetch by id
-	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId(),
-		AuthProviderId: group.GetProps().GetAuthProviderId()})
+	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId()})
 	s.NoError(err)
 	s.Equal(group, g)
 }
 
-func (s *groupDataStoreTestSuite) TestGetWithoutID() {
-	group := fixtures.GetGroup()
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Times(0)
+// TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
+func (s *groupDataStoreTestSuite) TestGetFetchesByProps() {
+	groups := fixtures.GetGroups()
+	expectedGroup := groups[6]
+	expectedProps := expectedGroup.GetProps()
+	expectedProps.Id = "" // clear out the id for the purposes of this test
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(groups))
 
-	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{
-		Id:             "",
-		Traits:         nil,
-		AuthProviderId: group.GetProps().GetAuthProviderId(),
-		Key:            group.GetProps().GetKey(),
-		Value:          group.GetProps().GetValue(),
-	})
+	// Test that can fetch by props
+	g, err := s.dataStore.Get(s.hasReadCtx, expectedGroup.GetProps())
+	s.NoError(err)
+	s.Equal(expectedGroup, g)
+}
+
+// TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
+func (s *groupDataStoreTestSuite) TestGetByPropsErrorsIfAmbiguous() {
+	storedGroups := []*storage.Group{
+		fixtures.GetGroups()[6],
+		fixtures.GetGroups()[6],
+	}
+	// Clear out the id for each groups to make them all share the same props
+	storedGroups[0].GetProps().Id = ""
+	storedGroups[1].GetProps().Id = ""
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(storedGroups))
+
+	// Test that fetching by props when ambiguous will result in error
+	g, err := s.dataStore.Get(s.hasReadCtx, storedGroups[0].GetProps())
 	s.Error(err)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(g)
@@ -322,6 +337,26 @@ func (s *groupDataStoreTestSuite) TestAllowsUpdate() {
 	s.NoError(err, "expected no error trying to write with Access permissions")
 }
 
+// TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
+func (s *groupDataStoreTestSuite) TestCanUpdateGroupByProps() {
+	group := fixtures.GetGroups()[6]
+
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc([]*storage.Group{group})) // Make sure it can find the group
+
+	updatedGroup := group.Clone()
+	updatedGroup.GetProps().Id = "" // no id
+	updatedGroup.RoleName = updatedGroup.GetRoleName() + "-updated"
+
+	expectedGroup := updatedGroup.Clone()
+	expectedGroup.GetProps().Id = group.GetProps().GetId()
+
+	// It should upsert with the updated value
+	s.storage.EXPECT().Upsert(gomock.Any(), expectedGroup).Return(nil)
+	s.expectGet(1, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
+
+	s.NoError(s.dataStore.Update(s.hasWriteAccessCtx, updatedGroup.Clone(), false))
+}
+
 func (s *groupDataStoreTestSuite) TestEnforcesMutate() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Times(0)
 	s.storage.EXPECT().DeleteMany(gomock.Any(), gomock.Any()).Times(0)
@@ -390,6 +425,30 @@ func (s *groupDataStoreTestSuite) TestMutate() {
 	)
 
 	s.NoError(s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{toRemove}, []*storage.Group{toUpdate}, toAdd, false))
+}
+
+// TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
+func (s *groupDataStoreTestSuite) TestCanMutateGroupByProps() {
+	groups := fixtures.GetGroups()
+
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(groups)).Times(2)
+
+	updatedGroup := groups[6].Clone()
+	updatedGroup.GetProps().Id = "" // no id
+	updatedGroup.RoleName = updatedGroup.GetRoleName() + "-updated"
+
+	expectedGroup := updatedGroup.Clone()
+	expectedGroup.GetProps().Id = groups[6].GetProps().GetId()
+
+	removedGroup := groups[3].Clone()
+	removedGroup.GetProps().Id = ""
+
+	// It should upsert with the updated value
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{expectedGroup}).Return(nil)
+	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{groups[3].GetProps().GetId()}).Return(nil)
+	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
+
+	s.NoError(s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{removedGroup.Clone()}, []*storage.Group{updatedGroup.Clone()}, []*storage.Group{}, false))
 }
 
 func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() {
@@ -605,6 +664,23 @@ func (s *groupDataStoreTestSuite) TestAllowsRemove() {
 
 func (s *groupDataStoreTestSuite) expectGet(times int, group *storage.Group) *gomock.Call {
 	return s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(group, true, nil).Times(times)
+}
+
+// TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
+func (s *groupDataStoreTestSuite) TestRemoveDeletesByProps() {
+	groups := fixtures.GetGroups()
+	expectedProps := groups[6].GetProps().Clone()
+	expectedProps.Id = "" // clear out the id for the purposes of this test
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(2).DoAndReturn(walkMockFunc(groups))
+
+	// Test that removing when no groups match expected props fails
+	s.Error(s.dataStore.Remove(s.hasWriteAccessCtx, &storage.GroupProperties{AuthProviderId: "i-don't-exist"}, false))
+
+	// Test that can remove by props only
+	s.expectGet(1, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
+	s.storage.EXPECT().Delete(gomock.Any(), groups[6].GetProps().GetId())
+	err := s.dataStore.Remove(s.hasWriteAccessCtx, expectedProps, false)
+	s.NoError(err)
 }
 
 func (s *groupDataStoreTestSuite) TestValidateGroup() {
