@@ -23,7 +23,7 @@ var (
 
 // Store is a store for network graph external sources.
 type Store interface {
-	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream
+	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList]
 	LookupByNetwork(ipNet pkgNet.IPNetwork) *storage.NetworkEntityInfo
 	LookupByID(id string) *storage.NetworkEntityInfo
 }
@@ -47,7 +47,7 @@ type handlerImpl struct {
 	// to 0, this gives us highest-smallest to lowest-largest subnet ordering. e.g. 127.0.0.0/8, 10.10.0.0/24,
 	// 10.0.0.0/24, 10.0.0.0/8. This list can be used to lookup the smallest subnet containing an IP address.
 	lastSeenList             *sensor.IPNetworkList
-	ipNetworkListProtoStream *concurrency.ValueStream
+	ipNetworkListProtoStream *concurrency.ValueStream[*sensor.IPNetworkList]
 
 	lock sync.Mutex
 }
@@ -160,7 +160,7 @@ func networkListsEqual(a, b *sensor.IPNetworkList) bool {
 		sliceutils.ByteEqual(a.GetIpv6Networks(), b.GetIpv6Networks())
 }
 
-func (h *handlerImpl) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream {
+func (h *handlerImpl) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList] {
 	return h.ipNetworkListProtoStream
 }
 
