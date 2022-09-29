@@ -1,6 +1,6 @@
 package utils
 
-// InvertSlice inverts an slice, returning a map mapping each element in the slice to the _last_ index it occurs at.
+// InvertSlice inverts a slice, returning a map mapping each element in the slice to the _last_ index it occurs at.
 func InvertSlice[T comparable](slice []T) map[T]int {
 	result := make(map[T]int, len(slice))
 	for i, v := range slice {
