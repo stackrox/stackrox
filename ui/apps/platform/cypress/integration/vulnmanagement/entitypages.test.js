@@ -15,7 +15,7 @@ describe('Entities single views', () => {
 
     it('related entities tile links should unset search params upon navigation', () => {
         const entitiesKey1 = 'clusters';
-        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
+        const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
 
         visitVulnerabilityManagementEntities(entitiesKey1);
 
@@ -229,7 +229,7 @@ describe('Entities single views', () => {
     });
 
     it('should show a CVE description in overview when coming from cve list', () => {
-        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
+        const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
         const entitiesKey = usingVMUpdates ? 'image-cves' : 'cves';
         visitVulnerabilityManagementEntities(entitiesKey);
 
@@ -267,7 +267,7 @@ describe('Entities single views', () => {
     });
 
     it('should show the active state in Component overview when scoped under a deployment', () => {
-        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
+        const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
         const entitiesKey1 = 'deployments';
         const entitiesKey2 = usingVMUpdates ? 'image-components' : 'components';
         visitVulnerabilityManagementEntities(entitiesKey1);
@@ -304,7 +304,7 @@ describe('Entities single views', () => {
 
     it('should show the active state in the fixable CVES widget for a single deployment', () => {
         const entitiesKey = 'deployments';
-        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
+        const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
 
         const fixableCvesFixture = usingVMUpdates
             ? 'vulnerabilities/fixableCvesForEntity.json'

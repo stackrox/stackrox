@@ -34,7 +34,7 @@ export const defaultNamespaceSort = [
 
 const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const fragmentToUse = isFrontendVMUpdatesEnabled
         ? NAMESPACE_LIST_FRAGMENT_UPDATED

@@ -29,7 +29,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
     const [isExporting, setIsExporting] = useState(false);
     const { isDarkMode } = useTheme();
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const useCaseEntityMap = getUseCaseEntityMap();
     if (showVmUpdates) {

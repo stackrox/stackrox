@@ -73,7 +73,7 @@ const processData = (data, workflowState, showVMUpdates) => {
 
 const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
 
