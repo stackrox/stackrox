@@ -25,7 +25,7 @@ const (
 	// DefaultCentralDBPVCName is the default name for Central DB PVC
 	DefaultCentralDBPVCName = "central-db"
 
-	pvcAnnotationKey = "target.pvc.stackrox.io"
+	pvcTargetLabelKey = "target.pvc.stackrox.io"
 )
 
 // PVCTarget specifies which deployment should attach the PVC
@@ -175,8 +175,8 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(r.centralObj, r.centralObj.GroupVersionKind()),
 			},
-			Annotations: map[string]string{
-				pvcAnnotationKey: string(r.target),
+			Labels: map[string]string{
+				pvcTargetLabelKey: string(r.target),
 			},
 		},
 
@@ -238,6 +238,7 @@ func parseResourceQuantityOr(qStrPtr *string, d resource.Quantity) (resource.Qua
 
 func (r *reconcilePVCExtensionRun) getOwnedPVC() ([]*corev1.PersistentVolumeClaim, error) {
 	pvcList := &corev1.PersistentVolumeClaimList{}
+
 	if err := r.client.List(r.ctx, pvcList, ctrlClient.InNamespace(r.namespace)); err != nil {
 		return nil, errors.Wrapf(err, "receiving list PVC list for %s %s", r.centralObj.GroupVersionKind(), r.centralObj.GetName())
 	}
@@ -264,7 +265,7 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentTarget() (*corev1
 	filtered := make([]*corev1.PersistentVolumeClaim, 0, len(pvcList))
 	for _, pvc := range pvcList {
 		// If the target annotation is empty, default to Central for backwards compatibility
-		if val, ok := pvc.Annotations[pvcAnnotationKey]; !ok && r.target == PVCTargetCentral {
+		if val, ok := pvc.Labels[pvcTargetLabelKey]; !ok && r.target == PVCTargetCentral {
 			filtered = append(filtered, pvc)
 		} else if val == string(r.target) {
 			filtered = append(filtered, pvc)

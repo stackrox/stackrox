@@ -114,10 +114,10 @@ func TestReconcilePVCExtension(t *testing.T) {
 		},
 	})
 	centralTargetAnnotations := map[string]string{
-		pvcAnnotationKey: string(PVCTargetCentral),
+		pvcTargetLabelKey: string(PVCTargetCentral),
 	}
 	centralDBTargetAnnotations := map[string]string{
-		pvcAnnotationKey: string(PVCTargetCentralDB),
+		pvcTargetLabelKey: string(PVCTargetCentralDB),
 	}
 
 	changedPVCConfigCentralDB := makeCentral(nil)
