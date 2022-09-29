@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -196,13 +197,14 @@ func main() {
 	}()
 
 	cli := sensor.NewComplianceServiceClient(conn)
+	cliNode := sensor.NewComplianceServiceClient(conn)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = metadata.AppendToOutgoingContext(ctx, "rox-compliance-nodename", getNode())
 
 	stoppedSig := concurrency.NewSignal()
 	go manageStream(ctx, cli, &stoppedSig)
-	go manageNodescanLoop(ctx, cli)
+	go manageNodescanLoop(ctx, cliNode)
 
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
@@ -221,6 +223,7 @@ func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient)
 		case <-ctx.Done():
 			return
 		default:
+			fmt.Println("init stream in Nodescan loop")
 			client, _, err := initializeStream(ctx, cli)
 			if err != nil {
 				if ctx.Err() != nil {
@@ -236,6 +239,7 @@ func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient)
 }
 
 func runTimedScan(client sensor.ComplianceService_CommunicateClient) error {
+	fmt.Println("runTimedScan called")
 	f := func() { scanNode(client) }
 	timer := time.AfterFunc(10*time.Second, f)
 	defer timer.Stop()
@@ -244,7 +248,7 @@ func runTimedScan(client sensor.ComplianceService_CommunicateClient) error {
 }
 
 func scanNode(client sensor.ComplianceService_CommunicateClient) error {
-	log.Warnf("Sending data to sensor!")
+	fmt.Println("Sending data to sensor!")
 	return client.Send(&sensor.MsgFromCompliance{
 		Node: getNode(),
 		Msg: &sensor.MsgFromCompliance_NodeScan{
@@ -262,7 +266,6 @@ func scanNode(client sensor.ComplianceService_CommunicateClient) error {
 								SetFixedBy: &storage.NodeVulnerability_FixedBy{
 									FixedBy: "4.2.1",
 								},
-								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
