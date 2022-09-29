@@ -14,7 +14,7 @@ func TestReverseInPlace(t *testing.T) {
 
 func TestReversed(t *testing.T) {
 	in := []string{"foo", "bar", "baz"}
-	out := Reversed(in).([]string)
+	out := Reversed(in)
 	assert.Equal(t, []string{"baz", "bar", "foo"}, out)
 	assert.Equal(t, []string{"foo", "bar", "baz"}, in)
 }
