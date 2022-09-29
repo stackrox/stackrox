@@ -85,6 +85,8 @@ var (
         {{if $field.Options.Index}};{{- /**/ -}}
             index:{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}},{{- /**/ -}}
             type:{{$field.Options.Index}}{{- /**/ -}}
+        {{else if $field|isSacScoping }};{{- /**/ -}}
+            index:sac_filter,type:btree{{- /**/ -}}
         {{end}}{{- /**/ -}}
         "`
     {{- end}}

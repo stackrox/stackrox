@@ -115,6 +115,7 @@ var funcMap = template.FuncMap{
 	"storageToResource":            storageToResource,
 	"concatWith":                   concatWith,
 	"searchFieldNameInOtherSchema": searchFieldNameInOtherSchema,
+	"isSacScoping":                 isSacScoping,
 	"pluralType": func(s string) string {
 		if s[len(s)-1] == 'y' {
 			return fmt.Sprintf("%sies", strings.TrimSuffix(s, "y"))
