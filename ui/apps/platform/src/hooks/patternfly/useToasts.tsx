@@ -5,7 +5,7 @@ export type AlertVariantType = 'default' | 'info' | 'success' | 'danger' | 'warn
 export type Toast = {
     title: string;
     variant: AlertVariantType;
-    key: number;
+    key: string;
     children?: ReactNode;
 };
 
@@ -19,7 +19,7 @@ function useToasts(): UseToasts {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
     function getUniqueId() {
-        return new Date().getTime() + Math.random();
+        return `${new Date().toISOString()} ${Math.random()}`;
     }
 
     function addToast(title, variant = 'default' as AlertVariantType, children) {
