@@ -41,7 +41,7 @@ const (
 type ComplianceRunMetadata struct {
 	RunId           string     `gorm:"column:runid;type:varchar;primaryKey"`
 	StandardId      string     `gorm:"column:standardid;type:varchar"`
-	ClusterId       string     `gorm:"column:clusterid;type:varchar"`
+	ClusterId       string     `gorm:"column:clusterid;type:varchar;index:sac_filter,type:btree"`
 	FinishTimestamp *time.Time `gorm:"column:finishtimestamp;type:timestamp"`
 	Serialized      []byte     `gorm:"column:serialized;type:bytea"`
 }
