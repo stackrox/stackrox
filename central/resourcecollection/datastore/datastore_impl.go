@@ -26,12 +26,12 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.searcher.Count(ctx, q)
 }
 
-func (ds *datastoreImpl) SearchCollections(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+func (ds *datastoreImpl) SearchCollections(ctx context.Context, q *v1.Query) ([]*storage.ResourceCollection, error) {
 	return ds.searcher.SearchCollections(ctx, q)
 }
 
-func (ds *datastoreImpl) SearchRawCollections(ctx context.Context, q *v1.Query) ([]*storage.ResourceCollection, error) {
-	return ds.searcher.SearchRawCollections(ctx, q)
+func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	return ds.searcher.SearchResults(ctx, q)
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error) {

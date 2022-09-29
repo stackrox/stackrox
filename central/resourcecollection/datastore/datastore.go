@@ -19,8 +19,8 @@ import (
 // DataStore is a wrapper around a store that provides search functionality
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
-	SearchCollections(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawCollections(ctx context.Context, q *v1.Query) ([]*storage.ResourceCollection, error)
+	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
+	SearchCollections(ctx context.Context, q *v1.Query) ([]*storage.ResourceCollection, error)
 
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error)
