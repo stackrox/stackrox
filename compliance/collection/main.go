@@ -203,6 +203,7 @@ func main() {
 	ctx = metadata.AppendToOutgoingContext(ctx, "rox-compliance-nodename", getNode())
 
 	stoppedSig := concurrency.NewSignal()
+
 	go manageStream(ctx, cli, &stoppedSig)
 	go manageNodescanLoop(ctx, cliNode)
 
@@ -218,19 +219,18 @@ func main() {
 }
 
 func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient) {
+	// init stream
+	client, _, err := initializeStream(ctx, cli)
+	if err != nil {
+		log.Fatalf("error initializing stream to sensor: %v", err)
+	}
+	t := time.NewTicker(10 * time.Second)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		default:
-			fmt.Println("init stream in Nodescan loop")
-			client, _, err := initializeStream(ctx, cli)
-			if err != nil {
-				if ctx.Err() != nil {
-					continue
-				}
-				log.Fatalf("error initializing stream to sensor: %v", err)
-			}
+		case <-t.C:
+			fmt.Println("enter in Nodescan loop")
 			if err := runTimedScan(client); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
@@ -240,11 +240,7 @@ func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient)
 
 func runTimedScan(client sensor.ComplianceService_CommunicateClient) error {
 	fmt.Println("runTimedScan called")
-	f := func() { scanNode(client) }
-	timer := time.AfterFunc(10*time.Second, f)
-	defer timer.Stop()
-	time.Sleep(5 * time.Second)
-	return nil
+	return scanNode(client)
 }
 
 func scanNode(client sensor.ComplianceService_CommunicateClient) error {

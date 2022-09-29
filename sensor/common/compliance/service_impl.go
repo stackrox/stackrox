@@ -2,6 +2,7 @@ package compliance
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -142,7 +143,10 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		case *sensor.MsgFromCompliance_AuditEvents:
 			s.auditEvents <- t.AuditEvents
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
+		case *sensor.MsgFromCompliance_NodeScan:
+			fmt.Println("NodeScan received %v", msg)
 		}
+
 	}
 }
 
