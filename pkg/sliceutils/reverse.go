@@ -1,7 +1,6 @@
 package sliceutils
 
 import (
-	"fmt"
 	"reflect"
 )
 
@@ -15,25 +14,18 @@ func reverseInPlace(sliceVal reflect.Value, l int) {
 }
 
 // ReverseInPlace reverses the elements of the given slice in-place.
-func ReverseInPlace(slice interface{}) {
-	val := reflect.ValueOf(slice)
-	if val.Kind() != reflect.Slice {
-		panic(fmt.Errorf("value is not of slice kind but %v", val.Kind()))
+func ReverseInPlace[T any](slice []T) {
+	l := len(slice)
+	for i := 0; i < l/2; i++ {
+		slice[i], slice[l-1-i] = slice[l-1-i], slice[i]
 	}
-	l := val.Len()
-	reverseInPlace(val, l)
 }
 
 // Reversed returns a slice that contains the elements of the input slice in reverse order.
-func Reversed(slice interface{}) interface{} {
-	val := reflect.ValueOf(slice)
-	if val.Kind() != reflect.Slice {
-		panic(fmt.Errorf("value is not of slice kind but %v", val.Kind()))
+func Reversed[T any](slice []T) []T {
+	out := make([]T, 0, len(slice))
+	for i := len(slice) - 1; i >= 0; i-- {
+		out = append(out, slice[i])
 	}
-
-	l := val.Len()
-	out := reflect.MakeSlice(val.Type(), l, l)
-	reflect.Copy(out, val)
-	reverseInPlace(out, l)
-	return out.Interface()
+	return out
 }
