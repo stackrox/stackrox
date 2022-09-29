@@ -26,8 +26,8 @@ var (
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
 	Count(ctx context.Context, query *v1.Query) (int, error)
-	SearchCollections(context.Context, *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawCollections(ctx context.Context, query *v1.Query) ([]*storage.ResourceCollection, error)
+	SearchResults(ctx context.Context, query *v1.Query) ([]*v1.SearchResult, error)
+	SearchCollections(context.Context, *v1.Query) ([]*storage.ResourceCollection, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.
