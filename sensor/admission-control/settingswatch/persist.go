@@ -91,10 +91,6 @@ func (p *persister) loadExisting() (*sensor.AdmissionControlSettings, error) {
 func (p *persister) persistCurrent() error {
 	settings := p.settingsStreamIt.Value()
 	if settings == nil {
-		return nil // initial value
-	}
-
-	if settings == nil {
 		if err := os.Remove(settingsPath); err != nil {
 			return errors.Wrapf(err, "removing existing settings path %s", settingsPath)
 		}
