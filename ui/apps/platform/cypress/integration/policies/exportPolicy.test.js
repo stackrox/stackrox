@@ -1,12 +1,12 @@
 import * as api from '../../constants/apiEndpoints';
-import { selectors } from '../../constants/PoliciesPagePatternFly';
+import { selectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     doPolicyPageAction,
     doPolicyRowAction,
     visitPolicies,
     visitPolicy,
-} from '../../helpers/policiesPatternFly';
+} from '../../helpers/policies';
 
 describe('Export policy', () => {
     withAuth();
