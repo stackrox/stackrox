@@ -457,10 +457,6 @@ parameters:
     type: string
     # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
     default: "ubuntu-2004:202111-02"
-  docker_version:
-    type: string
-    # https://circleci.com/docs/2.0/building-docker-images/#docker-version
-    default: "20.10.14"
   release_rc_tag_bash_regex:
     type: string
     # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
@@ -921,8 +917,7 @@ commands:
       - check-scanner-and-collector-release-step:
           fail-on-rc: false
 
-      - setup_remote_docker:
-          version: << pipeline.parameters.docker_version >>
+      - setup_remote_docker
       - setup-dep-env:
           docker-login: true
 
@@ -1469,7 +1464,7 @@ commands:
 
       - steps: << parameters.determine-whether-to-run >>
 
-      - setup_remote_docker
+      # - setup_remote_docker
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -2831,8 +2826,7 @@ jobs:
             echo "${TAG}-rcd" > CI_TAG
             make --quiet tag
 
-      - setup_remote_docker:
-          version: << pipeline.parameters.docker_version >>
+      - setup_remote_docker
 
       - restore-go-mod-cache
       - setup-go-build-env
@@ -2892,9 +2886,7 @@ jobs:
     steps:
       - checkout
 
-      - setup_remote_docker:
-          # Default docker server version isn't new enough therefore we're asking for more recent one to enjoy Buildkit.
-          version: << pipeline.parameters.docker_version >>
+      - setup_remote_docker
       - run:
           name: Login to Docker Hub and Quay.io
           command: |
