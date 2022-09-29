@@ -28,7 +28,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 - ROX-11937: The Splunk integration now processes all additional standards of the compliance operator (ocp4-cis & ocp4-cis-node) correctly.
 - ROX-9342: Sensor no longer uses `anyuid` Security Context Constraint (SCC).
-  The default SCC for sensor is now `nonroot[-v2]` or `stackrox-sensor` depending on the settings.
+  The default SCC for sensor is now `restricted[-v2]` or `stackrox-sensor` depending on the settings.
+  Both the `runAsUser` and `fsGroup` for the admission-control and sensor deployments are no longer hardcoded to 4000 on Openshift clusters
+  to allow using the `restricted` and `restricted-v2` SCCs.
 
 ## [3.72.0]
 

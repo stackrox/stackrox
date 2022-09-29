@@ -293,11 +293,6 @@ metadata:
 apiVersion: authorization.openshift.io/v1
 kind: RoleBinding
 metadata:
-  name: sensor-use-nonroot-scc
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
   name: stackrox-admission-control-psp
 ---
 apiVersion: authorization.openshift.io/v1
@@ -314,16 +309,6 @@ apiVersion: authorization.openshift.io/v1
 kind: Role
 metadata:
   name: edit
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: use-anyuid-scc
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: use-nonroot-scc
 ---
 apiVersion: authorization.openshift.io/v1
 kind: Role
@@ -378,11 +363,6 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: sensor-use-nonroot-scc
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
   name: stackrox-admission-control-psp
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -399,16 +379,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: edit
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: use-anyuid-scc
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: use-nonroot-scc
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

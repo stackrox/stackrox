@@ -1,7 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{- if ._rox.env.openshift }}
-{{- if ._rox.system.createSCCs }}
+{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
 
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
@@ -44,52 +43,5 @@ volumes:
   - downwardAPI
   - emptyDir
   - secret
-
----
-
-{{- end }}
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: use-nonroot-scc
-  namespace: {{ ._rox._namespace }}
-  labels:
-    {{- include "srox.labels" (list . "role" "use-nonroot-scc") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
-  annotations:
-    {{- include "srox.annotations" (list . "role" "use-nonroot-scc") | nindent 4 }}
-rules:
-- apiGroups:
-  - security.openshift.io
-  resources:
-  - securitycontextconstraints
-  resourceNames:
-  - nonroot-v2
-  - nonroot
-  verbs:
-  - use
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: sensor-use-nonroot-scc
-  namespace: {{ ._rox._namespace }}
-  labels:
-    {{- include "srox.labels" (list . "rolebinding" "sensor-use-nonroot-scc") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
-  annotations:
-    {{- include "srox.annotations" (list . "rolebinding" "sensor-use-nonroot-scc") | nindent 4 }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: use-nonroot-scc
-subjects:
-- kind: ServiceAccount
-  name: sensor
-  namespace: {{ ._rox._namespace }}
-- kind: ServiceAccount
-  name: sensor-upgrader
-  namespace: {{ ._rox._namespace }}
 
 {{- end }}
