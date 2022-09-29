@@ -25,7 +25,7 @@ issues:
         - forbidigo
     - linters:
         - revive
-      text: "should have a package comment, unless it's in another file for this package"
+      text: "should have a package comment"
     - linters:
         - revive
       text: "should not use dot imports"
