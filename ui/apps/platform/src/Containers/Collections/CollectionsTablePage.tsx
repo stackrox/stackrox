@@ -13,7 +13,6 @@ import {
     Spinner,
     AlertActionCloseButton,
     AlertGroup,
-    AlertVariant,
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
