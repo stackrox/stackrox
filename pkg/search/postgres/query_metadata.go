@@ -119,16 +119,6 @@ var (
 				return val.([]string)
 			},
 		},
-		walker.BigIntArray: {
-			alloc: func() interface{} {
-				out := make([]int64, 0)
-				return &out
-			},
-			printer: func(val interface{}) []string {
-				// The post-transform function does the work of conversion.
-				return val.([]string)
-			},
-		},
 		walker.EnumArray: {
 			alloc: func() interface{} {
 				out := make([]int, 0)

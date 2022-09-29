@@ -17,7 +17,6 @@ const (
 	Integer     DataType = "integer"
 	IntArray    DataType = "intarray"
 	BigInteger  DataType = "biginteger"
-	BigIntArray DataType = "bigintarray"
 )
 
 // DataTypeToSQLType converts the internal representation to SQL
@@ -42,8 +41,6 @@ func DataTypeToSQLType(dataType DataType) string {
 		sqlType = "text[]"
 	case EnumArray, IntArray:
 		sqlType = "int[]"
-	case BigIntArray:
-		sqlType = "bigint[]"
 	case Bytes:
 		sqlType = "bytea"
 	default:

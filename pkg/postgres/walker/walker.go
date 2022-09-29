@@ -367,9 +367,6 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 					schema.AddFieldWithType(field, IntArray, opts)
 				}
 				continue
-			case reflect.Uint32, reflect.Uint64, reflect.Int64:
-				schema.AddFieldWithType(field, BigIntArray, opts)
-				continue
 			}
 
 			childSchema := &Schema{
@@ -395,6 +392,10 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				schema.AddFieldWithType(field, Integer, opts)
 			}
 		case reflect.Uint32, reflect.Uint64, reflect.Int64:
+			// For Uint64, there may be a need to convert to/from int64 because a
+			// BigInteger may not hold a Uint64.  We could switch this type to a numeric but that comes at a
+			// high performance cost.  As of 3.73 we are not using Uint64 except in test something to be mindful of
+			// if we begin to use this type in the future.
 			schema.AddFieldWithType(field, BigInteger, opts)
 		case reflect.Float32, reflect.Float64:
 			schema.AddFieldWithType(field, Numeric, opts)
