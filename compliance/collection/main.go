@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -219,32 +218,28 @@ func main() {
 }
 
 func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient) {
-	// init stream
 	client, _, err := initializeStream(ctx, cli)
 	if err != nil {
 		log.Fatalf("error initializing stream to sensor: %v", err)
 	}
-	t := time.NewTicker(10 * time.Second)
+	t := time.NewTicker(10 * time.Second) // FIXME: Increase time, make this configurable
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-t.C:
-			fmt.Println("enter in Nodescan loop")
-			if err := runTimedScan(client); err != nil {
+			log.Infof("manageNodescanLoop: Calling scanNode")
+			if err := scanNode(client); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
 		}
 	}
 }
 
-func runTimedScan(client sensor.ComplianceService_CommunicateClient) error {
-	fmt.Println("runTimedScan called")
-	return scanNode(client)
-}
-
 func scanNode(client sensor.ComplianceService_CommunicateClient) error {
-	fmt.Println("Sending data to sensor!")
+	// from compliance, we need to get the following info to central
+	// List of components, comprised of Name & Version for each one, plus some metadata like OS, Scan time, etc
+	log.Infof("scanNode: Sending data to sensor.")
 	return client.Send(&sensor.MsgFromCompliance{
 		Node: getNode(),
 		Msg: &sensor.MsgFromCompliance_NodeScan{
@@ -254,7 +249,7 @@ func scanNode(client sensor.ComplianceService_CommunicateClient) error {
 					{
 						Name:    "Fake Component",
 						Version: "4.2",
-						Vulnerabilities: []*storage.NodeVulnerability{
+						/*Vulnerabilities: []*storage.NodeVulnerability{
 							{
 								CveBaseInfo: &storage.CVEInfo{
 									Cve: "CVE-2042-1",
@@ -263,7 +258,7 @@ func scanNode(client sensor.ComplianceService_CommunicateClient) error {
 									FixedBy: "4.2.1",
 								},
 							},
-						},
+						},*/
 					},
 				},
 			},
