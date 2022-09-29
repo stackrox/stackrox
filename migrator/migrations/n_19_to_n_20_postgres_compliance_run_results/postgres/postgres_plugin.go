@@ -302,7 +302,7 @@ func (s *storeImpl) Delete(ctx context.Context, runMetadataRunId string) error {
 		search.NewQueryBuilder().AddDocIDs(runMetadataRunId).ProtoQuery(),
 	)
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // DeleteByQuery removes the objects based on the passed query
@@ -315,7 +315,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 		query,
 	)
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -417,7 +417,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
