@@ -297,6 +297,9 @@ func main() {
 			"Cycle":           embeddedFK != "" && referencedField != "",
 			"EmbeddedFK":      embeddedFK,
 			"ReferencedField": referencedField,
+			"References":     parsedReferences,
+			"SearchScope":    searchScope,
+			"RegisterSchema": !props.ConversionFuncs,
 		}
 
 		// remove any self references
@@ -307,9 +310,10 @@ func main() {
 			}
 		}
 
-		if err := generateSchema(schema, searchCategory, searchScope, filteredReferences, props.SchemaDirectory, !props.ConversionFuncs); err != nil {
+		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
 			return err
 		}
+
 		if props.ConversionFuncs {
 			if err := generateConverstionFuncs(schema, props.SchemaDirectory); err != nil {
 				return err
@@ -376,21 +380,6 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-}
-
-func generateSchema(s *walker.Schema, searchCategory string, searchScope []string, parsedReferences []parsedReference, dir string, registerSchema bool) error {
-	templateMap := map[string]interface{}{
-		"Schema":         s,
-		"SearchCategory": searchCategory,
-		"References":     parsedReferences,
-		"SearchScope":    searchScope,
-		"RegisterSchema": registerSchema,
-	}
-
-	if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(dir, s.Table)); err != nil {
-		return err
-	}
-	return nil
 }
 
 func generateConverstionFuncs(s *walker.Schema, dir string) error {

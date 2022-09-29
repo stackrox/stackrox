@@ -63,7 +63,7 @@ const (
 type Nodes struct {
 	Id                      string            `gorm:"column:id;type:varchar;primaryKey"`
 	Name                    string            `gorm:"column:name;type:varchar"`
-	ClusterId               string            `gorm:"column:clusterid;type:varchar;index:sac_filter,type:btree"`
+	ClusterId               string            `gorm:"column:clusterid;type:varchar;index:sac_filter,type:hash"`
 	ClusterName             string            `gorm:"column:clustername;type:varchar"`
 	Labels                  map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations             map[string]string `gorm:"column:annotations;type:jsonb"`
