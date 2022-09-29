@@ -8,7 +8,7 @@ require github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581
 
 require (
 	cloud.google.com/go/compute v1.10.0
-	cloud.google.com/go/containeranalysis v0.4.0
+	cloud.google.com/go/containeranalysis v0.6.0
 	cloud.google.com/go/storage v1.27.0
 	github.com/BurntSushi/toml v1.2.0
 	github.com/Masterminds/semver v1.5.0
@@ -112,7 +112,7 @@ require (
 	golang.org/x/tools v0.1.12
 	golang.stackrox.io/grpc-http1 v0.2.5
 	google.golang.org/api v0.98.0
-	google.golang.org/genproto v0.0.0-20220920201722-2b89144ce006
+	google.golang.org/genproto v0.0.0-20220926165614-551eb538f295
 	google.golang.org/grpc v1.49.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
