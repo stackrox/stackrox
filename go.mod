@@ -2,10 +2,6 @@ module github.com/stackrox/rox
 
 go 1.18
 
-// CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
-// directive at the bottom of the file as well.
-require github.com/stackrox/scanner v0.0.0-20220929215850-334d4658d5e6
-
 require (
 	cloud.google.com/go/compute v1.10.0
 	cloud.google.com/go/containeranalysis v0.6.0
@@ -94,6 +90,7 @@ require (
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
+	github.com/stackrox/scanner v0.0.0-20220929215850-334d4658d5e6
 	github.com/stretchr/testify v1.8.0
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
@@ -471,12 +468,6 @@ replace (
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
 )
-
-// Circular rox -> scanner -> rox dependency would pull in a long list of past rox versions, cluttering go.sum
-// and the module cache.
-// If you upgrade the scanner version, you MUST change this line as well to refer to the rox version included
-// from the given scanner version.
-exclude github.com/stackrox/rox v0.0.0-20210914215712-9ac265932e28
 
 exclude k8s.io/client-go v12.0.0+incompatible
 
