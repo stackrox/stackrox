@@ -121,7 +121,23 @@ func getEnv(c platform.Central) *translation.ValuesBuilder {
 	return &ret
 }
 
-func getPersistenceValues(p *platform.Persistence) *translation.ValuesBuilder {
+func getCentralDBPersistenceValues(p *platform.DBPersistence) *translation.ValuesBuilder {
+	persistence := translation.NewValuesBuilder()
+	if hostPath := p.GetHostPath(); hostPath != "" {
+		persistence.SetStringValue("hostPath", hostPath)
+	} else {
+		pvcBuilder := translation.NewValuesBuilder()
+		pvcBuilder.SetBoolValue("createClaim", false)
+		if pvc := p.GetPersistentVolumeClaim(); pvc != nil {
+			pvcBuilder.SetString("claimName", pvc.ClaimName)
+		}
+
+		persistence.AddChild("persistentVolumeClaim", &pvcBuilder)
+	}
+	return &persistence
+}
+
+func getCentralPersistenceValues(p *platform.Persistence) *translation.ValuesBuilder {
 	persistence := translation.NewValuesBuilder()
 	if hostPath := p.GetHostPath(); hostPath != "" {
 		persistence.SetStringValue("hostPath", hostPath)
@@ -151,7 +167,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 
 	// TODO(ROX-7147): design CentralEndpointSpec, see central_types.go
 
-	cv.AddChild("persistence", getPersistenceValues(c.GetPersistence()))
+	cv.AddChild("persistence", getCentralPersistenceValues(c.GetPersistence()))
 
 	if c.Exposure != nil {
 		exposure := translation.NewValuesBuilder()
@@ -202,7 +218,7 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
 	cv.SetStringMap("nodeSelector", c.NodeSelector)
 	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
-	cv.AddChild("persistence", getPersistenceValues(c.GetPersistence()))
+	cv.AddChild("persistence", getCentralDBPersistenceValues(c.GetPersistence()))
 	return &cv
 }
 

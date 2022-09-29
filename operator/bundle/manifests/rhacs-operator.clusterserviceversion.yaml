@@ -104,8 +104,8 @@ spec:
           and a host path.
         displayName: Persistence
         path: central.persistence
-      - description: 'NOTE: Central DB is in technical preview and will become the
-          Settings for Central DB, which is responsible for data persistence.'
+      - description: 'NOTE: Central DB is in technical preview. Settings for Central
+          DB, which is responsible for data persistence.'
         displayName: Central DB Settings (Technical Preview)
         path: central.db
       - description: Allows overriding the default resource settings for this component.
@@ -193,8 +193,8 @@ spec:
         displayName: Path
         path: central.db.persistence.hostPath.path
       - description: The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be created. Defaults to "stackrox-db" if
-          not set.
+          the given name exists, it will be created. Defaults to "central-db" if not
+          set.
         displayName: Claim Name
         path: central.db.persistence.persistentVolumeClaim.claimName
       - description: The size of the persistent volume when created through the claim.

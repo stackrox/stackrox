@@ -60,9 +60,8 @@ spec:
                     - name
                     type: object
                   db:
-                    description: 'NOTE: Central DB is in technical preview and will
-                      become the Settings for Central DB, which is responsible for
-                      data persistence.'
+                    description: 'NOTE: Central DB is in technical preview. Settings
+                      for Central DB, which is responsible for data persistence.'
                     properties:
                       connectionString:
                         description: Specify a connection string that corresponds
@@ -116,7 +115,7 @@ spec:
                               claimName:
                                 description: The name of the PVC to manage persistent
                                   data. If no PVC with the given name exists, it will
-                                  be created. Defaults to "stackrox-db" if not set.
+                                  be created. Defaults to "central-db" if not set.
                                 type: string
                               size:
                                 description: The size of the persistent volume when
@@ -311,6 +310,7 @@ spec:
                           for most users.
                         properties:
                           claimName:
+                            default: stackrox-db
                             description: The name of the PVC to manage persistent
                               data. If no PVC with the given name exists, it will
                               be created. Defaults to "stackrox-db" if not set.
