@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/nodecomponentedge/store/dackbox"
 	"github.com/stackrox/rox/central/nodecomponentedge/store/postgres"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -26,7 +26,7 @@ func initialize() {
 	var indexer index.Indexer
 	var searcher search.Searcher
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 		searcher = search.New(storage, indexer)

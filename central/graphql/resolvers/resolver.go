@@ -60,7 +60,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -164,7 +164,7 @@ func New() *Resolver {
 		vulnReqStore:                vulnReqDataStore.Singleton(),
 		AuditLogger:                 audit.New(processor.Singleton()),
 	}
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		resolver.ClusterCVEDataStore = clusterCVEDataStore.Singleton()
 		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
 		resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()

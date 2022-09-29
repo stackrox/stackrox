@@ -17,7 +17,7 @@ import (
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -88,7 +88,7 @@ func (s *nodeDatastoreSACSuite) setupRocks() {
 }
 
 func (s *nodeDatastoreSACSuite) SetupSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.setupPostgres()
 	} else {
 		s.setupRocks()
@@ -98,7 +98,7 @@ func (s *nodeDatastoreSACSuite) SetupSuite() {
 }
 
 func (s *nodeDatastoreSACSuite) TearDownSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pgtestbase.Pool.Close()
 	} else {
 		s.Require().NoError(rocksdb.CloseAndRemove(s.rocksEngine))
@@ -133,7 +133,7 @@ func (s *nodeDatastoreSACSuite) addTestNode(clusterID string) string {
 }
 
 func (s *nodeDatastoreSACSuite) waitForIndexing() {
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		indexingCompleted := concurrency.NewSignal()
 		s.indexQ.PushSignal(&indexingCompleted)
 		<-indexingCompleted.Done()

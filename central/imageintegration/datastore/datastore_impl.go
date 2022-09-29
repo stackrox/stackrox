@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -115,7 +115,7 @@ func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) 
 }
 
 func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil
 	}
 	imageIntegrations, err := ds.storage.GetAll(ctx)

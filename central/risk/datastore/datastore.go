@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/central/risk/datastore/internal/store/rocksdb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -45,7 +45,7 @@ func New(riskStore store.Store, indexer index.Indexer, searcher search.Searcher)
 			storage.RiskSubjectType_NAMESPACE.String(): ranking.NamespaceRanker(),
 			storage.RiskSubjectType_NODE.String():      ranking.NodeRanker(),
 			storage.RiskSubjectType_NODE_COMPONENT.String(): func() *ranking.Ranker {
-				if features.PostgresDatastore.Enabled() {
+				if env.PostgresDatastoreEnabled.BooleanSetting() {
 					return ranking.NodeComponentRanker()
 				}
 				return ranking.ComponentRanker()

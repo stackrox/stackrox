@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/cve"
 	pkgCVSSV2 "github.com/stackrox/rox/pkg/cvss/cvssv2"
 	pkgCVSSV3 "github.com/stackrox/rox/pkg/cvss/cvssv3"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scans"
@@ -364,7 +364,7 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		ret.Severity = from.GetSeverity()
 		return ret
 	}
