@@ -38,7 +38,7 @@ func EnsureConvertedTo(p *storage.Policy, toVersion PolicyVersion) error {
 		// No downgrade
 		utils.CrashOnError(errors.Errorf("Unexpected version %s, cannot downgrade policy version to %s", ver.String(), toVersion.String()))
 	case diff < 0:
-		// If it's blow the requested version, delegate to the upgrader
+		// If it's below the requested version, delegate to the upgrader
 		if err := upgradePolicyTo(p, toVersion); err != nil {
 			return err
 		}

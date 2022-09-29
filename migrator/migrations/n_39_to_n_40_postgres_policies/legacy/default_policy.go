@@ -18,6 +18,8 @@ const (
 )
 
 var (
+	// The default policies are a snapshot of current of default policies
+	// without the default policies added during 3.66 to 3.73.
 	//go:embed files/*.json
 	legacyPoliciesFS embed.FS
 	currentVersion   policyversion.PolicyVersion
