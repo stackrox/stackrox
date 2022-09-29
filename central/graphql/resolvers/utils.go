@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -264,27 +263,16 @@ func (resolver *ClusterWithK8sCVEInfoResolver) K8sCVEInfo() *K8sCVEInfoResolver 
 	return resolver.k8sCVEInfo
 }
 
-type paginationWrapper struct {
-	pv *v1.QueryPagination
-}
-
-func (pw paginationWrapper) paginate(datSlice interface{}, err error) (interface{}, error) {
-	if err != nil || pw.pv == nil {
-		return datSlice, err
+func paginate[T any](pv *v1.QueryPagination, slice []T, err error) ([]T, error) {
+	if err != nil || pv == nil {
+		return slice, err
+	}
+	if len(slice) == 0 {
+		return slice, nil
 	}
 
-	datType := reflect.TypeOf(datSlice)
-	if datType.Kind() != reflect.Slice {
-		return datSlice, errors.New("not a slice")
-	}
-
-	datValue := reflect.ValueOf(datSlice)
-	if datValue.Len() == 0 {
-		return datSlice, nil
-	}
-
-	offset := int(pw.pv.GetOffset())
-	limit := int(pw.pv.GetLimit())
+	offset := int(pv.GetOffset())
+	limit := int(pv.GetLimit())
 	if offset < 0 {
 		offset = 0
 	}
@@ -292,9 +280,9 @@ func (pw paginationWrapper) paginate(datSlice interface{}, err error) (interface
 		limit = 0
 	}
 
-	remnants := datValue.Len() - offset
+	remnants := len(slice) - offset
 	if remnants <= 0 {
-		return reflect.Zero(datType).Interface(), nil
+		return nil, nil
 	}
 
 	var end int
@@ -303,7 +291,7 @@ func (pw paginationWrapper) paginate(datSlice interface{}, err error) (interface
 	} else {
 		end = offset + limit
 	}
-	return datValue.Slice(offset, end).Interface(), nil
+	return slice[offset:end], nil
 }
 
 func getImageIDFromIfImageShaQuery(ctx context.Context, resolver *Resolver, args RawQuery) (string, error) {

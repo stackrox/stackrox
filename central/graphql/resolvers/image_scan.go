@@ -84,8 +84,5 @@ func getImageComponentResolvers(ctx context.Context, root *Resolver, imageScan *
 	for _, resolver := range resolvers {
 		resolverI = append(resolverI, resolver)
 	}
-	ret, err := paginationWrapper{
-		pv: query.GetPagination(),
-	}.paginate(resolverI, nil)
-	return ret.([]ImageComponentResolver), err
+	return paginate(query.GetPagination(), resolverI, nil)
 }
