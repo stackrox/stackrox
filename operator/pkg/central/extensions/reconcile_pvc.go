@@ -45,12 +45,34 @@ var (
 	defaultPVCSize = resource.MustParse("100Gi")
 )
 
+func convertDBPersistenceToPersistence(p *platform.DBPersistence) *platform.Persistence {
+	if p == nil {
+		return nil
+	}
+	if p.HostPath != nil {
+		return &platform.Persistence{
+			HostPath: p.HostPath,
+		}
+	}
+	pvc := p.GetPersistentVolumeClaim()
+	if pvc == nil {
+		return &platform.Persistence{}
+	}
+	return &platform.Persistence{
+		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+			ClaimName:        pvc.ClaimName,
+			Size:             pvc.Size,
+			StorageClassName: pvc.StorageClassName,
+		},
+	}
+}
+
 func getPersistenceByClaimName(central *platform.Central, claim string) *platform.Persistence {
 	switch claim {
 	case DefaultCentralPVCName:
 		return central.Spec.Central.GetPersistence()
 	case DefaultCentralDBPVCName:
-		return central.Spec.Central.DB.GetPersistence()
+		return convertDBPersistenceToPersistence(central.Spec.Central.DB.GetPersistence())
 	default:
 		panic("unknown default claim name")
 	}

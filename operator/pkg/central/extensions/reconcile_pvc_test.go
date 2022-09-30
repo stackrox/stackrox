@@ -122,8 +122,8 @@ func TestReconcilePVCExtension(t *testing.T) {
 
 	changedPVCConfigCentralDB := makeCentral(nil)
 	changedPVCConfigCentralDB.Spec.Central.DB = &platform.CentralDBSpec{
-		Persistence: &platform.Persistence{
-			PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+		Persistence: &platform.DBPersistence{
+			PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
 				Size:             pointer.StringPtr("500Gi"),
 				StorageClassName: pointer.StringPtr("new-storage-class"),
 				ClaimName:        pointer.StringPtr(testPVCName),
