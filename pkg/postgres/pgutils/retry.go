@@ -11,23 +11,35 @@ const (
 	timeout  = 5 * time.Minute
 )
 
-// RetryExecQuery is used to specify how long to retry to successfully run an exec query
-// that fails with Transient errors
-func RetryExecQuery(fn func() error) error {
-	// Shape fn to match the RetryQuery below
+// Retry is used to specify how long to retry to successfully run a query with 1 return value
+// that fails with transient errors
+func Retry(fn func() error) error {
+	// Shape fn to match the Retry2 below
 	fnWithReturn := func() (struct{}, error) {
 		return struct{}{}, fn()
 	}
-	_, err := RetryQuery(fnWithReturn)
+	_, err := Retry2(fnWithReturn)
 	return err
 }
 
-// RetryQuery is used to specify how long to retry to successfully run a query
-// that fails with Transient errors
-func RetryQuery[T any](fn func() (T, error)) (T, error) {
+// Retry2 is used to specify how long to retry to successfully run a query with 2 return values
+// that fails with transient errors
+func Retry2[T any](fn func() (T, error)) (T, error) {
+	// Shape fn to match the Retry3 below
+	fnWithReturn := func() (T, struct{}, error) {
+		val, err := fn()
+		return val, struct{}{}, err
+	}
+	val, _, err := Retry3(fnWithReturn)
+	return val, err
+}
+
+// Retry3 is used to specify how long to retry to successfully run a query with 3 return values
+// that fails with transient errors
+func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 	// Run query immediately
-	if val, err := fn(); err == nil || !isTransientError(err) {
-		return val, err
+	if val1, val2, err := fn(); err == nil || !isTransientError(err) {
+		return val1, val2, err
 	}
 
 	expirationTimer := time.NewTimer(timeout)
@@ -44,10 +56,11 @@ func RetryQuery[T any](fn func() (T, error)) (T, error) {
 		case <-intervalTicker.C:
 			// Uses err outside the for loop to allow for the expiration to show the last err received
 			// and provide context for the expiration
-			var ret T
-			ret, err = fn()
+			var ret1 T
+			var ret2 U
+			ret1, ret2, err = fn()
 			if err == nil || !isTransientError(err) {
-				return ret, err
+				return ret1, ret2, err
 			}
 		}
 	}
