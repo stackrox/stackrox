@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	scannerDBPasswordKey = `password`
-	passwordResourceName = "scanner-db-password"
+	scannerDBPasswordKey          = `password`
+	scannerDBPasswordResourceName = "scanner-db-password"
 )
 
 // ScannerBearingCustomResource interface exposes details about the Scanner resource from the kubernetes object.
@@ -28,7 +28,7 @@ type reconcileScannerDBPasswordConfig struct {
 // ReconcileScannerDBPassword reconciles a scanner db password
 func ReconcileScannerDBPassword(ctx context.Context, obj ScannerBearingCustomResource, client ctrlClient.Client) error {
 	return reconcileScannerDBPassword(ctx, obj, client, reconcileScannerDBPasswordConfig{
-		PasswordResourceName: passwordResourceName,
+		PasswordResourceName: scannerDBPasswordResourceName,
 	})
 }
 

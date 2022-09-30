@@ -18,23 +18,29 @@ import (
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager) error {
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
-	return reconciler.SetupReconcilerWithManager(
-		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
-		proxy.InjectProxyEnvVars(translation.Translator{}, proxyEnv),
+	opts := []pkgReconciler.Option{
 		pkgReconciler.WithExtraWatch(
 			&source.Kind{Type: &platform.SecuredCluster{}},
 			handleSiblingCentrals(mgr),
 			// Only appearance and disappearance of a SecuredCluster resource can influence whether
 			// an init bundle should be created by the Central controller.
-			utils.CreateAndDeleteOnlyPredicate{}),
+			utils.CreateAndDeleteOnlyPredicate{},
+		),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient())),
+		pkgReconciler.WithPreExtension(extensions.ReconcileCentralDBPasswordExtension(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(mgr.GetClient())),
-		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient())),
+		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), extensions.PVCTargetCentral, extensions.DefaultCentralPVCName)),
+		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), extensions.PVCTargetCentralDB, extensions.DefaultCentralDBPVCName)),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 		pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod),
 		pkgReconciler.WithPauseReconcileAnnotation("stackrox.io/pause-reconcile"),
+	}
+	return reconciler.SetupReconcilerWithManager(
+		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
+		proxy.InjectProxyEnvVars(translation.Translator{}, proxyEnv),
+		opts...,
 	)
 }
