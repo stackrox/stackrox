@@ -33,7 +33,7 @@ type controller struct {
 
 type telemetryCallback func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error
 
-func newController(capabilities centralsensor.SensorCapabilitySet, injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) *controller {
+func newController(capabilities set.Set[centralsensor.SensorCapability], injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) *controller {
 	ctrl := &controller{
 		stopSig:               stopSig,
 		returnChans:           make(map[string]chan *central.TelemetryResponsePayload),
