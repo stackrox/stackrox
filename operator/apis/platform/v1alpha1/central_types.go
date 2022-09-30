@@ -115,23 +115,13 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	Persistence *Persistence `json:"persistence,omitempty"`
 
+	// NOTE: Central DB is in technical preview.
+	// Settings for Central DB, which is responsible for data persistence.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Central DB Settings (Technical Preview)"
+	DB *CentralDBSpec `json:"db,omitempty"`
+
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
-}
-
-// GetHostPath returns Central's configured host path
-func (c *CentralComponentSpec) GetHostPath() string {
-	if c == nil {
-		return ""
-	}
-	if c.Persistence == nil {
-		return ""
-	}
-	if c.Persistence.HostPath == nil {
-		return ""
-	}
-
-	return pointer.StringPtrDerefOr(c.Persistence.HostPath.Path, "")
 }
 
 // GetPersistence returns Central's persistence config
@@ -140,14 +130,6 @@ func (c *CentralComponentSpec) GetPersistence() *Persistence {
 		return nil
 	}
 	return c.Persistence
-}
-
-// GetPersistentVolumeClaim returns Central's configured PVC
-func (c *CentralComponentSpec) GetPersistentVolumeClaim() *PersistentVolumeClaim {
-	if c.GetPersistence() == nil {
-		return nil
-	}
-	return c.GetPersistence().PersistentVolumeClaim
 }
 
 // GetAdminPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
@@ -166,6 +148,56 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 	return pointer.BoolPtrDerefOr(c.AdminPasswordGenerationDisabled, false)
 }
 
+// CentralDBEnabled returns a bool if CentralDBSpec is not nil
+func (c *CentralComponentSpec) CentralDBEnabled() bool {
+	if c == nil {
+		return false
+	}
+	return c.DB != nil
+}
+
+// CentralDBSpec defines settings for the "central db" component.
+type CentralDBSpec struct {
+	// Specify a secret that contains the password in the "password" data item.
+	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
+	// in the "central-db-password" secret.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
+	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
+
+	// Disable database password generation. Do not use this for first-time installations in which the operator
+	// is managing Central DB as Central will have no way to connect to the database.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	PasswordGenerationDisabled *bool `json:"passwordGenerationDisabled,omitempty"`
+
+	// Specify a connection string that corresponds to an existing database. If set, the operator will not manage Central DB.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	ConnectionStringOverride *string `json:"connectionString,omitempty"`
+
+	// Configures how Central DB should store its persistent data. You can choose between using a persistent
+	// volume claim (recommended default), and a host path.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	Persistence *DBPersistence `json:"persistence,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
+	DeploymentSpec `json:",inline"`
+}
+
+// IsExternal specifies that the database should not be managed by the Operator
+func (c *CentralDBSpec) IsExternal() bool {
+	if c == nil {
+		return false
+	}
+	return c.ConnectionStringOverride != nil
+}
+
+// GetPersistence returns the persistence for Central DB
+func (c *CentralDBSpec) GetPersistence() *DBPersistence {
+	if c == nil {
+		return nil
+	}
+	return c.Persistence
+}
+
 // Persistence defines persistence settings for central.
 type Persistence struct {
 	// Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
@@ -177,6 +209,26 @@ type Persistence struct {
 	// be used together with a node selector (only available in YAML view).
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Host path",order=99
 	HostPath *HostPathSpec `json:"hostPath,omitempty"`
+}
+
+// GetPersistentVolumeClaim returns the configured PVC
+func (p *Persistence) GetPersistentVolumeClaim() *PersistentVolumeClaim {
+	if p == nil {
+		return nil
+	}
+	return p.PersistentVolumeClaim
+}
+
+// GetHostPath returns the configured host path
+func (p *Persistence) GetHostPath() string {
+	if p == nil {
+		return ""
+	}
+	if p.HostPath == nil {
+		return ""
+	}
+
+	return pointer.StringPtrDerefOr(p.HostPath.Path, "")
 }
 
 // HostPathSpec defines settings for host path config.
@@ -193,6 +245,59 @@ type PersistentVolumeClaim struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
 	//+kubebuilder:validation:Default=stackrox-db
 	//+kubebuilder:default=stackrox-db
+	ClaimName *string `json:"claimName,omitempty"`
+
+	// The size of the persistent volume when created through the claim. If a claim was automatically created,
+	// this can be used after the initial deployment to resize (grow) the volume (only supported by some
+	// storage class controllers).
+	//+kubebuilder:validation:Pattern=^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Size",order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
+	Size *string `json:"size,omitempty"`
+
+	// The name of the storage class to use for the PVC. If your cluster is not configured with a default storage
+	// class, you must select a value here.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Storage Class",order=3,xDescriptors={"urn:alm:descriptor:io.kubernetes:StorageClass"}
+	StorageClassName *string `json:"storageClassName,omitempty"`
+}
+
+// DBPersistence defines persistence settings for Central DB.
+type DBPersistence struct {
+	// Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
+	// Recommended for most users.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Persistent volume claim",order=1
+	PersistentVolumeClaim *DBPersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
+
+	// Stores persistent data on a directory on the host. This is not recommended, and should only
+	// be used together with a node selector (only available in YAML view).
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Host path",order=99
+	HostPath *HostPathSpec `json:"hostPath,omitempty"`
+}
+
+// GetPersistentVolumeClaim returns the configured PVC
+func (p *DBPersistence) GetPersistentVolumeClaim() *DBPersistentVolumeClaim {
+	if p == nil {
+		return nil
+	}
+	return p.PersistentVolumeClaim
+}
+
+// GetHostPath returns the configured host path
+func (p *DBPersistence) GetHostPath() string {
+	if p == nil {
+		return ""
+	}
+	if p.HostPath == nil {
+		return ""
+	}
+
+	return pointer.StringPtrDerefOr(p.HostPath.Path, "")
+}
+
+// DBPersistentVolumeClaim defines PVC-based persistence settings for Central DB.
+type DBPersistentVolumeClaim struct {
+	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
+	// created. Defaults to "central-db" if not set.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
 	ClaimName *string `json:"claimName,omitempty"`
 
 	// The size of the persistent volume when created through the claim. If a claim was automatically created,
