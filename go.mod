@@ -2,10 +2,6 @@ module github.com/stackrox/rox
 
 go 1.18
 
-// CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
-// directive at the bottom of the file as well.
-require github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581
-
 require (
 	cloud.google.com/go/compute v1.10.0
 	cloud.google.com/go/containeranalysis v0.6.0
@@ -34,7 +30,7 @@ require (
 	github.com/docker/docker v20.10.18+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
-	github.com/facebookincubator/nvdtools v0.1.4
+	github.com/facebookincubator/nvdtools v0.1.5
 	github.com/fatih/color v1.13.0
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
@@ -94,6 +90,7 @@ require (
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
+	github.com/stackrox/scanner v0.0.0-20220929215850-334d4658d5e6
 	github.com/stretchr/testify v1.8.0
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
@@ -162,6 +159,7 @@ require (
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
+	github.com/blevesearch/blevex v1.0.0 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/mmap-go v1.0.2 // indirect
 	github.com/blevesearch/segment v0.9.0 // indirect
@@ -321,7 +319,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.12.0 // indirect
 	github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd // indirect
-	github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab // indirect
+	github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d // indirect
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/subosito/gotenv v1.3.0 // indirect
@@ -469,12 +467,6 @@ replace (
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
 )
-
-// Circular rox -> scanner -> rox dependency would pull in a long list of past rox versions, cluttering go.sum
-// and the module cache.
-// If you upgrade the scanner version, you MUST change this line as well to refer to the rox version included
-// from the given scanner version.
-exclude github.com/stackrox/rox v0.0.0-20210914215712-9ac265932e28
 
 exclude k8s.io/client-go v12.0.0+incompatible
 
