@@ -30,15 +30,14 @@ echo "Building the image since it doesn't exist"
 docker build -t "${image}" -f "${dockerfile}" "${dir}"
 if [[ -n "${CI}" ]]; then
   docker login -u  "${QUAY_RHACS_ENG_RW_USERNAME}" -p "${QUAY_RHACS_ENG_RW_PASSWORD}" quay.io
-  docker push "${image}" | cat
 
   if [[ $image == docker* || $image == stackrox* ]]; then
     repo=${image#docker.io/}
     repo=${repo#stackrox/}
 
     quay_image="quay.io/rhacs-eng/${repo}"
-    docker tag ${image} ${quay_image}
-    docker push ${quay_image} | cat
+    docker tag "${image}" "${quay_image}"
+    docker push "${quay_image}" | cat
   fi
 
 else
