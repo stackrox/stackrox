@@ -312,7 +312,7 @@ func withOpenShiftTypeFiltering(q string) string {
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_OPENSHIFT_CVE.String()).Query())
 }
 
-func (resolver *clusterCVEResolver) withClusterVulnerabilityScope() context.Context {
+func (resolver *clusterCVEResolver) clusterVulnerabilityScopeContext() context.Context {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return scoped.Context(resolver.ctx, scoped.Scope{
 			ID:    resolver.data.GetId(),
@@ -347,7 +347,7 @@ func (resolver *clusterCVEResolver) Clusters(ctx context.Context, args Paginated
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
-	return resolver.root.Clusters(resolver.withClusterVulnerabilityScope(), args)
+	return resolver.root.Clusters(resolver.clusterVulnerabilityScopeContext(), args)
 }
 
 // ClusterCount returns a number of clusters affected by cluster vulnerability.
@@ -356,7 +356,7 @@ func (resolver *clusterCVEResolver) ClusterCount(ctx context.Context, args RawQu
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
-	return resolver.root.ClusterCount(resolver.withClusterVulnerabilityScope(), args)
+	return resolver.root.ClusterCount(resolver.clusterVulnerabilityScopeContext(), args)
 }
 
 func (resolver *clusterCVEResolver) VulnerabilityType() string {
@@ -433,9 +433,9 @@ func (resolver *clusterCVEResolver) IsFixable(ctx context.Context, args RawQuery
 	return count != 0, nil
 }
 
-func (resolver *clusterCVEResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
+func (resolver *clusterCVEResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
 	// TODO we're temporarily pointing it at LastModified until this information is actually in the data model
-	return resolver.LastModified(ctx)
+	return resolver.LastModified(resolver.ctx)
 }
 
 func (resolver *clusterCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver {

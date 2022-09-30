@@ -95,7 +95,8 @@ func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]*i
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapImages(imageLoader.FromQuery(ctx, q))
+	images, err := imageLoader.FromQuery(ctx, q)
+	return resolver.wrapImagesWithContext(ctx, images, err)
 }
 
 // ImageCount returns count of all images across deployments
@@ -128,31 +129,19 @@ func (resolver *Resolver) Image(ctx context.Context, args struct{ ID graphql.ID 
 		return nil, err
 	}
 	image, err := imageLoader.FromID(ctx, string(args.ID))
-	return resolver.wrapImage(image, image != nil, err)
+	return resolver.wrapImageWithContext(ctx, image, image != nil, err)
 }
 
 // Deployments returns the deployments which use this image for the identified image, if it exists
-func (resolver *imageResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
+func (resolver *imageResolver) Deployments(_ context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Deployments")
-	if err := readDeployments(ctx); err != nil {
-		return nil, err
-	}
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
-
-	return resolver.root.Deployments(ctx, PaginatedQuery{Pagination: args.Pagination, Query: &query})
+	return resolver.root.Deployments(resolver.imageScopeContext(), args)
 }
 
 // DeploymentCount returns the number of deployments which use this image for the identified image, if it exists
-func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
+func (resolver *imageResolver) DeploymentCount(_ context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "DeploymentCount")
-	if err := readDeployments(ctx); err != nil {
-		return 0, err
-	}
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
-
-	return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
+	return resolver.root.DeploymentCount(resolver.imageScopeContext(), args)
 }
 
 // TopImageVulnerability returns the image vulnerability with the top CVSS score.
@@ -165,7 +154,7 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 		}
 		return vulnResolver, nil
 	}
-	return resolver.root.TopImageVulnerability(resolver.imageScopeContext(ctx), args)
+	return resolver.root.TopImageVulnerability(resolver.imageScopeContext(), args)
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
@@ -234,28 +223,19 @@ func (resolver *imageResolver) vulnQueryScoping(ctx context.Context) context.Con
 }
 
 // ImageVulnerabilities returns, as ImageVulnerabilityResolver, the vulnerabilities for the image
-func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+func (resolver *imageResolver) ImageVulnerabilities(_ context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
-
-	ctx = resolver.vulnQueryScoping(ctx)
-
-	return resolver.root.ImageVulnerabilities(ctx, args)
+	return resolver.root.ImageVulnerabilities(resolver.imageScopeContext(), args)
 }
 
-func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+func (resolver *imageResolver) ImageVulnerabilityCount(_ context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCount")
-
-	ctx = resolver.vulnQueryScoping(ctx)
-
-	return resolver.root.ImageVulnerabilityCount(ctx, args)
+	return resolver.root.ImageVulnerabilityCount(resolver.imageScopeContext(), args)
 }
 
-func (resolver *imageResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+func (resolver *imageResolver) ImageVulnerabilityCounter(_ context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCounter")
-
-	ctx = resolver.vulnQueryScoping(ctx)
-
-	return resolver.root.ImageVulnerabilityCounter(ctx, args)
+	return resolver.root.ImageVulnerabilityCounter(resolver.imageScopeContext(), args)
 }
 
 // Vulns returns all of the vulnerabilities in the image.
@@ -330,18 +310,18 @@ func (resolver *imageResolver) VulnCounter(ctx context.Context, args RawQuery) (
 	}), RawQuery{Query: &query})
 }
 
-func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+func (resolver *imageResolver) ImageComponents(_ context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
-	return resolver.root.ImageComponents(resolver.imageScopeContext(ctx), args)
+	return resolver.root.ImageComponents(resolver.imageScopeContext(), args)
 }
 
-func (resolver *imageResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+func (resolver *imageResolver) ImageComponentCount(_ context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponentCount")
-	return resolver.root.ImageComponentCount(resolver.imageScopeContext(ctx), args)
+	return resolver.root.ImageComponentCount(resolver.imageScopeContext(), args)
 }
 
-func (resolver *imageResolver) imageScopeContext(ctx context.Context) context.Context {
-	return scoped.Context(ctx, scoped.Scope{
+func (resolver *imageResolver) imageScopeContext() context.Context {
+	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
 		ID:    resolver.data.GetId(),
 	})
@@ -405,9 +385,9 @@ func (resolver *imageResolver) PlottedVulns(ctx context.Context, args RawQuery) 
 }
 
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
-func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+func (resolver *imageResolver) PlottedImageVulnerabilities(_ context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "PlottedImageVulnerabilities")
-	return resolver.root.PlottedImageVulnerabilities(resolver.imageScopeContext(ctx), args)
+	return resolver.root.PlottedImageVulnerabilities(resolver.imageScopeContext(), args)
 }
 
 func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
@@ -429,11 +409,10 @@ func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, er
 		scan = image.GetScan()
 	}
 
-	res, err := resolver.root.wrapImageScan(scan, true, nil)
+	res, err := resolver.root.wrapImageScanWithContext(ctx, scan, true, nil)
 	if err != nil || res == nil {
 		return nil, err
 	}
-	res.ctx = resolver.imageScopeContext(ctx)
 	return res, nil
 }
 
@@ -458,27 +437,27 @@ func (resolver *imageResolver) UnusedVarSink(ctx context.Context, args RawQuery)
 
 //// Image scan-related fields pulled as direct sub-resolvers of image.
 
-func (resolver *imageResolver) DataSource(ctx context.Context) (*dataSourceResolver, error) {
+func (resolver *imageResolver) DataSource(_ context.Context) (*dataSourceResolver, error) {
 	value := resolver.data.GetScan().GetDataSource()
 	return resolver.root.wrapDataSource(value, true, nil)
 }
 
-func (resolver *imageResolver) ScanNotes(ctx context.Context) []string {
+func (resolver *imageResolver) ScanNotes(_ context.Context) []string {
 	value := resolver.data.GetScan().GetNotes()
 	return stringSlice(value)
 }
 
-func (resolver *imageResolver) OperatingSystem(ctx context.Context) string {
+func (resolver *imageResolver) OperatingSystem(_ context.Context) string {
 	value := resolver.data.GetScan().GetOperatingSystem()
 	return value
 }
 
-func (resolver *imageResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
+func (resolver *imageResolver) ScanTime(_ context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScan().GetScanTime()
 	return timestamp(value)
 }
 
-func (resolver *imageResolver) ScannerVersion(ctx context.Context) string {
+func (resolver *imageResolver) ScannerVersion(_ context.Context) string {
 	value := resolver.data.GetScan().GetScannerVersion()
 	return value
 }

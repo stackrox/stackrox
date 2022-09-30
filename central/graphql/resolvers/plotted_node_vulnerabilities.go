@@ -22,13 +22,15 @@ func init() {
 
 // PlottedNodeVulnerabilitiesResolver returns the data required by top risky nodes scatter-plot on vuln mgmt dashboard
 type PlottedNodeVulnerabilitiesResolver struct {
+	ctx     context.Context
 	root    *Resolver
 	all     []string
 	fixable int
 }
 
-func (resolver *Resolver) wrapPlottedNodeVulnerabilities(all []string, fixable int) (*PlottedNodeVulnerabilitiesResolver, error) {
+func (resolver *Resolver) wrapPlottedNodeVulnerabilitiesWithContext(ctx context.Context, all []string, fixable int) (*PlottedNodeVulnerabilitiesResolver, error) {
 	return &PlottedNodeVulnerabilitiesResolver{
+		ctx:     ctx,
 		root:    resolver,
 		all:     all,
 		fixable: fixable,
@@ -44,7 +46,7 @@ func (resolver *Resolver) PlottedNodeVulnerabilities(ctx context.Context, args R
 			return nil, err
 		}
 
-		return resolver.wrapPlottedNodeVulnerabilities(allCveIds, fixableCount)
+		return resolver.wrapPlottedNodeVulnerabilitiesWithContext(ctx, allCveIds, fixableCount)
 	}
 
 	query, err := args.AsV1QueryOrEmpty()
@@ -78,24 +80,24 @@ func (resolver *Resolver) PlottedNodeVulnerabilities(ctx context.Context, args R
 		return nil, err
 	}
 
-	return resolver.wrapPlottedNodeVulnerabilities(allCveIds, int(fixableCount))
+	return resolver.wrapPlottedNodeVulnerabilitiesWithContext(ctx, allCveIds, int(fixableCount))
 }
 
 // BasicNodeVulnerabilityCounter returns the NodeVulnerabilityCounter for scatter-plot with only total and fixable
-func (pvr *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounter(_ context.Context) (*VulnerabilityCounterResolver, error) {
+func (resolver *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounter(_ context.Context) (*VulnerabilityCounterResolver, error) {
 	return &VulnerabilityCounterResolver{
 		all: &VulnerabilityFixableCounterResolver{
-			total:   int32(len(pvr.all)),
-			fixable: int32(pvr.fixable),
+			total:   int32(len(resolver.all)),
+			fixable: int32(resolver.fixable),
 		},
 	}, nil
 }
 
 // NodeVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
-func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args PaginationWrapper) ([]NodeVulnerabilityResolver, error) {
-	if len(pvr.all) == 0 {
+func (resolver *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(_ context.Context, args PaginationWrapper) ([]NodeVulnerabilityResolver, error) {
+	if len(resolver.all) == 0 {
 		return nil, nil
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.CVEID, pvr.all...).Query()
-	return pvr.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &q, Pagination: args.Pagination})
+	q := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.all...).Query()
+	return resolver.root.NodeVulnerabilities(resolver.ctx, PaginatedQuery{Query: &q, Pagination: args.Pagination})
 }
