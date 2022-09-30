@@ -200,7 +200,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 			DefaultClaim:  DefaultCentralPVCName,
 			Target:        PVCTargetCentral,
 			ExistingPVCs:  []*corev1.PersistentVolumeClaim{makePVC(changedPVCNameCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, centralTargetAnnotations)},
-			ExpectedError: `Could not create PVC "stackrox-db-test" because the operator can only manage 1 PVC for Central. To fix this either reference a manually created PVC or remove the OwnerReference of the "stackrox-db" PVC.`,
+			ExpectedError: `Could not create PVC "stackrox-db-test" because the operator can only manage 1 PVC for central. To fix this either reference a manually created PVC or remove the OwnerReference of the "stackrox-db" PVC.`,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				DefaultCentralPVCName: verifyMultiple(ownedBy(changedPVCNameCentral)),
 				testPVCName:           pvcNotCreatedVerifier,
@@ -279,7 +279,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 				makePVC(emptyNotDeletedCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, centralTargetAnnotations),
 				makePVC(emptyNotDeletedCentral, testPVCName, defaultPVCSize, emptyStorageClass, centralTargetAnnotations),
 			},
-			ExpectedError: "multiple owned PVCs were found for Central, please remove not used ones or delete their OwnerReferences. Found PVCs: stackrox-db, stackrox-db-test: operator is only allowed to have 1 owned PVC",
+			ExpectedError: "multiple owned PVCs were found for central, please remove not used ones or delete their OwnerReferences. Found PVCs: stackrox-db, stackrox-db-test: operator is only allowed to have 1 owned PVC",
 		},
 
 		"storage-class-is-not-reconciled-if-empty-storage-class-is-given": {
