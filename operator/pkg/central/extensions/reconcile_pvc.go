@@ -33,10 +33,10 @@ type PVCTarget string
 
 const (
 	// PVCTargetCentral is for any PVC that would be attached to the Central deployment
-	PVCTargetCentral PVCTarget = "Central"
+	PVCTargetCentral PVCTarget = "central"
 
 	// PVCTargetCentralDB is for any PVC that would be attached to the Central DB deployment
-	PVCTargetCentralDB PVCTarget = "Central DB"
+	PVCTargetCentralDB PVCTarget = "central-db"
 )
 
 var (
