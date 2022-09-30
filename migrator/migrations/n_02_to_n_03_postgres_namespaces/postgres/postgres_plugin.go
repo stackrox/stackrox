@@ -230,14 +230,14 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NamespaceMetada
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NamespaceMetadata) error {
 
-	return pgutils.RetryExecQuery(ctx, func() error {
+	return pgutils.RetryExecQuery(func() error {
 		return s.upsert(ctx, obj)
 	})
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NamespaceMetadata) error {
 
-	return pgutils.RetryExecQuery(ctx, func() error {
+	return pgutils.RetryExecQuery(func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations
