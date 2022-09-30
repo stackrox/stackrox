@@ -66,7 +66,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	}
 
 	d.hasher.Reset()
-	hashValue, err := hashstructure.Hash(event.GetResource(), &hashstructure.HashOptions{
+	hashValue, err := hashstructure.Hash(event.GetResource(), hashstructure.FormatV2, &hashstructure.HashOptions{
 		TagName: "sensorhash",
 		Hasher:  d.hasher,
 	})

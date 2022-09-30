@@ -34,7 +34,7 @@ func init() {
 		},
 	}
 	var err error
-	metadataHash, err = hashstructure.Hash(metadata, &hashstructure.HashOptions{ZeroNil: true})
+	metadataHash, err = hashstructure.Hash(metadata, hashstructure.FormatV1, &hashstructure.HashOptions{ZeroNil: true})
 	utils.Must(err)
 
 	if val, ok := metadataHashToVersion[metadataHash]; !ok || val != metadataVersion {

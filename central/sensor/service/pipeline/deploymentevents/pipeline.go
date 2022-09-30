@@ -166,7 +166,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 	}
 
 	var err error
-	deployment.Hash, err = hashstructure.Hash(deployment, &hashstructure.HashOptions{})
+	deployment.Hash, err = hashstructure.Hash(deployment, hashstructure.FormatV2, &hashstructure.HashOptions{})
 	if err != nil {
 		return err
 	}
