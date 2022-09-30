@@ -68,10 +68,10 @@ func (mr *MockSearcherMockRecorder) Search(ctx, query interface{}) *gomock.Call 
 }
 
 // SearchCollections mocks base method.
-func (m *MockSearcher) SearchCollections(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+func (m *MockSearcher) SearchCollections(arg0 context.Context, arg1 *v1.Query) ([]*storage.ResourceCollection, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchCollections", arg0, arg1)
-	ret0, _ := ret[0].([]*v1.SearchResult)
+	ret0, _ := ret[0].([]*storage.ResourceCollection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -82,17 +82,17 @@ func (mr *MockSearcherMockRecorder) SearchCollections(arg0, arg1 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCollections", reflect.TypeOf((*MockSearcher)(nil).SearchCollections), arg0, arg1)
 }
 
-// SearchRawCollections mocks base method.
-func (m *MockSearcher) SearchRawCollections(ctx context.Context, query *v1.Query) ([]*storage.ResourceCollection, error) {
+// SearchResults mocks base method.
+func (m *MockSearcher) SearchResults(ctx context.Context, query *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawCollections", ctx, query)
-	ret0, _ := ret[0].([]*storage.ResourceCollection)
+	ret := m.ctrl.Call(m, "SearchResults", ctx, query)
+	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchRawCollections indicates an expected call of SearchRawCollections.
-func (mr *MockSearcherMockRecorder) SearchRawCollections(ctx, query interface{}) *gomock.Call {
+// SearchResults indicates an expected call of SearchResults.
+func (mr *MockSearcherMockRecorder) SearchResults(ctx, query interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawCollections", reflect.TypeOf((*MockSearcher)(nil).SearchRawCollections), ctx, query)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockSearcher)(nil).SearchResults), ctx, query)
 }

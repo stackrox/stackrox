@@ -114,10 +114,10 @@ func (mr *MockDataStoreMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 }
 
 // SearchCollections mocks base method.
-func (m *MockDataStore) SearchCollections(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+func (m *MockDataStore) SearchCollections(ctx context.Context, q *v1.Query) ([]*storage.ResourceCollection, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchCollections", ctx, q)
-	ret0, _ := ret[0].([]*v1.SearchResult)
+	ret0, _ := ret[0].([]*storage.ResourceCollection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -128,17 +128,17 @@ func (mr *MockDataStoreMockRecorder) SearchCollections(ctx, q interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCollections", reflect.TypeOf((*MockDataStore)(nil).SearchCollections), ctx, q)
 }
 
-// SearchRawCollections mocks base method.
-func (m *MockDataStore) SearchRawCollections(ctx context.Context, q *v1.Query) ([]*storage.ResourceCollection, error) {
+// SearchResults mocks base method.
+func (m *MockDataStore) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawCollections", ctx, q)
-	ret0, _ := ret[0].([]*storage.ResourceCollection)
+	ret := m.ctrl.Call(m, "SearchResults", ctx, q)
+	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchRawCollections indicates an expected call of SearchRawCollections.
-func (mr *MockDataStoreMockRecorder) SearchRawCollections(ctx, q interface{}) *gomock.Call {
+// SearchResults indicates an expected call of SearchResults.
+func (mr *MockDataStoreMockRecorder) SearchResults(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawCollections", reflect.TypeOf((*MockDataStore)(nil).SearchRawCollections), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockDataStore)(nil).SearchResults), ctx, q)
 }
