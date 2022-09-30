@@ -62,7 +62,7 @@ const processData = (data, workflowState) => {
 
 const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const queryToUse = showVMUpdates
         ? MOST_COMMON_IMAGE_VULNERABILITIES

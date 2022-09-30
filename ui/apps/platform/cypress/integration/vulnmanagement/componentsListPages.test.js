@@ -14,7 +14,7 @@ describe('Components list Page and its entity detail page, (related entities) su
 
     describe('with VM updates OFF', () => {
         before(function beforeHook() {
-            if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
                 this.skip();
             }
         });

@@ -30,7 +30,7 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
     withAuth();
 
     before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }
     });

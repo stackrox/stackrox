@@ -35,7 +35,7 @@ const VulnDashboardPage = ({ history }) => {
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     let entityMenuTypes = [...baseEntityMenuTypes];
     if (showVmUpdates) {
