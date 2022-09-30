@@ -22,7 +22,7 @@ describe('Config Management Entities (Service Accounts)', () => {
 
     it('should click on the namespace entity widget in the side panel and match the header', () => {
         renderListAndSidePanel(entitiesKey);
-        clickOnSingularEntityWidgetInSidePanel(entitiesKey, 'namespace');
+        clickOnSingularEntityWidgetInSidePanel(entitiesKey, 'namespaces');
     });
 
     it('should render the service list and open the side panel with the clicked namespace value', () => {
