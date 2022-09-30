@@ -1,9 +1,9 @@
 package stateutils
 
 import (
-	"github.com/stackrox/rox/generated/set"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type stateAndUpgraderReq struct {
@@ -22,8 +22,8 @@ type nextStateAndResponse struct {
 
 type transitioner struct {
 	workflowMatch     *string
-	stageMatch        *sensorupgrader.StageSet
-	currentStateMatch *set.StorageUpgradeProgress_UpgradeStateSet
+	stageMatch        *set.Set[sensorupgrader.Stage]
+	currentStateMatch *set.Set[storage.UpgradeProgress_UpgradeState]
 	errOccurredMatch  *bool
 	upgradeTypeMatch  *storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType
 

@@ -63,7 +63,7 @@ type manager struct {
 	connectionManager connection.Manager
 
 	baselinesByDeploymentID map[string]*networkbaseline.BaselineInfo
-	seenNetworkPolicies     set.Uint64Set
+	seenNetworkPolicies     set.Set[uint64]
 	lock                    sync.Mutex
 
 	deploymentObservationQueue queue.DeploymentObservationQueue
@@ -903,7 +903,7 @@ func New(
 		networkPolicyDS:            networkPolicyDS,
 		clusterFlows:               clusterFlows,
 		connectionManager:          connectionManager,
-		seenNetworkPolicies:        set.NewUint64Set(),
+		seenNetworkPolicies:        set.NewSet[uint64](),
 		deploymentObservationQueue: queue.New(),
 		baselineFlushTicker:        time.NewTicker(baselineFlushTickerDuration),
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
@@ -100,7 +101,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		PolicyVersion:            policyversion.CurrentVersion().String(),
 		DeploymentIdentification: configHandler.GetDeploymentIdentification(),
 	}
-	capsSet := centralsensor.NewSensorCapabilitySet()
+	capsSet := set.NewSet[centralsensor.SensorCapability]()
 	for _, component := range s.components {
 		capsSet.AddAll(component.Capabilities()...)
 	}
