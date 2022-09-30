@@ -85,7 +85,8 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapDeployment(resolver.DeploymentDataStore.GetDeployment(ctx, string(*args.ID)))
+	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(ctx, string(*args.ID))
+	return resolver.wrapDeploymentWithContext(ctx, deployment, ok, err)
 }
 
 // Deployments returns GraphQL resolvers all deployments
@@ -98,6 +99,7 @@ func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) 
 	if err != nil {
 		return nil, err
 	}
+	deployments, err := resolver.DeploymentDataStore.SearchRawDeployments(ctx, q)
 	return resolver.wrapDeployments(
 		resolver.DeploymentDataStore.SearchRawDeployments(ctx, q))
 }
