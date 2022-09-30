@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/secret/mappings"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -286,25 +285,6 @@ var secretScopedSACSearchTestCases = map[string]secretSACSearchResult{
 	},
 }
 
-var secretUnrestrictedSACSearchTestCases = map[string]secretSACSearchResult{
-	"full read access should see all secrets": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
-		scopeKey: testutils.UnrestrictedReadCtx,
-		resultCounts: map[string]map[string]int{
-			"": {"": 18},
-		},
-	},
-	"full read-write access should see all secrets": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
-		scopeKey: testutils.UnrestrictedReadWriteCtx,
-		resultCounts: map[string]map[string]int{
-			"": {"": 18},
-		},
-	},
-}
-
 var secretUnrestrictedSACObjectSearchTestCases = map[string]secretSACSearchResult{
 	"full read access should see all secrets": {
 		scopeKey: testutils.UnrestrictedReadCtx,
@@ -351,7 +331,7 @@ func (s *secretDatastoreSACTestSuite) TestSecretScopedCount() {
 }
 
 func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedCount() {
-	for name, c := range secretUnrestrictedSACSearchTestCases {
+	for name, c := range secretUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runCountTest(c)
 		})
@@ -375,7 +355,7 @@ func (s *secretDatastoreSACTestSuite) TestSecretScopedCountSecrets() {
 }
 
 func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedCountSecrets() {
-	for name, c := range secretUnrestrictedSACSearchTestCases {
+	for name, c := range secretUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runCountSecretsTest(c)
 		})
@@ -386,7 +366,14 @@ func (s *secretDatastoreSACTestSuite) runSearchTest(testParams secretSACSearchRe
 	ctx := s.testContexts[testParams.scopeKey]
 	searchResults, err := s.datastore.Search(ctx, nil)
 	s.NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), searchResults, mappings.OptionsMap)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(searchResults))
+	for ix := range searchResults {
+		obj, found, err := s.datastore.GetSecret(s.testContexts[testutils.UnrestrictedReadCtx], searchResults[ix].ID)
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testParams.resultCounts, resultCounts)
 }
 
@@ -399,7 +386,7 @@ func (s *secretDatastoreSACTestSuite) TestSecretScopedSearch() {
 }
 
 func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedSearch() {
-	for name, c := range secretUnrestrictedSACSearchTestCases {
+	for name, c := range secretUnrestrictedSACObjectSearchTestCases /* secretUnrestrictedSACSearchTestCases */ {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})
@@ -410,7 +397,14 @@ func (s *secretDatastoreSACTestSuite) runSearchSecretsTest(testParams secretSACS
 	ctx := s.testContexts[testParams.scopeKey]
 	searchResults, err := s.datastore.SearchSecrets(ctx, nil)
 	s.NoError(err)
-	resultDistribution := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), searchResults, mappings.OptionsMap)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(searchResults))
+	for ix := range searchResults {
+		obj, found, err := s.datastore.GetSecret(s.testContexts[testutils.UnrestrictedReadCtx], searchResults[ix].GetId())
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultDistribution := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testParams.resultCounts, resultDistribution)
 }
 
@@ -423,7 +417,7 @@ func (s *secretDatastoreSACTestSuite) TestSecretScopedSearchSecrets() {
 }
 
 func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedSearchSecrets() {
-	for name, c := range secretUnrestrictedSACSearchTestCases {
+	for name, c := range secretUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runSearchSecretsTest(c)
 		})

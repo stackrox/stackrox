@@ -5,14 +5,18 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
+	postgresStore "github.com/stackrox/rox/central/risk/datastore/internal/store/postgres"
 	rocksdbStore "github.com/stackrox/rox/central/risk/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -30,6 +34,8 @@ type RiskDataStoreTestSuite struct {
 
 	db *rocksdb.RocksDB
 
+	pool *pgxpool.Pool
+
 	indexer   index.Indexer
 	searcher  search.Searcher
 	storage   store.Store
@@ -41,16 +47,25 @@ type RiskDataStoreTestSuite struct {
 
 func (suite *RiskDataStoreTestSuite) SetupSuite() {
 	var err error
-	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
-	suite.Require().NoError(err)
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		pgtestbase := pgtest.ForT(suite.T())
+		suite.Require().NotNil(pgtestbase)
+		suite.pool = pgtestbase.Pool
 
-	db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
-	suite.Require().NoError(err)
+		suite.storage = postgresStore.New(suite.pool)
+		suite.indexer = postgresStore.NewIndexer(suite.pool)
+	} else {
+		suite.bleveIndex, err = globalindex.TempInitializeIndices("")
+		suite.Require().NoError(err)
 
-	suite.db = db
+		db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
+		suite.Require().NoError(err)
 
-	suite.storage = rocksdbStore.New(db)
-	suite.indexer = index.New(suite.bleveIndex)
+		suite.db = db
+
+		suite.storage = rocksdbStore.New(db)
+		suite.indexer = index.New(suite.bleveIndex)
+	}
 	suite.searcher = search.New(suite.storage, suite.indexer)
 	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
 	suite.Require().NoError(err)
@@ -61,13 +76,17 @@ func (suite *RiskDataStoreTestSuite) SetupSuite() {
 			sac.ResourceScopeKeys(resources.Risk)))
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Risk)))
 }
 
 func (suite *RiskDataStoreTestSuite) TearDownSuite() {
-	suite.NoError(suite.bleveIndex.Close())
-	rocksdbtest.TearDownRocksDB(suite.db)
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		suite.pool.Close()
+	} else {
+		suite.NoError(suite.bleveIndex.Close())
+		rocksdbtest.TearDownRocksDB(suite.db)
+	}
 }
 
 func (suite *RiskDataStoreTestSuite) TestRiskDataStore() {

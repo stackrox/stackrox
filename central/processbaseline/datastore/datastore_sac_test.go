@@ -233,7 +233,15 @@ func (s *processBaselineSACTestSuite) runSearchTest(c testutils.SACSearchTestCas
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	resultObjs := make([]sac.NamespaceScopedObject, 0, len(results))
+	for i := range results {
+		key, err := IDToKey(results[i].ID)
+		if err != nil {
+			continue
+		}
+		resultObjs = append(resultObjs, key)
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjs)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
@@ -246,7 +254,7 @@ func (s *processBaselineSACTestSuite) TestScopedSearch() {
 }
 
 func (s *processBaselineSACTestSuite) TestUnrestrictedSearch() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})

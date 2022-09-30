@@ -229,12 +229,12 @@ func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searche
 	var sacQueryFilter *v1.Query
 	switch h.resourceMD.GetScope() {
 	case permissions.NamespaceScope:
-		sacQueryFilter, err = BuildClusterNamespaceLevelSACQueryFilter(effectiveaccessscope)
+		sacQueryFilter, err = BuildNonVerboseClusterNamespaceLevelSACQueryFilter(effectiveaccessscope)
 		if err != nil {
 			return nil, err
 		}
 	case permissions.ClusterScope:
-		sacQueryFilter, err = BuildClusterLevelSACQueryFilter(effectiveaccessscope)
+		sacQueryFilter, err = BuildNonVerboseClusterLevelSACQueryFilter(effectiveaccessscope)
 		if err != nil {
 			return nil, err
 		}
@@ -242,16 +242,7 @@ func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searche
 		sacQueryFilter = nil
 	}
 	scopedQuery := search.ConjunctionQuery(q, sacQueryFilter)
-	if q == nil {
-		scopedQuery.Pagination = &v1.QueryPagination{
-			Limit: math.MaxInt32,
-		}
-	} else {
-		scopedQuery.Pagination = &v1.QueryPagination{
-			Limit:       math.MaxInt32,
-			SortOptions: q.GetPagination().GetSortOptions(),
-		}
-	}
+	scopedQuery.Pagination = q.GetPagination()
 
 	var opts []blevesearch.SearchOption
 	results, err := searcher.Search(ctx, scopedQuery, opts...)
@@ -267,8 +258,39 @@ func (h *pgSearchHelper) executeCount(ctx context.Context, q *v1.Query, searcher
 		return searcher.Count(ctx, q)
 	}
 
-	results, err := h.executeSearch(ctx, q, searcher)
-	return len(results), err
+	// Generate query filter
+	resourceWithAccess := permissions.ResourceWithAccess{
+		Resource: h.resourceMD,
+		Access:   storage.Access_READ_ACCESS,
+	}
+	effectiveaccessscope, err := scopeChecker.EffectiveAccessScope(resourceWithAccess)
+	if err != nil {
+		return 0, err
+	}
+	var sacQueryFilter *v1.Query
+	switch h.resourceMD.GetScope() {
+	case permissions.NamespaceScope:
+		sacQueryFilter, err = BuildNonVerboseClusterNamespaceLevelSACQueryFilter(effectiveaccessscope)
+		if err != nil {
+			return 0, err
+		}
+	case permissions.ClusterScope:
+		sacQueryFilter, err = BuildNonVerboseClusterLevelSACQueryFilter(effectiveaccessscope)
+		if err != nil {
+			return 0, err
+		}
+	default:
+		sacQueryFilter = nil
+	}
+	scopedQuery := search.ConjunctionQuery(q, sacQueryFilter)
+	scopedQuery.Pagination = q.GetPagination()
+
+	var opts []blevesearch.SearchOption
+	count, err := searcher.Count(ctx, scopedQuery, opts...)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 // searchHelper implementations

@@ -431,25 +431,6 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 	},
 }
 
-var alertUnrestrictedSACSearchTestCases = map[string]alertSACSearchResult{
-	"full read access should see all alerts": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
-		scopeKey: testutils.UnrestrictedReadCtx,
-		resultCounts: map[string]map[string]int{
-			"": {"": 19},
-		},
-	},
-	"full read-write access should see all alerts": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
-		scopeKey: testutils.UnrestrictedReadWriteCtx,
-		resultCounts: map[string]map[string]int{
-			"": {"": 19},
-		},
-	},
-}
-
 var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 	"full read access should see all alerts": {
 		// SAC search fields are not injected in query when running unscoped search
@@ -489,7 +470,14 @@ func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResu
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.Search(ctx, nil)
 	s.NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), searchResults, s.optionsMap)
+	rawResults := make([]*storage.Alert, 0, len(searchResults))
+	for _, result := range searchResults {
+		res, found, err := s.datastore.GetAlert(s.testContexts[testutils.UnrestrictedReadCtx], result.ID)
+		if found && err == nil {
+			rawResults = append(rawResults, res)
+		}
+	}
+	resultCounts := countSearchRawAlertsResultsPerClusterAndNamespace(rawResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultCounts)
 }
 
@@ -502,7 +490,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedSearch() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearch() {
-	for name, c := range alertUnrestrictedSACSearchTestCases {
+	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})
@@ -526,7 +514,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedCount() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCount() {
-	for name, c := range alertUnrestrictedSACSearchTestCases {
+	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runCountTest(c)
 		})
@@ -550,7 +538,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedCountAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCountAlerts() {
-	for name, c := range alertUnrestrictedSACSearchTestCases {
+	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runCountAlertsTest(c)
 		})
@@ -561,7 +549,14 @@ func (s *alertDatastoreSACTestSuite) runSearchAlertsTest(testparams alertSACSear
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchAlerts(ctx, nil)
 	s.NoError(err)
-	resultsDistribution := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), searchResults, s.optionsMap)
+	rawResults := make([]*storage.Alert, 0, len(searchResults))
+	for _, result := range searchResults {
+		res, found, err := s.datastore.GetAlert(s.testContexts[testutils.UnrestrictedReadCtx], result.GetId())
+		if found && err == nil {
+			rawResults = append(rawResults, res)
+		}
+	}
+	resultsDistribution := countSearchRawAlertsResultsPerClusterAndNamespace(rawResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
 }
 
@@ -574,7 +569,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchAlerts() {
-	for name, c := range alertUnrestrictedSACSearchTestCases {
+	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runSearchAlertsTest(c)
 		})

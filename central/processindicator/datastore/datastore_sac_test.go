@@ -183,7 +183,7 @@ func (s *processIndicatorDatastoreSACSuite) TestScopedSearch() {
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestUnrestrictedSearch() {
-	for name, c := range sacTestUtils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range sacTestUtils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})
@@ -222,6 +222,13 @@ func (s *processIndicatorDatastoreSACSuite) runSearchTest(c sacTestUtils.SACSear
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := sacTestUtils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	resultObjs := make([]sac.NamespaceScopedObject, 0, len(results))
+	for i := range results {
+		obj, found, err := s.datastore.GetProcessIndicator(s.testContexts[sacTestUtils.UnrestrictedReadCtx], results[i].ID)
+		if found && err == nil {
+			resultObjs = append(resultObjs, obj)
+		}
+	}
+	resultCounts := sacTestUtils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjs)
 	sacTestUtils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }

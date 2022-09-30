@@ -188,7 +188,14 @@ func (s *k8sRoleBindingSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	resultObjs := make([]sac.NamespaceScopedObject, 0, len(results))
+	for i := range results {
+		obj, found, err := s.datastore.GetRoleBinding(s.testContexts[testutils.UnrestrictedReadCtx], results[i].ID)
+		if found && err == nil {
+			resultObjs = append(resultObjs, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjs)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
@@ -201,7 +208,7 @@ func (s *k8sRoleBindingSACSuite) TestScopedSearch() {
 }
 
 func (s *k8sRoleBindingSACSuite) TestUnrestrictedSearch() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})

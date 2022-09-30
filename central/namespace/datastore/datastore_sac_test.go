@@ -380,7 +380,14 @@ func (s *namespaceDatastoreSACSuite) runSearchTest(testparams testutils.SACSearc
 	ctx := s.testContexts[testparams.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	rawResults := make([]*storage.NamespaceMetadata, 0, len(results))
+	for _, result := range results {
+		res, found, err := s.datastore.GetNamespace(s.testContexts[testutils.UnrestrictedReadCtx], result.ID)
+		if found && err == nil {
+			rawResults = append(rawResults, res)
+		}
+	}
+	resultCounts := s.countSearchResultObjectsPerClusterAndNamespace(rawResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.Results, resultCounts)
 }
 
@@ -393,7 +400,7 @@ func (s *namespaceDatastoreSACSuite) TestScopedSearch() {
 }
 
 func (s *namespaceDatastoreSACSuite) TestUnrestrictedSearch() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})
@@ -404,7 +411,14 @@ func (s *namespaceDatastoreSACSuite) runSearchResultsTest(testparams testutils.S
 	ctx := s.testContexts[testparams.ScopeKey]
 	results, err := s.datastore.SearchResults(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	rawResults := make([]*storage.NamespaceMetadata, 0, len(results))
+	for _, result := range results {
+		res, found, err := s.datastore.GetNamespace(s.testContexts[testutils.UnrestrictedReadCtx], result.GetId())
+		if found && err == nil {
+			rawResults = append(rawResults, res)
+		}
+	}
+	resultCounts := s.countSearchResultObjectsPerClusterAndNamespace(rawResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.Results, resultCounts)
 }
 
@@ -417,7 +431,7 @@ func (s *namespaceDatastoreSACSuite) TestScopedSearchResults() {
 }
 
 func (s *namespaceDatastoreSACSuite) TestUnrestrictedSearchResults() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchResultsTest(c)
 		})
