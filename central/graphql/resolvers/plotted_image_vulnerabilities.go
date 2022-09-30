@@ -94,7 +94,10 @@ func (resolver *PlottedImageVulnerabilitiesResolver) BasicImageVulnerabilityCoun
 }
 
 // ImageVulnerabilities returns the image vulnerabilities for top risky images scatter-plot
-func (resolver *PlottedImageVulnerabilitiesResolver) ImageVulnerabilities(_ context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+func (resolver *PlottedImageVulnerabilitiesResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	if len(resolver.all) == 0 {
 		return nil, nil
 	}

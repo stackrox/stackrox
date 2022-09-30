@@ -94,7 +94,10 @@ func (resolver *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounte
 }
 
 // NodeVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
-func (resolver *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(_ context.Context, args PaginationWrapper) ([]NodeVulnerabilityResolver, error) {
+func (resolver *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args PaginationWrapper) ([]NodeVulnerabilityResolver, error) {
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	if len(resolver.all) == 0 {
 		return nil, nil
 	}

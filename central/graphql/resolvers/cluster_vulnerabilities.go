@@ -313,15 +313,13 @@ func withOpenShiftTypeFiltering(q string) string {
 }
 
 func (resolver *clusterCVEResolver) clusterVulnerabilityScopeContext() context.Context {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return scoped.Context(resolver.ctx, scoped.Scope{
-			ID:    resolver.data.GetId(),
-			Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
-		})
+	if resolver.ctx == nil {
+		log.Errorf("attempted to scope context on nil")
+		return nil
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
-		Level: v1.SearchCategory_VULNERABILITIES,
+		Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
 	})
 }
 

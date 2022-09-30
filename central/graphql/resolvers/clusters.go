@@ -632,31 +632,17 @@ func (resolver *clusterResolver) ImageCount(ctx context.Context, args RawQuery) 
 func (resolver *clusterResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Components")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
 
-		return resolver.root.Components(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Components(resolver.clusterScopeContext(), args)
+	return resolver.root.Components(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 func (resolver *clusterResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComponentCount")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
 
-		return resolver.root.ComponentCount(ctx, RawQuery{Query: &query})
-	}
-
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ComponentCount(resolver.clusterScopeContext(), args)
+	return resolver.root.ComponentCount(ctx, RawQuery{Query: &query})
 }
 
 func (resolver *clusterResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
@@ -745,6 +731,10 @@ func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, a
 }
 
 func (resolver *clusterResolver) clusterScopeContext() context.Context {
+	if resolver.ctx == nil {
+		log.Errorf("attempted to scope context on nil")
+		return nil
+	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_CLUSTERS,
 		ID:    resolver.data.GetId(),

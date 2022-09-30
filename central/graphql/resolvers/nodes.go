@@ -118,8 +118,11 @@ func (resolver *Resolver) NodeCount(ctx context.Context, args RawQuery) (int32, 
 	return nodeLoader.CountFromQuery(ctx, query)
 }
 
-func (resolver *nodeResolver) Cluster(_ context.Context) (*clusterResolver, error) {
+func (resolver *nodeResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Cluster")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.Cluster(resolver.ctx, struct{ graphql.ID }{graphql.ID(resolver.data.GetClusterId())})
 }
 
@@ -332,14 +335,20 @@ func (resolver *nodeResolver) ComponentCount(ctx context.Context, args RawQuery)
 }
 
 // NodeComponents returns the components in the node.
-func (resolver *nodeResolver) NodeComponents(_ context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
+func (resolver *nodeResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeComponents")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.NodeComponents(resolver.nodeScopeContext(), args)
 }
 
 // NodeComponentCount returns the number of components in the node
-func (resolver *nodeResolver) NodeComponentCount(_ context.Context, args RawQuery) (int32, error) {
+func (resolver *nodeResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeComponentCount")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.NodeComponentCount(resolver.nodeScopeContext(), args)
 }
 
@@ -473,20 +482,29 @@ func (resolver *nodeResolver) VulnCounter(ctx context.Context, args RawQuery) (*
 }
 
 // NodeVulnerabilities returns the vulnerabilities in the node.
-func (resolver *nodeResolver) NodeVulnerabilities(_ context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+func (resolver *nodeResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeVulnerabilities")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.NodeVulnerabilities(resolver.nodeScopeContext(), args)
 }
 
 // NodeVulnerabilityCount returns the number of vulnerabilities the node has.
-func (resolver *nodeResolver) NodeVulnerabilityCount(_ context.Context, args RawQuery) (int32, error) {
+func (resolver *nodeResolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeVulnerabilityCount")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.NodeVulnerabilityCount(resolver.nodeScopeContext(), args)
 }
 
 // NodeVulnerabilityCounter resolves the number of different types of vulnerabilities contained in a node.
-func (resolver *nodeResolver) NodeVulnerabilityCounter(_ context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeVulnerabilityCounter")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.NodeVulnerabilityCounter(resolver.nodeScopeContext(), args)
 }
 
@@ -509,8 +527,11 @@ func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, ar
 	return resolver.root.PlottedNodeVulnerabilities(ctx, RawQuery{Query: &query})
 }
 
-func (resolver *nodeResolver) Scan(_ context.Context) (*nodeScanResolver, error) {
+func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
 	res, err := resolver.root.wrapNodeScanWithContext(resolver.ctx, resolver.data.GetScan(), true, nil)
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	if err != nil || res == nil {
 		return nil, err
 	}
@@ -522,6 +543,10 @@ func (resolver *nodeResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int3
 }
 
 func (resolver *nodeResolver) nodeScopeContext() context.Context {
+	if resolver.ctx == nil {
+		log.Errorf("attempted to scope context on nil")
+		return nil
+	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODES,
 		ID:    resolver.data.GetId(),

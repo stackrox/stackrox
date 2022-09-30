@@ -268,15 +268,13 @@ func imageCveToVulnerabilityWithSeverity(in []*storage.ImageCVE) []Vulnerability
 }
 
 func (resolver *imageCVEResolver) imageVulnerabilityScopeContext() context.Context {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return scoped.Context(resolver.ctx, scoped.Scope{
-			ID:    resolver.data.GetId(),
-			Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
-		})
+	if resolver.ctx == nil {
+		log.Errorf("attempted to scope context on nil")
+		return nil
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
-		Level: v1.SearchCategory_VULNERABILITIES,
+		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 	})
 }
 

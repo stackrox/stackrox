@@ -121,14 +121,20 @@ func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (i
 }
 
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
-func (resolver *deploymentResolver) Cluster(_ context.Context) (*clusterResolver, error) {
+func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Cluster")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.Cluster(resolver.deploymentScopeContext(), struct{ graphql.ID }{graphql.ID(resolver.data.GetClusterId())})
 }
 
 // NamespaceObject returns a GraphQL resolver for the namespace where this deployment runs
-func (resolver *deploymentResolver) NamespaceObject(_ context.Context) (*namespaceResolver, error) {
+func (resolver *deploymentResolver) NamespaceObject(ctx context.Context) (*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "NamespaceObject")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.Namespace(resolver.deploymentScopeContext(), struct{ graphql.ID }{graphql.ID(resolver.data.GetNamespaceId())})
 }
 
@@ -515,16 +521,22 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 	return results[0].ID, nil
 }
 
-func (resolver *deploymentResolver) Images(_ context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Images")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	if !resolver.hasImages() {
 		return nil, nil
 	}
 	return resolver.root.Images(resolver.deploymentScopeContext(), args)
 }
 
-func (resolver *deploymentResolver) ImageCount(_ context.Context, args RawQuery) (int32, error) {
+func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCount")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.ImageCount(resolver.deploymentScopeContext(), args)
 }
 
@@ -551,32 +563,51 @@ func (resolver *deploymentResolver) ComponentCount(ctx context.Context, args Raw
 	}), RawQuery{Query: &query})
 }
 
-func (resolver *deploymentResolver) ImageComponents(_ context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.ImageComponents(resolver.deploymentScopeContext(), args)
 }
 
-func (resolver *deploymentResolver) ImageComponentCount(_ context.Context, args RawQuery) (int32, error) {
+func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponentCount")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.ImageComponentCount(resolver.deploymentScopeContext(), args)
 }
 
-func (resolver *deploymentResolver) ImageVulnerabilities(_ context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+func (resolver *deploymentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilities")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.ImageVulnerabilities(resolver.deploymentScopeContext(), args)
 }
 
-func (resolver *deploymentResolver) ImageVulnerabilityCount(_ context.Context, args RawQuery) (int32, error) {
+func (resolver *deploymentResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCount")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.ImageVulnerabilityCount(resolver.deploymentScopeContext(), args)
 }
 
-func (resolver *deploymentResolver) ImageVulnerabilityCounter(_ context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+func (resolver *deploymentResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCounter")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.ImageVulnerabilityCounter(resolver.deploymentScopeContext(), args)
 }
 
 func (resolver *deploymentResolver) deploymentScopeContext() context.Context {
+	if resolver.ctx == nil {
+		log.Errorf("attempted to scope context on nil")
+		return nil
+	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_DEPLOYMENTS,
 		ID:    resolver.data.GetId(),
@@ -777,8 +808,11 @@ func (resolver *deploymentResolver) PlottedVulns(ctx context.Context, args RawQu
 }
 
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
-func (resolver *deploymentResolver) PlottedImageVulnerabilities(_ context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+func (resolver *deploymentResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PlottedImageVulnerabilities")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	return resolver.root.PlottedImageVulnerabilities(resolver.deploymentScopeContext(), args)
 }
 
