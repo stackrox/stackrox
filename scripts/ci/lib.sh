@@ -183,15 +183,12 @@ push_main_image_set() {
 
         local destination_registries=("quay.io/stackrox-io")
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        require_environment "DOCKER_IO_PUSH_USERNAME"
-        require_environment "DOCKER_IO_PUSH_PASSWORD"
         require_environment "QUAY_RHACS_ENG_RW_USERNAME"
         require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
 
-        docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
         docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
-        local destination_registries=("docker.io/stackrox" "quay.io/rhacs-eng")
+        local destination_registries=("quay.io/rhacs-eng")
     else
         die "$brand is not a supported brand"
     fi
@@ -217,7 +214,7 @@ push_main_image_set() {
 }
 
 push_matching_collector_scanner_images() {
-    info "Pushing collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng"
+    info "Pushing collector & scanner images tagged with main-version to quay.io/rhacs-eng"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: push_matching_collector_scanner_images <brand>"
@@ -234,16 +231,13 @@ push_matching_collector_scanner_images() {
         local source_registry="quay.io/stackrox-io"
         local target_registries=( "quay.io/stackrox-io" )
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        require_environment "DOCKER_IO_PUSH_USERNAME"
-        require_environment "DOCKER_IO_PUSH_PASSWORD"
         require_environment "QUAY_RHACS_ENG_RW_USERNAME"
         require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
 
-        docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
         docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
         local source_registry="quay.io/rhacs-eng"
-        local target_registries=( "docker.io/stackrox" "quay.io/rhacs-eng" )
+        local target_registries=( "quay.io/rhacs-eng" )
     else
         die "$brand is not a supported brand"
     fi
