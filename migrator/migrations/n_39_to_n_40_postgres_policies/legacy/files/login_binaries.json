@@ -1,0 +1,42 @@
+{
+  "id": "1c4e2cab-ce24-4e2a-9a66-f61028e79931",
+  "name": "Login Binaries",
+  "description": "Processes that indicate login attempts",
+  "rationale": "Login processes at runtime are unusual in a container",
+  "remediation": "Ensure that the base image used to create the Dockerfile doesn't have login binaries packaged with it.",
+  "disabled": true,
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "login|systemd|systemd|systemd-logind|gosu|su|nologin|faillog|lastlog|newgrp|sg"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0004",
+      "techniques": [
+        "T1548"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

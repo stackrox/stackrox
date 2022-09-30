@@ -1,0 +1,47 @@
+{
+  "id": "b3335ee3-6f1e-4c3a-a0ad-7c249c25c750",
+  "name": "systemd Execution",
+  "description": "Detected usage of the systemd service manager",
+  "rationale": "The systemd service manager is generally not used in containers, and its use could indicate suspicious activity",
+  "remediation": "Remove systemd from the image before deploying, or consider using a base image that doesn't bundle systemd",
+  "categories": [
+    "System Modification"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "systemd"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0003",
+      "techniques": [
+        "T1543.002"
+      ]
+    },
+    {
+      "tactic": "TA0004",
+      "techniques": [
+        "T1543.002"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

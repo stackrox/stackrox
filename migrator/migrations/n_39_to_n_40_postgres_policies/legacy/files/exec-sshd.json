@@ -1,0 +1,54 @@
+{
+  "id": "618e65ca-737b-4fec-bb42-57a04e7dfc28",
+  "name": "Secure Shell Server (sshd) Execution",
+  "description": "Detects container running the SSH daemon",
+  "rationale": "The secure shell server allows shell access to a container, which can be dangerous.",
+  "remediation": "If ssh is absolutely required, ensure that it is not using default authentication. Otherwise, consider removing it from the container altogether.",
+  "categories": [
+    "Network Tools",
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "sshd"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0001",
+      "techniques": [
+        "T1078"
+      ]
+    },
+    {
+      "tactic": "TA0002",
+      "techniques": [
+        "T1059.004"
+      ]
+    },
+    {
+      "tactic": "TA0008",
+      "techniques": [
+        "T1021.004"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

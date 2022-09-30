@@ -10,9 +10,9 @@ import (
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/central/policy/store/boltdb"
 	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
-	policyUtils "github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -80,7 +80,7 @@ func addDefaults(s policyStore.Store) {
 		count++
 
 		// fill multi-word sort helper field
-		policyUtils.FillSortHelperFields(p)
+		policyutils.FillSortHelperFields(p)
 
 		if err := s.Upsert(policyCtx, p); err != nil {
 			panic(err)

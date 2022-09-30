@@ -1,0 +1,42 @@
+{
+  "id": "1037940a-fc22-4f64-8784-b8f5bd1cc93f",
+  "name": "Shell Management",
+  "description": "Commands that are used to add/remove a shell",
+  "rationale": "Shell management is not usually done at runtime",
+  "remediation": "Ensure that the base image used to create the Dockerfile doesn't have shell binaries packaged with it.",
+  "disabled": true,
+  "categories": [
+    "System Modification"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "add-shell|remove-shell"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0002",
+      "techniques": [
+        "T1059.004"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}
