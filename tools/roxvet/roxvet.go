@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckedifassign"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/unusedroxctlargs"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/validateimports"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/verifylicenseheader"
 	"golang.org/x/tools/go/analysis/unitchecker"
 )
 
@@ -30,5 +31,6 @@ func main() {
 		filepathwalk.Analyzer,
 		validateimports.Analyzer,
 		importpackagenames.Analyzer,
+		verifylicenseheader.Analyzer
 	)
 }
