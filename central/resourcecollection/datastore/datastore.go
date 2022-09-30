@@ -16,7 +16,7 @@ import (
 
 //go:generate mockgen-wrapper
 
-// DataStore is a wrapper around a store that provides search functionality
+// DataStore is the entry point for modifying Collection data.
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
