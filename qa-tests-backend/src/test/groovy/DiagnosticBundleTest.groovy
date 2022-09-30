@@ -1,17 +1,23 @@
 import static com.jayway.restassured.RestAssured.given
+
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+
 import com.jayway.restassured.config.RestAssuredConfig
 import com.jayway.restassured.config.SSLConfig
-import groups.BAT
+
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.storage.RoleOuterClass
 import io.stackrox.proto.storage.RoleOuterClass.Role
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
-import org.junit.experimental.categories.Category
+
+import groups.BAT
+import services.ClusterService
 import services.RoleService
+import util.Env
+
+import org.junit.experimental.categories.Category
 import spock.lang.Shared
 import spock.lang.Unroll
-import util.Env
 
 @Category(BAT)
 class DiagnosticBundleTest extends BaseSpecification {
@@ -102,20 +108,22 @@ class DiagnosticBundleTest extends BaseSpecification {
         assert response.statusCode == statusCode
 
         if (statusCode == 200) {
-            def foundK8sInfo = false
+            List<String> entries = []
             def zis = new ZipInputStream(response.body.asInputStream())
             try {
                 ZipEntry entry
                 while ((entry = zis.nextEntry) != null) {
                     log.info "Found file ${entry.name}"
-                    if (entry.name == "kubernetes/remote/stackrox/sensor/deployment-sensor.yaml") {
-                        foundK8sInfo = true
-                    }
+                    entries.add(entry.name)
                 }
             } finally {
                 zis.close()
             }
-            assert foundK8sInfo
+
+            def entry = "kubernetes/" +
+                    "${Env.CI_JOBNAME.contains('rosa') ? '_central-cluster' : ClusterService.DEFAULT_CLUSTER_NAME}" +
+                    "/stackrox/sensor/deployment-sensor.yaml"
+            assert entry in entries
         }
 
         cleanup:
