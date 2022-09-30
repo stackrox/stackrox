@@ -563,7 +563,7 @@ func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Que
 	})
 }
 
-func retriableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db *pgxpool.Pool) ([]searchPkg.Result, error) {
+func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db *pgxpool.Pool) ([]searchPkg.Result, error) {
 	queryStr := query.AsSQL()
 
 	// Assumes that ids are strings.
@@ -679,7 +679,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 		return nil, nil
 	}
 	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
-		return retriableRunSearchRequestForSchema(ctx, query, schema, db)
+		return retryableRunSearchRequestForSchema(ctx, query, schema, db)
 	})
 }
 
@@ -734,7 +734,7 @@ func RunGetQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Quer
 	})
 }
 
-func retriableRunGetManyQueryForSchema(ctx context.Context, query *query, db *pgxpool.Pool) ([][]byte, error) {
+func retryableRunGetManyQueryForSchema(ctx context.Context, query *query, db *pgxpool.Pool) ([][]byte, error) {
 	queryStr := query.AsSQL()
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
@@ -764,7 +764,7 @@ func RunGetManyQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	}
 
 	return pgutils.Retry2(func() ([][]byte, error) {
-		return retriableRunGetManyQueryForSchema(ctx, query, db)
+		return retryableRunGetManyQueryForSchema(ctx, query, db)
 	})
 }
 
