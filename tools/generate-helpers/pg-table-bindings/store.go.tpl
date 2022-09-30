@@ -350,7 +350,9 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     {{- end }}
     {{- end }}{{/* if not $inMigration */}}
 
-    return s.upsert(ctx, obj)
+	return pgutils.RetryExecQuery(ctx, func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
@@ -393,17 +395,19 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     return s.upsert(ctx, objs...)
     {{- else }}
 
-    // Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-    // same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-    // violations
-    s.mutex.Lock()
-    defer s.mutex.Unlock()
+	return pgutils.RetryExecQuery(ctx, func() error {
+		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+		// violations
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
 
-    if len(objs) < batchAfter {
-        return s.upsert(ctx, objs...)
-    } else {
-        return s.copyFrom(ctx, objs...)
-    }
+		if len(objs) < batchAfter {
+			return s.upsert(ctx, objs...)
+		} else {
+			return s.copyFrom(ctx, objs...)
+		}
+	})
     {{- end }}
 }
 {{- end }}

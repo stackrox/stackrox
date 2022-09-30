@@ -136,7 +136,9 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Cluster) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return s.upsert(ctx, obj)
+	return pgutils.RetryExecQuery(ctx, func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Cluster) error {

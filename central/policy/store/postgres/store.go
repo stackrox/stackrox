@@ -272,7 +272,9 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Policy) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return s.upsert(ctx, obj)
+	return pgutils.RetryExecQuery(ctx, func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) error {
@@ -283,17 +285,19 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) erro
 		return sac.ErrResourceAccessDenied
 	}
 
-	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-	// violations
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	return pgutils.RetryExecQuery(ctx, func() error {
+		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+		// violations
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
 
-	if len(objs) < batchAfter {
-		return s.upsert(ctx, objs...)
-	} else {
-		return s.copyFrom(ctx, objs...)
-	}
+		if len(objs) < batchAfter {
+			return s.upsert(ctx, objs...)
+		} else {
+			return s.copyFrom(ctx, objs...)
+		}
+	})
 }
 
 // Count returns the number of objects in the store
