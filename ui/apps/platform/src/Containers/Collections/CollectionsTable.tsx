@@ -23,7 +23,7 @@ import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { GetSortParams } from 'hooks/useURLSort';
 import { CollectionResponse } from 'services/CollectionsService';
 import { SearchFilter } from 'types/search';
-import { collectionsPath } from 'routePaths';
+import { collectionsBasePath } from 'routePaths';
 
 export type CollectionsTableProps = {
     collections: CollectionResponse[];
@@ -57,14 +57,14 @@ function CollectionsTable({
 
     function onEditCollection(id: string) {
         history.push({
-            pathname: `${collectionsPath}/${id}`,
+            pathname: `${collectionsBasePath}/${id}`,
             search: 'action=edit',
         });
     }
 
     function onCloneCollection(id: string) {
         history.push({
-            pathname: `${collectionsPath}/${id}`,
+            pathname: `${collectionsBasePath}/${id}`,
             search: 'action=clone',
         });
     }
@@ -192,7 +192,7 @@ function CollectionsTable({
                                         variant={ButtonVariant.link}
                                         isInline
                                         component={LinkShim}
-                                        href={`${collectionsPath}/${id}`}
+                                        href={`${collectionsBasePath}/${id}`}
                                     >
                                         {name}
                                     </Button>
