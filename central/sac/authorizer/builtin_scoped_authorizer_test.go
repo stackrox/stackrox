@@ -3,7 +3,6 @@ package authorizer
 import (
 	"testing"
 
-	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,36 +15,34 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	firstCluster = payload.Cluster{
-		ID:   "cluster-1",
-		Name: "FirstCluster",
-	}
-	secondCluster = payload.Cluster{
-		ID:   "cluster-2",
-		Name: "SecondCluster",
-	}
+const (
+	firstClusterID    = "cluster-1"
+	firstClusterName  = "FirstCluster"
+	secondClusterID   = "cluster-2"
+	secondClusterName = "SecondCluster"
 
 	firstNamespaceName  = "FirstNamespace"
 	secondNamespaceName = "SecondNamespace"
+)
 
+var (
 	allResourcesView = mapResourcesToAccess(resources.AllResourcesViewPermissions())
 	allResourcesEdit = mapResourcesToAccess(resources.AllResourcesModifyPermissions())
 
 	clusters = []*storage.Cluster{
-		{Id: firstCluster.ID, Name: firstCluster.Name},
-		{Id: secondCluster.ID, Name: secondCluster.Name},
+		{Id: firstClusterID, Name: firstClusterName},
+		{Id: secondClusterID, Name: secondClusterName},
 	}
 	namespaces = []*storage.NamespaceMetadata{{
 		Id:          "namespace-1",
 		Name:        firstNamespaceName,
-		ClusterId:   firstCluster.ID,
-		ClusterName: firstCluster.Name,
+		ClusterId:   firstClusterID,
+		ClusterName: firstClusterName,
 	}, {
 		Id:          "namespace-2",
 		Name:        secondNamespaceName,
-		ClusterId:   firstCluster.ID,
-		ClusterName: firstCluster.Name,
+		ClusterId:   firstClusterID,
+		ClusterName: firstClusterName,
 	}}
 )
 
@@ -63,7 +60,7 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		{
 			name:      "allow read from cluster with permissions",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
-			scopeKeys: readCluster(firstCluster.ID, resources.Cluster.Resource),
+			scopeKeys: readCluster(firstClusterID, resources.Cluster.Resource),
 			results:   []bool{false, false, true},
 		},
 		{
@@ -81,25 +78,25 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		{
 			name:      "deny cluster modification with permission to view",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
-			scopeKeys: scopeKeys(storage.Access_READ_WRITE_ACCESS, resources.Cluster.Resource, firstCluster.ID, ""),
+			scopeKeys: scopeKeys(storage.Access_READ_WRITE_ACCESS, resources.Cluster.Resource, firstClusterID, ""),
 			results:   []bool{false, false, false, false},
 		},
 		{
 			name:      "deny read from cluster with no scope access",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
-			scopeKeys: readCluster(secondCluster.ID, resources.Cluster.Resource),
+			scopeKeys: readCluster(secondClusterID, resources.Cluster.Resource),
 			results:   []bool{false, false, false},
 		},
 		{
 			name:      "allow read from compliance with permissions",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Cluster())},
-			scopeKeys: readCluster(firstCluster.ID, resources.Compliance.Resource),
+			scopeKeys: readCluster(firstClusterID, resources.Compliance.Resource),
 			results:   []bool{false, false, true},
 		},
 		{
 			name:      "allow read from compliance with replacing resource permissions",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Cluster())},
-			scopeKeys: readCluster(firstCluster.ID, resources.ComplianceRuns.Resource),
+			scopeKeys: readCluster(firstClusterID, resources.ComplianceRuns.Resource),
 			results:   []bool{false, false, true},
 		},
 		{
@@ -107,7 +104,7 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 			roles: []permissions.ResolvedRole{
 				role(allResourcesView, withAccessTo1Namespace()),
 				role(allResourcesView, withAccessTo1Cluster())},
-			scopeKeys: readNamespace(firstCluster.ID, secondNamespaceName),
+			scopeKeys: readNamespace(firstClusterID, secondNamespaceName),
 			results:   []bool{false, false, true, true},
 		},
 		{
@@ -125,13 +122,13 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		{
 			name:      "deny read from anything when scope is empty",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{Id: "empty"})},
-			scopeKeys: readCluster(firstCluster.ID, resources.Cluster.Resource),
+			scopeKeys: readCluster(firstClusterID, resources.Cluster.Resource),
 			results:   []bool{false, false, false},
 		},
 		{
 			name:      "deny read from anything when scope deny all",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeExcludeAll)},
-			scopeKeys: readCluster(firstCluster.ID, resources.Cluster.Resource),
+			scopeKeys: readCluster(firstClusterID, resources.Cluster.Resource),
 			results:   []bool{false, false, false},
 		},
 		{
@@ -173,12 +170,12 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 	}{
 		{
 			name:      "allow read from cluster with partial access",
-			scopeKeys: readCluster(firstCluster.ID, resources.Cluster.Resource),
+			scopeKeys: readCluster(firstClusterID, resources.Cluster.Resource),
 			results:   []bool{false, false, true},
 		},
 		{
 			name:      "allow read from namespace with direct access",
-			scopeKeys: readNamespace(firstCluster.ID, firstNamespaceName),
+			scopeKeys: readNamespace(firstClusterID, firstNamespaceName),
 			results:   []bool{false, false, false, true},
 		},
 		{
@@ -190,7 +187,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 		},
 		{
 			name:      "error when wrong sub scope",
-			scopeKeys: sac.ClusterScopeKeys(firstCluster.ID),
+			scopeKeys: sac.ClusterScopeKeys(firstClusterID),
 			results:   []bool{},
 		},
 		{
@@ -205,7 +202,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 			name: "error when wrong sub scope",
 			scopeKeys: []sac.ScopeKey{
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
-				sac.ClusterScopeKey(firstCluster.ID),
+				sac.ClusterScopeKey(firstClusterID),
 			},
 			results: []bool{false},
 		},
@@ -223,19 +220,19 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 			scopeKeys: []sac.ScopeKey{
 				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKey(resources.Cluster.Resource),
-				sac.ClusterScopeKey(firstCluster.ID),
-				sac.ClusterScopeKey(secondCluster.ID),
+				sac.ClusterScopeKey(firstClusterID),
+				sac.ClusterScopeKey(secondClusterID),
 			},
 			results: []bool{false, false, true},
 		},
 		{
 			name:      "deny when unknown namespace",
-			scopeKeys: readNamespace(firstCluster.ID, "unknown ID"),
+			scopeKeys: readNamespace(firstClusterID, "unknown ID"),
 			results:   []bool{false, false, false, false},
 		},
 		{
 			name:      "deny when empty namespace",
-			scopeKeys: readNamespace(firstCluster.ID, ""),
+			scopeKeys: readNamespace(firstClusterID, ""),
 			results:   []bool{false, false, false, false},
 		},
 		{
@@ -276,14 +273,14 @@ func TestEffectiveAccessScope(t *testing.T) {
 	// the cluster part. In order to have the scope validation (which relies on Compactify) working,
 	// the clusters in the expected trees are identified with their names rather than ID.
 
-	oneClusterEffectiveScope := effectiveaccessscope.FromClustersAndNamespacesMap([]string{firstCluster.Name}, nil)
+	oneClusterEffectiveScope := effectiveaccessscope.FromClustersAndNamespacesMap([]string{firstClusterName}, nil)
 
 	oneNamespaceScopeMap := map[string][]string{
-		firstCluster.Name: {firstNamespaceName},
+		firstClusterName: {firstNamespaceName},
 	}
 	oneNamespaceEffectiveScope := effectiveaccessscope.FromClustersAndNamespacesMap(nil, oneNamespaceScopeMap)
 
-	mixedEffectiveScope := effectiveaccessscope.FromClustersAndNamespacesMap([]string{secondCluster.Name}, oneNamespaceScopeMap)
+	mixedEffectiveScope := effectiveaccessscope.FromClustersAndNamespacesMap([]string{secondClusterName}, oneNamespaceScopeMap)
 
 	tests := []struct {
 		name      string
@@ -673,7 +670,7 @@ func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T)
 						Requirements: []*storage.SetBasedLabelSelector_Requirement{
 							{Key: "invalid key"},
 						}}}}})},
-			scopeKeys: readCluster(firstCluster.ID, resources.Cluster.Resource),
+			scopeKeys: readCluster(firstClusterID, resources.Cluster.Resource),
 			results:   []bool{false},
 		},
 	}
@@ -720,7 +717,7 @@ func withAccessTo1Cluster() *storage.SimpleAccessScope {
 	return &storage.SimpleAccessScope{
 		Id: "withAccessTo1Cluster",
 		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters: []string{firstCluster.Name},
+			IncludedClusters: []string{firstClusterName},
 		},
 	}
 }
@@ -729,7 +726,7 @@ func withAccessTo2Cluster() *storage.SimpleAccessScope {
 	return &storage.SimpleAccessScope{
 		Id: "withAccessTo2Cluster",
 		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters: []string{secondCluster.Name},
+			IncludedClusters: []string{secondClusterName},
 		},
 	}
 }
@@ -739,7 +736,7 @@ func withAccessTo1Namespace() *storage.SimpleAccessScope {
 		Id: "withAccessTo1Namespace",
 		Rules: &storage.SimpleAccessScope_Rules{
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{
-				ClusterName:   firstCluster.Name,
+				ClusterName:   firstClusterName,
 				NamespaceName: firstNamespaceName,
 			}},
 		},
