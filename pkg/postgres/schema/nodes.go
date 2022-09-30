@@ -75,7 +75,7 @@ type Nodes struct {
 	Components              int32             `gorm:"column:components;type:integer"`
 	Cves                    int32             `gorm:"column:cves;type:integer"`
 	FixableCves             int32             `gorm:"column:fixablecves;type:integer"`
-	Priority                int64             `gorm:"column:priority;type:integer"`
+	Priority                int64             `gorm:"column:priority;type:bigint"`
 	RiskScore               float32           `gorm:"column:riskscore;type:numeric"`
 	TopCvss                 float32           `gorm:"column:topcvss;type:numeric"`
 	Serialized              []byte            `gorm:"column:serialized;type:bytea"`

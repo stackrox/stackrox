@@ -55,7 +55,7 @@ type ProcessIndicators struct {
 	SignalName         string `gorm:"column:signal_name;type:varchar"`
 	SignalArgs         string `gorm:"column:signal_args;type:varchar"`
 	SignalExecFilePath string `gorm:"column:signal_execfilepath;type:varchar"`
-	SignalUid          uint32 `gorm:"column:signal_uid;type:integer"`
+	SignalUid          uint32 `gorm:"column:signal_uid;type:bigint"`
 	ClusterId          string `gorm:"column:clusterid;type:varchar"`
 	Namespace          string `gorm:"column:namespace;type:varchar"`
 	Serialized         []byte `gorm:"column:serialized;type:bytea"`
