@@ -51,7 +51,7 @@ func (s *PostgresPruningSuite) SetupSuite() {
 }
 
 func (s *PostgresPruningSuite) TearDownSuite() {
-	//s.testDB.Teardown(s.T())
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
