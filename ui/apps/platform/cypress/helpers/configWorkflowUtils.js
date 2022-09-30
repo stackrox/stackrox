@@ -328,16 +328,18 @@ export const clickOnSingleEntityInTable = (entitiesKey1, entitiesKey2) => {
 
     const segment2 = segmentForEntity[entitiesKey2];
 
-    cy.get(configManagementSelectors.tableRows)
-        .find(`${configManagementSelectors.tableCells} a[href*='/${segment2}']`)
-        .eq(0)
+    cy.get(`${configManagementSelectors.tableCells} a[href*='/${segment2}']:eq(0)`)
         .invoke('text')
         .then((value) => {
-            interactAndWaitForConfigurationManagementEntityInSidePanel(() => {
-                cy.get(configManagementSelectors.tableRows)
-                    .find(`${configManagementSelectors.tableCells} a[href*='/${segment2}']:eq(0)`)
-                    .click();
-            }, entitiesKey2);
+            interactAndWaitForConfigurationManagementSecondaryEntityInSidePanel(
+                () => {
+                    cy.get(
+                        `${configManagementSelectors.tableCells} a[href*='/${segment2}']:eq(0)`
+                    ).click();
+                },
+                entitiesKey1,
+                entitiesKey2
+            );
 
             cy.get(
                 `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${value}")`
