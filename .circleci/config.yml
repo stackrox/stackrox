@@ -3045,6 +3045,20 @@ jobs:
 
       - *saveGoBuildCache
 
+      - run:
+          name: Push new Docker image
+          command: |
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+
+            TAG=$(make --quiet tag)
+
+            QUAY_REPO="rhacs-eng"
+            for img in scale grpc-server; do
+              ./scripts/ci/push-as-manifest-list.sh "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
+            done
+
+      - cleanup-clusters-on-fail
+
   provision-gke-api-scale-tests:
     executor: custom
     resource_class: small
