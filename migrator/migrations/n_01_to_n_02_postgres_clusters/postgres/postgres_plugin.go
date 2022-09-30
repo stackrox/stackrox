@@ -122,7 +122,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Cluster) error 
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Cluster) error {
 
-	return pgutils.RetryExecQuery(func() error {
+	return pgutils.Retry(func() error {
 		return s.upsert(ctx, obj)
 	})
 }
