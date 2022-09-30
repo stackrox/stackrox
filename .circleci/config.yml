@@ -4755,8 +4755,6 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - go-unit-tests-release:
           <<: *runOnAllTagsWithQuayIOPullCtx
-      - go-postgres-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
       - shell-unit-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - ui-unit-tests:
@@ -4830,15 +4828,6 @@ workflows:
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-e2e-tests
-      - provision-gke-postgres-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-postgres-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-stackrox
-            - build-rhacs
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-postgres-api-e2e-tests
       - provision-gke-kernel-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - gke-kernel-api-e2e-tests:
@@ -4865,33 +4854,6 @@ workflows:
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-scale-tests
-      - provision-gke-postgres-api-scale-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-postgres-api-scale-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-          - build-stackrox
-          - build-rhacs
-          - build-scale-monitoring-and-mock-server
-          - provision-gke-postgres-api-scale-tests
-      - provision-openshift-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - openshift-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-stackrox
-            - build-rhacs
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-api-e2e-tests
-      - provision-openshift-crio-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - openshift-crio-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-stackrox
-            - build-rhacs
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-crio-api-e2e-tests
       - provision-eks-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - eks-api-e2e-tests:
@@ -4901,16 +4863,6 @@ workflows:
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-eks-api-e2e-tests
-      # ROX-8306 - Disabled due to Azure account issue
-      # - provision-aks-api-e2e-tests:
-      #     <<: *runOnAllTagsWithQuayIOPullCtx
-      # - aks-api-e2e-tests:
-      #     <<: *runOnAllTagsWithQuayIOPullCtx
-      #     requires:
-      #       - build-stackrox
-      #       - build-rhacs
-      #       - build-scale-monitoring-and-mock-server
-      #       - provision-aks-api-e2e-tests
       - provision-openshift-4-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - openshift-4-api-e2e-tests:
@@ -4961,23 +4913,6 @@ workflows:
             - ui-unit-tests
             - push-release
 
-      - provision-openshift-rosa-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          context:
-            - osd-cluster-manager
-            - quay-rhacs-eng-readonly
-
-      - openshift-rosa-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-rosa-api-e2e-tests
-            - build-stackrox
-            - build-rhacs
-          context:
-            - osd-cluster-manager
-            - quay-rhacs-eng-readonly
-
       - check-docs-job:
           <<: *runOnlyOnReleaseCandidateBuilds
           context:
@@ -4986,63 +4921,6 @@ workflows:
           <<: *runOnlyOnReleaseCandidateBuilds
           context:
           - custom-executor-pull
-
-      - provision-openshift-aro-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          context:
-            - com-redhat-cloud
-            - quay-rhacs-eng-readonly
-            - azure-ci
-            - aro-cluster-manager
-            - osd-cluster-manager
-
-      - openshift-aro-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-aro-api-e2e-tests
-            - build-stackrox
-            - build-rhacs
-          context:
-            - com-redhat-cloud
-            - quay-rhacs-eng-readonly
-            - azure-ci
-            - aro-cluster-manager
-            - osd-cluster-manager
-
-      - provision-osd-aws-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          context:
-            - quay-rhacs-eng-readonly
-            - osd-cluster-manager
-
-      - osd-aws-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-scale-monitoring-and-mock-server
-            - provision-osd-aws-api-e2e-tests
-            - build-stackrox
-            - build-rhacs
-          context:
-            - quay-rhacs-eng-readonly
-            - osd-cluster-manager
-
-      - provision-osd-gcp-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          context:
-            - quay-rhacs-eng-readonly
-            - osd-cluster-manager
-
-      - osd-gcp-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-scale-monitoring-and-mock-server
-            - provision-osd-gcp-api-e2e-tests
-            - build-stackrox
-            - build-rhacs
-          context:
-            - quay-rhacs-eng-readonly
-            - osd-cluster-manager
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds
