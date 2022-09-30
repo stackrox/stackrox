@@ -75,7 +75,7 @@ type Images struct {
 	Cves                 int32             `gorm:"column:cves;type:integer"`
 	FixableCves          int32             `gorm:"column:fixablecves;type:integer"`
 	LastUpdated          *time.Time        `gorm:"column:lastupdated;type:timestamp"`
-	Priority             int64             `gorm:"column:priority;type:integer"`
+	Priority             int64             `gorm:"column:priority;type:bigint"`
 	RiskScore            float32           `gorm:"column:riskscore;type:numeric"`
 	TopCvss              float32           `gorm:"column:topcvss;type:numeric"`
 	Serialized           []byte            `gorm:"column:serialized;type:bytea"`

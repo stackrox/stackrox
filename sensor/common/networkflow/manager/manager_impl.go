@@ -714,10 +714,10 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 	return updatedEndpoints
 }
 
-func (m *networkFlowManager) PublicIPsValueStream() concurrency.ReadOnlyValueStream {
+func (m *networkFlowManager) PublicIPsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPAddressList] {
 	return m.publicIPs.PublicIPsProtoStream()
 }
 
-func (m *networkFlowManager) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream {
+func (m *networkFlowManager) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList] {
 	return m.externalSrcs.ExternalSrcsValueStream()
 }

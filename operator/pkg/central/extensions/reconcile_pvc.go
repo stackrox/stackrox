@@ -20,7 +20,23 @@ import (
 )
 
 const (
-	defaultPVCName = "stackrox-db"
+	// DefaultCentralPVCName is the default name for Central PVC
+	DefaultCentralPVCName = "stackrox-db"
+	// DefaultCentralDBPVCName is the default name for Central DB PVC
+	DefaultCentralDBPVCName = "central-db"
+
+	pvcTargetLabelKey = "target.pvc.stackrox.io"
+)
+
+// PVCTarget specifies which deployment should attach the PVC
+type PVCTarget string
+
+const (
+	// PVCTargetCentral is for any PVC that would be attached to the Central deployment
+	PVCTargetCentral PVCTarget = "central"
+
+	// PVCTargetCentralDB is for any PVC that would be attached to the Central DB deployment
+	PVCTargetCentralDB PVCTarget = "central-db"
 )
 
 var (
@@ -29,29 +45,72 @@ var (
 	defaultPVCSize = resource.MustParse("100Gi")
 )
 
-// ReconcilePVCExtension reconciles PVCs created by the operator
-func ReconcilePVCExtension(client ctrlClient.Client) extensions.ReconcileExtension {
-	return wrapExtension(reconcilePVC, client)
+func convertDBPersistenceToPersistence(p *platform.DBPersistence) *platform.Persistence {
+	if p == nil {
+		return nil
+	}
+	if p.HostPath != nil {
+		return &platform.Persistence{
+			HostPath: p.HostPath,
+		}
+	}
+	pvc := p.GetPersistentVolumeClaim()
+	if pvc == nil {
+		return &platform.Persistence{}
+	}
+	return &platform.Persistence{
+		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+			ClaimName:        pvc.ClaimName,
+			Size:             pvc.Size,
+			StorageClassName: pvc.StorageClassName,
+		},
+	}
 }
 
-func reconcilePVC(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
+func getPersistenceByClaimName(central *platform.Central, claim string) *platform.Persistence {
+	switch claim {
+	case DefaultCentralPVCName:
+		return central.Spec.Central.GetPersistence()
+	case DefaultCentralDBPVCName:
+		return convertDBPersistenceToPersistence(central.Spec.Central.DB.GetPersistence())
+	default:
+		panic("unknown default claim name")
+	}
+}
+
+// ReconcilePVCExtension reconciles PVCs created by the operator
+func ReconcilePVCExtension(client ctrlClient.Client, target PVCTarget, defaultClaimName string) extensions.ReconcileExtension {
+	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
+		persistence := getPersistenceByClaimName(central, defaultClaimName)
+		return reconcilePVC(ctx, central, persistence, target, defaultClaimName, client, log)
+	}
+	return wrapExtension(fn, client)
+}
+
+func reconcilePVC(ctx context.Context, central *platform.Central, persistence *platform.Persistence, target PVCTarget, defaultClaimName string, client ctrlClient.Client, log logr.Logger) error {
 	ext := reconcilePVCExtensionRun{
-		ctx:        ctx,
-		namespace:  central.GetNamespace(),
-		client:     client,
-		centralObj: central,
-		log:        log,
+		ctx:              ctx,
+		namespace:        central.GetNamespace(),
+		client:           client,
+		centralObj:       central,
+		persistence:      persistence,
+		target:           target,
+		defaultClaimName: defaultClaimName,
+		log:              log,
 	}
 
 	return ext.Execute()
 }
 
 type reconcilePVCExtensionRun struct {
-	ctx        context.Context
-	namespace  string
-	client     ctrlClient.Client
-	centralObj *platform.Central
-	log        logr.Logger
+	ctx              context.Context
+	namespace        string
+	client           ctrlClient.Client
+	centralObj       *platform.Central
+	persistence      *platform.Persistence
+	defaultClaimName string
+	target           PVCTarget
+	log              logr.Logger
 }
 
 func (r *reconcilePVCExtensionRun) Execute() error {
@@ -59,19 +118,19 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 		return r.handleDelete()
 	}
 
-	if r.centralObj.Spec.Central.GetHostPath() != "" {
-		if r.centralObj.Spec.Central.GetPersistentVolumeClaim() != nil {
-			return errors.New("invalid persistence configuration, either hostPath oder persistentVolumeClaim must be set, not both")
+	if r.persistence.GetHostPath() != "" {
+		if r.persistence.GetPersistentVolumeClaim() != nil {
+			return errors.New("invalid persistence configuration, either hostPath or persistentVolumeClaim must be set, not both")
 		}
 		return nil
 	}
 
-	pvcConfig := r.centralObj.Spec.Central.GetPersistentVolumeClaim()
+	pvcConfig := r.persistence.GetPersistentVolumeClaim()
 	if pvcConfig == nil {
 		pvcConfig = &platform.PersistentVolumeClaim{}
 	}
-	claimName := pointer.StringPtrDerefOr(pvcConfig.ClaimName, defaultPVCName)
 
+	claimName := pointer.StringPtrDerefOr(pvcConfig.ClaimName, r.defaultClaimName)
 	key := ctrlClient.ObjectKey{Namespace: r.namespace, Name: claimName}
 	pvc := &corev1.PersistentVolumeClaim{}
 	if err := r.client.Get(r.ctx, key, pvc); err != nil {
@@ -81,14 +140,14 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 		pvc = nil
 	}
 
-	ownedPVC, err := r.getUniqueOwnedPVCs()
+	ownedPVC, err := r.getUniqueOwnedPVCsForCurrentTarget()
 	if err != nil {
 		return err
 	}
 	if ownedPVC != nil {
 		if ownedPVC.GetName() != claimName && pvc == nil {
 			return errors.Errorf(
-				"Could not create PVC %q because the operator can only manage 1 PVC for Central. To fix this either reference a manually created PVC or remove the OwnerReference of the %q PVC.", claimName, ownedPVC.GetName())
+				"Could not create PVC %q because the operator can only manage 1 PVC for %s. To fix this either reference a manually created PVC or remove the OwnerReference of the %q PVC.", claimName, r.target, ownedPVC.GetName())
 		}
 	}
 
@@ -137,6 +196,9 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 			Namespace: r.namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(r.centralObj, r.centralObj.GroupVersionKind()),
+			},
+			Labels: map[string]string{
+				pvcTargetLabelKey: string(r.target),
 			},
 		},
 
@@ -198,6 +260,7 @@ func parseResourceQuantityOr(qStrPtr *string, d resource.Quantity) (resource.Qua
 
 func (r *reconcilePVCExtensionRun) getOwnedPVC() ([]*corev1.PersistentVolumeClaim, error) {
 	pvcList := &corev1.PersistentVolumeClaimList{}
+
 	if err := r.client.List(r.ctx, pvcList, ctrlClient.InNamespace(r.namespace)); err != nil {
 		return nil, errors.Wrapf(err, "receiving list PVC list for %s %s", r.centralObj.GroupVersionKind(), r.centralObj.GetName())
 	}
@@ -214,26 +277,36 @@ func (r *reconcilePVCExtensionRun) getOwnedPVC() ([]*corev1.PersistentVolumeClai
 	return ownedPVCs, nil
 }
 
-func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCs() (*corev1.PersistentVolumeClaim, error) {
+func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentTarget() (*corev1.PersistentVolumeClaim, error) {
 	pvcList, err := r.getOwnedPVC()
 	if err != nil {
 		return nil, err
 	}
 
+	// Filter PVC List by current PVC Claim Name
+	filtered := make([]*corev1.PersistentVolumeClaim, 0, len(pvcList))
+	for _, pvc := range pvcList {
+		// If the target annotation is empty, default to Central for backwards compatibility
+		if val, ok := pvc.Labels[pvcTargetLabelKey]; !ok && r.target == PVCTargetCentral {
+			filtered = append(filtered, pvc)
+		} else if val == string(r.target) {
+			filtered = append(filtered, pvc)
+		}
+	}
 	// If no previously created managed PVC was found everything is ok.
-	if len(pvcList) == 0 {
+	if len(filtered) == 0 {
 		return nil, nil
 	}
-
-	if len(pvcList) > 1 {
+	if len(filtered) > 1 {
 		var names []string
-		for _, item := range pvcList {
+		for _, item := range filtered {
 			names = append(names, item.GetName())
 		}
 		sort.Strings(names)
+
 		return nil, errors.Wrapf(errMultipleOwnedPVCs,
-			"multiple owned PVCs were found, please remove not used ones or delete their OwnerReferences. Found PVCs: %s", strings.Join(names, ", "))
+			"multiple owned PVCs were found for %s, please remove not used ones or delete their OwnerReferences. Found PVCs: %s", r.target, strings.Join(names, ", "))
 	}
 
-	return pvcList[0], nil
+	return filtered[0], nil
 }

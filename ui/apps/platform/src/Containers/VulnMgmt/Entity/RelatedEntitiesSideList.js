@@ -15,7 +15,7 @@ import filterEntityRelationship from 'Containers/VulnMgmt/VulnMgmt.utils/filterE
 
 const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityContext }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const { isDarkMode } = useTheme();
     const workflowState = useContext(workflowStateContext);
@@ -27,7 +27,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
     const countKeyMap = { ...defaultCountKeyMap, ...altCountKeyMap };
 
     const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
-        // @TODO: Remove the following filter step once ROX_FRONTEND_VM_UPDATES is ON
+        // @TODO: Remove the following filter step once ROX_POSTGRES_DATASTORE is ON
         .filter((matchEntity) => {
             return filterEntityRelationship(showVMUpdates, matchEntity);
         })
@@ -52,7 +52,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
             );
         });
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
-        // @TODO: Remove the following filter step once ROX_FRONTEND_VM_UPDATES is ON
+        // @TODO: Remove the following filter step once ROX_POSTGRES_DATASTORE is ON
         .filter((containEntity) => {
             return filterEntityRelationship(showVMUpdates, containEntity);
         })

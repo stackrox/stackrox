@@ -245,7 +245,7 @@ func (resolver *nodeResolver) Controls(ctx context.Context, args RawQuery) ([]*c
 	if err != nil {
 		return nil, err
 	}
-	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(results, any, resolver.root.ComplianceStandardStore))
+	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(results, all, resolver.root.ComplianceStandardStore))
 	if err != nil {
 		return nil, err
 	}

@@ -31,7 +31,7 @@ const VulmMgmtEntityPolicy = ({
     const workflowState = useContext(workflowStateContext);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const fragmentToUse = showVMUpdates
         ? DEPLOYMENT_LIST_FRAGMENT_UPDATED

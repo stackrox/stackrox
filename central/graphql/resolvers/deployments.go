@@ -251,10 +251,7 @@ func (resolver *deploymentResolver) Policies(ctx context.Context, args Paginated
 		})
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(policyResolvers, nil)
-	return resolvers.([]*policyResolver), err
+	return paginate(pagination, policyResolvers, nil)
 }
 
 func (resolver *deploymentResolver) PolicyCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -333,10 +330,7 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 		})
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(policyResolvers, nil)
-	return resolvers.([]*policyResolver), err
+	return paginate(pagination, policyResolvers, nil)
 }
 
 // FailingPolicyCount returns count of policies failing on this deployment
@@ -428,10 +422,7 @@ func (resolver *deploymentResolver) Secrets(ctx context.Context, args PaginatedQ
 		return nil, err
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(secrets, nil)
-	return resolvers.([]*secretResolver), err
+	return paginate(pagination, secrets, nil)
 }
 
 // SecretCount returns the total number of secrets for this deployment

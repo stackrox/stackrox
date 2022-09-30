@@ -295,7 +295,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     small,
 }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const workflowState = useContext(workflowStateContext);
 

@@ -64,10 +64,10 @@ func (mr *MockSettingsManagerMockRecorder) GetResourcesForSync() *gomock.Call {
 }
 
 // SensorEventsStream mocks base method.
-func (m *MockSettingsManager) SensorEventsStream() concurrency.ReadOnlyValueStream {
+func (m *MockSettingsManager) SensorEventsStream() concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest] {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SensorEventsStream")
-	ret0, _ := ret[0].(concurrency.ReadOnlyValueStream)
+	ret0, _ := ret[0].(concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest])
 	return ret0
 }
 
@@ -78,10 +78,10 @@ func (mr *MockSettingsManagerMockRecorder) SensorEventsStream() *gomock.Call {
 }
 
 // SettingsStream mocks base method.
-func (m *MockSettingsManager) SettingsStream() concurrency.ReadOnlyValueStream {
+func (m *MockSettingsManager) SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings] {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SettingsStream")
-	ret0, _ := ret[0].(concurrency.ReadOnlyValueStream)
+	ret0, _ := ret[0].(concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings])
 	return ret0
 }
 

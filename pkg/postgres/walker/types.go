@@ -16,6 +16,7 @@ const (
 	EnumArray   DataType = "enumarray"
 	Integer     DataType = "integer"
 	IntArray    DataType = "intarray"
+	BigInteger  DataType = "biginteger"
 )
 
 // DataTypeToSQLType converts the internal representation to SQL
@@ -34,6 +35,8 @@ func DataTypeToSQLType(dataType DataType) string {
 		sqlType = "jsonb"
 	case Enum, Integer:
 		sqlType = "integer"
+	case BigInteger:
+		sqlType = "bigint"
 	case StringArray:
 		sqlType = "text[]"
 	case EnumArray, IntArray:

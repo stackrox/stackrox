@@ -23,6 +23,9 @@ message TestSingleKeyStruct {
     bool bool                    = 4 [(gogoproto.moretags) = 'search:"Test Bool"'];
     // repeated bool bool_slice: currently unsupported
 
+    // When using this ensure your precision needs are met and accounted for.  This will use a
+    // BigInt which may require you to convert from uint64 to int64 OR update
+    // the handling to use numerics.
     uint64 uint64                = 5 [(gogoproto.moretags) = 'search:"Test Uint64"'];
     // repeated uint64 uint64_slice: currently unsupported
 
@@ -102,7 +105,7 @@ message TestMultiKeyStruct {
   string string = 16 [(gogoproto.moretags) = 'search:"Test String"'];
 
   // repeated int64: currently unsupported
-  repeated int64 int_slice_deprecated = 17 [deprecated = true];
+  repeated int64 int_slice_deprecated = 17 [deprecated = true, (gogoproto.moretags) = 'sql:"-"'];
 
   repeated int32 int32_slice = 18 [(gogoproto.moretags) = 'search:"Test Int32 Slice"'];
 
