@@ -88,7 +88,6 @@ type WorkloadManager struct {
 // WorkloadManagerConfig WorkloadManager's configuration
 type WorkloadManagerConfig struct {
 	workloadFile string
-	client       client.Interface
 }
 
 // ConfigDefaults default configuration
