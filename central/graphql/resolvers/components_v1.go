@@ -34,10 +34,7 @@ func (resolver *imageScanResolver) Components(ctx context.Context, args Paginate
 		},
 	}, query)
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(vulns, err)
-	return resolvers.([]*EmbeddedImageScanComponentResolver), err
+	return paginate(pagination, vulns, err)
 }
 
 func (resolver *imageScanResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -167,16 +164,12 @@ func (eicr *EmbeddedImageScanComponentResolver) Vulns(ctx context.Context, args 
 		})
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: query.GetPagination(),
-	}.paginate(vulns, nil)
+	resolvers, err := paginate(query.GetPagination(), vulns, nil)
 	if err != nil {
 		return nil, err
 	}
-	paginatedVulns := resolvers.([]*EmbeddedVulnerabilityResolver)
-
-	ret := make([]VulnerabilityResolver, 0, len(paginatedVulns))
-	for _, resolver := range paginatedVulns {
+	ret := make([]VulnerabilityResolver, 0, len(resolvers))
+	for _, resolver := range resolvers {
 		ret = append(ret, resolver)
 	}
 	return ret, err

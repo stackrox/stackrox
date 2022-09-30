@@ -59,14 +59,12 @@ func unwrappedPlottedVulnerabilities(ctx context.Context, resolver *Resolver, cv
 		return nil, nil
 	}
 
-	cvesInterface, err := paginationWrapper{
-		pv: q.GetPagination(),
-	}.paginate(cveIds, nil)
+	cves, err := paginate(q.GetPagination(), cveIds, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	vulns, err := resolver.CVEDataStore.GetBatch(ctx, cvesInterface.([]string))
+	vulns, err := resolver.CVEDataStore.GetBatch(ctx, cves)
 	if err != nil {
 		return nil, err
 	}
