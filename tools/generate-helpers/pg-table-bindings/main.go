@@ -279,6 +279,14 @@ func main() {
 			}
 		}
 
+		// remove any self references
+		filteredReferences := make([]parsedReference, 0, len(parsedReferences))
+		for _, ref := range parsedReferences {
+			if ref.Table != props.Table {
+				filteredReferences = append(filteredReferences, ref)
+			}
+		}
+
 		templateMap := map[string]interface{}{
 			"Type":              props.Type,
 			"TrimmedType":       trimmedType,
@@ -297,17 +305,9 @@ func main() {
 			"Cycle":           embeddedFK != "" && referencedField != "",
 			"EmbeddedFK":      embeddedFK,
 			"ReferencedField": referencedField,
-			"References":      parsedReferences,
+			"References":      filteredReferences,
 			"SearchScope":     searchScope,
 			"RegisterSchema":  !props.ConversionFuncs,
-		}
-
-		// remove any self references
-		filteredReferences := make([]parsedReference, 0, len(parsedReferences))
-		for _, ref := range parsedReferences {
-			if ref.Table != props.Table {
-				filteredReferences = append(filteredReferences, ref)
-			}
 		}
 
 		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
