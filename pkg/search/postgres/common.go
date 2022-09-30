@@ -558,7 +558,7 @@ func tracedQueryRow(ctx context.Context, pool *pgxpool.Pool, sql string, args ..
 func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) ([]searchPkg.Result, error) {
 	schema := mapping.GetTableFromCategory(category)
 
-	return pgutils.RetryQuery(func() ([]searchPkg.Result, error) {
+	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
 		return RunSearchRequestForSchema(ctx, schema, q, db)
 	})
 }
@@ -678,7 +678,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	if query == nil {
 		return nil, nil
 	}
-	return pgutils.RetryQuery(func() ([]searchPkg.Result, error) {
+	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
 		return retriableRunSearchRequestForSchema(ctx, query, schema, db)
 	})
 }
@@ -687,7 +687,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 func RunCountRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) (int, error) {
 	schema := mapping.GetTableFromCategory(category)
 
-	return pgutils.RetryQuery(func() (int, error) {
+	return pgutils.Retry2(func() (int, error) {
 		return RunCountRequestForSchema(ctx, schema, q, db)
 	})
 }
@@ -700,7 +700,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	}
 	queryStr := query.AsSQL()
 
-	return pgutils.RetryQuery(func() (int, error) {
+	return pgutils.Retry2(func() (int, error) {
 		var count int
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		if err := row.Scan(&count); err != nil {
@@ -724,7 +724,7 @@ func RunGetQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Quer
 	}
 	queryStr := query.AsSQL()
 
-	return pgutils.RetryQuery(func() ([]byte, error) {
+	return pgutils.Retry2(func() ([]byte, error) {
 		var data []byte
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		if err := row.Scan(&data); err != nil {
@@ -763,7 +763,7 @@ func RunGetManyQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		return nil, emptyQueryErr
 	}
 
-	return pgutils.RetryQuery(func() ([][]byte, error) {
+	return pgutils.Retry2(func() ([][]byte, error) {
 		return retriableRunGetManyQueryForSchema(ctx, query, db)
 	})
 }
@@ -827,7 +827,7 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 		return err
 	}
 
-	return pgutils.RetryExecQuery(func() error {
+	return pgutils.Retry(func() error {
 		_, err = db.Exec(ctx, query.AsSQL(), query.Data...)
 		if err != nil {
 			return errors.Wrapf(err, "could not delete from %q", schema.Table)
