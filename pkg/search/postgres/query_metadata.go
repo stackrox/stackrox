@@ -79,6 +79,14 @@ var (
 				return []string{strconv.Itoa(*val.(*int))}
 			},
 		},
+		walker.BigInteger: {
+			alloc: func() interface{} {
+				return pointers.Int64(0)
+			},
+			printer: func(val interface{}) []string {
+				return []string{strconv.FormatInt(*val.(*int64), 10)}
+			},
+		},
 		walker.Numeric: {
 			alloc: func() interface{} {
 				return &pgtype.Numeric{}
