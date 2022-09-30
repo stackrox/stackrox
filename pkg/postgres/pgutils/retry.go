@@ -12,7 +12,7 @@ const (
 )
 
 // Retry is used to specify how long to retry to successfully run a query with 1 return value
-// that fails with Transient errors
+// that fails with transient errors
 func Retry(fn func() error) error {
 	// Shape fn to match the Retry2 below
 	fnWithReturn := func() (struct{}, error) {
