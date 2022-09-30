@@ -31,7 +31,8 @@ function cluster_status() {
 }
 
 function cluster_destroying() {
-    [ "$(cluster_status "$1")" -eq 3 ]
+    STATUS=$(cluster_status "$1")
+    [ "$STATUS" -eq 3 || "$STATUS" -eq "DESTROYING" ]
 }
 
 function infra_status_summary() {
@@ -49,19 +50,24 @@ case $(cluster_status "$CNAME") in
 "")
     gh_summary "Cluster $CNAME doesn't exist."
     ;;
-1)
+0|FAILED)
+    # Cluster exists already.
+    infra_status_summary "$CNAME" "Cluster failed to create"
+    exit 0
+    ;;
+1|CREATING)
     # Don't wait for the cluster being created, as another workflow could be
     # waiting for it.
     # TODO: use concurrency tweak to allow only single workflow running at once.
     infra_status_summary "$CNAME" "Cluster is being created by another workflow"
     exit 0
     ;;
-2)
+2|READY)
     # Cluster exists already.
     infra_status_summary "$CNAME" "Cluster already exists"
     exit 0
     ;;
-3)
+3|DESTROYING)
     # Cluster is being destroyed.
     infra_status_summary "$CNAME" "Cluster is being destroyed"
     while cluster_destroying "$CNAME"; do
@@ -69,7 +75,7 @@ case $(cluster_status "$CNAME") in
         sleep 30
     done
     ;;
-4)
+4|FINISHED)
     # Cluster has already been destroyed. Create it again.
     gh_log notice "Cluster \`$CNAME\` has been destroyed already."
     infra_status_summary "$CNAME" "Cluster has been destroyed already"
