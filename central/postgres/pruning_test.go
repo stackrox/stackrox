@@ -21,6 +21,8 @@ import (
 
 const (
 	clusterID = "22"
+
+	flowsCountStmt = "select count(*) from network_flows"
 )
 
 type PostgresPruningSuite struct {
@@ -49,7 +51,7 @@ func (s *PostgresPruningSuite) SetupSuite() {
 }
 
 func (s *PostgresPruningSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
+	//s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
@@ -156,71 +158,26 @@ func (s *PostgresPruningSuite) TestPruneStaleNetworkFlows() {
 			Props: &storage.NetworkFlowProperties{
 				DstPort: 22,
 				DstEntity: &storage.NetworkEntityInfo{
-					Type: 1,
+					Type: 2,
 					Id:   "TestDst1",
 				},
 				SrcEntity: &storage.NetworkEntityInfo{
-					Type: 1,
+					Type: 2,
 					Id:   "TestSrc1",
 				},
 			},
 			ClusterId:         clusterID,
-			LastSeenTimestamp: types.TimestampNow(),
+			LastSeenTimestamp: nil,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
 				DstPort: 22,
 				DstEntity: &storage.NetworkEntityInfo{
-					Type: 1,
-					Id:   "TestDst1",
-				},
-				SrcEntity: &storage.NetworkEntityInfo{
-					Type: 1,
-					Id:   "TestSrc1",
-				},
-			},
-			ClusterId:         clusterID,
-			LastSeenTimestamp: types.TimestampNow(),
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
-				DstPort: 22,
-				DstEntity: &storage.NetworkEntityInfo{
-					Type: 1,
-					Id:   "TestDst1",
-				},
-				SrcEntity: &storage.NetworkEntityInfo{
-					Type: 1,
-					Id:   "TestSrc1",
-				},
-			},
-			ClusterId:         clusterID,
-			LastSeenTimestamp: types.TimestampNow(),
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
-				DstPort: 22,
-				DstEntity: &storage.NetworkEntityInfo{
-					Type: 1,
-					Id:   "TestDst1",
-				},
-				SrcEntity: &storage.NetworkEntityInfo{
-					Type: 1,
-					Id:   "TestSrc1",
-				},
-			},
-			ClusterId:         clusterID,
-			LastSeenTimestamp: types.TimestampNow(),
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
-				DstPort: 22,
-				DstEntity: &storage.NetworkEntityInfo{
-					Type: 1,
+					Type: 2,
 					Id:   "TestDst2",
 				},
 				SrcEntity: &storage.NetworkEntityInfo{
-					Type: 1,
+					Type: 2,
 					Id:   "TestSrc2",
 				},
 			},
@@ -231,29 +188,77 @@ func (s *PostgresPruningSuite) TestPruneStaleNetworkFlows() {
 			Props: &storage.NetworkFlowProperties{
 				DstPort: 22,
 				DstEntity: &storage.NetworkEntityInfo{
-					Type: 1,
-					Id:   "TestDst2",
+					Type: 2,
+					Id:   "TestDst1",
 				},
 				SrcEntity: &storage.NetworkEntityInfo{
-					Type: 1,
-					Id:   "TestSrc2",
+					Type: 2,
+					Id:   "TestSrc1",
 				},
 			},
 			ClusterId:         clusterID,
 			LastSeenTimestamp: types.TimestampNow(),
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: 2,
+					Id:   "TestDst1",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: 2,
+					Id:   "TestSrc1",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: types.TimestampNow(),
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: 2,
+					Id:   "TestDst1",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: 2,
+					Id:   "TestSrc1",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: types.TimestampNow(),
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: 2,
+					Id:   "TestDst2",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: 2,
+					Id:   "TestSrc2",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: nil,
 		},
 	}
 
 	err = flowStore.UpsertFlows(s.ctx, flows, timestamp.Now())
 	s.Nil(err)
 
-	storedFlows, _, err := flowStore.GetAllFlows(s.ctx, nil)
+	row := s.testDB.Pool.QueryRow(s.ctx, flowsCountStmt)
+	var count int
+	err = row.Scan(&count)
 	s.Nil(err)
-	s.Equal(len(storedFlows), 6)
+	s.Equal(count, len(flows))
 
 	PruneStaleNetworkFlows(s.ctx, s.testDB.Pool)
 
-	storedFlows, _, err = flowStore.GetAllFlows(s.ctx, nil)
+	row = s.testDB.Pool.QueryRow(s.ctx, flowsCountStmt)
+	err = row.Scan(&count)
 	s.Nil(err)
-	s.Equal(len(storedFlows), 2)
+	s.Equal(count, 2)
 }
