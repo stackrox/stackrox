@@ -130,7 +130,8 @@ const opnamePrefixExceptionForPrimaryAndSecondaryEntities = {
     // TODO controls?
     images: 'getImage_',
     namespaces: 'getNamespace_',
-    // TODO nodes?
+    // TODO getNode instead of getNodeCONTROL
+    policies: 'getPolicy_',
     roles: 'getRole_',
     secrets: 'getSecret_',
     serviceaccounts: 'getServiceAccount_',
