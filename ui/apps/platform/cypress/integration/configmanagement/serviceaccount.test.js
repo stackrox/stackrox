@@ -2,8 +2,8 @@ import {
     renderListAndSidePanel,
     navigateToSingleEntityPage,
     hasCountWidgetsFor,
-    clickOnEntityWidget,
-    clickOnSingleEntity,
+    clickOnSingularEntityWidgetInSidePanel,
+    clickOnSingleEntityInTable,
     hasTabsFor,
     hasRelatedEntityFor,
     pageEntityCountMatchesTableRows,
@@ -11,68 +11,74 @@ import {
 } from '../../helpers/configWorkflowUtils';
 import withAuth from '../../helpers/basicAuth';
 
+const entitiesKey = 'serviceaccounts';
+
 describe('Config Management Entities (Service Accounts)', () => {
     withAuth();
 
     it('should render the service accounts list and open the side panel when a row is clicked', () => {
-        renderListAndSidePanel('serviceAccounts');
+        renderListAndSidePanel(entitiesKey);
     });
 
     it('should click on the namespace entity widget in the side panel and match the header', () => {
-        renderListAndSidePanel('serviceAccounts');
-        clickOnEntityWidget('namespace', 'side-panel');
+        renderListAndSidePanel(entitiesKey);
+        clickOnSingularEntityWidgetInSidePanel('namespace');
     });
 
     it('should render the service list and open the side panel with the clicked namespace value', () => {
-        clickOnSingleEntity('serviceAccounts', 'namespace');
+        clickOnSingleEntityInTable(entitiesKey, 'namespaces');
     });
 
     it('should take you to a service account single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel('serviceAccounts');
-        navigateToSingleEntityPage('serviceAccount');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should show the related cluster widget', () => {
-        renderListAndSidePanel('serviceAccounts');
-        navigateToSingleEntityPage('serviceAccount');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasRelatedEntityFor('Cluster');
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel('serviceAccounts');
-        navigateToSingleEntityPage('serviceAccount');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Deployments', 'Roles']);
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel('serviceAccounts');
-        navigateToSingleEntityPage('serviceAccount');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasTabsFor(['deployments', 'roles']);
     });
 
     it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+        const entitiesKey2 = 'deployments';
+
         context('Page', () => {
-            renderListAndSidePanel('serviceAccounts');
-            navigateToSingleEntityPage('serviceAccount');
-            pageEntityCountMatchesTableRows('Deployments');
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         context('Side Panel', () => {
-            renderListAndSidePanel('serviceAccounts');
-            sidePanelEntityCountMatchesTableRows('Deployments');
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
     it('should have the same number of Roles in the count widget as in the Roles table', () => {
+        const entitiesKey2 = 'roles';
+
         context('Page', () => {
-            renderListAndSidePanel('serviceAccounts');
-            navigateToSingleEntityPage('serviceAccount');
-            pageEntityCountMatchesTableRows('Roles');
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
         context('Side Panel', () => {
-            renderListAndSidePanel('serviceAccounts');
-            sidePanelEntityCountMatchesTableRows('Roles');
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 });

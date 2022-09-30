@@ -1,39 +1,4 @@
-import upperFirst from 'lodash/upperFirst';
-
 export const graphql = (operationName) => `/api/graphql?opname=${operationName}`;
-
-// TODO Encapsulate exceptions in test constants for Configuration Management.
-
-const operationNamePlural = {
-    deployments: 'getDeployments',
-    roles: 'k8sRoles',
-};
-
-const operationNameSingular = {
-    control: 'controlById',
-    role: 'k8sRole',
-};
-
-/*
- * graphqlPluralEntity('serviceAccounts') === 'api/graphql?opname=serviceAccounts'
- */
-export function graphqlPluralEntity(entityPlural) {
-    const operationName = operationNamePlural[entityPlural] ?? entityPlural;
-    return graphql(operationName);
-}
-
-/*
- * graphqlSingularEntity('serviceAccount') === 'api/graphql?opname=getServiceAccount'
- *
- * Note that lodash capitalize converts the remaining characters to lower case.
- */
-export function graphqlSingularEntity(entitySingular) {
-    const operationName =
-        operationNameSingular[entitySingular] ?? `get${upperFirst(entitySingular)}`;
-    return graphql(operationName);
-}
-
-// TODO graphqlSubentity(entity, subentity)
 
 function searchObjToQuery(searchObj) {
     let result = '';
@@ -200,10 +165,6 @@ export const compliance = {
 export const logs = '/api/logimbue';
 
 export const featureFlags = '/v1/featureflags';
-
-export const configMgmt = {
-    // Use graphqlPluralEntity or graphqlSingularEntity.
-};
 
 export const integrationHealth = {
     imageIntegrations: '/v1/integrationhealth/imageintegrations',

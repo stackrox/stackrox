@@ -9,6 +9,8 @@ import {
 } from '../../helpers/configWorkflowUtils';
 import withAuth from '../../helpers/basicAuth';
 
+// const entitiesKey = 'policies'; // omit to minimize changed lines
+
 describe('Config Management Entities (Policies)', () => {
     withAuth();
 
@@ -18,37 +20,39 @@ describe('Config Management Entities (Policies)', () => {
 
     it('should take you to a policy single when the "navigate away" button is clicked', () => {
         renderListAndSidePanel('policies');
-        navigateToSingleEntityPage('policy');
+        navigateToSingleEntityPage('policies');
     });
 
     it('should have the correct count widgets for a single entity view', () => {
         renderListAndSidePanel('policies');
-        navigateToSingleEntityPage('policy');
+        navigateToSingleEntityPage('policies');
         hasCountWidgetsFor(['Deployments']);
     });
 
     it('should click on the deployments count widget in the entity page and show the deployments tab', () => {
         renderListAndSidePanel('policies');
-        navigateToSingleEntityPage('policy');
+        navigateToSingleEntityPage('policies');
         clickOnCountWidget('deployments', 'entityList');
     });
 
     it('should have the correct tabs for a single entity view', () => {
         renderListAndSidePanel('policies');
-        navigateToSingleEntityPage('policy');
+        navigateToSingleEntityPage('policies');
         hasTabsFor(['deployments']);
     });
 
     it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+        const entitiesKey2 = 'deployments';
+
         context('Page', () => {
             renderListAndSidePanel('policies');
-            navigateToSingleEntityPage('policy');
-            pageEntityCountMatchesTableRows('Deployments');
+            navigateToSingleEntityPage('policies');
+            pageEntityCountMatchesTableRows('policies', entitiesKey2);
         });
 
         context('Side Panel', () => {
             renderListAndSidePanel('policies');
-            sidePanelEntityCountMatchesTableRows('Deployments');
+            sidePanelEntityCountMatchesTableRows('policies', entitiesKey2);
         });
     });
 });
