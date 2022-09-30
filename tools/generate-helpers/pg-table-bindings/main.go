@@ -297,9 +297,9 @@ func main() {
 			"Cycle":           embeddedFK != "" && referencedField != "",
 			"EmbeddedFK":      embeddedFK,
 			"ReferencedField": referencedField,
-			"References":     parsedReferences,
-			"SearchScope":    searchScope,
-			"RegisterSchema": !props.ConversionFuncs,
+			"References":      parsedReferences,
+			"SearchScope":     searchScope,
+			"RegisterSchema":  !props.ConversionFuncs,
 		}
 
 		// remove any self references
