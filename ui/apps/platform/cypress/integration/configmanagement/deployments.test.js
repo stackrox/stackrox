@@ -27,7 +27,7 @@ describe('Config Management Entities (Deployments)', () => {
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
         renderListAndSidePanel('deployments');
-        clickOnSingularEntityWidgetInSidePanel('clusters');
+        clickOnSingularEntityWidgetInSidePanel('deployments', 'clusters');
     });
 
     it('should take you to a deployments single when the "navigate away" button is clicked', () => {

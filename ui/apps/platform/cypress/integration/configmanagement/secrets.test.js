@@ -39,7 +39,7 @@ describe('Config Management Entities (Secrets)', () => {
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
         renderListAndSidePanel('secrets');
-        clickOnSingularEntityWidgetInSidePanel('clusters');
+        clickOnSingularEntityWidgetInSidePanel('secrets', 'clusters');
     });
 
     it('should take you to a secrets single when the "navigate away" button is clicked', () => {

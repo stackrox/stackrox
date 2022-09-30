@@ -220,6 +220,18 @@ export function interactAndWaitForConfigurationManagementEntityInSidePanel(
     );
 }
 
+export function interactAndWaitForConfigurationManagementSecondaryEntityInSidePanel(
+    interactionCallback,
+    entitiesKey1,
+    entitiesKey2
+) {
+    interactAndWaitForResponses(interactionCallback, getRequestConfigForEntity(entitiesKey2));
+
+    cy.location('pathname').should('contain', getEntitiesPath(entitiesKey1)); // contains because it has id
+    cy.location('pathname').should('contain', segmentForEntity[entitiesKey2]); // contains because it has id
+    cy.get(`[data-testid="breadcrumb-link-text"]:contains("${headingForEntity[entitiesKey2]}")`);
+}
+
 export function interactAndWaitForConfigurationManagementEntityPage(
     interactionCallback,
     entitiesKey
@@ -298,15 +310,15 @@ export function clickOnCountWidget(entitiesKey, type) {
 }
 
 // For example, deployment and namespace have singular cluster widget.
-export function clickOnSingularEntityWidgetInSidePanel(entitiesKey) {
-    interactAndWaitForConfigurationManagementEntityInSidePanel(() => {
-        cy.get(
-            `${configManagementSelectors.relatedEntityWidgets}:contains('${widgetTitleForEntity[entitiesKey]}')`
-        ).click();
-    }, entitiesKey);
-
-    cy.get(
-        `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${headingForEntity[entitiesKey]}")`
+export function clickOnSingularEntityWidgetInSidePanel(entitiesKey1, entitiesKey2) {
+    interactAndWaitForConfigurationManagementSecondaryEntityInSidePanel(
+        () => {
+            cy.get(
+                `${configManagementSelectors.relatedEntityWidgets}:contains('${widgetTitleForEntity[entitiesKey2]}')`
+            ).click();
+        },
+        entitiesKey1,
+        entitiesKey2
     );
 }
 

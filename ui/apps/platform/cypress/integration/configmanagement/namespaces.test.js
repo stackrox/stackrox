@@ -28,7 +28,7 @@ describe('Config Management Entities (Namespaces)', () => {
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
         renderListAndSidePanel('namespaces');
-        clickOnSingularEntityWidgetInSidePanel('clusters');
+        clickOnSingularEntityWidgetInSidePanel('namespaces', 'clusters');
     });
 
     it('should take you to a namespace single when the "navigate away" button is clicked', () => {

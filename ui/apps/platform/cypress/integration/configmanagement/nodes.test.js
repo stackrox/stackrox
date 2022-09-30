@@ -28,7 +28,7 @@ describe('Config Management Entities (Nodes)', () => {
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
         renderListAndSidePanel('nodes');
-        clickOnSingularEntityWidgetInSidePanel('clusters');
+        clickOnSingularEntityWidgetInSidePanel('nodes', 'clusters');
     });
 
     it('should take you to a nodes single when the "navigate away" button is clicked', () => {
