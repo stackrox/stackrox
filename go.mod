@@ -462,3 +462,5 @@ replace (
 exclude k8s.io/client-go v12.0.0+incompatible
 
 exclude github.com/openshift/client-go v3.9.0+incompatible
+
+replace github.com/mitchellh/hashstructure => github.com/mitchellh/hashstructure/v2 v2.0.2
