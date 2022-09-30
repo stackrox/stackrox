@@ -1,0 +1,40 @@
+{
+  "id": "3a98be1e-d427-41ba-ad60-994e848a5554",
+  "name": "Emergency Deployment Annotation",
+  "description": "Alert on deployments that use the emergency annotation (e.g. \"admission.stackrox.io/break-glass\": \"ticket-1234\") to circumvent StackRox Admission Controller checks",
+  "rationale": "Ideally, all deployments should be validated before they are launched into the cluster; however, in case of emergency, annotations in the form of { \"admission.stackrox.io/break-glass\": \"ticket-1234\"} can be used to avoid those checks.",
+  "remediation": "Redeploy your service and unset the emergency annotation.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Disallowed Annotation",
+          "values": [
+            {
+              "value": "admission.stackrox.io/break-glass="
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0005",
+      "techniques": [
+        "T1610"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

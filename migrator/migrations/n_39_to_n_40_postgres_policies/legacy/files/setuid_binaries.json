@@ -1,0 +1,48 @@
+{
+  "id": "98c8396e-3541-48b9-a30a-371c86a8f0ef",
+  "name": "SetUID Processes",
+  "description": "Processes that are known to use setuid binaries",
+  "rationale": "setuid permits users to run certain programs with escalated privileges",
+  "remediation": "Ensure that the base image used to create the Dockerfile doesn't have setuid software packaged with it.",
+  "disabled": true,
+  "categories": [
+    "System Modification"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "sshd|dbus-daemon-lau|ping|ping6|critical-stack-|pmmcli|filemng|PassengerAgent|bwrap|osdetect|nginxmng|sw-engine-fpm|start-stop-daem"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0004",
+      "techniques": [
+        "T1548.001"
+      ]
+    },
+    {
+      "tactic": "TA0005",
+      "techniques": [
+        "T1548.001"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

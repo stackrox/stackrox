@@ -1,0 +1,33 @@
+{
+  "id": "629f847d-72b1-4009-8891-cbe479ab10ab",
+  "name": "Secure Shell (ssh) Port Exposed in Image",
+  "description": "Alert on deployments exposing port 22, commonly reserved for SSH access.",
+  "rationale": "Port 22 is reserved for SSH access. SSH should not typically be used within containers.",
+  "remediation": "Ensure that non-SSH services are not using port 22. Ensure that any actual SSH servers have been vetted.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Dockerfile Line",
+          "values": [
+            {
+              "value": "EXPOSE=(22/tcp|\\s+22/tcp)"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

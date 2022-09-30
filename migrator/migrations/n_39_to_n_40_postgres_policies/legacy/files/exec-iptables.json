@@ -1,0 +1,67 @@
+{
+  "id": "880fd131-46f0-43d2-82c9-547f5aa7e043",
+  "name": "iptables Execution",
+  "description": "Detects execution of iptables; iptables is a deprecated way of managing network state in containers",
+  "rationale": "iptables is a deprecated way of managing network state in containers",
+  "remediation": "Check for any processes that may be modifying iptables rules. Check for open ports that may be allowing code injection to modify iptables rules",
+  "categories": [
+    "Network Tools"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "exclusions": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    }
+  ],
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "iptables"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0005",
+      "techniques": [
+        "T1562.004"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}
