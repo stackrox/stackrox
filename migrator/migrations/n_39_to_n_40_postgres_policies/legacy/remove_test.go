@@ -54,7 +54,7 @@ func (s *policyTestSuite) TestRemovedDefaultPolicies() {
 	getAndVerify := func(removed set.StringSet) {
 		allPolicies, err := s.store.GetAll(s.ctx)
 		s.NoError(err)
-		s.Len(allPolicies, len(removed)+1)
+		s.Len(allPolicies, removed.Cardinality()+1)
 		for _, p := range allPolicies {
 			if p.GetId() == policy.GetId() {
 				s.Equal(policy, p)
