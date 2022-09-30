@@ -280,11 +280,10 @@ export const hasCountWidgetsFor = (entities) => {
 
 export function clickOnCountWidget(entitiesKey, type) {
     cy.get(
-        `${configManagementSelectors.countWidgets}:contains('${widgetTitleForEntity[entitiesKey]}')`
+        `${configManagementSelectors.countWidgets}:contains('${widgetTitleForEntities[entitiesKey]}')`
     )
         .find(configManagementSelectors.countWidgetValue)
-
-        .click({ force: true });
+        .click();
 
     if (type === 'side-panel') {
         cy.get(
