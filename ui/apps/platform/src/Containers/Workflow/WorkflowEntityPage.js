@@ -49,7 +49,7 @@ const WorkflowEntityPage = ({
     const { isDarkMode } = useTheme();
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const enhancedQueryOptions =
         queryOptions && queryOptions.variables ? queryOptions : { variables: {} };

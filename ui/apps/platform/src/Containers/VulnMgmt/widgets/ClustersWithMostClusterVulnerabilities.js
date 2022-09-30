@@ -334,7 +334,7 @@ const processDataLegacy = (data, workflowState, limit, showVmUpdates) => {
 
 const ClustersWithMostClusterVulnerabilities = ({ entityContext, limit }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const queryToUse = showVmUpdates
         ? CLUSTER_WITH_MOST_CLUSTER_VULNERABILTIES
         : CLUSTER_WITH_MOST_ORCHESTRATOR_ISTIO_VULNERABILTIES;
