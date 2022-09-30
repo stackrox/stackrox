@@ -672,7 +672,7 @@ func (resolver *complianceControlResolver) ComplianceControlNodes(ctx context.Co
 		if err != nil {
 			return nil, err
 		}
-		resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, any, ds))
+		resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, all, ds))
 		if err != nil {
 			return nil, err
 		}
@@ -790,7 +790,7 @@ type resultType int
 const (
 	failing resultType = iota
 	passing
-	any
+	all
 )
 
 func getScopeIDFromAggregationResult(result *storage.ComplianceAggregation_Result, scope storage.ComplianceAggregation_Scope) (string, error) {

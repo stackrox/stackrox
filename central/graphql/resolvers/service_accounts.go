@@ -58,10 +58,8 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: query.Pagination,
-	}.paginate(resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query)))
-	return resolvers.([]*serviceAccountResolver), err
+	serviceAccountResolvers, err := resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query))
+	return paginate(query.GetPagination(), serviceAccountResolvers, err)
 }
 
 // ServiceAccountCount returns count of all service accounts across infrastructure
@@ -129,11 +127,7 @@ func (resolver *serviceAccountResolver) K8sRoles(ctx context.Context, args Pagin
 		return nil, err
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(roleResolvers, nil)
-
-	return resolvers.([]*k8SRoleResolver), err
+	return paginate(pagination, roleResolvers, nil)
 }
 
 func (resolver *serviceAccountResolver) getRolesAndBindings(ctx context.Context, passedQuery *v1.Query) ([]*storage.K8SRoleBinding, []*storage.K8SRole, error) {

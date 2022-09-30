@@ -236,10 +236,7 @@ func (resolver *namespaceResolver) Subjects(ctx context.Context, args PaginatedQ
 		resolvers = append(resolvers, &subjectResolver{ctx, resolver.root, subject})
 	}
 
-	paginatedResolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(resolvers, nil)
-	return paginatedResolvers.([]*subjectResolver), err
+	return paginate(pagination, resolvers, nil)
 }
 
 // ServiceAccountCount returns the count of ServiceAccounts which have any permission on this cluster namespace
@@ -392,10 +389,7 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQ
 		})
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(policyResolvers, nil)
-	return resolvers.([]*policyResolver), err
+	return paginate(pagination, policyResolvers, nil)
 }
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.

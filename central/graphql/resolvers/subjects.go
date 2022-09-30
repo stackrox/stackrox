@@ -70,11 +70,7 @@ func (resolver *Resolver) Subjects(ctx context.Context, args PaginatedQuery) ([]
 		subjectResolvers = append(subjectResolvers, &subjectResolver{root: resolver, data: subject})
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: query.Pagination,
-	}.paginate(subjectResolvers, nil)
-
-	return resolvers.([]*subjectResolver), err
+	return paginate(query.Pagination, subjectResolvers, nil)
 }
 
 // SubjectCount returns count of all subjects across infrastructure
@@ -170,13 +166,11 @@ func (resolver *subjectResolver) K8sRoles(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: filterQ.Pagination,
-	}.paginate(resolver.root.wrapK8SRoles(roles, nil))
+	roleResolvers, err := resolver.root.wrapK8SRoles(roles, nil)
 	if err != nil {
 		return nil, err
 	}
-	return resolvers.([]*k8SRoleResolver), err
+	return paginate(filterQ.Pagination, roleResolvers, nil)
 }
 
 func (resolver *subjectResolver) getRolesForSubject(ctx context.Context, filterQ *v1.Query) ([]*storage.K8SRole, error) {
