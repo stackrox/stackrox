@@ -122,7 +122,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Cluster) error 
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Cluster) error {
 
-	return s.upsert(ctx, obj)
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Cluster) error {
