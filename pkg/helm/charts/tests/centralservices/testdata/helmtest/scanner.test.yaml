@@ -40,7 +40,17 @@ tests:
     - name: "with empty setting"
       set:
         scanner.mode: ""
+
 - name: "scanner with deprecated PodSecurityPolicies disabled"
+  values:
+    system:
+      enablePodSecurityPolicies: false
+  expect: |
+    .podsecuritypolicys["stackrox-scanner"] | assertThat(. == null)
+    .rolebindings["stackrox-scanner-psp"] | assertThat(. == null)
+    .clusterroles["stackrox-scanner-psp"] | assertThat(. == null)
+
+- name: "scanner with deprecated PodSecurityPolicies enabled"
   values:
     system:
       enablePodSecurityPolicies: true
