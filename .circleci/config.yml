@@ -3045,7 +3045,7 @@ jobs:
       - run:
           name: Build images
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+            # docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             make scale-image mock-grpc-server-image
 
       - *saveGoBuildCache
@@ -3053,14 +3053,14 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+            # docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
             TAG=$(make --quiet tag)
 
             QUAY_REPO="rhacs-eng"
             for img in scale grpc-server; do
-              ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/${img}:${TAG}" | cat
+              # ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/${img}:${TAG}" | cat
               ./scripts/ci/push-as-manifest-list.sh "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
             done
 
