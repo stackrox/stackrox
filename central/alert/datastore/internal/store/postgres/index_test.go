@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -26,7 +27,7 @@ type AlertsIndexSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 
-	pool    *pgxpool.Pool
+	pool    *postgres.Postgres
 	store   Store
 	indexer *indexerImpl
 }
@@ -47,7 +48,7 @@ func (s *AlertsIndexSuite) SetupTest() {
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
+	s.pool, err = postgres.ConnectConfig(context.Background(), config)
 	s.Require().NoError(err)
 
 	Destroy(ctx, s.pool)

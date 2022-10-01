@@ -33,6 +33,7 @@ import (
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -63,7 +64,7 @@ type GraphQLImageVulnerabilityTestSuite struct {
 	suite.Suite
 
 	ctx      context.Context
-	db       *pgxpool.Pool
+	db       *postgres.Postgres
 	gormDB   *gorm.DB
 	resolver *Resolver
 
@@ -86,7 +87,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := postgres.ConnectConfig(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool

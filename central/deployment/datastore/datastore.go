@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
@@ -32,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/process/filter"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -62,7 +62,7 @@ type DataStore interface {
 	GetDeploymentIDs(ctx context.Context) ([]string, error)
 }
 
-func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpool.Pool,
+func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgPkg.Postgres,
 	bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
@@ -95,7 +95,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpo
 }
 
 // New creates a deployment datastore based on dackbox
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Pool,
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgPkg.Postgres,
 	bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
@@ -110,7 +110,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Po
 }
 
 // NewTestDataStore allows for direct creation of the datastore for testing purposes
-func NewTestDataStore(t *testing.T, storage store.Store, graphProvider graph.Provider, pool *pgxpool.Pool,
+func NewTestDataStore(t *testing.T, storage store.Store, graphProvider graph.Provider, pool *pgPkg.Postgres,
 	bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
@@ -146,7 +146,7 @@ func NewTestDataStore(t *testing.T, storage store.Store, graphProvider graph.Pro
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+func GetTestPostgresDataStore(t *testing.T, pool *pgPkg.Postgres) (DataStore, error) {
 	dbstore := postgres.FullStoreWrap(postgres.New(pool))
 	indexer := postgres.NewIndexer(pool)
 	searcher := search.NewV2(dbstore, indexer)

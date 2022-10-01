@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -251,7 +252,7 @@ type TestClusterCVEOpsInPostgresTestSuite struct {
 
 	mockCtrl            *gomock.Controller
 	ctx                 context.Context
-	db                  *pgxpool.Pool
+	db                  *pgPkg.Postgres
 	gormDB              *gorm.DB
 	clusterDataStore    clusterDS.DataStore
 	clusterCVEDatastore clusterCVEDataStore.DataStore
@@ -279,7 +280,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.NoError(err)
 
-	db, err := pgxpool.ConnectConfig(s.ctx, config)
+	db, err := pgPkg.ConnectConfig(s.ctx, config)
 	s.NoError(err)
 	s.db = db
 

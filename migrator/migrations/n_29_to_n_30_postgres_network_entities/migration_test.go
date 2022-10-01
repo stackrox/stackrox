@@ -61,7 +61,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 }
 
 func (s *postgresMigrationSuite) TestNetworkEntityMigration() {
-	newStore := pgStore.New(s.postgresDB.Pool)
+	newStore := pgStore.New(s.postgresDB.Postgres)
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
 
@@ -76,7 +76,7 @@ func (s *postgresMigrationSuite) TestNetworkEntityMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, networkEntitys))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Postgres, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)

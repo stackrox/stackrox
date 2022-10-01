@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/set"
@@ -25,7 +26,7 @@ const (
 )
 
 // NewFullStore augments the generated store with upsert and delete cluster cves functions.
-func NewFullStore(db *pgxpool.Pool) store.Store {
+func NewFullStore(db *postgres.Postgres) store.Store {
 	return &fullStoreImpl{
 		db:    db,
 		Store: New(db),
@@ -33,7 +34,7 @@ func NewFullStore(db *pgxpool.Pool) store.Store {
 }
 
 // NewFullTestStore is used for testing.
-func NewFullTestStore(t *testing.T, db *pgxpool.Pool, store Store) store.Store {
+func NewFullTestStore(t *testing.T, db *postgres.Postgres, store Store) store.Store {
 	return &fullStoreImpl{
 		db:    db,
 		Store: store,
@@ -41,7 +42,7 @@ func NewFullTestStore(t *testing.T, db *pgxpool.Pool, store Store) store.Store {
 }
 
 type fullStoreImpl struct {
-	db *pgxpool.Pool
+	db *postgres.Postgres
 
 	Store
 }

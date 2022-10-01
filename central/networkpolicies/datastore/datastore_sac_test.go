@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -34,7 +35,7 @@ type networkPolicySACSuite struct {
 
 	datastore DataStore
 
-	pool *pgxpool.Pool
+	pool *postgres.Postgres
 
 	engine *bolt.DB
 
@@ -51,7 +52,7 @@ func (s *networkPolicySACSuite) SetupSuite() {
 		src := pgtest.GetConnectionString(s.T())
 		cfg, err := pgxpool.ParseConfig(src)
 		s.Require().NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
+		s.pool, err = postgres.ConnectConfig(ctx, cfg)
 		s.Require().NoError(err)
 		pgdbStore.Destroy(ctx, s.pool)
 		gormDB := pgtest.OpenGormDB(s.T(), src)

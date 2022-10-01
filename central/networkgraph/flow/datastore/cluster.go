@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 )
 
@@ -33,7 +33,7 @@ func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.D
 }
 
 // GetTestPostgresClusterDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresClusterDataStore(t *testing.T, pool *pgxpool.Pool) (ClusterDataStore, error) {
+func GetTestPostgresClusterDataStore(t *testing.T, pool *pgPkg.Postgres) (ClusterDataStore, error) {
 	dbstore := postgres.NewClusterStore(pool)
 	configStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {

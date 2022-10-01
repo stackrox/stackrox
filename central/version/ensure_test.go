@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -30,7 +31,7 @@ type EnsurerTestSuite struct {
 	boltDB       *bolt.DB
 	rocksDB      *rocksdb.RocksDB
 	pgStore      postgres.Store
-	pool         *pgxpool.Pool
+	pool         *pgPkg.Postgres
 	versionStore store.Store
 }
 
@@ -40,7 +41,7 @@ func (suite *EnsurerTestSuite) SetupTest() {
 		config, err := pgxpool.ParseConfig(source)
 		suite.Require().NoError(err)
 		ctx := sac.WithAllAccess(context.Background())
-		pool, _ := pgxpool.ConnectConfig(ctx, config)
+		pool, _ := pgPkg.ConnectConfig(ctx, config)
 		suite.pool = pool
 
 		// Ensure we are starting fresh

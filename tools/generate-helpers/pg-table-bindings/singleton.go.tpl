@@ -28,10 +28,10 @@ import (
     "github.com/stackrox/rox/pkg/auth/permissions"
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
+    "github.com/stackrox/rox/pkg/postgres"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/search"
-    "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
 )
 
@@ -57,14 +57,14 @@ type Store interface {
 }
 
 type storeImpl struct {
-    db *pgxpool.Pool
+    db *postgres.Postgres
     mutex sync.Mutex
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
+func New(db *postgres.Postgres) Store {
     return &storeImpl{
         db: db,
     }
@@ -220,6 +220,6 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 
 // Used for Testing
 
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.Postgres) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{.Schema.Table}} CASCADE")
 }

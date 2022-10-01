@@ -65,7 +65,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 }
 
 func (s *postgresMigrationSuite) TestSensorUpgradeConfigMigration() {
-	newStore := pgStore.New(s.postgresDB.Pool)
+	newStore := pgStore.New(s.postgresDB.Postgres)
 	legacyStore := legacy.New(s.legacyDB)
 
 	// Prepare data and write to legacy DB
@@ -74,7 +74,7 @@ func (s *postgresMigrationSuite) TestSensorUpgradeConfigMigration() {
 	s.NoError(legacyStore.Upsert(s.ctx, sensorUpgradeConfig))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Postgres, legacyStore))
 
 	// Verify
 	fetched, found, err := newStore.Get(s.ctx)

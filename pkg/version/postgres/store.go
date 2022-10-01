@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -38,19 +39,19 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *pgxpool.Pool
+	db    *postgres.Postgres
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
+func New(ctx context.Context, db *postgres.Postgres) Store {
 	createTableIfNotExist(ctx, db)
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func createTableIfNotExist(ctx context.Context, db *pgxpool.Pool) {
+func createTableIfNotExist(ctx context.Context, db *postgres.Postgres) {
 	_, err := db.Exec(ctx, createTableStmt)
 	if err != nil {
 		log.Panicf("Error creating version table: %v", err)
@@ -183,6 +184,6 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 // Used for Testing
 
 // Destroy is Used for Testing
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS versions CASCADE")
 }

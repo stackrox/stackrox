@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	activeComponentDackbox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	clusterCVEEdgeDackbox "github.com/stackrox/rox/central/clustercveedge/dackbox"
@@ -40,6 +39,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	rocksPkg "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -51,7 +51,7 @@ import (
 // as well as test data injection and cleanup functions.
 type DackboxTestDataStore interface {
 	// Expose internal for the case other datastores would be needed for testing purposes
-	GetPostgresPool() *pgxpool.Pool
+	GetPostgresPool() *pgPkg.Postgres
 	GetRocksEngine() *rocksPkg.RocksDB
 	GetBleveIndex() bleve.Index
 	GetDackbox() *dackbox.DackBox
@@ -89,8 +89,8 @@ type dackboxTestDataStoreImpl struct {
 	storedNamespaces  []string
 }
 
-func (s *dackboxTestDataStoreImpl) GetPostgresPool() *pgxpool.Pool {
-	return s.pgtestbase.Pool
+func (s *dackboxTestDataStoreImpl) GetPostgresPool() *pgPkg.Postgres {
+	return s.pgtestbase.Postgres
 }
 
 func (s *dackboxTestDataStoreImpl) GetRocksEngine() *rocksPkg.RocksDB {

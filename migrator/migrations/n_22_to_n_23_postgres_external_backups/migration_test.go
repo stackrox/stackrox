@@ -65,7 +65,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 }
 
 func (s *postgresMigrationSuite) TestExternalBackupMigration() {
-	newStore := pgStore.New(s.postgresDB.Pool)
+	newStore := pgStore.New(s.postgresDB.Postgres)
 	legacyStore := legacy.New(s.legacyDB)
 
 	// Prepare data and write to legacy DB
@@ -78,7 +78,7 @@ func (s *postgresMigrationSuite) TestExternalBackupMigration() {
 	}
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Postgres, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)

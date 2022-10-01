@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -102,7 +103,7 @@ type FlowStore interface {
 }
 
 type flowStoreImpl struct {
-	db        *pgxpool.Pool
+	db        *postgres.Postgres
 	clusterID string
 }
 
@@ -177,7 +178,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, clusterID string) FlowStore {
+func New(db *postgres.Postgres, clusterID string) FlowStore {
 	return &flowStoreImpl{
 		db:        db,
 		clusterID: clusterID,
@@ -544,17 +545,17 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 
 //// Used for testing
 
-func dropTableNetworkflow(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNetworkflow(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_flows CASCADE")
 }
 
 // Destroy destroys the tables
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.Postgres) {
 	dropTableNetworkflow(ctx, db)
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, clusterID string) FlowStore {
+func CreateTableAndNewStore(ctx context.Context, db *postgres.Postgres, gormDB *gorm.DB, clusterID string) FlowStore {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, networkFlowsTable)
 	return New(db, clusterID)
 }

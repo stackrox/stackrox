@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -52,7 +53,7 @@ type GraphQLClusterVulnerabilityTestSuite struct {
 	suite.Suite
 
 	ctx      context.Context
-	db       *pgxpool.Pool
+	db       *postgres.Postgres
 	gormDB   *gorm.DB
 	resolver *Resolver
 
@@ -77,7 +78,7 @@ func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := postgres.ConnectConfig(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool

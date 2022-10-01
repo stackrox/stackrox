@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -54,7 +55,7 @@ type versionPair struct {
 type PostgresCloneManagerSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
-	pool        *pgxpool.Pool
+	pool        *postgres.Postgres
 	config      *pgxpool.Config
 	sourceMap   map[string]string
 	ctx         context.Context
@@ -79,7 +80,7 @@ func (s *PostgresCloneManagerSuite) SetupTest() {
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := postgres.ConnectConfig(ctx, config)
 	s.Require().NoError(err)
 
 	s.ctx = ctx

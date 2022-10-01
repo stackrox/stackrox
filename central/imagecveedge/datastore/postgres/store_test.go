@@ -38,7 +38,7 @@ func (s *ImageCveEdgesStoreSuite) SetupSuite() {
 	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.Postgres)
 }
 
 func (s *ImageCveEdgesStoreSuite) SetupTest() {

@@ -38,7 +38,7 @@ func (s *TestG2GrandChild1StoreSuite) SetupSuite() {
 	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.Postgres)
 }
 
 func (s *TestG2GrandChild1StoreSuite) SetupTest() {

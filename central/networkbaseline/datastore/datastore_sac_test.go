@@ -5,11 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -30,7 +30,7 @@ func TestNetworkBaselineDatastoreSAC(t *testing.T) {
 type networkBaselineDatastoreSACTestSuite struct {
 	suite.Suite
 	engine       *rocksdb.RocksDB
-	pool         *pgxpool.Pool
+	pool         *postgres.Postgres
 	datastore    DataStore
 	testContexts map[string]context.Context
 	testNBIDs    []string
@@ -50,7 +50,7 @@ func (s *networkBaselineDatastoreSACTestSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(s.T())
 		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.Pool
+		s.pool = pgtestbase.Postgres
 		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
 		s.Require().NoError(err)
 	} else {

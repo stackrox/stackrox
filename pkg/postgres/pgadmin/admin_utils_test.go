@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -26,7 +27,7 @@ const (
 type PostgresRestoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
-	pool        *pgxpool.Pool
+	pool        *postgres.Postgres
 	config      *pgxpool.Config
 	sourceMap   map[string]string
 	ctx         context.Context
@@ -51,7 +52,7 @@ func (s *PostgresRestoreSuite) SetupTest() {
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := postgres.ConnectConfig(ctx, config)
 	s.Require().NoError(err)
 
 	s.ctx = ctx

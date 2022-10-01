@@ -27,18 +27,19 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
 
-func setupPostgresConn(t testing.TB) (*pgxpool.Pool, *gorm.DB) {
+func setupPostgresConn(t testing.TB) (*postgres.Postgres, *gorm.DB) {
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
 	assert.NoError(t, err)
 
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := postgres.ConnectConfig(context.Background(), config)
 	assert.NoError(t, err)
 
 	gormDB := pgtest.OpenGormDB(t, source)
@@ -71,7 +72,7 @@ func setupResolver(
 	return resolver, schema
 }
 
-func createImageDatastore(_ testing.TB, ctrl *gomock.Controller, db *pgxpool.Pool, gormDB *gorm.DB) imageDS.DataStore {
+func createImageDatastore(_ testing.TB, ctrl *gomock.Controller, db *postgres.Postgres, gormDB *gorm.DB) imageDS.DataStore {
 	ctx := context.Background()
 	imagePostgres.Destroy(ctx, db)
 
@@ -84,7 +85,7 @@ func createImageDatastore(_ testing.TB, ctrl *gomock.Controller, db *pgxpool.Poo
 	)
 }
 
-func createImageComponentDatastore(_ testing.TB, ctrl *gomock.Controller, db *pgxpool.Pool, gormDB *gorm.DB) imageComponentDS.DataStore {
+func createImageComponentDatastore(_ testing.TB, ctrl *gomock.Controller, db *postgres.Postgres, gormDB *gorm.DB) imageComponentDS.DataStore {
 	ctx := context.Background()
 	imageComponentPostgres.Destroy(ctx, db)
 
@@ -98,7 +99,7 @@ func createImageComponentDatastore(_ testing.TB, ctrl *gomock.Controller, db *pg
 	)
 }
 
-func createImageCVEDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) imageCVEDS.DataStore {
+func createImageCVEDatastore(t testing.TB, db *postgres.Postgres, gormDB *gorm.DB) imageCVEDS.DataStore {
 	ctx := context.Background()
 	imageCVEPostgres.Destroy(ctx, db)
 
@@ -111,7 +112,7 @@ func createImageCVEDatastore(t testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) im
 	return datastore
 }
 
-func createImageComponentCVEEdgeDatastore(_ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB) imageComponentCVEEdgeDS.DataStore {
+func createImageComponentCVEEdgeDatastore(_ testing.TB, db *postgres.Postgres, gormDB *gorm.DB) imageComponentCVEEdgeDS.DataStore {
 	ctx := context.Background()
 	imageComponentCVEEdgePostgres.Destroy(ctx, db)
 

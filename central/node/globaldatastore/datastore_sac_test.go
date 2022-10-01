@@ -67,7 +67,7 @@ func (s *nodeDatastoreSACSuite) setupPostgres() {
 
 	s.pgtestbase = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pgtestbase)
-	s.datastore, err = dackboxDatastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
+	s.datastore, err = dackboxDatastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Postgres)
 	s.Require().NoError(err)
 	s.globalDatastore, err = globaldatastore.New(s.datastore)
 	s.Require().NoError(err)
@@ -111,7 +111,7 @@ func (s *nodeDatastoreSACSuite) SetupSuite() {
 
 func (s *nodeDatastoreSACSuite) TearDownSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase.Pool.Close()
+		s.pgtestbase.Postgres.Close()
 	} else {
 		s.Require().NoError(rocksdb.CloseAndRemove(s.rocksEngine))
 		s.Require().NoError(s.bleveIndex.Close())

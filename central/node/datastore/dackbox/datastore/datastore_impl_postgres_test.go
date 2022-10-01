@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/nodes/converter"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -48,7 +49,7 @@ type NodePostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx                context.Context
-	db                 *pgxpool.Pool
+	db                 *pgPkg.Postgres
 	gormDB             *gorm.DB
 	datastore          DataStore
 	mockCtrl           *gomock.Controller
@@ -73,7 +74,7 @@ func (suite *NodePostgresDataStoreTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	suite.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(suite.ctx, config)
+	pool, err := pgPkg.ConnectConfig(suite.ctx, config)
 	suite.NoError(err)
 	suite.gormDB = pgtest.OpenGormDB(suite.T(), source)
 	suite.db = pool

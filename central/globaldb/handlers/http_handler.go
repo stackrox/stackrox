@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb/export"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/osutils"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
@@ -31,7 +31,7 @@ const (
 )
 
 // BackupDB is a handler that writes a consistent view of the databases to the HTTP response.
-func BackupDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, postgresDB *pgxpool.Pool, includeCerts bool) http.Handler {
+func BackupDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, postgresDB *postgres.Postgres, includeCerts bool) http.Handler {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return dumpDB(postgresDB, includeCerts)
 	}
@@ -121,7 +121,7 @@ func serializeDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, includeCerts bool) h
 	}
 }
 
-func dumpDB(postgresDB *pgxpool.Pool, includeCerts bool) http.HandlerFunc {
+func dumpDB(postgresDB *postgres.Postgres, includeCerts bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting Postgres DB backup ...")
 		filename := time.Now().Format(pgFileFormat)

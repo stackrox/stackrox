@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/env"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -29,7 +30,7 @@ type VersionStoreTestSuite struct {
 	boltDB  *bolt.DB
 	rocksDB *rocksdb.RocksDB
 	pgStore postgres.Store
-	pool    *pgxpool.Pool
+	pool    *pgPkg.Postgres
 	ctx     context.Context
 	store   Store
 }
@@ -40,7 +41,7 @@ func (suite *VersionStoreTestSuite) SetupTest() {
 		config, err := pgxpool.ParseConfig(source)
 		suite.Require().NoError(err)
 		suite.ctx = sac.WithAllAccess(context.Background())
-		pool, _ := pgxpool.ConnectConfig(suite.ctx, config)
+		pool, _ := pgPkg.ConnectConfig(suite.ctx, config)
 		suite.pool = pool
 
 		suite.store = NewPostgres(suite.ctx, pool)

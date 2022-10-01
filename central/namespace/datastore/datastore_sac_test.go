@@ -54,7 +54,7 @@ func (s *namespaceDatastoreSACSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pgtestbase = pgtest.ForT(s.T())
 		s.Require().NotNil(s.pgtestbase)
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
+		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.Postgres)
 		s.Require().NoError(err)
 		s.optionsMap = schema.NamespacesSchema.OptionsMap
 	} else {
@@ -78,7 +78,7 @@ func (s *namespaceDatastoreSACSuite) SetupSuite() {
 
 func (s *namespaceDatastoreSACSuite) TearDownSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase.Pool.Close()
+		s.pgtestbase.Postgres.Close()
 	} else {
 		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
 		s.Require().NoError(s.index.Close())

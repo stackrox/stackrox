@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ func TestStore(t *testing.T) {
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
 	require.NoError(t, err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := postgres.ConnectConfig(context.Background(), config)
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
 

@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
@@ -58,7 +59,7 @@ SELECT TABLE_NAME
 var (
 	postgresOpenRetries        = 10
 	postgresTimeBetweenRetries = 10 * time.Second
-	postgresDB                 *pgxpool.Pool
+	postgresDB                 *postgres.Postgres
 	pgSync                     sync.Once
 
 	// PostgresQueryTimeout - Postgres query timeout value
@@ -66,18 +67,18 @@ var (
 )
 
 // GetPostgres returns a global database instance. It should be called after InitializePostgres
-func GetPostgres() *pgxpool.Pool {
+func GetPostgres() *postgres.Postgres {
 	return postgresDB
 }
 
 // GetPostgresTest returns a global database instance. It should be used in tests only.
-func GetPostgresTest(t *testing.T) *pgxpool.Pool {
+func GetPostgresTest(t *testing.T) *postgres.Postgres {
 	t.Log("Initializing Postgres...")
 	return InitializePostgres(context.Background())
 }
 
 // InitializePostgres creates and returns returns a global database instance.
-func InitializePostgres(ctx context.Context) *pgxpool.Pool {
+func InitializePostgres(ctx context.Context) *postgres.Postgres {
 	pgSync.Do(func() {
 		_, dbConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
@@ -91,8 +92,14 @@ func InitializePostgres(ctx context.Context) *pgxpool.Pool {
 		dbConfig.ConnConfig.Database = activeDB
 
 		if err := retry.WithRetry(func() error {
-			postgresDB, err = pgxpool.ConnectConfig(ctx, dbConfig)
-			return err
+			pool, err := pgxpool.ConnectConfig(ctx, dbConfig)
+			if err != nil {
+				return err
+			}
+			postgresDB = &postgres.Postgres{
+				Pool: pool,
+			}
+			return nil
 		}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
 			time.Sleep(postgresTimeBetweenRetries)
 		}), retry.OnFailedAttempts(func(err error) {
@@ -111,7 +118,7 @@ func InitializePostgres(ctx context.Context) *pgxpool.Pool {
 	return postgresDB
 }
 
-func collectPostgresStats(ctx context.Context, db *pgxpool.Pool) {
+func collectPostgresStats(ctx context.Context, db *postgres.Postgres) {
 	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
 	row, err := db.Query(ctx, tableQuery)
@@ -144,7 +151,7 @@ func collectPostgresStats(ctx context.Context, db *pgxpool.Pool) {
 	}
 }
 
-func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool) {
+func startMonitoringPostgres(ctx context.Context, db *postgres.Postgres) {
 	t := time.NewTicker(1 * time.Minute)
 	defer t.Stop()
 	for range t.C {

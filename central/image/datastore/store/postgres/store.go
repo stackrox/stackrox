@@ -18,11 +18,12 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
@@ -64,7 +65,7 @@ type imagePartsAsSlice struct {
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, noUpdateTimestamps bool, keyFence concurrency.KeyFence) store.Store {
+func New(db *postgres.Postgres, noUpdateTimestamps bool, keyFence concurrency.KeyFence) store.Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
@@ -73,7 +74,7 @@ func New(db *pgxpool.Pool, noUpdateTimestamps bool, keyFence concurrency.KeyFenc
 }
 
 type storeImpl struct {
-	db                 *pgxpool.Pool
+	db                 *postgres.Postgres
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
 }
@@ -1015,7 +1016,7 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 
 //// Used for testing
 
-func dropAllTablesInImageTree(ctx context.Context, db *pgxpool.Pool) {
+func dropAllTablesInImageTree(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images CASCADE")
 	dropTableImagesLayers(ctx, db)
 	dropTableImageComponents(ctx, db)
@@ -1025,37 +1026,37 @@ func dropAllTablesInImageTree(ctx context.Context, db *pgxpool.Pool) {
 	dropTableImageComponentEdges(ctx, db)
 }
 
-func dropTableImagesLayers(ctx context.Context, db *pgxpool.Pool) {
+func dropTableImagesLayers(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images_Layers CASCADE")
 }
 
-func dropTableImageComponents(ctx context.Context, db *pgxpool.Pool) {
+func dropTableImageComponents(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentsTable+" CASCADE")
 }
 
-func dropTableImageCVEs(ctx context.Context, db *pgxpool.Pool) {
+func dropTableImageCVEs(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageCVEsTable+" CASCADE")
 }
 
-func dropTableImageCVEEdges(ctx context.Context, db *pgxpool.Pool) {
+func dropTableImageCVEEdges(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageCVEEdgesTable+" CASCADE")
 }
 
-func dropTableComponentCVEEdges(ctx context.Context, db *pgxpool.Pool) {
+func dropTableComponentCVEEdges(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+componentCVEEdgesTable+" CASCADE")
 }
 
-func dropTableImageComponentEdges(ctx context.Context, db *pgxpool.Pool) {
+func dropTableImageComponentEdges(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentEdgesTable+" CASCADE")
 }
 
 // Destroy drops image table.
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.Postgres) {
 	dropAllTablesInImageTree(ctx, db)
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) store.Store {
+func CreateTableAndNewStore(ctx context.Context, db *postgres.Postgres, gormDB *gorm.DB, noUpdateTimestamps bool) store.Store {
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImagesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentsStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCvesStmt)
@@ -1125,7 +1126,7 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 		search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))

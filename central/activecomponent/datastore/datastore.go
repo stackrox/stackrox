@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/activecomponent/datastore/index"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store/postgres"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/env"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 )
@@ -44,7 +44,7 @@ func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexe
 
 // NewForTestOnly returns a new instance of DataStore. TO BE USED FOR TESTING PURPOSES ONLY.
 // To make this more explicit, we require passing a testing.T to this version.
-func NewForTestOnly(t *testing.T, db *pgxpool.Pool) (DataStore, error) {
+func NewForTestOnly(t *testing.T, db *pgPkg.Postgres) (DataStore, error) {
 	testutils.MustBeInTest(t)
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {

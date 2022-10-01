@@ -19,11 +19,12 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
@@ -71,13 +72,13 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db                 *pgxpool.Pool
+	db                 *postgres.Postgres
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, noUpdateTimestamps bool, keyFence concurrency.KeyFence) Store {
+func New(db *postgres.Postgres, noUpdateTimestamps bool, keyFence concurrency.KeyFence) Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
@@ -602,10 +603,10 @@ func (s *storeImpl) retryableCount(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
-// Exists returns if the id exists in the store
+// Exists returns if the qid exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Node")
 
@@ -631,7 +632,7 @@ func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
+	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
 	return count == 1, err
 }
 
@@ -927,7 +928,7 @@ func (s *storeImpl) retryableGetNodeMetadata(ctx context.Context, id string) (*s
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, t *testing.T, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
+func CreateTableAndNewStore(ctx context.Context, t *testing.T, db *postgres.Postgres, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableClustersStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsStmt)
@@ -937,7 +938,7 @@ func CreateTableAndNewStore(ctx context.Context, t *testing.T, db *pgxpool.Pool,
 	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
 }
 
-func dropTableNodes(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNodes(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes CASCADE")
 	dropTableNodesTaints(ctx, db)
 	dropTableNodesComponents(ctx, db)
@@ -946,28 +947,28 @@ func dropTableNodes(ctx context.Context, db *pgxpool.Pool) {
 	dropTableComponentCVEEdges(ctx, db)
 }
 
-func dropTableNodesTaints(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNodesTaints(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes_taints CASCADE")
 }
 
-func dropTableNodesComponents(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNodesComponents(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentsTable+" CASCADE")
 }
 
-func dropTableNodeCVEs(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNodeCVEs(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeCVEsTable+" CASCADE")
 }
 
-func dropTableComponentCVEEdges(ctx context.Context, db *pgxpool.Pool) {
+func dropTableComponentCVEEdges(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+componentCVEEdgesTable+" CASCADE")
 }
 
-func dropTableNodeComponentEdges(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNodeComponentEdges(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentEdgesTable+" CASCADE")
 }
 
 // Destroy drops all node tree tables.
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.Postgres) {
 	dropTableNodes(ctx, db)
 }
 

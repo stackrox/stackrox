@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	activeComponentDackbox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	clusterCVEEdgeDackbox "github.com/stackrox/rox/central/clustercveedge/dackbox"
@@ -42,6 +41,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -79,7 +79,7 @@ type deploymentDatastoreSACSuite struct {
 	indexQ   queue.WaitableQueue
 
 	// Elements for postgres mode
-	pool *pgxpool.Pool
+	pool *postgres.Postgres
 
 	datastore      dDS.DataStore
 	namespaceStore nsDS.DataStore
@@ -101,7 +101,7 @@ func (s *deploymentDatastoreSACSuite) SetupSuite() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(s.T())
 		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.Pool
+		s.pool = pgtestbase.Postgres
 		s.datastore, err = dDS.GetTestPostgresDataStore(s.T(), s.pool)
 		s.Require().NoError(err)
 		s.namespaceStore, err = nsDS.GetTestPostgresDataStore(s.T(), s.pool)

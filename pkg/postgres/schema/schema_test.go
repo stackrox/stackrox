@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/env"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	pkgPostgres "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -32,7 +33,7 @@ type SchemaTestSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	connConfig  *pgx.ConnConfig
-	pool        *pgxpool.Pool
+	pool        *pgPkg.Postgres
 	gormDB      *gorm.DB
 	ctx         context.Context
 }
@@ -59,7 +60,7 @@ func (s *SchemaTestSuite) SetupSuite() {
 	s.connConfig = config.ConnConfig
 
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := pgPkg.ConnectConfig(ctx, config)
 	s.Require().NoError(err)
 
 	s.ctx = ctx

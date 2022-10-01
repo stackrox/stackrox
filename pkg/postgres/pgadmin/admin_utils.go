@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
@@ -109,7 +110,7 @@ func CreateDB(sourceMap map[string]string, adminConfig *pgxpool.Config, dbTempla
 }
 
 // RenameDB - renames a database
-func RenameDB(adminPool *pgxpool.Pool, originalDB, newDB string) error {
+func RenameDB(adminPool *postgres.Postgres, originalDB, newDB string) error {
 	log.Debugf("Renaming database %q to %q", originalDB, newDB)
 	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
 	defer cancel()
@@ -221,7 +222,7 @@ func TerminateConnection(config *pgxpool.Config, dbName string) error {
 // GetAdminPool - returns a pool to connect to the admin database.
 // This is useful for renaming databases such as a restore to active.
 // THIS POOL SHOULD BE CLOSED ONCE ITS PURPOSE HAS BEEN FULFILLED.
-func GetAdminPool(postgresConfig *pgxpool.Config) *pgxpool.Pool {
+func GetAdminPool(postgresConfig *pgxpool.Config) *postgres.Postgres {
 	// Clone config to connect to template DB
 	tempConfig := postgresConfig.Copy()
 
@@ -236,7 +237,7 @@ func GetAdminPool(postgresConfig *pgxpool.Config) *pgxpool.Pool {
 
 // GetClonePool - returns a connection pool for the specified database clone.
 // THIS POOL SHOULD BE CLOSED ONCE ITS PURPOSE HAS BEEN FULFILLED.
-func GetClonePool(postgresConfig *pgxpool.Config, clone string) *pgxpool.Pool {
+func GetClonePool(postgresConfig *pgxpool.Config, clone string) *postgres.Postgres {
 	log.Debugf("GetClonePool -- %q", clone)
 
 	// Clone config to connect to template DB
@@ -252,12 +253,12 @@ func GetClonePool(postgresConfig *pgxpool.Config, clone string) *pgxpool.Pool {
 	return postgresDB
 }
 
-func getPool(postgresConfig *pgxpool.Config) *pgxpool.Pool {
+func getPool(postgresConfig *pgxpool.Config) *postgres.Postgres {
 	var err error
-	var postgresDB *pgxpool.Pool
+	var postgresDB *postgres.Postgres
 
 	if err := retry.WithRetry(func() error {
-		postgresDB, err = pgxpool.ConnectConfig(context.Background(), postgresConfig)
+		postgresDB, err = postgres.ConnectConfig(context.Background(), postgresConfig)
 		return err
 	}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
 		time.Sleep(postgresTimeBetweenRetries)

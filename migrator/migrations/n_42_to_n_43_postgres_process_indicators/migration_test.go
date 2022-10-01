@@ -61,7 +61,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 }
 
 func (s *postgresMigrationSuite) TestProcessIndicatorMigration() {
-	newStore := pgStore.New(s.postgresDB.Pool)
+	newStore := pgStore.New(s.postgresDB.Postgres)
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
 
@@ -76,7 +76,7 @@ func (s *postgresMigrationSuite) TestProcessIndicatorMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, processIndicators))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Postgres, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)

@@ -17,11 +17,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
@@ -65,12 +66,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *pgxpool.Pool
+	db    *postgres.Postgres
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
+func New(db *postgres.Postgres) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -260,7 +261,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 		return 0, nil
 	}
 
-	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
@@ -278,7 +279,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
+	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -300,7 +301,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Notifier, bool
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := pgSearch.RunGetQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
@@ -346,7 +347,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // DeleteByQuery removes the objects based on the passed query
@@ -364,7 +365,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 		query,
 	)
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -376,7 +377,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if !scopeChecker.IsAllowed() {
 		return nil, nil
 	}
-	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +409,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Notif
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -457,7 +458,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
@@ -467,7 +468,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Notifier) err
 	if !scopeChecker.IsAllowed() {
 		return nil
 	}
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -495,17 +496,17 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Notifier) err
 
 //// Used for testing
 
-func dropTableNotifiers(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNotifiers(ctx context.Context, db *postgres.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS notifiers CASCADE")
 
 }
 
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.Postgres) {
 	dropTableNotifiers(ctx, db)
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db *postgres.Postgres, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }

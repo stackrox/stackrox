@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/config"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	postgresDB *pgxpool.Pool
+	postgresDB *pgPkg.Postgres
 	gormDB     *gorm.DB
 
 	err error
@@ -35,7 +35,7 @@ var (
 )
 
 // Load loads a Postgres instance and returns a GormDB.
-func Load(conf *config.Config, databaseName string) (*pgxpool.Pool, *gorm.DB, error) {
+func Load(conf *config.Config, databaseName string) (*pgPkg.Postgres, *gorm.DB, error) {
 	log.WriteToStderrf("Load database = %q", databaseName)
 	once.Do(func() {
 		ctx := context.Background()
@@ -66,7 +66,7 @@ func Load(conf *config.Config, databaseName string) (*pgxpool.Pool, *gorm.DB, er
 				// Need to connect on a static DB so we can rename the used DBs.
 				tempConfig.ConnConfig.Database = databaseName
 
-				postgresDB, err = pgxpool.ConnectConfig(ctx, tempConfig)
+				postgresDB, err = pgPkg.ConnectConfig(ctx, tempConfig)
 				if err != nil {
 					log.WriteToStderrf("fail to connect to central db %v", err)
 					return err

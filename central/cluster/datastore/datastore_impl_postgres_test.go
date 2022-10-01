@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -40,7 +41,7 @@ type ClusterPostgresDataStoreTestSuite struct {
 
 	mockCtrl         *gomock.Controller
 	ctx              context.Context
-	db               *pgxpool.Pool
+	db               *postgres.Postgres
 	nsDatastore      namespace.DataStore
 	clusterDatastore DataStore
 	nodeDataStore    *nodeMocks.MockGlobalDataStore
@@ -65,7 +66,7 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := postgres.ConnectConfig(s.ctx, config)
 	s.NoError(err)
 	s.db = pool
 

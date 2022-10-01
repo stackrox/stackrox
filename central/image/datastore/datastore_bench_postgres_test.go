@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -38,7 +39,7 @@ func BenchmarkImageGetMany(b *testing.B) {
 	config, err := pgxpool.ParseConfig(source)
 	require.NoError(b, err)
 
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := pgPkg.ConnectConfig(ctx, config)
 	require.NoError(b, err)
 	gormDB := pgtest.OpenGormDB(b, source)
 	defer pgtest.CloseGormDB(b, gormDB)

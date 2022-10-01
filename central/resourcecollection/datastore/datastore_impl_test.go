@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -25,7 +26,7 @@ type CollectionPostgresDataStoreTestSuite struct {
 
 	mockCtrl    *gomock.Controller
 	ctx         context.Context
-	db          *pgxpool.Pool
+	db          *pgPkg.Postgres
 	datastore   DataStore
 	envIsolator *envisolator.EnvIsolator
 }
@@ -45,7 +46,7 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := pgPkg.ConnectConfig(s.ctx, config)
 	s.NoError(err)
 	s.db = pool
 
