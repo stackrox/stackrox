@@ -35,25 +35,6 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// AckKeysIndexed mocks base method.
-func (m *MockStore) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
-	for _, a := range keys {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AckKeysIndexed", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AckKeysIndexed indicates an expected call of AckKeysIndexed.
-func (mr *MockStoreMockRecorder) AckKeysIndexed(ctx interface{}, keys ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, keys...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckKeysIndexed", reflect.TypeOf((*MockStore)(nil).AckKeysIndexed), varargs...)
-}
-
 // Count mocks base method.
 func (m *MockStore) Count(ctx context.Context) (int, error) {
 	m.ctrl.T.Helper()
@@ -128,21 +109,6 @@ func (m *MockStore) GetImageMetadata(ctx context.Context, id string) (*storage.I
 func (mr *MockStoreMockRecorder) GetImageMetadata(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageMetadata", reflect.TypeOf((*MockStore)(nil).GetImageMetadata), ctx, id)
-}
-
-// GetKeysToIndex mocks base method.
-func (m *MockStore) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKeysToIndex", ctx)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetKeysToIndex indicates an expected call of GetKeysToIndex.
-func (mr *MockStoreMockRecorder) GetKeysToIndex(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeysToIndex", reflect.TypeOf((*MockStore)(nil).GetKeysToIndex), ctx)
 }
 
 // GetMany mocks base method.
