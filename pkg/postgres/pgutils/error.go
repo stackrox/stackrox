@@ -47,5 +47,5 @@ func isTransientError(err error) bool {
 		return transientPGCodes.Contains(pgErr.Code)
 	}
 	// Assume all other errors are transient
-	return false
+	return true
 }
