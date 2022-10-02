@@ -77,6 +77,12 @@ func insertIntoVersions(ctx context.Context, tx pgx.Tx, obj *storage.Version) er
 }
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Version) error {
+	return pgutils.Retry(func() error {
+		return s.retryableUpsert(ctx, obj)
+	})
+}
+
+func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.Version) error {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS)
 	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
@@ -111,6 +117,12 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Version) error {
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context) (*storage.Version, bool, error) {
+	return pgutils.Retry3(func() (*storage.Version, bool, error) {
+		return s.retryableGet(ctx)
+	})
+}
+
+func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Version, bool, error) {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS)
 	if !scopeChecker.IsAllowed() {
 		return nil, false, nil
@@ -145,6 +157,12 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context) error {
+	return pgutils.Retry(func() error {
+		return s.retryableDelete(ctx)
+	})
+}
+
+func (s *storeImpl) retryableDelete(ctx context.Context) error {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS)
 	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
