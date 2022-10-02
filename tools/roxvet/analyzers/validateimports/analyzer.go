@@ -266,7 +266,6 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	}
 
 	for _, imp := range imports {
-		fmt.Println(imp, packageName, validImportRoot, allowedPackages)
 		err := verifySingleImportFromAllowedPackagesOnly(imp, packageName, validImportRoot, allowedPackages...)
 		if err != nil {
 			pass.Reportf(imp.Pos(), "invalid import %s: %v", imp.Path.Value, err)
