@@ -1,9 +1,13 @@
 package pgutils
 
 import (
+	"io"
+	"net"
+
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -53,6 +57,8 @@ func isTransientError(err error) bool {
 	case pgx.ErrNoRows:
 		return false
 	}
-	// Assume all other errors are transient
-	return true
+	if netErr := (*net.OpError)(nil); errors.As(err, &netErr) {
+		return netErr.Temporary() || netErr.Timeout()
+	}
+	return errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe)
 }
