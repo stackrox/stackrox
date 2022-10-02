@@ -377,16 +377,22 @@ function entityCountMatchesTableRows(entitiesKey1, entitiesKey2, contextSelector
                 return;
             }
 
-            interactAndWaitForConfigurationManagementSecondaryEntities(
-                () => {
-                    cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
-                        .find('button')
-                        .invoke('attr', 'disabled', false)
-                        .click();
-                },
-                entitiesKey1,
-                entitiesKey2
-            );
+            function clickCountWidget() {
+                cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
+                    .find('button')
+                    .invoke('attr', 'disabled', false)
+                    .click();
+            }
+
+            if (entitiesKey1 === 'controls' && entitiesKey2 === 'nodes') {
+                clickCountWidget(); // no request
+            } else {
+                interactAndWaitForConfigurationManagementSecondaryEntities(
+                    clickCountWidget,
+                    entitiesKey1,
+                    entitiesKey2
+                );
+            }
 
             cy.get(`${contextSelector} .rt-tr-group`);
             const noun = tableHeaderNoun(entitiesKey2, count);
