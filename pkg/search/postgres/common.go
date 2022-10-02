@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	context2 "github.com/stackrox/rox/pkg/postgres/pgutils/context"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/random"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -769,6 +770,9 @@ func RunGetManyQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 
 // RunCursorQueryForSchema creates a cursor against the database
 func RunCursorQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *postgres.Postgres) (fetcher func(n int) ([][]byte, error), closer func(), err error) {
+	// Cursor queries are exempt
+	ctx = context2.WithRetry(ctx)
+
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error creating query")
