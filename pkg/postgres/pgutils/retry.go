@@ -1,6 +1,7 @@
 package pgutils
 
 import (
+	"runtime/debug"
 	"time"
 
 	"github.com/stackrox/rox/pkg/timeutil"
@@ -52,6 +53,7 @@ func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 	for {
 		select {
 		case <-expirationTimer.C:
+			debug.PrintStack()
 			log.Fatalf("unsuccessful in reconnecting to the database: %v. Exiting...", err)
 		case <-intervalTicker.C:
 			// Uses err outside the for loop to allow for the expiration to show the last err received
