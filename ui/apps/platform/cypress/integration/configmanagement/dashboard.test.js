@@ -14,11 +14,13 @@ const policyViolationsBySeverityLinkShouldMatchList = (linkSelector, linkRegExp,
     cy.get(linkSelector)
         .invoke('text')
         .then((linkText) => {
-            const [, count, noun] = linkRegExp.exec(linkText);
+            const [, count] = linkRegExp.exec(linkText);
+
             interactAndWaitForConfigurationManagementEntities(() => {
                 cy.get(linkSelector).click();
             }, keyPlural);
-            cy.get(`${selectors.tablePanelHeader}:contains("${count} ${noun}")`);
+
+            cy.get(`[data-testid="side-panel"] [data-testid="panel-header"]:contains("${count}")`);
         });
 };
 
@@ -257,7 +259,7 @@ describe('Config Management Dashboard Page', () => {
 
         policyViolationsBySeverityLinkShouldMatchList(
             selectors.policyViolationsBySeverity.link.ratedAsHigh,
-            /^(\d+) (policy|policies)/,
+            /^(\d+) rated as high/,
             keyPlural
         );
 
@@ -273,7 +275,7 @@ describe('Config Management Dashboard Page', () => {
 
         policyViolationsBySeverityLinkShouldMatchList(
             selectors.policyViolationsBySeverity.link.ratedAsLow,
-            /^(\d+) (policy|policies)/,
+            /^(\d+) rated as low/,
             keyPlural
         );
 
