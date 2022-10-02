@@ -239,6 +239,12 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
 
+	return pgutils.Retry(func() error {
+		return s.retryableUpsertFlows(ctx, flows, lastUpdateTS)
+	})
+}
+
+func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
 	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
 	if len(flows) < batchAfter {
@@ -310,6 +316,12 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveFlowsByDeployment, "NetworkFlow")
 
+	return pgutils.Retry(func() error {
+		return s.retryableRemoveFlowsForDeployment(ctx, id)
+	})
+}
+
+func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, id string) error {
 	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
 	if err != nil {
 		return err
@@ -337,8 +349,14 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
 func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, types.Timestamp, error) {
+		return s.retryableGetAllFlows(ctx, since)
+	})
+}
+
+func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
@@ -365,6 +383,14 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
 func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
+
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, types.Timestamp, error) {
+		return s.retryableGetMatchingFlows(ctx, pred, since)
+	})
+}
+
+func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	var rows pgx.Rows
 	var err error
 
@@ -391,6 +417,12 @@ func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage
 // GetFlowsForDeployment returns the flows matching the deployment ID
 func (s *flowStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetFlowsForDeployment, "NetworkFlow")
+
+	return pgutils.Retry2(func() ([]*storage.NetworkFlow, error) {
+		return s.retryableGetFlowsForDeployment(ctx, deploymentID)
+	})
+}
+func (s *flowStoreImpl) retryableGetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
 	var rows pgx.Rows
 	var err error
 
@@ -439,10 +471,9 @@ func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlow
 func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
-	if err := s.delete(ctx, props); err != nil {
-		return err
-	}
-	return nil
+	return pgutils.Retry(func() error {
+		return s.delete(ctx, props)
+	})
 }
 
 // RemoveMatchingFlows removes flows from the store that fit the criteria specified in both keyMatchFn AND valueMatchFN
@@ -450,8 +481,14 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 // valueMatchFn will return true if the lastSeenTimestamp of a flow is more than 30 minutes ago.
 // TODO(ROX-9921) Figure out what to do with the functions.
 func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlow")
 
+	return pgutils.Retry(func() error {
+		return s.retryableRemoveMatchingFlows(ctx, keyMatchFn, valueMatchFn)
+	})
+}
+
+func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return err
