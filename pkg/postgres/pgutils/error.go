@@ -2,6 +2,7 @@ package pgutils
 
 import (
 	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -45,6 +46,12 @@ var transientPGCodes = set.NewFrozenStringSet(
 func isTransientError(err error) bool {
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
 		return transientPGCodes.Contains(pgErr.Code)
+	}
+	switch err {
+	case pgx.ErrTxClosed, pgx.ErrTxCommitRollback:
+		return true
+	case pgx.ErrNoRows:
+		return false
 	}
 	// Assume all other errors are transient
 	return true
