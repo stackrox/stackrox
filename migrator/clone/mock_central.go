@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -366,9 +367,9 @@ func (m *mockCentral) verifyMigrationVersionPostgres(clone string, ver *versionP
 }
 
 func (m *mockCentral) getCloneVersion(clone string) (*migrations.MigrationVersion, error) {
-	var pool *pgxpool.Pool
+	var pool *pgPkg.Postgres
 	if clone == migrations.GetCurrentClone() {
-		pool = m.tp.Pool
+		pool = m.tp.Postgres
 	} else {
 		pool = pgtest.ForTCustomPool(m.t, clone)
 	}

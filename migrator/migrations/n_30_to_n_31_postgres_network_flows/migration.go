@@ -6,7 +6,6 @@ import (
 	"context"
 
 	protoTypes "github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -37,7 +37,7 @@ var (
 	schema = pkgSchema.NetworkFlowsSchema
 )
 
-func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore store.ClusterStore) error {
+func move(gormDB *gorm.DB, postgresDB *postgres.Postgres, legacyStore store.ClusterStore) error {
 	ctx := sac.WithAllAccess(context.Background())
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 

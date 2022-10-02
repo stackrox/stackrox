@@ -440,7 +440,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ClusterCVE) e
 
 //// Used for testing
 
-func dropTableClusterCves(ctx context.Context, db *pgxpool.Pool) {
+func dropTableClusterCves(ctx context.Context, db *pgPkg.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS cluster_cves CASCADE")
 
 }

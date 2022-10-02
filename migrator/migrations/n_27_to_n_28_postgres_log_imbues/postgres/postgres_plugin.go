@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
@@ -59,12 +60,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *pgxpool.Pool
+	db    *pgPkg.Postgres
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
+func New(db *pgPkg.Postgres) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -217,9 +218,8 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.LogImbue) er
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
-	} else {
-		return s.copyFrom(ctx, objs...)
 	}
+	return s.copyFrom(ctx, objs...)
 }
 
 // Count returns the number of objects in the store
@@ -404,17 +404,17 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.LogImbue) err
 
 //// Used for testing
 
-func dropTableLogImbues(ctx context.Context, db *pgxpool.Pool) {
+func dropTableLogImbues(ctx context.Context, db *pgPkg.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS log_imbues CASCADE")
 
 }
 
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *pgPkg.Postgres) {
 	dropTableLogImbues(ctx, db)
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db *pgPkg.Postgres, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }

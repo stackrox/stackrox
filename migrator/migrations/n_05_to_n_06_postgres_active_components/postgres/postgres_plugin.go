@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
@@ -58,12 +59,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *pgxpool.Pool
+	db    *pgPkg.Postgres
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
+func New(db *pgPkg.Postgres) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -489,23 +490,23 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ActiveCompone
 
 //// Used for testing
 
-func dropTableActiveComponents(ctx context.Context, db *pgxpool.Pool) {
+func dropTableActiveComponents(ctx context.Context, db *pgPkg.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS active_components CASCADE")
 	dropTableActiveComponentsActiveContextsSlices(ctx, db)
 
 }
 
-func dropTableActiveComponentsActiveContextsSlices(ctx context.Context, db *pgxpool.Pool) {
+func dropTableActiveComponentsActiveContextsSlices(ctx context.Context, db *pgPkg.Postgres) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS active_components_active_contexts_slices CASCADE")
 
 }
 
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *pgPkg.Postgres) {
 	dropTableActiveComponents(ctx, db)
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db *pgPkg.Postgres, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }

@@ -5,7 +5,6 @@ package n5ton6
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
@@ -45,7 +45,7 @@ type imageIDAndOs struct {
 	ScanOperatingSystem string `gorm:"column:scan_operatingsystem;type:varchar"`
 }
 
-func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
+func move(gormDB *gorm.DB, postgresDB *postgres.Postgres, legacyStore legacy.Store) error {
 	imageTable := gormDB.Table(pkgSchema.ImagesSchema.Table).Model(pkgSchema.CreateTableImagesStmt.GormModel)
 	var imageCount int64
 	if err := imageTable.Count(&imageCount).Error; err != nil {

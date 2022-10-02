@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	"github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/common/v2"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search/postgres"
@@ -50,12 +51,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db                 *pgxpool.Pool
+	db                 *pgPkg.Postgres
 	noUpdateTimestamps bool
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, noUpdateTimestamps bool) Store {
+func New(db *pgPkg.Postgres, noUpdateTimestamps bool) Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,

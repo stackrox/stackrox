@@ -5,7 +5,6 @@ package n35ton36
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -16,6 +15,7 @@ import (
 	rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
+	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
@@ -38,7 +38,7 @@ var (
 	log       = loghelper.LogWrapper{}
 )
 
-func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
+func move(gormDB *gorm.DB, postgresDB *postgres.Postgres, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB, true)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.NodesSchema.Table)

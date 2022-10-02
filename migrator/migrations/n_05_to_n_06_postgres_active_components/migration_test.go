@@ -73,7 +73,7 @@ var (
 )
 
 func (s *postgresMigrationSuite) TestActiveComponentMigration() {
-	newStore := pgStore.New(s.postgresDB.Pool)
+	newStore := pgStore.New(s.postgresDB.Postgres)
 	dacky, err := dackbox.NewRocksDBDackBox(s.legacyDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	s.NoError(err)
 	legacyStore := legacy.New(dacky, concurrency.NewKeyFence())
@@ -178,7 +178,7 @@ func (s *postgresMigrationSuite) TestActiveComponentMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, activeComponents))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Postgres, legacyStore))
 
 	// Verify
 	s.verify(newStore, images)
