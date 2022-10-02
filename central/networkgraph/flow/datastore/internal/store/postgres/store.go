@@ -240,7 +240,7 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(&ctx, func() error {
 		return s.retryableUpsertFlows(ctx, flows, lastUpdateTS)
 	})
 }
@@ -317,7 +317,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveFlowsByDeployment, "NetworkFlow")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(&ctx, func() error {
 		return s.retryableRemoveFlowsForDeployment(ctx, id)
 	})
 }
@@ -352,7 +352,7 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, types.Timestamp, error) {
+	return pgutils.Retry3(&ctx, func() ([]*storage.NetworkFlow, types.Timestamp, error) {
 		return s.retryableGetAllFlows(ctx, since)
 	})
 }
@@ -386,7 +386,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
 
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, types.Timestamp, error) {
+	return pgutils.Retry3(&ctx, func() ([]*storage.NetworkFlow, types.Timestamp, error) {
 		return s.retryableGetMatchingFlows(ctx, pred, since)
 	})
 }
@@ -419,7 +419,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 func (s *flowStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetFlowsForDeployment, "NetworkFlow")
 
-	return pgutils.Retry2(func() ([]*storage.NetworkFlow, error) {
+	return pgutils.Retry2(&ctx, func() ([]*storage.NetworkFlow, error) {
 		return s.retryableGetFlowsForDeployment(ctx, deploymentID)
 	})
 }
@@ -472,7 +472,7 @@ func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlow
 func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(&ctx, func() error {
 		return s.delete(ctx, props)
 	})
 }
@@ -484,7 +484,7 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlow")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(&ctx, func() error {
 		return s.retryableRemoveMatchingFlows(ctx, keyMatchFn, valueMatchFn)
 	})
 }

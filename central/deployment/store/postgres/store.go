@@ -909,7 +909,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Deployment) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(&ctx, func() error {
 		return s.upsert(ctx, obj)
 	})
 }
@@ -931,7 +931,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Deployment) 
 		}
 	}
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(&ctx, func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations

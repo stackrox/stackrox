@@ -635,7 +635,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Image) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(&ctx, func() error {
 		return s.upsert(ctx, obj)
 	})
 }
@@ -644,7 +644,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Image) error {
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Image")
 
-	return pgutils.Retry2(func() (int, error) {
+	return pgutils.Retry2(&ctx, func() (int, error) {
 		row := s.db.QueryRow(ctx, countStmt)
 		var count int
 		if err := row.Scan(&count); err != nil {
@@ -658,7 +658,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Image")
 
-	return pgutils.Retry2(func() (bool, error) {
+	return pgutils.Retry2(&ctx, func() (bool, error) {
 		row := s.db.QueryRow(ctx, existsStmt, id)
 		var exists bool
 		if err := row.Scan(&exists); err != nil {
@@ -672,7 +672,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Image")
 
-	return pgutils.Retry3(func() (*storage.Image, bool, error) {
+	return pgutils.Retry3(&ctx, func() (*storage.Image, bool, error) {
 		return s.retryableGet(ctx, id)
 	})
 }
@@ -908,7 +908,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Image")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(&ctx, func() error {
 		return s.retryableDelete(ctx, id)
 	})
 }
@@ -950,7 +950,7 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, tx pgx.Tx, imageID stri
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ImageIDs")
 
-	return pgutils.Retry2(func() ([]string, error) {
+	return pgutils.Retry2(&ctx, func() ([]string, error) {
 		return s.retryableGetIDs(ctx)
 	})
 }
@@ -971,7 +971,7 @@ func (s *storeImpl) retryableGetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
-	return pgutils.Retry3(func() ([]*storage.Image, []int, error) {
+	return pgutils.Retry3(&ctx, func() ([]*storage.Image, []int, error) {
 		return s.retryableGetMany(ctx, ids)
 	})
 }
@@ -1070,7 +1070,7 @@ func CreateTableAndNewStore(ctx context.Context, db *postgres.Postgres, gormDB *
 func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
-	return pgutils.Retry3(func() (*storage.Image, bool, error) {
+	return pgutils.Retry3(&ctx, func() (*storage.Image, bool, error) {
 		return s.retryableGetImageMetadata(ctx, id)
 	})
 }
@@ -1099,7 +1099,7 @@ func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*
 func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
-	return pgutils.Retry3(func() ([]*storage.Image, []int, error) {
+	return pgutils.Retry3(&ctx, func() ([]*storage.Image, []int, error) {
 		return s.retryableGetManyImageMetadata(ctx, ids)
 	})
 }
@@ -1160,7 +1160,7 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 }
 
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(&ctx, func() error {
 		return s.retryableUpdateVulnState(ctx, cve, imageIDs, state)
 	})
 }

@@ -2,10 +2,12 @@ package postgres
 
 import (
 	"context"
+	"runtime/debug"
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 // ConnectConfig wraps pgxpool.Pool with the Postgres struct
@@ -36,21 +38,29 @@ type Postgres struct {
 }
 
 func (p *Postgres) Begin(ctx context.Context) (pgx.Tx, error) {
-
+	if !pgutils.HasRetry(ctx) {
+		debug.PrintStack()
+	}
 	return p.Pool.Begin(ctx)
 }
 
 func (p *Postgres) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
-
+	if !pgutils.HasRetry(ctx) {
+		debug.PrintStack()
+	}
 	return p.Pool.Query(ctx, sql, args...)
 }
 
 func (p *Postgres) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
-
+	if !pgutils.HasRetry(ctx) {
+		debug.PrintStack()
+	}
 	return p.Pool.QueryRow(ctx, sql, args...)
 }
 
 func (p *Postgres) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
-
+	if !pgutils.HasRetry(ctx) {
+		debug.PrintStack()
+	}
 	return p.Pool.Exec(ctx, sql, args...)
 }

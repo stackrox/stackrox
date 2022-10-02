@@ -1,10 +1,13 @@
 package pgutils
 
 import (
+	"context"
 	"time"
 
 	"github.com/stackrox/rox/pkg/timeutil"
 )
+
+type retryContextKey struct{}
 
 const (
 	interval = 5 * time.Second
@@ -13,30 +16,37 @@ const (
 
 // Retry is used to specify how long to retry to successfully run a query with 1 return value
 // that fails with transient errors
-func Retry(fn func() error) error {
+func Retry(ctx *context.Context, fn func() error) error {
 	// Shape fn to match the Retry2 below
 	fnWithReturn := func() (struct{}, error) {
 		return struct{}{}, fn()
 	}
-	_, err := Retry2(fnWithReturn)
+	_, err := Retry2(ctx, fnWithReturn)
 	return err
 }
 
 // Retry2 is used to specify how long to retry to successfully run a query with 2 return values
 // that fails with transient errors
-func Retry2[T any](fn func() (T, error)) (T, error) {
+func Retry2[T any](ctx *context.Context, fn func() (T, error)) (T, error) {
 	// Shape fn to match the Retry3 below
 	fnWithReturn := func() (T, struct{}, error) {
 		val, err := fn()
 		return val, struct{}{}, err
 	}
-	val, _, err := Retry3(fnWithReturn)
+	val, _, err := Retry3(ctx, fnWithReturn)
 	return val, err
 }
 
 // Retry3 is used to specify how long to retry to successfully run a query with 3 return values
 // that fails with transient errors
-func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
+func Retry3[T any, U any](ctx *context.Context, fn func() (T, U, error)) (T, U, error) {
+	// revert context
+	original := *ctx
+	defer func() {
+		*ctx = original
+	}()
+
+	*ctx = withRetry(*ctx)
 	// Run query immediately
 	if val1, val2, err := fn(); err == nil || !isTransientError(err) {
 		return val1, val2, err
@@ -64,4 +74,13 @@ func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 			}
 		}
 	}
+}
+
+func withRetry(ctx context.Context) context.Context {
+	return context.WithValue(ctx, retryContextKey{}, true)
+}
+
+// HasRetry context checks if there is a retry context
+func HasRetry(ctx context.Context) bool {
+	return ctx.Value(retryContextKey{}) != nil
 }

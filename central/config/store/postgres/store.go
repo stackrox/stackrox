@@ -78,7 +78,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Config) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(&ctx, func() error {
 		return s.retryableUpsert(ctx, obj)
 	})
 }
@@ -120,7 +120,7 @@ func (s *storeImpl) Get(ctx context.Context) (*storage.Config, bool, error) {
 		return nil, false, nil
 	}
 
-	return pgutils.Retry3(func() (*storage.Config, bool, error) {
+	return pgutils.Retry3(&ctx, func() (*storage.Config, bool, error) {
 		return s.retryableGet(ctx)
 	})
 }
@@ -163,7 +163,7 @@ func (s *storeImpl) Delete(ctx context.Context) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(&ctx, func() error {
 		return s.retryableDelete(ctx)
 	})
 }
