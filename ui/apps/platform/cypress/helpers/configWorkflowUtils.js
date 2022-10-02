@@ -61,6 +61,14 @@ const headingForEntity = {
     subjects: 'users and groups', // plural
 };
 
+function tableHeaderNoun(entitiesKey, countString) {
+    if (entitiesKey === 'controls') {
+        return countString === '1' ? 'CIS Control' : 'CIS Controls';
+    }
+
+    return countString === '1' ? headingForEntity[entitiesKey] : headingForEntities[entitiesKey];
+}
+
 // Title of widget is title case but has uppercase style.
 const widgetTitleForEntities = {
     clusters: 'Clusters',
@@ -381,8 +389,7 @@ function entityCountMatchesTableRows(entitiesKey1, entitiesKey2, contextSelector
             );
 
             cy.get(`${contextSelector} .rt-tr-group`);
-            const noun =
-                count === '1' ? headingForEntity[entitiesKey2] : headingForEntities[entitiesKey2];
+            const noun = tableHeaderNoun(entitiesKey2, count);
             cy.get(`${contextSelector} [data-testid="panel-header"]:contains("${count} ${noun}")`);
         });
 }
@@ -422,8 +429,7 @@ export function entityListCountMatchesTableLinkCount(entitiesKey1, entitiesKey2,
                 `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${heading}")`
             );
 
-            const noun =
-                count === '1' ? headingForEntity[entitiesKey2] : headingForEntities[entitiesKey2];
+            const noun = tableHeaderNoun(entitiesKey2, count);
             cy.get(
                 `[data-testid="side-panel"] [data-testid="panel-header"]:contains("${count} ${noun}")`
             );
