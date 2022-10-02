@@ -4,10 +4,9 @@ import (
 	"context"
 	"time"
 
+	context2 "github.com/stackrox/rox/pkg/postgres/pgutils/context"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
-
-type retryContextKey struct{}
 
 const (
 	interval = 5 * time.Second
@@ -46,7 +45,7 @@ func Retry3[T any, U any](ctx *context.Context, fn func() (T, U, error)) (T, U, 
 		*ctx = original
 	}()
 
-	*ctx = withRetry(*ctx)
+	*ctx = context2.WithRetry(*ctx)
 	// Run query immediately
 	if val1, val2, err := fn(); err == nil || !isTransientError(err) {
 		return val1, val2, err
@@ -74,13 +73,4 @@ func Retry3[T any, U any](ctx *context.Context, fn func() (T, U, error)) (T, U, 
 			}
 		}
 	}
-}
-
-func withRetry(ctx context.Context) context.Context {
-	return context.WithValue(ctx, retryContextKey{}, true)
-}
-
-// HasRetry context checks if there is a retry context
-func HasRetry(ctx context.Context) bool {
-	return ctx.Value(retryContextKey{}) != nil
 }
