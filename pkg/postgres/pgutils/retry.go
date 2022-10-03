@@ -1,8 +1,10 @@
 package pgutils
 
 import (
+	"runtime/debug"
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
 
@@ -39,6 +41,9 @@ func Retry2[T any](fn func() (T, error)) (T, error) {
 func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 	// Run query immediately
 	if val1, val2, err := fn(); err == nil || !isTransientError(err) {
+		if err != nil && err != pgx.ErrNoRows {
+			log.Debugf("UNEXPECTED: found permanent error: %+v", err)
+		}
 		return val1, val2, err
 	}
 
@@ -52,6 +57,7 @@ func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 	for {
 		select {
 		case <-expirationTimer.C:
+			debug.PrintStack()
 			log.Fatalf("unsuccessful in reconnecting to the database: %v. Exiting...", err)
 		case <-intervalTicker.C:
 			// Uses err outside the for loop to allow for the expiration to show the last err received
@@ -60,6 +66,9 @@ func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 			var ret2 U
 			ret1, ret2, err = fn()
 			if err == nil || !isTransientError(err) {
+				if err != nil && err != pgx.ErrNoRows {
+					log.Debugf("UNEXPECTED: found permanent error: %+v", err)
+				}
 				return ret1, ret2, err
 			}
 		}
