@@ -34,7 +34,7 @@ function PermissionSetsList({
     const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
 
     function onClickDelete(id: string) {
-        setIdDeleting('failure'); // id
+        setIdDeleting(id);
         setNameConfirmingDelete(
             permissionSets.find((permissionSet) => permissionSet.id === id)?.name ?? ''
         );
