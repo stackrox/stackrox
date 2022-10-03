@@ -10,6 +10,7 @@ import {
     visitClusterByNameWithFixture,
     visitClusterByNameWithFixtureMetadataDatetime,
 } from '../../helpers/clusters';
+import { hasFeatureFlag } from '../../helpers/features';
 
 describe('Clusters page', () => {
     withAuth();
@@ -49,7 +50,7 @@ describe('Clusters page', () => {
     });
 });
 
-describe.skip('Cluster Certificate Expiration', () => {
+describe('Cluster Certificate Expiration', () => {
     withAuth();
 
     const fixturePath = 'clusters/health.json';
@@ -151,7 +152,7 @@ describe.skip('Cluster Certificate Expiration', () => {
                 };
 
                 cy.intercept('GET', clustersApi.single, {
-                    body: { cluster },
+                    body: { cluster, clusterRetentionInfo: null },
                 }).as('getCluster');
                 cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
                 cy.wait('@getCluster');
@@ -310,7 +311,7 @@ describe('Cluster configuration', () => {
     });
 });
 
-describe.skip('Cluster Health', () => {
+describe('Cluster Health', () => {
     withAuth();
 
     const fixturePath = 'clusters/health.json';
@@ -330,6 +331,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Uninitialized',
                 sensorUpgrade: 'Not applicable',
                 credentialExpiration: 'Not applicable',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: null,
@@ -349,6 +351,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Unhealthy',
                 sensorUpgrade: 'Upgrade available',
                 credentialExpiration: 'in 6 days on Monday',
+                clusterDeletion: 'in 90 days',
             },
             expectedInSide: {
                 admissionControlHealthInfo: {
@@ -375,6 +378,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Unhealthy',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 29 days on 09/29/2020',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: {
@@ -401,6 +405,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Degraded',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 1 month',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: {
@@ -427,6 +432,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Degraded',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 2 months',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: {
@@ -453,6 +459,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Healthy',
                 sensorUpgrade: 'Upgrade available',
                 credentialExpiration: 'in 12 months',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: null,
@@ -475,6 +482,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Healthy',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 1 year',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: {
@@ -496,14 +504,17 @@ describe.skip('Cluster Health', () => {
         },
     ];
 
-    it('should appear in the list', () => {
+    it('should appear in the list', function () {
+        if (!hasFeatureFlag('ROX_DECOMMISSIONED_CLUSTER_RETENTION')) {
+            this.skip();
+        }
+
         visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, datetimeISOString);
 
         /*
          * Some cells have no internal markup (for example, Name or Cloud Provider).
          * Other cells have div and spans for status color versus default color.
          */
-        // TODO add assertion for Cluster Deletion column after ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag is deleted.
         cy.get(selectors.clusters.tableDataCell).should(($tds) => {
             let n = 0;
             expectedClusters.forEach(({ expectedInListAndSide }) => {
