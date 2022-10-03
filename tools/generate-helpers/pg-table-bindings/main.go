@@ -59,6 +59,9 @@ var migrationTestFile string
 //go:embed migration_tool.go.tpl
 var migrationToolFile string
 
+//go:embed migration_tool_test.go.tpl
+var migrationToolTestFile string
+
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
@@ -70,6 +73,7 @@ var (
 	migrationTemplate         = newTemplate(migrationFile)
 	migrationTestTemplate     = newTemplate(migrationTestFile)
 	migrationToolTemplate     = newTemplate(migrationToolFile)
+	migrationToolTestTemplate = newTemplate(migrationToolTestFile)
 )
 
 type properties struct {
@@ -390,6 +394,9 @@ func generateConverstionFuncs(s *walker.Schema, dir string) error {
 	if err := renderFile(templateMap, migrationToolTemplate, getConversionToolFileName(dir, s.Table)); err != nil {
 		return err
 	}
+	if err := renderFile(templateMap, migrationToolTestTemplate, getConversionTestFileName(dir, s.Table)); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -398,7 +405,11 @@ func getSchemaFileName(dir, table string) string {
 }
 
 func getConversionToolFileName(dir, table string) string {
-	return fmt.Sprintf("%s/convert_%s_with_test.go", dir, table)
+	return fmt.Sprintf("%s/convert_%s.go", dir, table)
+}
+
+func getConversionTestFileName(dir, table string) string {
+	return fmt.Sprintf("%s/convert_%s_test.go", dir, table)
 }
 
 func newTemplate(tpl string) func(name string) *template.Template {
