@@ -1,30 +1,295 @@
-import capitalize from 'lodash/capitalize';
-import pluralize from 'pluralize';
+import { graphql } from '../constants/apiEndpoints';
+import { selectors as configManagementSelectors } from '../constants/ConfigManagementPage';
+import { interactAndWaitForResponses } from './request';
+import { visit } from './visit';
 
-import * as api from '../constants/apiEndpoints';
-import { url, selectors as configManagementSelectors } from '../constants/ConfigManagementPage';
+const basePath = '/main/configmanagement';
+
+function getEntitiesPath(entitiesKey) {
+    return `${basePath}/${entitiesKey}`;
+}
+
+/*
+ * The following keys are path segments which correspond to entityKeys arguments of functions.
+ */
+
+const segmentForEntity = {
+    clusters: 'cluster',
+    controls: 'control',
+    deployments: 'deployment',
+    images: 'image',
+    namespaces: 'namespace',
+    nodes: 'node',
+    policies: 'policy',
+    roles: 'role',
+    secrets: 'secret',
+    serviceaccounts: 'serviceaccount',
+    subjects: 'subject',
+};
+
+function getEntityPagePath(entitiesKey, id = '') {
+    return `${basePath}/${segmentForEntity[entitiesKey]}${id && `/${id}`}`;
+}
+
+// Heading on entities page has uppercase style.
+const headingForEntities = {
+    clusters: 'clusters',
+    controls: 'controls',
+    deployments: 'deployments',
+    images: 'images',
+    namespaces: 'namespaces',
+    nodes: 'nodes',
+    policies: 'policies',
+    roles: 'roles',
+    secrets: 'secrets',
+    serviceaccounts: 'service accounts',
+    subjects: 'users and groups',
+};
+
+// Heading on entity page or side panel has uppercase style.
+const headingForEntity = {
+    clusters: 'cluster',
+    controls: 'control',
+    deployments: 'deployment',
+    images: 'image',
+    namespaces: 'namespace',
+    nodes: 'node',
+    policies: 'policy',
+    roles: 'role',
+    secrets: 'secret',
+    serviceaccounts: 'service account',
+    subjects: 'users and groups', // plural
+};
+
+function tableHeaderNoun(entitiesKey, countString) {
+    if (entitiesKey === 'controls') {
+        return countString === '1' ? 'CIS Control' : 'CIS Controls';
+    }
+
+    return countString === '1' ? headingForEntity[entitiesKey] : headingForEntities[entitiesKey];
+}
+
+// Title of widget is title case but has uppercase style.
+const widgetTitleForEntities = {
+    clusters: 'Clusters',
+    controls: 'CIS Controls',
+    deployments: 'Deployments',
+    images: 'Images',
+    namespaces: 'Namespaces',
+    nodes: 'Nodes',
+    policies: 'Policies',
+    roles: 'Roles',
+    secrets: 'Secrets',
+    serviceaccounts: 'Service Accounts',
+    subjects: 'Users & Groups', // ampersand instead of and
+};
+
+// Title of widget is title case but has uppercase style.
+// Deployment has a unique namespace and cluster.
+// Namespace has a unique cluster.
+// All other titles are for entities, even if only 1.
+const widgetTitleForEntity = {
+    clusters: 'Cluster',
+    namespaces: 'Namespace',
+};
+
+// Default opname is entities path segment. For example, clusters.
+const opnameExceptionsForEntities = {
+    deployments: 'getDeployments',
+    roles: 'k8sRoles',
+    serviceaccounts: 'serviceAccounts',
+};
+
+function getRequestConfigForEntities(entitiesKey) {
+    const opname = opnameExceptionsForEntities[entitiesKey] ?? entitiesKey;
+    return {
+        routeMatcherMap: {
+            [opname]: graphql(opname),
+        },
+    };
+}
+
+const opnameForEntity = {
+    clusters: 'getCluster',
+    controls: 'controlById',
+    deployments: 'getDeployment',
+    images: 'getImage',
+    namespaces: 'getNamespace',
+    nodes: 'getNode',
+    policies: 'getPolicy',
+    roles: 'k8sRole',
+    secrets: 'getSecret',
+    serviceaccounts: 'getServiceAccount',
+    subjects: 'getSubject',
+};
+
+function getRequestConfigForEntity(entitiesKey) {
+    const opname = opnameForEntity[entitiesKey];
+    return {
+        routeMatcherMap: {
+            [opname]: graphql(opname),
+        },
+    };
+}
+
+// Exception if prefix differs from opnameForEntity above.
+const opnamePrefixExceptionForPrimaryAndSecondaryEntities = {
+    clusters: 'getCluster_',
+    images: 'getImage_',
+    namespaces: 'getNamespace_',
+    policies: 'getPolicy_',
+    roles: 'getRole_',
+    secrets: 'getSecret_',
+    serviceaccounts: 'getServiceAccount_',
+    subjects: 'subject_',
+};
+
+const typeOfEntity = {
+    clusters: 'CLUSTER',
+    controls: 'CONTROL',
+    deployments: 'DEPLOYMENT',
+    images: 'IMAGE',
+    namespaces: 'NAMESPACE',
+    nodes: 'NODE',
+    policies: 'POLICY',
+    roles: 'ROLE',
+    secrets: 'SECRET',
+    serviceaccounts: 'SERVICE_ACCOUNT',
+    subjects: 'SUBJECT',
+};
+
+function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
+    const opnamePrefix =
+        opnamePrefixExceptionForPrimaryAndSecondaryEntities[entitiesKey1] ??
+        opnameForEntity[entitiesKey1];
+    return `${opnamePrefix}${typeOfEntity[entitiesKey2]}`;
+}
+
+const routeMatcherMapForDashboard = {};
+[
+    'numPolicies',
+    'numCISControls',
+    'policyViolationsBySeverity',
+    'runStatuses',
+    'complianceByControls',
+    'usersWithClusterAdminRoles',
+    'secrets',
+].forEach((opname) => {
+    routeMatcherMapForDashboard[opname] = {
+        method: 'POST',
+        url: graphql(opname),
+    };
+});
+
+const requestConfigForDashboard = {
+    routeMatcherMap: routeMatcherMapForDashboard,
+};
+
+const requestConfigForScan = {
+    routeMatcherMap: routeMatcherMapForDashboard,
+    waitOptions: {
+        requestTimeout: 10000, // because so many requests
+        responseTimeout: 20000, // for responses
+    },
+};
+
+export function visitConfigurationManagementDashboard() {
+    visit(basePath, requestConfigForDashboard);
+
+    cy.get('h1:contains("Configuration Management")');
+}
+
+export function visitConfigurationManagementEntities(entitiesKey) {
+    visit(getEntitiesPath(entitiesKey), getRequestConfigForEntities(entitiesKey));
+
+    cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
+}
+
+export function interactAndWaitForConfigurationManagementEntities(
+    interactionCallback,
+    entitiesKey
+) {
+    interactAndWaitForResponses(interactionCallback, getRequestConfigForEntities(entitiesKey));
+
+    cy.location('pathname').should('eq', getEntitiesPath(entitiesKey));
+    cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
+}
+
+export function interactAndWaitForConfigurationManagementEntityInSidePanel(
+    interactionCallback,
+    entitiesKey
+) {
+    interactAndWaitForResponses(interactionCallback, getRequestConfigForEntity(entitiesKey));
+
+    cy.location('pathname').should('contain', getEntitiesPath(entitiesKey)); // contains because it ends with id
+    cy.get(
+        `[data-testid="breadcrumb-link-text"]:eq(0):contains("${headingForEntity[entitiesKey]}")`
+    );
+}
+
+export function interactAndWaitForConfigurationManagementSecondaryEntityInSidePanel(
+    interactionCallback,
+    entitiesKey1,
+    entitiesKey2
+) {
+    interactAndWaitForResponses(interactionCallback, getRequestConfigForEntity(entitiesKey2));
+
+    cy.location('pathname').should('contain', getEntitiesPath(entitiesKey1)); // contains because it has id
+    cy.location('pathname').should('contain', segmentForEntity[entitiesKey2]); // contains because it has id
+    cy.get(`[data-testid="breadcrumb-link-text"]:contains("${headingForEntity[entitiesKey2]}")`);
+}
+
+export function interactAndWaitForConfigurationManagementEntityPage(
+    interactionCallback,
+    entitiesKey
+) {
+    interactAndWaitForResponses(interactionCallback, getRequestConfigForEntity(entitiesKey));
+
+    cy.location('pathname').should('contain', getEntityPagePath(entitiesKey)); // contains because it ends with id
+    cy.get(`h1 + div:contains("${headingForEntity[entitiesKey]}")`);
+}
+
+export function interactAndWaitForConfigurationManagementSecondaryEntities(
+    interactionCallback,
+    entitiesKey1,
+    entitiesKey2
+) {
+    const opname = opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2);
+    const requestConfig = {
+        routeMatcherMap: {
+            [opname]: graphql(opname),
+        },
+    };
+
+    interactAndWaitForResponses(interactionCallback, requestConfig);
+}
+
+export function interactAndWaitForConfigurationManagementScan(interactionCallback) {
+    interactAndWaitForResponses(interactionCallback, requestConfigForScan);
+}
 
 // specifying an "entityName" will try to select that row in the table
-export const renderListAndSidePanel = (entity, entityName = null) => {
-    cy.intercept('POST', api.graphqlPluralEntity(entity)).as('entities');
-    cy.intercept('POST', api.graphqlSingularEntity(pluralize.singular(entity))).as('getEntity');
-    cy.visit(url.list[entity]);
-    cy.wait('@entities');
-    cy.get(`${configManagementSelectors.tableRows}${entityName ? `:contains(${entityName})` : ''}`)
-        .not(configManagementSelectors.disabledTableRows)
-        .find(configManagementSelectors.tableCells)
-        .eq(1)
-        .click({ force: true });
-    cy.wait('@getEntity');
-    cy.get(configManagementSelectors.widgets);
-};
+export function renderListAndSidePanel(entitiesKey, entityName = null) {
+    visitConfigurationManagementEntities(entitiesKey);
 
-export const navigateToSingleEntityPage = (entity) => {
-    cy.intercept('POST', api.graphqlSingularEntity(entity)).as('getEntity');
-    cy.get(configManagementSelectors.externalLink).click();
-    cy.wait('@getEntity');
-    cy.location('pathname').should('contain', url.single[entity]);
-};
+    interactAndWaitForConfigurationManagementEntityInSidePanel(() => {
+        cy.get(
+            `${configManagementSelectors.tableRows}${entityName ? `:contains(${entityName})` : ''}`
+        )
+            .not(configManagementSelectors.disabledTableRows)
+            .find(configManagementSelectors.tableCells)
+            .eq(1)
+            .click();
+    }, entitiesKey);
+
+    cy.get(configManagementSelectors.widgets);
+}
+
+export function navigateToSingleEntityPage(entitiesKey) {
+    interactAndWaitForConfigurationManagementEntityPage(() => {
+        cy.get(configManagementSelectors.externalLink).click();
+    }, entitiesKey);
+}
 
 export const hasCountWidgetsFor = (entities) => {
     entities.forEach((entity) => {
@@ -32,79 +297,57 @@ export const hasCountWidgetsFor = (entities) => {
     });
 };
 
-export const clickOnCountWidget = (entity, type) => {
-    // TODO add another argument to intercept getEntity_SUBENTITY query
-    cy.get(`${configManagementSelectors.countWidgets}:contains('${capitalize(entity)}')`)
+export function clickOnCountWidget(entitiesKey, type) {
+    cy.get(
+        `${configManagementSelectors.countWidgets}:contains('${widgetTitleForEntities[entitiesKey]}')`
+    )
         .find(configManagementSelectors.countWidgetValue)
-
-        .click({ force: true });
+        .click();
 
     if (type === 'side-panel') {
         cy.get(
-            `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${entity}")`
+            `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${entitiesKey}")`
         );
     }
 
     if (type === 'entityList') {
-        cy.get(`${configManagementSelectors.groupedTabs}:contains('${entity}')`);
-        cy.get(`li.bg-base-100:contains("${entity}")`);
+        cy.get(`${configManagementSelectors.groupedTabs}:contains('${entitiesKey}')`);
+        cy.get(`li.bg-base-100:contains("${entitiesKey}")`);
     }
-};
+}
 
-export const clickOnEntityWidget = (entity, type) => {
-    cy.intercept('POST', api.graphqlSingularEntity(entity)).as('getEntity');
-    cy.get(`${configManagementSelectors.relatedEntityWidgets}:contains('${capitalize(entity)}')`)
-        .find(configManagementSelectors.relatedEntityWidgetValue)
-        .invoke('text')
-        .then((value) => {
+// For example, deployment and namespace have singular cluster widget.
+export function clickOnSingularEntityWidgetInSidePanel(entitiesKey1, entitiesKey2) {
+    interactAndWaitForConfigurationManagementSecondaryEntityInSidePanel(
+        () => {
             cy.get(
-                `${configManagementSelectors.relatedEntityWidgets}:contains('${capitalize(
-                    entity
-                )}')`
+                `${configManagementSelectors.relatedEntityWidgets}:contains('${widgetTitleForEntity[entitiesKey2]}')`
             ).click();
-            cy.wait('@getEntity');
-            if (type === 'side-panel') {
-                cy.get(
-                    `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${value}")`
-                );
-            }
-        });
-};
-
-export const clickOnRowEntity = (entity, subEntity, isNotCapitalized) => {
-    cy.intercept('POST', api.graphqlPluralEntity(entity)).as('entities');
-    cy.visit(url.list[entity]);
-    cy.wait('@entities');
-    cy.get(configManagementSelectors.tableRows)
-        .find(
-            `${configManagementSelectors.tableCells} a:contains('${
-                isNotCapitalized ? subEntity : capitalize(subEntity)
-            }')`
-        )
-        .eq(0)
-        .click({ force: true });
-    // TODO wait on entity_SUBENTITY request
-
-    cy.get(
-        `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${subEntity.toLowerCase()}")`
+        },
+        entitiesKey1,
+        entitiesKey2
     );
-};
+}
 
-export const clickOnSingleEntity = (entity, subEntity) => {
-    cy.intercept('POST', api.graphqlPluralEntity(entity)).as('entities');
-    cy.intercept('POST', api.graphqlSingularEntity(subEntity)).as('getEntity');
-    cy.visit(url.list[entity]);
-    cy.wait('@entities');
-    cy.get(configManagementSelectors.tableRows)
-        .find(`${configManagementSelectors.tableCells} a[href*='/${subEntity}']`)
-        .eq(0)
+// For example, namespaces or nodes have link to one cluster.
+export const clickOnSingleEntityInTable = (entitiesKey1, entitiesKey2) => {
+    visitConfigurationManagementEntities(entitiesKey1);
+
+    const segment2 = segmentForEntity[entitiesKey2];
+
+    cy.get(`${configManagementSelectors.tableCells} a[href*='/${segment2}']:eq(0)`)
         .invoke('text')
         .then((value) => {
-            cy.get(configManagementSelectors.tableRows)
-                .find(`${configManagementSelectors.tableCells} a[href*='/${subEntity}']`)
-                .eq(0)
-                .click({ force: true });
-            cy.wait('@getEntity');
+            interactAndWaitForConfigurationManagementSecondaryEntityInSidePanel(
+                () => {
+                    cy.get(
+                        `${configManagementSelectors.tableCells} a[href*='/${segment2}']:eq(0)`
+                    ).click();
+                },
+                entitiesKey1,
+                entitiesKey2
+            );
+
             cy.get(
                 `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${value}")`
             );
@@ -121,9 +364,9 @@ export const hasRelatedEntityFor = (entity) => {
     cy.get(`${configManagementSelectors.relatedEntityWidgetTitle}:contains('${entity}')`);
 };
 
-const entityCountMatchesTableRows = (listEntity, context) => {
-    // TODO add another argument to intercept getEntity_SUBENTITY query
-    const contextSelector = `[data-testid="${context === 'Page' ? 'panel' : 'side-panel'}"]`;
+// Assume at either entity page or entity in side panel.
+function entityCountMatchesTableRows(entitiesKey1, entitiesKey2, contextSelector) {
+    const listEntity = widgetTitleForEntities[entitiesKey2];
     cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
         .find(configManagementSelectors.countWidgetValue)
         .invoke('text')
@@ -131,44 +374,71 @@ const entityCountMatchesTableRows = (listEntity, context) => {
             if (count === '0') {
                 return;
             }
-            cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
-                .find('button')
-                .invoke('attr', 'disabled', false)
-                .click();
-            cy.wait(2000);
+
+            function clickCountWidget() {
+                cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
+                    .find('button')
+                    .invoke('attr', 'disabled', false)
+                    .click();
+            }
+
+            if (
+                (entitiesKey1 === 'controls' && entitiesKey2 === 'nodes') ||
+                (entitiesKey1 === 'nodes' && entitiesKey2 === 'controls')
+            ) {
+                clickCountWidget(); // no request
+            } else {
+                interactAndWaitForConfigurationManagementSecondaryEntities(
+                    clickCountWidget,
+                    entitiesKey1,
+                    entitiesKey2
+                );
+            }
+
             cy.get(`${contextSelector} .rt-tr-group`);
-            cy.get(`${contextSelector} [data-testid="panel-header"]`)
-                .invoke('text')
-                .then((panelHeaderText) => {
-                    expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(count, 10));
-                });
+            const noun = tableHeaderNoun(entitiesKey2, count);
+            cy.get(`${contextSelector} [data-testid="panel-header"]:contains("${count} ${noun}")`);
         });
-};
+}
 
-export const pageEntityCountMatchesTableRows = (listEntity) => {
-    entityCountMatchesTableRows(listEntity, 'Page');
-};
+export function pageEntityCountMatchesTableRows(entitiesKey1, entitiesKey2) {
+    entityCountMatchesTableRows(entitiesKey1, entitiesKey2, '[data-testid="panel"]');
+}
 
-export const sidePanelEntityCountMatchesTableRows = (listEntity) => {
-    entityCountMatchesTableRows(listEntity, 'Side Panel');
-};
+export function sidePanelEntityCountMatchesTableRows(entitiesKey1, entitiesKey2) {
+    entityCountMatchesTableRows(entitiesKey1, entitiesKey2, '[data-testid="side-panel"]');
+}
 
-export const entityListCountMatchesTableLinkCount = (entities1, entities2) => {
-    cy.intercept('POST', api.graphqlPluralEntity(entities1)).as('entities');
-    cy.visit(url.list[entities1]);
-    cy.wait('@entities');
-    cy.get(configManagementSelectors.tableLinks)
-        .contains(entities2) // return first match
+export function entityListCountMatchesTableLinkCount(entitiesKey1, entitiesKey2, entitiesRegExp2) {
+    // 1. Visit list page for primary entities.
+    visitConfigurationManagementEntities(entitiesKey1);
+
+    cy.get(configManagementSelectors.tableCells)
+        .contains('a', entitiesRegExp2)
         .then(($a) => {
-            const linkText = $a.text();
-            cy.wrap($a).click();
-            // TODO wait on entity_SUBENTITY request
-            cy.get('[data-testid="side-panel"] [data-testid="panel-header"]')
-                .invoke('text')
-                .should((panelHeaderText) => {
-                    // Expect leading numeric digits to match, however entire text might not match;
-                    // for example, '10 Users & Groups' versus '10 users and groups'
-                    expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(linkText, 10));
-                });
+            const [, count] = /^(\d+) /.exec($a.text());
+
+            // 2. Visit secondary entities side panel.
+            const opname = opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2);
+            interactAndWaitForResponses(
+                () => {
+                    cy.wrap($a).click();
+                },
+                {
+                    routeMatcherMap: {
+                        [opname]: graphql(opname),
+                    },
+                }
+            );
+
+            const heading = headingForEntities[entitiesKey2];
+            cy.get(
+                `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${heading}")`
+            );
+
+            const noun = tableHeaderNoun(entitiesKey2, count);
+            cy.get(
+                `[data-testid="side-panel"] [data-testid="panel-header"]:contains("${count} ${noun}")`
+            );
         });
-};
+}

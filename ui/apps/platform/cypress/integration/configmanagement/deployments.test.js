@@ -3,14 +3,16 @@ import {
     navigateToSingleEntityPage,
     hasCountWidgetsFor,
     clickOnCountWidget,
-    clickOnEntityWidget,
-    clickOnRowEntity,
+    clickOnSingularEntityWidgetInSidePanel,
+    entityListCountMatchesTableLinkCount,
     hasTabsFor,
     hasRelatedEntityFor,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
 } from '../../helpers/configWorkflowUtils';
 import withAuth from '../../helpers/basicAuth';
+
+// const entitiesKey = 'deployments'; // omit to minimize changed lines
 
 describe('Config Management Entities (Deployments)', () => {
     withAuth();
@@ -19,23 +21,23 @@ describe('Config Management Entities (Deployments)', () => {
         renderListAndSidePanel('deployments');
     });
 
-    it('should click on the secrets link in the deployments list and open the side panel with the secrets list', () => {
-        clickOnRowEntity('deployments', 'secret', true);
+    it('should open the side panel to show the same number of secrets when the secrets link is clicked', () => {
+        entityListCountMatchesTableLinkCount('deployments', 'secrets', /\d+ secrets?$/);
     });
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
         renderListAndSidePanel('deployments');
-        clickOnEntityWidget('cluster', 'side-panel');
+        clickOnSingularEntityWidgetInSidePanel('deployments', 'clusters');
     });
 
     it('should take you to a deployments single when the "navigate away" button is clicked', () => {
         renderListAndSidePanel('deployments');
-        navigateToSingleEntityPage('deployment');
+        navigateToSingleEntityPage('deployments');
     });
 
     it('should show the related cluster, namespace, and service account widgets', () => {
         renderListAndSidePanel('deployments');
-        navigateToSingleEntityPage('deployment');
+        navigateToSingleEntityPage('deployments');
         hasRelatedEntityFor('Cluster');
         hasRelatedEntityFor('Namespace');
         hasRelatedEntityFor('Service Account');
@@ -43,45 +45,49 @@ describe('Config Management Entities (Deployments)', () => {
 
     it('should have the correct count widgets for a single entity view', () => {
         renderListAndSidePanel('deployments');
-        navigateToSingleEntityPage('deployment');
+        navigateToSingleEntityPage('deployments');
         hasCountWidgetsFor(['Images', 'Secrets']);
     });
 
     it('should have the correct tabs for a single entity view', () => {
         renderListAndSidePanel('deployments');
-        navigateToSingleEntityPage('deployment');
+        navigateToSingleEntityPage('deployments');
         hasTabsFor(['images', 'secrets']);
     });
 
     it('should click on the images count widget in the entity page and show the images tab', () => {
         renderListAndSidePanel('deployments', 'collector');
-        navigateToSingleEntityPage('deployment');
+        navigateToSingleEntityPage('deployments');
         clickOnCountWidget('images', 'entityList');
     });
 
     it('should have the same number of Images in the count widget as in the Images table', () => {
+        const entitiesKey2 = 'images';
+
         context('Page', () => {
             renderListAndSidePanel('deployments');
-            navigateToSingleEntityPage('deployment');
-            pageEntityCountMatchesTableRows('Images');
+            navigateToSingleEntityPage('deployments');
+            pageEntityCountMatchesTableRows('deployments', entitiesKey2);
         });
 
         context('Side Panel', () => {
             renderListAndSidePanel('deployments');
-            sidePanelEntityCountMatchesTableRows('Images');
+            sidePanelEntityCountMatchesTableRows('deployments', entitiesKey2);
         });
     });
 
     it('should have the same number of Secrets in the count widget as in the Secrets table', () => {
+        const entitiesKey2 = 'secrets';
+
         context('Page', () => {
             renderListAndSidePanel('deployments');
-            navigateToSingleEntityPage('deployment');
-            pageEntityCountMatchesTableRows('Secrets');
+            navigateToSingleEntityPage('deployments');
+            pageEntityCountMatchesTableRows('deployments', entitiesKey2);
         });
 
         context('Side Panel', () => {
             renderListAndSidePanel('deployments');
-            sidePanelEntityCountMatchesTableRows('Secrets');
+            sidePanelEntityCountMatchesTableRows('deployments', entitiesKey2);
         });
     });
 });
