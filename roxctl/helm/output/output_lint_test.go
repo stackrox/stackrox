@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -62,8 +61,10 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 		{flavor: "dummy", rhacs: false, wantErr: true},
 
 		// Group: Valid --image-defaults, no --rhacs
+		{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: false},
 		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: false},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: false},
+		{flavor: defaults.ImageFlavorNameOpenSource, rhacs: false},
 
 		// Group: --rhacs only (test backwards-compatibility with versions < v3.68)
 		{flavor: "", flavorProvided: false, rhacs: true},
@@ -72,16 +73,12 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 		// Providing both flags shall produce flag-collision error
 		{flavor: "", flavorProvided: true, rhacs: true, wantErr: true},
 		{flavor: "dummy", rhacs: true, wantErr: true},
+		{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true, wantErr: true},
 		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true, wantErr: true},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: true, wantErr: true},
+		{flavor: defaults.ImageFlavorNameOpenSource, rhacs: true, wantErr: true},
 	}
-	// development flavor can be used only on non-released builds
-	if !buildinfo.ReleaseBuild {
-		tests = append(tests,
-			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true, wantErr: true}, // error: collision of --rhacs and --image-defaults
-			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: false},
-		)
-	}
+
 	testIO, _, _, _ := io.TestIO()
 	env := environment.NewTestCLIEnvironment(s.T(), testIO, printer.DefaultColorPrinter())
 
@@ -105,9 +102,11 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 }
 
 func (s *HelmChartTestSuite) TestHelmLint() {
-	flavorsToTest := []string{defaults.ImageFlavorNameStackRoxIORelease, defaults.ImageFlavorNameRHACSRelease}
-	if !buildinfo.ReleaseBuild {
-		flavorsToTest = append(flavorsToTest, defaults.ImageFlavorNameDevelopmentBuild)
+	flavorsToTest := []string{
+		defaults.ImageFlavorNameDevelopmentBuild,
+		defaults.ImageFlavorNameStackRoxIORelease,
+		defaults.ImageFlavorNameRHACSRelease,
+		defaults.ImageFlavorNameOpenSource,
 	}
 
 	for chartName := range common.ChartTemplates {

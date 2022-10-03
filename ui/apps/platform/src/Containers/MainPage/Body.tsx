@@ -6,6 +6,7 @@ import {
     mainPath,
     dashboardPath,
     networkPath,
+    networkPathPF,
     violationsPath,
     compliancePath,
     clustersPathWithParam,
@@ -26,6 +27,7 @@ import {
     vulnManagementReportsPath,
     configManagementPath,
     vulnManagementRiskAcceptancePath,
+    collectionsPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -48,12 +50,10 @@ function NotFoundPage(): ReactElement {
 const AsyncSearchPage = asyncComponent(() => import('Containers/Search/SearchPage'));
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
-// TODO Rename this and replace AsyncDashboardPage once Sec Metrics Phase One is complete
-// Jira: https://issues.redhat.com/browse/ROX-10650
-const AsyncDashboardPagePF = asyncComponent(
-    () => import('Containers/Dashboard/PatternFly/DashboardPage')
-);
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
+const AsyncNetworkGraphPage = asyncComponent(
+    () => import('Containers/NetworkGraph/NetworkGraphPage')
+);
 const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/ClustersPage'));
 const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/ClustersPage'));
 const AsyncIntegrationsPage = asyncComponent(
@@ -64,6 +64,8 @@ const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/V
 const AsyncPolicyManagementPage = asyncComponent(
     () => import('Containers/PolicyManagement/PolicyManagementPage')
 );
+
+const AsyncCollectionsPage = asyncComponent(() => import('Containers/Collections/CollectionsPage'));
 
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
@@ -97,9 +99,12 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
     const isSearchPageEnabled = isFeatureFlagEnabled('ROX_SEARCH_PAGE_UI');
-    const isDashboardPatternFlyEnabled = isFeatureFlagEnabled('ROX_SECURITY_METRICS_PHASE_ONE');
+    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
+    const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
+    // TODO Implement permissions once https://issues.redhat.com/browse/ROX-12619 is merged
+    const hasCollectionsPermission = true; // hasReadAccess('TODO');
 
     return (
         <div
@@ -111,19 +116,20 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                 <Switch>
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
-                    <Route
-                        path={dashboardPath}
-                        component={
-                            isDashboardPatternFlyEnabled ? AsyncDashboardPagePF : AsyncDashboardPage
-                        }
-                    />
+                    <Route path={dashboardPath} component={AsyncDashboardPage} />
                     <Route path={networkPath} component={AsyncNetworkPage} />
+                    {isNetworkGraphPatternflyEnabled && (
+                        <Route path={networkPathPF} component={AsyncNetworkGraphPage} />
+                    )}
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />
                     <Route path={integrationsPath} component={AsyncIntegrationsPage} />
                     <Route path={policyManagementBasePath} component={AsyncPolicyManagementPage} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
                     <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
+                    {isCollectionsEnabled && hasCollectionsPermission && (
+                        <Route path={collectionsPath} component={AsyncCollectionsPage} />
+                    )}
                     <Route path={riskPath} component={AsyncRiskPage} />
                     <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
                     {isSearchPageEnabled && <Route path={searchPath} component={AsyncSearchPage} />}

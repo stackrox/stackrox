@@ -15,50 +15,14 @@ import (
 var (
 	// CreateTableTestGrandparentsStmt holds the create statement for table `test_grandparents`.
 	CreateTableTestGrandparentsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists test_grandparents (
-                   Id varchar,
-                   Val varchar,
-                   Priority integer,
-                   RiskScore numeric,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*TestGrandparents)(nil),
-		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
-				Table: `
-               create table if not exists test_grandparents_embeddeds (
-                   test_grandparents_Id varchar,
-                   idx integer,
-                   Val varchar,
-                   PRIMARY KEY(test_grandparents_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (test_grandparents_Id) REFERENCES test_grandparents(Id) ON DELETE CASCADE
-               )
-               `,
 				GormModel: (*TestGrandparentsEmbeddeds)(nil),
-				Indexes: []string{
-					"create index if not exists testGrandparentsEmbeddeds_idx on test_grandparents_embeddeds using btree(idx)",
-				},
 				Children: []*postgres.CreateStmts{
 					&postgres.CreateStmts{
-						Table: `
-               create table if not exists test_grandparents_embeddeds_embedded2 (
-                   test_grandparents_Id varchar,
-                   test_grandparents_embeddeds_idx integer,
-                   idx integer,
-                   Val varchar,
-                   PRIMARY KEY(test_grandparents_Id, test_grandparents_embeddeds_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (test_grandparents_Id, test_grandparents_embeddeds_idx) REFERENCES test_grandparents_embeddeds(test_grandparents_Id, idx) ON DELETE CASCADE
-               )
-               `,
 						GormModel: (*TestGrandparentsEmbeddedsEmbedded2)(nil),
-						Indexes: []string{
-							"create index if not exists testGrandparentsEmbeddedsEmbedded2_idx on test_grandparents_embeddeds_embedded2 using btree(idx)",
-						},
-						Children: []*postgres.CreateStmts{},
+						Children:  []*postgres.CreateStmts{},
 					},
 				},
 			},
@@ -88,7 +52,7 @@ const (
 type TestGrandparents struct {
 	Id         string  `gorm:"column:id;type:varchar;primaryKey"`
 	Val        string  `gorm:"column:val;type:varchar"`
-	Priority   int64   `gorm:"column:priority;type:integer"`
+	Priority   int64   `gorm:"column:priority;type:bigint"`
 	RiskScore  float32 `gorm:"column:riskscore;type:numeric"`
 	Serialized []byte  `gorm:"column:serialized;type:bytea"`
 }

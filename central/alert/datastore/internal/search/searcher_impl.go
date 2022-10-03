@@ -12,7 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -53,7 +53,7 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 	return protoResults, nil
 }
 
-// SearchRawAlerts retrieves Alerts from the indexer and storage
+// SearchListAlerts retrieves list alerts from the indexer and storage
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
 	alerts, _, err := ds.searchListAlerts(ctx, q)
 	return alerts, err
@@ -138,7 +138,7 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	var filteredSearcher search.Searcher
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// Make the UnsafeSearcher safe.
 		filteredSearcher = alertPosgresSACSearchHelper.FilteredSearcher(unsafeSearcher)
 	} else {
@@ -176,7 +176,7 @@ func (ds *defaultViolationStateSearcher) Search(ctx context.Context, q *v1.Query
 
 	// By default, set stale to false.
 	if !querySpecifiesStateField {
-		cq := search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(
+		cq := search.ConjunctionQuery(q, search.NewQueryBuilder().AddExactMatches(
 			search.ViolationState,
 			storage.ViolationState_ACTIVE.String(),
 			storage.ViolationState_ATTEMPTED.String()).ProtoQuery())
@@ -201,7 +201,7 @@ func (ds *defaultViolationStateSearcher) Count(ctx context.Context, q *v1.Query)
 
 	// By default, set stale to false.
 	if !querySpecifiesStateField {
-		cq := search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
+		cq := search.ConjunctionQuery(q, search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
 		cq.Pagination = q.GetPagination()
 		q = cq
 	}

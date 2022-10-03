@@ -1,6 +1,7 @@
 import { ListImage, WatchedImage } from 'types/image.proto';
 
 import axios from './instance';
+import { Empty } from './types';
 
 const imagesUrl = '/v1/images';
 const watchedImagesUrl = '/v1/watchedimages';
@@ -34,8 +35,6 @@ export function unwatchImage(name: string): Promise<Empty> {
         .delete<Empty>(`${watchedImagesUrl}?name=${name}`)
         .then((response) => response.data);
 }
-
-type Empty = Record<string, never>;
 
 /*
  * Start watching an image fully-qualified image, even if inactive, identified by name.

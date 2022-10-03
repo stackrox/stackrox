@@ -16,24 +16,8 @@ import (
 var (
 	// CreateTableNodeComponentsCvesEdgesStmt holds the create statement for table `node_components_cves_edges`.
 	CreateTableNodeComponentsCvesEdgesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists node_components_cves_edges (
-                   Id varchar,
-                   IsFixable bool,
-                   FixedBy varchar,
-                   NodeComponentId varchar,
-                   NodeCveId varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (NodeComponentId) REFERENCES node_components(Id) ON DELETE CASCADE
-               )
-               `,
 		GormModel: (*NodeComponentsCvesEdges)(nil),
-		Indexes: []string{
-			"create index if not exists nodeComponentsCvesEdges_NodeComponentId on node_components_cves_edges using hash(NodeComponentId)",
-			"create index if not exists nodeComponentsCvesEdges_NodeCveId on node_components_cves_edges using hash(NodeCveId)",
-		},
-		Children: []*postgres.CreateStmts{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// NodeComponentsCvesEdgesSchema is the go schema for table `node_components_cves_edges`.

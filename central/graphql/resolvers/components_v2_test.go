@@ -10,7 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/assert"
@@ -48,7 +48,7 @@ func TestLocation(t *testing.T) {
 		},
 	}
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		imageComponentEdgeDS.EXPECT().Get(gomock.Any(), edges.EdgeID{ParentID: "image1", ChildID: "comp1"}.ToString()).
 			Return(&storage.ImageComponentEdge{Location: "loc"}, true, nil)
 	} else {
@@ -72,7 +72,7 @@ func TestLocation(t *testing.T) {
 	}
 
 	query := "Deployment:dep"
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		imageComponentEdgeDS.EXPECT().Get(gomock.Any(), edges.EdgeID{ParentID: "image1", ChildID: "comp1"}.ToString()).
 			Return(&storage.ImageComponentEdge{Location: "loc"}, true, nil)
 	} else {
@@ -114,7 +114,7 @@ func TestLocation(t *testing.T) {
 	query = "Image Sha:image1"
 	imageDS.EXPECT().Search(gomock.Any(), search.NewQueryBuilder().AddStrings(search.ImageSHA, "image1").ProtoQuery()).
 		Return([]search.Result{{ID: "image1"}}, nil)
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		imageComponentEdgeDS.EXPECT().Get(gomock.Any(), edges.EdgeID{ParentID: "image1", ChildID: "comp1"}.ToString()).
 			Return(&storage.ImageComponentEdge{Location: "loc"}, true, nil)
 	} else {

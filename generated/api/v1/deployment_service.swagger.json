@@ -324,12 +324,6 @@
         "deployment": {
           "$ref": "#/definitions/storageListDeployment"
         },
-        "whitelistStatuses": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageContainerNameAndBaselineStatus"
-          }
-        },
         "baselineStatuses": {
           "type": "array",
           "items": {
@@ -633,8 +627,7 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "description": "TODO(ROX-6895): \"Label\" search term is ambiguous."
+          }
         },
         "podLabels": {
           "type": "object",

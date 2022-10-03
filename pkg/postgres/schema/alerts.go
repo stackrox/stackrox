@@ -17,50 +17,8 @@ import (
 var (
 	// CreateTableAlertsStmt holds the create statement for table `alerts`.
 	CreateTableAlertsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists alerts (
-                   Id varchar,
-                   Policy_Id varchar,
-                   Policy_Name varchar,
-                   Policy_Description varchar,
-                   Policy_Disabled bool,
-                   Policy_Categories text[],
-                   Policy_LifecycleStages int[],
-                   Policy_Severity integer,
-                   Policy_EnforcementActions int[],
-                   Policy_LastUpdated timestamp,
-                   Policy_SORTName varchar,
-                   Policy_SORTLifecycleStage varchar,
-                   Policy_SORTEnforcement bool,
-                   LifecycleStage integer,
-                   ClusterId varchar,
-                   ClusterName varchar,
-                   Namespace varchar,
-                   NamespaceId varchar,
-                   Deployment_Id varchar,
-                   Deployment_Name varchar,
-                   Deployment_Inactive bool,
-                   Image_Id varchar,
-                   Image_Name_Registry varchar,
-                   Image_Name_Remote varchar,
-                   Image_Name_Tag varchar,
-                   Image_Name_FullName varchar,
-                   Resource_ResourceType integer,
-                   Resource_Name varchar,
-                   Enforcement_Action integer,
-                   Time timestamp,
-                   State integer,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*Alerts)(nil),
-		Indexes: []string{
-			"create index if not exists alerts_LifecycleStage on alerts using btree(LifecycleStage)",
-			"create index if not exists alerts_Deployment_Id on alerts using hash(Deployment_Id)",
-			"create index if not exists alerts_State on alerts using btree(State)",
-		},
-		Children: []*postgres.CreateStmts{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// AlertsSchema is the go schema for table `alerts`.
@@ -70,7 +28,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Alert)(nil)), "alerts")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.ListAlert)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.Alert)(nil)))
 		RegisterTable(schema, CreateTableAlertsStmt)
 		return schema
 	}()
@@ -88,7 +46,6 @@ type Alerts struct {
 	PolicyDescription        string                              `gorm:"column:policy_description;type:varchar"`
 	PolicyDisabled           bool                                `gorm:"column:policy_disabled;type:bool"`
 	PolicyCategories         *pq.StringArray                     `gorm:"column:policy_categories;type:text[]"`
-	PolicyLifecycleStages    *pq.Int32Array                      `gorm:"column:policy_lifecyclestages;type:int[]"`
 	PolicySeverity           storage.Severity                    `gorm:"column:policy_severity;type:integer"`
 	PolicyEnforcementActions *pq.Int32Array                      `gorm:"column:policy_enforcementactions;type:int[]"`
 	PolicyLastUpdated        *time.Time                          `gorm:"column:policy_lastupdated;type:timestamp"`

@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -15,30 +16,8 @@ import (
 var (
 	// CreateTableProcessIndicatorsStmt holds the create statement for table `process_indicators`.
 	CreateTableProcessIndicatorsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists process_indicators (
-                   Id varchar,
-                   DeploymentId varchar,
-                   ContainerName varchar,
-                   PodId varchar,
-                   PodUid varchar,
-                   Signal_ContainerId varchar,
-                   Signal_Name varchar,
-                   Signal_Args varchar,
-                   Signal_ExecFilePath varchar,
-                   Signal_Uid integer,
-                   ClusterId varchar,
-                   Namespace varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ProcessIndicators)(nil),
-		Indexes: []string{
-			"create index if not exists processIndicators_DeploymentId on process_indicators using hash(DeploymentId)",
-			"create index if not exists processIndicators_PodUid on process_indicators using hash(PodUid)",
-		},
-		Children: []*postgres.CreateStmts{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ProcessIndicatorsSchema is the go schema for table `process_indicators`.
@@ -48,6 +27,13 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Deployment": DeploymentsSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_INDICATORS, "processindicator", (*storage.ProcessIndicator)(nil)))
 		RegisterTable(schema, CreateTableProcessIndicatorsStmt)
 		return schema
@@ -69,7 +55,7 @@ type ProcessIndicators struct {
 	SignalName         string `gorm:"column:signal_name;type:varchar"`
 	SignalArgs         string `gorm:"column:signal_args;type:varchar"`
 	SignalExecFilePath string `gorm:"column:signal_execfilepath;type:varchar"`
-	SignalUid          uint32 `gorm:"column:signal_uid;type:integer"`
+	SignalUid          uint32 `gorm:"column:signal_uid;type:bigint"`
 	ClusterId          string `gorm:"column:clusterid;type:varchar"`
 	Namespace          string `gorm:"column:namespace;type:varchar"`
 	Serialized         []byte `gorm:"column:serialized;type:bytea"`

@@ -52,7 +52,7 @@ var (
 		allowlist   set.StringSet
 	}{
 		"io/ioutil": {
-			replacement: "https://golang.org/doc/go1.16#ioutil",
+			replacement: "https://golang.org/doc/go1.18#ioutil",
 		},
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",
@@ -189,6 +189,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/auth",
 			"pkg/batcher",
 			"pkg/bolthelper",
+			"pkg/booleanpolicy/policyversion",
 			"pkg/buildinfo",
 			"pkg/concurrency",
 			"pkg/config",
@@ -199,6 +200,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/dackbox/crud",
 			"pkg/dackbox/raw",
 			"pkg/dackbox/sortedkeys",
+			"pkg/defaults/policies",
 			"pkg/nodes/converter",
 			"pkg/db",
 			"pkg/env",
@@ -211,6 +213,8 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/logging",
 			"pkg/metrics",
 			"pkg/migrations",
+			"pkg/policyutils",
+			"pkg/postgres",
 			"pkg/postgres/pgadmin",
 			"pkg/postgres/pgconfig",
 			"pkg/postgres/pgtest",

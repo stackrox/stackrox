@@ -16,35 +16,11 @@ import (
 var (
 	// CreateTablePodsStmt holds the create statement for table `pods`.
 	CreateTablePodsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists pods (
-                   Id varchar,
-                   Name varchar,
-                   DeploymentId varchar,
-                   Namespace varchar,
-                   ClusterId varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*Pods)(nil),
-		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
-				Table: `
-               create table if not exists pods_live_instances (
-                   pods_Id varchar,
-                   idx integer,
-                   ImageDigest varchar,
-                   PRIMARY KEY(pods_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (pods_Id) REFERENCES pods(Id) ON DELETE CASCADE
-               )
-               `,
 				GormModel: (*PodsLiveInstances)(nil),
-				Indexes: []string{
-					"create index if not exists podsLiveInstances_idx on pods_live_instances using btree(idx)",
-				},
-				Children: []*postgres.CreateStmts{},
+				Children:  []*postgres.CreateStmts{},
 			},
 		},
 	}

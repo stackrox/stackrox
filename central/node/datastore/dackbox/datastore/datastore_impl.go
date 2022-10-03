@@ -16,8 +16,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/sac"
@@ -158,7 +158,7 @@ func (ds *datastoreImpl) GetNodesBatch(ctx context.Context, ids []string) ([]*st
 			return nil, err
 		}
 	} else {
-		idsQuery := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.NodeID, ids...).ProtoQuery()
+		idsQuery := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.NodeID, ids...).ProtoQuery()
 		nodes, err = ds.SearchRawNodes(ctx, idsQuery)
 		if err != nil {
 			return nil, err
@@ -227,7 +227,7 @@ func (ds *datastoreImpl) DeleteNodes(ctx context.Context, ids ...string) error {
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "Exists")
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		if ok, err := ds.canReadNode(ctx, id); err != nil || !ok {
 			return false, err
 		}

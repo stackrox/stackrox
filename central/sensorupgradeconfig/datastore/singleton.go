@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -40,8 +40,8 @@ func addDefaultConfigIfEmpty(d DataStore) error {
 
 func initialize() {
 	var storage store.Store
-	if features.PostgresDatastore.Enabled() {
-		storage = postgres.New(context.Background(), globaldb.GetPostgres())
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		storage = postgres.New(globaldb.GetPostgres())
 	} else {
 		storage = bolt.New(globaldb.GetGlobalDB())
 	}

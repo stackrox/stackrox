@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -57,7 +57,7 @@ type clusterDatastoreSACSuite struct {
 
 func (s *clusterDatastoreSACSuite) SetupSuite() {
 	var err error
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pgtestbase = pgtest.ForT(s.T())
 		s.NotNil(s.pgtestbase)
 		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
@@ -82,7 +82,7 @@ func (s *clusterDatastoreSACSuite) SetupSuite() {
 }
 
 func (s *clusterDatastoreSACSuite) TearDownSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pgtestbase.Pool.Close()
 	} else {
 		s.Require().NoError(s.boltengine.Close())
@@ -716,7 +716,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 
 	var cases map[string]testutils.ClusterSACCrudTestCase
 	testedVerb := "update cluster health"
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		cases = testutils.GenericGlobalClusterSACWriteTestCases(context.Background(), s.T(), testedVerb, clusterID, "not"+clusterID, resources.Cluster)
 	} else {
 		cases = testutils.GenericClusterSACWriteTestCases(context.Background(), s.T(), testedVerb, clusterID, "not"+clusterID, resources.Cluster)

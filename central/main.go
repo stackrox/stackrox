@@ -29,7 +29,6 @@ import (
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
-	complianceManager "github.com/stackrox/rox/central/compliance/manager"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
@@ -247,7 +246,7 @@ func main() {
 	ensureDB(ctx)
 
 	// Need to remove the backup clone and set the current version
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		sourceMap, config, err := pgconfig.GetPostgresConfig()
 		if err != nil {
 			log.Errorf("Unable to get Postgres DB config: %v", err)
@@ -281,7 +280,7 @@ func main() {
 
 func ensureDB(ctx context.Context) {
 	var versionStore vStore.Store
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		versionStore = vStore.NewPostgres(ctx, globaldb.InitializePostgres(ctx))
 	} else {
 		versionStore = vStore.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
@@ -294,9 +293,6 @@ func ensureDB(ctx context.Context) {
 }
 
 func startServices() {
-	if err := complianceManager.Singleton().Start(); err != nil {
-		log.Panicf("could not start compliance manager: %v", err)
-	}
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
@@ -375,7 +371,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		userService.Singleton(),
 		vulnRequestService.Singleton(),
 	}
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
@@ -669,7 +665,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	}
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/db/backup",
 			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),

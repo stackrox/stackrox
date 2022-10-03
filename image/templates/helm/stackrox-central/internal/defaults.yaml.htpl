@@ -20,12 +20,6 @@ defaults:
     image:
       name: [< required "" .ImageRemote >]
       tag: [< required "" .ImageTag >]
-    [<- if .FeatureFlags.ROX_POSTGRES_DATASTORE >]
-    dbImage:
-      name: [< required "" .CentralDBImageRemote >]
-      tag: [< required "" .CentralDBImageTag >]
-
-    [<- end >]
 
     resources:
       requests:
@@ -44,7 +38,30 @@ defaults:
         port: null
       route:
         enabled: false
+    db:
+      enabled: false
 
+      external: false
+
+      source:
+        minConns: 10
+        maxConns: 90
+        statementTimeoutMs: 60000
+
+      postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
+      hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
+
+      image:
+        name: [< required "" .CentralDBImageRemote >]
+        tag: [< required "" .CentralDBImageTag >]
+
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
   scanner:
     disable: false
     replicas: 3
@@ -91,4 +108,8 @@ defaults:
 
 pvcDefaults:
   claimName: "stackrox-db"
+  size: "100Gi"
+
+dbPVCDefaults:
+  claimName: "central-db"
   size: "100Gi"

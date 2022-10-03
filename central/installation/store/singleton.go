@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/installation/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -46,8 +46,8 @@ func createInitial() {
 // Singleton returns a singleton of the InstallationInfo store
 func Singleton() Store {
 	singletonInit.Do(func() {
-		if features.PostgresDatastore.Enabled() {
-			storeSingleton = postgres.New(sac.WithNoAccess(context.Background()), globaldb.GetPostgres())
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			storeSingleton = postgres.New(globaldb.GetPostgres())
 		} else {
 			storeSingleton = bolt.New(globaldb.GetGlobalDB())
 		}

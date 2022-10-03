@@ -18,15 +18,6 @@ var (
 	// SystemHealthPatternFly enables the Pattern Fly version of System Health page. (used in the front-end app only)
 	SystemHealthPatternFly = registerFeature("Enable Pattern Fly version of System Health page", "ROX_SYSTEM_HEALTH_PF", false)
 
-	// PoliciesPatternFly enables the PatternFly version of Policies. (used in the front-end app only)
-	PoliciesPatternFly = registerFeature("Enable PatternFly version of Policies", "ROX_POLICIES_PATTERNFLY", true)
-
-	// PostgresDatastore enables Postgres datastore.
-	PostgresDatastore = registerFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", false)
-
-	// FrontendVMUpdates enables Frontend VM Updates.
-	FrontendVMUpdates = registerFeature("Enable Frontend VM Updates", "ROX_FRONTEND_VM_UPDATES", false)
-
 	// NetworkPolicySystemPolicy enables two system policy fields (Missing (Ingress|Egress) Network Policy) to check deployments
 	// against network policies applied in the secured cluster.
 	NetworkPolicySystemPolicy = registerFeature("Enable NetworkPolicy-related system policy fields", "ROX_NETPOL_FIELDS", true)
@@ -37,9 +28,6 @@ var (
 	// SearchPageUI enables search page instead of search modal in UI. Frontend only.
 	SearchPageUI = registerFeature("Enable search page instead of search modal in UI", "ROX_SEARCH_PAGE_UI", false)
 
-	// SecurityMetricsPhaseOne enables the PatternFly version of the main dashboard with Action Widgets. (used in the front-end app only)
-	SecurityMetricsPhaseOne = registerFeature("Enable PatternFly version of Security Metrics Dashboard", "ROX_SECURITY_METRICS_PHASE_ONE", true)
-
 	// DecommissionedClusterRetention enables the setting in System Configuration.
 	DecommissionedClusterRetention = registerFeature("Enable Decommissioned Cluster Retention in System Configuration", "ROX_DECOMMISSIONED_CLUSTER_RETENTION", true)
 
@@ -48,4 +36,10 @@ var (
 
 	// RoxctlNetpolGenerate enables 'roxctl netpol generate' command which integrates with NP-Guard
 	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl netpol generate' command", "ROX_ROXCTL_NETPOL_GENERATE", false)
+
+	// ObjectCollections enables 'collection' entity APIs and Frontend collection pages
+	ObjectCollections = registerFeature("Enable object collection entities", "ROX_OBJECT_COLLECTIONS", false)
+
+	// NetworkGraphPatternFly enables the PatternFly version of NetworkGraph. (used in the front-end app only)
+	NetworkGraphPatternFly = registerFeature("Enable PatternFly version of NetworkGraph", "ROX_NETWORK_GRAPH_PATTERNFLY", false)
 )

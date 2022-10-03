@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableExternalBackupsStmt holds the create statement for table `external_backups`.
 	CreateTableExternalBackupsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists external_backups (
-                   Id varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ExternalBackups)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

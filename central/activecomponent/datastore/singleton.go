@@ -11,7 +11,7 @@ import (
 	globaldbDackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -22,7 +22,7 @@ var (
 )
 
 func initialize() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storage := postgres.New(globaldb.GetPostgres())
 		indexer := postgres.NewIndexer(globaldb.GetPostgres())
 		searcher := search.NewV2(storage, indexer)

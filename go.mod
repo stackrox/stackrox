@@ -1,20 +1,16 @@
 module github.com/stackrox/rox
 
-go 1.17
-
-// CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
-// directive at the bottom of the file as well.
-require github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581
+go 1.18
 
 require (
-	cloud.google.com/go/compute v1.9.0
-	cloud.google.com/go/containeranalysis v0.4.0
-	cloud.google.com/go/storage v1.26.0
+	cloud.google.com/go/compute v1.10.0
+	cloud.google.com/go/containeranalysis v0.6.0
+	cloud.google.com/go/storage v1.27.0
 	github.com/BurntSushi/toml v1.2.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/PagerDuty/go-pagerduty v1.5.1
+	github.com/PagerDuty/go-pagerduty v1.6.0
 	github.com/RoaringBitmap/roaring v1.2.1
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.16.0
@@ -24,26 +20,26 @@ require (
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
 	github.com/cloudflare/cfssl v1.6.2
 	github.com/containers/image/v5 v5.20.0
-	github.com/coreos/go-oidc/v3 v3.3.0
-	github.com/coreos/go-systemd/v22 v22.3.2
+	github.com/coreos/go-oidc/v3 v3.4.0
+	github.com/coreos/go-systemd/v22 v22.4.0
 	github.com/couchbase/moss v0.1.0 // indirect
 	github.com/dave/jennifer v1.5.1
 	github.com/deckarep/golang-set v1.8.0
 	github.com/dexidp/dex v0.0.0-20220607113954-3836196af2e7
 	github.com/docker/distribution v2.8.1+incompatible
-	github.com/docker/docker v20.10.17+incompatible
+	github.com/docker/docker v20.10.18+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
-	github.com/facebookincubator/nvdtools v0.1.4
+	github.com/facebookincubator/nvdtools v0.1.5
 	github.com/fatih/color v1.13.0
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v1.2.2
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/gofrs/uuid v4.2.0+incompatible
+	github.com/gofrs/uuid v4.3.0+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt/v4 v4.4.2
-	github.com/golang/mock v1.6.0
+	github.com/golang/mock v1.7.0-rc.1
 	github.com/golang/protobuf v1.5.2
 	github.com/google/certificate-transparency-go v1.1.3
 	github.com/google/go-cmp v0.5.9
@@ -58,6 +54,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/heroku/docker-registry-client v0.0.0
+	github.com/jackc/pgconn v1.13.0
 	github.com/jackc/pgtype v1.12.0
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/jinzhu/now v1.1.5 // indirect
@@ -71,7 +68,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/sys/mount v0.3.0 // indirect
-	github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220802140408-c0ab819afba6
+	github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220905143132-4bca39e41111
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
@@ -79,22 +76,21 @@ require (
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/operator-framework/helm-operator-plugins v0.0.7
-	github.com/operator-framework/operator-sdk v0.19.4
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.37.0
-	github.com/russellhaering/gosaml2 v0.8.0
+	github.com/russellhaering/gosaml2 v0.8.1
 	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/sergi/go-diff v1.2.0
 	github.com/sigstore/cosign v1.8.1-0.20220530190726-3a43ddc93914
 	github.com/sigstore/sigstore v1.2.1-0.20220528141235-6d98e7d59dee
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
+	github.com/stackrox/scanner v0.0.0-20220929215850-334d4658d5e6
 	github.com/stretchr/testify v1.8.0
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
@@ -105,39 +101,40 @@ require (
 	go.uber.org/atomic v1.10.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220824171710-5757bc0c5503
-	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b
-	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
+	golang.org/x/net v0.0.0-20220927171203-f486391704dc
+	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.12
-	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.95.0
-	google.golang.org/genproto v0.0.0-20220810155839-1856144b1d9c
+	golang.stackrox.io/grpc-http1 v0.2.5
+	google.golang.org/api v0.98.0
+	google.golang.org/genproto v0.0.0-20220926165614-551eb538f295
 	google.golang.org/grpc v1.49.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/postgres v1.3.9
-	gorm.io/gorm v1.23.8
+	gorm.io/driver/postgres v1.3.10
+	gorm.io/gorm v1.23.10
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.2
-	k8s.io/api v0.23.10
-	k8s.io/apimachinery v0.23.10
-	k8s.io/apiserver v0.23.10
-	k8s.io/client-go v0.23.10
-	k8s.io/kubectl v0.23.10
-	k8s.io/kubelet v0.22.13
+	k8s.io/api v0.23.12
+	k8s.io/apimachinery v0.23.12
+	k8s.io/apiserver v0.23.12
+	k8s.io/client-go v0.23.12
+	k8s.io/kubectl v0.23.12
+	k8s.io/kubelet v0.22.15
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/controller-runtime v0.11.2
+	sigs.k8s.io/controller-tools v0.8.0
 	sigs.k8s.io/e2e-framework v0.0.7
 	sigs.k8s.io/yaml v1.3.0
 )
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
-	cloud.google.com/go v0.102.1 // indirect
+	cloud.google.com/go v0.104.0 // indirect
 	cloud.google.com/go/iam v0.3.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
@@ -162,9 +159,12 @@ require (
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
+	github.com/blevesearch/blevex v1.0.0 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/mmap-go v1.0.2 // indirect
 	github.com/blevesearch/segment v0.9.0 // indirect
+	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
+	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chai2010/gettext-go v0.0.0-20160711120539-c6fed771bfd5 // indirect
@@ -199,6 +199,7 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/fullstorydev/grpcurl v1.8.6 // indirect
+	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
@@ -219,6 +220,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.11.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
+	github.com/gobuffalo/flect v0.2.4 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -230,7 +232,7 @@ require (
 	github.com/google/trillian v1.4.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.1.0 // indirect
-	github.com/googleapis/gax-go/v2 v2.4.0 // indirect
+	github.com/googleapis/gax-go/v2 v2.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
@@ -244,7 +246,6 @@ require (
 	github.com/itchyny/gojq v0.12.5 // indirect
 	github.com/itchyny/timefmt-go v0.1.3 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgconn v1.13.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.1 // indirect
@@ -259,6 +260,7 @@ require (
 	github.com/jonboulle/clockwork v0.3.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
 	github.com/klauspost/compress v1.15.8 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
@@ -317,7 +319,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.12.0 // indirect
 	github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd // indirect
-	github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab // indirect
+	github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d // indirect
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/subosito/gotenv v1.3.0 // indirect
@@ -343,6 +345,9 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
+	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
+	github.com/yvasiyarov/gorelic v0.0.7 // indirect
+	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	github.com/zmap/zcrypto v0.0.0-20210811211718-6f9bc4aff20f // indirect
 	github.com/zmap/zlint/v3 v3.3.1-0.20211019173530-cb17369b4628 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.4 // indirect
@@ -387,8 +392,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.1.0 // indirect
 	k8s.io/apiextensions-apiserver v0.23.5 // indirect
-	k8s.io/cli-runtime v0.23.10 // indirect
-	k8s.io/component-base v0.23.10 // indirect
+	k8s.io/cli-runtime v0.23.12 // indirect
+	k8s.io/component-base v0.23.12 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf // indirect
 	knative.dev/pkg v0.0.0-20220325200448-1f7514acd0c2 // indirect
@@ -416,7 +421,8 @@ replace (
 	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20220907150529-4ecbd2543f9e
 
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56
-	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
+	// we need https://github.com/fullsailor/pkcs7/pull/42 to be merged
+	github.com/fullsailor/pkcs7 => github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
 
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20220204234128-07f109db0819
@@ -434,7 +440,7 @@ replace (
 
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
-	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.10-0.20220908144520-9d1614a2a007
+	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.10-0.20220919093109-89f9785764c6
 	// github.com/sigstore/rekor is a transitive dep pulled in by cosign. The version pulled in by cosign is using
 	// a vulnerable go-tuf version
 	// (https://github.com/theupdateframework/go-tuf/security/advisories/GHSA-66x3-6cw3-v5gj).
@@ -461,12 +467,6 @@ replace (
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
 )
-
-// Circular rox -> scanner -> rox dependency would pull in a long list of past rox versions, cluttering go.sum
-// and the module cache.
-// If you upgrade the scanner version, you MUST change this line as well to refer to the rox version included
-// from the given scanner version.
-exclude github.com/stackrox/rox v0.0.0-20210914215712-9ac265932e28
 
 exclude k8s.io/client-go v12.0.0+incompatible
 

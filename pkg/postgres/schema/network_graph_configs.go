@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableNetworkGraphConfigsStmt holds the create statement for table `network_graph_configs`.
 	CreateTableNetworkGraphConfigsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists network_graph_configs (
-                   Id varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*NetworkGraphConfigs)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

@@ -237,23 +237,23 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId(), badEmailDep.GetId()},
 		},
 		{
-			fieldValues: map[search.FieldLabel]string{search.Label: "com.docker.stack.namespace=prevent"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentLabel: "com.docker.stack.namespace=prevent"},
 			expectedIDs: []string{deployment.GetId()},
 		},
 		{
-			fieldValues: map[search.FieldLabel]string{search.Label: "email=r/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentLabel: "email=r/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"},
 			expectedIDs: []string{deployment.GetId()},
 		},
 		{
-			fieldValues: map[search.FieldLabel]string{search.Label: "email=!r/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentLabel: "email=!r/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"},
 			expectedIDs: []string{badEmailDep.GetId()},
 		},
 		{
-			fieldValues: map[search.FieldLabel]string{search.Label: "!email"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentLabel: "!email"},
 			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId()},
 		},
 		{
-			fieldValues: map[search.FieldLabel]string{search.Label: "app=nginx"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentLabel: "app=nginx"},
 			expectedIDs: []string{},
 		},
 		{
@@ -265,15 +265,15 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedIDs: []string{},
 		},
 		{
-			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nginx", search.Label: "com.docker.stack.namespace=prevent"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nginx", search.DeploymentLabel: "com.docker.stack.namespace=prevent"},
 			expectedIDs: []string{},
 		},
 		{
-			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.Label: "com.docker.stack.namespace=r/.*"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.DeploymentLabel: "com.docker.stack.namespace=r/.*"},
 			expectedIDs: []string{deployment.GetId()},
 		},
 		{
-			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.Label: "com.docker.stack.namespace=*"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.DeploymentLabel: "com.docker.stack.namespace=*"},
 			expectedIDs: []string{deployment.GetId()},
 		},
 		{
@@ -651,7 +651,7 @@ func TestMapQueries(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		q := search.NewQueryBuilder().AddMapQuery(search.Label, c.key, c.value).ProtoQuery()
+		q := search.NewQueryBuilder().AddMapQuery(search.DeploymentLabel, c.key, c.value).ProtoQuery()
 		results, err := deploymentIndexer.Search(ctx, q)
 		assert.NoError(t, err)
 		assert.ElementsMatch(t, c.expectedIDs, search.ResultsToIDs(results))

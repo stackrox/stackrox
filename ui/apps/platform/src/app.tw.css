@@ -351,10 +351,6 @@ h6 {
     cursor: text !important;
 }
 
-.recharts-responsive-container .recharts-tooltip-cursor {
-    fill-opacity: 0;
-}
-
 .bg-inherit {
     background: inherit;
 }

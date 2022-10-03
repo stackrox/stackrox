@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/restore"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -29,7 +30,10 @@ func restorePostgresDB(ctx common.RestoreFileContext, fileReader io.Reader, size
 }
 
 func checkPostgresSize(ctx common.RestoreFileContext, fileReader io.Reader, size int64) error {
-	log.Debugf("checkPostgresSize -- check file size = %d", size)
+	// When using managed services, Postgres space is not a concern at this time.
+	if env.ManagedCentral.BooleanSetting() {
+		return nil
+	}
 
 	bytes := make([]byte, size)
 

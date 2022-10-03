@@ -15,16 +15,7 @@ import (
 var (
 	// CreateTablePolicyCategoriesStmt holds the create statement for table `policy_categories`.
 	CreateTablePolicyCategoriesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists policy_categories (
-                   Id varchar,
-                   Name varchar UNIQUE,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*PolicyCategories)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

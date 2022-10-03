@@ -15,17 +15,7 @@ import (
 var (
 	// CreateTableReportConfigurationsStmt holds the create statement for table `report_configurations`.
 	CreateTableReportConfigurationsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists report_configurations (
-                   Id varchar,
-                   Name varchar,
-                   Type integer,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ReportConfigurations)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

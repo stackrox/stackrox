@@ -39,7 +39,7 @@ export const defaultImageSort = [
 ];
 
 export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagEnabled) {
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     return function getImageTableColumns(workflowState) {
         const tableColumns = [
@@ -63,7 +63,7 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
-                    const { vulnCounter, id, scan, notes } = original;
+                    const { vulnCounter, id, scanTime, scanNotes, notes } = original;
 
                     const newState = workflowState
                         .pushListItem(id)
@@ -80,8 +80,8 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                             fixableUrl={fixableUrl}
                             entityName="Image"
                             hideLink={pdf}
-                            scan={scan}
-                            scanMessage={getImageScanMessage(notes || [], scan?.notes || [])}
+                            scanTime={scanTime}
+                            scanMessage={getImageScanMessage(notes || [], scanNotes || [])}
                         />
                     );
                 },
@@ -129,14 +129,14 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
-                    const { scan } = original;
-                    if (!scan) {
+                    const { scanTime } = original;
+                    if (!scanTime) {
                         return '–';
                     }
-                    return <DateTimeField date={scan.scanTime} asString={pdf} />;
+                    return <DateTimeField date={scanTime} asString={pdf} />;
                 },
                 id: imageSortFields.SCAN_TIME,
-                accessor: 'scan.scanTime',
+                accessor: 'scanTime',
                 sortField: imageSortFields.SCAN_TIME,
             },
             {
@@ -144,14 +144,14 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
                 Cell: ({ original }) => {
-                    const { scan } = original;
-                    if (!scan?.operatingSystem) {
+                    const { operatingSystem } = original;
+                    if (!operatingSystem) {
                         return '–';
                     }
-                    return <span>{scan.operatingSystem}</span>;
+                    return <span>{operatingSystem}</span>;
                 },
                 id: imageSortFields.IMAGE_OS,
-                accessor: 'scan.operatingSystem',
+                accessor: 'operatingSystem',
                 sortField: imageSortFields.IMAGE_OS,
             },
             {
@@ -223,7 +223,7 @@ const VulnMgmtImages = ({
     const [showWatchedImagesDialog, setShowWatchedImagesDialog] = useState(false);
     const workflowState = useContext(workflowStateContext);
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const fragmentToUse = showVmUpdates ? IMAGE_LIST_FRAGMENT : OLD_IMAGE_LIST_FRAGMENT;
 
     const inactiveImageScanningEnabled = workflowState.isBaseList(entityTypes.IMAGE);

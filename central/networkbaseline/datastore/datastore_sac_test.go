@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -47,7 +47,7 @@ func (s *networkBaselineDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	networkBaselineObj := "networkBaselineSACTest"
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(s.T())
 		s.Require().NotNil(pgtestbase)
 		s.pool = pgtestbase.Pool
@@ -65,7 +65,7 @@ func (s *networkBaselineDatastoreSACTestSuite) SetupSuite() {
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) TearDownSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pool.Close()
 	} else {
 		err := rocksdb.CloseAndRemove(s.engine)

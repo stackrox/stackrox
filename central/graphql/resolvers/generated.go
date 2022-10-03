@@ -373,6 +373,25 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"resource: ComplianceResource",
 		"value: ComplianceResultValue",
 	}))
+	utils.Must(builder.AddType("ComplianceDomain_Cluster", []string{
+		"id: ID!",
+		"name: String!",
+	}))
+	utils.Must(builder.AddType("ComplianceDomain_Deployment", []string{
+		"clusterId: String!",
+		"clusterName: String!",
+		"id: ID!",
+		"name: String!",
+		"namespace: String!",
+		"namespaceId: String!",
+		"type: String!",
+	}))
+	utils.Must(builder.AddType("ComplianceDomain_Node", []string{
+		"clusterId: String!",
+		"clusterName: String!",
+		"id: ID!",
+		"name: String!",
+	}))
 	utils.Must(builder.AddType("ComplianceResource", []string{
 		"cluster: ComplianceResource_ClusterName",
 		"deployment: ComplianceResource_DeploymentName",
@@ -415,7 +434,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"errorMessage: String!",
 		"finishTime: Time",
 		"id: ID!",
-		"scheduleId: String!",
 		"standardId: String!",
 		"startTime: Time",
 		"state: ComplianceRun_State!",
@@ -429,19 +447,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"standardId: String!",
 		"startTimestamp: Time",
 		"success: Boolean!",
-	}))
-	utils.Must(builder.AddType("ComplianceRunSchedule", []string{
-		"clusterId: String!",
-		"crontabSpec: String!",
-		"id: ID!",
-		"standardId: String!",
-		"suspended: Boolean!",
-	}))
-	utils.Must(builder.AddType("ComplianceRunScheduleInfo", []string{
-		"lastCompletedRun: ComplianceRun",
-		"lastRun: ComplianceRun",
-		"nextRunTime: Time",
-		"schedule: ComplianceRunSchedule",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.ComplianceRun_State(0)))
 	utils.Must(builder.AddType("ComplianceStandard", []string{
@@ -4969,6 +4974,197 @@ func (resolver *complianceControlResultResolver) Value(ctx context.Context) (*co
 	return resolver.root.wrapComplianceResultValue(value, true, nil)
 }
 
+type complianceDomain_ClusterResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ComplianceDomain_Cluster
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Cluster(value *storage.ComplianceDomain_Cluster, ok bool, err error) (*complianceDomain_ClusterResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_ClusterResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Clusters(values []*storage.ComplianceDomain_Cluster, err error) ([]*complianceDomain_ClusterResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_ClusterResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_ClusterResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_ClusterWithContext(ctx context.Context, value *storage.ComplianceDomain_Cluster, ok bool, err error) (*complianceDomain_ClusterResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_ClusterResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_ClustersWithContext(ctx context.Context, values []*storage.ComplianceDomain_Cluster, err error) ([]*complianceDomain_ClusterResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_ClusterResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_ClusterResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceDomain_ClusterResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceDomain_ClusterResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+type complianceDomain_DeploymentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ComplianceDomain_Deployment
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Deployment(value *storage.ComplianceDomain_Deployment, ok bool, err error) (*complianceDomain_DeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_DeploymentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Deployments(values []*storage.ComplianceDomain_Deployment, err error) ([]*complianceDomain_DeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_DeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_DeploymentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_DeploymentWithContext(ctx context.Context, value *storage.ComplianceDomain_Deployment, ok bool, err error) (*complianceDomain_DeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_DeploymentResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_DeploymentsWithContext(ctx context.Context, values []*storage.ComplianceDomain_Deployment, err error) ([]*complianceDomain_DeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_DeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_DeploymentResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceDomain_DeploymentResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *complianceDomain_DeploymentResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *complianceDomain_DeploymentResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceDomain_DeploymentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *complianceDomain_DeploymentResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *complianceDomain_DeploymentResolver) NamespaceId(ctx context.Context) string {
+	value := resolver.data.GetNamespaceId()
+	return value
+}
+
+func (resolver *complianceDomain_DeploymentResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value
+}
+
+type complianceDomain_NodeResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ComplianceDomain_Node
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Node(value *storage.ComplianceDomain_Node, ok bool, err error) (*complianceDomain_NodeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_NodeResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Nodes(values []*storage.ComplianceDomain_Node, err error) ([]*complianceDomain_NodeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_NodeResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_NodeResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_NodeWithContext(ctx context.Context, value *storage.ComplianceDomain_Node, ok bool, err error) (*complianceDomain_NodeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_NodeResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_NodesWithContext(ctx context.Context, values []*storage.ComplianceDomain_Node, err error) ([]*complianceDomain_NodeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_NodeResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_NodeResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceDomain_NodeResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *complianceDomain_NodeResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *complianceDomain_NodeResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceDomain_NodeResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
 type complianceResourceResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -5421,11 +5617,6 @@ func (resolver *complianceRunResolver) Id(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *complianceRunResolver) ScheduleId(ctx context.Context) string {
-	value := resolver.data.GetScheduleId()
-	return value
-}
-
 func (resolver *complianceRunResolver) StandardId(ctx context.Context) string {
 	value := resolver.data.GetStandardId()
 	return value
@@ -5521,135 +5712,6 @@ func (resolver *complianceRunMetadataResolver) StartTimestamp(ctx context.Contex
 func (resolver *complianceRunMetadataResolver) Success(ctx context.Context) bool {
 	value := resolver.data.GetSuccess()
 	return value
-}
-
-type complianceRunScheduleResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.ComplianceRunSchedule
-}
-
-func (resolver *Resolver) wrapComplianceRunSchedule(value *storage.ComplianceRunSchedule, ok bool, err error) (*complianceRunScheduleResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &complianceRunScheduleResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapComplianceRunSchedules(values []*storage.ComplianceRunSchedule, err error) ([]*complianceRunScheduleResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*complianceRunScheduleResolver, len(values))
-	for i, v := range values {
-		output[i] = &complianceRunScheduleResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapComplianceRunScheduleWithContext(ctx context.Context, value *storage.ComplianceRunSchedule, ok bool, err error) (*complianceRunScheduleResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &complianceRunScheduleResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapComplianceRunSchedulesWithContext(ctx context.Context, values []*storage.ComplianceRunSchedule, err error) ([]*complianceRunScheduleResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*complianceRunScheduleResolver, len(values))
-	for i, v := range values {
-		output[i] = &complianceRunScheduleResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *complianceRunScheduleResolver) ClusterId(ctx context.Context) string {
-	value := resolver.data.GetClusterId()
-	return value
-}
-
-func (resolver *complianceRunScheduleResolver) CrontabSpec(ctx context.Context) string {
-	value := resolver.data.GetCrontabSpec()
-	return value
-}
-
-func (resolver *complianceRunScheduleResolver) Id(ctx context.Context) graphql.ID {
-	value := resolver.data.GetId()
-	return graphql.ID(value)
-}
-
-func (resolver *complianceRunScheduleResolver) StandardId(ctx context.Context) string {
-	value := resolver.data.GetStandardId()
-	return value
-}
-
-func (resolver *complianceRunScheduleResolver) Suspended(ctx context.Context) bool {
-	value := resolver.data.GetSuspended()
-	return value
-}
-
-type complianceRunScheduleInfoResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *v1.ComplianceRunScheduleInfo
-}
-
-func (resolver *Resolver) wrapComplianceRunScheduleInfo(value *v1.ComplianceRunScheduleInfo, ok bool, err error) (*complianceRunScheduleInfoResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &complianceRunScheduleInfoResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapComplianceRunScheduleInfos(values []*v1.ComplianceRunScheduleInfo, err error) ([]*complianceRunScheduleInfoResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*complianceRunScheduleInfoResolver, len(values))
-	for i, v := range values {
-		output[i] = &complianceRunScheduleInfoResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapComplianceRunScheduleInfoWithContext(ctx context.Context, value *v1.ComplianceRunScheduleInfo, ok bool, err error) (*complianceRunScheduleInfoResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &complianceRunScheduleInfoResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapComplianceRunScheduleInfosWithContext(ctx context.Context, values []*v1.ComplianceRunScheduleInfo, err error) ([]*complianceRunScheduleInfoResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*complianceRunScheduleInfoResolver, len(values))
-	for i, v := range values {
-		output[i] = &complianceRunScheduleInfoResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *complianceRunScheduleInfoResolver) LastCompletedRun(ctx context.Context) (*complianceRunResolver, error) {
-	value := resolver.data.GetLastCompletedRun()
-	return resolver.root.wrapComplianceRun(value, true, nil)
-}
-
-func (resolver *complianceRunScheduleInfoResolver) LastRun(ctx context.Context) (*complianceRunResolver, error) {
-	value := resolver.data.GetLastRun()
-	return resolver.root.wrapComplianceRun(value, true, nil)
-}
-
-func (resolver *complianceRunScheduleInfoResolver) NextRunTime(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetNextRunTime()
-	return timestamp(value)
-}
-
-func (resolver *complianceRunScheduleInfoResolver) Schedule(ctx context.Context) (*complianceRunScheduleResolver, error) {
-	value := resolver.data.GetSchedule()
-	return resolver.root.wrapComplianceRunSchedule(value, true, nil)
 }
 
 func toComplianceRun_State(value *string) v1.ComplianceRun_State {

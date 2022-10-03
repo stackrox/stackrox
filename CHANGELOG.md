@@ -5,6 +5,34 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+### Removed Features
+- ROX-6194: `ROX_WHITELIST_GENERATION_DURATION` env var is removed in favor of `ROX_BASELINE_GENERATION_DURATION`;
+  `DeploymentWithProcessInfo` items in `/v1/deploymentswithprocessinfo` endpoint response do not include
+  `whitelist_statuses` anymore.
+- `Label` and `Annotation` search options are removed. Use the following search options:
+  - **Resource | Deprecated Search Option | New Search Option**
+  - Node | Label | Node Label
+  - Node | Annotation | Node Annotation
+  - Namespace | Label | Namespace Label
+  - Deployment | Label | Deployment Label
+  - ServiceAccount | Label | Service Account Label
+  - ServiceAccount | Annotation | Service Account Annotation
+  - K8sRole | Label | Role Label
+  - K8sRole | Annotation | Role Annotation
+  - K8sRoleBinding | Label | Role Binding Label
+  - K8sRoleAnnotation | Annotation | Role Binding Annotation
+- `ids` field in `/v1/cves/suppress` and `/v1/cves/unsuppress` API payload renamed to `cves`.
+- ROX-11592: Support to Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field
+  being set in the `/v1/groups` endpoint have been removed.
+
+### Deprecated Features
+
+### Technical Changes
+- ROX-11937: The Splunk integration now processes all additional standards of the compliance operator (ocp4-cis & ocp4-cis-node) correctly.
+- ROX-9342: Sensor no longer uses `anyuid` Security Context Constraint (SCC).
+  The default SCC for sensor is now `restricted[-v2]` or `stackrox-sensor` depending on the settings.
+  Both the `runAsUser` and `fsGroup` for the admission-control and sensor deployments are no longer hardcoded to 4000 on Openshift clusters
+  to allow using the `restricted` and `restricted-v2` SCCs.
 
 ## [3.72.0]
 

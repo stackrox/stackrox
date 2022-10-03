@@ -29,7 +29,7 @@ const VulmMgmtEntityCluster = ({
     const workflowState = useContext(workflowStateContext);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const overviewQuery = gql`
         query getCluster($id: ID!, $policyQuery: String) {

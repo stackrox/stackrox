@@ -7,6 +7,7 @@ import PageHeader from 'Components/PageHeader';
 import { useTheme } from 'Containers/ThemeProvider';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import ExportButton from 'Components/ExportButton';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import entityTypes from 'constants/entityTypes';
 import useFeatureFlags from 'hooks/useFeatureFlags';
@@ -22,9 +23,10 @@ import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap, ListComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowListPageLayout = ({ location }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const useCaseEntityMap = getUseCaseEntityMap();
-    if (isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES')) {
+    if (isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE')) {
         const newTypes = useCaseEntityMap['vulnerability-management'].filter(
             (entityType) => entityType !== entityTypes.COMPONENT
         );
@@ -44,10 +46,6 @@ const WorkflowListPageLayout = ({ location }) => {
 
     // set up cache-busting system that either the list or sidepanel can use to trigger list refresh
     const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-    function customCsvExportHandler(fileName) {
-        return exportCvesAsCsv(fileName, workflowState);
-    }
 
     // Get the list / entity components
     const ListComponent = ListComponentMap[useCase];
@@ -71,13 +69,17 @@ const WorkflowListPageLayout = ({ location }) => {
     const exportFilename = `${useCaseLabels[useCase]} ${pluralize(startCase(header))} Report`;
     const entityContext = {};
 
+    function customCsvExportHandler(fileName) {
+        return exportCvesAsCsv(fileName, workflowState, pageListType);
+    }
+
     if (selectedRow) {
         const { entityType, entityId } = selectedRow;
         entityContext[entityType] = entityId;
     }
 
     // TODO: remove all this feature flag check after VM updates have been live for one release
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const useCaseOptions = useCaseEntityMap[useCase].filter((option) => {
         if (showVmUpdates) {
             if (option === entityTypes.CVE || option === entityTypes.COMPONENT) {
@@ -112,6 +114,8 @@ const WorkflowListPageLayout = ({ location }) => {
                                 disabled={!!sidePanelEntityId}
                                 pdfId="capture-list"
                                 customCsvExportHandler={customCsvExportHandler}
+                                isExporting={isExporting}
+                                setIsExporting={setIsExporting}
                             />
                         </div>
                         <div className="flex items-center pl-2">
@@ -151,6 +155,7 @@ const WorkflowListPageLayout = ({ location }) => {
                     </SidePanelAnimatedArea>
                 </div>
             </div>
+            {isExporting && <BackdropExporting />}
         </workflowStateContext.Provider>
     );
 };

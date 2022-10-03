@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -17,12 +18,13 @@ var (
 )
 
 type context struct {
-	getter         string
-	column         string
-	searchDisabled bool
-	ignorePK       bool
-	ignoreUnique   bool
-	ignoreFKs      bool
+	getter             string
+	column             string
+	searchDisabled     bool
+	ignorePK           bool
+	ignoreUnique       bool
+	ignoreFKs          bool
+	ignoreSearchLabels set.StringSet
 }
 
 func (c context) Getter(name string) string {
@@ -42,12 +44,13 @@ func (c context) Column(name string) string {
 
 func (c context) childContext(name string, searchDisabled bool, opts PostgresOptions) context {
 	return context{
-		getter:         c.Getter(name),
-		column:         c.Column(name),
-		searchDisabled: c.searchDisabled || searchDisabled,
-		ignorePK:       c.ignorePK || opts.IgnorePrimaryKey,
-		ignoreUnique:   c.ignoreUnique || opts.IgnoreUniqueConstraint,
-		ignoreFKs:      c.ignoreFKs || opts.IgnoreChildFKs,
+		getter:             c.Getter(name),
+		column:             c.Column(name),
+		searchDisabled:     c.searchDisabled || searchDisabled,
+		ignorePK:           c.ignorePK || opts.IgnorePrimaryKey,
+		ignoreUnique:       c.ignoreUnique || opts.IgnoreUniqueConstraint,
+		ignoreFKs:          c.ignoreFKs || opts.IgnoreChildFKs,
+		ignoreSearchLabels: c.ignoreSearchLabels.Union(opts.IgnoreSearchLabels),
 	}
 }
 
@@ -170,7 +173,15 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 			// if this is an embedded entity with a primary key of its own, we do not want to use it as a
 			// primary key since the owning entity's primary key is what we'd like to use
 			opts.IgnorePrimaryKey = true
-
+		case strings.HasPrefix(field, "ignore_labels"):
+			csvLabels := stringutils.GetBetween(field, "(", ")")
+			if len(csvLabels) == 0 {
+				panic("field has empty ignore_labels. Either add labels to ignore or remove")
+			}
+			if opts.IgnoreSearchLabels != nil {
+				opts.IgnoreSearchLabels = set.NewStringSet()
+			}
+			opts.IgnoreSearchLabels.AddAll(strings.Split(csvLabels, ",")...)
 		case field == "id":
 			opts.ID = true
 		case field == "pk":
@@ -186,7 +197,7 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 			if ignoreFKs {
 				continue
 			}
-			typeName, ref := stringutils.Split2(field[strings.Index(field, "(")+1:strings.Index(field, ")")], ":")
+			typeName, ref := stringutils.Split2(stringutils.GetBetween(field, "(", ")"), ":")
 			if opts.Reference == nil {
 				opts.Reference = &foreignKeyRef{}
 			}
@@ -196,12 +207,20 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 			if ignoreFKs {
 				continue
 			}
-			// This column depends on a column in other table, but does not have a explicit referential constraint.
+			// This column depends on a column in other table, but does not have an explicit referential constraint.
 			// i.e. a column without `REFERENCES other_table(col)` part.
 			if opts.Reference == nil {
 				opts.Reference = &foreignKeyRef{}
 			}
 			opts.Reference.NoConstraint = true
+		case field == "restrict-delete":
+			if ignoreFKs {
+				continue
+			}
+			if opts.Reference == nil {
+				opts.Reference = &foreignKeyRef{}
+			}
+			opts.Reference.RestrictDelete = true
 		case field == "directional":
 			if ignoreFKs {
 				continue
@@ -242,6 +261,11 @@ func getSearchOptions(ctx context, searchTag string) (SearchField, []DerivedSear
 		}, nil
 	}
 	field := stringutils.GetUpTo(searchTag, ",")
+	if ctx.ignoreSearchLabels.Contains(field) {
+		return SearchField{
+			Ignored: ignored,
+		}, nil
+	}
 
 	var derivedSearchFields []DerivedSearchField
 	derivedSearchFieldsMap := search.GetFieldsDerivedFrom(field)
@@ -336,7 +360,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			case reflect.Uint8:
 				schema.AddFieldWithType(field, Bytes, opts)
 				continue
-			case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
+			case reflect.Int32:
 				if typeIsEnum(elemType) {
 					schema.AddFieldWithType(field, EnumArray, opts)
 				} else {
@@ -361,12 +385,18 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type)
 		case reflect.Uint8:
 			schema.AddFieldWithType(field, Bytes, opts)
-		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
+		case reflect.Int32:
 			if typeIsEnum(structField.Type) {
 				schema.AddFieldWithType(field, Enum, opts)
 			} else {
 				schema.AddFieldWithType(field, Integer, opts)
 			}
+		case reflect.Uint32, reflect.Uint64, reflect.Int64:
+			// For Uint64, there may be a need to convert to/from int64 because a
+			// BigInteger may not hold a Uint64.  We could switch this type to a numeric but that comes at a
+			// high performance cost.  As of 3.73 we are not using Uint64 except in test something to be mindful of
+			// if we begin to use this type in the future.
+			schema.AddFieldWithType(field, BigInteger, opts)
 		case reflect.Float32, reflect.Float64:
 			schema.AddFieldWithType(field, Numeric, opts)
 		case reflect.Interface:

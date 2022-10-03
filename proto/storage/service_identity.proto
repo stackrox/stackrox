@@ -17,10 +17,12 @@ message ServiceIdentity {
     string      init_bundle_id = 5;
 }
 
+// Next available tag: 13
 enum ServiceType {
     UNKNOWN_SERVICE           = 0;
     SENSOR_SERVICE            = 1;
     CENTRAL_SERVICE           = 2;
+    CENTRAL_DB_SERVICE        = 12;
     REMOTE_SERVICE            = 3;
     COLLECTOR_SERVICE         = 4;
     MONITORING_UI_SERVICE     = 5;

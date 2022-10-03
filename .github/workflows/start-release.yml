@@ -10,7 +10,7 @@ on:
       ref:
         description: Release base ref (for non-patch releases)
         required: false
-        default: master
+        default: HEAD
         type: string
       dry-run:
         description: Dry-run
@@ -20,13 +20,15 @@ on:
 
 env:
   docs_repository: openshift/openshift-docs
-  slack_channel: C03KSV3N6N8 #test-release-automation
+  #eng-release (CMH5M8MHN) for real runs or #test-release-automation (C03KSV3N6N8) for testing:
+  slack_channel: ${{ fromJSON('["CMH5M8MHN", "C03KSV3N6N8"]')[ github.repository != 'stackrox/stackrox' || github.event.inputs.dry-run == 'true'] }}
   main_branch: ${{github.event.repository.default_branch}}
   jira_project: ROX
-  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{github.event.repository.default_branch}}
+  script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
   DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
 
 # Ensure that only a single release automation workflow can run at a time.
 concurrency: Release automation

@@ -3,9 +3,10 @@ import queryString from 'qs';
 import { Alert, ListAlert } from 'Containers/Violations/types/violationTypes';
 
 import { ApiSortOption, SearchFilter } from 'types/search';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import { Empty } from './types';
 
 const baseUrl = '/v1/alerts';
 const baseCountUrl = '/v1/alertscount';
@@ -37,26 +38,6 @@ export type ClusterAlert = {
     cluster: string;
     severities: AlertEventsBySeverity[];
 };
-
-type AlertsByTimeseriesFilters = {
-    query: string;
-};
-
-/*
- * Fetch alerts by time for timeseries.
- */
-export function fetchAlertsByTimeseries(
-    filters: AlertsByTimeseriesFilters
-): Promise<ClusterAlert[]> {
-    const params = queryString.stringify(filters);
-
-    // set higher timeout for this call to handle known backend scale issues with dashboard
-    return axios
-        .get<{ clusters: ClusterAlert[] }>(`${baseUrl}/summary/timeseries?${params}`, {
-            timeout: 59999,
-        })
-        .then((response) => response.data.clusters);
-}
 
 export type AlertCountBySeverity = {
     severity: Severity;
@@ -94,22 +75,6 @@ export function fetchSummaryAlertCounts(
     );
 }
 
-/**
- * Fetch severity counts.
- *
- * TODO Delete once Action Widgets Dashboard (ROX-10650) becomes the default homepage
- * dashboard view
- */
-export function fetchSummaryAlertCountsLegacy(
-    filters: SummaryAlertCountsFilters
-): Promise<AlertGroup[]> {
-    const params = queryString.stringify(filters);
-
-    // set higher timeout for this call to handle known backend scale issues with dashboard
-    return axios
-        .get<{ groups: AlertGroup[] }>(`${baseUrl}/summary/counts?${params}`, { timeout: 59999 })
-        .then((response) => response.data.groups);
-}
 /*
  * Fetch a page of list alert objects.
  */
@@ -119,19 +84,7 @@ export function fetchAlerts(
     page: number,
     pageSize: number
 ): CancellableRequest<ListAlert[]> {
-    const offset = page > 0 ? page * pageSize : 0;
-    const query = getRequestQueryStringForSearchFilter(searchFilter);
-    const params = queryString.stringify(
-        {
-            query,
-            pagination: {
-                offset,
-                limit: pageSize,
-                sortOption,
-            },
-        },
-        { arrayFormat: 'repeat', allowDots: true }
-    );
+    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`, { signal })
@@ -167,21 +120,15 @@ export function fetchAlert(id: string): Promise<Alert> {
 /*
  * Resolve an alert given an alert ID.
  */
-export function resolveAlert(
-    alertId: string,
-    addToBaseline = false
-): Promise<Record<string, never>> {
+export function resolveAlert(alertId: string, addToBaseline = false): Promise<Empty> {
     return axios
-        .patch<Record<string, never>>(`${baseUrl}/${alertId}/resolve`, { addToBaseline })
+        .patch<Empty>(`${baseUrl}/${alertId}/resolve`, { addToBaseline })
         .then((response) => response.data);
 }
 
 /*
  * Resolve a list of alerts by alert ID.
  */
-export function resolveAlerts(
-    alertIds: string[] = [],
-    addToBaseline = false
-): Promise<Record<string, never>[]> {
+export function resolveAlerts(alertIds: string[] = [], addToBaseline = false): Promise<Empty[]> {
     return Promise.all(alertIds.map((id) => resolveAlert(id, addToBaseline)));
 }

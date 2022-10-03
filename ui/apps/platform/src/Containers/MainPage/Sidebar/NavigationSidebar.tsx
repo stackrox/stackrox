@@ -9,6 +9,7 @@ import {
     basePathToLabelMap,
     dashboardPath,
     networkBasePath,
+    networkPathPF,
     violationsBasePath,
     complianceBasePath,
     vulnManagementPath,
@@ -22,26 +23,20 @@ import {
     accessControlBasePathV2,
     systemConfigPath,
     systemHealthPath,
+    collectionsPath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
 
-const platformConfigurationPaths = [
-    clustersBasePath,
-    policyManagementBasePath,
-    integrationsPath,
-    accessControlBasePathV2,
-    systemConfigPath,
-    systemHealthPath,
-];
-
 type NavigationSidebarProps = {
     hasReadAccess: HasReadAccess;
-    // eslint-disable-next-line react/no-unused-prop-types
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
-function NavigationSidebar({ hasReadAccess }: NavigationSidebarProps): ReactElement {
+function NavigationSidebar({
+    hasReadAccess,
+    isFeatureFlagEnabled,
+}: NavigationSidebarProps): ReactElement {
     const location: Location = useLocation();
 
     const vulnerabilityManagementPaths = [vulnManagementPath];
@@ -55,6 +50,32 @@ function NavigationSidebar({ hasReadAccess }: NavigationSidebarProps): ReactElem
         vulnerabilityManagementPaths.push(vulnManagementReportsPath);
     }
 
+    const platformConfigurationPaths = [
+        clustersBasePath,
+        policyManagementBasePath,
+        integrationsPath,
+        accessControlBasePathV2,
+        systemConfigPath,
+        systemHealthPath,
+    ];
+
+    // TODO
+    // - This must be restricted based on permissions once the BE is in place https://issues.redhat.com/browse/ROX-12695
+    // - See also https://issues.redhat.com/browse/ROX-12619
+    if (isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS')) {
+        // Insert 'Collections' after 'Policy Management'
+        platformConfigurationPaths.splice(
+            platformConfigurationPaths.indexOf(policyManagementBasePath) + 1,
+            0,
+            collectionsPath
+        );
+    }
+
+    // TODO remove this temporary extra config menu item when the PF network graph goes live in the main menu
+    if (isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY')) {
+        platformConfigurationPaths.push(networkPathPF);
+    }
+
     const Navigation = (
         <Nav id="nav-primary-simple">
             <NavList id="nav-list-simple">
@@ -64,7 +85,10 @@ function NavigationSidebar({ hasReadAccess }: NavigationSidebarProps): ReactElem
                     title={basePathToLabelMap[dashboardPath]}
                 />
                 <LeftNavItem
-                    isActive={location.pathname.includes(networkBasePath)}
+                    isActive={
+                        location.pathname.includes(networkBasePath) &&
+                        !location.pathname.includes(networkPathPF)
+                    }
                     path={networkBasePath}
                     title={basePathToLabelMap[networkBasePath]}
                 />

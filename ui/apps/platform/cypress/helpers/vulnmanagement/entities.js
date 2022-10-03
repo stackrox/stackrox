@@ -1,8 +1,9 @@
 import * as api from '../../constants/apiEndpoints';
-import { headingPlural, url } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import { hasFeatureFlag } from '../features';
 
 import { visitFromLeftNavExpandable } from '../nav';
+import { interactAndWaitForResponses } from '../request';
 import { visit } from '../visit';
 
 let opnamesForDashboard = [
@@ -23,7 +24,7 @@ let opnamesForDashboard = [
     'clustersWithMostClusterVulnerabilities',
 ];
 
-if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
     opnamesForDashboard = opnamesForDashboard.filter(
         (opname) =>
             opname !== 'clustersWithMostOrchestratorIstioVulnerabilities' &&
@@ -41,25 +42,142 @@ if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
     );
 }
 
-export function visitVulnerabilityManagementDashboardFromLeftNav() {
-    opnamesForDashboard.forEach((opname) => {
-        cy.intercept('POST', api.graphql(opname)).as(opname);
+/*
+ * For example, given ['searchOptions', 'getDeployments'] return:
+ * {
+ *     searchOptions: '/api/graphql?opname=searchOptions',
+ *     getDeployments: '/api/graphql?opname=getDeployments',
+ * }
+ */
+function routeMatcherMapForOpnames(opnames) {
+    const routeMatcherMap = {};
+
+    opnames.forEach((opname) => {
+        routeMatcherMap[opname] = api.graphql(opname);
     });
 
-    visitFromLeftNavExpandable('Vulnerability Management', 'Dashboard');
+    return routeMatcherMap;
+}
 
-    cy.wait(opnamesForDashboard.map((opname) => `@${opname}`));
+const requestConfigForDashboard = {
+    routeMatcherMap: routeMatcherMapForOpnames(opnamesForDashboard),
+};
+
+/*
+ * The following keys are path segments which correspond to entityKeys arguments of functions below.
+ */
+
+const opnameForEntity = {
+    clusters: 'getCluster',
+    components: 'getComponent',
+    'image-components': 'getImageComponent',
+    'node-components': 'getComponent',
+    cves: 'getCve',
+    'image-cves': 'getCve',
+    'node-cves': 'getCve',
+    'cluster-cves': 'getCve',
+    deployments: 'getDeployment',
+    images: 'getImage',
+    namespaces: 'getNamespace',
+    nodes: 'getNode',
+    policies: 'getPolicy',
+};
+
+const opnameForEntities = {
+    clusters: 'getClusters',
+    components: 'getComponents',
+    'image-components': 'getImageComponents',
+    'node-components': 'getNodeComponents',
+    cves: 'getCves',
+    'image-cves': 'getImageCves',
+    'node-cves': 'getNodeCves',
+    'cluster-cves': 'getClusterCves',
+    deployments: 'getDeployments',
+    images: 'getImages',
+    namespaces: 'getNamespaces',
+    nodes: 'getNodes',
+    policies: 'getPolicies',
+};
+
+// Headings on entities pages: uppercase style hides the inconsistencies.
+const headingPlural = {
+    clusters: 'clusters',
+    components: 'components',
+    'image-components': 'image components',
+    'node-components': 'node components',
+    cves: 'CVES',
+    'image-cves': 'Image CVES',
+    'node-cves': 'Node CVES',
+    'cluster-cves': 'Platform CVES',
+    deployments: 'deployments',
+    images: 'images',
+    namespaces: 'namespaces',
+    nodes: 'nodes',
+    policies: 'policies',
+};
+
+const opnamePrefixForPrimaryAndSecondaryEntities = {
+    clusters: 'getCluster_',
+    components: 'getComponentSubEntity',
+    'image-components': 'getComponentSubEntity',
+    'node-components': 'getNodeComponentSubEntity',
+    cves: 'getCve',
+    'image-cves': 'getCve',
+    'node-cves': 'getCve',
+    'cluster-cves': 'getCve',
+    deployments: 'getDeployment',
+    images: 'getImage',
+    namespaces: 'getNamespace',
+    nodes: 'getNode',
+    policies: 'getPolicy',
+};
+
+const typeOfEntity = {
+    clusters: 'CLUSTER',
+    components: 'COMPONENT',
+    'image-components': 'IMAGE_COMPONENT',
+    'node-components': 'NODE_COMPONENT',
+    cves: 'CVE',
+    'image-cves': 'IMAGE_CVE',
+    'node-cves': 'NODE_CVE',
+    'cluster-cves': 'CLUSTER_CVE',
+    deployments: 'DEPLOYMENT',
+    images: 'IMAGE',
+    namespaces: 'NAMESPACE',
+    nodes: 'NODE',
+    policies: 'POLICY',
+};
+
+/*
+ * For example, given 'deployments' and 'image' return: 'getDeploymentIMAGE'
+ */
+function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
+    return `${opnamePrefixForPrimaryAndSecondaryEntities[entitiesKey1]}${typeOfEntity[entitiesKey2]}`;
+}
+
+const basePath = '/main/vulnerability-management'; // dashboard
+
+function getEntitiesPath(entitiesKey, search = '') {
+    return `${basePath}/${entitiesKey}${search}`;
+}
+
+function getEntityPath(entitiesKey, entityId) {
+    const entityType = typeOfEntity[entitiesKey];
+    const search = `?workflowState[0][t]=${entityType}&workflowState[0][i]=${entityId}`;
+    return getEntitiesPath(entitiesKey, search);
+}
+
+export function visitVulnerabilityManagementDashboardFromLeftNav() {
+    visitFromLeftNavExpandable('Vulnerability Management', 'Dashboard', requestConfigForDashboard);
+
+    cy.location('pathname').should('eq', basePath);
+    cy.location('search').should('eq', '');
     cy.get('h1:contains("Vulnerability Management")');
 }
 
 export function visitVulnerabilityManagementDashboard() {
-    opnamesForDashboard.forEach((opname) => {
-        cy.intercept('POST', api.graphql(opname)).as(opname);
-    });
+    visit(basePath, requestConfigForDashboard);
 
-    visit(url.dashboard);
-
-    cy.wait(opnamesForDashboard.map((opname) => `@${opname}`));
     cy.get('h1:contains("Vulnerability Management")');
 }
 
@@ -67,14 +185,293 @@ export function visitVulnerabilityManagementDashboard() {
  * For example, visitVulnerabilityManagementEntities('cves')
  * For example, visitVulnerabilityManagementEntities('policies', '?s[Policy]=Fixable Severity at least Important')
  */
-export function visitVulnerabilityManagementEntities(entitiesKey, search = '') {
-    cy.intercept('POST', api.graphql('searchOptions')).as('searchOptions');
-    cy.intercept('POST', api.vulnMgmt.graphqlEntities(entitiesKey)).as(entitiesKey);
-    cy.log(entitiesKey);
-    cy.log(api.vulnMgmt.graphqlEntities(entitiesKey));
+export function visitVulnerabilityManagementEntities(entitiesKey) {
+    const requestConfig = {
+        routeMatcherMap: routeMatcherMapForOpnames([
+            'searchOptions',
+            opnameForEntities[entitiesKey],
+        ]),
+    };
 
-    visit(`${url.list[entitiesKey]}${search}`);
+    visit(getEntitiesPath(entitiesKey), requestConfig);
 
-    cy.wait(['@searchOptions', `@${entitiesKey}`], { timeout: 10000 });
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+}
+
+export function visitVulnerabilityManagementEntitiesWithSearch(entitiesKey, search) {
+    const requestConfig = {
+        routeMatcherMap: routeMatcherMapForOpnames([
+            'searchOptions',
+            opnameForEntities[entitiesKey],
+        ]),
+    };
+
+    visit(getEntitiesPath(entitiesKey, search), requestConfig);
+
+    cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+}
+
+export function interactAndWaitForVulnerabilityManagementEntities(
+    interactionCallback,
+    entitiesKey,
+    staticResponseForEntities
+) {
+    /*
+     * Unlike visit function above, omit searchOptions request
+     * to support tests to sort the table by a column.
+     * By the way, the tests do not call this function for the click
+     * to restore initial sorting, because the response has been cached.
+     */
+    const opname = opnameForEntities[entitiesKey];
+    const requestConfig = {
+        routeMatcherMap: {
+            [opname]: api.graphql(opname),
+        },
+    };
+    const staticResponseMap = staticResponseForEntities && { [opname]: staticResponseForEntities };
+
+    interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap);
+
+    cy.location('pathname').should('eq', getEntitiesPath(entitiesKey));
+    cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+}
+
+export function visitVulnerabilityManagementEntityInSidePanel(
+    entitiesKey,
+    entityId,
+    staticResponseForEntity
+) {
+    const opname = opnameForEntity[entitiesKey];
+    const requestConfig = {
+        routeMatcherMap: {
+            [opname]: api.graphql(opname),
+        },
+    };
+    const staticResponseMap = staticResponseForEntity && { [opname]: staticResponseForEntity };
+
+    visit(getEntityPath(entitiesKey, entityId), requestConfig, staticResponseMap);
+}
+
+export function interactAndWaitForVulnerabilityManagementEntity(
+    interactionCallback,
+    entitiesKey,
+    staticResponseForEntity
+) {
+    const opname = opnameForEntity[entitiesKey];
+    const requestConfig = {
+        routeMatcherMap: {
+            [opname]: api.graphql(opname),
+        },
+    };
+    const staticResponseMap = staticResponseForEntity && { [opname]: staticResponseForEntity };
+
+    interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap);
+}
+
+export function interactAndWaitForVulnerabilityManagementSecondaryEntities(
+    interactionCallback,
+    entitiesKey1,
+    entitiesKey2,
+    staticResponseForSecondaryEntities
+) {
+    const opname = opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2);
+    const requestConfig = {
+        routeMatcherMap: {
+            [opname]: api.graphql(opname),
+        },
+    };
+    const staticResponseMap = staticResponseForSecondaryEntities && {
+        [opname]: staticResponseForSecondaryEntities,
+    };
+
+    interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap);
+}
+
+/*
+ * resultsFromRegExp: /^(\d+) (\D+)$/.exec(linkText)
+ * which assumes that linkText matches a more specific RegExp
+ * for example, /^\d+ deployments?$/
+ */
+
+function getCountAndNounFromSecondaryEntitiesLinkResults(resultsFromRegExp) {
+    return {
+        panelHeaderText: resultsFromRegExp[0],
+        relatedEntitiesCount: resultsFromRegExp[1],
+        relatedEntitiesNoun: resultsFromRegExp[2].toUpperCase(),
+    };
+}
+
+export function getCountAndNounFromImageCVEsLinkResults([, count]) {
+    return {
+        panelHeaderText: `${count} Image ${count === '1' ? 'CVE' : 'CVES'}`,
+        relatedEntitiesCount: count,
+        relatedEntitiesNoun: count === '1' ? 'IMAGE CVE' : 'IMAGE CVES',
+    };
+}
+
+export function getCountAndNounFromNodeCVEsLinkResults([, count]) {
+    return {
+        panelHeaderText: `${count} Node ${count === '1' ? 'CVE' : 'CVES'}`,
+        relatedEntitiesCount: count,
+        relatedEntitiesNoun: count === '1' ? 'NODE CVE' : 'NODE CVES',
+    };
+}
+
+/*
+ * Keys for primary and secondary entities are plural page address segments.
+ * For example, primary 'namespaces' and secondary 'deployments'
+ * corresponds to the following pages:
+ * /main/vulnerability-management/namespaces
+ * /main/vulnerability-management/namespace/id/deployments
+ *
+ * columnIndex is one-based but would be dataLabel in PatternFly.
+ *
+ * entitiesRegExp2 matches links in primary entities table to secondary entities.
+ * For example, /^\d+ deployments?$/
+ *
+ * getCountAndNounFromLinkResults optioanl function provides the noun.
+ * For example,
+ * Noun is not in link text: /^\d+ CVEs?$/ or /^\d+ Fixable$/
+ * Noun differs from link text: /^\d+ failing deployments?$/
+ */
+export function verifySecondaryEntities(
+    entitiesKey1,
+    entitiesKey2,
+    columnIndex,
+    entitiesRegExp2,
+    getCountAndNounFromLinkResults = getCountAndNounFromSecondaryEntitiesLinkResults
+) {
+    // 1. Visit list page for primary entities.
+    visitVulnerabilityManagementEntities(entitiesKey1);
+
+    // Find the first link for secondary entities.
+    // Plus 1 because of invisible .rt-td.hidden cell.
+    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex + 1})`)
+        .contains('a', entitiesRegExp2)
+        .then(($a) => {
+            const { panelHeaderText, relatedEntitiesCount, relatedEntitiesNoun } =
+                getCountAndNounFromLinkResults(/^(\d+) (\D+)$/.exec($a.text()));
+
+            // 2. Visit secondary entities side panel.
+            interactAndWaitForResponses(
+                () => {
+                    cy.wrap($a).click();
+                },
+                {
+                    routeMatcherMap: routeMatcherMapForOpnames([
+                        opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2),
+                    ]),
+                }
+            );
+
+            cy.get(`${selectors.entityRowHeader}:contains(${panelHeaderText})`);
+
+            // 3. Visit primary entity side panel.
+            interactAndWaitForResponses(
+                () => {
+                    cy.get(selectors.parentEntityInfoHeader).click();
+                },
+                {
+                    // prettier-ignore
+                    routeMatcherMap: routeMatcherMapForOpnames([
+                        opnameForEntity[entitiesKey1]
+                    ]),
+                }
+            );
+
+            // Tilde because link might be under either Contains or Matches.
+            // Match data-testid attribute of link to distinguish 1 IMAGE from 114 IMAGE COMPONENTS.
+            const relatedEntitiesSelector = `h2:contains("Related entities") ~ div ul li a[data-testid="${typeOfEntity[entitiesKey2]}-tile-link"]:has('[data-testid="tileLinkSuperText"]:contains("${relatedEntitiesCount}")'):has('[data-testid="tile-link-value"]:contains("${relatedEntitiesNoun}")')`;
+            cy.get(relatedEntitiesSelector);
+
+            // 4. Visit single page for primary entity.
+            cy.get(selectors.sidePanelExpandButton).click(); // does not make requests
+
+            // 5. Visit list page for secondary entities.
+            cy.get(relatedEntitiesSelector).click(); // might make some requests
+
+            cy.get(`${selectors.tabHeader}:contains("${panelHeaderText}")`);
+        });
+}
+
+/*
+ * For filtered secondary entities link, verify panelHeader text only,
+ * because related entities has total unfiltered count.
+ *
+ * For example,
+ * 1 Fixable corresponds to any of the following: 1 Image CVE or 1 Node CVE or 1 Platform CVE
+ * 2 failing deployments corresponds to 2 deployments
+ */
+export function verifyFilteredSecondaryEntitiesLink(
+    entitiesKey1,
+    _entitiesKey2, // unused because response might have been cached
+    columnIndex,
+    filteredEntitiesRegExp,
+    getCountAndNounFromLinkResults
+) {
+    // 1. Visit list page for primary entities.
+    visitVulnerabilityManagementEntities(entitiesKey1);
+
+    // Find the first link for secondary entities.
+    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex + 1})`)
+        .contains('a', filteredEntitiesRegExp)
+        .then(($a) => {
+            const { panelHeaderText } = getCountAndNounFromLinkResults(
+                /^(\d+) (\D+)$/.exec($a.text())
+            );
+
+            // 2. Visit secondary entities side panel.
+            cy.wrap($a).click();
+
+            cy.get(`${selectors.entityRowHeader}:contains(${panelHeaderText})`);
+        });
+}
+
+/*
+ * For fixable CVEs link when primary entities are images,
+ * also verify special case that image side panel has risk acceptance tabs.
+ *
+ * Keep arguments consistent with other functions,
+ * expecially in case risk acceptance ever applies to node or platform CVEs.
+ */
+export function verifyFixableCVEsLinkAndRiskAcceptanceTabs(
+    entitiesKey1,
+    _entitiesKey2, // unused because response might have been cached
+    columnIndex,
+    fixableCVEsRegExp,
+    getCountAndNounFromLinkResults
+) {
+    // 1. Visit list page for primary entities.
+    visitVulnerabilityManagementEntities(entitiesKey1);
+
+    // Find the first link for secondary entities.
+    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex + 1})`)
+        .contains('a', fixableCVEsRegExp)
+        .then(($a) => {
+            const { panelHeaderText } = getCountAndNounFromLinkResults(
+                /^(\d+) (\D+)$/.exec($a.text())
+            );
+
+            // 2. Visit secondary entities side panel.
+            cy.wrap($a).click();
+
+            cy.get(`${selectors.entityRowHeader}:contains(${panelHeaderText})`);
+
+            // 3. Visit primary entity side panel.
+            cy.get(selectors.parentEntityInfoHeader).click();
+
+            // Verify risk acceptance tabs under Image Findings.
+            cy.get('.pf-c-tabs .pf-c-tabs__item:eq(0):contains("Observed CVEs")').click({
+                force: true,
+                waitForAnimations: false,
+            });
+            cy.get('.pf-c-tabs .pf-c-tabs__item:eq(1):contains("Deferred CVEs")').click({
+                force: true,
+                waitForAnimations: false,
+            });
+            cy.get('.pf-c-tabs .pf-c-tabs__item:eq(2):contains("False positive CVEs")').click({
+                force: true,
+                waitForAnimations: false,
+            });
+        });
 }

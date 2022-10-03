@@ -19,7 +19,7 @@ var (
 		"openshift4": storage.ClusterType_OPENSHIFT4_CLUSTER,
 	}
 
-	clusterEnumToString = utils.Invert(clusterStringToType).(map[storage.ClusterType]string)
+	clusterEnumToString = utils.InvertMap(clusterStringToType)
 
 	validClusterStrings = func() []string {
 		out := make([]string, 0, len(clusterStringToType))

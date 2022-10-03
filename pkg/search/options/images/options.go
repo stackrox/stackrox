@@ -15,6 +15,6 @@ var ImageDeploymentOptions = search.NewOptionsMap(v1.SearchCategory_IMAGES).Add(
 	Add(search.ClusterID, deployments.OptionsMap.MustGet(search.ClusterID.String())).
 	Add(search.Namespace, deployments.OptionsMap.MustGet(search.Namespace.String())).
 	Add(search.NamespaceID, deployments.OptionsMap.MustGet(search.NamespaceID.String())).
-	Add(search.Label, deployments.OptionsMap.MustGet(search.Label.String())).
+	Add(search.DeploymentLabel, deployments.OptionsMap.MustGet(search.DeploymentLabel.String())).
 	Add(search.DeploymentName, deployments.OptionsMap.MustGet(search.DeploymentName.String())).
 	Add(search.DeploymentID, deployments.OptionsMap.MustGet(search.DeploymentID.String()))

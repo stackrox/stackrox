@@ -18,7 +18,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
@@ -254,7 +254,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 			s.Assert().NotEqual(ac.GetDeploymentId(), mockDeployments[2].GetId())
 
 			var imageComponent string
-			if features.PostgresDatastore.Enabled() {
+			if env.PostgresDatastoreEnabled.BooleanSetting() {
 				imageComponent = postgres.IDToParts(ac.GetComponentId())[0]
 			} else {
 				edge, err := edges.FromString(ac.GetComponentId())

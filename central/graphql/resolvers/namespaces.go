@@ -13,7 +13,7 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -181,7 +181,7 @@ func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args R
 	}
 	output := newBulkControlResults()
 	nsID := resolver.data.GetMetadata().GetId()
-	output.addDeploymentData(resolver.root, runResults, func(d *storage.Deployment, _ *v1.ComplianceControl) bool {
+	output.addDeploymentData(resolver.root, runResults, func(d *storage.ComplianceDomain_Deployment, _ *v1.ComplianceControl) bool {
 		return d.GetNamespaceId() == nsID
 	})
 
@@ -236,10 +236,7 @@ func (resolver *namespaceResolver) Subjects(ctx context.Context, args PaginatedQ
 		resolvers = append(resolvers, &subjectResolver{ctx, resolver.root, subject})
 	}
 
-	paginatedResolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(resolvers, nil)
-	return paginatedResolvers.([]*subjectResolver), err
+	return paginate(pagination, resolvers, nil)
 }
 
 // ServiceAccountCount returns the count of ServiceAccounts which have any permission on this cluster namespace
@@ -392,10 +389,7 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQ
 		})
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(policyResolvers, nil)
-	return resolvers.([]*policyResolver), err
+	return paginate(pagination, policyResolvers, nil)
 }
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.
@@ -473,7 +467,7 @@ func (resolver *namespaceResolver) PolicyStatusOnly(ctx context.Context, args Ra
 		search.ConjunctionQuery(q,
 			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 				AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
-				AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()))
+				AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()))
 	if err != nil {
 		return "", err
 	}
@@ -495,8 +489,8 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 		search.ConjunctionQuery(q,
 			search.NewQueryBuilder().AddExactMatches(search.ClusterID, namespace.GetMetadata().GetClusterId()).
 				AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
-				AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-				AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
+				AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+				AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
 }
 
 func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
@@ -734,7 +728,7 @@ func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args Raw
 
 func (resolver *namespaceResolver) PlottedVulns(ctx context.Context, args PaginatedQuery) (*PlottedVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PlottedVulns")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())

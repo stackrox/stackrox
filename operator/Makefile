@@ -100,13 +100,6 @@ ENABLE_WEBHOOKS ?= false
 # Use the value figured in the parent directory Makefile, unless provided explicitly in the environment.
 ROX_IMAGE_FLAVOR ?= $(shell $(MAKE) --quiet --no-print-directory -C .. image-flavor)
 
-# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
-ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
-else
-GOBIN=$(shell go env GOBIN)
-endif
-
 # Lowercase Operating System name, needed for downloading GitHub releases.
 OS=$(shell uname | tr A-Z a-z)
 
@@ -167,15 +160,17 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 
 ##@ Dependencies download
 
-CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen
+CONTROLLER_GEN_VERSION = 0.8.0
+CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen-$(CONTROLLER_GEN_VERSION)
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v$(CONTROLLER_GEN_VERSION))
 
-KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize
+KUSTOMIZE_VERSION = 3.8.7
+KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize-$(KUSTOMIZE_VERSION)
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v$(KUSTOMIZE_VERSION))
 
 OPERATOR_SDK_VERSION = 1.20.1
 OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk-$(OPERATOR_SDK_VERSION)
@@ -187,9 +182,8 @@ operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(OPERATOR_SDK) $${OPERATOR_SDK_URL}
 
-# TODO(porridge): change back to kudobuilder release once https://github.com/kudobuilder/kuttl/issues/371 is fixed
-KUTTL_VERSION = 0.11.0-verbose-resource
-KUTTL_UPSTREAM = porridge
+KUTTL_VERSION = 0.13.0
+KUTTL_UPSTREAM = kudobuilder
 KUTTL ?= $(PROJECT_DIR)/bin/kubectl-kuttl-$(KUTTL_VERSION)
 .PHONY: kuttl
 kuttl: ## Download kuttl.
@@ -204,25 +198,25 @@ envtest: ## Download envtest-setup locally if necessary.
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 GET_GITHUB_RELEASE_FN = get_github_release() { \
-	[ -f $${1} ] || { \
+	[ -x $${1} ] || { \
 		set -euxo pipefail ;\
 		mkdir -p bin ;\
 		curl --fail --location --output $${1} $${2} ;\
-		chmod +x $${1} ;\
 		[[ "$$(uname -s)" != "Darwin" ]] || xattr -c $${1} ;\
+		chmod +x $${1} ;\
 	} \
 }
 
 # go-get-tool will 'go get -d' any package $2 and install it to $(PROJECT_DIR)/bin unless $1 already exists.
 define go-get-tool
-$(SILENT)[ -f $(1) ] || { \
+$(SILENT)[ -x $(1) ] || { \
 set -e ;\
 TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
 go get -d $(2) ;\
-GOBIN=$(PROJECT_DIR)/bin go install $(firstword $(subst @, ,$(2))) ;\
+go build -o $(1) $(firstword $(subst @, ,$(2))) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
@@ -324,20 +318,14 @@ smuggled-status-sh:
 		"$${smuggled_status_sh}" ;\
 	)
 
-.PHONY: check-expected-go-version
-check-expected-go-version:
-	$(SILENT)expected=$$(head -n 1 ../EXPECTED_GO_VERSION | sed 's/go//'); \
-	actual=$$(grep '^FROM golang' Dockerfile | awk '{print $$2}' | cut -d: -f2); \
-	[ "$${expected}" = "$${actual}" ] || { echo "../EXPECTED_GO_VERSION $${expected}, Dockerfile $${actual}; please update to match"; exit 1; }
-
 # Force re-building the file to make sure the current environment is correctly reflected.
 .PHONY: build/Dockerfile.gen
 build/Dockerfile.gen: Dockerfile
 	mkdir -p build/
-	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g' < $< > $@
+	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen check-expected-go-version test smuggled-status-sh ## Build docker image with the operator.
+docker-build: build/Dockerfile.gen test smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
 		-t ${IMG} \
 		-f $< \
@@ -454,9 +442,9 @@ bundle-post-process: operator-sdk ## Post-process CSV file to include correct op
 		--first-version 3.62.0 `# 3.62.0 is the first operator version ever released` \
 		--operator-image $(IMG) \
 		--no-related-images \
+		--add-supported-arch amd64 \
 		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
-	| sed 's,replaces: rhacs-operator.v3.66.0,replaces: rhacs-operator.v3.66.1,' > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
-# TODO(ROX-8618): make the above sed on `replaces:` line generic (quick hack to address ROX-8630)
+		> build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 

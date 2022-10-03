@@ -13,15 +13,7 @@ import (
 var (
 	// CreateTableRolesStmt holds the create statement for table `roles`.
 	CreateTableRolesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists roles (
-                   Name varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Name)
-               )
-               `,
 		GormModel: (*Roles)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

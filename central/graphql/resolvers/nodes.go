@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -137,7 +137,7 @@ func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args RawQue
 	}
 	output := newBulkControlResults()
 	nodeID := resolver.data.GetId()
-	output.addNodeData(resolver.root, runResults, func(node *storage.Node, _ *v1.ComplianceControl) bool {
+	output.addNodeData(resolver.root, runResults, func(node *storage.ComplianceDomain_Node, _ *v1.ComplianceControl) bool {
 		return node.GetId() == nodeID
 	})
 	return *output, nil
@@ -245,7 +245,7 @@ func (resolver *nodeResolver) Controls(ctx context.Context, args RawQuery) ([]*c
 	if err != nil {
 		return nil, err
 	}
-	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(results, any, resolver.root.ComplianceStandardStore))
+	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(results, all, resolver.root.ComplianceStandardStore))
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopNodeVulnerability")
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		if err := readNodes(ctx); err != nil {
 			return nil, err
 		}
@@ -506,7 +506,7 @@ func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args
 // PlottedVulns returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *nodeResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "PlottedVulns")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedNodeVulnerabilities.")
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())

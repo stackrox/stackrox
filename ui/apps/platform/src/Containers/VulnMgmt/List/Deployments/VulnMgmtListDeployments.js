@@ -34,7 +34,7 @@ export const defaultDeploymentSort = [
 ];
 
 export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     return function getDeploymentTableColumns(workflowState) {
         // to determine whether to show the counts as links in the table when not in pure DEPLOYMENT state
@@ -229,7 +229,7 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
             },
             {
                 Header: `Images`,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => (
                     <TableCountLink
@@ -241,7 +241,9 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
                 ),
                 id: deploymentSortFields.IMAGE_COUNT,
                 accessor: 'imageCount',
-                sortField: deploymentSortFields.IMAGE_COUNT,
+                // TODO: restore sorting on this field, see https://issues.redhat.com/browse/ROX-12548 for context
+                // sortField: componentSortFields.IMAGES,
+                sortable: false,
             },
             {
                 Header: `Risk Priority`,
@@ -269,7 +271,7 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
 
 const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const fragmentToUse = isFrontendVMUpdatesEnabled
         ? DEPLOYMENT_LIST_FRAGMENT_UPDATED

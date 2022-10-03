@@ -69,9 +69,11 @@ spec:
                 matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
+      {{- if not ._rox.env.openshift }}
       securityContext:
         runAsUser: 4000
         fsGroup: 4000
+      {{- end }}
       serviceAccountName: sensor
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}

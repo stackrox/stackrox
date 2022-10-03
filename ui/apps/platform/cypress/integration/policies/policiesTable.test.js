@@ -1,5 +1,5 @@
 import * as api from '../../constants/apiEndpoints';
-import { selectors, url } from '../../constants/PoliciesPagePatternFly';
+import { selectors, url } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import { generateNameWithDate } from '../../helpers/formHelpers';
 import {
@@ -10,7 +10,12 @@ import {
     searchPolicies,
     visitPolicies,
     visitPoliciesFromLeftNav,
-} from '../../helpers/policiesPatternFly';
+} from '../../helpers/policies';
+import {
+    assertSortedItems,
+    callbackForPairOfAscendingPolicySeverityValuesFromElements,
+    callbackForPairOfDescendingPolicySeverityValuesFromElements,
+} from '../../helpers/sort';
 import { visit } from '../../helpers/visit';
 import navSelectors from '../../selectors/navigation';
 
@@ -57,7 +62,7 @@ describe('Policies table', () => {
         );
     });
 
-    it('table should have columns', () => {
+    it('should have columns', () => {
         visitPolicies();
 
         cy.get('th[scope="col"]:contains("Policy")');
@@ -66,6 +71,58 @@ describe('Policies table', () => {
         cy.get('th[scope="col"]:contains("Notifiers")');
         cy.get('th[scope="col"]:contains("Severity")');
         cy.get('th[scope="col"]:contains("Lifecycle")');
+    });
+
+    it('should sort the Severity column', () => {
+        visitPolicies();
+
+        const thSelector = 'th[scope="col"]:contains("Severity")';
+        const tdSelector = 'td[data-label="Severity"]';
+
+        // 0. Initial table state is sorted by the Policy column.
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
+
+        // 1. Sort ascending by the Severity column.
+        cy.get(thSelector).click();
+        // TODO Move sort order from invisible page state to visible query parameters in page address.
+        /*
+        cy.location('search').should('eq', '?sort[id]=Severity&sort[desc]=false');
+        */
+
+        // There is no request because front-end sorting.
+        cy.wait(1000);
+
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfAscendingPolicySeverityValuesFromElements);
+        });
+
+        // 2. Sort descending by the Severity column.
+        cy.get(thSelector).click();
+        // TODO Move sort order from invisible page state to visible query parameters in page address.
+        /*
+        cy.location('search').should(
+            'eq',
+            '?sort[id]=Severity&sort[desc]=true'
+        );
+        */
+
+        // There is no request because front-end sorting.
+        cy.wait(1000);
+
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
+        });
+
+        // 3. Sort ascending by the Severity column.
+        cy.get(thSelector).click();
+        // TODO Move sort order from invisible page state to visible query parameters in page address.
+        /*
+        cy.location('search').should('eq', '?sort[id]=Severity&sort[desc]=false');
+        */
+
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
     });
 
     it('should have expected status values', () => {

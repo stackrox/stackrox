@@ -2,6 +2,7 @@ package reprocessor
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -20,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -62,7 +62,7 @@ var (
 func Singleton() Loop {
 	once.Do(func() {
 		var dackboxIndexQueue queue.WaitableQueue
-		if !features.PostgresDatastore.Enabled() {
+		if !env.PostgresDatastoreEnabled.BooleanSetting() {
 			dackboxIndexQueue = dackbox.GetIndexQueue()
 		}
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
@@ -177,6 +177,7 @@ func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
 	l.deploymentRiskLock.Lock()
 	defer l.deploymentRiskLock.Unlock()
 	l.deploymentRiskSet.AddAll(deploymentIDs...)
+	log.Debugf("adding deployments [%s] to risk reprocessing", strings.Join(deploymentIDs, ","))
 }
 
 // Start starts the enrich and detect loop.
@@ -286,7 +287,7 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 			defer wg.Add(-1)
 			if individualReprocessFunc(id) {
 				nReprocessed.Inc()
-				if !features.PostgresDatastore.Enabled() {
+				if !env.PostgresDatastoreEnabled.BooleanSetting() {
 					l.waitForIndexing()
 				}
 			}
@@ -328,7 +329,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		}
 	}
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		l.waitForIndexing()
 	}
 
@@ -564,6 +565,8 @@ func (l *loopImpl) riskLoop() {
 			l.deploymentRiskLock.Lock()
 			if l.deploymentRiskSet.Cardinality() > 0 {
 				// goroutine to ensure this is non-blocking.
+				log.Infof("reprocessing risk for deployments [%s]",
+					strings.Join(l.deploymentRiskSet.AsSlice(), ","))
 				go l.sendDeployments(l.deploymentRiskSet.AsSlice())
 				l.deploymentRiskSet.Clear()
 			}

@@ -16,8 +16,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -136,7 +136,7 @@ func (ds *datastoreImpl) CountImages(ctx context.Context) (int, error) {
 }
 
 func (ds *datastoreImpl) canReadImage(ctx context.Context, sha string) (bool, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return true, nil
 	}
 	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {
@@ -210,7 +210,7 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*
 			return nil, err
 		}
 	} else {
-		shasQuery := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ImageSHA, shas...).ProtoQuery()
+		shasQuery := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageSHA, shas...).ProtoQuery()
 		imgs, err = ds.SearchRawImages(ctx, shasQuery)
 		if err != nil {
 			return nil, err

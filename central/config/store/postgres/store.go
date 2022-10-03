@@ -44,9 +44,7 @@ type storeImpl struct {
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableConfigsStmt)
-
+func New(db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -79,6 +77,12 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Config) error {
 		return sac.ErrResourceAccessDenied
 	}
 
+	return pgutils.Retry(func() error {
+		return s.retryableUpsert(ctx, obj)
+	})
+}
+
+func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.Config) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Config")
 	if err != nil {
 		return err
@@ -115,6 +119,12 @@ func (s *storeImpl) Get(ctx context.Context) (*storage.Config, bool, error) {
 		return nil, false, nil
 	}
 
+	return pgutils.Retry3(func() (*storage.Config, bool, error) {
+		return s.retryableGet(ctx)
+	})
+}
+
+func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Config, bool, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Config")
 	if err != nil {
 		return nil, false, err
@@ -143,7 +153,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 	return conn, conn.Release, nil
 }
 
-// Delete removes the specified ID from the store
+// Delete removes the singleton from the store
 func (s *storeImpl) Delete(ctx context.Context) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Config")
 
@@ -152,6 +162,12 @@ func (s *storeImpl) Delete(ctx context.Context) error {
 		return sac.ErrResourceAccessDenied
 	}
 
+	return pgutils.Retry(func() error {
+		return s.retryableDelete(ctx)
+	})
+}
+
+func (s *storeImpl) retryableDelete(ctx context.Context) error {
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "Config")
 	if err != nil {
 		return err

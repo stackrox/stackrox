@@ -360,7 +360,7 @@ func (s *PolicyServiceTestSuite) testPolicyGroups(query string, expectedPolicyGr
 }
 
 func (s *PolicyServiceTestSuite) TestMalformedScopes() {
-	queryString := "Label:"
+	queryString := "Deployment Label:"
 	s.testMalformedScope(queryString)
 
 	queryString = "Cluster:"
@@ -374,7 +374,7 @@ func (s *PolicyServiceTestSuite) TestScopeWithMalformedLabel() {
 	expectedScope := &storage.Scope{
 		Namespace: "blah",
 	}
-	queryString := "Label:+Namespace:blah"
+	queryString := "Deployment Label:+Namespace:blah"
 	s.testScopes(queryString, nil, expectedScope)
 }
 
@@ -385,7 +385,7 @@ func (s *PolicyServiceTestSuite) TestScopeWithMalformedNamespace() {
 			Value: "blah",
 		},
 	}
-	queryString := "Label:blah=blah+Namespace:"
+	queryString := "Deployment Label:blah=blah+Namespace:"
 	s.testScopes(queryString, nil, expectedScope)
 }
 
@@ -396,7 +396,7 @@ func (s *PolicyServiceTestSuite) TestScopeWithMalformedCluster() {
 			Value: "blah",
 		},
 	}
-	queryString := "Label:blah=blah+Cluster:"
+	queryString := "Deployment Label:blah=blah+Cluster:"
 	s.testScopes(queryString, nil, expectedScope)
 }
 
@@ -415,7 +415,7 @@ func (s *PolicyServiceTestSuite) TestScope() {
 			Id:   "remoteID",
 		},
 	}
-	queryString := "Label:app=collector+Cluster:remote,+Namespace:stackrox"
+	queryString := "Deployment Label:app=collector+Cluster:remote,+Namespace:stackrox"
 	s.testScopes(queryString, mockClusters, expectedScope)
 }
 
@@ -496,7 +496,7 @@ func (s *PolicyServiceTestSuite) TestManyScopes() {
 			Id:   "remoteID",
 		},
 	}
-	queryString := "Label:app=collector,dunk=buckets+Cluster:remote,mars,+Namespace:stackrox,hoops"
+	queryString := "Deployment Label:app=collector,dunk=buckets+Cluster:remote,mars,+Namespace:stackrox,hoops"
 	s.testScopes(queryString, mockClusters, expectedScopes...)
 }
 
@@ -529,7 +529,7 @@ func (s *PolicyServiceTestSuite) TestScopeOnlyLabel() {
 			Value: "Rules",
 		},
 	}
-	queryString := "Label:Joseph=Rules"
+	queryString := "Deployment Label:Joseph=Rules"
 	s.testScopes(queryString, nil, expectedScope)
 }
 
@@ -547,7 +547,7 @@ func (s *PolicyServiceTestSuite) TestScopeOddLabelFormats() {
 			},
 		},
 	}
-	queryString := "Label:Joseph,a=b=c"
+	queryString := "Deployment Label:Joseph,a=b=c"
 	s.testScopes(queryString, nil, expectedScopes...)
 }
 
@@ -580,7 +580,7 @@ func (s *PolicyServiceTestSuite) TestScopeClusterLabel() {
 			Id:   "remoteID",
 		},
 	}
-	queryString := "Cluster:remote,+Label:Joseph=Rules"
+	queryString := "Cluster:remote,+Deployment Label:Joseph=Rules"
 	s.testScopes(queryString, mockClusters, expectedScope)
 }
 
@@ -592,7 +592,7 @@ func (s *PolicyServiceTestSuite) TestScopeNamespaceLabel() {
 			Value: "Rules",
 		},
 	}
-	queryString := "Namespace:stackrox+Label:Joseph=Rules"
+	queryString := "Namespace:stackrox+Deployment Label:Joseph=Rules"
 	s.testScopes(queryString, nil, expectedScope)
 }
 
@@ -704,7 +704,7 @@ func (s *PolicyServiceTestSuite) TestUnconvertableFields() {
 func (s *PolicyServiceTestSuite) TestNoConvertableFields() {
 	ctx := context.Background()
 	request := &v1.PolicyFromSearchRequest{
-		SearchParams: "Deployment:abcd+CVE Snoozed:hrkrj+Label:+NotASearchTerm:jkjksdr",
+		SearchParams: "Deployment:abcd+CVE Snoozed:hrkrj+Deployment Label:+NotASearchTerm:jkjksdr",
 	}
 	_, err := s.tested.PolicyFromSearch(ctx, request)
 	s.Error(err)

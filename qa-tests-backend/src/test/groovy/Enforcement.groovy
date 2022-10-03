@@ -504,7 +504,7 @@ class Enforcement extends BaseSpecification {
         log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         //Node Constraint should have been ignored
-        assert orchestrator.getDeploymentNodeSelectors(d) == null
+        assert !orchestrator.getDeploymentNodeSelectors(d)
         assert orchestrator.getDeploymentUnavailableReplicaCount(d) !=
                 orchestrator.getDeploymentReplicaCount(d)
         assert Services.getAlertEnforcementCount(

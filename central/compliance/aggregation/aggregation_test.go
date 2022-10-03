@@ -51,10 +51,10 @@ func (mockStandardsRepo) GetCategoryByControl(controlID string) *standards.Categ
 func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 	return &storage.ComplianceRunResults{
 		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.Cluster{
+			Cluster: &storage.ComplianceDomain_Cluster{
 				Id: cluster,
 			},
-			Deployments: map[string]*storage.Deployment{
+			Deployments: map[string]*storage.ComplianceDomain_Deployment{
 				cluster + "deployment1": {
 					Id:          cluster + "deployment1",
 					Namespace:   qualifiedNamespace(cluster, "namespace1"),
@@ -74,7 +74,7 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 					ClusterId:   cluster,
 				},
 			},
-			Nodes: map[string]*storage.Node{
+			Nodes: map[string]*storage.ComplianceDomain_Node{
 				cluster + "node1": {
 					Id: cluster + "node1",
 				},
@@ -357,7 +357,7 @@ func TestDomainAttribution(t *testing.T) {
 				},
 			},
 			Domain: &storage.ComplianceDomain{
-				Nodes: map[string]*storage.Node{
+				Nodes: map[string]*storage.ComplianceDomain_Node{
 					"cluster1-node1": {
 						Id:   "cluster1-node1",
 						Name: "cluster1-node1",
@@ -385,7 +385,7 @@ func TestDomainAttribution(t *testing.T) {
 				},
 			},
 			Domain: &storage.ComplianceDomain{
-				Nodes: map[string]*storage.Node{
+				Nodes: map[string]*storage.ComplianceDomain_Node{
 					"cluster2-node1": {
 						Id:   "cluster2-node1",
 						Name: "cluster2-node1",
@@ -537,10 +537,8 @@ func TestIsValidCheck(t *testing.T) {
 
 func mockBenchmarkRunResult() *storage.ComplianceRunResults {
 	deploymentResults := make(map[string]*storage.ComplianceRunResults_EntityResults)
-	deployments := make(map[string]*storage.Deployment)
+	deployments := make(map[string]*storage.ComplianceDomain_Deployment)
 	for i := 0; i < 10000; i++ {
-		deployment := fixtures.GetDeployment()
-		deployment.Id = uuid.NewV4().String()
 		results := &storage.ComplianceRunResults_EntityResults{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
 		}
@@ -549,13 +547,23 @@ func mockBenchmarkRunResult() *storage.ComplianceRunResults {
 				OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 			}
 		}
-		deploymentResults[deployment.GetId()] = results
-		deployments[deployment.GetId()] = deployment
+		fixture := fixtures.GetDeployment()
+		fixture.Id = uuid.NewV4().String()
+
+		deploymentResults[fixture.GetId()] = results
+		deployments[fixture.GetId()] = &storage.ComplianceDomain_Deployment{
+			Id:          fixture.GetId(),
+			NamespaceId: fixture.GetNamespaceId(),
+			Name:        fixture.GetName(),
+			Type:        fixture.GetType(),
+			Namespace:   fixture.GetNamespace(),
+			ClusterName: fixture.GetClusterName(),
+		}
 	}
 
 	return &storage.ComplianceRunResults{
 		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.Cluster{
+			Cluster: &storage.ComplianceDomain_Cluster{
 				Id: "cluster",
 			},
 			Deployments: deployments,

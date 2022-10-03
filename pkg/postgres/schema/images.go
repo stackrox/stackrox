@@ -17,52 +17,11 @@ import (
 var (
 	// CreateTableImagesStmt holds the create statement for table `images`.
 	CreateTableImagesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists images (
-                   Id varchar,
-                   Name_Registry varchar,
-                   Name_Remote varchar,
-                   Name_Tag varchar,
-                   Name_FullName varchar,
-                   Metadata_V1_Created timestamp,
-                   Metadata_V1_User varchar,
-                   Metadata_V1_Command text[],
-                   Metadata_V1_Entrypoint text[],
-                   Metadata_V1_Volumes text[],
-                   Metadata_V1_Labels jsonb,
-                   Scan_ScanTime timestamp,
-                   Scan_OperatingSystem varchar,
-                   Signature_Fetched timestamp,
-                   Components integer,
-                   Cves integer,
-                   FixableCves integer,
-                   LastUpdated timestamp,
-                   Priority integer,
-                   RiskScore numeric,
-                   TopCvss numeric,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*Images)(nil),
-		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
-				Table: `
-               create table if not exists images_layers (
-                   images_Id varchar,
-                   idx integer,
-                   Instruction varchar,
-                   Value varchar,
-                   PRIMARY KEY(images_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
-               )
-               `,
 				GormModel: (*ImagesLayers)(nil),
-				Indexes: []string{
-					"create index if not exists imagesLayers_idx on images_layers using btree(idx)",
-				},
-				Children: []*postgres.CreateStmts{},
+				Children:  []*postgres.CreateStmts{},
 			},
 		},
 	}
@@ -116,7 +75,7 @@ type Images struct {
 	Cves                 int32             `gorm:"column:cves;type:integer"`
 	FixableCves          int32             `gorm:"column:fixablecves;type:integer"`
 	LastUpdated          *time.Time        `gorm:"column:lastupdated;type:timestamp"`
-	Priority             int64             `gorm:"column:priority;type:integer"`
+	Priority             int64             `gorm:"column:priority;type:bigint"`
 	RiskScore            float32           `gorm:"column:riskscore;type:numeric"`
 	TopCvss              float32           `gorm:"column:topcvss;type:numeric"`
 	Serialized           []byte            `gorm:"column:serialized;type:bytea"`

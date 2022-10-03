@@ -34,8 +34,6 @@ ROX_PRODUCT_BRANDING ?= STACKROX_BRANDING
 ROX_IMAGE_FLAVOR ?= $(shell \
 	if [[ "$(ROX_PRODUCT_BRANDING)" == "STACKROX_BRANDING" ]]; then \
 	  echo "opensource"; \
-	elif [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then \
-	  echo "stackrox.io"; \
 	else \
 	  echo "development_build"; \
 	fi)
@@ -48,7 +46,7 @@ endif
 DOCS_IMAGE = $(DEFAULT_IMAGE_REGISTRY)/docs:$(shell make --quiet --no-print-directory docs-tag)
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
-
+GO_TEST_OUTPUT_PATH=$(CURDIR)/test-output/test.log
 GOPATH_VOLUME_NAME := stackrox-rox-gopath
 GOCACHE_VOLUME_NAME := stackrox-rox-gocache
 
@@ -69,8 +67,14 @@ BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMA
 ifeq ($(UNAME_S),Darwin)
 ifeq ($(UNAME_M),arm64)
 	# TODO(ROX-12064) build these images in the CI pipeline
-	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.44-arm64
+	# Currently built on a GCP ARM instance off the rox-ci-image branch "cgorman-custom-arm"
+	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.49-arm64
 endif
+endif
+
+TARGET_ARCH := "amd64"
+ifeq ($(UNAME_M),arm64)
+TARGET_ARCH = "arm64"
 endif
 
 ifeq ($(UNAME_S),Darwin)
@@ -116,6 +120,11 @@ EASYJSON_BIN := $(GOBIN)/easyjson
 $(EASYJSON_BIN): deps
 	$(SILENT)echo "+ $@"
 	go install github.com/mailru/easyjson/easyjson
+
+CONTROLLER_GEN_BIN := $(GOBIN)/controller-gen
+$(CONTROLLER_GEN_BIN): deps
+	$(SILENT)echo "+ $@"
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen
 
 GOVERALLS_BIN := $(GOBIN)/goveralls
 $(GOVERALLS_BIN): deps
@@ -193,7 +202,10 @@ ci-config-validate:
 	circleci config validate --org-slug gh/stackrox
 
 .PHONY: fast-central-build
-fast-central-build:
+fast-central-build: central-build-nodeps
+
+.PHONY: central-build-nodeps
+central-build-nodeps:
 	@echo "+ $@"
 	$(GOBUILD) central
 
@@ -221,7 +233,10 @@ fast-migrator:
 	docker run --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
 
 .PHONY: fast-migrator-build
-fast-migrator-build:
+fast-migrator-build: migrator-build-nodeps
+
+.PHONY: migrator-build-nodeps
+migrator-build-nodeps:
 	@echo "+ $@"
 	$(GOBUILD) migrator
 
@@ -287,8 +302,14 @@ clean-easyjson-srcs:
 	@echo "+ $@"
 	$(SILENT)find . -name '*_easyjson.go' -exec rm {} \;
 
+COMPLIANCEOPERATOR_FILES = $(shell grep -R '+k8s:deepcopy-gen' pkg/complianceoperator/api/v1alpha1 -l)
+pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go: $(CONTROLLER_GEN_BIN) $(COMPLIANCEOPERATOR_FILES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(CONTROLLER_GEN_BIN) object:headerFile="tools/boilerplate.go.txt" paths="./pkg/complianceoperator/api/v1alpha1..."
+	# The generated source files might not comply with the current go formatting, so format them explicitly.
+	go fmt ./pkg/complianceoperator/api/v1alpha1/...
+
 .PHONY: go-generated-srcs
-go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
+go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN) pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go
 	@echo "+ $@"
 	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate -v -x ./...
 
@@ -343,12 +364,14 @@ endif
 
 .PHONY: build-prep
 build-prep: deps
-	mkdir -p bin/{darwin_amd64,linux_amd64,linux_ppc64le,linux_s390x,windows_amd64}
+	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
 .PHONY: cli-build
 cli-build: build-prep
 	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
 ifdef CI
@@ -357,6 +380,8 @@ endif
 
 .PHONY: cli
 cli: cli-build
+	# Workaround a bug on MacOS
+	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
@@ -425,8 +450,8 @@ else
 endif
 
 .PHONY: main-build-nodeps
-main-build-nodeps:
-	$(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
+main-build-nodeps: central-build-nodeps migrator-build-nodeps
+	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 ifndef CI
     CGO_ENABLED=0 $(GOBUILD) roxctl
@@ -468,7 +493,7 @@ go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
-		| tee test-output/test.log
+		| tee $(GO_TEST_OUTPUT_PATH)
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
 	for encoding in console json; do \
 		for level in debug info warn error fatal panic; do \
@@ -479,9 +504,10 @@ go-unit-tests: build-prep test-prep
 .PHONE: sensor-integration-test
 sensor-integration-test: build-prep test-prep
 	set -eo pipefail ; \
+	rm -rf  $(GO_TEST_OUTPUT_PATH); \
 	for package in $(shell git ls-files ./sensor/tests | grep '_test.go' | xargs -n 1 dirname | uniq | sort | sed -e 's/sensor\/tests\///'); do \
 		CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
-		| tee test-output/$$(echo $$package | sed -e 's/\//\_/').integration.log; \
+		| tee -a $(GO_TEST_OUTPUT_PATH); \
 	done \
 
 .PHONY: go-postgres-unit-tests
@@ -490,7 +516,7 @@ go-postgres-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
-		| tee test-output/test.log
+		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
 shell-unit-tests:
@@ -518,7 +544,7 @@ integration-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 -v \
 		$(shell go list ./... | grep  "registries\|scanners\|notifiers") \
-		| tee test-output/test.log
+		| tee $(GO_TEST_OUTPUT_PATH)
 
 generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 	$(BASE_DIR)/scripts/generate-junit-reports.sh
@@ -557,6 +583,7 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
+		--build-arg TARGET_ARCH=$(TARGET_ARCH) \
 		--file image/rhel/Dockerfile.gen \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"

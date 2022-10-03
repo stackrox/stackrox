@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/require"
@@ -54,14 +54,30 @@ const (
 					}
 				}
 			}}`
+
+	imageWithTopLevelScanTimeQuery = `
+		query getImages($query: String, $pagination: Pagination) {
+			images(query: $query, pagination: $pagination) { 
+				id
+				scanTime
+			}}`
+
+	imageWithNestedScanTimeQuery = `
+		query getImages($query: String, $pagination: Pagination) {
+			images(query: $query, pagination: $pagination) { 
+				id
+				scan {
+					scanTime
+				}
+			}}`
 )
 
 func BenchmarkImageResolver(b *testing.B) {
 	envIsolator := envisolator.NewEnvIsolator(b)
-	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	defer envIsolator.RestoreAll()
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		b.Skip("Skip postgres store tests")
 		b.SkipNow()
 	}
@@ -163,6 +179,36 @@ func BenchmarkImageResolver(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
 				imageWithCountsQuery,
+				"getImages",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
+
+	b.Run("GetImageScanTimeTopLevel", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				imageWithTopLevelScanTimeQuery,
+				"getImages",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
+
+	b.Run("GetImageScanTimeNested", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				imageWithNestedScanTimeQuery,
 				"getImages",
 				map[string]interface{}{
 					"pagination": map[string]interface{}{

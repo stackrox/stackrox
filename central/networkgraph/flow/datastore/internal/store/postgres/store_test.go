@@ -4,12 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,16 +27,22 @@ func TestNetworkflowStore(t *testing.T) {
 func (s *NetworkflowStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	} else {
-		s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+		s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	}
 }
 
 func (s *NetworkflowStoreSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
+}
+
+func getTimestamp(seconds int64) *types.Timestamp {
+	return &types.Timestamp{
+		Seconds: seconds,
+	}
 }
 
 func (s *NetworkflowStoreSuite) TestStore() {
@@ -56,52 +64,46 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	networkFlow := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
 			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "a"},
-			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "a"},
+			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "b"},
 			DstPort:    1,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
-		ClusterId: clusterID,
+		LastSeenTimestamp: getTimestamp(1),
+		ClusterId:         "22",
 	}
+	zeroTs := timestamp.MicroTS(0)
 
-	foundNetworkFlow, exists, err := store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
+	foundNetworkFlows, _, err := store.GetAllFlows(ctx, nil)
 	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundNetworkFlow)
+	s.Len(foundNetworkFlows, 0)
 
 	// Adding the same thing twice to ensure that we only retrieve 1 based on serial Flow_Id implementation
-	s.NoError(store.Upsert(ctx, networkFlow))
-	s.NoError(store.Upsert(ctx, networkFlow))
-	foundNetworkFlow, exists, err = store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
+	s.NoError(store.UpsertFlows(ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
+	networkFlow.LastSeenTimestamp = getTimestamp(2)
+	s.NoError(store.UpsertFlows(ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
+	foundNetworkFlows, _, err = store.GetAllFlows(ctx, nil)
 	s.NoError(err)
-	s.True(exists)
-	s.Equal(networkFlow, foundNetworkFlow)
+	s.Len(foundNetworkFlows, 1)
+	s.Equal(networkFlow, foundNetworkFlows[0])
 
-	networkFlowCount, err := store.Count(ctx)
+	// Check the get all flows by since time
+	foundNetworkFlows, _, err = store.GetAllFlows(ctx, getTimestamp(3))
 	s.NoError(err)
-	s.Equal(networkFlowCount, 1)
+	s.Len(foundNetworkFlows, 0)
 
-	networkFlowExists, err := store.Exists(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
+	s.NoError(store.RemoveFlow(ctx, networkFlow.GetProps()))
+	foundNetworkFlows, _, err = store.GetAllFlows(ctx, nil)
 	s.NoError(err)
-	s.True(networkFlowExists)
-	s.NoError(store.Upsert(ctx, networkFlow))
+	s.Len(foundNetworkFlows, 0)
 
-	foundNetworkFlow, exists, err = store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(networkFlow, foundNetworkFlow)
-
-	s.NoError(store.Delete(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol()))
-	foundNetworkFlow, exists, err = store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundNetworkFlow)
-
-	s.NoError(store.Upsert(ctx, networkFlow))
+	s.NoError(store.UpsertFlows(ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
 
 	err = store.RemoveFlowsForDeployment(ctx, networkFlow.GetProps().GetSrcEntity().GetId())
 	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundNetworkFlow)
+
+	foundNetworkFlows, _, err = store.GetAllFlows(ctx, nil)
+	s.NoError(err)
+	s.Len(foundNetworkFlows, 0)
 
 	var networkFlows []*storage.NetworkFlow
 	flowCount := 100
@@ -111,11 +113,11 @@ func (s *NetworkflowStoreSuite) TestStore() {
 		networkFlows = append(networkFlows, networkFlow)
 	}
 
-	s.NoError(store.UpsertMany(ctx, networkFlows))
+	s.NoError(store.UpsertFlows(ctx, networkFlows, zeroTs))
 
-	networkFlowCount, err = store.Count(ctx)
+	foundNetworkFlows, _, err = store.GetAllFlows(ctx, nil)
 	s.NoError(err)
-	s.Equal(networkFlowCount, flowCount)
+	s.Len(foundNetworkFlows, flowCount)
 
 	// Clean up
 	Destroy(ctx, pool)

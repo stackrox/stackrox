@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -68,7 +68,7 @@ func (ds *searcherImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storag
 }
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return k8sRolesSACPgSearchHelper.Apply(ds.indexer.Search)(ctx, q)
 	}
 
@@ -76,7 +76,7 @@ func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]se
 }
 
 func (ds *searcherImpl) getCountResults(ctx context.Context, q *v1.Query) (int, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return k8sRolesSACPgSearchHelper.ApplyCount(ds.indexer.Count)(ctx, q)
 	}
 

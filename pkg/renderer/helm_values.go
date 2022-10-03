@@ -4,7 +4,7 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	helmTemplate "github.com/stackrox/rox/pkg/helm/template"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/zip"
@@ -51,10 +51,10 @@ central:
     {{- .GetConfigOverride "endpoints.yaml" | nindent 4 }}
   {{- end }}
 
-  {{- if .HostPath }}
-  {{- if .HostPath.WithNodeSelector }}
+  {{- if .HasCentralHostPath }}
+  {{- if .HostPath.Central.WithNodeSelector }}
   nodeSelector:
-    {{ .HostPath.NodeSelectorKey | quote }}: {{ .HostPath.NodeSelectorValue | quote }}
+    {{ .HostPath.Central.NodeSelectorKey | quote }}: {{ .HostPath.Central.NodeSelectorValue | quote }}
   {{- end }}
   {{- end }}
 
@@ -70,36 +70,20 @@ central:
     tag: {{ .K8sConfig.ImageOverrides.Main.Tag }}
     {{- end }}
   {{- end }}
-  {{- if .K8sConfig.ImageOverrides.CentralDB }}
-  dbImage:
-    {{- if .K8sConfig.ImageOverrides.CentralDB.Registry }}
-    registry: {{ .K8sConfig.ImageOverrides.CentralDB.Registry }}
-    {{- end }}
-    {{- if .K8sConfig.ImageOverrides.CentralDB.Name }}
-    name: {{ .K8sConfig.ImageOverrides.CentralDB.Name }}
-    {{- end }}
-    {{- if .K8sConfig.ImageOverrides.CentralDB.Tag }}
-    # WARNING: You are using a non-default Central DB image tag. Upgrades via
-    # 'helm upgrade' will not work as expected. To ensure a smooth upgrade experience,
-    # make sure StackRox images are mirrored with the same tags as in the stackrox.io
-    # registry.
-    tag: {{ .K8sConfig.ImageOverrides.CentralDB.Tag }}
-    {{- end }}
-  {{- end }}
   persistence:
-    {{- if .HostPath }}
-    hostPath: {{ .HostPath.HostPath }}
-    {{ else if .External }}
+    {{- if and .HasCentralHostPath }}
+    hostPath: {{ .HostPath.Central.HostPath }}
+    {{ else if .HasCentralExternal }}
     persistentVolumeClaim:
-      claimName: {{ .External.Name | quote }}
-      size: {{ printf "%dGi" .External.Size | quote }}
-      {{- if .External.StorageClass }}
-      storageClass: {{ .External.StorageClass | quote }}
+      claimName: {{ .External.Central.Name | quote }}
+      size: {{ printf "%dGi" .External.Central.Size | quote }}
+      {{- if .External.Central.StorageClass }}
+      storageClass: {{ .External.Central.StorageClass | quote }}
       {{- end }}
     {{- else }}
     none: true
     {{- end }}
-  
+
   {{- if ne .K8sConfig.LoadBalancerType.String "NONE" }}
   exposure:
     {{- if eq .K8sConfig.LoadBalancerType.String "LOAD_BALANCER" }}
@@ -114,10 +98,48 @@ central:
       enabled: true
     {{ end }}
   {{- end }}
-  {{- if .K8sConfig.EnableCentralDB }}
-  enableCentralDB: true
-  {{- end }}
 
+
+  {{- if .K8sConfig.EnableCentralDB }}
+  db:
+    enabled: true
+    {{- if .HasCentralDBHostPath }}
+    {{- if .HostPath.DB.WithNodeSelector }}
+    nodeSelector:
+      {{ .HostPath.DB.NodeSelectorKey | quote }}: {{ .HostPath.DB.NodeSelectorValue | quote }}
+    {{- end }}
+    {{- end }}
+  
+    {{- if .K8sConfig.ImageOverrides.CentralDB }}
+    image:
+      {{- if .K8sConfig.ImageOverrides.CentralDB.Registry }}
+      registry: {{ .K8sConfig.ImageOverrides.CentralDB.Registry }}
+      {{- end }}
+      {{- if .K8sConfig.ImageOverrides.CentralDB.Name }}
+      name: {{ .K8sConfig.ImageOverrides.CentralDB.Name }}
+      {{- end }}
+      {{- if .K8sConfig.ImageOverrides.CentralDB.Tag }}
+      # WARNING: You are using a non-default Central DB image tag. Upgrades via
+      # 'helm upgrade' will not work as expected. To ensure a smooth upgrade experience,
+      # make sure StackRox images are mirrored with the same tags as in the stackrox.io
+      # registry.
+      tag: {{ .K8sConfig.ImageOverrides.CentralDB.Tag }}
+      {{- end }}
+    {{- end }}
+    persistence:
+      {{- if .HasCentralDBHostPath }}
+      hostPath: {{ .HostPath.DB.HostPath }}
+      {{ else if .HasCentralDBExternal }}
+      persistentVolumeClaim:
+        claimName: {{ .External.DB.Name | quote }}
+        size: {{ printf "%dGi" .External.DB.Size | quote }}
+        {{- if .External.DB.StorageClass }}
+        storageClass: {{ .External.DB.StorageClass | quote }}
+        {{- end }}
+      {{- else }}
+      none: true
+      {{- end }}
+  {{- end }}
 scanner:
   # IMPORTANT: If you do not wish to run StackRox Scanner, change the value on the following
   # line to "true".
@@ -291,12 +313,15 @@ central:
       {{- index .SecretsBase64Map "htpasswd" | b64dec | nindent 6 }}
   {{- end }}
 
+  {{- if .K8sConfig.EnableCentralDB }}
   {{- if ne (index .SecretsBase64Map "central-db-password") "" }}
   # Password for securing the communication between Central and its DB.
   # This password is not relevant to the user (unless for debugging purposes);
   # it merely acts as a pre-shared, random secret for securing the connection.
-  dbPassword:
-    value: {{ index .SecretsBase64Map "central-db-password" | b64dec }}
+  db:
+    password:
+      value: {{ index .SecretsBase64Map "central-db-password" | b64dec }}
+  {{- end }}
   {{- end }}
 
   {{- if ne (index .SecretsBase64Map "jwt-key.pem") "" }}
@@ -369,7 +394,7 @@ var (
 // two entries, one for `values-public.yaml`, and one for `values-private.yaml`.
 func renderNewHelmValues(c Config) ([]*zip.File, error) {
 	privateTemplate := privateValuesTemplate
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		privateTemplate = privateValuesPostgresTemplate
 	}
 

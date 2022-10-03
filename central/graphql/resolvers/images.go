@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -158,7 +158,7 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuer
 // TopImageVulnerability returns the image vulnerability with the top CVSS score.
 func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopImageVulnerability")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		vulnResolver, err := resolver.topVulnV2(ctx, args)
 		if err != nil || vulnResolver == nil {
 			return nil, err
@@ -171,7 +171,7 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVuln")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("TopVuln not supported with postgres enabled. Please use TopImageVulnerability.")
 	}
 
@@ -261,7 +261,7 @@ func (resolver *imageResolver) ImageVulnerabilityCounter(ctx context.Context, ar
 // Vulns returns all of the vulnerabilities in the image.
 func (resolver *imageResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Vulns")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("Vulns not supported with postgres enabled. Please use ImageVulnerabilities.")
 	}
 
@@ -278,7 +278,7 @@ func (resolver *imageResolver) Vulns(ctx context.Context, args PaginatedQuery) (
 // VulnCount returns the number of vulnerabilities the image has.
 func (resolver *imageResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnCount")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return 0, errors.New("VulnCount not supported with postgres enabled. Please use ImageVulnerabilityCount.")
 	}
 
@@ -305,7 +305,7 @@ func (resolver *imageResolver) VulnCount(ctx context.Context, args RawQuery) (in
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
 func (resolver *imageResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnCounter")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("VulnCounter not supported with postgres enabled. Please use ImageVulnerabilityCounter.")
 	}
 
@@ -397,7 +397,7 @@ func (resolver *imageResolver) getImageQuery() *v1.Query {
 
 func (resolver *imageResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "PlottedVulns")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
@@ -413,7 +413,7 @@ func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, 
 func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
 	resolver.ensureData(ctx)
 	scan := resolver.data.GetScan()
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// If scan is pulled, it is most likely to fetch all components and vulns contained in image.
 		// Therefore, load the image again with full scan.
 		imageLoader, err := loaders.GetImageLoader(ctx)

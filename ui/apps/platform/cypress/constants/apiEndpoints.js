@@ -57,6 +57,7 @@ export const general = {
 export const search = {
     results: '/v1/search?query=*',
     options: '/v1/search/metadata/options*',
+    optionsCategories: (categories) => `/v1/search/metadata/options?categories=${categories}`,
     autocomplete: 'v1/search/autocomplete*',
     autocompleteBySearch: (searchObj, category) =>
         `v1/search/autocomplete?query=${searchObjToQuery(searchObj)}&categories=${category}`,
@@ -132,7 +133,6 @@ export const certGen = {
 };
 
 export const dashboard = {
-    timeseries: '/v1/alerts/summary/timeseries?*',
     summaryCounts: graphql('summary_counts'),
 };
 
@@ -205,67 +205,6 @@ export const configMgmt = {
     // Use graphqlPluralEntity or graphqlSingularEntity.
 };
 
-/*
- * The following keys correspond to url list object in VulnManagementPage.js file.
- */
-
-const vulnMgmtEntityOp = {
-    clusters: 'getCluster',
-    components: 'getComponent',
-    cves: 'getCve',
-    deployments: 'getDeployment',
-    images: 'getImage',
-    namespaces: 'getNamespace',
-    nodes: 'getNode',
-    policies: 'getPolicy',
-};
-
-const vulnMgmtEntitiesOp = {
-    clusters: 'getClusters',
-    components: 'getComponents',
-    'image-components': 'getImageComponents',
-    'node-components': 'getNodeComponents',
-    cves: 'getCves',
-    'image-cves': 'getImageCves',
-    'node-cves': 'getNodeCves',
-    'cluster-cves': 'getClusterCves',
-    deployments: 'getDeployments',
-    images: 'getImages',
-    namespaces: 'getNamespaces',
-    nodes: 'getNodes',
-    policies: 'getPolicies',
-};
-
-const vulnMgmtEntitiesPrefix = {
-    clusters: 'getCluster_',
-    components: 'getComponentSubEntity',
-    cves: 'getCve',
-    deployments: 'getDeployment',
-    images: 'getImage',
-    namespaces: 'getNamespace',
-    nodes: 'getNode',
-    policies: 'getPolicy',
-};
-
-export const vulnMgmt = {
-    // For example, graphqlEntity('clusters')
-    graphqlEntity: (key) => graphql(vulnMgmtEntityOp[key]),
-    // For example, graphqlEntities('clusters')
-    graphqlEntities: (key) => graphql(vulnMgmtEntitiesOp[key]),
-    // For example, graphqlEntities2('clusters', 'CVE')
-    // prettier-ignore
-    graphqlEntities2: (key1, key2) => graphql(`${vulnMgmtEntitiesPrefix[key1]}${key2}`),
-    graphqlOps: {
-        getCves: 'getCves',
-        getPolicies: 'getPolicies',
-        getPolicy: 'getPolicy',
-        getImage: 'getImage',
-        getNode: 'getNode',
-        getDeploymentCOMPONENT: 'getDeploymentCOMPONENT',
-        getFixableCvesForEntity: 'getFixableCvesForEntity',
-    },
-};
-
 export const integrationHealth = {
     imageIntegrations: '/v1/integrationhealth/imageintegrations',
     signatureIntegrations: '/v1/signatureintegrations',
@@ -292,11 +231,6 @@ export const integration = {
         generate: 'v1/cluster-init/init-bundles',
         revoke: '/v1/cluster-init/init-bundles/revoke',
     },
-};
-
-export const report = {
-    configurations: '/v1/report/configurations*',
-    configurationsCount: '/v1/report-configurations-count*',
 };
 
 export const riskAcceptance = {

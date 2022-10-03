@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -71,7 +71,7 @@ type NodeComponentResolver interface {
 // NodeComponent returns a node component based on an input id (name:version)
 func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponent")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.nodeComponentV2(ctx, args)
 	}
 
@@ -95,7 +95,7 @@ func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (Node
 // NodeComponents returns node components that match the input query.
 func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponents")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		query := queryWithNodeIDRegexFilter(q.String())
 
 		return resolver.nodeComponentsV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
@@ -129,7 +129,7 @@ func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) 
 // NodeComponentCount returns count of node components that match the input query
 func (resolver *Resolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponentCount")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		query := queryWithNodeIDRegexFilter(args.String())
 
 		return resolver.componentCountV2(ctx, RawQuery{Query: &query})
@@ -160,7 +160,7 @@ func queryWithNodeIDRegexFilter(q string) string {
 }
 
 func (resolver *nodeComponentResolver) withNodeComponentScope(ctx context.Context) context.Context {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_NODE_COMPONENTS,
 			ID:    resolver.data.GetId(),
@@ -277,7 +277,7 @@ func (resolver *nodeComponentResolver) Source(_ context.Context) string {
 // TopNodeVulnerability returns the first node component vulnerability with the top CVSS score
 func (resolver *nodeComponentResolver) TopNodeVulnerability(ctx context.Context) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "TopNodeVulnerability")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		query := resolver.nodeComponentQuery()
 		query.Pagination = &v1.QueryPagination{
 			SortOptions: []*v1.QuerySortOption{

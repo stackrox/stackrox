@@ -242,7 +242,7 @@ type StorageReference struct {
 	APIVersion string `json:"apiVersion,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ComplianceScan represents a scan with a certain configuration that will be
 // applied to objects of a certain entity in the host. These could be nodes
@@ -298,7 +298,7 @@ func (cs *ComplianceScan) GetScanType() ComplianceScanType {
 	return scantype
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ComplianceScanList contains a list of ComplianceScan
 type ComplianceScanList struct {

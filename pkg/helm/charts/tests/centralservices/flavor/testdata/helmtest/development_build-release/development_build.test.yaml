@@ -1,0 +1,6 @@
+tests:
+- name: validate image defaults
+  expect: |
+    assertCentral("quay.io/rhacs-eng/main:3.0.99.0")
+    assertScanner("quay.io/rhacs-eng/scanner:3.0.99.0")
+    assertScannerDB("quay.io/rhacs-eng/scanner-db:3.0.99.0")

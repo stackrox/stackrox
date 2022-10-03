@@ -18,6 +18,6 @@ type SettingsManager interface {
 
 	FlushCache()
 
-	SettingsStream() concurrency.ReadOnlyValueStream
-	SensorEventsStream() concurrency.ReadOnlyValueStream
+	SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
+	SensorEventsStream() concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest]
 }

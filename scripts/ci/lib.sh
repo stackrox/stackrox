@@ -792,6 +792,7 @@ pr_has_label_in_body() {
 
 # get_pr_details() from GitHub and display the result. Exits 1 if not run in CI in a PR context.
 _PR_DETAILS=""
+_PR_DETAILS_CACHE_FILE="/tmp/PR_DETAILS_CACHE.json"
 get_pr_details() {
     local pull_request
     local org
@@ -801,7 +802,12 @@ get_pr_details() {
         echo "${_PR_DETAILS}"
         return
     fi
-
+    if [[ -e "${_PR_DETAILS_CACHE_FILE}" ]]; then
+        _PR_DETAILS="$(cat "${_PR_DETAILS_CACHE_FILE}")"
+        echo "${_PR_DETAILS}"
+        return
+    fi
+    
     _not_a_PR() {
         echo '{ "msg": "this is not a PR" }'
         exit 1
@@ -850,7 +856,7 @@ get_pr_details() {
         exit 2
     fi
     _PR_DETAILS="$pr_details"
-    echo "$pr_details"
+    echo "$pr_details" | tee "${_PR_DETAILS_CACHE_FILE}"
 }
 
 GATE_JOBS_CONFIG="$SCRIPTS_ROOT/scripts/ci/gate-jobs-config.json"
@@ -866,26 +872,23 @@ gate_job() {
 
     info "Will determine whether to run: $job"
 
-    if [[ "$job_config" == "null" ]]; then
-        info "$job will run because there is no gating criteria for $job"
+    if ! is_in_PR_context; then
+        # When not in a PR context, the jobs to run are simply defined in openshift/release config.
+        info "$job will run because this is not in a PR context"
         return
     fi
 
-    local pr_details
-    local exitstatus=0
-    pr_details="$(get_pr_details)" || exitstatus="$?"
-
-    if [[ "$exitstatus" == "0" ]]; then
-        if is_openshift_CI_rehearse_PR; then
-            gate_openshift_release_rehearse_job "$job" "$pr_details"
-        else
-            gate_pr_job "$job_config" "$pr_details"
-        fi
-    elif [[ "$exitstatus" == "1" ]]; then
-        gate_merge_job "$job_config"
-    else
-        die "Could not determine if this is a PR versus a merge"
+    if is_openshift_CI_rehearse_PR; then
+        info "$job will run because this is an openshift/release PR"
+        return
     fi
+
+    if [[ "$job_config" == "null" ]]; then
+        info "$job will run because there is no extra gating criteria for $job"
+        return
+    fi
+
+    gate_pr_job "$job_config"
 }
 
 get_var_from_job_config() {
@@ -905,34 +908,11 @@ get_var_from_job_config() {
 
 gate_pr_job() {
     local job_config="$1"
-    local pr_details="$2"
 
-    local run_with_labels=()
-    local skip_with_label
     local run_with_changed_path
     local changed_path_to_ignore
-    local run_with_labels_from_json
-    run_with_labels_from_json="$(get_var_from_job_config run_with_labels "$job_config")"
-    if [[ -n "${run_with_labels_from_json}" ]]; then
-        mapfile -t run_with_labels <<<"${run_with_labels_from_json}"
-    fi
-    skip_with_label="$(get_var_from_job_config skip_with_label "$job_config")"
     run_with_changed_path="$(get_var_from_job_config run_with_changed_path "$job_config")"
     changed_path_to_ignore="$(get_var_from_job_config changed_path_to_ignore "$job_config")"
-
-    if [[ -n "$skip_with_label" ]]; then
-        if pr_has_label "${skip_with_label}" "${pr_details}"; then
-            info "$job will not run because the PR has label $skip_with_label"
-            exit 0
-        fi
-    fi
-
-    for run_with_label in "${run_with_labels[@]}"; do
-        if pr_has_label "${run_with_label}" "${pr_details}"; then
-            info "$job will run because the PR has label $run_with_label"
-            return
-        fi
-    done
 
     if [[ -n "${run_with_changed_path}" || -n "${changed_path_to_ignore}" ]]; then
         local diff_base
@@ -941,9 +921,13 @@ gate_pr_job() {
             echo "Determined diff-base as ${diff_base}"
             echo "Master SHA: $(git rev-parse origin/master)"
         elif is_OPENSHIFT_CI; then
-            diff_base="$(jq -r '.refs[0].base_sha' <<<"$CLONEREFS_OPTIONS")"
+            if [[ -n "${PULL_BASE_SHA:-}" ]]; then
+                diff_base="${PULL_BASE_SHA:-}"
+            else
+                diff_base="$(jq -r '.refs[0].base_sha' <<<"$CLONEREFS_OPTIONS")"
+            fi
             echo "Determined diff-base as ${diff_base}"
-            [[ "${diff_base}" != "null" ]] || die "Could not find base_sha in CLONEREFS_OPTIONS: $CLONEREFS_OPTIONS"
+            [[ "${diff_base}" != "null" ]] || die "Could not find base_sha in PULL_BASE_SHA or CLONEREFS_OPTIONS"
         else
             die "unsupported"
         fi
@@ -960,54 +944,6 @@ gate_pr_job() {
     fi
 
     info "$job will be skipped"
-    exit 0
-}
-
-gate_merge_job() {
-    local job_config="$1"
-
-    local run_on_master
-    local run_on_tags
-    run_on_master="$(get_var_from_job_config run_on_master "$job_config")"
-    run_on_tags="$(get_var_from_job_config run_on_tags "$job_config")"
-
-    local base_ref
-    base_ref="$(get_base_ref)" || {
-        info "Warning: error running get_base_ref():"
-        echo "${base_ref}"
-        info "will continue with tests."
-    }
-
-    if [[ "${base_ref}" == "master" && "${run_on_master}" == "true" ]]; then
-        info "$job will run because this is master and run_on_master==true"
-        return
-    fi
-
-    if is_tagged && [[ "${run_on_tags}" == "true" ]]; then
-        info "$job will run because the head of this branch is tagged and run_on_tags==true"
-        return
-    fi
-
-    info "$job will be skipped - neither master/run_on_master or tagged/run_on_tags"
-    exit 0
-}
-
-# gate_openshift_release_rehearse_job() - use the PR description to indicate if
-# the pj-rehearse job should run for configured jobs.
-gate_openshift_release_rehearse_job() {
-    local job="$1"
-    local pr_details="$2"
-
-    if [[ "$(jq -r '.body' <<<"$pr_details")" =~ open.the.gate.*$job ]]; then
-        info "$job will run because the gate was opened"
-        return
-    fi
-
-    cat << _EOH_
-$job will be skipped. If you want to run a gated job during openshift/release pj-rehearsal 
-update the PR description with:
-open the gate: $job
-_EOH_
     exit 0
 }
 
@@ -1034,9 +970,21 @@ openshift_ci_mods() {
     export CI=true
     export OPENSHIFT_CI=true
 
+    # Single step test jobs do not have HOME
+    if [[ -z "${HOME:-}" ]] || ! touch "${HOME}/openshift-ci-write-test"; then
+        info "HOME (${HOME:-unset}) is not set or not writeable, using mktemp dir"
+        HOME=$( mktemp -d )
+        export HOME
+        info "HOME is now $HOME"
+    fi
+
     if is_in_PR_context && ! is_openshift_CI_rehearse_PR; then
         local sha
-        sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || echo "WARNING: Cannot find pull sha"
+        if [[ -n "${PULL_PULL_SHA:-}" ]]; then
+            sha="${PULL_PULL_SHA}"
+        else
+            sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || echo "WARNING: Cannot find pull sha"
+        fi
         if [[ -n "${sha:-}" ]] && [[ "$sha" != "null" ]]; then
             info "Will checkout SHA to match PR: $sha"
             git checkout "$sha"
@@ -1126,25 +1074,10 @@ handle_nightly_runs() {
         die "Only for OpenShift CI"
     fi
 
-    if ! is_in_PR_context; then
-        info "Debug:"
-        echo "JOB_NAME: ${JOB_NAME:-}"
-        echo "JOB_NAME_SAFE: ${JOB_NAME_SAFE:-}"
-    fi
-
     local nightly_tag_prefix
     nightly_tag_prefix="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-"
     if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
         ci_export CIRCLE_TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
-    elif is_in_PR_context && pr_has_label "simulate-nightly-run"; then
-        local sha
-        if [[ -n "${PULL_PULL_SHA:-}" ]]; then
-            sha="${PULL_PULL_SHA}"
-        else
-            sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || die "Cannot find pull sha"
-            [[ "$sha" != "null" ]] || die "Cannot find pull sha"
-        fi
-        ci_export CIRCLE_TAG "${nightly_tag_prefix}${sha:0:8}"
     fi
 }
 
@@ -1186,14 +1119,6 @@ validate_expected_go_version() {
         echo "Got unexpected go version ${roxctl_go_version} (wanted ${expected_go_version})"
         exit 1
     fi
-
-    # Ensure that the Go version is up-to-date in go.mod as well.
-    # Note that the patch version is not specified in go.mod.
-    [[ "${expected_go_version}" =~ ^go(1\.[0-9]{2})(\.[0-9]+)?$ ]]
-    go_version="${BASH_REMATCH[1]}"
-
-    go mod edit -go "${go_version}"
-    git diff --exit-code -- go.mod
 }
 
 store_qa_test_results() {
@@ -1241,26 +1166,68 @@ send_slack_notice_for_failures_on_merge() {
     fi
 
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
+    local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME:-missing}/${BUILD_ID:-missing}"
 
+    function slack_error() {
+        echo "ERROR: $1"
+        curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" << __EOM__
+{ "text": "*An error occurred dealing with a test failure:*\n\t- Test: ${log_url}.\n\t- $1." }
+__EOM__
+    }
+
+    function check_env() {
+        (
+            set +u
+            if [[ -z "$(eval echo "\$$1")" ]]; then
+                slack_error "An expected environment variable is unset/empty: $1"
+                return 1
+            fi
+        )
+    }
+
+    if [[ -n "${JOB_SPEC:-}" ]]; then
+        org=$(jq -r <<<"$JOB_SPEC" '.refs.org')
+        repo=$(jq -r <<<"$JOB_SPEC" '.refs.repo')
+    elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+        org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org')
+        repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo')
+    else
+        slack_error "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
+        return 1
+    fi
+
+    if [[ "$org" == "null" ]] || [[ "$repo" == "null" ]]; then
+        slack_error "Could not determine org and/or repo"
+        return 1
+    fi
+
+    check_env "PULL_BASE_SHA"
+    check_env "JOB_NAME_SAFE"
+    check_env "JOB_NAME"
+    check_env "BUILD_ID"
+
+    local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${PULL_BASE_SHA}"
+    local exitstatus=0
     local commit_details
-    org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org') || return 1
-    repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo') || return 1
-    [[ "$org" != "null" ]] && [[ "$repo" != "null" ]] || return 1
-    local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${OPENSHIFT_BUILD_COMMIT}"
-    commit_details=$(curl --retry 5 -sS "${commit_details_url}") || return 1
+    commit_details=$(curl --retry 5 -sS "${commit_details_url}") || exitstatus="$?"
+    if [[ "$exitstatus" != "0" ]]; then
+        slack_error "Cannot get commit details: ${commit_details}"
+        return 1
+    fi
 
     local job_name="${JOB_NAME_SAFE#merge-}"
 
     local commit_msg
-    commit_msg=$(jq -r <<<"$commit_details" '.commit.message') || return 1
+    commit_msg=$(jq -r <<<"$commit_details" '.commit.message') || exitstatus="$?"
     commit_msg="${commit_msg%%$'\n'*}" # use first line of commit msg
     local commit_url
-    commit_url=$(jq -r <<<"$commit_details" '.html_url') || return 1
+    commit_url=$(jq -r <<<"$commit_details" '.html_url') || exitstatus="$?"
     local author
-    author=$(jq -r <<<"$commit_details" '.commit.author.name') || return 1
-    [[ "$commit_msg" != "null" ]] && [[ "$commit_url" != "null" ]] && [[ "$author" != "null" ]] || return 1
-
-    local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
+    author=$(jq -r <<<"$commit_details" '.commit.author.name') || exitstatus="$?"
+    if [[ "$exitstatus" != "0" ]]; then
+        slack_error "Error parsing the commit details: ${commit_details}"
+        return 1
+    fi
 
     # shellcheck disable=SC2016
     local body='
@@ -1294,7 +1261,10 @@ send_slack_notice_for_failures_on_merge() {
 
     jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
        --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body" | \
-    curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" || {
+        slack_error "Error posting to Slack"
+        return 1
+    }
 }
 
 save_junit_failure() {
@@ -1323,13 +1293,23 @@ EOF
 add_build_comment_to_pr() {
     info "Adding a comment with the build tag to the PR"
 
+    local pr_details
+    local exitstatus=0
+    pr_details="$(get_pr_details)" || exitstatus="$?"
+    if [[ "$exitstatus" != "0" ]]; then
+        echo "DEBUG: Unable to get the PR details from GitHub: $exitstatus"
+        echo "DEBUG: PR details: ${pr_details}"
+        info "Will continue without commenting on the PR"
+        return
+    fi
+
     # hub-comment is tied to Circle CI env
     local url
-    url=$(get_pr_details | jq -r '.html_url')
+    url=$(jq -r '.html_url' <<<"$pr_details")
     export CIRCLE_PULL_REQUEST="$url"
 
     local sha
-    sha=$(get_pr_details | jq -r '.head.sha')
+    sha=$(jq -r '.head.sha' <<<"$pr_details")
     sha=${sha:0:7}
     export _SHA="$sha"
 

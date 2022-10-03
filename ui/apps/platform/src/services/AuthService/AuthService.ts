@@ -6,6 +6,7 @@ import queryString from 'qs';
 
 import { Role } from 'services/RolesService';
 
+import { Empty } from 'services/types';
 import AccessTokenManager from './AccessTokenManager';
 import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,
@@ -168,7 +169,7 @@ export function saveAuthProvider(authProvider: AuthProvider): string | Promise<A
  *
  * @returns {Promise} promise which is fullfilled when the request is complete TODO verify return empty object
  */
-export function deleteAuthProvider(authProviderId: string): Promise<Record<string, never>> {
+export function deleteAuthProvider(authProviderId: string): Promise<Empty> {
     if (!authProviderId) {
         throw new Error('Auth provider ID must be defined');
     }
@@ -415,5 +416,9 @@ export function addAuthInterceptors(authHttpErrorHandler): void {
  * @return {boolean} indicating whether the auth provider is immutable.
  */
 export function getIsAuthProviderImmutable(authProvider: AuthProvider): boolean {
-    return 'traits' in authProvider && authProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE';
+    return (
+        'traits' in authProvider &&
+        authProvider.traits != null &&
+        authProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE'
+    );
 }

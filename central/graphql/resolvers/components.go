@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/utils"
@@ -95,7 +95,7 @@ type ComponentResolver interface {
 // Component returns an image scan component based on an input id (name:version)
 func (resolver *Resolver) Component(ctx context.Context, args IDQuery) (ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("Component is not supported with postgres, please use Image/NodeComponent")
 	}
 	return resolver.componentV2(ctx, args)
@@ -104,7 +104,7 @@ func (resolver *Resolver) Component(ctx context.Context, args IDQuery) (Componen
 // Components returns the image scan components that match the input query.
 func (resolver *Resolver) Components(ctx context.Context, q PaginatedQuery) ([]ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("Components is not supported with postgres, please use Image/NodeComponents")
 	}
 	return resolver.componentsV2(ctx, q)
@@ -113,7 +113,7 @@ func (resolver *Resolver) Components(ctx context.Context, q PaginatedQuery) ([]C
 // ComponentCount returns count of all clusters across infrastructure
 func (resolver *Resolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComponentCount")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return 0, errors.New("ComponentCount is not supported with postgres, please use Image/NodeComponentCount")
 	}
 	return resolver.componentCountV2(ctx, args)

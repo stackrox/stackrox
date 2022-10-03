@@ -35,7 +35,6 @@ describe('Authentication', () => {
         );
         cy.intercept('GET', api.alerts.countsByCluster, { body: {} }).as('countsByCluster');
         cy.intercept('GET', api.alerts.countsByCategory, { body: {} }).as('countsByCategory');
-        cy.intercept('GET', api.dashboard.timeseries, { body: {} }).as('alertsByTimeseries');
         cy.intercept('GET', api.risks.riskyDeployments, { body: {} }).as('deployments');
         cy.intercept('POST', api.logs, { body: {} }).as('logs');
     };

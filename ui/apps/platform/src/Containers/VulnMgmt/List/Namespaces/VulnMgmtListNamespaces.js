@@ -34,7 +34,7 @@ export const defaultNamespaceSort = [
 
 const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const fragmentToUse = isFrontendVMUpdatesEnabled
         ? NAMESPACE_LIST_FRAGMENT_UPDATED
@@ -171,7 +171,8 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
                 ),
                 id: namespaceSortFields.IMAGES,
                 accessor: 'imageCount',
-                sortField: namespaceSortFields.IMAGES,
+                // TODO: restore sorting on this field, see https://issues.redhat.com/browse/ROX-12548 for context
+                // sortField: componentSortFields.IMAGES,
                 sortable: false,
             },
             // @TODD, restore the Policy Counts column once its performance is improved,

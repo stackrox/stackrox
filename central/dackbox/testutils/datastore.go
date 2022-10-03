@@ -38,7 +38,7 @@ import (
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	rocksPkg "github.com/stackrox/rox/pkg/rocksdb"
@@ -246,7 +246,7 @@ func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph(waitForIndexi
 }
 
 func (s *dackboxTestDataStoreImpl) waitForIndexing() {
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		indexingCompleted := concurrency.NewSignal()
 		s.indexQ.PushSignal(&indexingCompleted)
 		<-indexingCompleted.Done()
@@ -254,9 +254,10 @@ func (s *dackboxTestDataStoreImpl) waitForIndexing() {
 }
 
 func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pgtestbase.Teardown(t)
 	} else {
+		s.waitForIndexing()
 		err = s.bleveIndex.Close()
 		if err != nil {
 			return err
@@ -274,7 +275,7 @@ func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	var err error
 	s := &dackboxTestDataStoreImpl{}
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pgtestbase = pgtest.ForT(t)
 		s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
 		if err != nil {

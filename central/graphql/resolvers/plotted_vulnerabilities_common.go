@@ -5,12 +5,12 @@ import (
 	"errors"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 func getPlottedVulnsIdsAndFixableCount(ctx context.Context, root *Resolver, args RawQuery) ([]string, int, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, 0, errors.New("unexpected access to legacy CVE datastore")
 	}
 	query, err := getPlottedVulnsV1Query(args)
@@ -59,14 +59,12 @@ func unwrappedPlottedVulnerabilities(ctx context.Context, resolver *Resolver, cv
 		return nil, nil
 	}
 
-	cvesInterface, err := paginationWrapper{
-		pv: q.GetPagination(),
-	}.paginate(cveIds, nil)
+	cves, err := paginate(q.GetPagination(), cveIds, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	vulns, err := resolver.CVEDataStore.GetBatch(ctx, cvesInterface.([]string))
+	vulns, err := resolver.CVEDataStore.GetBatch(ctx, cves)
 	if err != nil {
 		return nil, err
 	}

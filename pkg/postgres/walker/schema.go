@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -65,6 +66,13 @@ type SchemaRelationship struct {
 	// NoConstraint indicates that this relationship is not enforced at the SQL
 	// level by a foreign key constraint.
 	NoConstraint bool
+
+	// RestrictDelete indicates that this relationship should restrict deletion rather than cascade
+	RestrictDelete bool
+
+	// CycleReference indicates that this relationship is a self reference
+	// this is necessary because parent references and self references would otherwise be named the same
+	CycleReference bool
 }
 
 // ThisSchemaColumnNames generates the sequence of column names for this schema
@@ -194,6 +202,9 @@ func (s *Schema) RelationshipsToDefineAsForeignKeys() []SchemaRelationship {
 	}
 	for _, ref := range s.References {
 		if !ref.NoConstraint {
+			if s.Parent != nil && s.Parent.Table == ref.OtherSchema.Table {
+				ref.CycleReference = true
+			}
 			out = append(out, ref)
 		}
 	}
@@ -342,9 +353,9 @@ func (s *Schema) ResolveReferences(schemaProvider func(messageTypeName string) *
 		fieldRef.OtherSchema = otherTable
 		fieldRef.ColumnName = columnNameInOtherSchema
 
-		addColumnPairToRelationshipsSlice(&s.References, s, otherTable, f.ColumnName, columnNameInOtherSchema, fieldRef.NoConstraint)
+		addColumnPairToRelationshipsSlice(&s.References, s, otherTable, f.ColumnName, columnNameInOtherSchema, fieldRef.NoConstraint, fieldRef.RestrictDelete)
 		if !fieldRef.Directional {
-			addColumnPairToRelationshipsSlice(&otherTable.ReferencedBy, otherTable, s, columnNameInOtherSchema, f.ColumnName, fieldRef.NoConstraint)
+			addColumnPairToRelationshipsSlice(&otherTable.ReferencedBy, otherTable, s, columnNameInOtherSchema, f.ColumnName, fieldRef.NoConstraint, fieldRef.RestrictDelete)
 		}
 	}
 
@@ -353,7 +364,7 @@ func (s *Schema) ResolveReferences(schemaProvider func(messageTypeName string) *
 	}
 }
 
-func addColumnPairToRelationshipsSlice(relationshipsSlice *[]SchemaRelationship, thisSchema, otherSchema *Schema, columnNameInThisSchema, columnNameInOtherSchema string, noConstraint bool) {
+func addColumnPairToRelationshipsSlice(relationshipsSlice *[]SchemaRelationship, thisSchema, otherSchema *Schema, columnNameInThisSchema, columnNameInOtherSchema string, noConstraint bool, restrictDelete bool) {
 	refIdxToModify := -1
 	for i, ref := range *relationshipsSlice {
 		if ref.OtherSchema == otherSchema {
@@ -367,7 +378,7 @@ func addColumnPairToRelationshipsSlice(relationshipsSlice *[]SchemaRelationship,
 	}
 	// This is the first column mapping for this particular schema.
 	if refIdxToModify == -1 {
-		*relationshipsSlice = append(*relationshipsSlice, SchemaRelationship{OtherSchema: otherSchema, NoConstraint: noConstraint})
+		*relationshipsSlice = append(*relationshipsSlice, SchemaRelationship{OtherSchema: otherSchema, NoConstraint: noConstraint, RestrictDelete: restrictDelete})
 		refIdxToModify = len(*relationshipsSlice) - 1
 	}
 	(*relationshipsSlice)[refIdxToModify].MappedColumnNames = append((*relationshipsSlice)[refIdxToModify].MappedColumnNames, ColumnNamePair{
@@ -397,6 +408,7 @@ type PostgresOptions struct {
 	Unique                 bool
 	IgnorePrimaryKey       bool
 	IgnoreUniqueConstraint bool
+	IgnoreSearchLabels     set.StringSet
 	Reference              *foreignKeyRef
 
 	// Which database type will be used to store this value
@@ -412,6 +424,9 @@ type foreignKeyRef struct {
 	ProtoBufField string
 	// If true, this column (foreign key) depends on a column in other table, but does not have a constraint.
 	NoConstraint bool
+
+	// If true, the constraint on this foreign key reference should restrict deletion
+	RestrictDelete bool
 
 	// If true, this means that we only want to create a graph edge out from this field and not have it be bi-directional
 	Directional bool

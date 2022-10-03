@@ -19,13 +19,13 @@ class CVEService extends BaseService {
 
     static suppressCVE(String cve) {
         return getCVEClient().suppressCVEs(CveService.SuppressCVERequest.newBuilder()
-                .addIds(cve)
+                .addCves(cve)
                 .setDuration(Duration.newBuilder().setSeconds(1000).build())
                 .build())
     }
 
     static unsuppressCVE(String cve) {
-        return getCVEClient().unsuppressCVEs(CveService.UnsuppressCVERequest.newBuilder().addIds(cve).build())
+        return getCVEClient().unsuppressCVEs(CveService.UnsuppressCVERequest.newBuilder().addCves(cve).build())
     }
 
     static suppressImageCVE(String cve) {
@@ -33,7 +33,7 @@ class CVEService extends BaseService {
             return suppressCVE(cve)
         }
         return getImageCVEClient().suppressCVEs(CveService.SuppressCVERequest.newBuilder()
-                .addIds(cve)
+                .addCves(cve)
                 .setDuration(Duration.newBuilder().setSeconds(1000).build())
                 .build())
     }
@@ -42,6 +42,6 @@ class CVEService extends BaseService {
         if (! Env.CI_JOBNAME.contains("postgres")) {
             return unsuppressCVE(cve)
         }
-        return getImageCVEClient().unsuppressCVEs(CveService.UnsuppressCVERequest.newBuilder().addIds(cve).build())
+        return getImageCVEClient().unsuppressCVEs(CveService.UnsuppressCVERequest.newBuilder().addCves(cve).build())
     }
 }

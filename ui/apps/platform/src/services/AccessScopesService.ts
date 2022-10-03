@@ -1,4 +1,5 @@
 import axios from './instance';
+import { Empty } from './types';
 
 const accessScopessUrl = '/v1/simpleaccessscopes';
 
@@ -80,7 +81,7 @@ export function createAccessScope(entity: AccessScope): Promise<AccessScope> {
 /*
  * Update entity and return empty object.
  */
-export function updateAccessScope(entity: AccessScope): Promise<Record<string, never>> {
+export function updateAccessScope(entity: AccessScope): Promise<Empty> {
     const { id } = entity;
     return axios.put(`${accessScopessUrl}/${id}`, entity);
 }
@@ -88,7 +89,7 @@ export function updateAccessScope(entity: AccessScope): Promise<Record<string, n
 /*
  * Delete entity which has id and return empty object.
  */
-export function deleteAccessScope(id: string): Promise<Record<string, never>> {
+export function deleteAccessScope(id: string): Promise<Empty> {
     return axios.delete(`${accessScopessUrl}/${id}`);
 }
 

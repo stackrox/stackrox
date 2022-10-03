@@ -1,4 +1,5 @@
 import axios from './instance';
+import { Empty } from './types';
 
 type IntegrationSource =
     | 'authProviders'
@@ -63,7 +64,7 @@ export function saveIntegration(
     source: IntegrationSource,
     data: IntegrationBase,
     options: IntegrationOptions = {} // TODO can destructure { updatePassword } for new forms
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     const { id } = data;
 
     if (!id) {
@@ -89,7 +90,7 @@ export function saveIntegration(
 export function saveIntegrationV2(
     source: IntegrationSource,
     data: IntegrationOptions // can also include config, externalBackup, notifier
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     const hasUpdatePassword = typeof data.updatePassword === 'boolean';
     if (hasUpdatePassword) {
         // If the data has a config object, use the contents of that config object.
@@ -121,7 +122,7 @@ export function testIntegration(
     source: IntegrationSource,
     data: IntegrationBase,
     options: IntegrationOptions = {} // TODO can destructure { updatePassword } for new forms
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     const updatePassword = options?.updatePassword; // ROX-7884 because setFormSubmissionOptions can return null
 
     // if the integration is not one that could possibly have stored credentials, use the previous API
@@ -141,7 +142,7 @@ export function testIntegration(
 export function testIntegrationV2(
     source: IntegrationSource,
     data: IntegrationOptions // can also include config, externalBackup, notifier
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     if (typeof data.updatePassword === 'boolean') {
         return axios.post(`${getPath(source)}/test/updated`, data);
     }
@@ -151,10 +152,7 @@ export function testIntegrationV2(
 /*
  * Delete an integration by source.
  */
-export function deleteIntegration(
-    source: IntegrationSource,
-    id: string
-): Promise<Record<string, never>> {
+export function deleteIntegration(source: IntegrationSource, id: string): Promise<Empty> {
     return axios.delete(`${getPath(source)}/${id}`);
 }
 
@@ -164,6 +162,6 @@ export function deleteIntegration(
 export function deleteIntegrations(
     source: IntegrationSource,
     ids: string[] = []
-): Promise<Record<string, never>[]> {
+): Promise<Empty[]> {
     return Promise.all(ids.map((id) => deleteIntegration(source, id)));
 }

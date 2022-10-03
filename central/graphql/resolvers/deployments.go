@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -167,7 +167,7 @@ func (resolver *deploymentResolver) GroupedProcesses(ctx context.Context) ([]*pr
 	if err := readIndicators(ctx); err != nil {
 		return nil, err
 	}
-	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
 	indicators, err := resolver.root.ProcessIndicatorStore.SearchRawProcessIndicators(ctx, query)
 	return resolver.root.wrapProcessNameGroups(service.IndicatorsToGroupedResponses(indicators), err)
 }
@@ -251,10 +251,7 @@ func (resolver *deploymentResolver) Policies(ctx context.Context, args Paginated
 		})
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(policyResolvers, nil)
-	return resolvers.([]*policyResolver), err
+	return paginate(pagination, policyResolvers, nil)
 }
 
 func (resolver *deploymentResolver) PolicyCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -333,10 +330,7 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 		})
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(policyResolvers, nil)
-	return resolvers.([]*policyResolver), err
+	return paginate(pagination, policyResolvers, nil)
 }
 
 // FailingPolicyCount returns count of policies failing on this deployment
@@ -428,10 +422,7 @@ func (resolver *deploymentResolver) Secrets(ctx context.Context, args PaginatedQ
 		return nil, err
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(secrets, nil)
-	return resolvers.([]*secretResolver), err
+	return paginate(pagination, secrets, nil)
 }
 
 // SecretCount returns the total number of secrets for this deployment
@@ -468,7 +459,7 @@ func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, q 
 	psr := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 		AddExactMatches(search.Namespace, deployment.GetNamespace()).
-		AddStrings(search.SecretName, secretSet.AsSlice()...).
+		AddExactMatches(search.SecretName, secretSet.AsSlice()...).
 		ProtoQuery()
 	secrets, err := resolver.root.SecretsDataStore.SearchRawSecrets(ctx, psr)
 	if err != nil {
@@ -500,7 +491,7 @@ func (resolver *deploymentResolver) ComplianceResults(ctx context.Context, args 
 	}
 	output := newBulkControlResults()
 	deploymentID := resolver.data.GetId()
-	output.addDeploymentData(resolver.root, runResults, func(d *storage.Deployment, _ *v1.ComplianceControl) bool {
+	output.addDeploymentData(resolver.root, runResults, func(d *storage.ComplianceDomain_Deployment, _ *v1.ComplianceControl) bool {
 		return d.GetId() == deploymentID
 	})
 
@@ -674,7 +665,7 @@ func (resolver *deploymentResolver) ProcessActivityCount(ctx context.Context) (i
 	if err := readIndicators(ctx); err != nil {
 		return 0, err
 	}
-	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
 	indicators, err := resolver.root.ProcessIndicatorStore.Search(ctx, query)
 	if err != nil {
 		return 0, err
@@ -795,7 +786,7 @@ func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args Ra
 
 func (resolver *deploymentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PlottedVulns")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())

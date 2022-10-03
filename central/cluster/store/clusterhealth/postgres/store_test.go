@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -30,9 +30,9 @@ func TestClusterHealthStatusesStore(t *testing.T) {
 
 func (s *ClusterHealthStatusesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
@@ -66,4 +66,49 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundClusterHealthStatus)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
+	s.NoError(store.Upsert(ctx, clusterHealthStatus))
+	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
+	s.NoError(err)
+	s.True(exists)
+	s.Equal(clusterHealthStatus, foundClusterHealthStatus)
+
+	clusterHealthStatusCount, err := store.Count(ctx)
+	s.NoError(err)
+	s.Equal(1, clusterHealthStatusCount)
+	clusterHealthStatusCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(clusterHealthStatusCount)
+
+	clusterHealthStatusExists, err := store.Exists(ctx, clusterHealthStatus.GetId())
+	s.NoError(err)
+	s.True(clusterHealthStatusExists)
+	s.NoError(store.Upsert(ctx, clusterHealthStatus))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, clusterHealthStatus), sac.ErrResourceAccessDenied)
+
+	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
+	s.NoError(err)
+	s.True(exists)
+	s.Equal(clusterHealthStatus, foundClusterHealthStatus)
+
+	s.NoError(store.Delete(ctx, clusterHealthStatus.GetId()))
+	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
+	s.NoError(err)
+	s.False(exists)
+	s.Nil(foundClusterHealthStatus)
+	s.NoError(store.Delete(withNoAccessCtx, clusterHealthStatus.GetId()))
+
+	var clusterHealthStatuss []*storage.ClusterHealthStatus
+	for i := 0; i < 200; i++ {
+		clusterHealthStatus := &storage.ClusterHealthStatus{}
+		s.NoError(testutils.FullInit(clusterHealthStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		clusterHealthStatuss = append(clusterHealthStatuss, clusterHealthStatus)
+	}
+
+	s.NoError(store.UpsertMany(ctx, clusterHealthStatuss))
+
+	clusterHealthStatusCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(200, clusterHealthStatusCount)
 }

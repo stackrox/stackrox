@@ -63,19 +63,8 @@ type storeImpl struct {
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
-{{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
-{{- define "createTable" }}
-{{- $schema := . }}
-pgutils.CreateTable(ctx, db, {{template "createTableStmtVar" $schema}})
-{{- end }}
-
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-    {{- range $reference := .Schema.References }}
-    {{- template "createTable" $reference.OtherSchema }}
-    {{- end }}
-    {{- template "createTable" .Schema}}
-
+func New(db *pgxpool.Pool) Store {
     return &storeImpl{
         db: db,
     }
@@ -122,6 +111,12 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
         return sac.ErrResourceAccessDenied
     }
     {{ end }}
+    return pgutils.Retry(func() error {
+        return s.retryableUpsert(ctx, obj)
+    })
+}
+
+func (s *storeImpl) retryableUpsert(ctx context.Context, obj *{{.Type}}) error {
     conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {
 	    return err
@@ -159,6 +154,12 @@ func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
         return nil, false, nil
     }
     {{ end}}
+    return pgutils.Retry3(func()(*{{.Type}}, bool, error) {
+        return s.retryableGet(ctx)
+    })
+}
+
+func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {
 	    return nil, false, err
@@ -189,7 +190,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 	return conn, conn.Release, nil
 }
 
-// Delete removes the specified ID from the store
+// Delete removes the singleton from the store
 func (s *storeImpl) Delete(ctx context.Context) error {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
@@ -199,6 +200,12 @@ func (s *storeImpl) Delete(ctx context.Context) error {
         return sac.ErrResourceAccessDenied
     }
     {{ end}}
+    return pgutils.Retry(func() error {
+        return s.retryableDelete(ctx)
+    })
+}
+
+func (s *storeImpl) retryableDelete(ctx context.Context) error {
     conn, release, err := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
 	if err != nil {
 	    return err

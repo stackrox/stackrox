@@ -1,19 +1,33 @@
-import { url, selectors } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import {
-    hasExpectedHeaderColumns,
-    allChecksForEntities,
-    allCVECheck,
-    allFixableCheck,
-} from '../../helpers/vmWorkflowUtils';
-import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
+    assertSortedItems,
+    callbackForPairOfAscendingNumberValuesFromElements,
+    callbackForPairOfDescendingNumberValuesFromElements,
+} from '../../helpers/sort';
+import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
+import {
+    getCountAndNounFromImageCVEsLinkResults,
+    interactAndWaitForVulnerabilityManagementEntities,
+    verifyFixableCVEsLinkAndRiskAcceptanceTabs,
+    verifySecondaryEntities,
+    visitVulnerabilityManagementEntities,
+} from '../../helpers/vulnmanagement/entities';
 
-describe('Images list page and its entity detail page, related entities sub list validations ', () => {
+const entitiesKey = 'images';
+
+describe('Vulnerability Management Images', () => {
     withAuth();
 
-    // TODO(ROX-8674): Enable this test.
-    it.skip('should display all the columns and links expected in images list page', () => {
-        visitVulnerabilityManagementEntities('images');
+    before(function beforeHook() {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+            this.skip();
+        }
+    });
+
+    it('should display table columns', () => {
+        visitVulnerabilityManagementEntities(entitiesKey);
 
         hasExpectedHeaderColumns([
             'Image',
@@ -23,49 +37,117 @@ describe('Images list page and its entity detail page, related entities sub list
             'Scan Time',
             'Image OS',
             'Image Status',
-            'Deployments',
-            'Components',
+            'Entities',
             'Risk Priority',
         ]);
-        cy.get(selectors.tableBodyColumn).each(($el) => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no deployments' && columnValue.includes('Deployment')) {
-                allChecksForEntities(url.list.images, 'deployment');
-            }
-            if (columnValue !== 'no components' && columnValue.includes('Component')) {
-                allChecksForEntities(url.list.images, 'component');
-            }
-            if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
-                cy.get(`${selectors.tableBodyColumn}:eq(0)`).click({ force: true });
+    });
 
-                cy.get('.pf-c-tabs .pf-c-tabs__item:eq(0):contains("Observed CVEs")').click({
-                    force: true,
-                    waitForAnimations: false,
-                });
+    it('should sort the Risk Priority column', () => {
+        visitVulnerabilityManagementEntities(entitiesKey);
 
-                cy.get('.pf-c-tabs .pf-c-tabs__item:eq(1):contains("Deferred CVEs")').click({
-                    force: true,
-                    waitForAnimations: false,
-                });
+        const thSelector = '.rt-th:contains("Risk Priority")';
+        const tdSelector = '.rt-td:nth-child(10)';
 
-                cy.get('.pf-c-tabs .pf-c-tabs__item:eq(2):contains("False positive CVEs")').click({
-                    force: true,
-                    waitForAnimations: false,
-                });
-
-                // TODO fix the following test problem: Expected to find element: [data-testid="tabs"]
-                allFixableCheck(url.list.images);
-            }
-            if (columnValue !== 'no cves' && columnValue.includes('cve')) {
-                allCVECheck(url.list.images);
-            }
+        // 0. Initial table state indicates that the column is sorted ascending.
+        cy.get(thSelector).should('have.class', '-sort-asc');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfAscendingNumberValuesFromElements);
         });
-        //  TBD to be fixed after back end sorting is fixed
-        //  validateSort(selectors.riskScoreCol);
+
+        // 1. Sort descending by the column.
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(thSelector).click();
+        }, entitiesKey);
+        cy.location('search').should(
+            'eq',
+            '?sort[0][id]=Image%20Risk%20Priority&sort[0][desc]=true'
+        );
+
+        cy.get(thSelector).should('have.class', '-sort-desc');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfDescendingNumberValuesFromElements);
+        });
+
+        // 2. Sort ascending by the column.
+        cy.get(thSelector).click(); // no request because initial response has been cached
+        cy.location('search').should(
+            'eq',
+            '?sort[0][id]=Image%20Risk%20Priority&sort[0][desc]=false'
+        );
+
+        cy.get(thSelector).should('have.class', '-sort-asc');
+        // Do not assert because of potential timing problem: get td elements before table re-renders.
+    });
+
+    // TODO Investigate whether not yet supported or incorrect field in payload.
+    it.skip('should sort the Top CVSS column', () => {
+        visitVulnerabilityManagementEntities(entitiesKey);
+
+        const thSelector = '.rt-th:contains("Top CVSS")';
+        const tdSelector = '.rt-td:nth-child(4) [data-testid="label-chip"]';
+
+        // 0. Initial table state indicates that the column is not sorted.
+        cy.get(thSelector)
+            .should('not.have.class', '-sort-asc')
+            .should('not.have.class', '-sort-desc');
+
+        // 1. Sort ascending by the column.
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(thSelector).click();
+        }, entitiesKey);
+        cy.location('search').should('eq', '?sort[0][id]=Image%20Top%20CVSS&sort[0][desc]=false');
+
+        cy.get(thSelector).should('have.class', '-sort-asc');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfAscendingNumberValuesFromElements);
+        });
+
+        // 2. Sort descending by the column.
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(thSelector).click();
+        }, entitiesKey);
+        cy.location('search').should('eq', '?sort[0][id]=Image%20Top%20CVSS&sort[0][desc]=true');
+
+        cy.get(thSelector).should('have.class', '-sort-desc');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfDescendingNumberValuesFromElements);
+        });
+    });
+
+    // Argument 3 in verify functions is one-based index of column which has the links.
+
+    // Some tests might fail in local deployment.
+
+    it('should display links for all image CVEs', () => {
+        verifySecondaryEntities(
+            entitiesKey,
+            'image-cves',
+            2,
+            /^\d+ CVEs?$/,
+            getCountAndNounFromImageCVEsLinkResults
+        );
+    });
+
+    it('should display links for fixable image CVEs and also Risk Acceptance tabs', () => {
+        verifyFixableCVEsLinkAndRiskAcceptanceTabs(
+            entitiesKey,
+            'image-cves',
+            2,
+            /^\d+ Fixable$/,
+            getCountAndNounFromImageCVEsLinkResults
+        );
+    });
+
+    it('should display links for deployments', () => {
+        verifySecondaryEntities(entitiesKey, 'deployments', 8, /^\d+ deployments?$/);
+    });
+
+    it('should display links for image-components', () => {
+        verifySecondaryEntities(entitiesKey, 'image-components', 8, /^\d+ image components?$/);
     });
 
     it('should show entity icon, not back button, if there is only one item on the side panel stack', () => {
-        visitVulnerabilityManagementEntities('images');
+        visitVulnerabilityManagementEntities(entitiesKey);
 
         cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
         cy.wait(1000);

@@ -10,11 +10,13 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
+	"github.com/stackrox/rox/central/postgres"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -25,6 +27,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -136,6 +139,10 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeExpiredVulnRequests()
 	if features.DecommissionedClusterRetention.Enabled() {
 		g.collectClusters(pvtConfig)
+	}
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		postgres.PruneActiveComponents(pruningCtx, globaldb.GetPostgres())
+		postgres.PruneClusterHealthStatuses(pruningCtx, globaldb.GetPostgres())
 	}
 
 	log.Info("[Pruning] Finished garbage collection cycle")
@@ -602,7 +609,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 func (g *garbageCollectorImpl) checkIfClusterContainsCentral(cluster *storage.Cluster) (bool, error) {
 	// This query could be expensive, but it's a rare occurrence. It only happens if there is a cluster that has been unhealthy for a long time (configurable)
 	query := search.NewQueryBuilder().
-		AddStrings(search.ClusterID, cluster.GetId()).
+		AddExactMatches(search.ClusterID, cluster.GetId()).
 		AddExactMatches(search.DeploymentName, "central")
 	deploys, err := g.deployments.SearchRawDeployments(pruningCtx, query.ProtoQuery())
 	if err != nil {
@@ -657,8 +664,8 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	if pruneResolvedDeployAfter > 0 {
 		q := search.NewQueryBuilder().
-			AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
-			AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
+			AddExactMatches(search.ViolationState, storage.ViolationState_RESOLVED.String()).
 			AddDays(search.ViolationTime, int64(pruneResolvedDeployAfter)).
 			ProtoQuery()
 		queries = append(queries, q)
@@ -666,7 +673,7 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	if pruneAllRuntimeAfter > 0 {
 		q := search.NewQueryBuilder().
-			AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
 			AddDays(search.ViolationTime, int64(pruneAllRuntimeAfter)).
 			ProtoQuery()
 		queries = append(queries, q)
@@ -674,7 +681,7 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	if pruneDeletedRuntimeAfter > 0 && pruneAllRuntimeAfter != pruneDeletedRuntimeAfter {
 		q := search.NewQueryBuilder().
-			AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
 			AddDays(search.ViolationTime, int64(pruneDeletedRuntimeAfter)).
 			AddBools(search.Inactive, true).
 			ProtoQuery()
@@ -683,8 +690,8 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	if pruneAttemptedDeployAfter > 0 {
 		q := search.NewQueryBuilder().
-			AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
-			AddStrings(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
+			AddExactMatches(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
 			AddDays(search.ViolationTime, int64(pruneAttemptedDeployAfter)).
 			ProtoQuery()
 		queries = append(queries, q)
@@ -692,8 +699,8 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	if pruneAttemptedRuntimeAfter > 0 {
 		q := search.NewQueryBuilder().
-			AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
-			AddStrings(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
+			AddExactMatches(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
 			AddDays(search.ViolationTime, int64(pruneAttemptedRuntimeAfter)).
 			ProtoQuery()
 		queries = append(queries, q)

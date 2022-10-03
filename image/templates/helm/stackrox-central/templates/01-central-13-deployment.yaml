@@ -100,8 +100,16 @@ spec:
           value: {{ ._rox.central.disableTelemetry | not | quote }}
         - name: ROX_OFFLINE_MODE
           value: {{ ._rox.env.offlineMode | quote }}
-        {{- if eq ._rox.env.openshift 4 }}
+        {{- if and (eq ._rox.env.openshift 4) (not ._rox.env.managedServices) }}
         - name: ROX_ENABLE_OPENSHIFT_AUTH
+          value: "true"
+        {{- end }}
+        {{- if ._rox.env.managedServices }}
+        - name: ROX_MANAGED_CENTRAL
+          value: "true"
+        {{- end }}
+        {{- if ._rox.central.db.enabled }}
+        - name: ROX_POSTGRES_DATASTORE
           value: "true"
         {{- end }}
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
@@ -142,7 +150,7 @@ spec:
         - name: endpoints-config-volume
           mountPath: /etc/stackrox.d/endpoints/
           readOnly: true
-        {{- if ._rox.central.enableCentralDB }}
+        {{- if ._rox.central.db.enabled }}
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/db-password
         {{- end }}
@@ -196,7 +204,7 @@ spec:
       - name: endpoints-config-volume
         configMap:
           name: central-endpoints
-      {{- if ._rox.central.enableCentralDB }}
+      {{- if ._rox.central.db.enabled }}
       - name: central-db-password
         secret:
           secretName: central-db-password

@@ -18,157 +18,31 @@ import (
 var (
 	// CreateTableDeploymentsStmt holds the create statement for table `deployments`.
 	CreateTableDeploymentsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists deployments (
-                   Id varchar,
-                   Name varchar,
-                   Type varchar,
-                   Namespace varchar,
-                   NamespaceId varchar,
-                   OrchestratorComponent bool,
-                   Labels jsonb,
-                   PodLabels jsonb,
-                   Created timestamp,
-                   ClusterId varchar,
-                   ClusterName varchar,
-                   Annotations jsonb,
-                   Priority integer,
-                   ImagePullSecrets text[],
-                   ServiceAccount varchar,
-                   ServiceAccountPermissionLevel integer,
-                   RiskScore numeric,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*Deployments)(nil),
-		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
-				Table: `
-               create table if not exists deployments_containers (
-                   deployments_Id varchar,
-                   idx integer,
-                   Image_Id varchar,
-                   Image_Name_Registry varchar,
-                   Image_Name_Remote varchar,
-                   Image_Name_Tag varchar,
-                   Image_Name_FullName varchar,
-                   SecurityContext_Privileged bool,
-                   SecurityContext_DropCapabilities text[],
-                   SecurityContext_AddCapabilities text[],
-                   SecurityContext_ReadOnlyRootFilesystem bool,
-                   Resources_CpuCoresRequest numeric,
-                   Resources_CpuCoresLimit numeric,
-                   Resources_MemoryMbRequest numeric,
-                   Resources_MemoryMbLimit numeric,
-                   PRIMARY KEY(deployments_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id) REFERENCES deployments(Id) ON DELETE CASCADE
-               )
-               `,
 				GormModel: (*DeploymentsContainers)(nil),
-				Indexes: []string{
-					"create index if not exists deploymentsContainers_idx on deployments_containers using btree(idx)",
-				},
 				Children: []*postgres.CreateStmts{
 					&postgres.CreateStmts{
-						Table: `
-               create table if not exists deployments_containers_envs (
-                   deployments_Id varchar,
-                   deployments_containers_idx integer,
-                   idx integer,
-                   Key varchar,
-                   Value varchar,
-                   EnvVarSource integer,
-                   PRIMARY KEY(deployments_Id, deployments_containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
-               )
-               `,
 						GormModel: (*DeploymentsContainersEnvs)(nil),
-						Indexes: []string{
-							"create index if not exists deploymentsContainersEnvs_idx on deployments_containers_envs using btree(idx)",
-						},
-						Children: []*postgres.CreateStmts{},
+						Children:  []*postgres.CreateStmts{},
 					},
 					&postgres.CreateStmts{
-						Table: `
-               create table if not exists deployments_containers_volumes (
-                   deployments_Id varchar,
-                   deployments_containers_idx integer,
-                   idx integer,
-                   Name varchar,
-                   Source varchar,
-                   Destination varchar,
-                   ReadOnly bool,
-                   Type varchar,
-                   PRIMARY KEY(deployments_Id, deployments_containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
-               )
-               `,
 						GormModel: (*DeploymentsContainersVolumes)(nil),
-						Indexes: []string{
-							"create index if not exists deploymentsContainersVolumes_idx on deployments_containers_volumes using btree(idx)",
-						},
-						Children: []*postgres.CreateStmts{},
+						Children:  []*postgres.CreateStmts{},
 					},
 					&postgres.CreateStmts{
-						Table: `
-               create table if not exists deployments_containers_secrets (
-                   deployments_Id varchar,
-                   deployments_containers_idx integer,
-                   idx integer,
-                   Name varchar,
-                   Path varchar,
-                   PRIMARY KEY(deployments_Id, deployments_containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
-               )
-               `,
 						GormModel: (*DeploymentsContainersSecrets)(nil),
-						Indexes: []string{
-							"create index if not exists deploymentsContainersSecrets_idx on deployments_containers_secrets using btree(idx)",
-						},
-						Children: []*postgres.CreateStmts{},
+						Children:  []*postgres.CreateStmts{},
 					},
 				},
 			},
 			&postgres.CreateStmts{
-				Table: `
-               create table if not exists deployments_ports (
-                   deployments_Id varchar,
-                   idx integer,
-                   ContainerPort integer,
-                   Protocol varchar,
-                   Exposure integer,
-                   PRIMARY KEY(deployments_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id) REFERENCES deployments(Id) ON DELETE CASCADE
-               )
-               `,
 				GormModel: (*DeploymentsPorts)(nil),
-				Indexes: []string{
-					"create index if not exists deploymentsPorts_idx on deployments_ports using btree(idx)",
-				},
 				Children: []*postgres.CreateStmts{
 					&postgres.CreateStmts{
-						Table: `
-               create table if not exists deployments_ports_exposure_infos (
-                   deployments_Id varchar,
-                   deployments_ports_idx integer,
-                   idx integer,
-                   Level integer,
-                   ServiceName varchar,
-                   ServicePort integer,
-                   NodePort integer,
-                   ExternalIps text[],
-                   ExternalHostnames text[],
-                   PRIMARY KEY(deployments_Id, deployments_ports_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_ports_idx) REFERENCES deployments_ports(deployments_Id, idx) ON DELETE CASCADE
-               )
-               `,
 						GormModel: (*DeploymentsPortsExposureInfos)(nil),
-						Indexes: []string{
-							"create index if not exists deploymentsPortsExposureInfos_idx on deployments_ports_exposure_infos using btree(idx)",
-						},
-						Children: []*postgres.CreateStmts{},
+						Children:  []*postgres.CreateStmts{},
 					},
 				},
 			},
@@ -201,6 +75,7 @@ var (
 			v1.SearchCategory_DEPLOYMENTS,
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
+			v1.SearchCategory_PROCESS_INDICATORS,
 		}...)
 		RegisterTable(schema, CreateTableDeploymentsStmt)
 		return schema
@@ -231,7 +106,7 @@ type Deployments struct {
 	ClusterId                     string                  `gorm:"column:clusterid;type:varchar"`
 	ClusterName                   string                  `gorm:"column:clustername;type:varchar"`
 	Annotations                   map[string]string       `gorm:"column:annotations;type:jsonb"`
-	Priority                      int64                   `gorm:"column:priority;type:integer"`
+	Priority                      int64                   `gorm:"column:priority;type:bigint"`
 	ImagePullSecrets              *pq.StringArray         `gorm:"column:imagepullsecrets;type:text[]"`
 	ServiceAccount                string                  `gorm:"column:serviceaccount;type:varchar"`
 	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`

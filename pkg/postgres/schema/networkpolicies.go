@@ -15,17 +15,7 @@ import (
 var (
 	// CreateTableNetworkpoliciesStmt holds the create statement for table `networkpolicies`.
 	CreateTableNetworkpoliciesStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists networkpolicies (
-                   Id varchar,
-                   ClusterId varchar,
-                   Namespace varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*Networkpolicies)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 

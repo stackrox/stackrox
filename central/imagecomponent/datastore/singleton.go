@@ -21,7 +21,7 @@ import (
 	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -38,7 +38,7 @@ func initialize() {
 	var indexer index.Indexer
 	var searcher search.Searcher
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 		searcher = search.NewV2(storage, indexer)

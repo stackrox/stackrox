@@ -19,8 +19,8 @@ import (
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
@@ -116,7 +116,7 @@ func (ds *datastoreImpl) GetAlert(ctx context.Context, id string) (*storage.Aler
 
 // CountAlerts returns the number of alerts that are active
 func (ds *datastoreImpl) CountAlerts(ctx context.Context) (int, error) {
-	activeQuery := searchCommon.NewQueryBuilder().AddStrings(searchCommon.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
+	activeQuery := searchCommon.NewQueryBuilder().AddExactMatches(searchCommon.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
 	return ds.Count(ctx, activeQuery)
 }
 
@@ -304,7 +304,7 @@ func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
 }
 
 func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil
 	}
 	defer debug.FreeOSMemory()

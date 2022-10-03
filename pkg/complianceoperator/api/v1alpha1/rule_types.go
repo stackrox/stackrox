@@ -31,7 +31,7 @@ type RulePayload struct {
 	AvailableFixes []FixDefinition `json:"availableFixes,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // Rule is the Schema for the rules API
 // +kubebuilder:resource:path=rules,scope=Namespaced
@@ -57,7 +57,7 @@ type FixDefinition struct {
 	FixObject *unstructured.Unstructured `json:"fixObject,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // RuleList contains a list of Rule
 type RuleList struct {

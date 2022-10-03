@@ -98,12 +98,12 @@ func insertIntoTestMultiKeyStructs(ctx context.Context, batch *pgx.Batch, obj *s
 		obj.GetEnum(),
 		obj.GetEnums(),
 		obj.GetString_(),
-		obj.GetIntSlice(),
+		obj.GetInt32Slice(),
 		obj.GetOneofnested().GetNested(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO test_multi_key_structs (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, IntSlice, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, String_ = EXCLUDED.String_, IntSlice = EXCLUDED.IntSlice, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_multi_key_structs (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, Int32Slice, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, String_ = EXCLUDED.String_, Int32Slice = EXCLUDED.Int32Slice, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -172,7 +172,7 @@ func (s *storeImpl) copyFromTestMultiKeyStructs(ctx context.Context, tx pgx.Tx, 
 
 		"string_",
 
-		"intslice",
+		"int32slice",
 
 		"oneofnested_nested",
 
@@ -214,7 +214,7 @@ func (s *storeImpl) copyFromTestMultiKeyStructs(ctx context.Context, tx pgx.Tx, 
 
 			obj.GetString_(),
 
-			obj.GetIntSlice(),
+			obj.GetInt32Slice(),
 
 			obj.GetOneofnested().GetNested(),
 
@@ -383,7 +383,9 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestMultiKeyStruct)
 		return sac.ErrResourceAccessDenied
 	}
 
-	return s.upsert(ctx, obj)
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestMultiKeyStruct) error {
@@ -394,17 +396,19 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestMultiKey
 		return sac.ErrResourceAccessDenied
 	}
 
-	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-	// violations
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	return pgutils.Retry(func() error {
+		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+		// violations
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
 
-	if len(objs) < batchAfter {
-		return s.upsert(ctx, objs...)
-	} else {
-		return s.copyFrom(ctx, objs...)
-	}
+		if len(objs) < batchAfter {
+			return s.upsert(ctx, objs...)
+		} else {
+			return s.copyFrom(ctx, objs...)
+		}
+	})
 }
 
 // Count returns the number of objects in the store
@@ -518,7 +522,7 @@ func (s *storeImpl) Delete(ctx context.Context, key1 string, key2 string) error 
 		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Test Key 2"), key2).ProtoQuery(),
 	)
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // DeleteByQuery removes the objects based on the passed query
@@ -541,7 +545,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 		query,
 	)
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -693,7 +697,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

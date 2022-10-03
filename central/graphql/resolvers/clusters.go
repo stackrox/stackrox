@@ -491,10 +491,7 @@ func (resolver *clusterResolver) Subjects(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(subjectResolvers, nil)
-	return resolvers.([]*subjectResolver), err
+	return paginate(pagination, subjectResolvers, nil)
 }
 
 // SubjectCount returns count of Users and Groups in this cluster
@@ -792,11 +789,7 @@ func (resolver *clusterResolver) Policies(ctx context.Context, args PaginatedQue
 			ID:    resolver.data.GetId(),
 		})
 	}
-
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(policyResolvers, nil)
-	return resolvers.([]*policyResolver), err
+	return paginate(pagination, policyResolvers, nil)
 }
 
 func (resolver *clusterResolver) getApplicablePolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
@@ -928,7 +921,7 @@ func (resolver *clusterResolver) Controls(ctx context.Context, args RawQuery) ([
 	if err != nil || rs == nil {
 		return nil, err
 	}
-	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(rs, any, resolver.root.ComplianceStandardStore))
+	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(rs, all, resolver.root.ComplianceStandardStore))
 	if err != nil {
 		return nil, err
 	}
@@ -1016,8 +1009,8 @@ func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context, q *v
 	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx,
 		search.ConjunctionQuery(q,
 			search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).
-				AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-				AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
+				AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+				AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
 }
 
 func (resolver *clusterResolver) Risk(ctx context.Context) (*riskResolver, error) {

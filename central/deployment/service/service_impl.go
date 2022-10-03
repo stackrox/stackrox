@@ -74,8 +74,6 @@ func (s *serviceImpl) fillBaselineResults(ctx context.Context, resp *v1.ListDepl
 				return err
 			}
 			depWithProc.BaselineStatuses = baselineResults.GetBaselineStatuses()
-			// TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
-			depWithProc.WhitelistStatuses = depWithProc.BaselineStatuses
 		}
 	}
 	return nil
@@ -173,7 +171,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 	}
 
 	// Fill in pagination.
-	paginated.FillPagination(parsedQuery, request.Pagination, maxDeploymentsReturned)
+	paginated.FillPagination(parsedQuery, request.GetPagination(), maxDeploymentsReturned)
 
 	deployments, err := s.datastore.SearchListDeployments(ctx, parsedQuery)
 	if err != nil {
@@ -186,7 +184,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 }
 
 func queryForLabels() *v1.Query {
-	q := search.NewQueryBuilder().AddStringsHighlighted(search.Label, search.WildcardString).ProtoQuery()
+	q := search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentLabel, search.WildcardString).ProtoQuery()
 	q.Pagination = &v1.QueryPagination{
 		Limit: math.MaxInt32,
 	}
@@ -210,9 +208,9 @@ func (s *serviceImpl) GetLabels(ctx context.Context, _ *v1.Empty) (*v1.Deploymen
 }
 
 func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.DeploymentLabelsResponse_LabelValues, []string) {
-	labelField, ok := deployments.OptionsMap.Get(search.Label.String())
+	labelField, ok := deployments.OptionsMap.Get(search.DeploymentLabel.String())
 	if !ok {
-		utils.Should(errors.Errorf("could not find label %q in options map", search.Label.String()))
+		utils.Should(errors.Errorf("could not find label %q in options map", search.DeploymentLabel.String()))
 		return nil, nil
 	}
 	labelFieldPath := labelField.GetFieldPath()

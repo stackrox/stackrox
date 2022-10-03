@@ -11,7 +11,7 @@ import (
 )
 
 func TestJobProcessorGracefulStop(t *testing.T) {
-	sentJobs, completedJobs := set.NewIntSet(), set.NewIntSet()
+	sentJobs, completedJobs := set.NewSet[int](), set.NewSet[int]()
 	var sentJobsLock, completedJobsLock sync.Mutex
 
 	const numWorkers = 5
@@ -70,7 +70,7 @@ func TestJobProcessorPerfectlyParallel(t *testing.T) {
 		}))
 	}
 
-	receivedVals := set.NewIntSet()
+	receivedVals := set.NewSet[int]()
 	for i := 0; i < numVals; i++ {
 		val := <-outChan
 		assert.True(t, receivedVals.Add(val), "value %d duplicated", val)
@@ -123,7 +123,7 @@ func TestJobProcessorComplexCase(t *testing.T) {
 	}
 
 	totalTimeTaken := time.Since(start)
-	seenSoFar := set.NewIntSet()
+	seenSoFar := set.NewSet[int]()
 	for _, val := range receivedVals {
 		assert.True(t, seenSoFar.Add(val), "val %d seen twice", val)
 		if val%10 == 0 {

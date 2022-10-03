@@ -12,6 +12,7 @@ export const authResponsePrefix = '/auth/response/';
 export const dashboardPath = `${mainPath}/dashboard`;
 export const networkBasePath = `${mainPath}/network`;
 export const networkPath = `${networkBasePath}/:deploymentId?/:externalType?`;
+export const networkPathPF = `${mainPath}/network-graph`;
 export const violationsBasePath = `${mainPath}/violations`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const clustersBasePath = `${mainPath}/clusters`;
@@ -44,6 +45,7 @@ export const compliancePath = `${mainPath}/:context(compliance)`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
 export const systemHealthPathPF = `${mainPath}/system-health-pf`;
+export const collectionsPath = `${mainPath}/collections`;
 export const productDocsPath = '/docs/product';
 
 // Configuration Management
@@ -145,6 +147,7 @@ const vulnManagementPathToLabelMap = {
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
     [networkBasePath]: 'Network Graph',
+    [networkPathPF]: 'Network Graph-Patterfly',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
     ...vulnManagementPathToLabelMap,
@@ -156,6 +159,7 @@ export const basePathToLabelMap = {
     [policyManagementBasePath]: 'Policy Management',
     [policiesBasePath]: 'Policy Management',
     [policyCategoriesPath]: 'Policy Categories',
+    [collectionsPath]: 'Collections',
     [integrationsPath]: 'Integrations',
     [accessControlPath]: 'Access Control',
     [accessControlBasePathV2]: 'Access Control',

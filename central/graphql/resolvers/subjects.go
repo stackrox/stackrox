@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/rbac/service"
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -71,11 +70,7 @@ func (resolver *Resolver) Subjects(ctx context.Context, args PaginatedQuery) ([]
 		subjectResolvers = append(subjectResolvers, &subjectResolver{root: resolver, data: subject})
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: query.Pagination,
-	}.paginate(subjectResolvers, nil)
-
-	return resolvers.([]*subjectResolver), err
+	return paginate(query.Pagination, subjectResolvers, nil)
 }
 
 // SubjectCount returns count of all subjects across infrastructure
@@ -100,14 +95,18 @@ func (resolver *Resolver) getFilteredSubjects(ctx context.Context, query *v1.Que
 		return nil, err
 	}
 
-	bindings, err := resolver.K8sRoleBindingStore.SearchRawRoleBindings(ctx, query)
+	// Subject return only users and groups, there is a separate resolver for service accounts.
+	subjectKindQ :=
+		search.NewQueryBuilder().AddExactMatches(search.SubjectKind, storage.SubjectKind_USER.String(), storage.SubjectKind_GROUP.String())
+	q := search.ConjunctionQuery(subjectKindQ.ProtoQuery(), query)
+
+	bindings, err := resolver.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	// Subject return only users and groups, there is a separate resolver for service accounts.
-	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
-	return service.GetFilteredSubjects(query, subjects)
+	// Since the query already just gets users and group, this is effectively just a way to ensure only unique roles are returned
+	return k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP), nil
 }
 
 func (resolver *subjectResolver) Type(ctx context.Context) (string, error) {
@@ -167,13 +166,11 @@ func (resolver *subjectResolver) K8sRoles(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: filterQ.Pagination,
-	}.paginate(resolver.root.wrapK8SRoles(roles, nil))
+	roleResolvers, err := resolver.root.wrapK8SRoles(roles, nil)
 	if err != nil {
 		return nil, err
 	}
-	return resolvers.([]*k8SRoleResolver), err
+	return paginate(filterQ.Pagination, roleResolvers, nil)
 }
 
 func (resolver *subjectResolver) getRolesForSubject(ctx context.Context, filterQ *v1.Query) ([]*storage.K8SRole, error) {

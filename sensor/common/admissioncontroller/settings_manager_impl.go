@@ -19,8 +19,8 @@ import (
 type settingsManager struct {
 	mutex                         sync.Mutex
 	currSettings                  *sensor.AdmissionControlSettings
-	settingsStream                *concurrency.ValueStream
-	sensorEventsStream            *concurrency.ValueStream
+	settingsStream                *concurrency.ValueStream[*sensor.AdmissionControlSettings]
+	sensorEventsStream            *concurrency.ValueStream[*sensor.AdmCtrlUpdateResourceRequest]
 	hasClusterConfig, hasPolicies bool
 	centralEndpoint               string
 
@@ -31,8 +31,8 @@ type settingsManager struct {
 // NewSettingsManager creates a new settings manager for admission control settings.
 func NewSettingsManager(deployments store.DeploymentStore, pods store.PodStore) SettingsManager {
 	return &settingsManager{
-		settingsStream:     concurrency.NewValueStream(nil),
-		sensorEventsStream: concurrency.NewValueStream(nil),
+		settingsStream:     concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
+		sensorEventsStream: concurrency.NewValueStream[*sensor.AdmCtrlUpdateResourceRequest](nil),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 
 		deployments: deployments,
@@ -109,11 +109,11 @@ func (p *settingsManager) FlushCache() {
 	p.currSettings = newSettings
 }
 
-func (p *settingsManager) SettingsStream() concurrency.ReadOnlyValueStream {
+func (p *settingsManager) SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings] {
 	return p.settingsStream
 }
 
-func (p *settingsManager) SensorEventsStream() concurrency.ReadOnlyValueStream {
+func (p *settingsManager) SensorEventsStream() concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest] {
 	return p.sensorEventsStream
 }
 

@@ -21,7 +21,7 @@ import (
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -128,7 +128,7 @@ func TestLabelsMap(t *testing.T) {
 			registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 
 			var pool *pgxpool.Pool
-			if features.PostgresDatastore.Enabled() {
+			if env.PostgresDatastoreEnabled.BooleanSetting() {
 				pool = globaldb.GetPostgresTest(t)
 			}
 			deploymentsDS, err := datastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())

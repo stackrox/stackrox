@@ -15,18 +15,7 @@ import (
 var (
 	// CreateTableComplianceDomainsStmt holds the create statement for table `compliance_domains`.
 	CreateTableComplianceDomainsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists compliance_domains (
-                   Id varchar,
-                   Cluster_Id varchar,
-                   Cluster_Name varchar,
-                   Cluster_Labels jsonb,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*ComplianceDomains)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 
@@ -49,9 +38,6 @@ const (
 
 // ComplianceDomains holds the Gorm model for Postgres table `compliance_domains`.
 type ComplianceDomains struct {
-	Id            string            `gorm:"column:id;type:varchar;primaryKey"`
-	ClusterId     string            `gorm:"column:cluster_id;type:varchar"`
-	ClusterName   string            `gorm:"column:cluster_name;type:varchar"`
-	ClusterLabels map[string]string `gorm:"column:cluster_labels;type:jsonb"`
-	Serialized    []byte            `gorm:"column:serialized;type:bytea"`
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

@@ -426,7 +426,6 @@ func (ds *datastoreImpl) getProcessList(ctx context.Context, key *storage.Proces
 		pkgSearch.NewQueryBuilder().
 			AddExactMatches(pkgSearch.DeploymentID, key.GetDeploymentId()).
 			AddExactMatches(pkgSearch.ContainerName, key.GetContainerName()).
-			AddExactMatches(pkgSearch.Cluster, key.GetClusterId()).
 			ProtoQuery(),
 	)
 }

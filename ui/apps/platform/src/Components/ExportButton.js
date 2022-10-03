@@ -21,7 +21,13 @@ const queryParamMap = {
 const complianceDownloadUrl = '/api/compliance/export/csv';
 
 function checkVulnMgmtSupport(page, type) {
-    return page === useCaseTypes.VULN_MANAGEMENT && type === entityTypes.CVE;
+    return (
+        page === useCaseTypes.VULN_MANAGEMENT &&
+        (type === entityTypes.CVE ||
+            type === entityTypes.IMAGE_CVE ||
+            type === entityTypes.NODE_CVE ||
+            type === entityTypes.CLUSTER_CVE)
+    );
 }
 
 function checkComplianceSupport(page, type) {
@@ -39,6 +45,8 @@ class ExportButton extends Component {
         customCsvExportHandler: PropTypes.func,
         page: PropTypes.string,
         disabled: PropTypes.bool,
+        isExporting: PropTypes.bool.isRequired,
+        setIsExporting: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
@@ -132,6 +140,8 @@ class ExportButton extends Component {
                                 tableOptions={this.props.tableOptions}
                                 fileName={fileName}
                                 pdfTitle={headerText}
+                                isExporting={this.props.isExporting}
+                                setIsExporting={this.props.setIsExporting}
                             />
                             {this.isCsvSupported() && (
                                 <Button

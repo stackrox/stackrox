@@ -1,168 +1,229 @@
-import * as api from '../../constants/apiEndpoints';
-import { url, selectors } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { visitVulnerabilityManagementDashboard } from '../../helpers/vulnmanagement/entities';
+import {
+    interactAndWaitForVulnerabilityManagementEntities,
+    visitVulnerabilityManagementDashboard,
+    visitVulnerabilityManagementDashboardFromLeftNav,
+} from '../../helpers/vulnmanagement/entities';
 import { hasFeatureFlag } from '../../helpers/features';
 
-function validateTopRiskyEntities(entityName) {
+function verifyVulnerabilityManagementDashboardCVEs(entitiesKey, menuListItemRegExp) {
     visitVulnerabilityManagementDashboard();
-    cy.get(selectors.topRiskyItems.select.value).should(
-        'contain',
-        'Top risky deployments by CVE count & CVSS score'
-    );
-    cy.get(selectors.topRiskyItems.select.input).first().click();
-    cy.get(selectors.topRiskyItems.select.options)
-        .contains(`Top risky ${entityName} by CVE count & CVSS score`)
-        .click();
-    cy.get(selectors.topRiskyItems.select.value).should(
-        'contain',
-        `Top risky ${entityName} by CVE count & CVSS score`
-    );
-    cy.intercept('POST', api.vulnMgmt.graphqlEntities(entityName)).as('entities');
-    cy.get(selectors.getWidget(`Top risky ${entityName} by CVE count & CVSS score`))
-        .find(selectors.viewAllButton)
-        .click();
-    cy.wait('@entities');
-    cy.location('pathname').should('eq', url.list[entityName]);
+
+    // Selector contains singular noun to match 1 CVE.
+    const menuButtonSelector = `button[data-testid="menu-button"]:contains("CVE")`;
+    const menuListItemSelector = `${menuButtonSelector} + div[data-testid="menu-list"]`;
+
+    cy.get(menuButtonSelector).click(); // open menu list
+    cy.get(menuListItemSelector)
+        .contains('a', menuListItemRegExp)
+        .then(($a) => {
+            const linkText = $a.text();
+            const panelHeaderText = linkText.replace(/s$/, 'S'); // TODO fix UI inconsistency
+
+            interactAndWaitForVulnerabilityManagementEntities(() => {
+                cy.wrap($a).click(); // visit entities list
+            }, entitiesKey);
+
+            cy.get(`[data-testid="panel-header"]:contains(${panelHeaderText})`);
+        });
 }
 
-describe('Vuln Management Dashboard Page', () => {
+function verifyVulnerabilityManagementDashboardApplicationAndInfrastructure(
+    entitiesKey,
+    menuListItemText
+) {
+    const menuButtonSelector = `button[data-testid="menu-button"]:contains("Application & Infrastructure")`;
+    const menuListItemSelector = `${menuButtonSelector} + div a:contains("${menuListItemText}")`;
+
+    cy.get(menuButtonSelector).click(); // open menu list
+    interactAndWaitForVulnerabilityManagementEntities(() => {
+        cy.get(menuListItemSelector).click(); // visit entities list
+    }, entitiesKey);
+}
+
+function getViewAllSelectorForWidget(widgetHeading) {
+    return `${selectors.getWidget(widgetHeading)} ${selectors.viewAllButton}`;
+}
+
+function selectTopRiskyOption(optionText) {
+    cy.get('[data-testid="widget"]:contains("Top risky") .react-select__control').click();
+    cy.get(
+        `[data-testid="widget"]:contains("Top risky") .react-select__option:contains("${optionText}")`
+    ).click();
+}
+
+describe('Vulnerability Management Dashboard', () => {
     withAuth();
+
+    it('should visit using the left nav', () => {
+        visitVulnerabilityManagementDashboardFromLeftNav();
+    });
 
     it('should show same number of policies between the tile and the policies list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.get(selectors.tileLinks)
-            .eq(0)
-            .find(selectors.tileLinkValue)
+
+        const entitiesKey = 'policies';
+        const tileLinkSelector = `${selectors.tileLinks}:eq(0)`;
+        cy.get(`${tileLinkSelector} ${selectors.tileLinkValue}`)
             .invoke('text')
             .then((value) => {
-                const numPolicies = value;
-                cy.get(selectors.tileLinks).eq(0).click();
-                cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
-                    .invoke('text')
-                    .then((panelHeaderText) => {
-                        expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numPolicies, 10));
-                    });
+                interactAndWaitForVulnerabilityManagementEntities(() => {
+                    cy.get(tileLinkSelector).click();
+                }, entitiesKey);
+
+                cy.get(`[data-testid="panel"] [data-testid="panel-header"]:contains("${value}")`);
             });
     });
 
-    // TODO: update CVE links to CVE tables checks, for VM Updates
-    it.skip('should show same number of cves between the tile and the cves list', () => {
-        visitVulnerabilityManagementDashboard();
-        cy.get(selectors.tileLinks)
-            .eq(1)
-            .find(selectors.tileLinkValue)
-            .invoke('text')
-            .then((value) => {
-                const numCves = value;
-                cy.get(selectors.tileLinks).eq(1).click();
-                cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
-                    .invoke('text')
-                    .then((panelHeaderText) => {
-                        expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numCves, 10));
-                    });
-            });
+    // TODO Delete skip when we delete ROX_POSTGRES_DATASTORE feature flag.
+
+    it.skip('should show same number of Image CVEs in menu item and entities list', () => {
+        verifyVulnerabilityManagementDashboardCVEs('image-cves', /^\d+ Image CVEs?$/);
+    });
+
+    it.skip('should show same number of Node CVEs in menu item and entities list', () => {
+        verifyVulnerabilityManagementDashboardCVEs('node-cves', /^\d+ Node CVEs?$/);
+    });
+
+    it.skip('should show same number of Cluster (Platform) CVEs in menu item and entities list', () => {
+        verifyVulnerabilityManagementDashboardCVEs('cluster-cves', /^\d+ Platform CVEs?$/);
     });
 
     it('should show same number of images between the tile and the images list', () => {
         visitVulnerabilityManagementDashboard();
 
-        const tileToCheck = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES') ? 2 : 3;
-        cy.log({ tileToCheck });
-        cy.get(selectors.tileLinks, { timeout: 8000 })
-            .eq(tileToCheck)
-            .find(selectors.tileLinkValue)
+        const entitiesKey = 'images';
+        const tileToCheck = hasFeatureFlag('ROX_POSTGRES_DATASTORE') ? 2 : 3;
+        cy.get(`${selectors.tileLinks}:eq(${tileToCheck}) ${selectors.tileLinkValue}`)
             .invoke('text')
             .then((value) => {
-                const numImages = value;
-                cy.get(selectors.tileLinks).eq(tileToCheck).click();
-                cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
-                    .invoke('text')
-                    .then((panelHeaderText) => {
-                        expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numImages, 10));
-                    });
-            });
-    });
+                interactAndWaitForVulnerabilityManagementEntities(() => {
+                    cy.get(`${selectors.tileLinks}:eq(${tileToCheck})`).click();
+                }, entitiesKey);
 
-    it('should properly navigate to the policies list', () => {
-        visitVulnerabilityManagementDashboard();
-        cy.get(selectors.tileLinks).eq(0).click();
-        cy.location('pathname').should('eq', url.list.policies);
+                cy.get(`[data-testid="panel"] [data-testid="panel-header"]:contains("${value}")`);
+            });
     });
 
     it('should properly navigate to the clusters list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.get(selectors.applicationAndInfrastructureDropdown).click();
-        cy.get(selectors.getMenuListItem('clusters')).click();
-        cy.location('pathname').should('eq', url.list.clusters);
+
+        const entitiesKey = 'clusters';
+        const menuListItemText = 'clusters'; // lowercase because of Tailwind capitalize class
+
+        verifyVulnerabilityManagementDashboardApplicationAndInfrastructure(
+            entitiesKey,
+            menuListItemText
+        );
     });
 
     it('should properly navigate to the namespaces list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.get(selectors.applicationAndInfrastructureDropdown).click();
-        cy.get(selectors.getMenuListItem('namespaces')).click();
-        cy.location('pathname').should('eq', url.list.namespaces);
+
+        const entitiesKey = 'namespaces';
+        const menuListItemText = 'namespaces'; // lowercase because of Tailwind capitalize class
+
+        verifyVulnerabilityManagementDashboardApplicationAndInfrastructure(
+            entitiesKey,
+            menuListItemText
+        );
     });
 
     it('should properly navigate to the deployments list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.get(selectors.applicationAndInfrastructureDropdown).click();
-        cy.get(selectors.getMenuListItem('deployments')).click();
-        cy.location('pathname').should('eq', url.list.deployments);
+
+        const entitiesKey = 'deployments';
+        const menuListItemText = 'deployments'; // lowercase because of Tailwind capitalize class
+
+        verifyVulnerabilityManagementDashboardApplicationAndInfrastructure(
+            entitiesKey,
+            menuListItemText
+        );
+    });
+
+    // TODO Delete skip when we delete ROX_POSTGRES_DATASTORE feature flag.
+
+    it.skip('should navigate to the node components list', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'node-components';
+        const menuListItemText = 'node components'; // lowercase because of Tailwind capitalize class
+
+        verifyVulnerabilityManagementDashboardApplicationAndInfrastructure(
+            entitiesKey,
+            menuListItemText
+        );
+    });
+
+    it.skip('should navigate to the image components list', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'image-components';
+        const menuListItemText = 'image components'; // lowercase because of Tailwind capitalize class
+
+        verifyVulnerabilityManagementDashboardApplicationAndInfrastructure(
+            entitiesKey,
+            menuListItemText
+        );
     });
 
     it('clicking the "Top Riskiest Images" widget\'s "View All" button should take you to the images list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('images')).as('images');
-        cy.get(selectors.getWidget('Top Riskiest Images')).find(selectors.viewAllButton).click();
-        cy.wait('@images');
-        cy.location('pathname').should('eq', url.list.images);
+
+        const entitiesKey = 'images';
+        const widgetHeading = 'Top Riskiest Images';
+
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
+        }, entitiesKey);
+
         cy.location('search').should(
             'eq',
             '?sort[0][id]=Image%20Risk%20Priority&sort[0][desc]=false'
         );
     });
 
-    // TODO  change the sort param checked for, if a more desirable sort becomes available from the API
-    //   see https://stack-rox.atlassian.net/browse/ROX-4295 for details
     it('clicking the "Frequently Violated Policies" widget\'s "View All" button should take you to the policies list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.get(selectors.getWidget('Frequently Violated Policies'))
-            .find(selectors.viewAllButton)
-            .click();
-        cy.location('pathname').should('eq', url.list.policies);
+
+        const entitiesKey = 'policies';
+        const widgetHeading = 'Frequently Violated Policies';
+
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
+        }, entitiesKey);
+
         cy.location('search').should('eq', '?sort[0][id]=Severity&sort[0][desc]=true');
     });
 
     it('clicking the "Recently Detected Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
         visitVulnerabilityManagementDashboard();
 
-        const titleToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+        const entitiesKey = hasFeatureFlag('ROX_POSTGRES_DATASTORE') ? 'image-cves' : 'cves';
+        const widgetHeading = hasFeatureFlag('ROX_POSTGRES_DATASTORE')
             ? 'Recently Detected Image Vulnerabilities'
             : 'Recently Detected Vulnerabilities';
 
-        const urlToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
-            ? url.list['image-cves']
-            : url.list.cves;
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
+        }, entitiesKey);
 
-        cy.get(selectors.getWidget(titleToExpect)).find(selectors.viewAllButton).click();
-        cy.location('pathname').should('eq', urlToExpect);
         cy.location('search').should('eq', '?sort[0][id]=CVE%20Created%20Time&sort[0][desc]=true');
     });
 
     it('clicking the "Most Common Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
         visitVulnerabilityManagementDashboard();
 
-        const titleToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+        const entitiesKey = hasFeatureFlag('ROX_POSTGRES_DATASTORE') ? 'image-cves' : 'cves';
+        const widgetHeading = hasFeatureFlag('ROX_POSTGRES_DATASTORE')
             ? 'Most Common Image Vulnerabilities'
             : 'Most Common Vulnerabilities';
 
-        const urlToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
-            ? url.list['image-cves']
-            : url.list.cves;
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
+        }, entitiesKey);
 
-        cy.get(selectors.getWidget(titleToExpect)).find(selectors.viewAllButton).click();
-        cy.location('pathname').should('eq', urlToExpect);
         cy.location('search').should(
             'eq',
             '?sort[0][id]=Deployment%20Count&sort[0][desc]=true&sort[1][id]=CVSS&sort[1][desc]=true'
@@ -171,31 +232,74 @@ describe('Vuln Management Dashboard Page', () => {
 
     it('clicking the "Deployments With Most Severe Policy Violations" widget\'s "View All" button should take you to the policies list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.get(selectors.getWidget('Deployments With Most Severe Policy Violations'))
-            .find(selectors.viewAllButton)
-            .click();
-        cy.location('pathname').should('eq', url.list.deployments);
+
+        const entitiesKey = 'deployments';
+        const widgetHeading = 'Deployments With Most Severe Policy Violations';
+
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
+        }, entitiesKey);
+
         cy.location('search').should('eq', '');
     });
 
     it('clicking the "Clusters With Most Orchestrator & Istio Vulnerabilities" widget\'s "View All" button should take you to the clusters list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.get(selectors.getWidget('Clusters With Most Orchestrator & Istio Vulnerabilities'))
-            .find(selectors.viewAllButton)
-            .click();
-        cy.location('pathname').should('eq', url.list.clusters);
+
+        const entitiesKey = 'clusters';
+        const widgetHeading = 'Clusters With Most Orchestrator & Istio Vulnerabilities';
+
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
+        }, entitiesKey);
+
         cy.location('search').should('eq', '');
     });
 
     it('clicking the "Top risky deployments by CVE count & CVSS score" widget\'s "View All" button should take you to the deployments list', () => {
-        validateTopRiskyEntities('deployments');
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'deployments';
+        const widgetHeading = 'Top risky deployments by CVE count & CVSS score';
+
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
+        }, entitiesKey);
     });
 
     it('clicking the "Top risky namespaces by CVE count & CVSS score" widget\'s "View All" button should take you to the namespaces list', () => {
-        validateTopRiskyEntities('namespaces');
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'namespaces';
+        const widgetHeading = 'Top risky namespaces by CVE count & CVSS score';
+
+        selectTopRiskyOption(widgetHeading);
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
+        }, entitiesKey);
     });
 
     it('clicking the "Top risky images by CVE count & CVSS score" widget\'s "View All" button should take you to the images list', () => {
-        validateTopRiskyEntities('images');
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'images';
+        const widgetHeading = 'Top risky images by CVE count & CVSS score';
+
+        selectTopRiskyOption(widgetHeading);
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
+        }, entitiesKey);
+    });
+
+    it('clicking the "Top risky images by CVE count & CVSS score" widget\'s "View All" button should take you to the nodes list', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const entitiesKey = 'nodes';
+        const widgetHeading = 'Top risky nodes by CVE count & CVSS score';
+
+        selectTopRiskyOption(widgetHeading);
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
+        }, entitiesKey);
     });
 });

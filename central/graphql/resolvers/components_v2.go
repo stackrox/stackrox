@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 )
@@ -115,7 +115,7 @@ func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query
 }
 
 func (resolver *Resolver) imageComponentDataStoreQuery(ctx context.Context, args IDQuery) (*storage.ImageComponent, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
 	}
 	component, exists, err := resolver.ImageComponentDataStore.Get(ctx, string(*args.ID))
@@ -128,7 +128,7 @@ func (resolver *Resolver) imageComponentDataStoreQuery(ctx context.Context, args
 }
 
 func (resolver *Resolver) imageComponentsLoaderQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageComponent, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
 	}
 	componentLoader, err := loaders.GetComponentLoader(ctx)
@@ -140,7 +140,7 @@ func (resolver *Resolver) imageComponentsLoaderQuery(ctx context.Context, query 
 }
 
 func (resolver *Resolver) componentCountV2(ctx context.Context, args RawQuery) (int32, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return 0, errors.New("attempted to invoke legacy datastores with postgres enabled")
 	}
 	q, err := args.AsV1QueryOrEmpty()
@@ -344,7 +344,7 @@ func (eicr *imageComponentResolver) NodeCount(ctx context.Context, args RawQuery
 
 // PlottedVulns returns the data required by top risky component scatter-plot on vuln mgmt dashboard
 func (eicr *imageComponentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), eicr.componentRawQuery())

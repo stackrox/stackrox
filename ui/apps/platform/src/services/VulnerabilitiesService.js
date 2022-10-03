@@ -5,7 +5,19 @@ import queryService from 'utils/queryService';
 import entityTypes from 'constants/entityTypes';
 import axios from './instance';
 
-const csvUrl = '/api/vm/export/csv';
+function getCSVExportUrl(cveType) {
+    if (cveType === entityTypes.CLUSTER_CVE) {
+        return '/api/export/csv/cluster/cve';
+    }
+    if (cveType === entityTypes.NODE_CVE) {
+        return '/api/export/csv/node/cve';
+    }
+    if (cveType === entityTypes.IMAGE_CVE) {
+        return '/api/export/csv/image/cve';
+    }
+    // @TODO: Remove this URL when we remove feature flagging for ROX_VM_FRONTEND_UPDATES
+    return '/api/vm/export/csv';
+}
 
 function getBaseCveUrl(cveType) {
     if (cveType === entityTypes.CLUSTER_CVE) {
@@ -29,7 +41,7 @@ function getBaseCveUrl(cveType) {
  */
 export function suppressVulns(cveType, cveNames, duration = 0) {
     const baseUrl = getBaseCveUrl(cveType);
-    return axios.patch(`${baseUrl}/suppress`, { ids: cveNames, duration });
+    return axios.patch(`${baseUrl}/suppress`, { cves: cveNames, duration });
 }
 
 /**
@@ -40,16 +52,18 @@ export function suppressVulns(cveType, cveNames, duration = 0) {
  */
 export function unsuppressVulns(cveType, cveNames) {
     const baseUrl = getBaseCveUrl(cveType);
-    return axios.patch(`${baseUrl}/unsuppress`, { ids: cveNames });
+    return axios.patch(`${baseUrl}/unsuppress`, { cves: cveNames });
 }
 
 export function getCvesInCsvFormat(
+    cveType,
     fileName,
     query,
     sortOption = { field: cveSortFields.CVSS_SCORE, reversed: true },
     page = 0,
     pageSize = 0
 ) {
+    const csvUrl = getCSVExportUrl(cveType);
     const offset = page * pageSize;
     const params = queryString.stringify(
         {
@@ -73,7 +87,7 @@ export function getCvesInCsvFormat(
     });
 }
 
-export function exportCvesAsCsv(fileName, workflowState) {
+export function exportCvesAsCsv(fileName, workflowState, cveType) {
     const fullEntityContext = workflowState.getEntityContext();
     const lastEntityCtx = Object.keys(fullEntityContext).reduce((acc, key) => {
         return { ...{ [key]: fullEntityContext[key] } };
@@ -87,5 +101,5 @@ export function exportCvesAsCsv(fileName, workflowState) {
     let sortOption = workflowState.getCurrentSortState()[0];
     sortOption = sortOption && { field: sortOption.id, reversed: sortOption.desc };
 
-    return getCvesInCsvFormat(fileName, query, sortOption);
+    return getCvesInCsvFormat(cveType, fileName, query, sortOption);
 }

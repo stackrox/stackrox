@@ -32,9 +32,9 @@ export const defaultClusterSort = [
     },
 ];
 
-const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
+const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const fragmentToUse = isFrontendVMUpdatesEnabled
         ? CLUSTER_LIST_FRAGMENT_UPDATED
@@ -310,6 +310,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     return (
         <WorkflowListPage
             data={data}
+            totalResults={totalResults}
             query={query}
             queryOptions={queryOptions}
             entityListType={entityTypes.CLUSTER}

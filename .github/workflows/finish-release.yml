@@ -1,16 +1,101 @@
 name: Finish Release
 on:
-  release:
-    types: [released]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (A.B.C[-N])
+        required: true
+        default: 0.0.0-test
+        type: string
+      dry-run:
+        description: Dry-run
+        required: false
+        default: true
+        type: boolean
 
 env:
-  slack_channel: C03KSV3N6N8 #test-release-automation
+  main_branch: ${{ github.event.repository.default_branch }}
+  #eng-release (CMH5M8MHN) for real runs or #test-release-automation (C03KSV3N6N8) for testing:
+  slack_channel: ${{ fromJSON('["CMH5M8MHN", "C03KSV3N6N8"]')[ github.repository != 'stackrox/stackrox' || github.event.inputs.dry-run == 'true'] }}
+  script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[inputs.dry-run != true] }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
+
+# Ensure that only a single release automation workflow can run at a time.
+concurrency: Release automation
 
 jobs:
-  notify:
-    name: Notify about ${{github.event.release.title}}
+  run-parameters:
+    if: github.event_name == 'workflow_dispatch'
+    name: Run parameters
     runs-on: ubuntu-latest
     steps:
+      - run: |
+          [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
+          echo "Event: ${{ github.event_name }}" >>"$GITHUB_STEP_SUMMARY"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            cat <<EOF >>"$GITHUB_STEP_SUMMARY"
+          \`\`\`
+          ${{ toJSON(inputs) }}
+          \`\`\`
+          EOF
+          fi
+
+  variables:
+    if: github.event_name == 'workflow_dispatch'
+    name: Setup variables
+    uses: ./.github/workflows/variables.yml
+    with:
+      version: ${{ inputs.version }}
+
+  publish-release:
+    name: Tag Release ${{ needs.variables.outputs.release-patch }}
+    runs-on: ubuntu-latest
+    needs: [variables]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.variables.outputs.branch }}
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "${{ github.event.sender.login }}"
+          git config user.email noreply@github.com
+
+      - name: Tag release branch with "${{ needs.variables.outputs.release-patch }}"
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
+            tag-rc \
+            "${{ needs.variables.outputs.release-patch }}"
+
+      - name: Create GitHub Release
+        id: release
+        if: env.DRY_RUN == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            draft-release-notes \
+            "${{ needs.variables.outputs.release-patch }}" \
+            "${{ needs.variables.outputs.branch }}" \
+            "RELEASE_NOTES_GENERATED.md"
+          URL=$(gh release create "${{ needs.variables.outputs.release-patch }}" \
+            --notes-file RELEASE_NOTES_GENERATED.md \
+            --repo "${{ github.repository }}" \
+            --target "${{ needs.variables.outputs.branch }}")
+          echo "::set-output name=url::$URL"
+
+      - run: |
+          echo "Created GitHub release [${{ needs.variables.outputs.release-patch }}](${{ steps.release.outputs.url }})" >> $GITHUB_STEP_SUMMARY
+
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -21,10 +106,10 @@ jobs:
             { "blocks": [
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":white_check_mark: *<${{github.event.release.url}} | ${{github.event.release.name}}> has been published on GitHub.*" }},
+            ":white_check_mark: *<${{ steps.release.outputs.url }} | ${{ inputs.version }}> has been published on GitHub.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":arrow_right: Look for a CI generated PR created in `stackrox/release-artifacts` repository
-            and confirm that members of the `@release-publishers` Slack group got notified about
-            it.\n\n":arrow_right: Let's trigger the downstream release!" }}
+            and confirm that members of the @release-publishers Slack group got notified about
+            it.\n\n:arrow_right: Let's trigger the downstream release!" }}
             ]}

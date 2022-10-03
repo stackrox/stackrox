@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -27,7 +27,7 @@ var isEmptyGroupPropertiesF = func(props *storage.GroupProperties) bool {
 }
 
 func initialize() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		ds = New(postgres.New(globaldb.GetPostgres()))
 	} else {
 		ds = New(bolt.New(globaldb.GetGlobalDB()))

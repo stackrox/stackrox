@@ -3,6 +3,7 @@ package translation
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	// Required for the usage of go:embed below.
 	_ "embed"
@@ -20,6 +21,10 @@ import (
 var (
 	//go:embed base-values.yaml
 	baseValuesYAML []byte
+)
+
+const (
+	managedServicesAnnotation = "platform.stackrox.io/managed-services"
 )
 
 // Translator translates and enriches helm values
@@ -55,7 +60,7 @@ func translate(c platform.Central) (chartutil.Values, error) {
 	v := translation.NewValuesBuilder()
 
 	v.AddAllFrom(translation.GetImagePullSecrets(c.Spec.ImagePullSecrets))
-	v.AddAllFrom(getEnv(c.Spec.Egress))
+	v.AddAllFrom(getEnv(c))
 	v.AddAllFrom(translation.GetTLSConfigValues(c.Spec.TLS))
 
 	customize := translation.NewValuesBuilder()
@@ -65,6 +70,7 @@ func translate(c platform.Central) (chartutil.Values, error) {
 	if centralSpec == nil {
 		centralSpec = &platform.CentralComponentSpec{}
 	}
+
 	v.AddChild("central", getCentralComponentValues(centralSpec))
 
 	if c.Spec.Scanner != nil {
@@ -78,8 +84,12 @@ func translate(c platform.Central) (chartutil.Values, error) {
 	return v.Build()
 }
 
-func getEnv(egress *platform.Egress) *translation.ValuesBuilder {
+func getEnv(c platform.Central) *translation.ValuesBuilder {
 	env := translation.NewValuesBuilder()
+
+	egress := c.Spec.Egress
+	annotations := c.GetAnnotations()
+
 	if egress != nil {
 		if egress.ConnectivityPolicy != nil {
 			switch *egress.ConnectivityPolicy {
@@ -92,16 +102,61 @@ func getEnv(egress *platform.Egress) *translation.ValuesBuilder {
 			}
 		}
 	}
+
+	if annotations != nil {
+		if annotationValue, ok := annotations[managedServicesAnnotation]; ok {
+			managedServices, err := strconv.ParseBool(annotationValue)
+			if err != nil {
+				return env.SetError(fmt.Errorf("invalid annotation value %q for annotation %s",
+					annotationValue, managedServicesAnnotation))
+			}
+			if managedServices {
+				env.SetBoolValue("managedServices", true)
+			}
+		}
+	}
+
 	ret := translation.NewValuesBuilder()
 	ret.AddChild("env", &env)
 	return &ret
+}
+
+func getCentralDBPersistenceValues(p *platform.DBPersistence) *translation.ValuesBuilder {
+	persistence := translation.NewValuesBuilder()
+	if hostPath := p.GetHostPath(); hostPath != "" {
+		persistence.SetStringValue("hostPath", hostPath)
+	} else {
+		pvcBuilder := translation.NewValuesBuilder()
+		pvcBuilder.SetBoolValue("createClaim", false)
+		if pvc := p.GetPersistentVolumeClaim(); pvc != nil {
+			pvcBuilder.SetString("claimName", pvc.ClaimName)
+		}
+
+		persistence.AddChild("persistentVolumeClaim", &pvcBuilder)
+	}
+	return &persistence
+}
+
+func getCentralPersistenceValues(p *platform.Persistence) *translation.ValuesBuilder {
+	persistence := translation.NewValuesBuilder()
+	if hostPath := p.GetHostPath(); hostPath != "" {
+		persistence.SetStringValue("hostPath", hostPath)
+	} else {
+		pvcBuilder := translation.NewValuesBuilder()
+		pvcBuilder.SetBoolValue("createClaim", false)
+		if pvc := p.GetPersistentVolumeClaim(); pvc != nil {
+			pvcBuilder.SetString("claimName", pvc.ClaimName)
+		}
+
+		persistence.AddChild("persistentVolumeClaim", &pvcBuilder)
+	}
+	return &persistence
 }
 
 func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
-
 	if c.DefaultTLSSecret != nil {
 		cv.SetMap("defaultTLS", map[string]interface{}{"reference": c.DefaultTLSSecret.Name})
 	}
@@ -112,20 +167,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 
 	// TODO(ROX-7147): design CentralEndpointSpec, see central_types.go
 
-	persistence := translation.NewValuesBuilder()
-	if c.GetHostPath() != "" {
-		persistence.SetStringValue("hostPath", c.GetHostPath())
-		cv.AddChild("persistence", &persistence)
-	} else {
-		pvcBuilder := translation.NewValuesBuilder()
-		pvcBuilder.SetBoolValue("createClaim", false)
-		if c.GetPersistentVolumeClaim() != nil {
-			pvcBuilder.SetString("claimName", c.GetPersistentVolumeClaim().ClaimName)
-		}
-
-		persistence.AddChild("persistentVolumeClaim", &pvcBuilder)
-		cv.AddChild("persistence", &persistence)
-	}
+	cv.AddChild("persistence", getCentralPersistenceValues(c.GetPersistence()))
 
 	if c.Exposure != nil {
 		exposure := translation.NewValuesBuilder()
@@ -150,6 +192,33 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 		}
 		cv.AddChild("exposure", &exposure)
 	}
+
+	if c.CentralDBEnabled() {
+		cv.AddChild("db", getCentralDBComponentValues(c.DB))
+	}
+
+	return &cv
+}
+
+func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesBuilder {
+	cv := translation.NewValuesBuilder()
+	cv.SetBoolValue("enabled", true)
+
+	if c.ConnectionStringOverride != nil && c.PasswordSecret == nil {
+		cv.SetError(errors.New("if connection string override is set, then a password secret must also be set"))
+	}
+
+	if c.ConnectionStringOverride != nil {
+		source := translation.NewValuesBuilder()
+		source.SetString("connectionString", c.ConnectionStringOverride)
+		cv.AddChild("source", &source)
+		return &cv
+	}
+
+	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
+	cv.SetStringMap("nodeSelector", c.NodeSelector)
+	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
+	cv.AddChild("persistence", getCentralDBPersistenceValues(c.GetPersistence()))
 	return &cv
 }
 

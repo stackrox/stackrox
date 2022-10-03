@@ -19,9 +19,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
@@ -215,7 +216,7 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 // UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
 func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeployment")
-
+	debug.ROX12096(log.Infof, deployment.GetName(), "upserting deployment %q: %+v", deployment.GetName(), deployment)
 	return ds.upsertDeployment(ctx, deployment)
 }
 
@@ -230,7 +231,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	// Update deployment with latest risk score
 	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
 			return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 		}

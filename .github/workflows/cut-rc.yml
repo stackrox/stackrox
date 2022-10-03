@@ -36,11 +36,13 @@ env:
   main_branch: ${{github.event.repository.default_branch}}
   docs_repository: openshift/openshift-docs
   jira_projects: ROX, RS, RTOOLS
-  slack_channel: C03KSV3N6N8 #test-release-automation
-  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{github.event.repository.default_branch}}
+  #eng-release (CMH5M8MHN) for real runs or #test-release-automation (C03KSV3N6N8) for testing:
+  slack_channel: ${{ fromJSON('["CMH5M8MHN", "C03KSV3N6N8"]')[ github.repository != 'stackrox/stackrox' || github.event.inputs.dry-run == 'true'] }}
+  script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
   DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
 
 # Ensure that only a single release automation workflow can run at a time.
 concurrency: Release automation
@@ -106,19 +108,19 @@ jobs:
         if: env.DRY_RUN == 'false' && steps.check.outputs.open-issues != ''
         run: |
           set -u
-          if ! http_code=$(gh api --silent -X POST \
+          if ! RESPONSE=$(gh api -X POST \
             "repos/${{github.repository}}/milestones" \
             -f "title"="${{needs.variables.outputs.next-milestone}}" \
             2>&1); then
-
-            if grep "HTTP 422" <<< "$http_code"; then
+            if grep "HTTP 422" <<< "$RESPONSE"; then
               echo "Milestone ${{needs.variables.outputs.next-milestone}} already exists." >> $GITHUB_STEP_SUMMARY
             else
-              echo "::error::Couldn't create milestone ${{needs.variables.outputs.next-milestone}}: $http_code"
+              echo "::error::Couldn't create milestone ${{needs.variables.outputs.next-milestone}}: $RESPONSE"
               exit 1
             fi
           else
-            echo "Milestone ${{needs.variables.outputs.next-milestone}} has been created." >> $GITHUB_STEP_SUMMARY
+            NEXT_MILESTONE_URL=$(echo ${RESPONSE} | jq -r '.html_url')
+            echo ":arrow_right: Close the newly created [milestone ${{ needs.variables.outputs.next-milestone }}](${NEXT_MILESTONE_URL}) when ready, or delete it when finishing the release." >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Move open PRs
@@ -141,15 +143,16 @@ jobs:
             echo "PR $PR has been moved to milestone ${{needs.variables.outputs.next-milestone}}." >> $GITHUB_STEP_SUMMARY
           done
 
-  check-merged-prs:
-    name: Cherry-pick from PRs
-    needs: [variables, postpone-prs]
+  cut-rc:
+    name: Tag RC for milestone ${{needs.variables.outputs.milestone}}
     runs-on: ubuntu-latest
+    needs: [variables, postpone-prs, check-jira]
     steps:
       - name: Check out code
         uses: actions/checkout@v3
         with:
           ref: ${{needs.variables.outputs.branch}}
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
       - name: Initialize mandatory git config
         run: |
           git config user.name "${{github.event.sender.login}}"
@@ -167,7 +170,7 @@ jobs:
             "${{needs.variables.outputs.branch}}" \
             "${{needs.variables.outputs.release-patch}}"
 
-      - name: Post to Slack
+      - name: Post to Slack about picked cherries
         if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -197,19 +200,6 @@ jobs:
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}
 
-  cut-rc:
-    name: Tag RC for milestone ${{needs.variables.outputs.milestone}}
-    runs-on: ubuntu-latest
-    needs: [variables, check-merged-prs, check-jira]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: "${{needs.variables.outputs.branch}}"
-          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
-      - name: Initialize mandatory git config
-        run: |
-          git config user.name "${{github.event.sender.login}}"
-          git config user.email noreply@github.com
       - name: Update docs submodule
         run: |
           git submodule update --init --remote -- docs/content
@@ -218,14 +208,21 @@ jobs:
             git commit -m "Update docs submodule for milestone ${{needs.variables.outputs.milestone}}"
             echo "Documentation submodule has been updated" >> $GITHUB_STEP_SUMMARY
           fi
+
       - name: Tag release branch with "${{needs.variables.outputs.milestone}}"
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             tag-rc \
             "${{needs.variables.outputs.milestone}}"
+
       - name: Create next milestone
         if: env.DRY_RUN == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
         run: |
           set -u
           if ! http_code=$(gh api --silent -X POST \
@@ -243,22 +240,25 @@ jobs:
             echo ":arrow_right: Close the newly created milestone [${{needs.variables.outputs.next-milestone}}](${{github.event.milestone.html_url}}) when ready." >> $GITHUB_STEP_SUMMARY
           fi
 
-  pre-release:
-    name: Publish a GitHub pre-release
-    needs: [variables, cut-rc]
-    runs-on: ubuntu-latest
-    steps:
       - name: Create GitHub Pre-release
         id: pre-release
         if: env.DRY_RUN == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
         run: |
-          _MD_SECTION="${{needs.variables.outputs.release-patch}}"
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            draft-release-notes \
+            "${{ needs.variables.outputs.release-patch }}" \
+            "${{ needs.variables.outputs.branch }}" \
+            "RELEASE_NOTES_GENERATED.md"
           URL=$(gh release create "${{needs.variables.outputs.milestone}}" \
             --prerelease \
-            --notes "**Changelog**: ${{github.repository}}/blob/master/CHANGELOG.md#${_MD_SECTION//./}" \
-            --repo "${{github.repository}}" \
-            --target "${{needs.variables.outputs.branch}}")
+            --notes-file RELEASE_NOTES_GENERATED.md \
+            --repo "${{ github.repository }}" \
+            --target "${{ needs.variables.outputs.branch }}")
           echo "::set-output name=url::$URL"
+
       - run: |
           echo "Created GitHub pre-release [${{needs.variables.outputs.milestone}}](${{steps.pre-release.outputs.url}})" >> $GITHUB_STEP_SUMMARY
       - name: Post to Slack
@@ -277,13 +277,10 @@ jobs:
             { "type": "divider" },
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":white_check_mark: Once all checks pass, convert it to the final release
-            with:\n\n```gh release edit
-            \"${{needs.variables.outputs.milestone}}\"
-            --prerelease=false
-            --tag \"${{needs.variables.outputs.release-patch}}\"
-            --title \"${{needs.variables.outputs.release-patch}}\"```\nOtherwise
-            create next milestone `${{needs.variables.outputs.next-milestone}}`." }}
+            ":arrow_right: Once all checks pass and you're ready for release,
+            run the <${{ github.server_url }}/${{ github.repository }}/actions/workflows/finish-release.yml|Finish Release>
+            workflow and delete the `${{ needs.variables.outputs.next-milestone }}`
+            milestone to avoid confusion." }}
             ]}
 
   wait-for-images:

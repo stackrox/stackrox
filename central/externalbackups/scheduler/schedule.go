@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globaldb/export"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -49,7 +49,7 @@ func New(reporter integrationhealth.Reporter) Scheduler {
 
 func (s *scheduler) backup(w *io.PipeWriter, includeCerts bool) {
 	var err error
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		err = export.BackupPostgres(context.Background(), globaldb.GetPostgres(), includeCerts, w)
 	} else {
 		err = export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetRocksDB(), includeCerts, w)

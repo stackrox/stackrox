@@ -35,7 +35,7 @@ const nodeListUpdatedQuery = gql`
         results: nodes(query: $query, pagination: $pagination) {
             ...nodeFields
         }
-        count: nodeVulnerabilityCount(query: $query)
+        count: nodeCount(query: $query)
     }
     ${NODE_LIST_FRAGMENT_UPDATED}
 `;
@@ -201,7 +201,7 @@ export function getNodeTableColumns(showVMUpdates) {
 // TODO: set getNodes query to get real nodes list
 const VulnMgmtNodes = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const query = showVMUpdates ? nodeListUpdatedQuery : nodeListQuery;
 

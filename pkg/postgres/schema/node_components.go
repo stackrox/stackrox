@@ -15,21 +15,7 @@ import (
 var (
 	// CreateTableNodeComponentsStmt holds the create statement for table `node_components`.
 	CreateTableNodeComponentsStmt = &postgres.CreateStmts{
-		Table: `
-               create table if not exists node_components (
-                   Id varchar,
-                   Name varchar,
-                   Version varchar,
-                   Priority integer,
-                   RiskScore numeric,
-                   TopCvss numeric,
-                   OperatingSystem varchar,
-                   serialized bytea,
-                   PRIMARY KEY(Id)
-               )
-               `,
 		GormModel: (*NodeComponents)(nil),
-		Indexes:   []string{},
 		Children:  []*postgres.CreateStmts{},
 	}
 
@@ -63,7 +49,7 @@ type NodeComponents struct {
 	Id              string  `gorm:"column:id;type:varchar;primaryKey"`
 	Name            string  `gorm:"column:name;type:varchar"`
 	Version         string  `gorm:"column:version;type:varchar"`
-	Priority        int64   `gorm:"column:priority;type:integer"`
+	Priority        int64   `gorm:"column:priority;type:bigint"`
 	RiskScore       float32 `gorm:"column:riskscore;type:numeric"`
 	TopCvss         float32 `gorm:"column:topcvss;type:numeric"`
 	OperatingSystem string  `gorm:"column:operatingsystem;type:varchar"`
