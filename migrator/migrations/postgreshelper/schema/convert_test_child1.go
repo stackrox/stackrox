@@ -2,12 +2,8 @@
 package schema
 
 import (
-	"testing"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stretchr/testify/assert"
 )
 
 // ConvertTestChild1FromProto converts a `*storage.TestChild1` to Gorm model
@@ -31,14 +27,4 @@ func ConvertTestChild1ToProto(m *schema.TestChild1) (*storage.TestChild1, error)
 		return nil, err
 	}
 	return &msg, nil
-}
-
-func TestTestChild1Serialization(t *testing.T) {
-	obj := &storage.TestChild1{}
-	assert.NoError(t, testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	m, err := ConvertTestChild1FromProto(obj)
-	assert.NoError(t, err)
-	conv, err := ConvertTestChild1ToProto(m)
-	assert.NoError(t, err)
-	assert.Equal(t, obj, conv)
 }

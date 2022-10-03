@@ -2,12 +2,8 @@
 package schema
 
 import (
-	"testing"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stretchr/testify/assert"
 )
 
 // ConvertTestG3GrandChild1FromProto converts a `*storage.TestG3GrandChild1` to Gorm model
@@ -31,14 +27,4 @@ func ConvertTestG3GrandChild1ToProto(m *schema.TestG3GrandChild1) (*storage.Test
 		return nil, err
 	}
 	return &msg, nil
-}
-
-func TestTestG3GrandChild1Serialization(t *testing.T) {
-	obj := &storage.TestG3GrandChild1{}
-	assert.NoError(t, testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	m, err := ConvertTestG3GrandChild1FromProto(obj)
-	assert.NoError(t, err)
-	conv, err := ConvertTestG3GrandChild1ToProto(m)
-	assert.NoError(t, err)
-	assert.Equal(t, obj, conv)
 }

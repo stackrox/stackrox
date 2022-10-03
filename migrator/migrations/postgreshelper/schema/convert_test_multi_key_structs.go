@@ -2,14 +2,10 @@
 package schema
 
 import (
-	"testing"
-
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stretchr/testify/assert"
 )
 
 // ConvertTestMultiKeyStructFromProto converts a `*storage.TestMultiKeyStruct` to Gorm model
@@ -61,14 +57,4 @@ func ConvertTestMultiKeyStructToProto(m *schema.TestMultiKeyStructs) (*storage.T
 		return nil, err
 	}
 	return &msg, nil
-}
-
-func TestTestMultiKeyStructSerialization(t *testing.T) {
-	obj := &storage.TestMultiKeyStruct{}
-	assert.NoError(t, testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	m, err := ConvertTestMultiKeyStructFromProto(obj)
-	assert.NoError(t, err)
-	conv, err := ConvertTestMultiKeyStructToProto(m)
-	assert.NoError(t, err)
-	assert.Equal(t, obj, conv)
 }
