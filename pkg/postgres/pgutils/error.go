@@ -55,10 +55,7 @@ func isTransientError(err error) bool {
 	if pgconn.SafeToRetry(err) {
 		return true
 	}
-	switch err {
-	case pgx.ErrTxClosed, pgx.ErrTxCommitRollback:
-		return true
-	case pgx.ErrNoRows:
+	if errorhelpers.IsAny(err, pgx.ErrNoRows, pgx.ErrTxClosed, pgx.ErrTxCommitRollback) {
 		return false
 	}
 	if netErr := (*net.OpError)(nil); errors.As(err, &netErr) {

@@ -42,7 +42,7 @@ func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 	// Run query immediately
 	if val1, val2, err := fn(); err == nil || !isTransientError(err) {
 		if err != nil && err != pgx.ErrNoRows {
-			log.Infof("Found permanent error: %T %+v", err, err)
+			log.Debugf("UNEXPECTED: found permanent error: %+v", err)
 		}
 		return val1, val2, err
 	}
@@ -67,7 +67,7 @@ func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 			ret1, ret2, err = fn()
 			if err == nil || !isTransientError(err) {
 				if err != nil && err != pgx.ErrNoRows {
-					log.Infof("Found permanent error: %T %+v", err, err)
+					log.Debugf("UNEXPECTED: found permanent error: %+v", err)
 				}
 				return ret1, ret2, err
 			}
