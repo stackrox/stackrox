@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -93,7 +93,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 // every (in our case typically one) resource of specified type, which resides in the same namespace as the
 // observed resource.
 func HandleSiblings(gvk schema.GroupVersionKind, manager ctrl.Manager) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(object ctrlClient.Object) []reconcile.Request {
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(gvk)
 		utils.ListSiblings(list, object, manager.GetClient())
