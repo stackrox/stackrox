@@ -619,11 +619,8 @@ class SACTest extends BaseSpecification {
 
         and:
         "The flows should be equal to the flows obtained with all access after removing masked endpoints"
-        def sacFlowsFiltered = new HashSet<String>(sacFlows)
-        sacFlowsFiltered.removeAll { it.contains("masked deployment") }
-
-        def sacFlowsNoQueryFiltered = new HashSet<String>(sacFlowsNoQuery)
-        sacFlowsNoQueryFiltered.removeAll { it.contains("masked deployment") }
+        Set<String> sacFlowsFiltered = sacFlows.findAll { !it.contains("masked deployment") }
+        Set<String> sacFlowsNoQueryFiltered = sacFlowsNoQuery.findAll { !it.contains("masked deployment") }
 
         assert allAccessFlowsWithoutNeighbors == sacFlowsFiltered
         assert allAccessFlowsWithoutNeighbors == sacFlowsNoQueryFiltered
