@@ -205,7 +205,7 @@ func main() {
 	if localConfig.ReplayK8sEnabled {
 		fakeClient = k8s.MakeFakeClient()
 	}
-	var workloadManager *fake.WorkloadManager = nil
+	var workloadManager *fake.WorkloadManager
 	// if we are using a fake workload we don't want to connect to a real K8s cluster
 	if localConfig.FakeWorkloadFile != "" {
 		workloadManager = fake.NewWorkloadManager(fake.ConfigDefaults().
