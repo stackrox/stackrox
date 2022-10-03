@@ -1327,7 +1327,6 @@ class ComplianceTest extends BaseSpecification {
                 "AllComments"          : READ_WRITE_ACCESS,
                 "AuthProvider"         : READ_WRITE_ACCESS,
                 "BackupPlugins"        : READ_WRITE_ACCESS,
-                "ComplianceRunSchedule": READ_WRITE_ACCESS,
                 "Config"               : READ_WRITE_ACCESS,
                 "DebugLogs"            : READ_WRITE_ACCESS,
                 "Detection"            : READ_WRITE_ACCESS,

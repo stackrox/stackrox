@@ -6,8 +6,6 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-import "storage/compliance_management.proto";
-
 package v1;
 
 message ComplianceRunSelection {
