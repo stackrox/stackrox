@@ -3,6 +3,7 @@ package pgutils
 import (
 	"io"
 	"net"
+	"syscall"
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
@@ -58,7 +59,10 @@ func isTransientError(err error) bool {
 		return false
 	}
 	if netErr := (*net.OpError)(nil); errors.As(err, &netErr) {
-		return netErr.Temporary() || netErr.Timeout()
+		if netErr.Temporary() || netErr.Timeout() {
+			return true
+		}
+		return errorhelpers.IsAny(err, syscall.ECONNREFUSED, syscall.ECONNREFUSED, syscall.ECONNABORTED)
 	}
 	return errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe)
 }
