@@ -19,7 +19,7 @@ var (
 	// should be incremented to the new metadataVersion
 	metadataHashToVersion = map[uint64]int{
 		// initial hash of the metadata maps to 0
-		14694942439820752696: 0,
+		16385665611439321574: 0,
 	}
 
 	metadataHash uint64
@@ -34,7 +34,7 @@ func init() {
 		},
 	}
 	var err error
-	metadataHash, err = hashstructure.Hash(metadata, hashstructure.FormatV1, &hashstructure.HashOptions{ZeroNil: true})
+	metadataHash, err = hashstructure.Hash(metadata, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
 	utils.Must(err)
 
 	if val, ok := metadataHashToVersion[metadataHash]; !ok || val != metadataVersion {
