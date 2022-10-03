@@ -4,7 +4,7 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	helmTemplate "github.com/stackrox/rox/pkg/helm/template"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/zip"
@@ -394,7 +394,7 @@ var (
 // two entries, one for `values-public.yaml`, and one for `values-private.yaml`.
 func renderNewHelmValues(c Config) ([]*zip.File, error) {
 	privateTemplate := privateValuesTemplate
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		privateTemplate = privateValuesPostgresTemplate
 	}
 

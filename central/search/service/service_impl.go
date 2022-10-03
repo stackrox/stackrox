@@ -31,7 +31,6 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	protoSet "github.com/stackrox/rox/generated/set"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -117,7 +116,7 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 }
 
 var (
-	autocompleteCategories = func() protoSet.V1SearchCategorySet {
+	autocompleteCategories = func() set.Set[v1.SearchCategory] {
 		s := centralsearch.GetGlobalSearchCategories().Clone()
 		s.Add(v1.SearchCategory_COMPLIANCE)
 		return s

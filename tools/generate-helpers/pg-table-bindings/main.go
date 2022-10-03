@@ -59,6 +59,9 @@ var migrationTestFile string
 //go:embed migration_tool.go.tpl
 var migrationToolFile string
 
+//go:embed migration_tool_test.go.tpl
+var migrationToolTestFile string
+
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
@@ -70,6 +73,7 @@ var (
 	migrationTemplate         = newTemplate(migrationFile)
 	migrationTestTemplate     = newTemplate(migrationTestFile)
 	migrationToolTemplate     = newTemplate(migrationToolFile)
+	migrationToolTestTemplate = newTemplate(migrationToolTestFile)
 )
 
 type properties struct {
@@ -124,6 +128,9 @@ type properties struct {
 
 	// Generate conversion functions with schema
 	ConversionFuncs bool
+
+	// Indicates that there is a foreign key cycle relationship. Should be defined as <Embedded FK Field>:<Referenced Field>
+	Cycle string
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -199,6 +206,7 @@ func main() {
 	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from, including \"rocksdb\", \"dackbox\" and \"boltdb\"")
 	c.Flags().IntVar(&props.MigrateSeq, "migration-seq", 0, "the unique sequence number to migrate to Postgres")
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
+	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, of the form <foreign_key>:<referenced_field>")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if (props.MigrateSeq == 0) != (props.MigrateFrom == "") {
@@ -266,6 +274,23 @@ func main() {
 			}
 		}
 
+		var embeddedFK, referencedField string
+		if props.Cycle != "" {
+			if strings.Contains(props.Cycle, ":") {
+				embeddedFK, referencedField = stringutils.Split2(props.Cycle, ":")
+			} else {
+				log.Fatalf("cycle flag passed with invalid form (%s)", props.Cycle)
+			}
+		}
+
+		// remove any self references
+		filteredReferences := make([]parsedReference, 0, len(parsedReferences))
+		for _, ref := range parsedReferences {
+			if ref.Table != props.Table {
+				filteredReferences = append(filteredReferences, ref)
+			}
+		}
+
 		templateMap := map[string]interface{}{
 			"Type":              props.Type,
 			"TrimmedType":       trimmedType,
@@ -280,12 +305,19 @@ func main() {
 				permissionCheckerEnabled: permissionCheckerEnabled,
 				schema:                   schema,
 			},
-			"NoCopyFrom": props.NoCopyFrom,
+			"NoCopyFrom":      props.NoCopyFrom,
+			"Cycle":           embeddedFK != "" && referencedField != "",
+			"EmbeddedFK":      embeddedFK,
+			"ReferencedField": referencedField,
+			"References":      filteredReferences,
+			"SearchScope":     searchScope,
+			"RegisterSchema":  !props.ConversionFuncs,
 		}
 
-		if err := generateSchema(schema, searchCategory, searchScope, parsedReferences, props.SchemaDirectory, !props.ConversionFuncs); err != nil {
+		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
 			return err
 		}
+
 		if props.ConversionFuncs {
 			if err := generateConverstionFuncs(schema, props.SchemaDirectory); err != nil {
 				return err
@@ -354,27 +386,15 @@ func main() {
 	}
 }
 
-func generateSchema(s *walker.Schema, searchCategory string, searchScope []string, parsedReferences []parsedReference, dir string, registerSchema bool) error {
-	templateMap := map[string]interface{}{
-		"Schema":         s,
-		"SearchCategory": searchCategory,
-		"References":     parsedReferences,
-		"SearchScope":    searchScope,
-		"RegisterSchema": registerSchema,
-	}
-
-	if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(dir, s.Table)); err != nil {
-		return err
-	}
-	return nil
-}
-
 func generateConverstionFuncs(s *walker.Schema, dir string) error {
 	templateMap := map[string]interface{}{
 		"Schema": s,
 	}
 
 	if err := renderFile(templateMap, migrationToolTemplate, getConversionToolFileName(dir, s.Table)); err != nil {
+		return err
+	}
+	if err := renderFile(templateMap, migrationToolTestTemplate, getConversionTestFileName(dir, s.Table)); err != nil {
 		return err
 	}
 	return nil
@@ -385,7 +405,11 @@ func getSchemaFileName(dir, table string) string {
 }
 
 func getConversionToolFileName(dir, table string) string {
-	return fmt.Sprintf("%s/convert_%s_with_test.go", dir, table)
+	return fmt.Sprintf("%s/convert_%s.go", dir, table)
+}
+
+func getConversionTestFileName(dir, table string) string {
+	return fmt.Sprintf("%s/convert_%s_test.go", dir, table)
 }
 
 func newTemplate(tpl string) func(name string) *template.Template {

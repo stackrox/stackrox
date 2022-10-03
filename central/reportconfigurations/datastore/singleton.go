@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/reportconfigurations/store"
 	"github.com/stackrox/rox/central/reportconfigurations/store/postgres"
 	reportConfigStore "github.com/stackrox/rox/central/reportconfigurations/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -23,7 +23,7 @@ func Singleton() DataStore {
 	once.Do(func() {
 		var err error
 		var storage store.Store
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			storage = postgres.New(globaldb.GetPostgres())
 		} else {
 			storage, err = reportConfigStore.New(globaldb.GetRocksDB())

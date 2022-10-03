@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -91,7 +92,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	capsSet := centralsensor.NewSensorCapabilitySet(centralsensor.ComplianceInNodesCap)
+	capsSet := set.NewSet(centralsensor.ComplianceInNodesCap)
 	sensorHello := &central.SensorHello{
 		Capabilities: centralsensor.CapSetToStringSlice(capsSet),
 	}

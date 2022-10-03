@@ -47,7 +47,7 @@ const (
 type TestGrandparents struct {
 	Id         string  `gorm:"column:id;type:varchar;primaryKey"`
 	Val        string  `gorm:"column:val;type:varchar"`
-	Priority   int64   `gorm:"column:priority;type:integer"`
+	Priority   int64   `gorm:"column:priority;type:bigint"`
 	RiskScore  float32 `gorm:"column:riskscore;type:numeric"`
 	Serialized []byte  `gorm:"column:serialized;type:bytea"`
 }

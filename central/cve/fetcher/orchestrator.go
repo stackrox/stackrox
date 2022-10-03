@@ -15,8 +15,8 @@ import (
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -93,7 +93,7 @@ func (m *orchestratorCVEManager) Scan(version string, cveType utils.CVEType) ([]
 }
 
 func (m *orchestratorCVEManager) updateCVEs(embeddedCVEs []*storage.EmbeddedVulnerability, embeddedCVEToClusters map[string][]*storage.Cluster, cveType utils.CVEType) error {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		var newCVEs []converterV2.ClusterCVEParts
 		for _, embeddedCVE := range embeddedCVEs {
 			cve := utils.EmbeddedVulnerabilityToClusterCVE(cveType.ToStorageCVEType(), embeddedCVE)
@@ -245,11 +245,8 @@ func (m *orchestratorCVEManager) getAffectedClusters(ctx context.Context, cveID 
 		return nil, err
 	}
 
-	filteredClusters, err := sac.FilterSliceReflect(ctx, clustersSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS), clusters, func(c *storage.Cluster) sac.ScopePredicate {
+	filteredClusters := sac.FilterSlice(clustersSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS), clusters, func(c *storage.Cluster) sac.ScopePredicate {
 		return sac.ScopeSuffix{sac.ClusterScopeKey(c.GetId())}
 	})
-	if err != nil {
-		return nil, err
-	}
-	return filteredClusters.([]*storage.Cluster), nil
+	return filteredClusters, nil
 }

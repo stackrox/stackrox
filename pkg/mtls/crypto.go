@@ -84,6 +84,9 @@ var (
 	// CentralSubject is the identity used in certificates for Central.
 	CentralSubject = Subject{ServiceType: storage.ServiceType_CENTRAL_SERVICE, Identifier: "Central"}
 
+	// CentralDBSubject is the identity used in certificates for Central DB.
+	CentralDBSubject = Subject{ServiceType: storage.ServiceType_CENTRAL_DB_SERVICE, Identifier: "Central DB"}
+
 	// SensorSubject is the identity used in certificates for Sensor.
 	SensorSubject = Subject{ServiceType: storage.ServiceType_SENSOR_SERVICE, Identifier: "Sensor"}
 

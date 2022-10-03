@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -109,7 +109,7 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.N
 	}
 
 	node.Scan = scan
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		converter.FillV2NodeVulnerabilities(node)
 		for _, component := range node.GetScan().GetComponents() {
 			component.Vulns = nil
@@ -137,7 +137,7 @@ func FillScanStats(n *storage.Node) {
 		var componentTopCVSS float32
 		var hasVulns bool
 
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			for _, v := range c.GetVulnerabilities() {
 				hasVulns = true
 				if _, ok := vulns[v.GetCveBaseInfo().GetCve()]; !ok {

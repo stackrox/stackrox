@@ -30,8 +30,8 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -73,7 +73,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpo
 	}
 	var deploymentIndexer index.Indexer
 	var searcher search.Searcher
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		deploymentIndexer = postgres.NewIndexer(pool)
 		searcher = search.NewV2(storage, deploymentIndexer)
 	} else {
@@ -101,7 +101,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Po
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	var storage store.Store
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storage = postgres.NewFullStore(pool)
 	} else {
 		storage = dackBoxStore.New(dacky, keyFence)
@@ -124,7 +124,7 @@ func NewTestDataStore(t *testing.T, storage store.Store, graphProvider graph.Pro
 	}
 	var deploymentIndexer index.Indexer
 	var searcher search.Searcher
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		deploymentIndexer = postgres.NewIndexer(pool)
 		searcher = search.NewV2(storage, deploymentIndexer)
 	} else {

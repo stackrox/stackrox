@@ -36,7 +36,7 @@ import (
 	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/mappings"
 	vulnReqMapping "github.com/stackrox/rox/central/vulnerabilityrequest/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -182,7 +182,7 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 
 // GetEntityOptionsMap is a mapping from search categories to the options
 func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return getPostgresEntityOptionsMap()
 	}
 	nodeSearchOptions := search.CombineOptionsMaps(

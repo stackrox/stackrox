@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb/export"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -32,7 +32,7 @@ const (
 
 // BackupDB is a handler that writes a consistent view of the databases to the HTTP response.
 func BackupDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, postgresDB *pgxpool.Pool, includeCerts bool) http.Handler {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return dumpDB(postgresDB, includeCerts)
 	}
 	return serializeDB(boltDB, rocksDB, includeCerts)
@@ -58,7 +58,7 @@ func RestoreDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting DB restore ...")
 		// This is the old v1 API.  No need to support that for Postgres
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "api is deprecated and does not support Postgres.")
 			return
 		}

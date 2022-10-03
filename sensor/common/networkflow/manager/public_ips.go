@@ -29,7 +29,7 @@ type publicIPsManager struct {
 	publicIPs          map[net.IPAddress]struct{}
 	publicIPDeletions  map[net.IPAddress]time.Time
 
-	publicIPListProtoStream *concurrency.ValueStream
+	publicIPListProtoStream *concurrency.ValueStream[*sensor.IPAddressList]
 
 	lastSentIPAddrList *sensor.IPAddressList
 }
@@ -40,7 +40,7 @@ func newPublicIPsManager() *publicIPsManager {
 		publicIPs:          make(map[net.IPAddress]struct{}),
 		publicIPDeletions:  make(map[net.IPAddress]time.Time),
 
-		publicIPListProtoStream: concurrency.NewValueStream(nil),
+		publicIPListProtoStream: concurrency.NewValueStream[*sensor.IPAddressList](nil),
 	}
 }
 
@@ -115,7 +115,7 @@ func (m *publicIPsManager) regenerateAndPushPublicIPsProto() {
 	m.lastSentIPAddrList = publicIPsList
 }
 
-func (m *publicIPsManager) PublicIPsProtoStream() concurrency.ReadOnlyValueStream {
+func (m *publicIPsManager) PublicIPsProtoStream() concurrency.ReadOnlyValueStream[*sensor.IPAddressList] {
 	return m.publicIPListProtoStream
 }
 

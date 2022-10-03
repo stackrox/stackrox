@@ -26,7 +26,7 @@ const WorkflowListPageLayout = ({ location }) => {
     const [isExporting, setIsExporting] = useState(false);
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const useCaseEntityMap = getUseCaseEntityMap();
-    if (isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES')) {
+    if (isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE')) {
         const newTypes = useCaseEntityMap['vulnerability-management'].filter(
             (entityType) => entityType !== entityTypes.COMPONENT
         );
@@ -79,7 +79,7 @@ const WorkflowListPageLayout = ({ location }) => {
     }
 
     // TODO: remove all this feature flag check after VM updates have been live for one release
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const useCaseOptions = useCaseEntityMap[useCase].filter((option) => {
         if (showVmUpdates) {
             if (option === entityTypes.CVE || option === entityTypes.COMPONENT) {

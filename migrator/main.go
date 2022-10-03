@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/migrator/runner"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
@@ -64,7 +64,7 @@ func run() error {
 
 	var dbm cloneMgr.DBCloneManager
 	// Create the clone manager
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
 			return errors.Wrap(err, "unable to get Postgres DB config")
@@ -120,7 +120,7 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 
 	// We need to pass Rocks to the runner if we are in Rocks mode OR
 	// if we need to processBoth for the purpose of migrating Rocks to Postgres
-	if !features.PostgresDatastore.Enabled() || processBoth {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() || processBoth {
 		boltDB, err = bolthelpers.Load()
 		if err != nil {
 			return errors.Wrap(err, "failed to open bolt DB")
@@ -147,7 +147,7 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 
 	var gormDB *gorm.DB
 	var pgPool *pgxpool.Pool
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgPool, gormDB, err = postgreshelper.Load(conf, dbClone)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to postgres DB")
@@ -171,7 +171,7 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 		log.WriteToStderrf("version for %q is %v", dbClone, ver)
 	}
 
-	if boltDB == nil && !features.PostgresDatastore.Enabled() {
+	if boltDB == nil && !env.PostgresDatastoreEnabled.BooleanSetting() {
 		log.WriteToStderr("No DB found. Nothing to migrate...")
 		return nil
 	}

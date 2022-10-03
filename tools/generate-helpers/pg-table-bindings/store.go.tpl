@@ -350,7 +350,9 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     {{- end }}
     {{- end }}{{/* if not $inMigration */}}
 
-    return s.upsert(ctx, obj)
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
@@ -393,17 +395,19 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     return s.upsert(ctx, objs...)
     {{- else }}
 
-    // Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-    // same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-    // violations
-    s.mutex.Lock()
-    defer s.mutex.Unlock()
+	return pgutils.Retry(func() error {
+		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+		// violations
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
 
-    if len(objs) < batchAfter {
-        return s.upsert(ctx, objs...)
-    } else {
-        return s.copyFrom(ctx, objs...)
-    }
+		if len(objs) < batchAfter {
+			return s.upsert(ctx, objs...)
+		} else {
+			return s.copyFrom(ctx, objs...)
+		}
+	})
     {{- end }}
 }
 {{- end }}
@@ -629,7 +633,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     {{- end}}
     )
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 {{- end}}
 
@@ -676,7 +680,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
         query,
     )
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 {{- end}}
 
@@ -911,7 +915,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
         search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
     )
 
-    return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+    return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 {{- end }}
 {{- end }}

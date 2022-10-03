@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,7 +35,7 @@ type VersionStoreTestSuite struct {
 }
 
 func (suite *VersionStoreTestSuite) SetupTest() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		source := pgtest.GetConnectionString(suite.T())
 		config, err := pgxpool.ParseConfig(source)
 		suite.Require().NoError(err)
@@ -57,7 +57,7 @@ func (suite *VersionStoreTestSuite) SetupTest() {
 }
 
 func (suite *VersionStoreTestSuite) TearDownTest() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		postgres.Destroy(suite.ctx, suite.pool)
 		if suite.pool != nil {
 			suite.pool.Close()
@@ -83,7 +83,7 @@ func (suite *VersionStoreTestSuite) TestVersionStore() {
 }
 
 func (suite *VersionStoreTestSuite) TestVersionMismatch() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skip TestVersionMismatch as it does not apply to Postgres")
 		suite.T().SkipNow()
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/serviceaccount/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -57,14 +57,14 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return serviceAccountsSACPostgresSearchHelper.Apply(ds.indexer.Search)(ctx, q)
 	}
 	return serviceAccountsSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
 }
 
 func (ds *searcherImpl) getCount(ctx context.Context, q *v1.Query) (int, error) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return serviceAccountsSACPostgresSearchHelper.ApplyCount(ds.indexer.Count)(ctx, q)
 	}
 	return serviceAccountsSACSearchHelper.ApplyCount(ds.indexer.Count)(ctx, q)

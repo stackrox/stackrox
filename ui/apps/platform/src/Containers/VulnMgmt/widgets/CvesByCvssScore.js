@@ -66,7 +66,7 @@ const vulnerabilitySeveritySuffix = '_VULNERABILITY_SEVERITY';
 
 const CvesByCvssScore = ({ entityContext, parentContext }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     let queryToUse = CVES_QUERY;
 

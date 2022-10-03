@@ -1,0 +1,33 @@
+{
+  "id": "13b4eddc-2619-4953-b1ee-4c762144ca1e",
+  "name": "Images with no scans",
+  "description": "Alert on deployments with images that have not been scanned",
+  "rationale": "Without a scan, there will be no vulnerability information for this image",
+  "remediation": "Configure the appropriate registry and scanner integrations so that StackRox can obtain scans for your images.",
+  "disabled": true,
+  "categories": [
+    "Vulnerability Management"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Unscanned Image",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

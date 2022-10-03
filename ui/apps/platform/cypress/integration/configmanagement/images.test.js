@@ -3,13 +3,15 @@ import {
     navigateToSingleEntityPage,
     hasCountWidgetsFor,
     clickOnCountWidget,
-    clickOnRowEntity,
+    entityListCountMatchesTableLinkCount,
     hasTabsFor,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
 } from '../../helpers/configWorkflowUtils';
 import { selectors as configManagementSelectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
+
+// const entitiesKey = 'images'; // omit to minimize changed lines
 
 describe('Config Management Entities (Images)', () => {
     withAuth();
@@ -18,44 +20,46 @@ describe('Config Management Entities (Images)', () => {
         renderListAndSidePanel('images');
     });
 
-    it('should click on the deployments link in the images list and open the side panel with the images list', () => {
-        clickOnRowEntity('images', 'deployments', true);
+    it('should open the side panel to show the same number of deployments when the deployments link is clicked', () => {
+        entityListCountMatchesTableLinkCount('images', 'deployments', /^\d+ deployments?$/);
     });
 
     it('should take you to a images single when the "navigate away" button is clicked', () => {
         renderListAndSidePanel('images');
-        navigateToSingleEntityPage('image');
+        navigateToSingleEntityPage('images');
     });
 
     it('should have the correct count widgets for a single entity view', () => {
         renderListAndSidePanel('images');
-        navigateToSingleEntityPage('image');
+        navigateToSingleEntityPage('images');
         hasCountWidgetsFor(['Deployments']);
     });
 
     it('should click on the deployments count widget in the entity page and show the deployments tab', () => {
         renderListAndSidePanel('images');
-        navigateToSingleEntityPage('image');
+        navigateToSingleEntityPage('images');
         hasCountWidgetsFor(['Deployments']);
         clickOnCountWidget('deployments', 'entityList');
     });
 
     it('should have the correct tabs for a single entity view', () => {
         renderListAndSidePanel('images');
-        navigateToSingleEntityPage('image');
+        navigateToSingleEntityPage('images');
         hasTabsFor(['deployments']);
     });
 
     it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+        const entitiesKey2 = 'deployments';
+
         context('Page', () => {
             renderListAndSidePanel('images');
-            navigateToSingleEntityPage('image');
-            pageEntityCountMatchesTableRows('Deployments');
+            navigateToSingleEntityPage('images');
+            pageEntityCountMatchesTableRows('images', entitiesKey2);
         });
 
         context('Side Panel', () => {
             renderListAndSidePanel('images');
-            sidePanelEntityCountMatchesTableRows('Deployments');
+            sidePanelEntityCountMatchesTableRows('images', entitiesKey2);
         });
     });
 

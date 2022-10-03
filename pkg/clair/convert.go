@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scans"
 	clairV1 "github.com/stackrox/scanner/api/v1"
+	clairConvert "github.com/stackrox/scanner/api/v1/convert"
 	clientMetadata "github.com/stackrox/scanner/pkg/clairify/client/metadata"
 	"github.com/stackrox/scanner/pkg/component"
 )
@@ -52,15 +53,15 @@ type cvss struct {
 // SeverityToStorageSeverity converts the given string representation of a severity into a storage.VulnerabilitySeverity.
 func SeverityToStorageSeverity(severity string) storage.VulnerabilitySeverity {
 	switch severity {
-	case string(clairV1.UnknownSeverity):
+	case string(clairConvert.UnknownSeverity):
 		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-	case string(clairV1.LowSeverity):
+	case string(clairConvert.LowSeverity):
 		return storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
-	case string(clairV1.ModerateSeverity):
+	case string(clairConvert.ModerateSeverity):
 		return storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
-	case string(clairV1.ImportantSeverity):
+	case string(clairConvert.ImportantSeverity):
 		return storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
-	case string(clairV1.CriticalSeverity):
+	case string(clairConvert.CriticalSeverity):
 		return storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
 	}
 	return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY

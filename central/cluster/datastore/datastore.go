@@ -42,7 +42,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -140,7 +140,7 @@ func New(
 		nameToIDCache:             simplecache.New(),
 	}
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		ds.searcher = search.NewV2(clusterStorage, indexer, clusterRanker)
 	} else {
 		ds.searcher = search.New(clusterStorage, indexer, graphProvider, clusterRanker)

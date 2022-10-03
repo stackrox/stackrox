@@ -23,7 +23,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -68,7 +68,7 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Indicator)))
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.postgres = pgtest.ForT(suite.T())
 		suite.storage = postgresStore.New(suite.postgres.Pool)
 		suite.indexer = postgresStore.NewIndexer(suite.postgres.Pool)
@@ -85,7 +85,7 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.postgres.Teardown(suite.T())
 	} else {
 		rocksdbtest.TearDownRocksDB(suite.rocksDB)
@@ -102,7 +102,7 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks.MockStore, *indexMocks.MockIndexer, *searchMocks.MockSearcher) {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
 	mockIndexer := indexMocks.NewMockIndexer(suite.mockCtrl)
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		mockStorage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
 		mockIndexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 	}
@@ -434,7 +434,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByPod() {
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 	storeMock, indexMock, searchMock := suite.setupDataStoreWithMocks()
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storeMock.EXPECT().DeleteByQuery(gomock.Any(), gomock.Any()).Return(nil)
 	} else {
 		searchMock.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "jkldfjk"}}, nil)
@@ -470,7 +470,7 @@ func (suite *ProcessIndicatorReindexSuite) SetupTest() {
 }
 
 func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return
 	}
 	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)

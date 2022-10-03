@@ -2,14 +2,14 @@ package search
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/set"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // GetGlobalSearchCategories returns a set of search categories
-func GetGlobalSearchCategories() set.V1SearchCategorySet {
+func GetGlobalSearchCategories() set.Set[v1.SearchCategory] {
 	// globalSearchCategories is exposed for e2e options test
-	globalSearchCategories := set.NewV1SearchCategorySet(
+	globalSearchCategories := set.NewSet(
 		v1.SearchCategory_ALERTS,
 		v1.SearchCategory_CLUSTERS,
 		v1.SearchCategory_DEPLOYMENTS,

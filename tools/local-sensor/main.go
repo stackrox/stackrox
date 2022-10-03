@@ -20,6 +20,8 @@ import (
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"github.com/stackrox/rox/sensor/testutils"
 	"google.golang.org/grpc"
@@ -74,6 +76,7 @@ type localSensorConfig struct {
 	CreateMode         k8s.CreateMode
 	Delay              time.Duration
 	PoliciesFile       string
+	FakeWorkloadFile   string
 }
 
 const (
@@ -135,6 +138,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		Delay:              5 * time.Second,
 		CreateMode:         k8s.Delay,
 		PoliciesFile:       "",
+		FakeWorkloadFile:   "",
 	}
 	flag.BoolVar(&sensorConfig.Verbose, "verbose", sensorConfig.Verbose, "prints all messages to stdout as well as to the output file")
 	flag.DurationVar(&sensorConfig.Duration, "duration", sensorConfig.Duration, "duration that the scenario should run (leave it empty to run it without timeout)")
@@ -147,12 +151,16 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.DurationVar(&sensorConfig.ResyncPeriod, "resync", sensorConfig.ResyncPeriod, "resync period")
 	flag.DurationVar(&sensorConfig.Delay, "delay", sensorConfig.Delay, "create events with a given delay")
 	flag.StringVar(&sensorConfig.PoliciesFile, "with-policies", sensorConfig.PoliciesFile, " a file containing a list of policies")
+	flag.StringVar(&sensorConfig.FakeWorkloadFile, "with-fakeworkload", sensorConfig.FakeWorkloadFile, " a file containing a FakeWorkload definition")
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
 
 	if sensorConfig.ReplayK8sEnabled && sensorConfig.RecordK8sEnabled {
 		log.Fatalf("cannot record and replay a trace at the same time. Use either -record or -replay flag")
+	}
+	if sensorConfig.ReplayK8sEnabled && sensorConfig.FakeWorkloadFile != "" {
+		log.Fatalf("cannot replay a trace and use fake workloads at the same time. Use either -replay or -record -with-fakeworkload")
 	}
 	if sensorConfig.RecordK8sEnabled && sensorConfig.RecordK8sFile == "" {
 		log.Printf("trace destination empty. Using default 'k8s-trace.jsonl'\n")
@@ -191,10 +199,18 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
 	localConfig := mustGetCommandLineArgs()
+	var fakeClient client.Interface
 	fakeClient, err := k8s.MakeOutOfClusterClient()
 	// when replying a trace, there is no need to connect to K8s cluster
 	if localConfig.ReplayK8sEnabled {
 		fakeClient = k8s.MakeFakeClient()
+	}
+	var workloadManager *fake.WorkloadManager
+	// if we are using a fake workload we don't want to connect to a real K8s cluster
+	if localConfig.FakeWorkloadFile != "" {
+		workloadManager = fake.NewWorkloadManager(fake.ConfigDefaults().
+			WithWorkloadFile(localConfig.FakeWorkloadFile))
+		fakeClient = workloadManager.Client()
 	}
 	utils.CrashOnError(err)
 
@@ -235,7 +251,8 @@ func main() {
 		WithK8sClient(fakeClient).
 		WithCentralConnectionFactory(fakeConnectionFactory).
 		WithLocalSensor(true).
-		WithResyncPeriod(localConfig.ResyncPeriod)
+		WithResyncPeriod(localConfig.ResyncPeriod).
+		WithWorkloadManager(workloadManager)
 
 	if localConfig.RecordK8sEnabled {
 		traceRec := &k8s.TraceWriter{

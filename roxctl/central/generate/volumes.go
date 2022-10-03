@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/roxctl/common/environment"
 )
@@ -26,7 +26,7 @@ func externalVolume(cliEnvironment environment.Environment) *cobra.Command {
 	external := &renderer.ExternalPersistence{
 		Central: &renderer.ExternalPersistenceInstance{},
 	}
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		external.DB = &renderer.ExternalPersistenceInstance{}
 	}
 	c := volumeCommand("pvc")
@@ -41,7 +41,7 @@ func externalVolume(cliEnvironment environment.Environment) *cobra.Command {
 	flagWrap.StringVarP(&external.Central.Name, "name", "", "stackrox-db", "external volume name for Central", "central")
 	flagWrap.StringVarP(&external.Central.StorageClass, "storage-class", "", "", "storage class name for Central (optional if you have a default StorageClass configured)", "central")
 	flagWrap.Uint32VarP(&external.Central.Size, "size", "", 100, "external volume size in Gi for Central", "central")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		flagWrap.StringVarP(&external.DB.Name, "db-name", "", "central-db", "external volume name for Central DB", "central-db")
 		flagWrap.StringVarP(&external.DB.StorageClass, "db-storage-class", "", "", "storage class name for Central DB (optional if you have a default StorageClass configured)", "central-db")
 		flagWrap.Uint32VarP(&external.DB.Size, "db-size", "", 100, "external volume size in Gi for Central DB", "central-db")
@@ -65,7 +65,7 @@ func hostPathVolume(cliEnvironment environment.Environment) *cobra.Command {
 	hostpath := &renderer.HostPathPersistence{
 		Central: &renderer.HostPathPersistenceInstance{},
 	}
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		hostpath.DB = &renderer.HostPathPersistenceInstance{}
 	}
 	c := volumeCommand("hostpath")
@@ -79,7 +79,7 @@ func hostPathVolume(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().StringVarP(&hostpath.Central.HostPath, "hostpath", "", "/var/lib/stackrox", "path on the host")
 	c.Flags().StringVarP(&hostpath.Central.NodeSelectorKey, "node-selector-key", "", "", "node selector key (e.g. kubernetes.io/hostname)")
 	c.Flags().StringVarP(&hostpath.Central.NodeSelectorValue, "node-selector-value", "", "", "node selector value")
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		c.Flags().StringVarP(&hostpath.DB.HostPath, "db-hostpath", "", "/var/lib/stackrox-central", "path on the host")
 		c.Flags().StringVarP(&hostpath.DB.NodeSelectorKey, "db-node-selector-key", "", "", "node selector key (e.g. kubernetes.io/hostname)")
 		c.Flags().StringVarP(&hostpath.DB.NodeSelectorValue, "db-node-selector-value", "", "", "node selector value")

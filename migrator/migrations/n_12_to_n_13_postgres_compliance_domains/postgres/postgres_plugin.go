@@ -205,22 +205,26 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ComplianceDomai
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ComplianceDomain) error {
 
-	return s.upsert(ctx, obj)
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ComplianceDomain) error {
 
-	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-	// violations
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	return pgutils.Retry(func() error {
+		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+		// violations
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
 
-	if len(objs) < batchAfter {
-		return s.upsert(ctx, objs...)
-	} else {
-		return s.copyFrom(ctx, objs...)
-	}
+		if len(objs) < batchAfter {
+			return s.upsert(ctx, objs...)
+		} else {
+			return s.copyFrom(ctx, objs...)
+		}
+	})
 }
 
 // Count returns the number of objects in the store
@@ -287,7 +291,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // DeleteByQuery removes the objects based on the passed query
@@ -300,7 +304,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 		query,
 	)
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -402,7 +406,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

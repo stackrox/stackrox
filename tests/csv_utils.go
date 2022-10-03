@@ -64,7 +64,7 @@ func verifyRiskEventTimelineCSV(t testutils.T, deploymentID string, eventNamesEx
 
 	// Check event names match
 	// Index 0 of a row is the timestamp and 2 is the event name
-	eventNamesInCSV := sliceutils.Map(rows, func(row []string) string { return row[2] }).([]string)
+	eventNamesInCSV := sliceutils.Map(rows, func(row []string) string { return row[2] })
 	assert.ElementsMatch(t, eventNamesExpected, eventNamesInCSV)
 
 	// All the records should be ordered by their event timestamp in a reverse order (latest first)

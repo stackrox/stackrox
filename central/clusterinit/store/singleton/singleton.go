@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/store/postgres"
 	"github.com/stackrox/rox/central/clusterinit/store/rocksdb"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -19,7 +19,7 @@ var (
 func Singleton() store.Store {
 	instanceInit.Do(func() {
 		var underlying store.UnderlyingStore
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			underlying = postgres.New(globaldb.GetPostgres())
 		} else {
 			var err error

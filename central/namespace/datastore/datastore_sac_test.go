@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -51,7 +51,7 @@ type namespaceDatastoreSACSuite struct {
 
 func (s *namespaceDatastoreSACSuite) SetupSuite() {
 	var err error
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pgtestbase = pgtest.ForT(s.T())
 		s.Require().NotNil(s.pgtestbase)
 		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
@@ -77,7 +77,7 @@ func (s *namespaceDatastoreSACSuite) SetupSuite() {
 }
 
 func (s *namespaceDatastoreSACSuite) TearDownSuite() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pgtestbase.Pool.Close()
 	} else {
 		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))

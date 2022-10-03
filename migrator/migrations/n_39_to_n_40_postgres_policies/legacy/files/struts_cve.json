@@ -1,0 +1,33 @@
+{
+  "id": "900990b5-60ef-44e5-b7f6-4a1f22215d7f",
+  "name": "Apache Struts: CVE-2017-5638",
+  "description": "Alert on deployments with images containing Apache Struts vulnerability CVE-2017-5638",
+  "rationale": "CVE-2017-5638 is a serious and easily-exploitable vulnerability in Apache Struts.",
+  "remediation": "Rebuild your container with an updated version of Apache Struts.",
+  "categories": [
+    "Vulnerability Management"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity": "CRITICAL_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "CVE",
+          "values": [
+            {
+              "value": "CVE-2017-5638"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/imagecomponentedge/index"
 	"github.com/stackrox/rox/central/imagecomponentedge/search"
 	"github.com/stackrox/rox/central/imagecomponentedge/store/dackbox"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -20,7 +20,7 @@ var (
 )
 
 func initialize() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		var err error
 		storage := postgres.New(globaldb.GetPostgres())
 		indexer := postgres.NewIndexer(globaldb.GetPostgres())
