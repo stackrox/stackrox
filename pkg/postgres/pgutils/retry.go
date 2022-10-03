@@ -41,6 +41,9 @@ func Retry2[T any](fn func() (T, error)) (T, error) {
 func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 	// Run query immediately
 	if val1, val2, err := fn(); err == nil || !isTransientError(err) {
+		if err != nil && err != pgx.ErrNoRows {
+			log.Infof("Found permanent error: %T %+v", err, err)
+		}
 		return val1, val2, err
 	}
 
