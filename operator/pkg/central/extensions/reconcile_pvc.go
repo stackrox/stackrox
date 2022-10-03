@@ -72,6 +72,9 @@ func getPersistenceByClaimName(central *platform.Central, claim string) *platfor
 	case DefaultCentralPVCName:
 		return central.Spec.Central.GetPersistence()
 	case DefaultCentralDBPVCName:
+		if central.Spec.Central.DB.IsExternal() {
+			return nil
+		}
 		return convertDBPersistenceToPersistence(central.Spec.Central.DB.GetPersistence())
 	default:
 		panic("unknown default claim name")
@@ -82,6 +85,9 @@ func getPersistenceByClaimName(central *platform.Central, claim string) *platfor
 func ReconcilePVCExtension(client ctrlClient.Client, target PVCTarget, defaultClaimName string) extensions.ReconcileExtension {
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
 		persistence := getPersistenceByClaimName(central, defaultClaimName)
+		if persistence == nil {
+			return nil
+		}
 		return reconcilePVC(ctx, central, persistence, target, defaultClaimName, client, log)
 	}
 	return wrapExtension(fn, client)

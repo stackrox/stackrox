@@ -182,6 +182,21 @@ type CentralDBSpec struct {
 	DeploymentSpec `json:",inline"`
 }
 
+// GetPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
+func (c *CentralDBSpec) GetPasswordSecret() *LocalSecretReference {
+	if c == nil {
+		return nil
+	}
+	return c.PasswordSecret
+}
+
+func (c *CentralDBSpec) GetPasswordGenerationDisabled() bool {
+	if c == nil {
+		return false
+	}
+	return pointer.BoolPtrDerefOr(c.PasswordGenerationDisabled, false)
+}
+
 // IsExternal specifies that the database should not be managed by the Operator
 func (c *CentralDBSpec) IsExternal() bool {
 	if c == nil {

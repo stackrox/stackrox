@@ -209,6 +209,8 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 	}
 
 	if c.ConnectionStringOverride != nil {
+		cv.SetBoolValue("external", true)
+
 		source := translation.NewValuesBuilder()
 		source.SetString("connectionString", c.ConnectionStringOverride)
 		cv.AddChild("source", &source)
