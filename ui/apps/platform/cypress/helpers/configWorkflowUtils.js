@@ -135,10 +135,8 @@ function getRequestConfigForEntity(entitiesKey) {
 // Exception if prefix differs from opnameForEntity above.
 const opnamePrefixExceptionForPrimaryAndSecondaryEntities = {
     clusters: 'getCluster_',
-    // TODO controls?
     images: 'getImage_',
     namespaces: 'getNamespace_',
-    // TODO getNode instead of getNodeCONTROL
     policies: 'getPolicy_',
     roles: 'getRole_',
     secrets: 'getSecret_',
@@ -384,7 +382,10 @@ function entityCountMatchesTableRows(entitiesKey1, entitiesKey2, contextSelector
                     .click();
             }
 
-            if (entitiesKey1 === 'controls' && entitiesKey2 === 'nodes') {
+            if (
+                (entitiesKey1 === 'controls' && entitiesKey2 === 'nodes') ||
+                (entitiesKey1 === 'nodes' && entitiesKey2 === 'controls')
+            ) {
                 clickCountWidget(); // no request
             } else {
                 interactAndWaitForConfigurationManagementSecondaryEntities(
