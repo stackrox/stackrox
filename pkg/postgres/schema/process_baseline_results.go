@@ -39,7 +39,7 @@ const (
 // ProcessBaselineResults holds the Gorm model for Postgres table `process_baseline_results`.
 type ProcessBaselineResults struct {
 	DeploymentId string `gorm:"column:deploymentid;type:varchar;primaryKey"`
-	ClusterId    string `gorm:"column:clusterid;type:varchar"`
-	Namespace    string `gorm:"column:namespace;type:varchar"`
+	ClusterId    string `gorm:"column:clusterid;type:varchar;index:sac_filter,type:btree"`
+	Namespace    string `gorm:"column:namespace;type:varchar;index:sac_filter,type:btree"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
