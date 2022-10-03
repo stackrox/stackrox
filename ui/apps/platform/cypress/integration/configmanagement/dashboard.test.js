@@ -20,7 +20,7 @@ const policyViolationsBySeverityLinkShouldMatchList = (linkSelector, linkRegExp,
                 cy.get(linkSelector).click();
             }, keyPlural);
 
-            cy.get(`[data-testid="side-panel"] [data-testid="panel-header"]:contains("${count}")`);
+            cy.get(`[data-testid="panel"] [data-testid="panel-header"]:contains("${count}")`);
         });
 };
 
