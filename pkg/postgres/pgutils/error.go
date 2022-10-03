@@ -52,6 +52,9 @@ func isTransientError(err error) bool {
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
 		return transientPGCodes.Contains(pgErr.Code)
 	}
+	if pgconn.SafeToRetry(err) {
+		return true
+	}
 	switch err {
 	case pgx.ErrTxClosed, pgx.ErrTxCommitRollback:
 		return true
@@ -62,7 +65,7 @@ func isTransientError(err error) bool {
 		if netErr.Temporary() || netErr.Timeout() {
 			return true
 		}
-		return errorhelpers.IsAny(err, syscall.ECONNREFUSED, syscall.ECONNREFUSED, syscall.ECONNABORTED)
+		return errorhelpers.IsAny(err, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED)
 	}
 	return errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe)
 }
