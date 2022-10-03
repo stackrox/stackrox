@@ -31,6 +31,9 @@ import (
 const (
 	// The number of consecutive errors for a scanner or registry that cause its health status to be UNHEALTHY
 	consecutiveErrorThreshold = 3
+
+	openshiftConfigNamespace  = "openshift-config"
+	openshiftConfigPullSecret = "pull-secret"
 )
 
 var (
@@ -655,6 +658,10 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 	return nil
 }
 
+func isOpenshiftGlobalRegistry(source *storage.ImageIntegration_Source) bool {
+	return source.GetNamespace() == openshiftConfigNamespace && source.GetName() == openshiftConfigPullSecret
+}
+
 func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registryTypes.ImageRegistry, error) {
 	registries := e.integrations.RegistrySet().GetAll()
 	if ctx.Internal {
@@ -670,6 +677,11 @@ func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registr
 			}
 			source := integration.GetSource()
 			if source.GetClusterId() != ctx.Source.ClusterID {
+				continue
+			}
+			// Check if the integration source is the global OpenShift registry
+			if isOpenshiftGlobalRegistry(source) {
+				filteredRegistries = append(filteredRegistries, registry)
 				continue
 			}
 			if source.GetNamespace() != ctx.Source.Namespace {
