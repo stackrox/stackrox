@@ -4,6 +4,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
 
@@ -62,6 +63,9 @@ func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 			var ret2 U
 			ret1, ret2, err = fn()
 			if err == nil || !isTransientError(err) {
+				if err != nil && err != pgx.ErrNoRows {
+					log.Infof("Found permanent error: %T %v", err, err)
+				}
 				return ret1, ret2, err
 			}
 		}
