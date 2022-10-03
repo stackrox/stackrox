@@ -40,7 +40,7 @@ func main() {
 	var sharedClientInterface client.Interface
 
 	// Workload manager is only non-nil when we are mocking out the k8s client
-	workloadManager := fake.NewWorkloadManager()
+	workloadManager := fake.NewWorkloadManager(fake.ConfigDefaults())
 	if workloadManager != nil {
 		sharedClientInterface = workloadManager.Client()
 	} else {
