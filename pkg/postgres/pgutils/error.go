@@ -65,7 +65,7 @@ func isTransientError(err error) bool {
 		if netErr.Temporary() || netErr.Timeout() {
 			return true
 		}
-		return errorhelpers.IsAny(err, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED)
+		return errorhelpers.IsAny(err, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED, syscall.EPIPE)
 	}
 	return errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe)
 }
