@@ -33,11 +33,18 @@ export function getDefaultGroup({ authProviderId, roleName }) {
     // - Only authProviderID is set, key and value are empty.
     // - The role name of the group matches the given role name.
     // We need _explicitly_ ask for empty key and value fields to receive the actual default role.
-    return axios
-        .get(`${url}?authProviderId=${authProviderId}&key=&value=&roleName=${roleName}`)
-        .then((response) => ({
-            response: response.data?.groups[0],
-        }));
+    return axios.get(`${url}?authProviderId=${authProviderId}&key=&value=`).then((response) => {
+        // Explicitly return the group if the role name matches.
+        if (response.data?.groups[0].roleName === roleName) {
+            return {
+                response: response.data?.groups[0],
+            };
+        }
+        // Otherwise, explicitly return null response.
+        return {
+            response: undefined,
+        };
+    });
 }
 
 /**
