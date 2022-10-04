@@ -94,6 +94,16 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 				if err == nil && migVer.SeqNum > 0 && version.CompareVersionsOr(migVer.MainVersion, minForceRollbackTo, -1) >= 0 {
 					upgradeStatus.ForceRollbackTo = migVer.MainVersion
 				}
+			} else {
+				// It is possible that we had a Rocks previously, so we may be able to rollback to that version.
+				// Get rollback to version
+				migVer, err := migrations.Read(filepath.Join(migrations.DBMountPath(), migrations.PreviousClone))
+				if err != nil {
+					log.Infof("Unable to get previous version, leaving ForceRollbackTo empty.  %v", err)
+				}
+				if err == nil && migVer.SeqNum > 0 && version.CompareVersionsOr(migVer.MainVersion, minForceRollbackTo, -1) >= 0 {
+					upgradeStatus.ForceRollbackTo = migVer.MainVersion
+				}
 			}
 
 			upgradeStatus.CanRollbackAfterUpgrade = freeBytes+toBeFreedBytes > requiredBytes
