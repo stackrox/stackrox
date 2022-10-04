@@ -7,8 +7,8 @@ import "internalapi/sensor/compliance_nodescan.proto";
 package sensor;
 
 message FullNodeScanRequest {
-    string node = 1;
-    FullNodeScan msg = 2;
+    string       node = 1;
+    FullNodeScan msg  = 2;
 }
 
 message FullNodeScanResponse {}
