@@ -23,7 +23,7 @@ import {
     accessControlBasePathV2,
     systemConfigPath,
     systemHealthPath,
-    collectionsPath,
+    collectionsBasePath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
@@ -67,7 +67,7 @@ function NavigationSidebar({
         platformConfigurationPaths.splice(
             platformConfigurationPaths.indexOf(policyManagementBasePath) + 1,
             0,
-            collectionsPath
+            collectionsBasePath
         );
     }
 
