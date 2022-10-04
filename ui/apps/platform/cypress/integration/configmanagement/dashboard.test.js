@@ -7,8 +7,6 @@ import {
     visitConfigurationManagementDashboard,
 } from '../../helpers/configWorkflowUtils';
 
-// Name in this file is keyPlural instead of entitiesKey to minimize changed lines.
-
 // This function is more generic than its name implies.
 const policyViolationsBySeverityLinkShouldMatchList = (linkSelector, linkRegExp, keyPlural) => {
     cy.get(linkSelector)
@@ -24,11 +22,11 @@ const policyViolationsBySeverityLinkShouldMatchList = (linkSelector, linkRegExp,
         });
 };
 
-describe('Config Management Dashboard Page', () => {
+describe('Configuration Management Dashboard', () => {
     withAuth();
 
     it('should show same number of policies between the tile and the policies list', () => {
-        const keyPlural = 'policies';
+        const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
 
@@ -39,7 +37,7 @@ describe('Config Management Dashboard Page', () => {
 
                 interactAndWaitForConfigurationManagementEntities(() => {
                     cy.get(`${selectors.tileLinks}:eq(0)`).click();
-                }, keyPlural);
+                }, entitiesKey);
 
                 cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
                     .invoke('text')
@@ -50,7 +48,7 @@ describe('Config Management Dashboard Page', () => {
     });
 
     it('should show same number of controls between the tile and the controls list', () => {
-        const keyPlural = 'controls';
+        const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
 
@@ -61,7 +59,7 @@ describe('Config Management Dashboard Page', () => {
 
                 interactAndWaitForConfigurationManagementEntities(() => {
                     cy.get(`${selectors.tileLinks}:eq(1)`).click();
-                }, keyPlural);
+                }, entitiesKey);
 
                 cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
                     .invoke('text')
@@ -72,126 +70,126 @@ describe('Config Management Dashboard Page', () => {
     });
 
     it('should properly navigate to the policies list', () => {
-        const keyPlural = 'policies';
+        const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(`${selectors.tileLinks}:eq(0)`).click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('should properly navigate to the cis controls list', () => {
-        const keyPlural = 'controls';
+        const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(`${selectors.tileLinks}:eq(1)`).click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('should properly navigate to the clusters list', () => {
-        const keyPlural = 'clusters';
+        const entitiesKey = 'clusters';
 
         visitConfigurationManagementDashboard();
 
         cy.get(selectors.applicationAndInfrastructureDropdown).click();
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getMenuListItem('clusters')).click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('should properly navigate to the namespaces list', () => {
-        const keyPlural = 'namespaces';
+        const entitiesKey = 'namespaces';
 
         visitConfigurationManagementDashboard();
 
         cy.get(selectors.applicationAndInfrastructureDropdown).click();
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getMenuListItem('namespaces')).click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('should properly navigate to the nodes list', () => {
-        const keyPlural = 'nodes';
+        const entitiesKey = 'nodes';
 
         visitConfigurationManagementDashboard();
 
         cy.get(selectors.applicationAndInfrastructureDropdown).click();
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getMenuListItem('nodes')).click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('should properly navigate to the deployments list', () => {
-        const keyPlural = 'deployments';
+        const entitiesKey = 'deployments';
 
         visitConfigurationManagementDashboard();
 
         cy.get(selectors.applicationAndInfrastructureDropdown).click();
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getMenuListItem('deployments')).click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('should properly navigate to the images list', () => {
-        const keyPlural = 'images';
+        const entitiesKey = 'images';
 
         visitConfigurationManagementDashboard();
 
         cy.get(selectors.applicationAndInfrastructureDropdown).click();
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getMenuListItem('images')).click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('should properly navigate to the secrets list', () => {
-        const keyPlural = 'secrets';
+        const entitiesKey = 'secrets';
 
         visitConfigurationManagementDashboard();
 
         cy.get(selectors.applicationAndInfrastructureDropdown).click();
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getMenuListItem('secrets')).click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('should properly navigate to the users and groups list', () => {
-        const keyPlural = 'subjects';
+        const entitiesKey = 'subjects';
 
         visitConfigurationManagementDashboard();
 
         cy.get(selectors.rbacVisibilityDropdown).click();
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getMenuListItem('users and groups')).click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('should properly navigate to the service accounts list', () => {
-        const keyPlural = 'serviceaccounts';
+        const entitiesKey = 'serviceaccounts';
 
         visitConfigurationManagementDashboard();
 
         cy.get(selectors.rbacVisibilityDropdown).click();
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getMenuListItem('service accounts')).click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('should properly navigate to the roles list', () => {
-        const keyPlural = 'roles';
+        const entitiesKey = 'roles';
 
         visitConfigurationManagementDashboard();
 
         cy.get(selectors.rbacVisibilityDropdown).click();
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getMenuListItem('roles')).click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('clicking the "Policy Violations By Severity" widget\'s "View All" button should take you to the policies list', () => {
-        const keyPlural = 'policies';
+        const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
 
@@ -199,11 +197,11 @@ describe('Config Management Dashboard Page', () => {
             cy.get(selectors.getWidget('Policy Violations by Severity'))
                 .find(selectors.viewAllButton)
                 .click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "View All" button should take you to the controls list', () => {
-        const keyPlural = 'controls';
+        const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
 
@@ -211,11 +209,11 @@ describe('Config Management Dashboard Page', () => {
             cy.get(selectors.cisStandardsAcrossClusters.widget)
                 .find(selectors.viewStandardButton)
                 .click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('clicking the "Users with most Cluster Admin Roles" widget\'s "View All" button should take you to the users & groups list', () => {
-        const keyPlural = 'subjects';
+        const entitiesKey = 'subjects';
 
         visitConfigurationManagementDashboard();
 
@@ -223,11 +221,11 @@ describe('Config Management Dashboard Page', () => {
             cy.get(selectors.getWidget('Users with most Cluster Admin Roles'))
                 .find(selectors.viewAllButton)
                 .click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('clicking a specific user in the "Users with most Cluster Admin Roles" widget should take you to a single subject page', () => {
-        const keyPlural = 'subjects';
+        const entitiesKey = 'subjects';
 
         visitConfigurationManagementDashboard();
 
@@ -236,11 +234,11 @@ describe('Config Management Dashboard Page', () => {
                 .find(selectors.horizontalBars)
                 .eq(0)
                 .click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('clicking the "Secrets Most Used Across Deployments" widget\'s "View All" button should take you to the secrets list', () => {
-        const keyPlural = 'secrets';
+        const entitiesKey = 'secrets';
 
         visitConfigurationManagementDashboard();
 
@@ -248,19 +246,19 @@ describe('Config Management Dashboard Page', () => {
             cy.get(selectors.getWidget('Secrets Most Used Across Deployments'))
                 .find(selectors.viewAllButton)
                 .click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     // This test might fail in local deployment.
     it('should show the same number of high severity policies in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
-        const keyPlural = 'policies';
+        const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
 
         policyViolationsBySeverityLinkShouldMatchList(
             selectors.policyViolationsBySeverity.link.ratedAsHigh,
             /^(\d+) rated as high/,
-            keyPlural
+            entitiesKey
         );
 
         cy.location('search').should('contain', '[Severity]=HIGH_SEVERITY');
@@ -269,14 +267,14 @@ describe('Config Management Dashboard Page', () => {
 
     // This test might fail in local deployment.
     it('should show the same number of low severity policies in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
-        const keyPlural = 'policies';
+        const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
 
         policyViolationsBySeverityLinkShouldMatchList(
             selectors.policyViolationsBySeverity.link.ratedAsLow,
             /^(\d+) rated as low/,
-            keyPlural
+            entitiesKey
         );
 
         cy.location('search').should('contain', '[Severity]=LOW_SEVERITY');
@@ -284,21 +282,21 @@ describe('Config Management Dashboard Page', () => {
     });
 
     it('should show the same number of policies without violations in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
-        const keyPlural = 'policies';
+        const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
 
         policyViolationsBySeverityLinkShouldMatchList(
             selectors.policyViolationsBySeverity.link.policiesWithoutViolations,
             /^(\d+) (policy|policies)/,
-            keyPlural
+            entitiesKey
         );
 
         cy.location('search').should('contain', '[Policy%20Status]=Pass');
     });
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', () => {
-        const keyPlural = 'controls';
+        const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
 
@@ -311,13 +309,13 @@ describe('Config Management Dashboard Page', () => {
             cy.get(selectors.cisStandardsAcrossClusters.widget)
                 .find(selectors.cisStandardsAcrossClusters.passingControlsLink)
                 .click();
-        }, keyPlural);
+        }, entitiesKey);
 
         cy.location('search').should('contain', '[Compliance%20State]=Pass');
     });
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "failing controls" link should take you to the controls list and filter by failing controls', () => {
-        const keyPlural = 'controls';
+        const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
 
@@ -325,13 +323,13 @@ describe('Config Management Dashboard Page', () => {
             cy.get(selectors.cisStandardsAcrossClusters.widget)
                 .find(selectors.cisStandardsAcrossClusters.failingControlsLinks)
                 .click();
-        }, keyPlural);
+        }, entitiesKey);
 
         cy.location('search').should('contain', '[Compliance%20State]=Fail');
     });
 
     it('clicking the "Secrets Most Used Across Deployments" widget\'s individual list items should take you to the secret\'s single page', () => {
-        const keyPlural = 'secrets';
+        const entitiesKey = 'secrets';
 
         visitConfigurationManagementDashboard();
 
@@ -340,7 +338,7 @@ describe('Config Management Dashboard Page', () => {
                 .find('ul li')
                 .eq(0)
                 .click();
-        }, keyPlural);
+        }, entitiesKey);
     });
 
     it('switching clusters in the "CIS Standard Across Clusters" widget\'s should change the data', () => {

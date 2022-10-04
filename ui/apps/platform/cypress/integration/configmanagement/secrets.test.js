@@ -13,17 +13,17 @@ import {
 import { selectors as configManagementSelectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
 
-// const entitiesKey = 'secrets'; // omit to minimize changed lines
+const entitiesKey = 'secrets';
 
-describe('Config Management Entities (Secrets)', () => {
+describe('Configuration Management Secrets', () => {
     withAuth();
 
     it('should render the secrets list and open the side panel when a row is clicked', () => {
-        renderListAndSidePanel('secrets');
+        renderListAndSidePanel(entitiesKey);
     });
 
     it('should render the deployments link and open the side panel when a row is clicked', () => {
-        visitConfigurationManagementEntities('secrets');
+        visitConfigurationManagementEntities(entitiesKey);
 
         cy.get(configManagementSelectors.tableRows)
             .find(`${configManagementSelectors.tableCells} a[data-testid='deployment']`)
@@ -38,51 +38,51 @@ describe('Config Management Entities (Secrets)', () => {
     });
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
-        renderListAndSidePanel('secrets');
-        clickOnSingularEntityWidgetInSidePanel('secrets', 'clusters');
+        renderListAndSidePanel(entitiesKey);
+        clickOnSingularEntityWidgetInSidePanel(entitiesKey, 'clusters');
     });
 
     it('should take you to a secrets single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel('secrets');
-        navigateToSingleEntityPage('secrets');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should show the related cluster widget', () => {
-        renderListAndSidePanel('secrets');
-        navigateToSingleEntityPage('secrets');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasRelatedEntityFor('Cluster');
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel('secrets');
-        navigateToSingleEntityPage('secrets');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Deployments']);
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel('secrets');
-        navigateToSingleEntityPage('secrets');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasTabsFor(['deployments']);
     });
 
     it('should click on the deployments count widget in the entity page and show the deployments tab', () => {
-        renderListAndSidePanel('secrets');
-        navigateToSingleEntityPage('secrets');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('deployments', 'entityList');
     });
 
-    it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+    describe('should have same number in deployments table as in count widget', () => {
         const entitiesKey2 = 'deployments';
 
-        context('Page', () => {
-            renderListAndSidePanel('secrets');
-            navigateToSingleEntityPage('secrets');
-            pageEntityCountMatchesTableRows('secrets', entitiesKey2);
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('secrets');
-            sidePanelEntityCountMatchesTableRows('secrets', entitiesKey2);
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 });
