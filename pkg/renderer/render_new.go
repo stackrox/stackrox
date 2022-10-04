@@ -93,7 +93,9 @@ func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) 
 	// Modify metaVals depending on deployment format:
 	metaVals.KubectlOutput = c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL
 	metaVals.EnablePodSecurityPolicies = c.EnablePodSecurityPolicies
-
+	if metaVals.KubectlOutput {
+		metaVals.AutoSensePodSecurityPolicies = false
+	}
 	chartFiles, err := chTpl.InstantiateRaw(metaVals)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to instantiate central services chart template")
