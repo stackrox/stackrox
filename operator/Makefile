@@ -204,8 +204,9 @@ GET_GITHUB_RELEASE_FN = get_github_release() { \
 		for i in {1..5}; do \
 			set +e ;\
 			curl --fail --location --output $${1} $${2} ;\
-			[ $$? -eq 0 ] && break ;\
+			code=$$? ;\
 			set -e ;\
+			[ $$code -eq 0 ] && break ;\
 			[ $$i -eq 5 ] && exit 1; \
 		done ;\
 		[[ "$$(uname -s)" != "Darwin" ]] || xattr -c $${1} ;\
