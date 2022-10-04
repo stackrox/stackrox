@@ -90,6 +90,7 @@ jobs:
           if [[ "${{github.repository}}" == "stackrox/infra" ]]; then
             script_url="/repos/stackrox/stackrox/contents/.github/workflows/scripts/common.sh?ref=gavin/RS-574/reuse-cluster-create"
           fi
+          echo "URL: $script_url"
           gh api -H "$ACCEPT_RAW" "$script_url" | bash -s -- \
             create-cluster \
             "${{inputs.flavor}}" \
