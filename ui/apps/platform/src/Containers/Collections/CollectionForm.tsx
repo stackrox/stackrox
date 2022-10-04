@@ -1,18 +1,12 @@
 import React from 'react';
 import { Card, CardBody, Flex, FlexItem, Title } from '@patternfly/react-core';
 
-import { ResolvedCollectionResponse } from 'services/CollectionsService';
 import CollectionResults from './CollectionResults';
-import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
-import Ipsum from './Ipsum_DELETE';
 
-export type CollectionFormProps = {
-    action: CollectionPageAction['type'];
-    collectionData: ResolvedCollectionResponse | undefined;
-};
+export type CollectionFormProps = Record<string, never>;
 
-function CollectionForm({ action, collectionData }: CollectionFormProps) {
+function CollectionForm() {
     return (
         <Flex alignItems={{ default: 'alignItemsStretch' }}>
             <FlexItem style={{ flexBasis: 0 }} flex={{ default: 'flex_2' }}>
@@ -32,13 +26,11 @@ function CollectionForm({ action, collectionData }: CollectionFormProps) {
                             <RuleSelector />
                             <RuleSelector />
                             <RuleSelector />
-                            <Ipsum />
                         </CardBody>
                     </Card>
                     <Card>
                         <CardBody>
                             <Title headingLevel="h2">Attach existing collections</Title>
-                            <Ipsum />
                         </CardBody>
                     </Card>
                 </Flex>
@@ -54,7 +46,6 @@ function CollectionForm({ action, collectionData }: CollectionFormProps) {
                 <Card className="pf-u-h-100" style={{ overflow: 'auto' }}>
                     <CardBody>
                         <CollectionResults />
-                        <Ipsum />
                     </CardBody>
                 </Card>
             </FlexItem>

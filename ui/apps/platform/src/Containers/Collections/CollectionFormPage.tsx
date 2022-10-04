@@ -37,7 +37,7 @@ function CollectionsFormPage({ pageAction }: CollectionsFormPageProps) {
         return collectionId ? getCollection(collectionId) : noopRequest;
     }, [collectionId]);
 
-    const { data, loading, error } = useRestQuery(collectionFetcher);
+    const { data } = useRestQuery(collectionFetcher);
 
     const watchElements = Array.from(document.getElementsByClassName(observedClass));
     const { height } = useLayoutSpaceObserver(watchElements[0]?.parentElement, watchElements);
@@ -62,7 +62,7 @@ function CollectionsFormPage({ pageAction }: CollectionsFormPageProps) {
 
             <Divider component="div" />
             <PageSection isFilled style={styleVarsForResultsList(height)}>
-                <CollectionForm action={pageAction.type} collectionData={data} />
+                <CollectionForm />
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" className={`${observedClass} pf-u-flex-grow-0 pf-u-py-md`}>
