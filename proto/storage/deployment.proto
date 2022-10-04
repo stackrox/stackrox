@@ -18,7 +18,7 @@ message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" sql:"pk"'];
     string name                                = 2 [(gogoproto.moretags) = 'search:"Deployment,store"'];
     reserved 3;
-    uint64 hash                                = 26 [(gogoproto.moretags) = 'hash:"ignore"'];
+    uint64 hash                                = 26 [(gogoproto.moretags) = 'hash:"ignore" sensorhash:"ignore"'];
     string type                                = 4 [(gogoproto.moretags) = 'search:"Deployment Type"'];
     string namespace                           = 5 [(gogoproto.moretags) = 'search:"Namespace,store"'];
     string namespace_id                        = 23 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint"'];

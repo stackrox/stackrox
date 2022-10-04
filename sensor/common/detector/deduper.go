@@ -37,6 +37,7 @@ func (d *deduper) addDeployment(deployment *storage.Deployment) {
 	defer d.hashLock.Unlock()
 
 	d.hash[deployment.GetId()] = hashValue
+	deployment.Hash = hashValue
 }
 
 func (d *deduper) needsProcessing(deployment *storage.Deployment) bool {
@@ -60,6 +61,7 @@ func (d *deduper) needsProcessing(deployment *storage.Deployment) bool {
 	defer d.hashLock.Unlock()
 
 	d.hash[deployment.GetId()] = hashValue
+	deployment.Hash = hashValue
 	return true
 }
 
