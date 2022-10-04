@@ -77,6 +77,10 @@ if ! (return 0 2>/dev/null); then # called
         GITHUB_REF_NAME
 
     URL="/repos/$GITHUB_REPOSITORY/contents/.github/workflows/scripts/$SCRIPT.sh?ref=$GITHUB_REF_NAME"
+    if [[ "$GITHUB_REPOSITORY" == "stackrox/infra" ]]; then
+        URL="/repos/stackrox/stackrox/contents/.github/workflows/scripts/common.sh?ref=gavin/RS-574/reuse-cluster-create"
+    fi
+    echo "URL: $URL"
     shift
     gh_log debug "Executing '$SCRIPT.sh' from '$GITHUB_REPOSITORY' $GITHUB_REF_NAME branch with: ${*@Q}"
     gh api -H "Accept: application/vnd.github.v3.raw" "$URL" | bash -s -- "$@"
