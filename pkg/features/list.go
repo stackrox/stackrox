@@ -43,6 +43,6 @@ var (
 	// NetworkGraphPatternFly enables the PatternFly version of NetworkGraph. (used in the front-end app only)
 	NetworkGraphPatternFly = registerFeature("Enable PatternFly version of NetworkGraph", "ROX_NETWORK_GRAPH_PATTERNFLY", false)
 
-	// FullNodeScanning RHCOS full node scanning function
-	FullNodeScanning = registerFeature("Enable RHCOS full node scanning function", "ROX_FULL_NODE_SCANNING", false)
+	// RHCOSNodeScanning enables phase 1 functions of "Full host level vulnerability scanning for RHCOS nodes" (ROX-10818)
+	RHCOSNodeScanning = registerFeature("Enable RHCOS node scanning of OS and installed packages", "ROX_RHCOS_NODE_SCANNING", false)
 )
