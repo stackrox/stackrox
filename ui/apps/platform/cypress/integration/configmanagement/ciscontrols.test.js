@@ -16,9 +16,9 @@ import {
 } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
 
-// const entitiesKey = 'controls'; // omit to minimize changed lines
+const entitiesKey = 'controls';
 
-describe('Config Management Entities (CIS controls)', () => {
+describe('Configuration Management Controls', () => {
     withAuth();
 
     it('should render the controls list and open the side panel when a row is clicked', () => {
@@ -29,49 +29,49 @@ describe('Config Management Entities (CIS controls)', () => {
             cy.get('[data-testid="scan-button"]').click();
         });
 
-        renderListAndSidePanel('controls');
+        renderListAndSidePanel(entitiesKey);
     });
 
     it('should take you to a control single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel('controls');
-        navigateToSingleEntityPage('controls');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel('controls');
-        navigateToSingleEntityPage('controls');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Nodes']);
     });
 
     it('should click on the nodes count widget in the entity page and show the nodes tab', () => {
-        renderListAndSidePanel('controls');
-        navigateToSingleEntityPage('controls');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('nodes', 'entityList');
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel('controls');
-        navigateToSingleEntityPage('controls');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasTabsFor(['nodes']);
     });
 
-    it('should have the same number of Nodes in the count widget as in the Nodes table', () => {
+    describe('should have same number in nodes table as in count widget', () => {
         const entitiesKey2 = 'nodes';
 
-        context('Page', () => {
-            renderListAndSidePanel('controls');
-            navigateToSingleEntityPage('controls');
-            pageEntityCountMatchesTableRows('controls', entitiesKey2);
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('controls');
-            sidePanelEntityCountMatchesTableRows('controls', entitiesKey2);
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
     it('should show no failing nodes in the control findings section of a passing control', () => {
-        visitConfigurationManagementEntities('controls');
+        visitConfigurationManagementEntities(entitiesKey);
 
         cy.get(configManagementSelectors.tableNextPage).click();
         cy.get(configManagementSelectors.tableCells)
@@ -82,7 +82,7 @@ describe('Config Management Entities (CIS controls)', () => {
     });
 
     it('should show failing nodes in the control findings section of a failing control', () => {
-        visitConfigurationManagementEntities('controls');
+        visitConfigurationManagementEntities(entitiesKey);
 
         cy.get(configManagementSelectors.tableCells)
             .contains(controlStatus.fail)
