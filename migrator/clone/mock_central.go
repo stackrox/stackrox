@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"testing"
 
@@ -355,6 +356,12 @@ func (m *mockCentral) verifyMigrationVersion(dbPath string, ver *versionPair) {
 }
 
 func (m *mockCentral) verifyMigrationVersionPostgres(clone string, ver *versionPair) {
+	pc, _, _, ok := runtime.Caller(1)
+	details := runtime.FuncForPC(pc)
+	if ok && details != nil {
+		fmt.Printf("called from %s\n", details.Name())
+	}
+	log.Infof("SHREWS %q", clone)
 	pool := pgadmin.GetClonePool(m.adminConfig, clone)
 	defer pool.Close()
 

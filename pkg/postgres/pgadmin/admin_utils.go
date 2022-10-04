@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -238,7 +239,11 @@ func GetAdminPool(postgresConfig *pgxpool.Config) *pgxpool.Pool {
 // THIS POOL SHOULD BE CLOSED ONCE ITS PURPOSE HAS BEEN FULFILLED.
 func GetClonePool(postgresConfig *pgxpool.Config, clone string) *pgxpool.Pool {
 	log.Debugf("GetClonePool -- %q", clone)
-
+	pc, _, _, ok := runtime.Caller(1)
+	details := runtime.FuncForPC(pc)
+	if ok && details != nil {
+		fmt.Printf("called from %s\n", details.Name())
+	}
 	// Clone config to connect to template DB
 	tempConfig := postgresConfig.Copy()
 
