@@ -82,7 +82,7 @@ function CollectionsFormPage({ pageAction }: CollectionsFormPageProps) {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" className={`${observedClass} pf-u-flex-grow-0 pf-u-py-md`}>
-                <Button className="pf-u-mr-md">{action} collection</Button>
+                <Button className="pf-u-mr-md">{action === 'view' ? 'Edit' : 'Save'}</Button>
                 <Button variant="secondary">Cancel</Button>
             </PageSection>
         </>
