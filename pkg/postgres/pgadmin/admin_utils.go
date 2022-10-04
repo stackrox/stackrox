@@ -345,13 +345,14 @@ func getAvailablePostgresCapacity(postgresConfig *pgxpool.Config) (int64, error)
 			}
 			return 0, err
 		}
-
+		log.Info(info)
 		rawCapacityInfo = append(rawCapacityInfo, info)
 	}
 
 	// We should only get the header row and the row for the size of $PGDATA.  If we
 	// get more than that, then $PGDATA is not defined
 	if len(rawCapacityInfo) > 2 {
+		log.Info(len(rawCapacityInfo))
 		if err := tx.Rollback(ctx); err != nil {
 			return 0, err
 		}
