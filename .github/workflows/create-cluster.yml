@@ -87,8 +87,7 @@ jobs:
         run: |
           set -uo pipefail
           if [[ "${{inputs.direct_exec}}" == "true" ]]; then
-            ls -l
-            pwd
+            echo "${{ toJson(github) }}"
             source ./.github/workflows/scripts/common.sh
               ./.github/workflows/scripts/create-cluster \
               "${{inputs.flavor}}" \
