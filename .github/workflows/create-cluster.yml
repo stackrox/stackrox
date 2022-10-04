@@ -29,10 +29,6 @@ on:
         type: boolean
         required: false
         default: false
-      direct_exec:
-        type: boolean
-        required: false
-        default: false
 
   workflow_dispatch:
     inputs:
@@ -78,6 +74,11 @@ jobs:
           chmod +x ~/.local/bin/infractl
           # Ensure that the binary works
           infractl --version
+
+      - name: Env OK
+        run: |
+          echo "STACKROX_GHA_VERSION: $STACKROX_GHA_VERSION" || true
+          echo "env.STACKROX_GHA_VERSION: ${{ env.STACKROX_GHA_VERSION }}" || true
 
       - name: Create Cluster
         env:
