@@ -29,6 +29,10 @@ on:
         type: boolean
         required: false
         default: false
+      direct_exec:
+        type: boolean
+        required: false
+        default: false
 
   workflow_dispatch:
     inputs:
@@ -82,10 +86,20 @@ jobs:
           GH_NO_UPDATE_NOTIFIER: 1
         run: |
           set -uo pipefail
-          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
-            create-cluster \
-            "${{inputs.flavor}}" \
-            "${{inputs.name}}" \
-            "${{inputs.lifespan}}" \
-            "${{inputs.wait}}" \
-            "${{inputs.args}}"
+          if [[ "${{inputs.direct_exec}}" == "true" ]]; then
+            source ./scripts/common.sh
+              ./scripts/create-cluster \
+              "${{inputs.flavor}}" \
+              "${{inputs.name}}" \
+              "${{inputs.lifespan}}" \
+              "${{inputs.wait}}" \
+              "${{inputs.args}}"
+          else
+            gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+              create-cluster \
+              "${{inputs.flavor}}" \
+              "${{inputs.name}}" \
+              "${{inputs.lifespan}}" \
+              "${{inputs.wait}}" \
+              "${{inputs.args}}"
+          fi
