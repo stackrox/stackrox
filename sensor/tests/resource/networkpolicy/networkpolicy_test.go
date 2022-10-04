@@ -3,6 +3,7 @@ package networkpolicy
 import (
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/sensor/tests/resource"
 	"github.com/stretchr/testify/suite"
@@ -67,8 +68,11 @@ func (s *NetworkPolicySuite) Test_DeploymentShouldNotHaveViolation() {
 		// it disappears once re-sync kicks-in and processes the relationship betwee the network policy
 		// and this deployment. Therefore, this test passes as is, but the opposite assertion would also
 		// pass. e.g. "check if there IS an alert", because there will be a state where the alert is there.
-		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) bool {
-			return !checkIfAlertsHaveViolation(result, ingressNetpolViolationName)
+		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) error {
+			if checkIfAlertsHaveViolation(result, ingressNetpolViolationName) {
+				return errors.Errorf("violation found for deployment %s and violation name %s", result.GetSource().String(), ingressNetpolViolationName)
+			}
+			return nil
 		}, "Should not have a violation")
 	})
 }
@@ -77,8 +81,11 @@ func (s *NetworkPolicySuite) Test_DeploymentShouldHaveViolation() {
 	s.testContext.RunWithResources([]resource.YamlTestFile{
 		NginxDeployment,
 	}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) bool {
-			return checkIfAlertsHaveViolation(result, ingressNetpolViolationName)
+		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) error {
+			if !checkIfAlertsHaveViolation(result, ingressNetpolViolationName) {
+				return errors.Errorf("violation not found for deployment %s and violation name %s", result.GetSource().String(), ingressNetpolViolationName)
+			}
+			return nil
 		}, "Should have a violation")
 	})
 }

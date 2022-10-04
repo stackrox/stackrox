@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/tests/resource"
@@ -44,8 +45,11 @@ func (s *RoleDependencySuite) SetupSuite() {
 }
 
 func assertPermissionLevel(permissionLevel storage.PermissionLevel) resource.AssertFunc {
-	return func(deployment *storage.Deployment) bool {
-		return deployment.ServiceAccountPermissionLevel == permissionLevel
+	return func(deployment *storage.Deployment) error {
+		if deployment.ServiceAccountPermissionLevel != permissionLevel {
+			return errors.Errorf("expected permission level %s but found %s", permissionLevel, deployment.ServiceAccountPermissionLevel)
+		}
+		return nil
 	}
 
 }

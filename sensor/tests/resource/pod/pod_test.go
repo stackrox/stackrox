@@ -1,9 +1,12 @@
 package pod
 
 import (
+	"sort"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/tests/resource"
 	"github.com/stretchr/testify/suite"
@@ -43,24 +46,29 @@ func (s *PodHierarchySuite) TearDownTest() {
 	s.testContext.GetFakeCentral().ClearReceivedBuffer()
 }
 
+func sortAlphabetically(list []string) {
+	sort.Slice(list, func(a, b int) bool {
+		return list[a] > list[b]
+	})
+}
+
 func assertDeploymentContainerImages(images ...string) resource.AssertFunc {
-	return func(deployment *storage.Deployment) bool {
+	return func(deployment *storage.Deployment) error {
 		if len(deployment.GetContainers()) != len(images) {
-			return false
+			return errors.Errorf("number of containers does not match slice of images provided: %d != %d", len(deployment.GetContainers()), len(images))
 		}
-		allContains := true
+		containerImages := []string{}
 		for _, container := range deployment.GetContainers() {
-			fullname := container.GetImage().GetName().GetFullName()
-			contains := false
-			for _, i := range images {
-				if i == fullname {
-					contains = true
-					break
-				}
-			}
-			allContains = allContains && contains
+			containerImages = append(containerImages, container.GetImage().GetName().GetFullName())
 		}
-		return allContains
+
+		sortAlphabetically(containerImages)
+		sortAlphabetically(images)
+
+		if !cmp.Equal(containerImages, images) {
+			return errors.Errorf("container images don't match: %s", cmp.Diff(containerImages, images))
+		}
+		return nil
 	}
 }
 
