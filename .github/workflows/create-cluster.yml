@@ -29,6 +29,11 @@ on:
         type: boolean
         required: false
         default: false
+      STACKROX_GHA_VERSION:
+        description: Sets a version ref for callers in other repos
+        type: string
+        required: false
+        default: ""
 
   workflow_dispatch:
     inputs:
@@ -85,11 +90,12 @@ jobs:
           INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
           GH_TOKEN: ${{ github.token }}
           GH_NO_UPDATE_NOTIFIER: 1
+          STACKROX_GHA_VERSION: ${{ inputs.STACKROX_GHA_VERSION }}
         run: |
           set -uo pipefail
           script_url="${{env.script_url}}"
-          if [[ "${{github.repository}}" == "stackrox/infra" ]]; then
-            script_url="/repos/stackrox/stackrox/contents/.github/workflows/scripts/common.sh?ref=gavin/RS-574/reuse-cluster-create"
+          if [[ "${{ inputs.STACKROX_GHA_VERSION }}" != "" ]]; then
+            script_url="/repos/stackrox/stackrox/contents/.github/workflows/scripts/common.sh?ref=${{ inputs.STACKROX_GHA_VERSION }}"
           fi
           echo "script_url: $script_url"
           gh api -H "$ACCEPT_RAW" "$script_url" | bash -s -- \
