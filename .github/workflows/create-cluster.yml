@@ -85,11 +85,6 @@ jobs:
           # Ensure that the binary works
           infractl --version
 
-      - name: Env OK
-        run: |
-          echo "STACKROX_GHA_VERSION: $STACKROX_GHA_VERSION" || true
-          echo "env.STACKROX_GHA_VERSION: ${{ env.STACKROX_GHA_VERSION }}" || true
-
       - name: Create Cluster
         env:
           INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
@@ -102,7 +97,6 @@ jobs:
           if [[ "${{ inputs.STACKROX_GHA_VERSION }}" != "" ]]; then
             script_url="/repos/stackrox/stackrox/contents/.github/workflows/scripts/common.sh?ref=${{ inputs.STACKROX_GHA_VERSION }}"
           fi
-          echo "script_url: $script_url"
           gh api -H "$ACCEPT_RAW" "$script_url" | bash -s -- \
             create-cluster \
             "${{inputs.flavor}}" \

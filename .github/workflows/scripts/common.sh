@@ -80,7 +80,6 @@ if ! (return 0 2>/dev/null); then # called
     if [[ "${STACKROX_GHA_VERSION:-}" != "" ]]; then
         URL="/repos/stackrox/stackrox/contents/.github/workflows/scripts/$SCRIPT.sh?ref=$STACKROX_GHA_VERSION"
     fi
-    echo "URL: $URL"
     shift
     gh_log debug "Executing '$SCRIPT.sh' from '$GITHUB_REPOSITORY' $GITHUB_REF_NAME branch with: ${*@Q}"
     gh api -H "Accept: application/vnd.github.v3.raw" "$URL" | bash -s -- "$@"
