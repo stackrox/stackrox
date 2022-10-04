@@ -86,21 +86,14 @@ jobs:
           GH_NO_UPDATE_NOTIFIER: 1
         run: |
           set -uo pipefail
-          if [[ "${{inputs.direct_exec}}" == "true" ]]; then
-            echo "${{ toJson(github) }}"
-            source ./.github/workflows/scripts/common.sh
-              ./.github/workflows/scripts/create-cluster \
-              "${{inputs.flavor}}" \
-              "${{inputs.name}}" \
-              "${{inputs.lifespan}}" \
-              "${{inputs.wait}}" \
-              "${{inputs.args}}"
-          else
-            gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
-              create-cluster \
-              "${{inputs.flavor}}" \
-              "${{inputs.name}}" \
-              "${{inputs.lifespan}}" \
-              "${{inputs.wait}}" \
-              "${{inputs.args}}"
+          script_url="${{env.script_url}}"
+          if [[ "${{github.repository}}" == "stackrox/infra" ]]; then
+            script_url="/repos/stackrox/stackrox/contents/.github/workflows/scripts/common.sh?ref=gavin/RS-574/reuse-cluster-create"
           fi
+          gh api -H "$ACCEPT_RAW" "$script_url" | bash -s -- \
+            create-cluster \
+            "${{inputs.flavor}}" \
+            "${{inputs.name}}" \
+            "${{inputs.lifespan}}" \
+            "${{inputs.wait}}" \
+            "${{inputs.args}}"
