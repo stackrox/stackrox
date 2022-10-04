@@ -69,10 +69,6 @@ on:
         type: string
         required: false
         default: ""
-    outputs:
-      status:
-        description: The status of the cluster after this workflow completes
-        value: ${{ jobs.infra.outputs.status }}
 
 env:
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
