@@ -81,24 +81,34 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 				if err != nil {
 					return nil, errors.Wrapf(err, "Fail to get database size %s", migrations.PreviousDatabase)
 				}
+
+				// Get a short-lived connection for the purposes of checking the version of the previous clone.
+				pool := pgadmin.GetClonePool(adminConfig, migrations.GetPreviousClone())
+				defer pool.Close()
+
+				// Get rollback to version
+				migVer, err := migrations.ReadVersionPostgres(pool)
+				if err != nil {
+					log.Infof("Unable to get previous version, leaving ForceRollbackTo empty.  %v", err)
+				}
+				if err == nil && migVer.SeqNum > 0 && version.CompareVersionsOr(migVer.MainVersion, minForceRollbackTo, -1) >= 0 {
+					upgradeStatus.ForceRollbackTo = migVer.MainVersion
+				}
+			} else {
+				// It is possible that we had a Rocks previously, so we may be able to rollback to that version.
+				// Get rollback to version
+				migVer, err := migrations.Read(filepath.Join(migrations.DBMountPath(), migrations.PreviousClone))
+				if err != nil {
+					log.Infof("Unable to get previous version, leaving ForceRollbackTo empty.  %v", err)
+				}
+				if err == nil && migVer.SeqNum > 0 && version.CompareVersionsOr(migVer.MainVersion, minForceRollbackTo, -1) >= 0 {
+					upgradeStatus.ForceRollbackTo = migVer.MainVersion
+				}
 			}
 
 			upgradeStatus.CanRollbackAfterUpgrade = freeBytes+toBeFreedBytes > requiredBytes
 			upgradeStatus.SpaceAvailableForRollbackAfterUpgrade = freeBytes + toBeFreedBytes
 			upgradeStatus.SpaceRequiredForRollbackAfterUpgrade = requiredBytes
-		}
-
-		// Get a short-lived connection for the purposes of checking the version of the replica.
-		pool := pgadmin.GetClonePool(adminConfig, migrations.GetPreviousClone())
-		defer pool.Close()
-
-		// Get rollback to version
-		migVer, err := migrations.ReadVersionPostgres(pool)
-		if err != nil {
-			log.Infof("Unable to get previous version, leaving ForceRollbackTo empty.  %v", err)
-		}
-		if err == nil && migVer.SeqNum > 0 && version.CompareVersionsOr(migVer.MainVersion, minForceRollbackTo, -1) >= 0 {
-			upgradeStatus.ForceRollbackTo = migVer.MainVersion
 		}
 
 		return &v1.GetUpgradeStatusResponse{
