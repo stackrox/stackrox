@@ -87,8 +87,8 @@ jobs:
         run: |
           set -uo pipefail
           if [[ "${{inputs.direct_exec}}" == "true" ]]; then
-            source ./scripts/common.sh
-              ./scripts/create-cluster \
+            source ./.github/workflows/scripts/common.sh
+              ./.github/workflows/scripts/create-cluster \
               "${{inputs.flavor}}" \
               "${{inputs.name}}" \
               "${{inputs.lifespan}}" \
