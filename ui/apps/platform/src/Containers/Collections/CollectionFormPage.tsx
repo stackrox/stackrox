@@ -1,11 +1,20 @@
 import React, { CSSProperties, useCallback } from 'react';
-import { Button, Divider, PageSection, Text, Title } from '@patternfly/react-core';
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    Button,
+    Divider,
+    PageSection,
+    Title,
+} from '@patternfly/react-core';
 
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import { getCollection } from 'services/CollectionsService';
 import useLayoutSpaceObserver from 'hooks/useLayoutSpaceObserver';
-import CollectionForm from './CollectionForm';
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import { collectionsBasePath } from 'routePaths';
 import { CollectionPageAction } from './collections.utils';
+import CollectionForm from './CollectionForm';
 
 export type CollectionsFormPageProps = {
     pageAction: CollectionPageAction;
@@ -50,7 +59,14 @@ function CollectionsFormPage({ pageAction }: CollectionsFormPageProps) {
                 padding={{ default: 'noPadding' }}
             >
                 <PageSection className="pf-u-py-md">
-                    <Text>Breadcrumbs</Text>
+                    <Breadcrumb>
+                        <BreadcrumbItemLink to={collectionsBasePath}>
+                            Collections
+                        </BreadcrumbItemLink>
+                        <BreadcrumbItem>
+                            {data ? data.collection.name : 'Create collection'}
+                        </BreadcrumbItem>
+                    </Breadcrumb>
                 </PageSection>
                 <Divider component="div" />
                 <PageSection>
