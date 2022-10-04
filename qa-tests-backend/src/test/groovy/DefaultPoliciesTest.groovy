@@ -239,7 +239,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         waitForViolation(K8S_DASHBOARD,  "Kubernetes Dashboard Deployed", 30)
     }
 
-    @Category(BAT, COMPATIBILITY)
+    @Category(BAT)
     @Retry(count = 0)
     @IgnoreIf({ Env.CI_TAG == null || !Env.CI_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {

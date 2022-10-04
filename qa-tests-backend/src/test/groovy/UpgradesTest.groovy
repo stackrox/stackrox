@@ -1,5 +1,4 @@
 import com.google.protobuf.util.JsonFormat
-import groups.COMPATIBILITY
 import groovy.io.FileType
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
