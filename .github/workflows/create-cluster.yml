@@ -34,6 +34,10 @@ on:
         type: string
         required: false
         default: ""
+    outputs:
+      status:
+        description: The status of the cluster after this workflow completes
+        value: ${{ jobs.infra.outputs.status }}
 
   workflow_dispatch:
     inputs:
@@ -65,6 +69,10 @@ on:
         type: string
         required: false
         default: ""
+    outputs:
+      status:
+        description: The status of the cluster after this workflow completes
+        value: ${{ jobs.infra.outputs.status }}
 
 env:
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
@@ -73,6 +81,8 @@ env:
 jobs:
   infra:
     runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.info.outputs.status }}
     steps:
       - name: Download infractl
         run: |
@@ -104,3 +114,16 @@ jobs:
             "${{inputs.lifespan}}" \
             "${{inputs.wait}}" \
             "${{inputs.args}}"
+
+      - name: Get Cluster Info
+        env:
+          INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
+        id: info
+        run: |
+          name="${{inputs.name}}"
+          name="${name//./-}"
+          info="$(infractl 2>/dev/null get "$name" --json)"
+          echo "Cluster info:"
+          echo "$info"
+          status="$(echo $name | jq -r '.Status')"
+          echo "::set-output name=status::$status"
