@@ -63,11 +63,7 @@ const opnameAliasesMap = {
     complianceStandards,
 };
 
-const waitOptions = {
-    responseTimeout: 20000, // for 6 complianceStandards responses
-};
-
-const requestConfig = { routeMatcherMap, opnameAliasesMap, waitOptions };
+const requestConfig = { routeMatcherMap, opnameAliasesMap };
 
 export function visitComplianceDashboard() {
     visit(url.dashboard, requestConfig);
