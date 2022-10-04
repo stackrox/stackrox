@@ -64,7 +64,6 @@ const opnameAliasesMap = {
 };
 
 const waitOptions = {
-    requestTimeout: 10000, // because so many requests
     responseTimeout: 20000, // for 6 complianceStandards responses
 };
 

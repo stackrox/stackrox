@@ -185,14 +185,6 @@ const requestConfigForDashboard = {
     routeMatcherMap: routeMatcherMapForDashboard,
 };
 
-const requestConfigForScan = {
-    routeMatcherMap: routeMatcherMapForDashboard,
-    waitOptions: {
-        requestTimeout: 10000, // because so many requests
-        responseTimeout: 20000, // for responses
-    },
-};
-
 export function visitConfigurationManagementDashboard() {
     visit(basePath, requestConfigForDashboard);
 
@@ -265,7 +257,7 @@ export function interactAndWaitForConfigurationManagementSecondaryEntities(
 }
 
 export function interactAndWaitForConfigurationManagementScan(interactionCallback) {
-    interactAndWaitForResponses(interactionCallback, requestConfigForScan);
+    interactAndWaitForResponses(interactionCallback, requestConfigForDashboard);
 }
 
 // specifying an "entityName" will try to select that row in the table
