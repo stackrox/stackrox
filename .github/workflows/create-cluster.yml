@@ -121,5 +121,5 @@ jobs:
           info="$(infractl 2>/dev/null get "$name" --json)"
           echo "Cluster info:"
           echo "$info"
-          status="$(echo $name | jq -r '.Status')"
+          status="$(echo $info | jq -r '.Status')"
           echo "::set-output name=status::$status"
