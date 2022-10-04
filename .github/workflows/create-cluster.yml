@@ -60,6 +60,11 @@ on:
         type: boolean
         required: false
         default: false
+      STACKROX_GHA_VERSION:
+        description: Sets a version ref for callers in other repos
+        type: string
+        required: false
+        default: ""
 
 env:
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
