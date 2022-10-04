@@ -1,8 +1,9 @@
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback } from 'react';
 import { Button, Divider, PageSection, Text, Title } from '@patternfly/react-core';
 
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import { getCollection } from 'services/CollectionsService';
+import useLayoutSpaceObserver from 'hooks/useLayoutSpaceObserver';
 import CollectionForm from './CollectionForm';
 import { CollectionPageAction } from './collections.utils';
 
@@ -27,37 +28,7 @@ function styleVarsForResultsList(resultListSpaceOffset: number): CSSProperties {
     } as CSSProperties;
 }
 
-function useLayoutSpaceObserver(
-    root: HTMLElement | null | undefined,
-    observationTargets: Element[],
-    granularity = 10
-) {
-    const [usedSpace, setUsedSpace] = useState({ height: 0, width: 0 });
-
-    useEffect(() => {
-        function collectUsedSpace(intersectionEntries: IntersectionObserverEntry[]) {
-            let height = 0;
-            let width = 0;
-            intersectionEntries.forEach(({ intersectionRect }) => {
-                height += intersectionRect.height;
-                width += intersectionRect.width;
-            });
-
-            if (height !== usedSpace.height || width !== usedSpace.width) {
-                setUsedSpace({ height, width });
-            }
-        }
-
-        const threshold = Array.from(Array(granularity + 1), (_, n) => n / granularity);
-        const options = { root, rootMargin: '0px', threshold };
-        const observer = new IntersectionObserver(collectUsedSpace, options);
-        observationTargets.forEach((elem) => observer.observe(elem));
-
-        return () => observer.disconnect();
-    }, [root, observationTargets, granularity, usedSpace.height, usedSpace.width]);
-
-    return usedSpace;
-}
+const observedClass = 'collections-observe-layout';
 
 function CollectionsFormPage({ pageAction }: CollectionsFormPageProps) {
     const action = pageAction.type;
@@ -68,14 +39,16 @@ function CollectionsFormPage({ pageAction }: CollectionsFormPageProps) {
 
     const { data, loading, error } = useRestQuery(collectionFetcher);
 
-    const restrictedSpace = useLayoutSpaceObserver(
-        document.getElementsByClassName('ob-target')[0]?.parentElement,
-        Array.from(document.getElementsByClassName('ob-target'))
-    );
+    const watchElements = Array.from(document.getElementsByClassName(observedClass));
+    const { height } = useLayoutSpaceObserver(watchElements[0]?.parentElement, watchElements);
 
     return (
         <>
-            <PageSection variant="light" className="ob-target" padding={{ default: 'noPadding' }}>
+            <PageSection
+                variant="light"
+                className={observedClass}
+                padding={{ default: 'noPadding' }}
+            >
                 <PageSection className="pf-u-py-md">
                     <Text>Breadcrumbs</Text>
                 </PageSection>
@@ -88,11 +61,11 @@ function CollectionsFormPage({ pageAction }: CollectionsFormPageProps) {
             </PageSection>
 
             <Divider component="div" />
-            <PageSection isFilled style={styleVarsForResultsList(restrictedSpace.height)}>
+            <PageSection isFilled style={styleVarsForResultsList(height)}>
                 <CollectionForm action={pageAction.type} collectionData={data} />
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light" className="ob-target pf-u-flex-grow-0 pf-u-py-md">
+            <PageSection variant="light" className={`${observedClass} pf-u-flex-grow-0 pf-u-py-md`}>
                 <Button className="pf-u-mr-md">{action} collection</Button>
                 <Button variant="secondary">Cancel</Button>
             </PageSection>
