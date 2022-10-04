@@ -3,18 +3,82 @@ package datastore
 import (
 	"context"
 
+	"github.com/heimdalr/dag"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
-	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 type datastoreImpl struct {
-	storage  postgres.Store
+	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
+
+	graph *dag.DAG
+}
+
+func (ds *datastoreImpl) initGraph(ctx context.Context) error {
+	if ds.graph != nil {
+		return nil
+	}
+	ds.graph = dag.NewDAG()
+
+	// first walk adds vertices
+	err := ds.storage.Walk(ctx, func(obj *storage.ResourceCollection) error {
+		return ds.graph.AddVertexByID(obj.GetId(), obj.GetId())
+	})
+	if err != nil {
+		return err
+	}
+
+	// second walk adds edges
+	return ds.storage.Walk(ctx, func(obj *storage.ResourceCollection) error {
+		for _, edge := range obj.GetEmbeddedCollections() {
+			err = ds.graph.AddEdge(obj.GetId(), edge.GetId())
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (ds *datastoreImpl) addCollectionToGraph(ctx context.Context, obj *storage.ResourceCollection) error {
+	if err := ds.initGraph(ctx); err != nil {
+		return err
+	}
+
+	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetId())
+	if err != nil {
+		return err
+	}
+	for _, edge := range obj.GetEmbeddedCollections() {
+		err = ds.graph.AddEdge(obj.GetId(), edge.GetId())
+		if err != nil {
+			deleteErr := ds.graph.DeleteVertex(obj.GetId())
+			if deleteErr != nil {
+				log.Errorf("Failed to delete collection, might result in bad state (%v)", deleteErr)
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+func (ds *datastoreImpl) deleteCollectionFromGraph(ctx context.Context, id string) error {
+	if err := ds.initGraph(ctx); err != nil {
+		return err
+	}
+
+	return ds.graph.DeleteVertex(id)
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -58,4 +122,38 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 	}
 
 	return collections, nil
+}
+
+func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+
+	// add to graph first to detect any cycles
+	err := ds.addCollectionToGraph(ctx, collection)
+	if err != nil {
+		return err
+	}
+
+	err = ds.storage.Upsert(ctx, collection)
+	if err != nil {
+		// if we fail to upsert, update the graph
+		deleteErr := ds.deleteCollectionFromGraph(ctx, collection.GetId())
+		if deleteErr != nil {
+			log.Errorf("Failed to delete collection, might result in bad state (%v)", deleteErr)
+		}
+		return err
+	}
+	return err
+}
+
+func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error {
+
+	// delete from storage first so postgres can tell if the collection is referenced by another
+	err := ds.storage.Delete(ctx, id)
+	if err != nil {
+		return err
+	}
+	deleteErr := ds.deleteCollectionFromGraph(ctx, id)
+	if deleteErr != nil {
+		log.Errorf("Failed to delete collection, might result in bad state (%v)", deleteErr)
+	}
+	return err
 }

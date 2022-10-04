@@ -6,12 +6,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"github.com/heimdalr/dag"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -23,7 +25,6 @@ func TestCollectionDataStoreWithPostgres(t *testing.T) {
 type CollectionPostgresDataStoreTestSuite struct {
 	suite.Suite
 
-	mockCtrl    *gomock.Controller
 	ctx         context.Context
 	db          *pgxpool.Pool
 	datastore   DataStore
@@ -59,11 +60,62 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TearDownSuite() {
+	postgres.Destroy(s.ctx, s.db)
 	s.db.Close()
-	s.mockCtrl.Finish()
 	s.envIsolator.RestoreAll()
+}
+
+func (s *CollectionPostgresDataStoreTestSuite) TestAddCollection() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	// add 'a'
+	err := s.datastore.AddCollection(ctx, s.getTestCollection("a", nil))
+	s.NoError(err)
+	obj, ok, err := s.datastore.Get(ctx, "a")
+	s.NoError(err)
+	s.True(ok)
+	s.Equal("a", obj.GetId())
+
+	// try to add duplicate 'a' and check that we fail
+	err = s.datastore.AddCollection(ctx, s.getTestCollection("a", nil))
+	s.NotNil(err)
+	_, ok = err.(dag.VertexDuplicateError)
+	s.True(ok)
+
+	// add 'b' which points to 'a'
+	err = s.datastore.AddCollection(ctx, s.getTestCollection("b", []string{"a"}))
+	s.NoError(err)
+	obj, ok, err = s.datastore.Get(ctx, "b")
+	s.NoError(err)
+	s.True(ok)
+	s.Equal("b", obj.GetId())
+
+	// try to delete 'a' while 'b' points to it
+	err = s.datastore.DeleteCollection(ctx, "a")
+	s.NotNil(err)
+
+	// try to add 'c' which has a self reference
+	err = s.datastore.AddCollection(ctx, s.getTestCollection("c", []string{"c"}))
+	s.NotNil(err)
+	_, ok = err.(dag.SrcDstEqualError)
+	s.True(ok)
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TestFoo() {
 	// TODO e2e testing ROX-12626
+}
+
+func (s *CollectionPostgresDataStoreTestSuite) getTestCollection(id string, ids []string) *storage.ResourceCollection {
+	var embedded []*storage.ResourceCollection_EmbeddedResourceCollection
+	if ids != nil {
+		embedded = make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(ids))
+		for _, i := range ids {
+			embedded = append(embedded, &storage.ResourceCollection_EmbeddedResourceCollection{Id: i})
+		}
+	}
+	return &storage.ResourceCollection{
+		Id:                  id,
+		Name:                id,
+		EmbeddedCollections: embedded,
+	}
 }
