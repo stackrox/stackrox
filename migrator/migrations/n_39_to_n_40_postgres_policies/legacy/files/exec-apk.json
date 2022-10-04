@@ -1,0 +1,41 @@
+{
+  "id": "d63564bd-c184-40bc-9f30-39711e010b82",
+  "name": "Alpine Linux Package Manager Execution",
+  "description": "Alert when the Alpine Linux package manager (apk) is executed at runtime",
+  "rationale": "Use of package managers at runtime indicates that new software may be being introduced into containers while they are running.",
+  "remediation": "Run `apk --purge del apk-tools` in the image build for production containers. Change applications to no longer use package managers at runtime, if applicable.",
+  "categories": [
+    "Package Management"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "apk"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0011",
+      "techniques": [
+        "T1105"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

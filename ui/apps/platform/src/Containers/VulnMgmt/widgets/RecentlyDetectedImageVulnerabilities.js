@@ -16,7 +16,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import { cveSortFields } from 'constants/sortFields';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
-// TODO: remove once ROX_FRONTEND_VM_UPDATES is enabled
+// TODO: remove once ROX_POSTGRES_DATASTORE is enabled
 export const RECENTLY_DETECTED_VULNERABILITIES = gql`
     query recentlyDetectedVulnerabilities(
         $query: String
@@ -70,7 +70,7 @@ const processData = (data, workflowState, cveType) => {
 
 const RecentlyDetectedImageVulnerabilities = ({ entityContext, search, limit }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
 
     const queryObject = {

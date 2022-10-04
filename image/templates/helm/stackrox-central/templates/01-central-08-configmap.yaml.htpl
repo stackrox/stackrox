@@ -12,7 +12,6 @@ metadata:
 data:
   central-config.yaml: |
     {{- ._rox.central._config | nindent 4 }}
-[< if .FeatureFlags.ROX_POSTGRES_DATASTORE >]
     {{- if ._rox.central.db.enabled }}
     centralDB:
       {{- if ._rox.central.db.external }}
@@ -29,4 +28,3 @@ data:
         pool_max_conns={{ ._rox.central.db.source.maxConns }}
       {{- end }}
     {{- end }}
-[<- end >]

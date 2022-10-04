@@ -161,7 +161,7 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 	}
 
 	// Fill in pagination.
-	paginated.FillPagination(parsedQuery, request.Pagination, maxImagesReturned)
+	paginated.FillPagination(parsedQuery, request.GetPagination(), maxImagesReturned)
 
 	images, err := s.datastore.SearchListImages(ctx, parsedQuery)
 	if err != nil {

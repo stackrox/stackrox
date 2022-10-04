@@ -54,6 +54,7 @@ func init() {
 		&storage.ProcessBaselineResults{}:                       resources.ProcessWhitelist,
 		&storage.ProcessBaseline{}:                              resources.ProcessWhitelist,
 		&storage.ProcessIndicator{}:                             resources.Indicator,
+		&storage.ResourceCollection{}:                           resources.WorkflowAdministration,
 		&storage.ReportConfiguration{}:                          resources.VulnerabilityReports,
 		&storage.SimpleAccessScope{}:                            resources.Role,
 		&storage.StoredLicenseKey{}:                             resources.Licenses,
@@ -149,4 +150,8 @@ func searchFieldNameInOtherSchema(f walker.Field) string {
 
 func searchFieldName(f walker.Field) string {
 	return f.Search.FieldName
+}
+
+func isSacScoping(f walker.Field) bool {
+	return !f.Options.PrimaryKey && (f.Search.FieldName == search.ClusterID.String() || f.Search.FieldName == search.Namespace.String())
 }

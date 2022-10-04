@@ -1,4 +1,4 @@
-import { selectors } from '../../constants/PoliciesPagePatternFly';
+import { selectors } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
@@ -8,7 +8,7 @@ import {
     editFirstPolicyFromTable,
     cloneFirstPolicyFromTable,
     goToStep3,
-} from '../../helpers/policiesPatternFly';
+} from '../../helpers/policies';
 
 const dataTransfer = new DndSimulatorDataTransfer();
 

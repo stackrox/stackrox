@@ -40,7 +40,7 @@ const (
 type ProcessBaselines struct {
 	Id              string `gorm:"column:id;type:varchar;primaryKey"`
 	KeyDeploymentId string `gorm:"column:key_deploymentid;type:varchar"`
-	KeyClusterId    string `gorm:"column:key_clusterid;type:varchar"`
-	KeyNamespace    string `gorm:"column:key_namespace;type:varchar"`
+	KeyClusterId    string `gorm:"column:key_clusterid;type:varchar;index:sac_filter,type:btree"`
+	KeyNamespace    string `gorm:"column:key_namespace;type:varchar;index:sac_filter,type:btree"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 }

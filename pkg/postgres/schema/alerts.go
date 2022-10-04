@@ -46,7 +46,6 @@ type Alerts struct {
 	PolicyDescription        string                              `gorm:"column:policy_description;type:varchar"`
 	PolicyDisabled           bool                                `gorm:"column:policy_disabled;type:bool"`
 	PolicyCategories         *pq.StringArray                     `gorm:"column:policy_categories;type:text[]"`
-	PolicyLifecycleStages    *pq.Int32Array                      `gorm:"column:policy_lifecyclestages;type:int[]"`
 	PolicySeverity           storage.Severity                    `gorm:"column:policy_severity;type:integer"`
 	PolicyEnforcementActions *pq.Int32Array                      `gorm:"column:policy_enforcementactions;type:int[]"`
 	PolicyLastUpdated        *time.Time                          `gorm:"column:policy_lastupdated;type:timestamp"`
@@ -54,9 +53,9 @@ type Alerts struct {
 	PolicySORTLifecycleStage string                              `gorm:"column:policy_sortlifecyclestage;type:varchar"`
 	PolicySORTEnforcement    bool                                `gorm:"column:policy_sortenforcement;type:bool"`
 	LifecycleStage           storage.LifecycleStage              `gorm:"column:lifecyclestage;type:integer;index:alerts_lifecyclestage,type:btree"`
-	ClusterId                string                              `gorm:"column:clusterid;type:varchar"`
+	ClusterId                string                              `gorm:"column:clusterid;type:varchar;index:sac_filter,type:btree"`
 	ClusterName              string                              `gorm:"column:clustername;type:varchar"`
-	Namespace                string                              `gorm:"column:namespace;type:varchar"`
+	Namespace                string                              `gorm:"column:namespace;type:varchar;index:sac_filter,type:btree"`
 	NamespaceId              string                              `gorm:"column:namespaceid;type:varchar"`
 	DeploymentId             string                              `gorm:"column:deployment_id;type:varchar;index:alerts_deployment_id,type:hash"`
 	DeploymentName           string                              `gorm:"column:deployment_name;type:varchar"`

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -112,7 +113,7 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 	server := &mockServer{
 		sentList: make([]*central.MsgToSensor, 0),
 	}
-	caps := centralsensor.NewSensorCapabilitySet(centralsensor.AuditLogEventsCap)
+	caps := set.NewSet(centralsensor.AuditLogEventsCap)
 
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 

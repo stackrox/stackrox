@@ -63,7 +63,7 @@ const (
 type Nodes struct {
 	Id                      string            `gorm:"column:id;type:varchar;primaryKey"`
 	Name                    string            `gorm:"column:name;type:varchar"`
-	ClusterId               string            `gorm:"column:clusterid;type:varchar"`
+	ClusterId               string            `gorm:"column:clusterid;type:varchar;index:sac_filter,type:hash"`
 	ClusterName             string            `gorm:"column:clustername;type:varchar"`
 	Labels                  map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations             map[string]string `gorm:"column:annotations;type:jsonb"`
@@ -75,7 +75,7 @@ type Nodes struct {
 	Components              int32             `gorm:"column:components;type:integer"`
 	Cves                    int32             `gorm:"column:cves;type:integer"`
 	FixableCves             int32             `gorm:"column:fixablecves;type:integer"`
-	Priority                int64             `gorm:"column:priority;type:integer"`
+	Priority                int64             `gorm:"column:priority;type:bigint"`
 	RiskScore               float32           `gorm:"column:riskscore;type:numeric"`
 	TopCvss                 float32           `gorm:"column:topcvss;type:numeric"`
 	Serialized              []byte            `gorm:"column:serialized;type:bytea"`

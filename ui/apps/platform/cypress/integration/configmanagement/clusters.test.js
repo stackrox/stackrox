@@ -2,45 +2,34 @@ import {
     renderListAndSidePanel,
     navigateToSingleEntityPage,
     hasCountWidgetsFor,
-    clickOnRowEntity,
     hasTabsFor,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
     entityListCountMatchesTableLinkCount,
+    interactAndWaitForConfigurationManagementScan,
+    visitConfigurationManagementDashboard,
+    visitConfigurationManagementEntities,
 } from '../../helpers/configWorkflowUtils';
-import { url, selectors } from '../../constants/ConfigManagementPage';
+import { selectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { triggerScan } from '../../helpers/compliance';
 
-describe('Config Management Entities (Clusters)', () => {
+const entitiesKey = 'clusters';
+
+describe('Configuration Management Clusters', () => {
     withAuth();
 
     it('should render the clusters list and open the side panel when a row is clicked', () => {
-        renderListAndSidePanel('clusters');
-    });
-
-    it('should click on the roles link in the clusters list and open the side panel with the roles list', () => {
-        clickOnRowEntity('clusters', 'roles');
-    });
-
-    it('should click on the service accounts link in the clusters list and open the side panel with the service accounts list', () => {
-        clickOnRowEntity('clusters', 'Service Accounts', true);
-    });
-
-    it('should click on the controls link in the clusters list and open the side panel with the controls list', () => {
-        triggerScan(); // because test assumes that scan results are available
-
-        clickOnRowEntity('clusters', 'controls');
+        renderListAndSidePanel(entitiesKey);
     });
 
     it('should take you to a cluster single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel('clusters');
-        navigateToSingleEntityPage('cluster');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel('clusters');
-        navigateToSingleEntityPage('cluster');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor([
             'Nodes',
             'Namespaces',
@@ -55,8 +44,8 @@ describe('Config Management Entities (Clusters)', () => {
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel('clusters');
-        navigateToSingleEntityPage('cluster');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasTabsFor([
             'nodes',
             'namespaces',
@@ -71,7 +60,8 @@ describe('Config Management Entities (Clusters)', () => {
     });
 
     it('should have items in the Findings section', () => {
-        cy.visit(url.list.clusters);
+        visitConfigurationManagementEntities(entitiesKey);
+
         cy.get(`${selectors.tableCells}:contains(fail)`).eq(0).click();
 
         cy.get(
@@ -79,119 +69,150 @@ describe('Config Management Entities (Clusters)', () => {
         ).should('exist');
     });
 
-    it('should have the same number of Nodes in the count widget as in the Nodes table', () => {
-        context('Page', () => {
-            renderListAndSidePanel('clusters');
-            navigateToSingleEntityPage('cluster');
-            pageEntityCountMatchesTableRows('Nodes');
+    describe('should have same number in nodes table as in count widget', () => {
+        const entitiesKey2 = 'nodes';
+
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('clusters');
-            sidePanelEntityCountMatchesTableRows('Nodes');
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should have the same number of Namespaces in the count widget as in the Namespaces table', () => {
-        context('Page', () => {
-            renderListAndSidePanel('clusters');
-            navigateToSingleEntityPage('cluster');
-            pageEntityCountMatchesTableRows('Namespaces');
+    describe('should have same number in namespaces table as in count widget', () => {
+        const entitiesKey2 = 'namespaces';
+
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('clusters');
-            sidePanelEntityCountMatchesTableRows('Namespaces');
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
-        context('Page', () => {
-            renderListAndSidePanel('clusters');
-            navigateToSingleEntityPage('cluster');
-            pageEntityCountMatchesTableRows('Deployments');
+    describe('should have same number in deployments table as in count widget', () => {
+        const entitiesKey2 = 'deployments';
+
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('clusters');
-            sidePanelEntityCountMatchesTableRows('Deployments');
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should have the same number of Images in the count widget as in the Images table', () => {
-        context('Page', () => {
-            renderListAndSidePanel('clusters');
-            navigateToSingleEntityPage('cluster');
-            pageEntityCountMatchesTableRows('Images');
+    describe('should have same number in images table as in count widget', () => {
+        const entitiesKey2 = 'images';
+
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('clusters');
-            sidePanelEntityCountMatchesTableRows('Images');
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should have the same number of Users & Groups in the count widget as in the Users & Groups table', () => {
-        context('Page', () => {
-            renderListAndSidePanel('clusters');
-            navigateToSingleEntityPage('cluster');
-            pageEntityCountMatchesTableRows('Users & Groups');
+    describe('should have same number in users and groups table as in count widget', () => {
+        const entitiesKey2 = 'subjects';
+
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('clusters');
-            sidePanelEntityCountMatchesTableRows('Users & Groups');
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should have the same number of Service Accounts in the count widget as in the Service Accounts table', () => {
-        context('Page', () => {
-            renderListAndSidePanel('clusters');
-            navigateToSingleEntityPage('cluster');
-            pageEntityCountMatchesTableRows('Service Accounts');
+    describe('should have same number in service accounts table as in count widget', () => {
+        const entitiesKey2 = 'serviceaccounts';
+
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('clusters');
-            sidePanelEntityCountMatchesTableRows('Service Accounts');
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should have the same number of Roles in the count widget as in the Roles table', () => {
-        context('Page', () => {
-            renderListAndSidePanel('clusters');
-            navigateToSingleEntityPage('cluster');
-            pageEntityCountMatchesTableRows('Roles');
+    describe('should have same number in roles table as in count widget', () => {
+        const entitiesKey2 = 'roles';
+
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('clusters');
-            sidePanelEntityCountMatchesTableRows('Roles');
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should have the same number of Controls in the count widget as in the Controls table', () => {
-        context('Page', () => {
-            renderListAndSidePanel('clusters');
-            navigateToSingleEntityPage('cluster');
-            pageEntityCountMatchesTableRows('Controls');
+    describe('should have same number in controls table as in count widget', () => {
+        const entitiesKey2 = 'controls';
+
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('clusters');
-            sidePanelEntityCountMatchesTableRows('Controls');
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
+    });
+
+    it('should open the side panel to show the same number of Controls when the Controls link is clicked', () => {
+        visitConfigurationManagementDashboard();
+
+        // This test assumes that scan results are available
+        interactAndWaitForConfigurationManagementScan(() => {
+            cy.get('[data-testid="scan-button"]').click();
+        });
+
+        entityListCountMatchesTableLinkCount(entitiesKey, 'controls', /\d+ Controls?$/);
     });
 
     it('should open the side panel to show the same number of Users & Groups when the Users & Groups link is clicked', () => {
-        entityListCountMatchesTableLinkCount('clusters', 'Users & Groups');
+        entityListCountMatchesTableLinkCount(entitiesKey, 'subjects', /^\d+ Users & Groups$/);
     });
 
     it('should open the side panel to show the same number of Service Accounts when the Service Accounts link is clicked', () => {
-        entityListCountMatchesTableLinkCount('clusters', 'Service Accounts');
+        entityListCountMatchesTableLinkCount(
+            entitiesKey,
+            'serviceaccounts',
+            /^\d+ Service Accounts?$/
+        );
     });
 
     it('should open the side panel to show the same number of Roles when the Roles link is clicked', () => {
-        entityListCountMatchesTableLinkCount('clusters', 'Roles');
+        entityListCountMatchesTableLinkCount(entitiesKey, 'roles', /^\d+ Roles?$/);
     });
 });

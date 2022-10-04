@@ -1,11 +1,14 @@
 package pod
 
 import (
+	"sort"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/tests/resource"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -43,6 +46,32 @@ func (s *PodHierarchySuite) TearDownTest() {
 	s.testContext.GetFakeCentral().ClearReceivedBuffer()
 }
 
+func sortAlphabetically(list []string) {
+	sort.Slice(list, func(a, b int) bool {
+		return list[a] > list[b]
+	})
+}
+
+func assertDeploymentContainerImages(images ...string) resource.AssertFunc {
+	return func(deployment *storage.Deployment) error {
+		if len(deployment.GetContainers()) != len(images) {
+			return errors.Errorf("number of containers does not match slice of images provided: %d != %d", len(deployment.GetContainers()), len(images))
+		}
+		containerImages := []string{}
+		for _, container := range deployment.GetContainers() {
+			containerImages = append(containerImages, container.GetImage().GetName().GetFullName())
+		}
+
+		sortAlphabetically(containerImages)
+		sortAlphabetically(images)
+
+		if !cmp.Equal(containerImages, images) {
+			return errors.Errorf("container images don't match: %s", cmp.Diff(containerImages, images))
+		}
+		return nil
+	}
+}
+
 func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 	s.testContext.RunWithResources([]resource.YamlTestFile{
 		NginxDeployment,
@@ -55,18 +84,11 @@ func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 
 		s.Require().NoError(err)
 
-		time.Sleep(1 * time.Second)
+		testC.LastDeploymentState("nginx-deployment",
+			assertDeploymentContainerImages("docker.io/library/nginx:1.14.2"),
+			"nginx deployment should have a single container with nginx:1.14.2 image")
+
 		messages := testC.GetFakeCentral().GetAllMessages()
-		deployment := resource.GetLastMessageWithDeploymentName(messages, "sensor-integration", "nginx-deployment").
-			GetEvent().
-			GetDeployment()
-		require.NotNil(t, deployment, "Deployment object can't be nil")
-
-		s.Require().Len(deployment.GetContainers(), 1, "Should have 1 container in deployment object")
-		container := deployment.GetContainers()[0]
-		s.Equal("docker.io/library/nginx:1.14.2", container.GetImage().GetName().GetFullName(),
-			"Should have correct image name")
-
 		uniquePodNames := resource.GetUniquePodNamesFromPrefix(messages, "sensor-integration", "nginx-")
 		s.Require().Len(uniquePodNames, 3, "Should have received three different pod events")
 	})
@@ -85,22 +107,16 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 
 		s.Require().NoError(err)
 
-		time.Sleep(1 * time.Second)
+		testC.LastDeploymentState("nginx-rogue",
+			assertDeploymentContainerImages("docker.io/library/nginx:1.14.1"),
+			"nginx standalone pod should have a single container with nginx:1.14.1 image")
+
 		messages := testC.GetFakeCentral().GetAllMessages()
 		uniqueDeployments := resource.GetUniqueDeploymentNames(messages, "sensor-integration")
 		s.Contains(uniqueDeployments, "nginx-deployment",
 			"Should have receiving at least one deployment with nginx-deployment name")
 		s.Contains(uniqueDeployments, "nginx-rogue",
 			"Should have receiving at least one deployment with nginx-rogue name")
-
-		deployment := resource.GetLastMessageWithDeploymentName(messages, "sensor-integration", "nginx-rogue").
-			GetEvent().
-			GetDeployment()
-		require.NotNil(t, deployment)
-		s.Len(deployment.GetContainers(), 1)
-		container := deployment.GetContainers()[0]
-		s.Equal("docker.io/library/nginx:1.14.1", container.GetImage().GetName().GetFullName(),
-			"Should have correct image name")
 
 		uniquePodNames := resource.GetUniquePodNamesFromPrefix(messages, "sensor-integration", "nginx-")
 		s.Require().Len(uniquePodNames, 4,

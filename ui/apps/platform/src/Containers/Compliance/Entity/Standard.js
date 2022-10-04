@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import entityTypes from 'constants/entityTypes';
 import ComplianceList from 'Containers/Compliance/List/List';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
@@ -14,6 +15,7 @@ const StandardPage = ({
     entityListType2,
     entityId2,
 }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const listQuery = {
         'Standard Id': entityId,
     };
@@ -24,6 +26,8 @@ const StandardPage = ({
                 searchComponent={
                     <SearchInput categories={['COMPLIANCE']} shouldAddComplianceState />
                 }
+                isExporting={isExporting}
+                setIsExporting={setIsExporting}
             />
             <ComplianceList
                 entityType={listEntityType1}
@@ -33,6 +37,7 @@ const StandardPage = ({
                 entityListType2={entityListType2}
                 entityId2={entityId2}
             />
+            {isExporting && <BackdropExporting />}
         </section>
     );
 };

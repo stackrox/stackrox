@@ -1,0 +1,73 @@
+{
+  "id": "ccd66f67-0b69-4081-9d01-da692f7db3b4",
+  "name": "Mount Container Runtime Socket",
+  "description": "Alert on deployments with a volume mount on the container runtime socket",
+  "rationale": "Mounting the container runtime socket implies container access to the runtime daemon. With direct access to the runtime daemon, a user can schedule containers and collect information about the running containers. This can be used as a method of discovery or persistence in an attack. Depending on the container runtime configuration, this may also be used as a method of privilege escalation to the host operating system. Since this can be used as an attack, deployments that mount the container runtime socket should be minimized to those absolutely necessary.",
+  "remediation": "Investigate if this deployment is being deployed for legitimate business purposes, and if so, that mounting the container runtime socket is required. Perform one of the following actions based on this investigation: 1. Exclude the deployment in this policy because it is being deployed for legitimate use cases. 2. Do not mount the container runtime socket in the deployment and redeploy. 3. Launch an investigation into why a deployment with this insecure configuration useful to attackers was deployed.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on StackRox collector",
+      "deployment": {
+        "name": "collector",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on ucp-agent",
+      "deployment": {
+        "name": "ucp-agent"
+      }
+    },
+    {
+      "name": "Don't alert on ucp-agent-s390x",
+      "deployment": {
+        "name": "ucp-agent-s390x"
+      }
+    },
+    {
+      "name": "Don't alert on StackRox compliance",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox",
+          "label": {
+            "key": "app",
+            "value": "stackrox-compliance"
+          }
+        }
+      }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Volume Source",
+          "values": [
+            {
+              "value": "/var/run/docker.sock"
+            },
+            {
+              "value": "/var/run/crio/crio.sock"
+            },
+            {
+              "value": "/run/crio/crio.sock"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

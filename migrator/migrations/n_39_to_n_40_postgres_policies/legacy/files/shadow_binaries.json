@@ -1,0 +1,42 @@
+{
+  "id": "6e0239e1-f4ca-43d0-ad3f-79ec683db811",
+  "name": "Shadow File Modification",
+  "description": "Processes that indicate attempts to modify shadow files",
+  "rationale": "Attempts to change shadow file during runtime in containers is unusual",
+  "remediation": "Ensure that the base image used to create the Dockerfile doesn't have shadow utils packaged with it.",
+  "disabled": true,
+  "categories": [
+    "System Modification"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "chage|gpasswd|lastlog|newgrp|sg|adduser|deluser|chpasswd|groupadd|groupdel|addgroup|delgroup|groupmems|groupmod|grpck|grpconv|grpunconv|newusers|pwck|pwconv|pwunconv|useradd|userdel|usermod|vigr|vipw|unix_chkpwd"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0003",
+      "techniques": [
+        "T1098"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

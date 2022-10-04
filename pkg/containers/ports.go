@@ -15,7 +15,7 @@ var (
 		storage.PortConfig_ROUTE,
 		storage.PortConfig_EXTERNAL,
 	}
-	exposureRank = utils.Invert(exposureOrder).(map[storage.PortConfig_ExposureLevel]int)
+	exposureRank = utils.InvertSlice(exposureOrder)
 )
 
 // CompareExposureLevel compares two exposure levels.

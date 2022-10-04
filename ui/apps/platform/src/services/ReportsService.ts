@@ -4,6 +4,7 @@ import { ReportConfiguration } from 'types/report.proto';
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
 import { ApiSortOption } from 'types/search';
 import axios from './instance';
+import { Empty } from './types';
 
 const reportUrl = '/v1/report';
 const reportServiceUrl = `${reportUrl}/run`;
@@ -79,10 +80,10 @@ export function saveReport(report: ReportConfiguration): Promise<ReportConfigura
     });
 }
 
-export function deleteReport(reportId: string): Promise<Record<string, never>> {
+export function deleteReport(reportId: string): Promise<Empty> {
     return axios.delete(`${reportConfigurationsUrl}/${reportId}`);
 }
 
-export function runReport(reportId: string): Promise<Record<string, never>> {
+export function runReport(reportId: string): Promise<Empty> {
     return axios.post(`${reportServiceUrl}/${reportId}`);
 }

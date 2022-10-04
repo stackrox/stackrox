@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
@@ -6,6 +6,7 @@ import entityTypes from 'constants/entityTypes';
 import { createOptions } from 'utils/workflowUtils';
 import DashboardLayout from 'Components/DashboardLayout';
 import ExportButton from 'Components/ExportButton';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import PageTitle from 'Components/PageTitle';
 import RadioButtonGroup from 'Components/RadioButtonGroup';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -30,10 +31,11 @@ const componentMenuType = [entityTypes.COMPONENT];
 const splitComponentMenuTypes = [entityTypes.NODE_COMPONENT, entityTypes.IMAGE_COMPONENT];
 
 const VulnDashboardPage = ({ history }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     let entityMenuTypes = [...baseEntityMenuTypes];
     if (showVmUpdates) {
@@ -105,40 +107,48 @@ const VulnDashboardPage = ({ history }) => {
                     fileName="Vulnerability Management Dashboard Report"
                     page={workflowState.useCase}
                     pdfId="capture-dashboard"
+                    isExporting={isExporting}
+                    setIsExporting={setIsExporting}
                 />
             </div>
         </>
     );
     return (
-        <DashboardLayout headerText="Vulnerability Management" headerComponents={headerComponents}>
-            <div className="s-2 md:sx-4 xxxl:sx-4 ">
-                <TopRiskyEntitiesByVulnerabilities
-                    defaultSelection={entityTypes.DEPLOYMENT}
-                    cveFilter={cveFilter}
-                />
-            </div>
-            <div className="s-2 xxxl:sx-2">
-                <TopRiskiestEntities limit={DASHBOARD_LIMIT} />
-            </div>
-            <div className="s-2 xxxl:sx-2">
-                <FrequentlyViolatedPolicies />
-            </div>
-            <div className="s-2 xxxl:sx-2">
-                <RecentlyDetectedImageVulnerabilities
-                    search={searchState}
-                    limit={DASHBOARD_LIMIT}
-                />
-            </div>
-            <div className="s-2 md:sy-2 md:sx-2 lg:sy-4 xxxl:sx-2">
-                <MostCommonVulnerabilities search={searchState} />
-            </div>
-            <div className="s-2 xxxl:sx-2">
-                <DeploymentsWithMostSeverePolicyViolations limit={DASHBOARD_LIMIT} />
-            </div>
-            <div className="s-2 xxxl:sx-2">
-                <ClustersWithMostClusterVulnerabilities />
-            </div>
-        </DashboardLayout>
+        <>
+            <DashboardLayout
+                headerText="Vulnerability Management"
+                headerComponents={headerComponents}
+            >
+                <div className="s-2 md:sx-4 xxxl:sx-4 ">
+                    <TopRiskyEntitiesByVulnerabilities
+                        defaultSelection={entityTypes.DEPLOYMENT}
+                        cveFilter={cveFilter}
+                    />
+                </div>
+                <div className="s-2 xxxl:sx-2">
+                    <TopRiskiestEntities limit={DASHBOARD_LIMIT} />
+                </div>
+                <div className="s-2 xxxl:sx-2">
+                    <FrequentlyViolatedPolicies />
+                </div>
+                <div className="s-2 xxxl:sx-2">
+                    <RecentlyDetectedImageVulnerabilities
+                        search={searchState}
+                        limit={DASHBOARD_LIMIT}
+                    />
+                </div>
+                <div className="s-2 md:sy-2 md:sx-2 lg:sy-4 xxxl:sx-2">
+                    <MostCommonVulnerabilities search={searchState} />
+                </div>
+                <div className="s-2 xxxl:sx-2">
+                    <DeploymentsWithMostSeverePolicyViolations limit={DASHBOARD_LIMIT} />
+                </div>
+                <div className="s-2 xxxl:sx-2">
+                    <ClustersWithMostClusterVulnerabilities />
+                </div>
+            </DashboardLayout>
+            {isExporting && <BackdropExporting />}
+        </>
     );
 };
 

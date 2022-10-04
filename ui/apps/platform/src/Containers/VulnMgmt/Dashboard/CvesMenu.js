@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { gql, useQuery } from '@apollo/client';
 
+import Loader from 'Components/Loader';
 import Menu from 'Components/Menu';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -54,13 +55,15 @@ const CvesMenu = () => {
         : [];
 
     const totalCveCount =
-        data.imageVulnerabilityCount + data.nodeVulnerabilityCount + data.clusterVulnerabilityCount;
+        data.imageVulnerabilityCount +
+            data.nodeVulnerabilityCount +
+            data.clusterVulnerabilityCount || 0;
     const menuTitle = `${totalCveCount} CVEs`;
 
     return (
         <Menu
             buttonClass={`bg-base-100 hover:bg-base-200 border border-base-400 btn-class flex font-condensed h-full text-center text-sm text-base-600 ${errorClasses}`}
-            buttonText={menuTitle}
+            buttonText={loading ? <Loader className="text-base-100" message="" /> : menuTitle}
             options={options}
             className="h-full min-w-24"
         />

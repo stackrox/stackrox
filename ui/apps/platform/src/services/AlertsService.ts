@@ -3,9 +3,10 @@ import queryString from 'qs';
 import { Alert, ListAlert } from 'Containers/Violations/types/violationTypes';
 
 import { ApiSortOption, SearchFilter } from 'types/search';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import { Empty } from './types';
 
 const baseUrl = '/v1/alerts';
 const baseCountUrl = '/v1/alertscount';
@@ -83,19 +84,7 @@ export function fetchAlerts(
     page: number,
     pageSize: number
 ): CancellableRequest<ListAlert[]> {
-    const offset = page > 0 ? page * pageSize : 0;
-    const query = getRequestQueryStringForSearchFilter(searchFilter);
-    const params = queryString.stringify(
-        {
-            query,
-            pagination: {
-                offset,
-                limit: pageSize,
-                sortOption,
-            },
-        },
-        { arrayFormat: 'repeat', allowDots: true }
-    );
+    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`, { signal })
@@ -131,21 +120,15 @@ export function fetchAlert(id: string): Promise<Alert> {
 /*
  * Resolve an alert given an alert ID.
  */
-export function resolveAlert(
-    alertId: string,
-    addToBaseline = false
-): Promise<Record<string, never>> {
+export function resolveAlert(alertId: string, addToBaseline = false): Promise<Empty> {
     return axios
-        .patch<Record<string, never>>(`${baseUrl}/${alertId}/resolve`, { addToBaseline })
+        .patch<Empty>(`${baseUrl}/${alertId}/resolve`, { addToBaseline })
         .then((response) => response.data);
 }
 
 /*
  * Resolve a list of alerts by alert ID.
  */
-export function resolveAlerts(
-    alertIds: string[] = [],
-    addToBaseline = false
-): Promise<Record<string, never>[]> {
+export function resolveAlerts(alertIds: string[] = [], addToBaseline = false): Promise<Empty[]> {
     return Promise.all(alertIds.map((id) => resolveAlert(id, addToBaseline)));
 }

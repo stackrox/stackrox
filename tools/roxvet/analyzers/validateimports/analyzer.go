@@ -52,7 +52,7 @@ var (
 		allowlist   set.StringSet
 	}{
 		"io/ioutil": {
-			replacement: "https://golang.org/doc/go1.16#ioutil",
+			replacement: "https://golang.org/doc/go1.18#ioutil",
 		},
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",
@@ -189,6 +189,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/auth",
 			"pkg/batcher",
 			"pkg/bolthelper",
+			"pkg/booleanpolicy/policyversion",
 			"pkg/buildinfo",
 			"pkg/concurrency",
 			"pkg/config",
@@ -199,6 +200,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/dackbox/crud",
 			"pkg/dackbox/raw",
 			"pkg/dackbox/sortedkeys",
+			"pkg/defaults/policies",
 			"pkg/nodes/converter",
 			"pkg/db",
 			"pkg/env",
@@ -211,6 +213,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/logging",
 			"pkg/metrics",
 			"pkg/migrations",
+			"pkg/policyutils",
 			"pkg/postgres",
 			"pkg/postgres/pgadmin",
 			"pkg/postgres/pgconfig",
@@ -240,12 +243,12 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	}
 
 	if validImportRoot == "sensor/debugger" {
-		allowedPackages = append(allowedPackages, "sensor/kubernetes/listener/resources")
+		allowedPackages = append(allowedPackages, "sensor/kubernetes/listener/resources", "sensor/kubernetes/client")
 	}
 
 	if validImportRoot == "tools" {
 		allowedPackages = append(allowedPackages, "central/globaldb", "central/metrics", "central/postgres", "central/role/resources",
-			"sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils")
+			"sensor/kubernetes/client", "sensor/kubernetes/fake", "sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils")
 	}
 
 	if validImportRoot == "sensor/kubernetes" {

@@ -23,8 +23,8 @@ var (
 )
 
 type managementService struct {
-	settingsStream     concurrency.ReadOnlyValueStream
-	sensorEventsStream concurrency.ReadOnlyValueStream
+	settingsStream     concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
+	sensorEventsStream concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest]
 
 	alertHandler AlertHandler
 	admCtrlMgr   SettingsManager
@@ -73,8 +73,8 @@ func (s *managementService) runRecv(
 	}
 }
 
-func (s *managementService) sendCurrentSettings(stream sensor.AdmissionControlManagementService_CommunicateServer, settingsIt concurrency.ValueStreamIter) error {
-	settings, _ := settingsIt.Value().(*sensor.AdmissionControlSettings)
+func (s *managementService) sendCurrentSettings(stream sensor.AdmissionControlManagementService_CommunicateServer, settingsIt concurrency.ValueStreamIter[*sensor.AdmissionControlSettings]) error {
+	settings := settingsIt.Value()
 	if settings == nil {
 		return nil
 	}
@@ -141,8 +141,8 @@ func (s *managementService) PolicyAlerts(_ context.Context, alerts *sensor.Admis
 	return &types.Empty{}, nil
 }
 
-func (s *managementService) sendSensorEvent(stream sensor.AdmissionControlManagementService_CommunicateServer, iter concurrency.ValueStreamIter) error {
-	obj, _ := iter.Value().(*sensor.AdmCtrlUpdateResourceRequest)
+func (s *managementService) sendSensorEvent(stream sensor.AdmissionControlManagementService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.AdmCtrlUpdateResourceRequest]) error {
+	obj := iter.Value()
 	if obj == nil {
 		return nil
 	}

@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -57,10 +57,9 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.ProcessWhitelist),
 		),
 	)
-
 	var err error
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(suite.T())
 		suite.Require().NotNil(pgtestbase)
 		suite.pool = pgtestbase.Pool
@@ -90,7 +89,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 
 func (suite *ProcessBaselineDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.pool.Close()
 	} else {
 		rocksdbtest.TearDownRocksDB(suite.db)

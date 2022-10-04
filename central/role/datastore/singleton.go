@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -33,7 +33,7 @@ func Singleton() DataStore {
 		var roleStorage store.RoleStore
 		var permissionSetStorage store.PermissionSetStore
 		var accessScopeStorage store.SimpleAccessScopeStore
-		if features.PostgresDatastore.Enabled() {
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			roleStorage = postgresRolePGStore.New(globaldb.GetPostgres())
 			permissionSetStorage = PermissionSetPGStore.New(globaldb.GetPostgres())
 			accessScopeStorage = postgresSimpleAccessScopeStore.New(globaldb.GetPostgres())

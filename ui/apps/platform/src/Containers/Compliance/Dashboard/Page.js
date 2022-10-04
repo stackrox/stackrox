@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { resourceTypes } from 'constants/entityTypes';
 import StandardsByEntity from 'Containers/Compliance/widgets/StandardsByEntity';
 import StandardsAcrossEntity from 'Containers/Compliance/widgets/StandardsAcrossEntity';
@@ -7,9 +8,14 @@ import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceBySta
 import DashboardHeader from './Header';
 
 const ComplianceDashboardPage = () => {
+    const [isExporting, setIsExporting] = useState(false);
     return (
         <section>
-            <DashboardHeader classes="z-10 sticky top-0" />
+            <DashboardHeader
+                classes="z-10 sticky top-0"
+                isExporting={isExporting}
+                setIsExporting={setIsExporting}
+            />
 
             <div className="flex-1 relative p-6 xxxl:p-8 bg-base-200" id="capture-dashboard">
                 <div
@@ -39,6 +45,7 @@ const ComplianceDashboardPage = () => {
                     <ComplianceByStandards />
                 </div>
             </div>
+            {isExporting && <BackdropExporting />}
         </section>
     );
 };

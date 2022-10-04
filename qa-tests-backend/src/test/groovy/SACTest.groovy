@@ -31,7 +31,6 @@ import util.NetworkGraphUtil
 
 import org.junit.AssumptionViolatedException
 import org.junit.experimental.categories.Category
-import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Unroll
 
@@ -427,7 +426,6 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Autocomplete on #category resources using the #tokenName token returns #numResults results"() {
         when:
         "Search is called using a token without view access to Deployments"
@@ -621,11 +619,8 @@ class SACTest extends BaseSpecification {
 
         and:
         "The flows should be equal to the flows obtained with all access after removing masked endpoints"
-        def sacFlowsFiltered = new HashSet<String>(sacFlows)
-        sacFlowsFiltered.removeAll { it.contains("masked deployment") }
-
-        def sacFlowsNoQueryFiltered = new HashSet<String>(sacFlowsNoQuery)
-        sacFlowsNoQueryFiltered.removeAll { it.contains("masked deployment") }
+        Set<String> sacFlowsFiltered = sacFlows.findAll { !it.contains("masked deployment") }
+        Set<String> sacFlowsNoQueryFiltered = sacFlowsNoQuery.findAll { !it.contains("masked deployment") }
 
         assert allAccessFlowsWithoutNeighbors == sacFlowsFiltered
         assert allAccessFlowsWithoutNeighbors == sacFlowsNoQueryFiltered

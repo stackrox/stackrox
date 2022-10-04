@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -42,7 +42,7 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool := s.dackboxTestStore.GetPostgresPool()
 		s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
 		s.Require().NoError(err)
@@ -75,7 +75,7 @@ func getCveID(vulnerability *storage.EmbeddedVulnerability, os string) string {
 func getEdgeID(component *storage.EmbeddedImageScanComponent, vulnerability *storage.EmbeddedVulnerability, os string) string {
 	componentID := getComponentID(component, os)
 	convertedCVEID := getCveID(vulnerability, os)
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return postgres.IDFromPks([]string{componentID, convertedCVEID})
 	}
 	return edges.EdgeID{ParentID: componentID, ChildID: convertedCVEID}.ToString()

@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/imageintegration/store/bolt"
 	"github.com/stackrox/rox/central/imageintegration/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -40,7 +39,7 @@ func initialize() {
 	var storage store.Store
 	var indexer index.Indexer
 
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {

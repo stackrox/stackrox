@@ -36,7 +36,7 @@ type configMapPersister struct {
 
 	client v1client.ConfigMapInterface
 
-	settingsStreamIt concurrency.ValueStreamIter
+	settingsStreamIt concurrency.ValueStreamIter[*sensor.AdmissionControlSettings]
 }
 
 // NewConfigMapSettingsPersister creates a config persister object for the admission controller.
@@ -181,6 +181,6 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 }
 
 func (p *configMapPersister) createCurrentConfigMap() (*v1.ConfigMap, error) {
-	settings, _ := p.settingsStreamIt.Value().(*sensor.AdmissionControlSettings)
+	settings := p.settingsStreamIt.Value()
 	return settingsToConfigMap(settings)
 }

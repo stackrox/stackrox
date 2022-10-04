@@ -20,11 +20,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// SensorEventListener provides functionality to listen on sensor events.
-type SensorEventListener interface {
-	SensorEventStream() concurrency.ReadOnlyValueStream
-}
-
 // New returns a new kubernetes listener.
 func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer) common.SensorComponent {
 	k := &listenerImpl{

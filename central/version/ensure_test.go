@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -35,7 +35,7 @@ type EnsurerTestSuite struct {
 }
 
 func (suite *EnsurerTestSuite) SetupTest() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		source := pgtest.GetConnectionString(suite.T())
 		config, err := pgxpool.ParseConfig(source)
 		suite.Require().NoError(err)
@@ -61,7 +61,7 @@ func (suite *EnsurerTestSuite) SetupTest() {
 }
 
 func (suite *EnsurerTestSuite) TearDownTest() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		if suite.pool != nil {
 			suite.pool.Close()
 		}
@@ -71,7 +71,7 @@ func (suite *EnsurerTestSuite) TearDownTest() {
 }
 
 func (suite *EnsurerTestSuite) TestWithEmptyDB() {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.NoError(Ensure(store.NewPostgres(context.Background(), suite.pool)))
 	} else {
 		suite.NoError(Ensure(store.New(suite.boltDB, suite.rocksDB)))
@@ -83,7 +83,7 @@ func (suite *EnsurerTestSuite) TestWithEmptyDB() {
 
 func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: int32(migrations.CurrentDBVersionSeqNum())}))
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.NoError(Ensure(store.NewPostgres(context.Background(), suite.pool)))
 	} else {
 		suite.NoError(Ensure(store.New(suite.boltDB, suite.rocksDB)))
@@ -96,7 +96,7 @@ func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 
 func (suite *EnsurerTestSuite) TestWithIncorrectVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: int32(migrations.CurrentDBVersionSeqNum()) - 2}))
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.Error(Ensure(store.NewPostgres(context.Background(), suite.pool)))
 	} else {
 		suite.Error(Ensure(store.New(suite.boltDB, suite.rocksDB)))

@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
-// Indexer provides funtionality to index node components.
+// Indexer provides functionality to index node components.
 type Indexer interface {
 	AddNodeComponent(components *storage.NodeComponent) error
 	AddNodeComponents(components []*storage.NodeComponent) error

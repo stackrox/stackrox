@@ -3,7 +3,7 @@ package postgres
 import (
 	"runtime"
 
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -13,7 +13,7 @@ var log = logging.LoggerForModule()
 // This helps trace where calls into deprecated features are coming from.
 // e.g. calls into RocksDB and BoltDB initialization
 func LogCallerOnPostgres(name string) {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		_, file, no, ok := runtime.Caller(2)
 		if ok {
 			log.Infof("%s called from %s#%d", name, file, no)

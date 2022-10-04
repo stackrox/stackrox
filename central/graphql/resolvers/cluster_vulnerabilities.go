@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -57,7 +57,7 @@ type ClusterVulnerabilityResolver interface {
 // ClusterVulnerability returns a vulnerability of the given id
 func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterVulnerability")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.clusterVulnerabilityV2(ctx, args)
 	}
 
@@ -84,7 +84,7 @@ func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery
 // ClusterVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ClusterVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterVulnerabilities")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		query := withClusterTypeFiltering(q.String())
 		return resolver.clusterVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 	}
@@ -125,7 +125,7 @@ func (resolver *Resolver) ClusterVulnerabilities(ctx context.Context, q Paginate
 // ClusterVulnerabilityCount returns count of image vulnerabilities for the input query
 func (resolver *Resolver) ClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterVulnerabilityCount")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		query := withClusterTypeFiltering(args.String())
 		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 	}
@@ -154,7 +154,7 @@ func (resolver *Resolver) ClusterVulnerabilityCount(ctx context.Context, args Ra
 // ClusterVulnerabilityCounter returns a VulnerabilityCounterResolver for the input query
 func (resolver *Resolver) ClusterVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterVulnerabilityCounter")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		query := withClusterTypeFiltering(args.String())
 		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
 	}
@@ -201,7 +201,7 @@ func (resolver *Resolver) ClusterVulnerabilityCounter(ctx context.Context, args 
 // K8sClusterVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
 func (resolver *Resolver) K8sClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sClusterVulnerability")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.clusterVulnerabilityV2(ctx, args)
 	}
 	return resolver.ClusterVulnerability(ctx, args)
@@ -211,7 +211,7 @@ func (resolver *Resolver) K8sClusterVulnerability(ctx context.Context, args IDQu
 func (resolver *Resolver) K8sClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sClusterVulnerabilities")
 	query := withK8sTypeFiltering(args.String())
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.clusterVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 	return resolver.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
@@ -221,7 +221,7 @@ func (resolver *Resolver) K8sClusterVulnerabilities(ctx context.Context, args Pa
 func (resolver *Resolver) K8sClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sClusterVulnerabilityCount")
 	query := withK8sTypeFiltering(args.String())
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 	}
 	return resolver.ClusterVulnerabilityCount(ctx, RawQuery{Query: &query})
@@ -230,7 +230,7 @@ func (resolver *Resolver) K8sClusterVulnerabilityCount(ctx context.Context, args
 // IstioClusterVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
 func (resolver *Resolver) IstioClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioClusterVulnerability")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.clusterVulnerabilityV2(ctx, args)
 	}
 	return resolver.ClusterVulnerability(ctx, args)
@@ -240,7 +240,7 @@ func (resolver *Resolver) IstioClusterVulnerability(ctx context.Context, args ID
 func (resolver *Resolver) IstioClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioClusterVulnerabilities")
 	query := withIstioTypeFiltering(args.String())
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.clusterVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 	return resolver.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
@@ -250,7 +250,7 @@ func (resolver *Resolver) IstioClusterVulnerabilities(ctx context.Context, args 
 func (resolver *Resolver) IstioClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioClusterVulnerabilityCount")
 	query := withIstioTypeFiltering(args.String())
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 	}
 	return resolver.ClusterVulnerabilityCount(ctx, RawQuery{Query: &query})
@@ -259,7 +259,7 @@ func (resolver *Resolver) IstioClusterVulnerabilityCount(ctx context.Context, ar
 // OpenShiftClusterVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
 func (resolver *Resolver) OpenShiftClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftClusterVulnerability")
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.clusterVulnerabilityV2(ctx, args)
 	}
 	return resolver.ClusterVulnerability(ctx, args)
@@ -269,7 +269,7 @@ func (resolver *Resolver) OpenShiftClusterVulnerability(ctx context.Context, arg
 func (resolver *Resolver) OpenShiftClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftClusterVulnerabilities")
 	query := withOpenShiftTypeFiltering(args.String())
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.clusterVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 	return resolver.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
@@ -279,7 +279,7 @@ func (resolver *Resolver) OpenShiftClusterVulnerabilities(ctx context.Context, a
 func (resolver *Resolver) OpenShiftClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftClusterVulnerabilityCount")
 	query := withOpenShiftTypeFiltering(args.String())
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 	}
 	return resolver.ClusterVulnerabilityCount(ctx, RawQuery{Query: &query})
@@ -318,7 +318,7 @@ func withOpenShiftTypeFiltering(q string) string {
 }
 
 func (resolver *clusterCVEResolver) withClusterVulnerabilityScope(ctx context.Context) context.Context {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return scoped.Context(ctx, scoped.Scope{
 			ID:    resolver.data.GetId(),
 			Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,

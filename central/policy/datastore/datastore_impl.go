@@ -12,13 +12,13 @@ import (
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/central/policy/store/boltdb"
-	"github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -47,7 +47,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) buildIndex() error {
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil
 	}
 	policies, err := ds.storage.GetAll(policyCtx)
@@ -164,7 +164,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	if ds.policyNameIsNotUnique(policyNameIDMap, policy.GetName()) {
 		return "", fmt.Errorf("Could not add policy due to name validation, policy with name %s already exists", policy.GetName())
 	}
-	utils.FillSortHelperFields(policy)
+	policyutils.FillSortHelperFields(policy)
 	// Any policy added after startup must be marked custom policy.
 	markPoliciesAsCustom(policy)
 
@@ -191,7 +191,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 		return errors.New("policy id not specified")
 	}
 
-	utils.FillSortHelperFields(policy)
+	policyutils.FillSortHelperFields(policy)
 
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
@@ -235,7 +235,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 		return nil, false, errorsPkg.Wrap(err, "removing cluster scopes and notifiers")
 	}
 
-	utils.FillSortHelperFields(importPolicies...)
+	policyutils.FillSortHelperFields(importPolicies...)
 	// All imported policies must be marked custom policy even if they were exported default policies.
 	markPoliciesAsCustom(importPolicies...)
 
@@ -412,7 +412,7 @@ func handlePolicyStoreErrorList(policyError *boltdb.PolicyStoreErrorList) []*v1.
 }
 
 // SIDE EFFECTS, THE ORIGINAL OBJECTS WILL BE MODIFIED IN PLACE
-func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Context, importPolicies ...*storage.Policy) (set.IntSet, error) {
+func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Context, importPolicies ...*storage.Policy) (set.Set[int], error) {
 	// pre-load all clusters.  There should be a manageable number.
 	clusterList, err := ds.clusterDatastore.GetClusters(ctx)
 	if err != nil {
@@ -424,7 +424,7 @@ func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Cont
 	}
 
 	notifierCache := make(map[string]bool)
-	changedIndices := set.NewIntSet()
+	changedIndices := set.NewSet[int]()
 	for i, policy := range importPolicies {
 		modified := false
 		var scopes []*storage.Scope

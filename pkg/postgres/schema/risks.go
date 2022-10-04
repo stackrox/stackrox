@@ -39,8 +39,8 @@ const (
 // Risks holds the Gorm model for Postgres table `risks`.
 type Risks struct {
 	Id               string                  `gorm:"column:id;type:varchar;primaryKey"`
-	SubjectNamespace string                  `gorm:"column:subject_namespace;type:varchar"`
-	SubjectClusterId string                  `gorm:"column:subject_clusterid;type:varchar"`
+	SubjectNamespace string                  `gorm:"column:subject_namespace;type:varchar;index:sac_filter,type:btree"`
+	SubjectClusterId string                  `gorm:"column:subject_clusterid;type:varchar;index:sac_filter,type:btree"`
 	SubjectType      storage.RiskSubjectType `gorm:"column:subject_type;type:integer"`
 	Score            float32                 `gorm:"column:score;type:numeric"`
 	Serialized       []byte                  `gorm:"column:serialized;type:bytea"`

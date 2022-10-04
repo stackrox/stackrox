@@ -45,7 +45,7 @@ const TableWidgetFixableCves = ({
     const [cveSort, setCveSort] = useState(defaultCveSort);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const displayedEntityType = resourceLabels[entityType];
     const displayedVulnType = resourceLabels[vulnType];

@@ -43,6 +43,7 @@ var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 	walker.DateTime:    newTimeQuery,
 	walker.Enum:        newEnumQuery,
 	walker.Integer:     newNumericQuery,
+	walker.BigInteger:  newNumericQuery,
 	walker.Numeric:     newNumericQuery,
 	walker.EnumArray:   queryOnArray(newEnumQuery, getEnumArrayPostTransformFunc),
 	walker.IntArray:    queryOnArray(newNumericQuery, getIntArrayPostTransformFunc),
@@ -59,11 +60,6 @@ func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field
 		sqlDataType:         sqlDataType,
 	}
 
-	// Special case: wildcard
-	if stringutils.MatchesAny(value, pkgSearch.WildcardString, pkgSearch.NullString) {
-		return handleExistenceQueries(ctx), nil
-	}
-
 	if sqlDataType == walker.Map {
 		return newMapQuery(ctx)
 	}
@@ -71,10 +67,21 @@ func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field
 	trimmedValue, modifiers := pkgSearch.GetValueAndModifiersFromString(value)
 	ctx.value = trimmedValue
 	ctx.queryModifiers = modifiers
+
 	qe, err := datatypeToQueryFunc[sqlDataType](ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	// Special case: wildcard
+	if stringutils.MatchesAny(value, pkgSearch.WildcardString, pkgSearch.NullString) {
+		if len(qe.SelectedFields) != 1 {
+			// If there are no selected fields, then no post transform needs to be used
+			return handleExistenceQueries(ctx, nil), nil
+		}
+		return handleExistenceQueries(ctx, qe.SelectedFields[0].PostTransform), nil
+	}
+
 	if goesIntoHavingClause {
 		having := qe.Where
 		qe.Having = &having
@@ -83,16 +90,16 @@ func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field
 	return qe, nil
 }
 
-func handleExistenceQueries(ctx *queryAndFieldContext) *QueryEntry {
+func handleExistenceQueries(ctx *queryAndFieldContext, transformFn func(interface{}) interface{}) *QueryEntry {
 	switch ctx.value {
 	case pkgSearch.WildcardString:
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 			Query: fmt.Sprintf("%s is not null", ctx.qualifiedColumnName),
-		}, nil)
+		}, transformFn)
 	case pkgSearch.NullString:
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 			Query: fmt.Sprintf("%s is null", ctx.qualifiedColumnName),
-		}, nil)
+		}, transformFn)
 	default:
 		log.Fatalf("existence query for value %s is not currently handled", ctx.value)
 	}

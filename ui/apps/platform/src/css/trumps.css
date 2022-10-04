@@ -127,6 +127,18 @@ button.pf-c-tree-view__node {
     list-style: decimal;
 }
 
+/*
+ * Override disabled checkbox styles when the input element is in a PF table
+ */
+.pf-c-table__check input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    border-color: revert;
+}
+.pf-c-table__check input[type="checkbox"]:checked:disabled {
+    background-color: var(--pf-global--disabled-color--200);
+    border-color: transparent;
+}
+
 /* For classic components to equal or exceed z-index of PatternFly elements. */
 
 .z-xs-100 {

@@ -284,6 +284,10 @@ var (
 	ComplianceRunID                = newFieldLabel("Compliance Run ID")
 	ComplianceRunFinishedTimestamp = newFieldLabel("Compliance Run Finished Timestamp")
 
+	// Resource Collection fields
+	CollectionName       = newFieldLabel("Collection Name")
+	EmbeddedCollectionID = newFieldLabel("Embedded Collection ID")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")
@@ -414,6 +418,7 @@ type DerivedFieldLabelMetadata struct {
 }
 
 // DerivationType represents a type of derivation.
+//
 //go:generate stringer -type=DerivationType
 type DerivationType int
 

@@ -124,10 +124,7 @@ func deploymentsWithMostSevereViolations(ctx context.Context, resolver *Resolver
 
 	sortBySeverity(ret)
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(ret, nil)
-	return resolvers.([]*DeploymentsWithMostSevereViolationsResolver), err
+	return paginate(pagination, ret, nil)
 }
 
 func sortBySeverity(deps []*DeploymentsWithMostSevereViolationsResolver) {

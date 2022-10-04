@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -68,6 +69,10 @@ type SchemaRelationship struct {
 
 	// RestrictDelete indicates that this relationship should restrict deletion rather than cascade
 	RestrictDelete bool
+
+	// CycleReference indicates that this relationship is a self reference
+	// this is necessary because parent references and self references would otherwise be named the same
+	CycleReference bool
 }
 
 // ThisSchemaColumnNames generates the sequence of column names for this schema
@@ -197,6 +202,9 @@ func (s *Schema) RelationshipsToDefineAsForeignKeys() []SchemaRelationship {
 	}
 	for _, ref := range s.References {
 		if !ref.NoConstraint {
+			if s.Parent != nil && s.Parent.Table == ref.OtherSchema.Table {
+				ref.CycleReference = true
+			}
 			out = append(out, ref)
 		}
 	}
@@ -400,6 +408,7 @@ type PostgresOptions struct {
 	Unique                 bool
 	IgnorePrimaryKey       bool
 	IgnoreUniqueConstraint bool
+	IgnoreSearchLabels     set.StringSet
 	Reference              *foreignKeyRef
 
 	// Which database type will be used to store this value

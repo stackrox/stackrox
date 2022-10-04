@@ -9,7 +9,7 @@ import (
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -36,7 +36,7 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool := s.dackboxTestStore.GetPostgresPool()
 		s.imageComponentStore, err = imageComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
 		s.Require().NoError(err)

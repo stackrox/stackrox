@@ -42,6 +42,7 @@ import (
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -142,7 +143,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
 	var pool *pgxpool.Pool
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool = globaldb.GetPostgresTest(s.T())
 	}
 	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
@@ -301,7 +302,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
 	var pool *pgxpool.Pool
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool = globaldb.GetPostgresTest(s.T())
 	}
 	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
@@ -383,7 +384,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
 	var pool *pgxpool.Pool
-	if features.PostgresDatastore.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool = globaldb.GetPostgresTest(s.T())
 	}
 	deploymentDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())

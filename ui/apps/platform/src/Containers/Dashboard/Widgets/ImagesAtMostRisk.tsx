@@ -113,7 +113,7 @@ function ImagesAtMostRisk() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const variables = getQueryVariables(searchFilter, imageStatus);
-    const imagesQuery = getImagesQuery(isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES'));
+    const imagesQuery = getImagesQuery(isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE'));
     const { data, previousData, loading, error } = useQuery<ImageData>(imagesQuery, {
         variables,
     });

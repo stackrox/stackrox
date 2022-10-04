@@ -1,5 +1,5 @@
 import * as api from '../../constants/apiEndpoints';
-import { headingPlural, selectors, url } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import { hasFeatureFlag } from '../features';
 
 import { visitFromLeftNavExpandable } from '../nav';
@@ -24,7 +24,7 @@ let opnamesForDashboard = [
     'clustersWithMostClusterVulnerabilities',
 ];
 
-if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
     opnamesForDashboard = opnamesForDashboard.filter(
         (opname) =>
             opname !== 'clustersWithMostOrchestratorIstioVulnerabilities' &&
@@ -63,20 +63,8 @@ const requestConfigForDashboard = {
     routeMatcherMap: routeMatcherMapForOpnames(opnamesForDashboard),
 };
 
-export function visitVulnerabilityManagementDashboardFromLeftNav() {
-    visitFromLeftNavExpandable('Vulnerability Management', 'Dashboard', requestConfigForDashboard);
-
-    cy.get('h1:contains("Vulnerability Management")');
-}
-
-export function visitVulnerabilityManagementDashboard() {
-    visit(url.dashboard, requestConfigForDashboard);
-
-    cy.get('h1:contains("Vulnerability Management")');
-}
-
 /*
- * The following keys correspond to url list object in VulnManagementPage.js file.
+ * The following keys are path segments which correspond to entityKeys arguments of functions below.
  */
 
 const opnameForEntity = {
@@ -109,6 +97,23 @@ const opnameForEntities = {
     namespaces: 'getNamespaces',
     nodes: 'getNodes',
     policies: 'getPolicies',
+};
+
+// Headings on entities pages: uppercase style hides the inconsistencies.
+const headingPlural = {
+    clusters: 'clusters',
+    components: 'components',
+    'image-components': 'image components',
+    'node-components': 'node components',
+    cves: 'CVES',
+    'image-cves': 'Image CVES',
+    'node-cves': 'Node CVES',
+    'cluster-cves': 'Platform CVES',
+    deployments: 'deployments',
+    images: 'images',
+    namespaces: 'namespaces',
+    nodes: 'nodes',
+    policies: 'policies',
 };
 
 const opnamePrefixForPrimaryAndSecondaryEntities = {
@@ -150,11 +155,37 @@ function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
     return `${opnamePrefixForPrimaryAndSecondaryEntities[entitiesKey1]}${typeOfEntity[entitiesKey2]}`;
 }
 
+const basePath = '/main/vulnerability-management'; // dashboard
+
+function getEntitiesPath(entitiesKey, search = '') {
+    return `${basePath}/${entitiesKey}${search}`;
+}
+
+function getEntityPath(entitiesKey, entityId) {
+    const entityType = typeOfEntity[entitiesKey];
+    const search = `?workflowState[0][t]=${entityType}&workflowState[0][i]=${entityId}`;
+    return getEntitiesPath(entitiesKey, search);
+}
+
+export function visitVulnerabilityManagementDashboardFromLeftNav() {
+    visitFromLeftNavExpandable('Vulnerability Management', 'Dashboard', requestConfigForDashboard);
+
+    cy.location('pathname').should('eq', basePath);
+    cy.location('search').should('eq', '');
+    cy.get('h1:contains("Vulnerability Management")');
+}
+
+export function visitVulnerabilityManagementDashboard() {
+    visit(basePath, requestConfigForDashboard);
+
+    cy.get('h1:contains("Vulnerability Management")');
+}
+
 /*
  * For example, visitVulnerabilityManagementEntities('cves')
  * For example, visitVulnerabilityManagementEntities('policies', '?s[Policy]=Fixable Severity at least Important')
  */
-export function visitVulnerabilityManagementEntities(entitiesKey, search = '') {
+export function visitVulnerabilityManagementEntities(entitiesKey) {
     const requestConfig = {
         routeMatcherMap: routeMatcherMapForOpnames([
             'searchOptions',
@@ -162,7 +193,20 @@ export function visitVulnerabilityManagementEntities(entitiesKey, search = '') {
         ]),
     };
 
-    visit(`${url.list[entitiesKey]}${search}`, requestConfig);
+    visit(getEntitiesPath(entitiesKey), requestConfig);
+
+    cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+}
+
+export function visitVulnerabilityManagementEntitiesWithSearch(entitiesKey, search) {
+    const requestConfig = {
+        routeMatcherMap: routeMatcherMapForOpnames([
+            'searchOptions',
+            opnameForEntities[entitiesKey],
+        ]),
+    };
+
+    visit(getEntitiesPath(entitiesKey, search), requestConfig);
 
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
 }
@@ -188,7 +232,7 @@ export function interactAndWaitForVulnerabilityManagementEntities(
 
     interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap);
 
-    cy.location('pathname').should('eq', url.list[entitiesKey]);
+    cy.location('pathname').should('eq', getEntitiesPath(entitiesKey));
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
 }
 
@@ -197,8 +241,6 @@ export function visitVulnerabilityManagementEntityInSidePanel(
     entityId,
     staticResponseForEntity
 ) {
-    const pathname = url.list[entitiesKey];
-    const search = `?workflowState[0][t]=${typeOfEntity[entitiesKey]}&workflowState[0][i]=${entityId}`;
     const opname = opnameForEntity[entitiesKey];
     const requestConfig = {
         routeMatcherMap: {
@@ -207,7 +249,7 @@ export function visitVulnerabilityManagementEntityInSidePanel(
     };
     const staticResponseMap = staticResponseForEntity && { [opname]: staticResponseForEntity };
 
-    visit(`${pathname}${search}`, requestConfig, staticResponseMap);
+    visit(getEntityPath(entitiesKey, entityId), requestConfig, staticResponseMap);
 }
 
 export function interactAndWaitForVulnerabilityManagementEntity(

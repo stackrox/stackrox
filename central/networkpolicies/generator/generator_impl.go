@@ -134,13 +134,9 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	// Filter out only those deployments for which we can see network flows. We cannot reliably generate network
 	// policies for other deployments.
 	networkFlowsChecker := networkFlowsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(clusterID)
-	filteredSlice, err := sac.FilterSliceReflect(ctx, networkFlowsChecker, deployments, func(deployment *storage.Deployment) sac.ScopePredicate {
+	relevantDeployments := sac.FilterSlice(networkFlowsChecker, deployments, func(deployment *storage.Deployment) sac.ScopePredicate {
 		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
 	})
-	if err != nil {
-		return nil, errors.Wrap(err, "could not determine network flow access for deployments")
-	}
-	relevantDeployments := filteredSlice.([]*storage.Deployment)
 	relevantDeploymentsMap := objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments)
 
 	// Since we are generating ingress policies only, retrieve all flows incoming to one of the relevant deployments.

@@ -194,8 +194,8 @@ function launch_central {
     	add_args "--with-config-file=${ROXDEPLOY_CONFIG_FILE_MAP}"
     fi
 
-    if [[ "$POD_SECURITY_POLICIES" == "true" ]]; then
-      add_args "--enable-pod-security-policies"
+    if [[ -n "$POD_SECURITY_POLICIES" ]]; then
+      add_args "--enable-pod-security-policies=${POD_SECURITY_POLICIES}"
     fi
 
     local unzip_dir="${k8s_dir}/central-deploy/"
@@ -296,9 +296,9 @@ function launch_central {
         )
       fi
 
-      if [[ "$POD_SECURITY_POLICIES" == "true" ]]; then
+      if [[ -n "$POD_SECURITY_POLICIES" ]]; then
         helm_args+=(
-          --set system.enablePodSecurityPolicies=true
+          --set system.enablePodSecurityPolicies="${POD_SECURITY_POLICIES}"
         )
       fi
 
@@ -325,6 +325,9 @@ function launch_central {
 
       if [[ "${is_local_dev}" == "true" ]]; then
           kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
+          if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+            kubectl -n stackrox patch deploy/central-db --patch '{"spec":{"template":{"spec":{"initContainers":[{"name":"init-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":1,"memory":"1Gi"}}}],"containers":[{"name":"central-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
+          fi
       fi
 
       if [[ "${CGO_CHECKS}" == "true" ]]; then

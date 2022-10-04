@@ -49,13 +49,15 @@ const MOST_COMMON_IMAGE_VULNERABILITIES = gql`
     }
 `;
 
-const processData = (data, workflowState) => {
+const processData = (data, workflowState, showVMUpdates) => {
     // @TODO: filter on the client side until multiple sorts, including derived fields, is supported by BE
     const results = sortBy(data.results, ['cvss']);
 
+    const cveType = showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE;
+
     return results.map((vuln) => {
         const { id, cve, cvss, scoreVersion, isFixable, deploymentCount } = vuln;
-        const url = workflowState.pushRelatedEntity(entityTypes.CVE, id).toUrl();
+        const url = workflowState.pushRelatedEntity(cveType, id).toUrl();
         const tooltip = getTooltip(vuln);
 
         return {
@@ -71,7 +73,7 @@ const processData = (data, workflowState) => {
 
 const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
 
@@ -110,7 +112,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
 
             content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
         } else {
-            const processedData = processData(data, workflowState);
+            const processedData = processData(data, workflowState, showVMUpdates);
             if (!processedData || processedData.length === 0) {
                 content = (
                     <NoResultsMessage

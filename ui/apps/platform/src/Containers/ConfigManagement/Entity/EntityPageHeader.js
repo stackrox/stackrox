@@ -10,7 +10,7 @@ import useEntityName from 'hooks/useEntityName';
 import entityLabels from 'messages/entity';
 import { getUseCaseEntityMap } from 'utils/entityRelationships';
 
-const EntityPageHeader = ({ entityType, entityId, urlParams }) => {
+const EntityPageHeader = ({ entityType, entityId, urlParams, isExporting, setIsExporting }) => {
     const useCaseEntityMap = getUseCaseEntityMap();
     const safeEntityId = decodeURIComponent(entityId); // fix bug  ROX-4543-fix-bad-encoding-in-config-mgt-API-request
     const { entityName } = useEntityName(entityType, safeEntityId);
@@ -36,6 +36,8 @@ const EntityPageHeader = ({ entityType, entityId, urlParams }) => {
                         type={entityType}
                         page="configManagement"
                         pdfId={pdfId}
+                        isExporting={isExporting}
+                        setIsExporting={setIsExporting}
                     />
                 </div>
                 <div className="flex items-center pl-2">
@@ -55,6 +57,8 @@ EntityPageHeader.propTypes = {
     urlParams: PropTypes.shape({
         entityListType1: PropTypes.string,
     }),
+    isExporting: PropTypes.bool.isRequired,
+    setIsExporting: PropTypes.func.isRequired,
 };
 
 EntityPageHeader.defaultProps = {

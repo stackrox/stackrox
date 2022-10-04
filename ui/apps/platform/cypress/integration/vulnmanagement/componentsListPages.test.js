@@ -1,4 +1,4 @@
-import { url, selectors } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import { hasFeatureFlag } from '../../helpers/features';
 import withAuth from '../../helpers/basicAuth';
 import {
@@ -14,7 +14,7 @@ describe('Components list Page and its entity detail page, (related entities) su
 
     describe('with VM updates OFF', () => {
         before(function beforeHook() {
-            if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
                 this.skip();
             }
         });
@@ -31,18 +31,19 @@ describe('Components list Page and its entity detail page, (related entities) su
                 'Nodes',
                 'Risk Priority',
             ]);
+            const pathname = '/main/vulnerability-management/components';
             cy.get(selectors.tableBodyColumn).each(($el) => {
                 const columnValue = $el.text().toLowerCase();
                 if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
-                    allChecksForEntities(url.list.components, 'Deployment');
+                    allChecksForEntities(pathname, 'Deployment');
                 }
                 if (columnValue !== 'no images' && columnValue.includes('image')) {
-                    allChecksForEntities(url.list.components, 'Image');
+                    allChecksForEntities(pathname, 'Image');
                 }
                 /* TBD - uncomment later - if (columnValue !== 'no cves' && columnValue.includes('fixable'))
-                    allFixableCheck(url.list.components); */
+                    allFixableCheck(pathname); */
                 if (columnValue !== 'no cves' && columnValue.includes('cve')) {
-                    allCVECheck(url.list.components);
+                    allCVECheck(pathname);
                 }
             });
             //  TBD to be fixed after back end sorting is fixed

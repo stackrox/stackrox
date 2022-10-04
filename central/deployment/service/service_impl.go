@@ -171,7 +171,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 	}
 
 	// Fill in pagination.
-	paginated.FillPagination(parsedQuery, request.Pagination, maxDeploymentsReturned)
+	paginated.FillPagination(parsedQuery, request.GetPagination(), maxDeploymentsReturned)
 
 	deployments, err := s.datastore.SearchListDeployments(ctx, parsedQuery)
 	if err != nil {

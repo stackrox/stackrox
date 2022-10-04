@@ -1,15 +1,18 @@
-import { url, selectors } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import { hasExpectedHeaderColumns, allChecksForEntities } from '../../helpers/vmWorkflowUtils';
-import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
+import {
+    visitVulnerabilityManagementEntities,
+    visitVulnerabilityManagementEntitiesWithSearch,
+} from '../../helpers/vulnmanagement/entities';
 
 describe('Vulnerability Management CVEs', () => {
     withAuth();
 
     describe('with VM updates OFF', () => {
         before(function beforeHook() {
-            if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
                 this.skip();
             }
         });
@@ -30,16 +33,17 @@ describe('Vulnerability Management CVEs', () => {
                 ],
                 1 // skip 1 additional column to account for checkbox column
             );
+            const pathname = '/main/vulnerability-management/cves';
             cy.get(selectors.tableBodyColumn).each(($el) => {
                 const columnValue = $el.text().toLowerCase();
                 if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
-                    allChecksForEntities(url.list.cves, 'Deployment');
+                    allChecksForEntities(pathname, 'Deployment');
                 }
                 if (columnValue !== 'no images' && columnValue.includes('image')) {
-                    allChecksForEntities(url.list.cves, 'image');
+                    allChecksForEntities(pathname, 'image');
                 }
                 if (columnValue !== 'no components' && columnValue.includes('component')) {
-                    allChecksForEntities(url.list.cves, 'component');
+                    allChecksForEntities(pathname, 'component');
                 }
             });
 
@@ -125,7 +129,7 @@ describe('Vulnerability Management CVEs', () => {
         });
 
         it.skip('should unsuppress suppressed CVE', () => {
-            visitVulnerabilityManagementEntities('cves', '?s[CVE%20Snoozed]=true');
+            visitVulnerabilityManagementEntitiesWithSearch('cves', '?s[CVE%20Snoozed]=true');
             cy.get(selectors.cveUnsuppressPanelButton).should('be.disabled');
 
             // Obtain the CVE to verify in unsuppressed view
