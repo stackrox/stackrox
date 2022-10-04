@@ -201,7 +201,13 @@ GET_GITHUB_RELEASE_FN = get_github_release() { \
 	[ -x $${1} ] || { \
 		set -euxo pipefail ;\
 		mkdir -p bin ;\
-		curl --fail --retry 5 --retry-all-errors --location --output $${1} $${2} ;\
+		for i in {1..5}; do \
+			set +e ;\
+			curl --fail --location --output $${1} $${2} ;\
+			[ $$? -eq 0 ] && break ;\
+			set -e ;\
+			[ $$i -eq 5 ] && exit 1; \
+		done ;\
 		[[ "$$(uname -s)" != "Darwin" ]] || xattr -c $${1} ;\
 		chmod +x $${1} ;\
 	} \
