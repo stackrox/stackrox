@@ -11,62 +11,62 @@ import {
 import { selectors as configManagementSelectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
 
-// const entitiesKey = 'images'; // omit to minimize changed lines
+const entitiesKey = 'images';
 
-describe('Config Management Entities (Images)', () => {
+describe('Configuration Management Images', () => {
     withAuth();
 
     it('should render the images list and open the side panel when a row is clicked', () => {
-        renderListAndSidePanel('images');
+        renderListAndSidePanel(entitiesKey);
     });
 
     it('should open the side panel to show the same number of deployments when the deployments link is clicked', () => {
-        entityListCountMatchesTableLinkCount('images', 'deployments', /^\d+ deployments?$/);
+        entityListCountMatchesTableLinkCount(entitiesKey, 'deployments', /^\d+ deployments?$/);
     });
 
     it('should take you to a images single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel('images');
-        navigateToSingleEntityPage('images');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel('images');
-        navigateToSingleEntityPage('images');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Deployments']);
     });
 
     it('should click on the deployments count widget in the entity page and show the deployments tab', () => {
-        renderListAndSidePanel('images');
-        navigateToSingleEntityPage('images');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Deployments']);
         clickOnCountWidget('deployments', 'entityList');
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel('images');
-        navigateToSingleEntityPage('images');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasTabsFor(['deployments']);
     });
 
-    it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+    describe('should have same number in deployments table as in count widget', () => {
         const entitiesKey2 = 'deployments';
 
-        context('Page', () => {
-            renderListAndSidePanel('images');
-            navigateToSingleEntityPage('images');
-            pageEntityCountMatchesTableRows('images', entitiesKey2);
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('images');
-            sidePanelEntityCountMatchesTableRows('images', entitiesKey2);
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
     // regression test for ROX-4543-crash-when-drilling-down-to-image-deployments
     it('should allow user to drill down from cluster to image to image-deployments', () => {
         renderListAndSidePanel('clusters');
-        clickOnCountWidget('images', 'side-panel');
+        clickOnCountWidget(entitiesKey, 'side-panel');
         cy.get(`[data-testid="side-panel"] ${configManagementSelectors.tableRows}:last`).click({
             force: true,
         });
