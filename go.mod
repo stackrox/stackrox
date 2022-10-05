@@ -18,7 +18,7 @@ require (
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
-	github.com/cloudflare/cfssl v1.6.2
+	github.com/cloudflare/cfssl v1.6.3
 	github.com/containers/image/v5 v5.20.0
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/coreos/go-systemd/v22 v22.4.0
