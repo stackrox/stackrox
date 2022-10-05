@@ -340,6 +340,7 @@ func getAvailablePostgresCapacity(postgresConfig *pgxpool.Config) (int64, error)
 			}
 			return 0, err
 		}
+
 		rawCapacityInfo = append(rawCapacityInfo, info)
 	}
 
