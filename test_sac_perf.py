@@ -7,17 +7,19 @@ import urllib3
 
 ##### CONSTANTS #####
 
-HOST = 'https://localhost:8042'
+HOST = 'https://localhost:8000'
 #HOST = 'https://localhost:9000'
 #HOST = 'https://34.134.207.6'
 
 #PASSWORD_FILE_PATH = 'deploy/k8s/central-deploy/password'
-PASSWORD_FILE_PATH = 'yann-postgres-sac-performnce-05.pwd'
-#PASSWORD_FILE_PATH = 'yann-postgres-sac-performnce-06.pwd'
+#PASSWORD_FILE_PATH = 'yann-postgres-sac-performance-05.pwd'
+#PASSWORD_FILE_PATH = 'yann-postgres-sac-performance-06.pwd'
+PASSWORD_FILE_PATH = 'yann-postgres-sac-performance-12.pwd'
 #PASSWORD_FILE_PATH = 'sac_perf_test_pwd'
 
 GRAPHQL_ENDPOINT             = '/api/graphql'
 NAMESPACE_ENDPOINT           = '/v1/namespaces'
+PERMISSION_SET_ENDPOINT      = '/v1/permissionsets'
 ROLE_ENDPOINT                = '/v1/roles'
 SIMPLE_ACCESS_SCOPE_ENDPOINT = '/v1/simpleaccessscopes'
 TOKEN_GENERATOR_ENDPOINT     = '/v1/apitokens/generate'
@@ -30,14 +32,20 @@ EMPTY_QUERY = ''
 # MAP KEYS
 K_ACCESSSCOPEID       = 'accessScopeId'
 K_ACCESSSCOPENAME     = 'accessScopeName'
+K_ACCESSSCOPES        = 'accessScopes'
+K_CLUSTER_NAME        = 'cluster_name'
 K_CLUSTERNAME         = 'clusterName'
+K_DATA                = 'data'
 K_DESCRIPTION         = 'description'
 K_ID                  = 'id'
 K_INCLUDED_NAMESPACES = 'included_namespaces'
+K_INCLUDEDNAMESPACES  = 'includedNamespaces'
 K_METADATA            = 'metadata'
 K_NAME                = 'name'
 K_NAMESPACENAME       = 'namespaceName'
 K_NAMESPACES          = 'namespaces'
+K_OPERATIONNAME       = 'operationName'
+K_PERMISSIONSETS      = 'permissionSets'
 K_PERMISSIONSETID     = 'permissionSetId'
 K_RESOURCETOACCESS    = 'resourceToAccess'
 K_ROLES               = 'roles'
@@ -53,7 +61,7 @@ GRAPHQL_WIDGET_QUERIES = {
   'summary_counts':            '{"operationName":"summary_counts","variables":{},"query":"query summary_counts {\\n  clusterCount\\n  nodeCount\\n  violationCount\\n  deploymentCount\\n  imageCount\\n  secretCount\\n}\\n"}',
   'getAllNamespacesByCluster': '{"operationName":"getAllNamespacesByCluster","variables":{"query":""},"query":"query getAllNamespacesByCluster($query: String) {\\n  clusters(query: $query) {\\n    id\\n    name\\n    namespaces {\\n      metadata {\\n        id\\n        name\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n"}',
   'mostRecentAlerts':          '{"operationName":"mostRecentAlerts","variables":{"query":"Severity:CRITICAL_SEVERITY"},"query":"query mostRecentAlerts($query: String) {\\n  alerts: violations(\\n    query: $query\\n    pagination: {limit: 3, sortOption: {field: \\"Violation Time\\", reversed: true}}\\n  ) {\\n    id\\n    time\\n    deployment {\\n      clusterName\\n      namespace\\n      name\\n      __typename\\n    }\\n    policy {\\n      name\\n      severity\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n"}',
-  'getImagesDashboard':        '{"operationName":"getImagesDashboard","variables":{"query":""},"query":"query getImages($query: String) {\\n  images(\\n    query: $query\\n    pagination: {limit: 6, sortOption: {field: \\"Image Risk Priority\\", reversed: false}}\\n  ) {\\n    id\\n    name {\\n      remote\\n      fullName\\n      __typename\\n    }\\n    priority\\n    imageVulnerabilityCounter {\\n      important {\\n        total\\n        fixable\\n        __typename\\n      }\\n      critical {\\n        total\\n        fixable\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n"}',
+  'getImagesDashboard':        '{"operationName":"getImages","variables":{"query":""},"query":"query getImages($query: String) {\\n  images(\\n    query: $query\\n    pagination: {limit: 6, sortOption: {field: \\"Image Risk Priority\\", reversed: false}}\\n  ) {\\n    id\\n    name {\\n      remote\\n      fullName\\n      __typename\\n    }\\n    priority\\n    imageVulnerabilityCounter {\\n      important {\\n        total\\n        fixable\\n        __typename\\n      }\\n      critical {\\n        total\\n        fixable\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n"}',
   'agingImagesQuery':          '{"operationName":"agingImagesQuery","variables":{"query0":"Image Created Time:30d-90d","query1":"Image Created Time:90d-180d","query2":"Image Created Time:180d-365d","query3":"Image Created Time:>365d"},"query":"query agingImagesQuery($query0: String, $query1: String, $query2: String, $query3: String) {\\n  timeRange0: imageCount(query: $query0)\\n  timeRange1: imageCount(query: $query1)\\n  timeRange2: imageCount(query: $query2)\\n  timeRange3: imageCount(query: $query3)\\n}\\n"}',
   'getAggregatedResults':      '{"operationName":"getAggregatedResults","variables":{"groupBy":["STANDARD"],"where":"Cluster:*"},"query":"query getAggregatedResults($groupBy: [ComplianceAggregation_Scope!], $where: String) {\\n  controls: aggregatedResults(groupBy: $groupBy, unit: CONTROL, where: $where) {\\n    results {\\n      aggregationKeys {\\n        id\\n        scope\\n        __typename\\n      }\\n      numFailing\\n      numPassing\\n      numSkipped\\n      unit\\n      __typename\\n    }\\n    __typename\\n  }\\n  complianceStandards: complianceStandards {\\n    id\\n    name\\n    __typename\\n  }\\n}\\n"}',
 
@@ -109,9 +117,6 @@ TEST_ROLES = {
   'AnalystOneHundredNamespacesInOneCluster':   {K_PERMISSIONSETID: ANALYST_PERMISSION_SET, K_ACCESSSCOPENAME: 'OneHundredNamespacesInOneCluster'},
   'AnalystOneHundredNamespacesInFiveClusters': {K_PERMISSIONSETID: ANALYST_PERMISSION_SET, K_ACCESSSCOPENAME: 'OneHundredNamespacesInFiveClusters'},
   'AnalystOneHundredNamespacesInTenClusters':  {K_PERMISSIONSETID: ANALYST_PERMISSION_SET, K_ACCESSSCOPENAME: 'OneHundredNamespacesInTenClusters'}
-}
-
-RESERVED_SCOPES = {
 }
 
 ##### UTILITY FUNCTIONS #####
@@ -197,14 +202,9 @@ def getElapsed(ts1, ts2):
   delta = ts2 - ts1
   if ts1 > ts2:
     delta = ts1 - ts2
-  #wms = delta.weeks   * 604800000
   dms = delta.days    *  86400000
-  #hms = delta.hours   *   3600000
-  #mms = delta.minutes *     60000
   sms = delta.seconds *      1000
-  #rms = delta.milliseconds
   rms = delta.microseconds // 1000
-  #tms = rms + sms + mms + hms + dms + wms
   tms = rms + sms + dms
   grain = 5
   remain = tms % grain
@@ -223,10 +223,24 @@ def createNamespaceScope(namespaces, scopeName, scopeDescription):
     }
   }
   for ns in namespaces:
-    query[K_RULES][K_INCLUDED_NAMESPACES].append({K_CLUSTERNAME: ns.clusterName, K_NAMESPACENAME: ns.namespaceName})
+    query[K_RULES][K_INCLUDED_NAMESPACES].append({K_CLUSTERNAME: ns[K_METADATA][K_CLUSTERNAME], K_NAMESPACENAME: ns[K_METADATA][K_NAME]})
   rspjson = postRequest(SIMPLE_ACCESS_SCOPE_ENDPOINT, query, '')
   id = rspjson[K_ID]
   return id
+
+def updateNamespaceScope(namespaces, scopeId, scopeName, scopeDescription):
+  query = {
+    K_ID: scopeId,
+    K_NAME: scopeName,
+    K_DESCRIPTION: scopeDescription,
+    K_RULES: {
+      K_INCLUDED_NAMESPACES: []
+    }
+  }
+  for ns in namespaces:
+    query[K_RULES][K_INCLUDED_NAMESPACES].append({K_CLUSTERNAME: ns[K_METADATA][K_CLUSTERNAME], K_NAMESPACENAME: ns[K_METADATA][K_NAME]})
+  rspjson = putRequest(SIMPLE_ACCESS_SCOPE_ENDPOINT+'/'+scopeId, query, '')
+  return scopeId
 
 def createRole(rolename, permissionsetid, accessscopeid, description):
   if not PERMISSION_SET_PREFIX in permissionsetid:
@@ -241,6 +255,22 @@ def createRole(rolename, permissionsetid, accessscopeid, description):
     K_ACCESSSCOPEID: accessscopeid
   }
   rspjson = postRequest(ROLE_ENDPOINT+'/'+rolename, query, '')
+  return rspjson
+
+def updateRole(rolename, permissionsetid, accessscopeid, description):
+  if not PERMISSION_SET_PREFIX in permissionsetid:
+    permissionsetid = PERMISSION_SET_PREFIX+permissionsetid
+  if not ACCESS_SCOPE_PREFIX in accessscopeid:
+    accessscopeid = ACCESS_SCOPE_PREFIX+accessscopeid
+  query = {
+    K_NAME: rolename,
+    K_DESCRIPTION: description,
+    K_RESOURCETOACCESS: {},
+    K_PERMISSIONSETID: permissionsetid,
+    K_ACCESSSCOPEID: accessscopeid
+  }
+  rspjson = putRequest(ROLE_ENDPOINT+'/'+rolename, query, '')
+  return rspjson
 
 def getToken(role):
   token = ''
@@ -255,6 +285,7 @@ def getToken(role):
   return token
 
 def getNamespaces():
+  print('Fetching namespaces')
   start = datetime.datetime.now()
   rspjson = getRequestAsAdmin(NAMESPACE_ENDPOINT, EMPTY_QUERY)
   end = datetime.datetime.now()
@@ -280,16 +311,36 @@ def getNamespaces():
     namespacesByClusterAndName[clusterName][namespaceName] = ns
   return namespacesByClusterAndName
 
+def getRoles():
+  rspjson = getRequestAsAdmin(ROLE_ENDPOINT, EMPTY_QUERY)
+  rolesByName = {}
+  if K_ROLES not in rspjson:
+    return rolesByName
+  for role in rspjson[K_ROLES]:
+    roleName = role[K_NAME]
+    rolesByName[roleName] = role
+  return rolesByName
+  
+
 def getAccessScopes():
   rspjson = getRequestAsAdmin(SIMPLE_ACCESS_SCOPE_ENDPOINT, EMPTY_QUERY)
   accessScopesByName = {}
-  ACCESS_SCOPES = 'accessScopes'
-  if not ACCESS_SCOPES in rspjson:
+  if not K_ACCESSSCOPES in rspjson:
     return accessScopesByName
-  for scope in rspjson[ACCESS_SCOPES]:
+  for scope in rspjson[K_ACCESSSCOPES]:
     scopeName = scope[K_NAME]
     accessScopesByName[scopeName] = scope
   return accessScopesByName
+
+def getPermissionSets():
+  rspjson = getRequestAsAdmin(PERMISSION_SET_ENDPOINT, EMPTY_QUERY)
+  permissionSetsById= {}
+  if not K_PERMISSIONSETS in rspjson:
+    return permissionSetsById
+  for permissionSet in rspjson[K_PERMISSIONSETS]:
+    permissionSetId = permissionSet[K_ID]
+    permissionSetsById[permissionSetId] = permissionSet
+  return permissionSetsById
 
 def ensureScopeDistribution(scope, allAccessScopes):
   if not scope in allAccessScopes:
@@ -319,178 +370,277 @@ def ensureScopeDistribution(scope, allAccessScopes):
     return False
   return True
 
-def ensurePredefinedAccessScope(name, accessScopes, namespacesByClusterAndName, hasPredefinedNamespaces):
-  if name in accessScopes:
-    scope = accessScopes[name]
-    if hasPredefinedNamespaces:
-      scopeNamespacesByCluster = {}
-      if K_RULES in scope and 'includedNamespaces' in scope[K_RULES]:
-        for rule in scope[K_RULES]['includedNamespaces']:
-          ruleCluster = ''
-          ruleNamespace = ''
-          if K_CLUSTERNAME in rule: ruleCluster = rule[K_CLUSTERNAME]
-          if K_NAMESPACENAME in rule: ruleNamespace = rule[K_NAMESPACENAME]
-          if ruleCluster != '' and ruleCluster not in scopeNamespacesByCluster:
-            scopeNamespacesByCluster[ruleCluster] = []
-          if ruleCluster != '' and ruleNamespace != '':
-            scopeNamespacesByCluster[ruleCluster].append(ruleNamespace)
-      hasAllPredefinedNamespaces = True
-      reservedNamespacesByCluster = {}
-      for cluster in RESERVED_SCOPES:
-        # print('checking namespaces from cluster ' + cluster + ' (' + str(len(RESERVED_SCOPES[cluster])) + ')')
-        namespaceMatches = 0
-        for namespace in RESERVED_SCOPES[cluster]:
-          # if cluster in ['stackrox4', 'stackrox5']:
-          #   print(cluster + ',' + namespace + '|' + RESERVED_SCOPES[cluster][namespace])
-          if RESERVED_SCOPES[cluster][namespace] == name:
-            namespaceMatches += 1
-            if cluster not in reservedNamespacesByCluster:
-              # print('scope ' + name + ' has reserved cluster ' + cluster)
-              reservedNamespacesByCluster[cluster] = []
-            reservedNamespacesByCluster[cluster].append(namespace)
-        # print('got ' + str(namespaceMatches) + ' matching namespaces for scope ' + name + ' in cluster ' + cluster)
-      if len(reservedNamespacesByCluster) != len(scopeNamespacesByCluster):
-        print('cluster count mismatch between reserved and scope ' + str(len(reservedNamespacesByCluster)) + ' vs ' + str(len(scopeNamespacesByCluster)))
-        hasAllPredefinedNamespaces = False
-      if hasAllPredefinedNamespaces:
-        for cluster in reservedNamespacesByCluster:
-          if cluster not in scopeNamespacesByCluster:
-            print('reserved cluster [' + cluster + '] not found in scope')
-            hasAllPredefinedNamespaces = False
-            break
-          if len(reservedNamespacesByCluster[cluster]) != len(scopeNamespacesByCluster[cluster]):
-            print('namespace count mismatch between reserved and scope ' + str(len(reservedNamespacesByCluster[cluster])) + ' vs ' + str(len(scopeNamespacesByCluster[cluster])))
-            hasAllPredefinedNamespaces = False
-            break
-          for namespace in reservedNamespacesByCluster[cluster]:
-            if namespace not in scopeNamespacesByCluster[cluster]:
-              print('reserved cluster,namespace pair ('+cluster+','+namespace+'] not found in scope')
-              hasAllPredefinedNamespaces = False
-              break
-          if not hasAllPredefinedNamespaces:
-            break
-      if hasAllPredefinedNamespaces:
-        print('Scope ' + name + ' exists, and contains the pre-defined namespaces') 
-        return
-      else:
-        print('Scope ' + name + ' exists, but not all predefined namespaces are in there')
-        query = {K_ID: scope[K_ID], K_NAME: name, K_DESCRIPTION: '', K_RULES:{'includedNamespaces':[]}}
-        for cluster in reservedNamespacesByCluster:
-          for namespace in reservedNamespacesByCluster[cluster]:
-            query[K_RULES]['includedNamespaces'].append({K_CLUSTERNAME: cluster, K_NAMESPACENAME: namespace})
-        rsp = putRequest(SIMPLE_ACCESS_SCOPE_ENDPOINT + '/' + scope[K_ID], query, '')
-        return
+def listNamespacesToReserve(clusterCount, namespaceCount, reservedNamespacesByCluster, allNamespacesByCluster):
+  print('Listing ' + str(namespaceCount) + ' namespaces in ' + str(clusterCount) + ' clusters')
+  if clusterCount == 0 or namespaceCount == 0:
+    return {}
+  namespacesPerCluster = namespaceCount // clusterCount
+  remainingNamespaces = namespaceCount % clusterCount
+  reservedNamespaceCountByCluster = {}
+  for cluster in allNamespacesByCluster:
+    reservedCount = 0
+    if cluster in reservedNamespacesByCluster:
+      reservedCount = len(reservedNamespacesByCluster[cluster])
+    reservedNamespaceCountByCluster[cluster] = reservedCount
+  clustersToUse = []
+  for cluster in allNamespacesByCluster:
+    if len(clustersToUse) == 0:
+      clustersToUse.append(cluster)
     else:
-      print('Scope ' + name + ' exists, but not all predefined namespaces exist')
-      hasCorrectClusterNamespaceDistribution = ensureScopeDistribution(scope, accessScopes)
-      if hasCorrectClusterNamespaceDistribution:
-        print('Scope ' + name + ' exists, has correct cluster/namespace distribution, but not all predefined namespaces exist')
-      else:
-        query = {K_ID: scope[K_ID], K_NAME: name, K_DESCRIPTION: '', K_RULES:{'includedNamespaces':[]}}
-        # TODO
-        putRequest(SIMPLE_ACCESS_SCOPE_ENDPOINT + '/' + scope[K_ID], query, '')
-      return
-  else:
-    if hasPredefinedNamespaces:
-      print('Scope ' + name + ' does not exist, but all predefined namespaces exist')
-      query = {K_NAME: name, K_DESCRIPTION: '', K_RULES:{'includedNamespaces':[]}}
-      for cluster in reservedNamespacesByCluster:
-        for namespace in reservedNamespacesByCluster[cluster]:
-          query[K_RULES]['includedNamespaces'].append({'ClusterName': cluster, K_NAMESPACENAME: namespace})
-      postRequest(SIMPLE_ACCESS_SCOPE_ENDPOINT, query, '')
-      return
-    else:
-      print('Scope ' + name + ' does not exist, but not all predefined namespaces exist')
-      query = {K_ID: scope[K_ID], K_NAME: name, K_DESCRIPTION: '', K_RULES:{'includedNamespaces':[]}}
-      # TODO
-      postRequest(SIMPLE_ACCESS_SCOPE_ENDPOINT, query, '')
-      return
+      reservedNamespaces = reservedNamespaceCountByCluster[cluster]
+      insertIndex = 0
+      for ix in range(len(clustersToUse)):
+        cl = clustersToUse[ix]
+        reserved = 0
+        if cl in reservedNamespacesByCluster:
+          reserved = len(reservedNamespacesByCluster[cl])
+        if reserved >= reservedNamespaces:
+          insertIndex = ix
+          break
+      prefixClusters = clustersToUse[0:insertIndex]
+      suffixClusters = clustersToUse[insertIndex:]
+      ncl = []
+      for cl in prefixClusters: ncl.append(cl)
+      ncl.append(cluster)
+      for cl in suffixClusters: ncl.append(cl)
+      clustersToUse = ncl
+  clustersToUse = clustersToUse[0:clusterCount]
+  newlyReserved = []
+  for cluster in clustersToUse:
+    if cluster not in allNamespacesByCluster:
+      print('Selection error: cluster ' + cluster + ' not found in all namespace list')
+      continue
+    namespacesToInclude = namespacesPerCluster
+    if remainingNamespaces:
+      namespacesToInclude += 1
+      remainingNamespaces -= 1
+    for nsname in allNamespacesByCluster[cluster]:
+      ns = allNamespacesByCluster[cluster][nsname]
+      if cluster in reservedNamespacesByCluster and nsname in reservedNamespacesByCluster[cluster]: continue
+      newlyReserved.append(ns)
+      namespacesToInclude -= 1
+      if namespacesToInclude == 0: break
+  print('Shortlisted ' + str(len(newlyReserved)) + ' namespaces')
+  return newlyReserved
 
-def ensurePredefinedAccessScopes():
-  namespacesByClusterAndName = getNamespaces()
-  hasPredefinedNamespaces = True
-  for cluster in RESERVED_SCOPES:
-    if cluster not in namespacesByClusterAndName:
-      hasPredefinedNamespaces = False
-      break
-    for namespace in RESERVED_SCOPES[cluster]:
-      if namespace not in namespacesByClusterAndName[cluster]:
-        hasPredefinedNamespaces = False
-        break
-    if not hasPredefinedNamespaces:
-      break
-  existingAccessScopes = getAccessScopes()
-  for scope in SCOPE_DISTRIBUTION:
-    ensurePredefinedAccessScope(scope, existingAccessScopes, namespacesByClusterAndName, hasPredefinedNamespaces)
+def ensureAccessScopes():
   allAccessScopes = getAccessScopes()
+  scopesToCreate = []
+  scopesToUpdate = []
+  reservedNamespacesByCluster = {}
   for scope in SCOPE_DISTRIBUTION:
-    ensureScopeDistribution(scope, allAccessScopes)
+    if not scope in allAccessScopes:
+      scopesToCreate.append(scope)
+    else:
+      hasProperDistribution = ensureScopeDistribution(scope, allAccessScopes)
+      if hasProperDistribution:
+        actualScope = allAccessScopes[scope]
+        for namespaceRule in actualScope[K_RULES][K_INCLUDEDNAMESPACES]:
+          ruleCluster = namespaceRule[K_CLUSTERNAME]
+          ruleNamespace = namespaceRule[K_NAMESPACENAME]
+          if ruleCluster not in reservedNamespacesByCluster:
+            reservedNamespacesByCluster[ruleCluster] = {}
+          reservedNamespacesByCluster[ruleCluster][ruleNamespace] = True
+      else:
+        scopesToUpdate.append(scope)
+  if len(scopesToCreate) == 0 and len(scopesToUpdate) == 0:
+    return
+  print(str(len(scopesToCreate)) + ' scopes to create and ' + str(len(scopesToUpdate)) + ' scopes to update.')
+  startNamespaceLookup = datetime.datetime.now()
+  allNamespaces = getNamespaces()
+  endNamespaceLookup = datetime.datetime.now()
+  elapsedNamespaceLookup = getElapsed(startNamespaceLookup, endNamespaceLookup)
+  for scope in scopesToCreate:
+    distribution = SCOPE_DISTRIBUTION[scope]
+    scopeNamespaces = listNamespacesToReserve(distribution['ClusterCount'], distribution['NamespaceCount'], reservedNamespacesByCluster, allNamespaces)
+    createNamespaceScope(scopeNamespaces, scope, '')
+    for ns in scopeNamespaces:
+      clusterName = ns[K_METADATA][K_CLUSTERNAME]
+      namespaceName = ns[K_METADATA][K_NAME]
+      if clusterName not in reservedNamespacesByCluster:
+        reservedNamespacesByCluster[clusterName] = {}
+      reservedNamespacesByCluster[clusterName][namespaceName] = True
+  for scope in scopesToUpdate:
+    distribution = SCOPE_DISTRIBUTION[scope]
+    actualScope = allAccessScopes[scope]
+    scopeId = actualScope[K_ID]
+    scopeNamespaces = listNamespacesToReserve(distribution['ClusterCount'], distribution['NamespaceCount'], reservedNamespacesByCluster, allNamespaces)
+    updateNamespaceScope(scopeNamespaces, scopeId, scope, '')
+    for ns in scopeNamespaces:
+      clusterName = ns[K_METADATA][K_CLUSTERNAME]
+      namespaceName = ns[K_METADATA][K_NAME]
+      if clusterName not in reservedNamespacesByCluster:
+        reservedNamespacesByCluster[clusterName] = {}
+      reservedNamespacesByCluster[clusterName][namespaceName] = True
+
+def ensureTestRoles():
+  ensureAccessScopes()
+  allAccessScopes = getAccessScopes()
+  allPermissionSets = getPermissionSets()
+  allRoles = getRoles()
+  rolesToCreate = []
+  rolesToUpdate = []
+  for role in TEST_ROLES:
+    if role not in allRoles:
+      rolesToCreate.append(role)
+    else:
+      fetchedRole = allRoles[role]
+      fetchedPermissionSetId = fetchedRole[K_PERMISSIONSETID]
+      rolePermissionSetId = TEST_ROLES[role][K_PERMISSIONSETID]
+      if fetchedPermissionSetId != rolePermissionSetId:
+        print('updating role ' + role + ' - permissionset mismatch ' + fetchedPermissionSetId + ' vs ' + rolePermissionSetId)
+        rolesToUpdate.append(role)
+      fetchedAccessScopeId = fetchedRole[K_ACCESSSCOPEID]
+      roleAccessScopeName = TEST_ROLES[role][K_ACCESSSCOPENAME]
+      roleAccessScopeId = allAccessScopes[roleAccessScopeName][K_ID]
+      if fetchedRole[K_ACCESSSCOPEID] != roleAccessScopeId:
+        print('updating role ' + role + ' - accessScopeId mismatch ' + fetchedAccessScopeId + ' vs ' + roleAccessScopeId)
+        rolesToUpdate.append(role)
+  print(str(len(rolesToCreate)) + ' roles to create and ' + str(len(rolesToUpdate)) + ' roles to update')
+  for role in rolesToCreate:
+    rolePermissionSetId = TEST_ROLES[role][K_PERMISSIONSETID]
+    roleAccessScopeName = TEST_ROLES[role][K_ACCESSSCOPENAME]
+    roleAccessScopeId = allAccessScopes[roleAccessScopeName][K_ID]
+    createRole(role, rolePermissionSetId, roleAccessScopeId, '')
+  for role in rolesToUpdate:
+    rolePermissionSetId = TEST_ROLES[role][K_PERMISSIONSETID]
+    roleAccessScopeName = TEST_ROLES[role][K_ACCESSSCOPENAME]
+    roleAccessScopeId = allAccessScopes[roleAccessScopeName][K_ID]
+    updateRole(role, rolePermissionSetId, roleAccessScopeId, '')
 
 def runTimedGraphQLQuery(opname, token):
   start = datetime.datetime.now()
   query = ''
+  result = {}
   if opname in GRAPHQL_WIDGET_QUERIES:
     query = GRAPHQL_WIDGET_QUERIES[opname]
+    realOpName = opname
+    parsedQuery = json.loads(query)
+    if K_OPERATIONNAME in parsedQuery:
+      realOpName = parsedQuery[K_OPERATIONNAME]
     try:
-      result = getRequest(GRAPHQL_ENDPOINT + '?opname=' + opname, query, token, QUERY_TIMEOUT)
+      result = getRequest(GRAPHQL_ENDPOINT + '?opname=' + realOpName, query, token, QUERY_TIMEOUT)
       # print(str(result))
     except:
+      print('runTimedGraphQLQuery failure for target ' + opname + ' (' + realOpName + ')')
       pass
   end = datetime.datetime.now()
   elapsed = getElapsed(start, end)
   # print('GraphQL query ' + opname + ' took ' + str(elapsed) + ' ms')
-  return elapsed
+  return elapsed, result
+
+def collectPerformanceData(runCount):
+  dataByWidgetAndRole = {}
+  for role in TEST_ROLES:
+    token = getToken(role)
+    # Get Alert count
+    widgetName = 'alert_count'
+    elapsed, graphQLResult = runTimedGraphQLQuery('summary_counts', token)
+    if widgetName not in dataByWidgetAndRole:
+      dataByWidgetAndRole[widgetName] = {}
+    valueToAdd = 0
+    if K_DATA in graphQLResult and 'violationCount' in graphQLResult[K_DATA]:
+      valueToAdd = graphQLResult[K_DATA]['violationCount']
+    else:
+      print('No value for widget [' + widgetName + '] and role ' + role)
+      print(graphQLResult)
+    dataByWidgetAndRole[widgetName][role] = valueToAdd
+    # Get CVE count
+    widgetName = 'vulnerability_count'
+    elapsed, graphQLResult = runTimedGraphQLQuery('cvesCount', token)
+    if widgetName not in dataByWidgetAndRole:
+      dataByWidgetAndRole[widgetName] = {}
+    valueToAdd = 0
+    if K_DATA in graphQLResult and 'vulnerabilityCount' in graphQLResult[K_DATA]:
+      valueToAdd = graphQLResult[K_DATA]['vulnerabilityCount']
+    elif K_DATA in graphQLResult and ('imageVulnerabilityCount' in graphQLResult[K_DATA] or 'nodeVulnerabilityCount' in graphQLResult[K_DATA] or 'clusterVulnerabilityCount' in graphQLResult[K_DATA]):
+      data = graphQLResult[K_DATA]
+      for key in ['imageVulnerabilityCount', 'nodeVulnerabilityCount', 'clusterVulnerabilityCount']:
+        if key in data:
+          valueToAdd += data[key]
+    else:
+      print('No value for widget [' + widgetName + '] and role ' + role)
+      print(graphQLResult)
+    dataByWidgetAndRole[widgetName][role] = valueToAdd
+    # Get Image count
+    widgetName = 'image_count'
+    elapsed, graphQLResult = runTimedGraphQLQuery('getImages', token)
+    if widgetName not in dataByWidgetAndRole:
+      dataByWidgetAndRole[widgetName] = {}
+    valueToAdd = 0
+    if K_DATA in graphQLResult and 'imageCount' in graphQLResult[K_DATA]:
+      valueToAdd = graphQLResult[K_DATA]['imageCount']
+    else:
+      print('No value for widget [' + widgetName + '] and role ' + role)
+      print(graphQLResult)
+    dataByWidgetAndRole[widgetName][role] = valueToAdd
+  for it in range(runCount):
+    runstart = datetime.datetime.now()
+    for role in TEST_ROLES:
+      for widget in GRAPHQL_WIDGET_QUERIES:
+        # print(str(it) + ' - testing widget ' + widget + ' for role ' + role)
+        sys.stdout.write('.')
+        sys.stdout.flush()
+        if widget not in dataByWidgetAndRole:
+          dataByWidgetAndRole[widget] = {}
+        if role not in dataByWidgetAndRole[widget]:
+          dataByWidgetAndRole[widget][role] = []
+        token = getToken(role)
+        elapsed, graphQLResult = runTimedGraphQLQuery(widget, token)
+        dataByWidgetAndRole[widget][role].append(elapsed)
+      sys.stdout.write('+')
+      sys.stdout.flush()
+    sys.stdout.write('\n')
+    runend = datetime.datetime.now()
+    runelapsed = getElapsed(runstart, runend)
+    print('Run ' + str(it+1) + ' took ' + str(runelapsed) + 'ms')
+  return dataByWidgetAndRole
+
+def displayPerformanceData(dataByWidgetAndRole):
+  widget_perf_arrays = {}
+  for widget in ['alert_count', 'vulnerability_count', 'image_count']:
+    perf_array = []
+    for role in TEST_ROLES:
+      valueToAppend = 0
+      if widget in dataByWidgetAndRole and role in dataByWidgetAndRole[widget]:
+        valueToAppend = dataByWidgetAndRole[widget][role]
+      else:
+        print('No value for widget ' + widget + ' and role ' + role)
+      perf_array.append(valueToAppend)
+    widget_perf_arrays[widget] = perf_array
+  for widget in GRAPHQL_WIDGET_QUERIES:
+    perf_array = []
+    for role in TEST_ROLES:
+      if widget not in dataByWidgetAndRole:
+        continue
+      if role not in dataByWidgetAndRole[widget]:
+        continue
+      elapsedArray = dataByWidgetAndRole[widget][role]
+      if len(elapsedArray) <= 0:
+        continue
+      minelapsed = min(elapsedArray)
+      totalelapsed = sum(elapsedArray)
+      avgelapsed = totalelapsed // len(elapsedArray)
+      maxelapsed = max(elapsedArray)
+      print('Role ' + role + ' - widget ' + widget + ' elapsed min ' + str(minelapsed) + ' avg ' + str(avgelapsed) + ' max ' + str(maxelapsed))
+      # TODO: consider taking the average augmented or diminished by the standard deviation
+      perf_array.append(avgelapsed)
+    widget_perf_arrays[widget] = perf_array
+  
+  for widget in ['alert_count', 'vulnerability_count', 'image_count']:
+    perf_array = widget_perf_arrays[widget]
+    print(widget + ',' + ','.join([str(x) for x in perf_array]))
+  for widget in GRAPHQL_WIDGET_QUERIES:
+    perf_array = widget_perf_arrays[widget]
+    print(widget + ',' + ','.join([str(x) for x in perf_array]))
+
 
 ##### MAIN SCRIPT CONTENT #####
 
 urllib3.disable_warnings()
 
-#ensurePredefinedAccessScopes()
-allAccessScopes = getAccessScopes()
-for scope in SCOPE_DISTRIBUTION:
-  ensureScopeDistribution(scope, allAccessScopes)
+ensureTestRoles()
 
-elapsedByWidgetAndRole = {}
-for it in range(TEST_RUN_COUNTS):
-  runstart = datetime.datetime.now()
-  for role in TEST_ROLES:
-    for widget in GRAPHQL_WIDGET_QUERIES:
-      # print(str(it) + ' - testing widget ' + widget + ' for role ' + role)
-      sys.stdout.write('.')
-      sys.stdout.flush()
-      if widget not in elapsedByWidgetAndRole:
-        elapsedByWidgetAndRole[widget] = {}
-      if role not in elapsedByWidgetAndRole[widget]:
-        elapsedByWidgetAndRole[widget][role] = []
-      token = getToken(role)
-      elapsed = runTimedGraphQLQuery(widget, token)
-      elapsedByWidgetAndRole[widget][role].append(elapsed)
-    sys.stdout.write('+')
-    sys.stdout.flush()
-  sys.stdout.write('\n')
-  runend = datetime.datetime.now()
-  runelapsed = getElapsed(runstart, runend)
-  print('Run ' + str(it+1) + ' took ' + str(runelapsed) + 'ms')
+dataByWidgetAndRole = collectPerformanceData(TEST_RUN_COUNTS)
 
-widget_perf_arrays = {}
-for widget in GRAPHQL_WIDGET_QUERIES:
-  perf_array = []
-  for role in TEST_ROLES:
-    if widget not in elapsedByWidgetAndRole:
-      continue
-    if role not in elapsedByWidgetAndRole[widget]:
-      continue
-    elapsedArray = elapsedByWidgetAndRole[widget][role]
-    if len(elapsedArray) <= 0:
-      continue
-    minelapsed = min(elapsedArray)
-    totalelapsed = sum(elapsedArray)
-    avgelapsed = totalelapsed // len(elapsedArray)
-    maxelapsed = max(elapsedArray)
-    print('Role ' + role + ' - widget ' + widget + ' elapsed min ' + str(minelapsed) + ' avg ' + str(avgelapsed) + ' max ' + str(maxelapsed))
-    perf_array.append(avgelapsed)
-  widget_perf_arrays[widget] = perf_array
-
-for widget in GRAPHQL_WIDGET_QUERIES:
-  perf_array = widget_perf_arrays[widget]
-  print(widget + ',' + ','.join([str(x) for x in perf_array]))
+displayPerformanceData(dataByWidgetAndRole)
