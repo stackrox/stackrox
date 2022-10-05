@@ -245,7 +245,7 @@ func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, mes
 // that state until `timeout` the test fails.
 func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
-	ticker := time.NewTicker(10 * time.Millisecond)
+	ticker := time.NewTicker(500 * time.Millisecond)
 	var lastErr error
 	for {
 		select {

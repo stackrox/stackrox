@@ -200,7 +200,11 @@ _Note: Similar instructions apply when using
    `yarn deploy-local` fails, see this
    [Knowledge Base article for debugging instructions](https://github.com/stackrox/dev-docs/blob/main/docs/troubleshooting/Troubleshooting-local-deployment.md).
 
-1. **Start** - Start your local dev server by running `yarn start`.
+1. **Start** - Start your local dev server by running `yarn start`. This will build 
+   all monorepo packages in watch mode. To build and watch only the main UI and to see 
+   available options to `yarn start`, first ensure that `yarn build` has been
+   run from the top level and then refer to the [README.md](./apps/platform/README.md#running-the-development-server) 
+   in the `apps/platform` directory.
 
 _Note: to redeploy a newer version of StackRox, delete existing app using
 `teardown` script from the [workflow](https://github.com/stackrox/workflow/)
