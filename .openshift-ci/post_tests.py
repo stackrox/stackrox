@@ -303,6 +303,7 @@ class FinalPost(StoreArtifacts):
 
     def run(self, test_outputs=None, test_results=None):
         self.store_artifacts()
+        self.add_test_results(test_results)
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()
         self.handle_run_failure()
