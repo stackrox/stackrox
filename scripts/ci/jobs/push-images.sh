@@ -115,7 +115,7 @@ slack_build_notice() {
     --arg build_url "$build_url" \
     --arg tag "$tag" \
     --arg github_url "$github_url" \
-    '{"text": ":prow: Prow build for tag [\($tag)](\($github_url)) started! Check the status of the build under the following URL: \($build_url)"}' \
+    '{"text": ":prow: Prow build for tag <\($github_url)|\($tag)> started! Check the status of the build under the following URL: \($build_url)"}' \
 | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
