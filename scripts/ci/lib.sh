@@ -497,7 +497,7 @@ check_rhacs_eng_image_exists() {
     if [[ "$name" =~ stackrox-operator-(bundle|index) ]]; then
         tag="$(echo "v${tag}" | sed 's,x,0,')"
     elif [[ "$name" == "stackrox-operator" ]]; then
-        tag="$(echo "${tag}" | sed 's,x,0,')"
+        tag="${tag//x/0}"
     elif [[ "$name" == "main-rcd" ]]; then
         name="main"
         tag="${tag}-rcd"
@@ -646,6 +646,7 @@ mark_collector_release() {
 
     # RS-487: create_update_pr.sh needs to be fixed so it is not Circle CI dependent.
     export CIRCLE_USERNAME=roxbot
+    # shellcheck disable=SC2153
     export CIRCLE_PULL_REQUEST="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
     export GITHUB_TOKEN_FOR_PRS="${GITHUB_TOKEN}"
     /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"

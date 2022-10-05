@@ -63,3 +63,6 @@ cypress-report.xml
 
 # Local exclusions
 local/database-restore/*
+
+# shellcheck output
+shellcheck-reports
