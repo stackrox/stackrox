@@ -45,3 +45,12 @@ function check-operator-generated-files-up-to-date() {
     git diff --exit-code HEAD
 }
 check-operator-generated-files-up-to-date
+
+# shellcheck disable=SC2016
+echo 'Check if a script that was on the failed shellcheck list is now fixed. (If this fails, run `make update-shellcheck-skip` and commit the result.)'
+function check-shellcheck-failing-list() {
+    make update-shellcheck-skip
+    echo 'Checking for diffs after updating shellcheck failing list...'
+    git diff --exit-code HEAD
+}
+check-shellcheck-failing-list
