@@ -2,8 +2,8 @@ package networkpolicy
 
 import (
 	"testing"
-	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/sensor/tests/resource"
 	"github.com/stretchr/testify/suite"
@@ -36,7 +36,6 @@ func (s *NetworkPolicySuite) SetupSuite() {
 }
 
 func (s *NetworkPolicySuite) TearDownTest() {
-	// Clear any messages received in fake central during the test run
 	s.testContext.GetFakeCentral().ClearReceivedBuffer()
 }
 
@@ -44,25 +43,37 @@ var (
 	ingressNetpolViolationName = "Deployments should have at least one ingress Network Policy"
 )
 
+func checkIfAlertsHaveViolation(result *central.AlertResults, name string) bool {
+	if result == nil {
+		return false
+	}
+
+	alerts := result.GetAlerts()
+	if len(alerts) == 0 {
+		return false
+	}
+	for _, alert := range result.GetAlerts() {
+		if alert.GetPolicy().GetName() == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *NetworkPolicySuite) Test_DeploymentShouldNotHaveViolation() {
 	s.testContext.RunWithResources([]resource.YamlTestFile{
 		NginxDeployment, NetpolAllow443,
 	}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		// Test context already takes care of creating and destroying resources
-		time.Sleep(2 * time.Second)
-
-		messages := testC.GetFakeCentral().GetAllMessages()
-
-		alerts := getAllAlertsForDeploymentName(messages, "nginx-deployment")
-		lastViolationState := alerts[len(alerts)-1]
-		var hasViolation bool
-		for _, alert := range lastViolationState.GetEvent().GetAlertResults().GetAlerts() {
-			if alert.GetPolicy().GetName() == ingressNetpolViolationName {
-				hasViolation = true
-				break
+		// There's a caveat to this test: the state HAS a violation at the beginning, but
+		// it disappears once re-sync kicks-in and processes the relationship betwee the network policy
+		// and this deployment. Therefore, this test passes as is, but the opposite assertion would also
+		// pass. e.g. "check if there IS an alert", because there will be a state where the alert is there.
+		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) error {
+			if checkIfAlertsHaveViolation(result, ingressNetpolViolationName) {
+				return errors.Errorf("violation found for deployment %s and violation name %s", result.GetSource().String(), ingressNetpolViolationName)
 			}
-		}
-		s.Require().False(hasViolation, "Should not have violation %s, but found in last violation state")
+			return nil
+		}, "Should not have a violation")
 	})
 }
 
@@ -70,33 +81,11 @@ func (s *NetworkPolicySuite) Test_DeploymentShouldHaveViolation() {
 	s.testContext.RunWithResources([]resource.YamlTestFile{
 		NginxDeployment,
 	}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		// Test context already takes care of creating and destroying resources
-		time.Sleep(2 * time.Second)
-
-		messages := testC.GetFakeCentral().GetAllMessages()
-
-		alerts := getAllAlertsForDeploymentName(messages, "nginx-deployment")
-		lastViolationState := alerts[len(alerts)-1]
-		var hasViolation bool
-		for _, alert := range lastViolationState.GetEvent().GetAlertResults().GetAlerts() {
-			if alert.GetPolicy().GetName() == ingressNetpolViolationName {
-				hasViolation = true
-				break
+		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) error {
+			if !checkIfAlertsHaveViolation(result, ingressNetpolViolationName) {
+				return errors.Errorf("violation not found for deployment %s and violation name %s", result.GetSource().String(), ingressNetpolViolationName)
 			}
-		}
-		s.Require().True(hasViolation, "Should have violation %s, but not found in last violation state")
+			return nil
+		}, "Should have a violation")
 	})
-}
-
-func getAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name string) []*central.MsgFromSensor {
-	var selected []*central.MsgFromSensor
-	for _, m := range messages {
-		for _, alert := range m.GetEvent().GetAlertResults().GetAlerts() {
-			if alert.GetDeployment().GetName() == name {
-				selected = append(selected, m)
-				break
-			}
-		}
-	}
-	return selected
 }

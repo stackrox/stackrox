@@ -13,107 +13,107 @@ import {
 } from '../../helpers/configWorkflowUtils';
 import withAuth from '../../helpers/basicAuth';
 
-// const entitiesKey = 'namespaces'; // omit to minimize changed lines
+const entitiesKey = 'namespaces';
 
-describe('Config Management Entities (Namespaces)', () => {
+describe('Configuration Management Namespaces', () => {
     withAuth();
 
     it('should render the namespaces list and open the side panel when a row is clicked', () => {
-        renderListAndSidePanel('namespaces');
+        renderListAndSidePanel(entitiesKey);
     });
 
     it('should render the namespaces list and open the side panel with the clicked cluster value', () => {
-        clickOnSingleEntityInTable('namespaces', 'clusters');
+        clickOnSingleEntityInTable(entitiesKey, 'clusters');
     });
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
-        renderListAndSidePanel('namespaces');
-        clickOnSingularEntityWidgetInSidePanel('namespaces', 'clusters');
+        renderListAndSidePanel(entitiesKey);
+        clickOnSingularEntityWidgetInSidePanel(entitiesKey, 'clusters');
     });
 
     it('should take you to a namespace single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel('namespaces');
-        navigateToSingleEntityPage('namespaces');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should show the related cluster widget', () => {
-        renderListAndSidePanel('namespaces');
-        navigateToSingleEntityPage('namespaces');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasRelatedEntityFor('Cluster');
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel('namespaces');
-        navigateToSingleEntityPage('namespaces');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Deployments', 'Secrets', 'Images']);
     });
 
     it('should click on the secrets count widget in the entity page and show the secrets tab', () => {
-        renderListAndSidePanel('namespaces', 'stackrox');
-        navigateToSingleEntityPage('namespaces');
+        renderListAndSidePanel(entitiesKey, 'stackrox');
+        navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('secrets', 'entityList');
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel('namespaces');
-        navigateToSingleEntityPage('namespaces');
+        renderListAndSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasTabsFor(['deployments', 'secrets', 'images']);
     });
 
-    it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+    describe('should have same number in deployments table as in count widget', () => {
         const entitiesKey2 = 'deployments';
 
-        context('Page', () => {
-            renderListAndSidePanel('namespaces');
-            navigateToSingleEntityPage('namespaces');
-            pageEntityCountMatchesTableRows('namespaces', entitiesKey2);
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('namespaces');
-            sidePanelEntityCountMatchesTableRows('namespaces', entitiesKey2);
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should have the same number of Secrets in the count widget as in the Secrets table', () => {
+    describe('should have same number in secrets table as in count widget', () => {
         const entitiesKey2 = 'secrets';
 
-        context('Page', () => {
-            renderListAndSidePanel('namespaces');
-            navigateToSingleEntityPage('namespaces');
-            pageEntityCountMatchesTableRows('namespaces', entitiesKey2);
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('namespaces');
-            sidePanelEntityCountMatchesTableRows('namespaces', entitiesKey2);
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should have the same number of Images in the count widget as in the Images table', () => {
+    describe('should have same number in images table as in count widget', () => {
         const entitiesKey2 = 'images';
 
-        context('Page', () => {
-            renderListAndSidePanel('namespaces');
-            navigateToSingleEntityPage('namespaces');
-            pageEntityCountMatchesTableRows('namespaces', entitiesKey2);
+        it('of page', () => {
+            renderListAndSidePanel(entitiesKey);
+            navigateToSingleEntityPage(entitiesKey);
+            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('namespaces');
-            sidePanelEntityCountMatchesTableRows('namespaces', entitiesKey2);
+        it('of side panel', () => {
+            renderListAndSidePanel(entitiesKey);
+            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
     it('should open the side panel to show the same number of Service Accounts when the Service Accounts link is clicked', () => {
         entityListCountMatchesTableLinkCount(
-            'namespaces',
+            entitiesKey,
             'serviceaccounts',
             /^\d+ Service Accounts?$/
         );
     });
 
     it('should open the side panel to show the same number of Roles when the Roles link is clicked', () => {
-        entityListCountMatchesTableLinkCount('namespaces', 'roles', /^\d+ Roles?$/);
+        entityListCountMatchesTableLinkCount(entitiesKey, 'roles', /^\d+ Roles?$/);
     });
 });

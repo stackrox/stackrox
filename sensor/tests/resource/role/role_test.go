@@ -2,15 +2,12 @@ package role
 
 import (
 	"context"
-	"fmt"
 	"testing"
-	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/tests/resource"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -21,29 +18,6 @@ var (
 	NginxRole        = resource.YamlTestFile{Kind: "Role", File: "nginx-role.yaml"}
 	NginxRoleBinding = resource.YamlTestFile{Kind: "Binding", File: "nginx-binding.yaml"}
 )
-
-func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n string) *central.MsgFromSensor {
-	var lastMessage *central.MsgFromSensor
-	for i := len(messages) - 1; i >= 0; i-- {
-		if messages[i].GetEvent().GetDeployment().GetName() == n {
-			lastMessage = messages[i]
-			break
-		}
-	}
-	return lastMessage
-}
-
-func assertLastDeploymentHasPermissionLevel(t *testing.T, messages []*central.MsgFromSensor, permissionLevel storage.PermissionLevel) {
-	lastNginxDeploymentUpdate := GetLastMessageWithDeploymentName(messages, "nginx-deployment")
-	require.NotNil(t, lastNginxDeploymentUpdate, "should have found a message for nginx-deployment")
-	deployment := lastNginxDeploymentUpdate.GetEvent().GetDeployment()
-	assert.Equal(
-		t,
-		deployment.ServiceAccountPermissionLevel,
-		permissionLevel,
-		fmt.Sprintf("permission level has to be %s", permissionLevel),
-	)
-}
 
 type RoleDependencySuite struct {
 	testContext *resource.TestContext
@@ -70,6 +44,16 @@ func (s *RoleDependencySuite) SetupSuite() {
 	}
 }
 
+func assertPermissionLevel(permissionLevel storage.PermissionLevel) resource.AssertFunc {
+	return func(deployment *storage.Deployment) error {
+		if deployment.ServiceAccountPermissionLevel != permissionLevel {
+			return errors.Errorf("expected permission level %s but found %s", permissionLevel, deployment.ServiceAccountPermissionLevel)
+		}
+		return nil
+	}
+
+}
+
 func (s *RoleDependencySuite) Test_PermutationTest() {
 	s.testContext.RunWithResourcesPermutation(
 		[]resource.YamlTestFile{
@@ -77,13 +61,9 @@ func (s *RoleDependencySuite) Test_PermutationTest() {
 			NginxRole,
 			NginxRoleBinding,
 		}, "Role Dependency", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-			// Test context already takes care of creating and destroying resources
-			time.Sleep(2 * time.Second)
-			assertLastDeploymentHasPermissionLevel(
-				t,
-				testC.GetFakeCentral().GetAllMessages(),
-				storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
-			)
+			testC.LastDeploymentState("nginx-deployment",
+				assertPermissionLevel(storage.PermissionLevel_ELEVATED_IN_NAMESPACE),
+				"Permission level has to be elevated in namespace")
 			testC.GetFakeCentral().ClearReceivedBuffer()
 		},
 	)
@@ -95,13 +75,9 @@ func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 			NginxDeployment,
 			NginxRole,
 		}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-			// Test context already takes care of creating and destroying resources
-			time.Sleep(2 * time.Second)
-			assertLastDeploymentHasPermissionLevel(
-				t,
-				testC.GetFakeCentral().GetAllMessages(),
-				storage.PermissionLevel_NONE,
-			)
+			testC.LastDeploymentState("nginx-deployment",
+				assertPermissionLevel(storage.PermissionLevel_NONE),
+				"Permission level has to be none if role binding is missing")
 			testC.GetFakeCentral().ClearReceivedBuffer()
 		})
 }
@@ -121,27 +97,17 @@ func (s *RoleDependencySuite) Test_MultipleDeploymentUpdates() {
 		defer utils.IgnoreError(deleteRole)
 		require.NoError(t, err)
 
-		// Wait because of re-sync
-		time.Sleep(3 * time.Second)
-
-		assertLastDeploymentHasPermissionLevel(
-			t,
-			testC.GetFakeCentral().GetAllMessages(),
-			storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
-		)
+		testC.LastDeploymentState("nginx-deployment",
+			assertPermissionLevel(storage.PermissionLevel_ELEVATED_IN_NAMESPACE),
+			"Permission level has to be elevated in namespace")
 		testC.GetFakeCentral().ClearReceivedBuffer()
 
 		utils.IgnoreError(deleteRole)
 		utils.IgnoreError(deleteRoleBinding)
 
-		// Wait because of re-sync
-		time.Sleep(3 * time.Second)
-
-		assertLastDeploymentHasPermissionLevel(
-			t,
-			testC.GetFakeCentral().GetAllMessages(),
-			storage.PermissionLevel_NONE,
-		)
+		testC.LastDeploymentState("nginx-deployment",
+			assertPermissionLevel(storage.PermissionLevel_NONE),
+			"Permission level has to be none after deleting role and binding")
 		testC.GetFakeCentral().ClearReceivedBuffer()
 	})
 }

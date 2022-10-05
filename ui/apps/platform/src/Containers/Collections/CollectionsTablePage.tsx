@@ -18,7 +18,7 @@ import pluralize from 'pluralize';
 
 import PageTitle from 'Components/PageTitle';
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { collectionsPath } from 'routePaths';
+import { collectionsBasePath } from 'routePaths';
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import { deleteCollection, getCollectionCount, listCollections } from 'services/CollectionsService';
 import useURLSearch from 'hooks/useURLSearch';
@@ -157,7 +157,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                             <Button
                                 variant={ButtonVariant.primary}
                                 component={LinkShim}
-                                href={`${collectionsPath}?action=create`}
+                                href={`${collectionsBasePath}?action=create`}
                             >
                                 Create collection
                             </Button>

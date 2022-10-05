@@ -13,7 +13,7 @@ import withAuth from '../../helpers/basicAuth';
 
 const entitiesKey = 'serviceaccounts';
 
-describe('Config Management Entities (Service Accounts)', () => {
+describe('Configuration Management Service Accounts', () => {
     withAuth();
 
     it('should render the service accounts list and open the side panel when a row is clicked', () => {
@@ -52,31 +52,31 @@ describe('Config Management Entities (Service Accounts)', () => {
         hasTabsFor(['deployments', 'roles']);
     });
 
-    it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+    describe('should have same number in deployments table as in count widget', () => {
         const entitiesKey2 = 'deployments';
 
-        context('Page', () => {
+        it('of page', () => {
             renderListAndSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
+        it('of side panel', () => {
             renderListAndSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should have the same number of Roles in the count widget as in the Roles table', () => {
+    describe('should have same number in roles table as in count widget', () => {
         const entitiesKey2 = 'roles';
 
-        context('Page', () => {
+        it('of page', () => {
             renderListAndSidePanel(entitiesKey);
             navigateToSingleEntityPage(entitiesKey);
             pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
+        it('of side panel', () => {
             renderListAndSidePanel(entitiesKey);
             sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
         });

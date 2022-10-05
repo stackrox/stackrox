@@ -40,7 +40,7 @@ import (
 )
 
 const (
-	// DefaultNamespace - the default namespace used to create the resources
+	// DefaultNamespace the default namespace used to create the resources
 	DefaultNamespace string = "sensor-integration"
 )
 
@@ -74,10 +74,13 @@ func objByKind(kind string) k8s.Object {
 	}
 }
 
-// TestCallback the test callback
+// TestCallback represents the test case function written in the go test file.
 type TestCallback func(t *testing.T, testContext *TestContext, objects map[string]k8s.Object)
 
-// TestContext the test context
+// TestContext holds all the information about the cluster and sensor under test. A TestContext represents
+// a test case run where the input is a set of resources applied to the cluster and the output is a set of
+// messages emitted by Sensor. Each Go test should use a single TestContext instance to manage cluster interaction
+// and assertions.
 type TestContext struct {
 	t               *testing.T
 	r               *resources.Resources
@@ -100,12 +103,12 @@ func defaultCentralConfig() CentralConfig {
 	}
 }
 
-// NewContext creates a new test context
+// NewContext creates a new test context with default configuration.
 func NewContext(t *testing.T) (*TestContext, error) {
 	return NewContextWithConfig(t, defaultCentralConfig())
 }
 
-// NewContextWithConfig creates a new test context with custom central configuration
+// NewContextWithConfig creates a new test context with custom central configuration.
 func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, error) {
 	envConfig := envconf.New().WithKubeconfigFile(conf.ResolveKubeConfigFile())
 	r, err := resources.New(envConfig.Client().RESTConfig())
@@ -124,12 +127,12 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 	}, nil
 }
 
-// Stop - stop the test
+// Stop test context and sensor.
 func (c *TestContext) Stop() {
 	c.stopFn()
 }
 
-// Resources - test resources
+// Resources object is used to interact with the cluster and apply new resources.
 func (c *TestContext) Resources() *resources.Resources {
 	return c.r
 }
@@ -154,12 +157,12 @@ func createTestNs(ctx context.Context, r *resources.Resources, name string) (*v1
 	}, nil
 }
 
-// GetFakeCentral - gets a fake central
+// GetFakeCentral gets a fake central instance. This is used to fetch messages sent by sensor under test.
 func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
 	return c.fakeCentral
 }
 
-// RunWithResources - runs with resources
+// RunWithResources runs the test case applying files in `files` slice in order.
 func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallback) {
 	_, removeNamespace, err := createTestNs(context.Background(), c.r, DefaultNamespace)
 	defer utils.IgnoreError(removeNamespace)
@@ -185,7 +188,7 @@ func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallba
 	testCase(c.t, c, fileToObj)
 }
 
-// RunBare - runs bare
+// RunBare runs a test case without applying any resources to the cluster.
 func (c *TestContext) RunBare(name string, testCase TestCallback) {
 	c.t.Run(name, func(t *testing.T) {
 		_, removeNamespace, err := createTestNs(context.Background(), c.r, DefaultNamespace)
@@ -197,7 +200,8 @@ func (c *TestContext) RunBare(name string, testCase TestCallback) {
 	})
 }
 
-// RunWithResourcesPermutation - runs with resource permutation
+// RunWithResourcesPermutation runs the test cases using `files` similarly to `RunWithResources` but it will run the
+// test case for each possible permutation of `files` slice.
 func (c *TestContext) RunWithResourcesPermutation(files []YamlTestFile, name string, testCase TestCallback) {
 	runPermutation(files, 0, func(f []YamlTestFile) {
 		newF := make([]YamlTestFile, len(f))
@@ -227,6 +231,85 @@ func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
 		runPermutation(files, i+1, cb)
 		files[i], files[j] = files[j], files[i]
 	}
+}
+
+// AssertFunc is the deployment state assertion function signature.
+type AssertFunc func(deployment *storage.Deployment) error
+
+// LastDeploymentState checks the deployment state similarly to `LastDeploymentStateWithTimeout` with a default 3 seconds timeout.
+func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, message string) {
+	c.LastDeploymentStateWithTimeout(name, assertion, message, 3*time.Second)
+}
+
+// LastDeploymentStateWithTimeout checks that a deployment reaches a state asserted by `assertion`. If the deployment does not reach
+// that state until `timeout` the test fails.
+func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
+	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(500 * time.Millisecond)
+	var lastErr error
+	for {
+		select {
+		case <-timer.C:
+			c.t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
+		case <-ticker.C:
+			messages := c.GetFakeCentral().GetAllMessages()
+			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, "sensor-integration", name)
+			deployment := lastDeploymentUpdate.GetEvent().GetDeployment()
+			if deployment != nil {
+				if lastErr = assertion(deployment); lastErr == nil {
+					return
+				}
+			}
+		}
+	}
+}
+
+// AlertAssertFunc is the alert assertion function signature.
+type AlertAssertFunc func(alertResults *central.AlertResults) error
+
+// LastViolationState checks the violation state similarly to `LastViolationStateWithTimeout` with a default 3 seconds timeout.
+func (c *TestContext) LastViolationState(name string, assertion AlertAssertFunc, message string) {
+	c.LastViolationStateWithTimeout(name, assertion, message, 3*time.Second)
+}
+
+// LastViolationStateWithTimeout checks that a violation state for a deployment must match `assertion`. If violation state does not match
+// until `timeout` the test fails.
+func (c *TestContext) LastViolationStateWithTimeout(name string, assertion AlertAssertFunc, message string, timeout time.Duration) {
+	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(10 * time.Millisecond)
+	var lastErr error
+	for {
+		select {
+		case <-timer.C:
+			c.t.Fatalf("timeout reached waiting for violation state (%s): %s", message, lastErr)
+		case <-ticker.C:
+			messages := c.GetFakeCentral().GetAllMessages()
+			alerts := GetAllAlertsForDeploymentName(messages, name)
+			var lastViolationState *central.AlertResults
+			if len(alerts) > 0 {
+				lastViolationState = alerts[len(alerts)-1].GetEvent().GetAlertResults()
+			}
+			if lastErr = assertion(lastViolationState); lastErr == nil {
+				// Assertion matched the case. We can return here without failing the test case
+				return
+			}
+		}
+	}
+
+}
+
+// GetAllAlertsForDeploymentName filters sensor messages and gets all alerts for a deployment with `name`
+func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name string) []*central.MsgFromSensor {
+	var selected []*central.MsgFromSensor
+	for _, m := range messages {
+		for _, alert := range m.GetEvent().GetAlertResults().GetAlerts() {
+			if alert.GetDeployment().GetName() == name {
+				selected = append(selected, m)
+				break
+			}
+		}
+	}
+	return selected
 }
 
 // CentralConfig allows tests to inject ACS policies in the tests
@@ -355,7 +438,7 @@ func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error
 	}
 }
 
-// GetLastMessageWithDeploymentName - gets the last message by deployment name
+// GetLastMessageWithDeploymentName find most recent sensor messages by namespace and deployment name
 func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, name string) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
 	for i := len(messages) - 1; i >= 0; i-- {
@@ -368,7 +451,7 @@ func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, nam
 	return lastMessage
 }
 
-// GetLastAlertsWithDeploymentID - gets the last AlertResults by deployment ID
+// GetLastAlertsWithDeploymentID find most recent alert message by deployment ID
 func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
 	for i := len(messages) - 1; i >= 0; i-- {
@@ -380,7 +463,7 @@ func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string)
 	return lastMessage
 }
 
-// GetUniquePodNamesFromPrefix - gets unique pod names by prefix
+// GetUniquePodNamesFromPrefix find all unique pod names from sensor events
 func GetUniquePodNamesFromPrefix(messages []*central.MsgFromSensor, ns, prefix string) []string {
 	uniqueNames := set.NewStringSet()
 	for _, msg := range messages {
@@ -394,7 +477,7 @@ func GetUniquePodNamesFromPrefix(messages []*central.MsgFromSensor, ns, prefix s
 	return uniqueNames.AsSlice()
 }
 
-// GetUniqueDeploymentNames - gets unique deployment names
+// GetUniqueDeploymentNames find all unique deployment names from sensor events
 func GetUniqueDeploymentNames(messages []*central.MsgFromSensor, ns string) []string {
 	uniqueNames := set.NewStringSet()
 	for _, msg := range messages {
