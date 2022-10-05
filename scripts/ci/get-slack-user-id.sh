@@ -15,10 +15,11 @@ slack_user=''
 
 # You can find Slack Member ID by clicking on the user profile in Slack, then three dots, then Copy member ID.
 # More info: https://api.slack.com/reference/surfaces/formatting#mentioning-users
-# Here you can find GitHub logins: https://github.com/stackrox/stackrox/graphs/contributors
+# Here you can find GitHub logins: https://github.com/orgs/stackrox/people
 # TODO: please keep the list in the alphabetic order. It is simpler to maintain it this way.
 case "$github_login" in
 '0x656b694d')       slack_user='U02MJ72K1B5' ;;
+'BradLugo')         slack_user='U042Z3TSZU3' ;;
 'JoukoVirtanen')    slack_user='U033Y28GYN4' ;;
 'Maddosaurus')      slack_user='U01Q5L5R0GJ' ;;
 'Molter73')         slack_user='U02A292NPV2' ;;
@@ -27,6 +28,7 @@ case "$github_login" in
 'Stringy')          slack_user='U02KJKREKPY' ;;
 'alanonthegit')     slack_user='U01PZFFSZRB' ;;
 'alwayshooin')      slack_user='U01PLAWUU8N' ;;
+'bradr5')           slack_user='U03UQ9DM44U' ;;
 'c-du')             slack_user='U02NE59PHT3' ;;
 'charmik-redhat')   slack_user='U035YKHMXEW' ;;
 'clickboo')         slack_user='U01PFFU0YKD' ;;
@@ -48,6 +50,7 @@ case "$github_login" in
 'jvdm')             slack_user='U02TTV416HY' ;;
 'keyallis')         slack_user='U02UX82JZAM' ;;
 'kovayur')          slack_user='U033ZSBGEUQ' ;;
+'ksurabhi91')       slack_user='U043ZP4RN76' ;;
 'kurlov')           slack_user='U035001CQCV' ;;
 'lvalerom')         slack_user='U02SJTV567N' ;;
 'md2119')           slack_user='U01Q57U4JFK' ;;
@@ -66,11 +69,13 @@ case "$github_login" in
 'sbostick')         slack_user='U01Q6UL38FM' ;;
 'srcporter')        slack_user='U01P0CZ5QDV' ;;
 'stehessel')        slack_user='U02SDMERUFP' ;;
+'sthadka')          slack_user='U029PASTL5C' ;;
 'theencee')         slack_user='U01Q57JQ3CZ' ;;
 'tommartensen')     slack_user='U040F2EG19U' ;;
 'vikin91')          slack_user='U02L405V2GH' ;;
 'vjwilson')         slack_user='U01PKQQF0KY' ;;
 'vladbologa')       slack_user='U03NFNXKPH9' ;;
+'vulerh')           slack_user='U02A9CAR59T' ;;
 esac
 
 echo "${slack_user}"
