@@ -7,6 +7,7 @@ set -euo pipefail
 
 style_checks() {
     info "Starting style-checks"
+
     make style || touch FAIL
 
     info "Saving junit XML report"
