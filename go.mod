@@ -41,6 +41,7 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/golang/protobuf v1.5.2
 	github.com/google/certificate-transparency-go v1.1.3
+	github.com/google/gnostic v0.5.7-v3refs
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-containerregistry v0.11.0
 	github.com/gorilla/schema v1.2.0
@@ -126,8 +127,6 @@ require (
 	sigs.k8s.io/e2e-framework v0.0.7
 	sigs.k8s.io/yaml v1.3.0
 )
-
-require github.com/google/gnostic v0.5.7-v3refs
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
