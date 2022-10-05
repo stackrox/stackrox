@@ -15,20 +15,22 @@ The documentation below is only specific to this package.
 
 To start the local development server in watch mode, run `yarn start`.
 
-#### Dev server environment variables
-
 The behavior of `yarn start` can be changed with the following environment variables:
 
+
+#### YARN_START_TARGET
 `YARN_START_TARGET` will set the default endpoint that API requests are forwarded to from
 the UI. By default the UI will forward API requests to `https://localhost:8000`.
 
-example: 
 ```sh
 YARN_START_TARGET=https://8.8.8.8:443 yarn start
 ```
 will start the development server
 and forward all API requests to `https://8.8.8.8:443`. _Note that the protocol (https) is required to
 be set for this option._
+
+
+#### YARN_CUSTOM_PROXIES
 
 `YARN_CUSTOM_PROXIES` will override the endpoint that API requests are forwarded to for specific
 endpoints that you define. The value of `YARN_CUSTOM_PROXIES` is a comma separated list of URL and
