@@ -20,8 +20,8 @@ func insecureRegistries(info *compliance.ContainerRuntimeInfo) []*storage.Compli
 		_, cidr, _ := net.ParseCIDR(cidrStr)
 		isPrivate := false
 		if cidr != nil {
-			for _, privateSubnets := range netutil.GetPrivateSubnets() {
-				if netutil.IsIPNetSubset(privateSubnets, cidr) {
+			for _, privateSubnet := range netutil.GetPrivateSubnets() {
+				if netutil.IsIPNetSubset(privateSubnet, cidr) {
 					isPrivate = true
 					break
 				}
