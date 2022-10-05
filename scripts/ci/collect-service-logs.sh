@@ -80,7 +80,9 @@ main() {
         done
     done
 
+    kubectl -n "${namespace}" get events -o wide >"${log_dir}/events.txt"
     kubectl -n "${namespace}" get events -o yaml >"${log_dir}/events.yaml"
+
     find "${log_dir}" -type f -size 0 -delete
 }
 
