@@ -22,8 +22,8 @@ func MustParseCIDR(cidr string) *net.IPNet {
 // IsIPNetOverlapingPrivateRange checks if network overlaps with private subnets
 func IsIPNetOverlapingPrivateRange(ipNet *net.IPNet) bool {
 	var privateSubnets []*net.IPNet
-	privateSubnets = append(privateSubnets, IPV4PrivateNetworks...)
-	privateSubnets = append(privateSubnets, IPV6PrivateNetworks...)
+	privateSubnets = append(privateSubnets, IPv4PrivateNetworks...)
+	privateSubnets = append(privateSubnets, IPv6PrivateNetworks...)
 	return AnyOverlap(ipNet, privateSubnets)
 }
 

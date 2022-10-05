@@ -66,7 +66,7 @@ func (d ipv4data) isLoopback() bool {
 
 func (d ipv4data) isPublic() bool {
 	netIP := net.IP(d.bytes())
-	for _, privateIPNet := range netutil.IPV4PrivateNetworks {
+	for _, privateIPNet := range netutil.IPv4PrivateNetworks {
 		if privateIPNet.Contains(netIP) {
 			return false
 		}
@@ -87,7 +87,7 @@ func (d ipv6data) bytes() []byte {
 	return d[:]
 }
 func (d ipv6data) isLoopback() bool {
-	if netutil.IPV4MappedIPv6Loopback.Contains(net.IP(d.bytes())) {
+	if netutil.IPv4MappedIPv6Loopback.Contains(net.IP(d.bytes())) {
 		return true
 	}
 
@@ -104,7 +104,7 @@ func (d ipv6data) isLoopback() bool {
 
 func (d ipv6data) isPublic() bool {
 	netIP := net.IP(d.bytes())
-	for _, privateIPNet := range netutil.IPV6PrivateNetworks {
+	for _, privateIPNet := range netutil.IPv6PrivateNetworks {
 		if privateIPNet.Contains(netIP) {
 			return false
 		}

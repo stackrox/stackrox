@@ -80,8 +80,6 @@ func TestMatchPolicyPeer(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	_, _, _, _ = t1, t2, t3, t4
-
 	type expectedMatch struct {
 		id        string
 		matchType storage.NetworkEntityInfo_Type
