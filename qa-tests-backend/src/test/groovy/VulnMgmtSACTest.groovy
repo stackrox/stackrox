@@ -1,19 +1,20 @@
 import static org.junit.Assume.assumeFalse
-import groups.BAT
+
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.storage.RoleOuterClass
-import org.junit.experimental.categories.Category
+
+import groups.BAT
 import services.ApiTokenService
 import services.BaseService
 import services.GraphQLService
 import services.ImageIntegrationService
 import services.ImageService
 import services.RoleService
+import util.Env
 
-import spock.lang.IgnoreIf
+import org.junit.experimental.categories.Category
 import spock.lang.Retry
 import spock.lang.Unroll
-import util.Env
 
 @Category(BAT)
 class VulnMgmtSACTest extends BaseSpecification {
@@ -102,7 +103,6 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify role based scoping on vuln mgmt: #roleName #baseQuery"() {
         when:
         "Get Node CVEs and components"
