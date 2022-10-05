@@ -3,7 +3,7 @@ import static Services.waitForViolation
 
 import java.util.stream.Collectors
 
-import groups.GraphQL
+import groups.BAT
 import objects.Deployment
 import services.GraphQLService
 
