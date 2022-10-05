@@ -101,8 +101,7 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
 
     // Some tests might fail in local deployment.
 
-    // TODO Investigate why CI displays No clusters instead of 2 clusters.
-    it.skip('should display links for clusters', () => {
+    it('should display links for clusters', () => {
         verifySecondaryEntities(
             entitiesKey,
             'clusters',
