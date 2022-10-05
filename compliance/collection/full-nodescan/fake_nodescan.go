@@ -1,4 +1,4 @@
-package nodescan
+package full_nodescan
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
