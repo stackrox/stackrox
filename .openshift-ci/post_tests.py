@@ -11,7 +11,6 @@ from typing import List
 
 
 class PostTestsConstants:
-
     API_TIMEOUT = 5 * 60
     COLLECT_TIMEOUT = 10 * 60
     CHECK_TIMEOUT = 5 * 60
@@ -37,7 +36,7 @@ class NullPostTest:
 
 class RunWithBestEffortMixin:
     def __init__(
-        self,
+            self,
     ):
         self.exitstatus = 0
         self.failed_commands: List[List[str]] = []
@@ -69,8 +68,8 @@ class StoreArtifacts(RunWithBestEffortMixin):
     """For tests that only need to store artifacts"""
 
     def __init__(
-        self,
-        artifact_destination_prefix=None,
+            self,
+            artifact_destination_prefix=None,
     ):
         super().__init__()
         self.artifact_destination_prefix = artifact_destination_prefix
@@ -78,7 +77,19 @@ class StoreArtifacts(RunWithBestEffortMixin):
 
     def run(self, test_outputs=None, test_results=None):
         self.store_artifacts(test_outputs)
+        self.add_test_results(test_results)
         self.handle_run_failure()
+
+    def add_test_results(self, test_results):
+        if test_results is None:
+            return
+        print("Storing test results in JUnit format")
+        for to_dir, from_dir in test_results:
+            self.run_with_best_effort(
+                ["scripts/ci/store-artifacts.sh", "store_test_results",
+                 from_dir, to_dir],
+                timeout=PostTestsConstants.ARTIFACTS_TIMEOUT,
+            )
 
     def store_artifacts(self, test_outputs=None):
         if test_outputs is not None:
@@ -102,15 +113,13 @@ class PostClusterTest(StoreArtifacts):
     """The standard cluster test suite of debug gathering and analysis"""
 
     def __init__(
-        self,
-        collect_central_artifacts=True,
-        check_stackrox_logs=False,
-        artifact_destination_prefix=None,
-        add_test_result=True,
+            self,
+            collect_central_artifacts=True,
+            check_stackrox_logs=False,
+            artifact_destination_prefix=None,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_stackrox_logs = check_stackrox_logs
-        self._add_test_result = add_test_result
         self.k8s_namespaces = ["stackrox", "stackrox-operator", "proxies", "squid"]
         self.openshift_namespaces = [
             "openshift-dns",
@@ -130,8 +139,7 @@ class PostClusterTest(StoreArtifacts):
         self.collect_service_logs()
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
-        if self._add_test_result:
-            self.add_test_result(test_results)
+        self.add_test_results(test_results)
         self.store_artifacts(test_outputs)
         self.handle_run_failure()
 
@@ -209,25 +217,15 @@ class PostClusterTest(StoreArtifacts):
             timeout=PostTestsConstants.CHECK_TIMEOUT,
         )
 
-    def add_test_result(self, test_results):
-        print("Storing operator test results in JUnit format")
-        for fromDir, toDir in test_results:
-            self.run_with_best_effort(
-                ["scripts/ci/store-artifacts.sh", "store_test_results",
-                 fromDir, toDir],
-                timeout=PostTestsConstants.ARTIFACTS_TIMEOUT,
-            )
-
-
 
 class CheckStackroxLogs(StoreArtifacts):
     """When only stackrox logs and checks are required"""
 
     def __init__(
-        self,
-        check_for_stackrox_restarts=False,
-        check_for_errors_in_stackrox_logs=False,
-        artifact_destination_prefix=None,
+            self,
+            check_for_stackrox_restarts=False,
+            check_for_errors_in_stackrox_logs=False,
+            artifact_destination_prefix=None,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_for_stackrox_restarts = check_for_stackrox_restarts
@@ -243,6 +241,7 @@ class CheckStackroxLogs(StoreArtifacts):
             if self._check_for_errors_in_stackrox_logs:
                 self.check_for_errors_in_stackrox_logs()
         self.store_artifacts(test_outputs)
+        self.add_test_results(test_results)
         self.handle_run_failure()
 
     def wait_for_central_api(self):
@@ -287,11 +286,11 @@ class FinalPost(StoreArtifacts):
     """Collect logs that accumulate over multiple tests and other final steps"""
 
     def __init__(
-        self,
-        store_qa_test_debug_logs=False,
-        store_qa_spock_results=False,
-        artifact_destination_prefix="final",
-        handle_e2e_progress_failures=True,
+            self,
+            store_qa_test_debug_logs=False,
+            store_qa_spock_results=False,
+            artifact_destination_prefix="final",
+            handle_e2e_progress_failures=True,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._store_qa_test_debug_logs = store_qa_test_debug_logs

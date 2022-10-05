@@ -58,9 +58,13 @@ class OperatorE2eTest(BaseTest):
     SCORECARD_TEST_TIMEOUT_SEC = 20 * 60
 
     def __init__(self):
+        self.test_outputs = [
+            "operator/build/kuttl-test-artifacts",
+            "operator/build/kuttl-test-artifacts-upgrade",
+        ]
         self.test_results = {
-            "operator/build/kuttl-test-artifacts": "kuttl-test-artifacts",
-            "operator/build/kuttl-test-artifacts-upgrade": "kuttl-test-artifacts-upgrade",
+            "kuttl-test-artifacts": "operator/build/kuttl-test-artifacts",
+            "kuttl-test-artifacts-upgrade": "operator/build/kuttl-test-artifacts-upgrade",
         }
 
     def run(self):
