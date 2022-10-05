@@ -103,7 +103,7 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) TestAllowsUpdate() {
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TestDefault() {
 	s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil)
-	s.storage.EXPECT().Upsert(gomock.Any(), defaultConfig).Return(nil)
+	s.storage.EXPECT().Upsert(gomock.Any(), upgradeConfig(true)).Return(nil)
 
 	s.Require().NoError(addDefaultConfigIfEmpty(s.dataStore))
 }

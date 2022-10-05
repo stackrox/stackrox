@@ -20,11 +20,11 @@ var (
 	singleton DataStore
 )
 
-var (
-	defaultConfig = &storage.SensorUpgradeConfig{
-		EnableAutoUpgrade: true,
+func upgradeConfig(autoUpgrade bool) *storage.SensorUpgradeConfig {
+	return &storage.SensorUpgradeConfig{
+		EnableAutoUpgrade: autoUpgrade,
 	}
-)
+}
 
 func addDefaultConfigIfEmpty(d DataStore) error {
 	ctx := sac.WithAllAccess(context.Background())
@@ -35,7 +35,9 @@ func addDefaultConfigIfEmpty(d DataStore) error {
 	if currentConfig != nil {
 		return nil
 	}
-	return d.UpsertSensorUpgradeConfig(ctx, defaultConfig)
+
+	// Auto upgrade is disabled by default if managed central flag is set
+	return d.UpsertSensorUpgradeConfig(ctx, upgradeConfig(!env.ManagedCentral.BooleanSetting()))
 }
 
 func initialize() {
