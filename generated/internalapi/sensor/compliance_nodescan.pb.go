@@ -8,6 +8,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	v1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -25,15 +26,16 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Names and data types are designed to follow proto/storage/node.proto as close as possible
-// Next tag: 5
+// Next tag: 7
 type FullNodeScan struct {
-	Id                   string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Node ID,store" sql:"pk"`
-	Name                 string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Node,store"`
-	ScanTime             *types.Timestamp         `protobuf:"bytes,3,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Node Scan Time,store"`
-	Components           []*FullNodeScanComponent `protobuf:"bytes,4,rep,name=components,proto3" json:"components,omitempty" sql:"-"`
-	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
-	XXX_unrecognized     []byte                   `json:"-"`
-	XXX_sizecache        int32                    `json:"-"`
+	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Node ID,store" sql:"pk"`
+	Name                 string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Node,store"`
+	ScanTime             *types.Timestamp `protobuf:"bytes,3,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Node Scan Time,store"`
+	Components           *v1.Components   `protobuf:"bytes,4,opt,name=components,proto3" json:"components,omitempty"`
+	Notes                []v1.Note        `protobuf:"varint,5,rep,packed,name=notes,proto3,enum=scannerV1.Note" json:"notes,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *FullNodeScan) Reset()         { *m = FullNodeScan{} }
@@ -90,9 +92,16 @@ func (m *FullNodeScan) GetScanTime() *types.Timestamp {
 	return nil
 }
 
-func (m *FullNodeScan) GetComponents() []*FullNodeScanComponent {
+func (m *FullNodeScan) GetComponents() *v1.Components {
 	if m != nil {
 		return m.Components
+	}
+	return nil
+}
+
+func (m *FullNodeScan) GetNotes() []v1.Note {
+	if m != nil {
+		return m.Notes
 	}
 	return nil
 }
@@ -108,86 +117,16 @@ func (m *FullNodeScan) Clone() *FullNodeScan {
 	*cloned = *m
 
 	cloned.ScanTime = m.ScanTime.Clone()
-	if m.Components != nil {
-		cloned.Components = make([]*FullNodeScanComponent, len(m.Components))
-		for idx, v := range m.Components {
-			cloned.Components[idx] = v.Clone()
-		}
+	cloned.Components = m.Components.Clone()
+	if m.Notes != nil {
+		cloned.Notes = make([]v1.Note, len(m.Notes))
+		copy(cloned.Notes, m.Notes)
 	}
-	return cloned
-}
-
-type FullNodeScanComponent struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`
-	Version              string   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *FullNodeScanComponent) Reset()         { *m = FullNodeScanComponent{} }
-func (m *FullNodeScanComponent) String() string { return proto.CompactTextString(m) }
-func (*FullNodeScanComponent) ProtoMessage()    {}
-func (*FullNodeScanComponent) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c2ec431e25d2b87, []int{1}
-}
-func (m *FullNodeScanComponent) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *FullNodeScanComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_FullNodeScanComponent.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *FullNodeScanComponent) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FullNodeScanComponent.Merge(m, src)
-}
-func (m *FullNodeScanComponent) XXX_Size() int {
-	return m.Size()
-}
-func (m *FullNodeScanComponent) XXX_DiscardUnknown() {
-	xxx_messageInfo_FullNodeScanComponent.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_FullNodeScanComponent proto.InternalMessageInfo
-
-func (m *FullNodeScanComponent) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *FullNodeScanComponent) GetVersion() string {
-	if m != nil {
-		return m.Version
-	}
-	return ""
-}
-
-func (m *FullNodeScanComponent) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *FullNodeScanComponent) Clone() *FullNodeScanComponent {
-	if m == nil {
-		return nil
-	}
-	cloned := new(FullNodeScanComponent)
-	*cloned = *m
-
 	return cloned
 }
 
 func init() {
 	proto.RegisterType((*FullNodeScan)(nil), "sensor.FullNodeScan")
-	proto.RegisterType((*FullNodeScanComponent)(nil), "sensor.FullNodeScanComponent")
 }
 
 func init() {
@@ -195,31 +134,29 @@ func init() {
 }
 
 var fileDescriptor_6c2ec431e25d2b87 = []byte{
-	// 369 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x91, 0xb1, 0x4e, 0xeb, 0x30,
-	0x14, 0x86, 0x6f, 0xd2, 0xaa, 0xbd, 0x75, 0xef, 0x94, 0x0b, 0x22, 0xaa, 0x68, 0x6c, 0x02, 0x43,
-	0x25, 0x4a, 0x82, 0xda, 0xad, 0x03, 0x43, 0x40, 0x48, 0x30, 0x30, 0x14, 0xc4, 0xd0, 0xa5, 0x72,
-	0x13, 0x13, 0x22, 0x12, 0x3b, 0xc4, 0x29, 0xef, 0xc0, 0x1b, 0xf4, 0x91, 0x18, 0x79, 0x82, 0x08,
-	0x95, 0x37, 0xc8, 0x13, 0x20, 0xc7, 0x31, 0x6a, 0x05, 0x9b, 0x75, 0xf4, 0x7f, 0x47, 0xdf, 0xf9,
-	0x0d, 0x86, 0x11, 0xcd, 0x49, 0x46, 0x71, 0x8c, 0xd3, 0xc8, 0xe5, 0x84, 0x72, 0x96, 0xb9, 0x3e,
-	0x4b, 0xd2, 0x38, 0xc2, 0xd4, 0x27, 0x73, 0xca, 0x02, 0xc2, 0x7d, 0x4c, 0x9d, 0x34, 0x63, 0x39,
-	0x33, 0x5a, 0x32, 0xd1, 0x83, 0x21, 0x63, 0x61, 0x4c, 0xdc, 0x6a, 0xba, 0x58, 0x3e, 0xb8, 0x79,
-	0x94, 0x10, 0x9e, 0xe3, 0x24, 0x95, 0xc1, 0xde, 0x4e, 0xc8, 0x42, 0x56, 0x3d, 0x5d, 0xf1, 0x92,
-	0x53, 0x7b, 0xa5, 0x83, 0x7f, 0x97, 0xcb, 0x38, 0xbe, 0x61, 0x01, 0xb9, 0xf5, 0x31, 0x35, 0xc6,
-	0x40, 0x8f, 0x02, 0x53, 0x43, 0xda, 0xa0, 0xe3, 0x1d, 0x96, 0x05, 0x84, 0x9c, 0xe0, 0xcc, 0x7f,
-	0x9c, 0xd8, 0x22, 0x81, 0xae, 0x2e, 0x86, 0x3c, 0x67, 0x19, 0xb1, 0x11, 0x7f, 0x8e, 0x27, 0x76,
-	0xfa, 0x64, 0x4f, 0xf5, 0x28, 0x30, 0x8e, 0x41, 0x93, 0xe2, 0x84, 0x98, 0x7a, 0x85, 0xed, 0x95,
-	0x05, 0xfc, 0xbf, 0x89, 0xd5, 0xcc, 0xb4, 0x0a, 0x19, 0x33, 0xd0, 0x11, 0xfe, 0x73, 0x21, 0x68,
-	0x36, 0x90, 0x36, 0xe8, 0x8e, 0x7a, 0x8e, 0xb4, 0x77, 0x94, 0xbd, 0x73, 0xa7, 0xec, 0xbd, 0x83,
-	0xb2, 0x80, 0xfd, 0x2d, 0x09, 0xe1, 0x89, 0x44, 0x40, 0xed, 0xfd, 0x2b, 0xf6, 0x89, 0x81, 0x71,
-	0x0d, 0x80, 0xa8, 0x8a, 0x51, 0x42, 0x73, 0x6e, 0x36, 0x51, 0x63, 0xd0, 0x1d, 0xf5, 0x1d, 0x59,
-	0x91, 0xb3, 0x79, 0xe7, 0xb9, 0x4a, 0x79, 0xdd, 0xb2, 0x80, 0xed, 0xea, 0x9a, 0x13, 0x7b, 0xba,
-	0x41, 0xdb, 0xaf, 0x1a, 0xd8, 0xfd, 0x15, 0x31, 0x4e, 0xeb, 0x73, 0x65, 0x4b, 0xfb, 0x65, 0x01,
-	0x4d, 0x25, 0xf8, 0x1d, 0xda, 0xbe, 0xf9, 0x0c, 0xb4, 0x5f, 0x48, 0xc6, 0x23, 0x46, 0xeb, 0x8e,
-	0x8e, 0xca, 0x02, 0xa2, 0x1f, 0x10, 0xba, 0x97, 0x21, 0x05, 0x2b, 0xc8, 0x33, 0xdf, 0xd6, 0x96,
-	0xf6, 0xbe, 0xb6, 0xb4, 0x8f, 0xb5, 0xa5, 0xad, 0x3e, 0xad, 0x3f, 0xb3, 0xfa, 0xdf, 0x17, 0xad,
-	0xaa, 0xb2, 0xf1, 0x57, 0x00, 0x00, 0x00, 0xff, 0xff, 0x00, 0x87, 0xa9, 0x9b, 0x36, 0x02, 0x00,
-	0x00,
+	// 352 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x51, 0xcd, 0x4a, 0xeb, 0x40,
+	0x14, 0xbe, 0x49, 0x7f, 0xb8, 0x9d, 0x7b, 0x51, 0x88, 0x8a, 0xb1, 0x60, 0x12, 0x23, 0x42, 0xc1,
+	0x92, 0xa1, 0x2d, 0x6e, 0xba, 0xac, 0x22, 0xb8, 0xe9, 0x22, 0x8a, 0x8b, 0x6e, 0xca, 0x34, 0x39,
+	0xc6, 0x60, 0x32, 0x27, 0x66, 0xa6, 0x3e, 0x8b, 0xcf, 0xe0, 0x93, 0xb8, 0xf4, 0x09, 0x8a, 0xd4,
+	0x37, 0xe8, 0x13, 0xc8, 0x24, 0x69, 0xa9, 0xee, 0x0e, 0xe7, 0xfb, 0x99, 0xef, 0x3b, 0x43, 0xba,
+	0x31, 0x97, 0x90, 0x73, 0x96, 0xb0, 0x2c, 0xa6, 0x02, 0xb8, 0xc0, 0x9c, 0x06, 0x98, 0x66, 0x49,
+	0xcc, 0x78, 0x00, 0x53, 0x8e, 0x21, 0x88, 0x80, 0x71, 0x2f, 0xcb, 0x51, 0xa2, 0xd1, 0x2c, 0x19,
+	0x6d, 0x3b, 0x42, 0x8c, 0x12, 0xa0, 0xc5, 0x76, 0x36, 0x7f, 0xa0, 0x32, 0x4e, 0x41, 0x48, 0x96,
+	0x66, 0x25, 0xb1, 0x7d, 0xa4, 0x44, 0x1c, 0x72, 0xaa, 0x6c, 0x5f, 0x7a, 0x94, 0xa3, 0x84, 0x0a,
+	0xb2, 0x7e, 0x41, 0xea, 0x35, 0xe4, 0xc0, 0x65, 0x85, 0xef, 0x47, 0x18, 0x61, 0x31, 0x52, 0x35,
+	0x95, 0x5b, 0xf7, 0x4d, 0x27, 0xff, 0xaf, 0xe7, 0x49, 0x32, 0xc6, 0x10, 0x6e, 0x03, 0xc6, 0x8d,
+	0x01, 0xd1, 0xe3, 0xd0, 0xd4, 0x1c, 0xad, 0xd3, 0x1a, 0x9d, 0xae, 0x16, 0xb6, 0x2d, 0x80, 0xe5,
+	0xc1, 0xe3, 0xd0, 0x55, 0x0c, 0xe7, 0xe6, 0xaa, 0x2b, 0x24, 0xe6, 0xe0, 0x3a, 0xe2, 0x39, 0x19,
+	0xba, 0xd9, 0x93, 0xeb, 0xeb, 0x71, 0x68, 0x9c, 0x93, 0x3a, 0x67, 0x29, 0x98, 0x7a, 0x21, 0x3b,
+	0x5c, 0x2d, 0xec, 0xbd, 0x6d, 0x59, 0xa5, 0xf1, 0x0b, 0x92, 0x31, 0x21, 0x2d, 0x15, 0x75, 0xaa,
+	0xba, 0x99, 0x35, 0x47, 0xeb, 0xfc, 0xeb, 0xb7, 0xbd, 0xb2, 0xb8, 0xb7, 0x2e, 0xee, 0xdd, 0xad,
+	0x8b, 0x8f, 0x4e, 0x56, 0x0b, 0xfb, 0xf8, 0x47, 0x08, 0x95, 0xd3, 0x51, 0x84, 0xb5, 0xef, 0x5f,
+	0xe5, 0xa7, 0x16, 0xc6, 0x05, 0x21, 0x9b, 0xde, 0xc2, 0xac, 0x17, 0xe6, 0x07, 0x5e, 0x75, 0x99,
+	0xfb, 0x9e, 0x77, 0xb9, 0x01, 0xfd, 0x2d, 0xa2, 0x71, 0x46, 0x1a, 0xea, 0x92, 0xc2, 0x6c, 0x38,
+	0xb5, 0xce, 0x4e, 0x7f, 0x77, 0x4b, 0x31, 0x46, 0x09, 0x7e, 0x89, 0x8e, 0xcc, 0xf7, 0xa5, 0xa5,
+	0x7d, 0x2c, 0x2d, 0xed, 0x73, 0x69, 0x69, 0xaf, 0x5f, 0xd6, 0x9f, 0x49, 0xf5, 0x71, 0xb3, 0x66,
+	0x11, 0x7c, 0xf0, 0x1d, 0x00, 0x00, 0xff, 0xff, 0x9b, 0xab, 0x3b, 0x3f, 0xf7, 0x01, 0x00, 0x00,
 }
 
 func (m *FullNodeScan) Marshal() (dAtA []byte, err error) {
@@ -246,19 +183,35 @@ func (m *FullNodeScan) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Components) > 0 {
-		for iNdEx := len(m.Components) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Components[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintComplianceNodescan(dAtA, i, uint64(size))
+	if len(m.Notes) > 0 {
+		dAtA2 := make([]byte, len(m.Notes)*10)
+		var j1 int
+		for _, num := range m.Notes {
+			for num >= 1<<7 {
+				dAtA2[j1] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j1++
 			}
-			i--
-			dAtA[i] = 0x22
+			dAtA2[j1] = uint8(num)
+			j1++
 		}
+		i -= j1
+		copy(dAtA[i:], dAtA2[:j1])
+		i = encodeVarintComplianceNodescan(dAtA, i, uint64(j1))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.Components != nil {
+		{
+			size, err := m.Components.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceNodescan(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
 	}
 	if m.ScanTime != nil {
 		{
@@ -283,47 +236,6 @@ func (m *FullNodeScan) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.Id)
 		copy(dAtA[i:], m.Id)
 		i = encodeVarintComplianceNodescan(dAtA, i, uint64(len(m.Id)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *FullNodeScanComponent) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *FullNodeScanComponent) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *FullNodeScanComponent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Version) > 0 {
-		i -= len(m.Version)
-		copy(dAtA[i:], m.Version)
-		i = encodeVarintComplianceNodescan(dAtA, i, uint64(len(m.Version)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintComplianceNodescan(dAtA, i, uint64(len(m.Name)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -359,31 +271,16 @@ func (m *FullNodeScan) Size() (n int) {
 		l = m.ScanTime.Size()
 		n += 1 + l + sovComplianceNodescan(uint64(l))
 	}
-	if len(m.Components) > 0 {
-		for _, e := range m.Components {
-			l = e.Size()
-			n += 1 + l + sovComplianceNodescan(uint64(l))
+	if m.Components != nil {
+		l = m.Components.Size()
+		n += 1 + l + sovComplianceNodescan(uint64(l))
+	}
+	if len(m.Notes) > 0 {
+		l = 0
+		for _, e := range m.Notes {
+			l += sovComplianceNodescan(uint64(e))
 		}
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *FullNodeScanComponent) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sovComplianceNodescan(uint64(l))
-	}
-	l = len(m.Version)
-	if l > 0 {
-		n += 1 + l + sovComplianceNodescan(uint64(l))
+		n += 1 + sovComplianceNodescan(uint64(l)) + l
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -555,126 +452,82 @@ func (m *FullNodeScan) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Components = append(m.Components, &FullNodeScanComponent{})
-			if err := m.Components[len(m.Components)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if m.Components == nil {
+				m.Components = &v1.Components{}
+			}
+			if err := m.Components.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipComplianceNodescan(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthComplianceNodescan
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *FullNodeScanComponent) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowComplianceNodescan
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: FullNodeScanComponent: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: FullNodeScanComponent: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceNodescan
+		case 5:
+			if wireType == 0 {
+				var v v1.Note
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowComplianceNodescan
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= v1.Note(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
 				}
-				if iNdEx >= l {
+				m.Notes = append(m.Notes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowComplianceNodescan
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthComplianceNodescan
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthComplianceNodescan
+				}
+				if postIndex > l {
 					return io.ErrUnexpectedEOF
 				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
+				var elementCount int
+				if elementCount != 0 && len(m.Notes) == 0 {
+					m.Notes = make([]v1.Note, 0, elementCount)
 				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceNodescan
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceNodescan
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceNodescan
+				for iNdEx < postIndex {
+					var v v1.Note
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowComplianceNodescan
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= v1.Note(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Notes = append(m.Notes, v)
 				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceNodescan
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceNodescan
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Version = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipComplianceNodescan(dAtA[iNdEx:])
