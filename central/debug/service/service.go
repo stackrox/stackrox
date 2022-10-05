@@ -60,8 +60,8 @@ const (
 
 	centralClusterPrefix = "_central-cluster"
 
-	metricsPullTimeout     = 10 * time.Second
-	diagnosticsPullTimeout = 10 * time.Second
+	metricsPullTimeout     = 20 * time.Second
+	diagnosticsPullTimeout = 20 * time.Second
 	layout                 = "2006-01-02T15:04:05.000Z"
 	logWindow              = 20 * time.Minute
 )
@@ -529,11 +529,11 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 
 	if opts.logs == fullK8sIntrospectionData {
 		if err := s.getK8sDiagnostics(ctx, zipWriter, opts); err != nil {
-			log.Error(err)
+			log.Errorf("could not get K8s diagnostics: %+q", err)
 			opts.logs = localLogs // fallback to local logs
 		}
 		if err := s.pullSensorMetrics(ctx, zipWriter, opts); err != nil {
-			log.Error(err)
+			log.Errorf("could not get sensor metrics: %+q", err)
 		}
 	}
 
