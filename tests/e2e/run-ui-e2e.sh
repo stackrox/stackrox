@@ -22,6 +22,11 @@ test_ui_e2e() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs
 
+    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || is_nightly_run || {
+        info "Disabling postgres as this is a release, RC or nightly build"
+        export ROX_POSTGRES_DATASTORE=false
+    }
+
     deploy_stackrox
 
     run_ui_e2e_tests
