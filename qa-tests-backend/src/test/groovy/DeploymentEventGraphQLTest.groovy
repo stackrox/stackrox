@@ -89,7 +89,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
     private final gqlService = new GraphQLService()
 
-    @Category(GraphQL)
+    @Category(BAT)
     def "Verify Deployment Events in GraphQL"() {
         when:
         "Validate Policy Violation is Triggered"
