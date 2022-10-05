@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
@@ -74,7 +75,7 @@ func LogTrace(ctx context.Context, logger *logging.Logger, contextString string)
 		if e.rowsAccessed != nil {
 			rowsAccessed = *e.rowsAccessed
 		}
-		if e.duration > queryThreshold {
+		if e.duration > queryThreshold || strings.Contains(e.query, "namespaces") {
 			logger.Infof("trace=%s: returned %d rows and took(%d ms): %s %+v", tracer.id, rowsAccessed, e.duration.Milliseconds(), e.query, e.args)
 		}
 	}
