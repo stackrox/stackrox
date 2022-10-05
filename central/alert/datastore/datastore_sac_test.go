@@ -489,7 +489,15 @@ func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResu
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.Search(ctx, nil)
 	s.NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), searchResults, s.optionsMap)
+	rawResults := make([]*storage.Alert, 0, len(searchResults))
+	for _, result := range searchResults {
+		res, found, err := s.datastore.GetAlert(s.testContexts[testutils.UnrestrictedReadCtx], result.ID)
+		if found && err == nil {
+			rawResults = append(rawResults, res)
+		}
+	}
+	// resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), searchResults, s.optionsMap)
+	resultCounts := countSearchRawAlertsResultsPerClusterAndNamespace(rawResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultCounts)
 }
 
@@ -502,7 +510,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedSearch() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearch() {
-	for name, c := range alertUnrestrictedSACSearchTestCases {
+	for name, c := range alertUnrestrictedSACObjectSearchTestCases /* alertUnrestrictedSACSearchTestCases */ {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})
