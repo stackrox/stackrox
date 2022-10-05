@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
-	"github.com/pkg/errors"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,7 +20,6 @@ type dataStore struct {
 
 var (
 	sacHelper = sac.ForResource(resources.SensorUpgradeConfig)
-	ErrAutoUpgradeNotAllowed = errors.New("auto-upgrade not allowed on managed central")
 )
 
 func (d *dataStore) initialize() error {
@@ -55,7 +54,7 @@ func (d *dataStore) UpsertSensorUpgradeConfig(ctx context.Context, sensorUpgrade
 	}
 
 	if env.ManagedCentral.BooleanSetting() && sensorUpgradeConfig.EnableAutoUpgrade {
-		return ErrAutoUpgradeNotAllowed
+		return errors.New("auto-upgrade not allowed on managed central")
 	}
 
 	if err := d.store.Upsert(ctx, sensorUpgradeConfig); err != nil {

@@ -109,12 +109,12 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) TestAllowsUpdate() {
 }
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TestDefault() {
-	testCases := map[string]struct{
-		env bool
+	testCases := map[string]struct {
+		env                     bool
 		expectedAutoUpgradeFlag bool
 	}{
-		"ROX_MANAGED_CENTRAL=true":  { true, false },
-		"ROX_MANAGED_CENTRAL=false": { false, true },
+		"ROX_MANAGED_CENTRAL=true":  {true, false},
+		"ROX_MANAGED_CENTRAL=false": {false, true},
 	}
 
 	for _, testCase := range testCases {
