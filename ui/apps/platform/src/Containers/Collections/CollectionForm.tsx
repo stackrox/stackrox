@@ -24,6 +24,7 @@ import {
     DropdownToggle,
     Flex,
     FlexItem,
+    Label,
     Text,
     Title,
 } from '@patternfly/react-core';
@@ -36,10 +37,16 @@ import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
 import { deleteCollection } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
-import RuleSelector from './RuleSelector';
+import RuleSelector, { RuleSelectorOption, SelectorOption } from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
-import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
+import {
+    Collection,
+    ResourceSelector,
+    ScopedResourceSelector,
+    SelectorEntityType,
+    SelectorRule,
+} from './types';
 
 type FormStateReducerAction =
     | { type: 'setName'; name: string }
@@ -101,6 +108,19 @@ function CollectionForm({
     showBreadcrumbs,
 }: CollectionFormProps) {
     const history = useHistory();
+    const [resourceSelectors, setResourceSelectors] = useState<ResourceSelector>();
+    const [deploymentSelectorOption, setDeploymentSelectorOption] = useState<RuleSelectorOption>(
+        SelectorOption.All
+    );
+    const [namespaceSelectorOption, setNamespaceSelectorOption] = useState<RuleSelectorOption>(
+        SelectorOption.All
+    );
+    const [clusterSelectorOption, setClusterSelectorOption] = useState<RuleSelectorOption>(
+        SelectorOption.All
+    );
+
+    function onRulesChange(entityType: SelectorEntityType, rules: SelectorRule[]) {}
+
     const {
         isOpen: drawerIsOpen,
         toggleSelect: toggleDrawer,
@@ -281,9 +301,36 @@ function CollectionForm({
                             <Card>
                                 <CardBody>
                                     <Title headingLevel="h2">Add new collection rules</Title>
-                                    <RuleSelector />
-                                    <RuleSelector />
-                                    <RuleSelector />
+                                    <RuleSelector
+                                        entityType="Deployment"
+                                        selectedOption={deploymentSelectorOption}
+                                        onOptionChange={setDeploymentSelectorOption}
+                                        onRulesChange={(rules: SelectorRule[]) =>
+                                            onRulesChange('Deployment', rules)
+                                        }
+                                    />
+                                    <Label variant="outline" isCompact>
+                                        in
+                                    </Label>
+                                    <RuleSelector
+                                        entityType="Namespace"
+                                        selectedOption={namespaceSelectorOption}
+                                        onOptionChange={setNamespaceSelectorOption}
+                                        onRulesChange={(rules: SelectorRule[]) =>
+                                            onRulesChange('Namespace', rules)
+                                        }
+                                    />
+                                    <Label variant="outline" isCompact>
+                                        in
+                                    </Label>
+                                    <RuleSelector
+                                        entityType="Cluster"
+                                        selectedOption={clusterSelectorOption}
+                                        onOptionChange={setClusterSelectorOption}
+                                        onRulesChange={(rules: SelectorRule[]) =>
+                                            onRulesChange('Cluster', rules)
+                                        }
+                                    />
                                 </CardBody>
                             </Card>
                             <Card>
