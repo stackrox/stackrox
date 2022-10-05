@@ -121,12 +121,11 @@ $(EASYJSON_BIN): deps
 	$(SILENT)echo "+ $@"
 	go install github.com/mailru/easyjson/easyjson
 
-# We need a legacy version of controller-gen to generate sources for the compliance operator.
-LEGACY_CONTROLLER_GEN_BIN := $(CURDIR)/.bin/controller-tools-v0.8.0/controller-gen
-$(LEGACY_CONTROLLER_GEN_BIN): deps
+CONTROLLER_GEN_BIN := $(GOBIN)/controller-gen
+$(CONTROLLER_GEN_BIN): deps
 	$(SILENT)echo "+ $@"
-	$(SILENT) mkdir -p "$(dir $(LEGACY_CONTROLLER_GEN_BIN))"
-	GOBIN="$(dir $(LEGACY_CONTROLLER_GEN_BIN))" go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
+	@# We need to install a legacy version for compatibility reasons.
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
 
 GOVERALLS_BIN := $(GOBIN)/goveralls
 $(GOVERALLS_BIN): deps
@@ -310,8 +309,8 @@ clean-easyjson-srcs:
 	$(SILENT)find . -name '*_easyjson.go' -exec rm {} \;
 
 COMPLIANCEOPERATOR_FILES = $(shell grep -R '+k8s:deepcopy-gen' pkg/complianceoperator/api/v1alpha1 -l)
-pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go: $(LEGACY_CONTROLLER_GEN_BIN) $(COMPLIANCEOPERATOR_FILES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(LEGACY_CONTROLLER_GEN_BIN) object:headerFile="tools/boilerplate.go.txt" paths="./pkg/complianceoperator/api/v1alpha1..."
+pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go: $(CONTROLLER_GEN_BIN) $(COMPLIANCEOPERATOR_FILES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(CONTROLLER_GEN_BIN) object:headerFile="tools/boilerplate.go.txt" paths="./pkg/complianceoperator/api/v1alpha1..."
 	# The generated source files might not comply with the current go formatting, so format them explicitly.
 	go fmt ./pkg/complianceoperator/api/v1alpha1/...
 

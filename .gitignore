@@ -23,9 +23,6 @@ coverage.out
 coverage.html
 combined_coverage.dat
 
-# Build tools
-/.bin/
-
 # Build output
 /bin/
 /linux-gocache
