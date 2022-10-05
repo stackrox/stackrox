@@ -435,7 +435,6 @@ replace (
 	github.com/mikefarah/yaml/v2 => gopkg.in/yaml.v2 v2.4.0
 
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
-	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
 
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
