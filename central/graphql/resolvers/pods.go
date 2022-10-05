@@ -29,6 +29,7 @@ func init() {
 
 // Pod returns a GraphQL resolver for a given id.
 func (resolver *Resolver) Pod(ctx context.Context, args struct{ *graphql.ID }) (*podResolver, error) {
+	log.Info("SHREWS -- Pod")
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Pod")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
@@ -38,6 +39,7 @@ func (resolver *Resolver) Pod(ctx context.Context, args struct{ *graphql.ID }) (
 
 // Pods returns GraphQL resolvers for all pods.
 func (resolver *Resolver) Pods(ctx context.Context, args PaginatedQuery) ([]*podResolver, error) {
+	log.Info("SHREWS -- Pods")
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Pods")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
@@ -51,11 +53,13 @@ func (resolver *Resolver) Pods(ctx context.Context, args PaginatedQuery) ([]*pod
 
 // PodCount returns count of all pods across deployments
 func (resolver *Resolver) PodCount(ctx context.Context, args RawQuery) (int32, error) {
+	log.Info("SHREWS -- PodCount")
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "PodCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
 	q, err := args.AsV1QueryOrEmpty()
+	log.Infof("Query => %v", q)
 	if err != nil {
 		return 0, err
 	}
@@ -69,6 +73,7 @@ func (resolver *Resolver) PodCount(ctx context.Context, args RawQuery) (int32, e
 // ContainerCount returns the number of active containers.
 // Active is defined by being present in the pod spec.
 func (resolver *podResolver) ContainerCount() int32 {
+	log.Info("SHREWS -- ContainerCount")
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Pods, "ContainerCount")
 
 	containerNames := set.NewStringSet()
@@ -91,6 +96,7 @@ func (resolver *podResolver) ContainerCount() int32 {
 
 // policyViolationEvents returns all policy violations associated with this pod.
 func (resolver *podResolver) policyViolationEvents(ctx context.Context) ([]*PolicyViolationEventResolver, error) {
+	log.Info("SHREWS -- policyViolationEvents")
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Pods, "PolicyViolationEvents")
 
 	q := search.ConjunctionQuery(
@@ -98,6 +104,7 @@ func (resolver *podResolver) policyViolationEvents(ctx context.Context) ([]*Poli
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery(),
 	)
+	log.Infof("Query => %v", q)
 
 	predicateFn := func(alert *storage.Alert) bool {
 		for _, proc := range alert.GetProcessViolation().GetProcesses() {
@@ -114,6 +121,7 @@ func (resolver *podResolver) policyViolationEvents(ctx context.Context) ([]*Poli
 
 // processActivityEvents returns all the process activities associated with this pod.
 func (resolver *podResolver) processActivityEvents(ctx context.Context) ([]*ProcessActivityEventResolver, error) {
+	log.Info("SHREWS -- processActivityEvents")
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Pods, "ProcessActivityEvents")
 
 	// It is possible that not all process indicators have PodUID populated. For now, it is safer to not use it.
@@ -122,6 +130,7 @@ func (resolver *podResolver) processActivityEvents(ctx context.Context) ([]*Proc
 		search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetDeploymentId()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.PodID, resolver.data.GetName()).ProtoQuery(),
 	)
+	log.Infof("Query => %v", query)
 
 	return resolver.root.getProcessActivityEvents(ctx, query)
 }
@@ -200,6 +209,7 @@ func (resolver *podResolver) containerTerminationEvents() []*ContainerTerminatio
 
 // Events returns all events associated with this pod sorted by timestamp.
 func (resolver *podResolver) Events(ctx context.Context) ([]*DeploymentEventResolver, error) {
+	log.Info("SHREWS -- Events")
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Pods, "Events")
 
 	var events []*DeploymentEventResolver
