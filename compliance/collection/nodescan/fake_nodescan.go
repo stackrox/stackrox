@@ -1,25 +1,32 @@
 package nodescan
 
 import (
-	"fmt"
-
-	"github.com/stackrox/scanner/database"
-	"github.com/stackrox/scanner/pkg/analyzer/nodes"
-	"github.com/stackrox/scanner/pkg/component"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 )
 
-func FakeCollect() error {
-	// The real nodes.Analyze() call returns a Components pointer
-	components := nodes.Components{
-		OSNamespace: &database.Namespace{
-			Name:          "Fake RHEL",
-			VersionFormat: "42",
-		},
-		OSComponents:            []database.FeatureVersion{},
-		CertifiedRHELComponents: nil,
-		LanguageComponents:      []*component.Component{},
-	}
+var (
+	_ NodeScanner = (*FakeNodeScanner)(nil) // FIXME: Remove
+)
 
-	fmt.Printf("components: %v", components)
-	return nil
+type FakeNodeScanner struct {
+}
+
+func (f *FakeNodeScanner) Scan(nodeName string) (*sensor.MsgFromCompliance, error) {
+	log.Infof("Generating fake scan result message...")
+	msg := &sensor.MsgFromCompliance{
+		Node: nodeName,
+		Msg: &sensor.MsgFromCompliance_NodeScan{
+			NodeScan: &storage.NodeScan{
+				OperatingSystem: "Fake RHEL",
+				Components: []*storage.EmbeddedNodeScanComponent{
+					{
+						Name:    "Fake Component",
+						Version: "4.2",
+					},
+				},
+			},
+		},
+	}
+	return msg, nil
 }
