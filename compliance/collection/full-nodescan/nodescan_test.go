@@ -1,4 +1,4 @@
-package nodescan
+package full_nodescan
 
 import (
 	"testing"

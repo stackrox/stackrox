@@ -10,7 +10,7 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
-	"github.com/stackrox/rox/compliance/collection/nodescan"
+	"github.com/stackrox/rox/compliance/collection/full-nodescan"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -226,8 +226,8 @@ func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient)
 	if err != nil {
 		log.Fatalf("error initializing stream to sensor: %v", err)
 	}
-	t := time.NewTicker(fullNodeScanInterval) // FIXME: Increase time, make this globally configurable
-	scanner := nodescan.FakeNodeScanner{}     // FIXME: Replace with real scanner
+	t := time.NewTicker(fullNodeScanInterval)  // FIXME: Increase time, make this globally configurable
+	scanner := full_nodescan.FakeNodeScanner{} // FIXME: Replace with real scanner
 
 	for {
 		select {
@@ -242,7 +242,7 @@ func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient)
 	}
 }
 
-func scanNode(client sensor.ComplianceService_CommunicateClient, scanner nodescan.NodeScanner) error {
+func scanNode(client sensor.ComplianceService_CommunicateClient, scanner full_nodescan.NodeScanner) error {
 	// from compliance, we need to get the following info to central
 	// List of components, comprised of Name & Version for each one, plus some metadata like OS, Scan time, etc
 	log.Infof("scanNode: Sending data to sensor.")
