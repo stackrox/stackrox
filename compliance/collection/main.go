@@ -10,6 +10,7 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
+	"github.com/stackrox/rox/compliance/collection/nodescan"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -31,9 +32,12 @@ var (
 
 	node string
 	once sync.Once
+
+	fullNodeScanInterval time.Duration = 10 * time.Second
 )
 
 func getNode() string {
+
 	once.Do(func() {
 		node = os.Getenv(string(orchestrators.NodeName))
 		if node == "" {
@@ -222,46 +226,30 @@ func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient)
 	if err != nil {
 		log.Fatalf("error initializing stream to sensor: %v", err)
 	}
-	t := time.NewTicker(10 * time.Second) // FIXME: Increase time, make this configurable
+	t := time.NewTicker(fullNodeScanInterval) // FIXME: Increase time, make this globally configurable
+	scanner := nodescan.FakeNodeScanner{}     // FIXME: Replace with real scanner
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-t.C:
 			log.Infof("manageNodescanLoop: Calling scanNode")
-			if err := scanNode(client); err != nil {
+			if err := scanNode(client, &scanner); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
 		}
 	}
 }
 
-func scanNode(client sensor.ComplianceService_CommunicateClient) error {
+func scanNode(client sensor.ComplianceService_CommunicateClient, scanner nodescan.NodeScanner) error {
 	// from compliance, we need to get the following info to central
 	// List of components, comprised of Name & Version for each one, plus some metadata like OS, Scan time, etc
 	log.Infof("scanNode: Sending data to sensor.")
-	return client.Send(&sensor.MsgFromCompliance{
-		Node: getNode(),
-		Msg: &sensor.MsgFromCompliance_NodeScan{
-			NodeScan: &storage.NodeScan{
-				OperatingSystem: "Fake RHEL",
-				Components: []*storage.EmbeddedNodeScanComponent{
-					{
-						Name:    "Fake Component",
-						Version: "4.2",
-						/*Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
-									Cve: "CVE-2042-1",
-								},
-								SetFixedBy: &storage.NodeVulnerability_FixedBy{
-									FixedBy: "4.2.1",
-								},
-							},
-						},*/
-					},
-				},
-			},
-		},
-	})
+
+	msg, err := scanner.Scan(getNode())
+	if err != nil {
+		return errors.Wrap(err, "error scanning node")
+	}
+	return client.Send(msg)
 }
