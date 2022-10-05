@@ -22,7 +22,6 @@ require (
 	github.com/containers/image/v5 v5.23.0
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/coreos/go-systemd/v22 v22.4.0
-	github.com/couchbase/moss v0.1.0 // indirect
 	github.com/dave/jennifer v1.5.1
 	github.com/deckarep/golang-set v1.8.0
 	github.com/dexidp/dex v0.0.0-20220607113954-3836196af2e7
@@ -57,9 +56,7 @@ require (
 	github.com/jackc/pgconn v1.13.0
 	github.com/jackc/pgtype v1.12.0
 	github.com/jackc/pgx/v4 v4.17.2
-	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
-	github.com/kisielk/sqlstruct v0.0.0-20210630145711-dae28ed37023 // indirect
 	github.com/lib/pq v1.10.7
 	github.com/machinebox/graphql v0.2.2
 	github.com/magiconair/properties v1.8.6
@@ -67,7 +64,6 @@ require (
 	github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/moby/sys/mount v0.3.0 // indirect
 	github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220905143132-4bca39e41111
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
@@ -178,6 +174,7 @@ require (
 	github.com/containers/storage v1.43.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/couchbase/ghistogram v0.1.0 // indirect
+	github.com/couchbase/moss v0.1.0 // indirect
 	github.com/couchbase/vellum v1.0.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20210823021906-dc406ceaf94b // indirect
@@ -258,6 +255,7 @@ require (
 	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b // indirect
 	github.com/jhump/protoreflect v1.12.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmoiron/sqlx v1.3.4 // indirect
 	github.com/jonboulle/clockwork v0.3.0 // indirect
@@ -285,6 +283,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
+	github.com/moby/sys/mount v0.3.3 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/moby/sys/symlink v0.1.0 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
