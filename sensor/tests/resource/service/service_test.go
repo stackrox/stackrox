@@ -81,14 +81,14 @@ func checkPortConfig(deployment *storage.Deployment, ports []*storage.PortConfig
 						}
 					}
 					if !foundPortInfo {
-						return errors.Errorf("PortInfo '%v' not found", expectedPort)
+						return errors.Errorf("PortInfo '%+v' not found", expectedPortInfo)
 					}
 				}
 				foundPortConfig = true
 			}
 		}
 		if !foundPortConfig {
-			return errors.Errorf("PortConfig '%v' not found", expectedPort)
+			return errors.Errorf("PortConfig '%+v' not found", expectedPort)
 		}
 	}
 	return nil
@@ -105,7 +105,7 @@ func assertLastDeploymentMissingPortExposure(ports []*storage.PortConfig) resour
 		if err := checkPortConfig(deployment, ports); err != nil {
 			return nil
 		}
-		return errors.Errorf("PortConfig '%v' should not be present", ports)
+		return errors.Errorf("PortConfig '%+v' should not be present", ports)
 	}
 }
 
@@ -332,11 +332,6 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 
 		testC.LastDeploymentState(nginxDeploymentName,
 			assertLastDeploymentMissingPortExposure([]*storage.PortConfig{
-				//{
-				//	Protocol:      "TCP",
-				//	ContainerPort: 80,
-				//	Exposure:      0,
-				// },
 				{
 					Protocol:      "TCP",
 					ContainerPort: 80,
