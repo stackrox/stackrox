@@ -244,7 +244,7 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 		rbacUtils.NewClusterPermissionEvaluator(saClusterID,
 			resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 
-	namespaces, err := resolver.root.NamespaceDataStore.GetNamespaces(ctx)
+	namespaces, err := resolver.root.NamespaceDataStore.SearchNamespaces(ctx, search.EmptyQuery())
 	if err != nil {
 		return evaluators, err
 	}
