@@ -244,12 +244,12 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 		rbacUtils.NewClusterPermissionEvaluator(saClusterID,
 			resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 
-	namespaces, err := resolver.root.Namespaces(ctx, PaginatedQuery{})
+	namespaces, err := resolver.root.NamespaceDataStore.GetNamespaces(ctx)
 	if err != nil {
 		return evaluators, err
 	}
-	for _, namespace := range namespaces {
-		namespaceName := namespace.data.GetMetadata().GetName()
+	for _, namespaceMetadata := range namespaces {
+		namespaceName := namespaceMetadata.GetName()
 		evaluators[namespaceName] = rbacUtils.NewNamespacePermissionEvaluator(saClusterID,
 			namespaceName, resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 	}
