@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -239,11 +238,7 @@ func GetAdminPool(postgresConfig *pgxpool.Config) *pgxpool.Pool {
 // THIS POOL SHOULD BE CLOSED ONCE ITS PURPOSE HAS BEEN FULFILLED.
 func GetClonePool(postgresConfig *pgxpool.Config, clone string) *pgxpool.Pool {
 	log.Debugf("GetClonePool -- %q", clone)
-	pc, _, _, ok := runtime.Caller(1)
-	details := runtime.FuncForPC(pc)
-	if ok && details != nil {
-		fmt.Printf("called from %s\n", details.Name())
-	}
+
 	// Clone config to connect to template DB
 	tempConfig := postgresConfig.Copy()
 
@@ -345,14 +340,12 @@ func getAvailablePostgresCapacity(postgresConfig *pgxpool.Config) (int64, error)
 			}
 			return 0, err
 		}
-		log.Info(info)
 		rawCapacityInfo = append(rawCapacityInfo, info)
 	}
 
 	// We should only get the header row and the row for the size of $PGDATA.  If we
 	// get more than that, then $PGDATA is not defined
 	if len(rawCapacityInfo) > 2 {
-		log.Info(len(rawCapacityInfo))
 		if err := tx.Rollback(ctx); err != nil {
 			return 0, err
 		}

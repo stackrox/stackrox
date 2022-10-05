@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"testing"
 
@@ -121,7 +120,6 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() && m.runBoth {
 		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
 			if pgadmin.CheckIfDBExists(m.adminConfig, postgres.PreviousClone) {
-				log.Info("SHREWS 1")
 				m.verifyClonePostgres(postgres.PreviousClone, curVer)
 			}
 		} else {
@@ -129,7 +127,6 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 		}
 	} else if env.PostgresDatastoreEnabled.BooleanSetting() {
 		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
-			log.Info("SHREWS 2")
 			m.verifyClonePostgres(postgres.PreviousClone, curVer)
 		} else {
 			assert.False(m.t, pgadmin.CheckIfDBExists(m.adminConfig, postgres.PreviousClone))
@@ -270,7 +267,6 @@ func (m *mockCentral) restoreCentral(ver *versionPair, breakPoint string) {
 	}
 	m.runMigrator("", "")
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		log.Info("SHREWS 3")
 		m.verifyClonePostgres(postgres.BackupClone, curVer)
 		m.runCentral()
 	} else {
@@ -331,11 +327,6 @@ func (m *mockCentral) verifyClone(clone string, ver *versionPair) {
 }
 
 func (m *mockCentral) verifyClonePostgres(clone string, ver *versionPair) {
-	pc, _, _, ok := runtime.Caller(1)
-	details := runtime.FuncForPC(pc)
-	if ok && details != nil {
-		fmt.Printf("called from %s\n", details.Name())
-	}
 	if version.CompareVersions(ver.version, "3.0.57.0") >= 0 {
 		m.verifyMigrationVersionPostgres(clone, ver)
 	} else {
@@ -370,12 +361,6 @@ func (m *mockCentral) verifyMigrationVersion(dbPath string, ver *versionPair) {
 }
 
 func (m *mockCentral) verifyMigrationVersionPostgres(clone string, ver *versionPair) {
-	pc, _, _, ok := runtime.Caller(1)
-	details := runtime.FuncForPC(pc)
-	if ok && details != nil {
-		fmt.Printf("called from %s\n", details.Name())
-	}
-	log.Infof("SHREWS %q", clone)
 	pool := pgadmin.GetClonePool(m.adminConfig, clone)
 	defer pool.Close()
 
