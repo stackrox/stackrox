@@ -33,7 +33,7 @@ func resetLocalGraph(ds *datastoreImpl) {
 	ds.graphLock.Lock()
 	defer ds.graphLock.Unlock()
 
-	if ds != nil {
+	if ds.graph != nil {
 		ds.graph = nil
 	}
 }
