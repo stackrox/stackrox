@@ -6,6 +6,7 @@ option cc_enable_arenas = true;
 import "google/protobuf/timestamp.proto";
 import "internalapi/sensor/network_enums.proto";
 import "storage/network_flow.proto";
+import "storage/process_indicator.proto";
 
 package sensor;
 
@@ -47,6 +48,8 @@ message NetworkEndpoint {
     // If we're no longer listening on this endpoint, this gives the timestamp when the listen socket
     // was shutdown. If this is unset, we treat it as an actively listening endpoint.
     google.protobuf.Timestamp close_timestamp = 5;
+
+    storage.NetworkProcessUniqueKey originator      = 6;
 }
 
 message NetworkAddress {
@@ -57,4 +60,3 @@ message NetworkAddress {
     // `ip_network` and `address_data` usage should be mutually exclusive.
     bytes  ip_network   = 3;
 }
-

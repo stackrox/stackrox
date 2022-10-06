@@ -124,7 +124,8 @@ $(EASYJSON_BIN): deps
 CONTROLLER_GEN_BIN := $(GOBIN)/controller-gen
 $(CONTROLLER_GEN_BIN): deps
 	$(SILENT)echo "+ $@"
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen
+	@# We need to install a legacy version for compatibility reasons.
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
 
 GOVERALLS_BIN := $(GOBIN)/goveralls
 $(GOVERALLS_BIN): deps
