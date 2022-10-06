@@ -58,6 +58,9 @@ func (ds *datastoreImpl) initGraph(ctx context.Context) error {
 		} else {
 			objs, _, err = ds.storage.GetMany(ctx, ids[i:])
 		}
+		if err != nil {
+			return err
+		}
 		for _, obj := range objs {
 			for _, edge := range obj.GetEmbeddedCollections() {
 				err = ds.graph.AddEdge(obj.GetId(), edge.GetId())

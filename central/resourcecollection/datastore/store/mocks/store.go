@@ -95,6 +95,21 @@ func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
+// GetIDs mocks base method.
+func (m *MockStore) GetIDs(ctx context.Context) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIDs", ctx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIDs indicates an expected call of GetIDs.
+func (mr *MockStoreMockRecorder) GetIDs(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIDs", reflect.TypeOf((*MockStore)(nil).GetIDs), ctx)
+}
+
 // GetMany mocks base method.
 func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.ResourceCollection, []int, error) {
 	m.ctrl.T.Helper()
