@@ -48,7 +48,7 @@ You can also add conditions to the file like checking for feature flags.
 #### Feature Flags
 
 To access the feature flags you can use `.FeatureFlags.ROX_FLAG_NAME`. The feature flags work the same as in the StackRox
-project itself too. You can find all [meta values here](https://github.com/stackrox/stackrox/blob/master/pkg/helm/charts/meta.go#L11-L11).
+project. You can find all [meta values here](https://github.com/stackrox/stackrox/blob/master/pkg/helm/charts/meta.go#L11-L11).
 
 Example:
 
