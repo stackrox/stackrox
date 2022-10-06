@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log           = logging.LoggerForModule()
+	initBatchSize = 20
 )
 
 type datastoreImpl struct {
@@ -25,30 +26,48 @@ type datastoreImpl struct {
 	graph *dag.DAG
 }
 
+func resetLocalGraph(ds *datastoreImpl) {
+	if ds != nil {
+		ds.graph = nil
+	}
+}
+
 func (ds *datastoreImpl) initGraph(ctx context.Context) error {
 	if ds.graph != nil {
 		return nil
 	}
 	ds.graph = dag.NewDAG()
 
-	// first walk adds vertices
-	err := ds.storage.Walk(ctx, func(obj *storage.ResourceCollection) error {
-		return ds.graph.AddVertexByID(obj.GetId(), obj.GetId())
-	})
+	// add ids first
+	ids, err := ds.storage.GetIDs(ctx)
 	if err != nil {
 		return err
 	}
+	for _, id := range ids {
+		err = ds.graph.AddVertexByID(id, id)
+		if err != nil {
+			return err
+		}
+	}
 
-	// second walk adds edges
-	return ds.storage.Walk(ctx, func(obj *storage.ResourceCollection) error {
-		for _, edge := range obj.GetEmbeddedCollections() {
-			err = ds.graph.AddEdge(obj.GetId(), edge.GetId())
-			if err != nil {
-				return err
+	// then add edges by batches
+	for i := 0; i < len(ids); i += initBatchSize {
+		var objs []*storage.ResourceCollection
+		if i+initBatchSize < len(ids) {
+			objs, _, err = ds.storage.GetMany(ctx, ids[i:i+initBatchSize])
+		} else {
+			objs, _, err = ds.storage.GetMany(ctx, ids[i:])
+		}
+		for _, obj := range objs {
+			for _, edge := range obj.GetEmbeddedCollections() {
+				err = ds.graph.AddEdge(obj.GetId(), edge.GetId())
+				if err != nil {
+					return err
+				}
 			}
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) addCollectionToGraph(ctx context.Context, obj *storage.ResourceCollection) error {

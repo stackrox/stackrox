@@ -13,6 +13,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error)
+	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ResourceCollection, []int, error)
 
 	Upsert(context.Context, *storage.ResourceCollection) error

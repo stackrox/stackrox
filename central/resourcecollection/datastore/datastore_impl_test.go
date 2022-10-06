@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/heimdalr/dag"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/gorm"
 )
 
 func TestCollectionDataStoreWithPostgres(t *testing.T) {
@@ -27,6 +29,8 @@ type CollectionPostgresDataStoreTestSuite struct {
 
 	ctx         context.Context
 	db          *pgxpool.Pool
+	gormDB      *gorm.DB
+	store       postgres.Store
 	datastore   DataStore
 	envIsolator *envisolator.EnvIsolator
 }
@@ -52,17 +56,99 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 
 	postgres.Destroy(s.ctx, s.db)
 
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	store := postgres.CreateTableAndNewStore(s.ctx, s.db, gormDB)
+	s.gormDB = pgtest.OpenGormDB(s.T(), source)
+	s.store = postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	index := postgres.NewIndexer(s.db)
-	s.datastore = New(store, index, search.New(store, index))
+	s.datastore = New(s.store, index, search.New(s.store, index))
+}
+
+// SetupTest removes the local graph before every test
+func (s *CollectionPostgresDataStoreTestSuite) SetupTest() {
+	resetLocalGraph(s.datastore.(*datastoreImpl))
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TearDownSuite() {
 	postgres.Destroy(s.ctx, s.db)
 	s.db.Close()
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.envIsolator.RestoreAll()
+}
+
+func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	for _, tc := range []struct {
+		desc string
+		size int
+	}{
+		{
+			desc: "Test Graph Init small",
+			size: 2,
+		},
+		{
+			desc: "Test Graph Init initBatchSize-1",
+			size: initBatchSize - 1,
+		},
+		{
+			desc: "Test Graph Init initBatchSize",
+			size: initBatchSize,
+		},
+		{
+			desc: "Test Graph Init initBatchSize+1",
+			size: initBatchSize + 1,
+		},
+		{
+			desc: "Test Graph Init initBatchSize+2",
+			size: initBatchSize + 2,
+		},
+		{
+			desc: "Test Graph Init initBatchSize*2",
+			size: initBatchSize * 2,
+		},
+	} {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			objs := make([]*storage.ResourceCollection, 0, tc.size)
+			objIDs := make([]string, 0, tc.size+1)
+
+			objs = append(objs, s.getTestCollection("0", nil))
+			objIDs = append(objIDs, "0")
+			for i := 1; i < tc.size; i++ {
+				edges := make([]string, 0, i)
+				for j := 0; j < i; j++ {
+					edges = append(edges, fmt.Sprintf("%d", j))
+				}
+				id := fmt.Sprintf("%d", i)
+				objs = append(objs, s.getTestCollection(id, edges))
+				objIDs = append(objIDs, id)
+			}
+
+			// add objs directly through the store
+			err := s.store.UpsertMany(ctx, objs)
+			s.NoError(err)
+
+			// trigger graph init
+			triggerID := fmt.Sprintf("%d", tc.size)
+			trigger := s.getTestCollection(triggerID, []string{fmt.Sprintf("%d", tc.size-1)})
+			err = s.datastore.AddCollection(ctx, trigger)
+			s.NoError(err)
+
+			// update our expectation values
+			objIDs = append(objIDs, triggerID)
+			objs = append(objs, trigger)
+
+			// get data and check it
+			batch, err := s.datastore.GetBatch(ctx, objIDs)
+			s.NoError(err)
+			s.ElementsMatch(objs, batch)
+
+			// clean up data
+			for i := len(objIDs) - 1; i >= 0; i-- {
+				s.NoError(s.datastore.DeleteCollection(ctx, objIDs[i]))
+			}
+
+			resetLocalGraph(s.datastore.(*datastoreImpl))
+		})
+	}
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TestAddCollection() {
@@ -99,6 +185,10 @@ func (s *CollectionPostgresDataStoreTestSuite) TestAddCollection() {
 	s.NotNil(err)
 	_, ok = err.(dag.SrcDstEqualError)
 	s.True(ok)
+
+	// clean up testing data
+	s.NoError(s.datastore.DeleteCollection(ctx, "b"))
+	s.NoError(s.datastore.DeleteCollection(ctx, "a"))
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TestFoo() {
