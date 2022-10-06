@@ -59,12 +59,13 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.store = postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	index := postgres.NewIndexer(s.db)
-	s.datastore = New(s.store, index, search.New(s.store, index))
+	s.datastore, err = New(s.store, index, search.New(s.store, index))
+	s.NoError(err)
 }
 
 // SetupTest removes the local graph before every test
 func (s *CollectionPostgresDataStoreTestSuite) SetupTest() {
-	resetLocalGraph(s.datastore.(*datastoreImpl))
+	s.NoError(resetLocalGraph(s.datastore.(*datastoreImpl)))
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TearDownSuite() {
@@ -127,14 +128,8 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 			s.NoError(err)
 
 			// trigger graph init
-			triggerID := fmt.Sprintf("%d", tc.size)
-			trigger := s.getTestCollection(triggerID, []string{fmt.Sprintf("%d", tc.size-1)})
-			err = s.datastore.AddCollection(ctx, trigger)
+			err = resetLocalGraph(s.datastore.(*datastoreImpl))
 			s.NoError(err)
-
-			// update our expectation values
-			objIDs = append(objIDs, triggerID)
-			objs = append(objs, trigger)
 
 			// get data and check it
 			batch, err := s.datastore.GetBatch(ctx, objIDs)
@@ -145,8 +140,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 			for i := len(objIDs) - 1; i >= 0; i-- {
 				s.NoError(s.datastore.DeleteCollection(ctx, objIDs[i]))
 			}
-
-			resetLocalGraph(s.datastore.(*datastoreImpl))
+			s.NoError(resetLocalGraph(s.datastore.(*datastoreImpl)))
 		})
 	}
 }
@@ -208,4 +202,11 @@ func (s *CollectionPostgresDataStoreTestSuite) getTestCollection(id string, ids 
 		Name:                id,
 		EmbeddedCollections: embedded,
 	}
+}
+
+func resetLocalGraph(ds *datastoreImpl) error {
+	if ds.graph != nil {
+		ds.graph = nil
+	}
+	return ds.initGraph()
 }

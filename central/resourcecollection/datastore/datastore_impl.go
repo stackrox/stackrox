@@ -7,9 +7,11 @@ import (
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -28,17 +30,7 @@ type datastoreImpl struct {
 	graph     *dag.DAG
 }
 
-func resetLocalGraph(ds *datastoreImpl) {
-
-	ds.graphLock.Lock()
-	defer ds.graphLock.Unlock()
-
-	if ds.graph != nil {
-		ds.graph = nil
-	}
-}
-
-func (ds *datastoreImpl) initGraph(ctx context.Context) error {
+func (ds *datastoreImpl) initGraph() error {
 	if ds.graph != nil {
 		return nil
 	}
@@ -47,6 +39,10 @@ func (ds *datastoreImpl) initGraph(ctx context.Context) error {
 	defer ds.graphLock.Unlock()
 
 	ds.graph = dag.NewDAG()
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
 	// add ids first
 	ids, err := ds.storage.GetIDs(ctx)
@@ -83,11 +79,7 @@ func (ds *datastoreImpl) initGraph(ctx context.Context) error {
 	return nil
 }
 
-func (ds *datastoreImpl) addCollectionToGraph(ctx context.Context, obj *storage.ResourceCollection) error {
-	if err := ds.initGraph(ctx); err != nil {
-		return err
-	}
-
+func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) error {
 	ds.graphLock.Lock()
 	defer ds.graphLock.Unlock()
 
@@ -100,7 +92,7 @@ func (ds *datastoreImpl) addCollectionToGraph(ctx context.Context, obj *storage.
 		if err != nil {
 			deleteErr := ds.graph.DeleteVertex(obj.GetId())
 			if deleteErr != nil {
-				log.Errorf("Failed to delete collection, might result in bad state (%v)", deleteErr)
+				log.Errorf("Failed to remove collection from internal state object (%v)", deleteErr)
 			}
 			return err
 		}
@@ -108,11 +100,7 @@ func (ds *datastoreImpl) addCollectionToGraph(ctx context.Context, obj *storage.
 	return nil
 }
 
-func (ds *datastoreImpl) deleteCollectionFromGraph(ctx context.Context, id string) error {
-	if err := ds.initGraph(ctx); err != nil {
-		return err
-	}
-
+func (ds *datastoreImpl) deleteCollectionFromGraph(id string) error {
 	ds.graphLock.Lock()
 	defer ds.graphLock.Unlock()
 
@@ -165,7 +153,7 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
 
 	// add to graph first to detect any cycles
-	err := ds.addCollectionToGraph(ctx, collection)
+	err := ds.addCollectionToGraph(collection)
 	if err != nil {
 		return err
 	}
@@ -173,7 +161,7 @@ func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.
 	err = ds.storage.Upsert(ctx, collection)
 	if err != nil {
 		// if we fail to upsert, update the graph
-		deleteErr := ds.deleteCollectionFromGraph(ctx, collection.GetId())
+		deleteErr := ds.deleteCollectionFromGraph(collection.GetId())
 		if deleteErr != nil {
 			log.Errorf("Failed to remove collection from internal state object (%v)", deleteErr)
 		}
@@ -189,7 +177,7 @@ func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error 
 	if err != nil {
 		return err
 	}
-	deleteErr := ds.deleteCollectionFromGraph(ctx, id)
+	deleteErr := ds.deleteCollectionFromGraph(id)
 	if deleteErr != nil {
 		log.Errorf("Failed to remove collection from internal state object (%v)", deleteErr)
 	}
