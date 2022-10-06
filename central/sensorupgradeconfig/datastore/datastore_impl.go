@@ -53,7 +53,7 @@ func (d *dataStore) UpsertSensorUpgradeConfig(ctx context.Context, sensorUpgrade
 		return sac.ErrResourceAccessDenied
 	}
 
-	if env.ManagedCentral.BooleanSetting() && sensorUpgradeConfig.EnableAutoUpgrade {
+	if env.ManagedCentral.BooleanSetting() && sensorUpgradeConfig.GetEnableAutoUpgrade() {
 		return errors.New("auto-upgrade not allowed on managed central")
 	}
 
