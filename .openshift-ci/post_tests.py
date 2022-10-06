@@ -84,7 +84,7 @@ class StoreArtifacts(RunWithBestEffortMixin):
         if test_results is None:
             return
         print("Storing test results in JUnit format")
-        for to_dir, from_dir in test_results:
+        for to_dir, from_dir in test_results.items():
             self.run_with_best_effort(
                 ["scripts/ci/store-artifacts.sh", "store_test_results",
                  from_dir, to_dir],
