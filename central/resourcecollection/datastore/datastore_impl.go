@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -23,10 +24,15 @@ type datastoreImpl struct {
 	indexer  index.Indexer
 	searcher search.Searcher
 
-	graph *dag.DAG
+	graph     *dag.DAG
+	graphLock sync.Mutex
 }
 
 func resetLocalGraph(ds *datastoreImpl) {
+
+	ds.graphLock.Lock()
+	defer ds.graphLock.Unlock()
+
 	if ds != nil {
 		ds.graph = nil
 	}
@@ -36,6 +42,10 @@ func (ds *datastoreImpl) initGraph(ctx context.Context) error {
 	if ds.graph != nil {
 		return nil
 	}
+
+	ds.graphLock.Lock()
+	defer ds.graphLock.Unlock()
+
 	ds.graph = dag.NewDAG()
 
 	// add ids first
@@ -78,6 +88,9 @@ func (ds *datastoreImpl) addCollectionToGraph(ctx context.Context, obj *storage.
 		return err
 	}
 
+	ds.graphLock.Lock()
+	defer ds.graphLock.Unlock()
+
 	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetId())
 	if err != nil {
 		return err
@@ -99,6 +112,9 @@ func (ds *datastoreImpl) deleteCollectionFromGraph(ctx context.Context, id strin
 	if err := ds.initGraph(ctx); err != nil {
 		return err
 	}
+
+	ds.graphLock.Lock()
+	defer ds.graphLock.Unlock()
 
 	return ds.graph.DeleteVertex(id)
 }
@@ -159,7 +175,7 @@ func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.
 		// if we fail to upsert, update the graph
 		deleteErr := ds.deleteCollectionFromGraph(ctx, collection.GetId())
 		if deleteErr != nil {
-			log.Errorf("Failed to delete collection, might result in bad state (%v)", deleteErr)
+			log.Errorf("Failed to remove collection from internal state object (%v)", deleteErr)
 		}
 		return err
 	}
@@ -175,7 +191,7 @@ func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error 
 	}
 	deleteErr := ds.deleteCollectionFromGraph(ctx, id)
 	if deleteErr != nil {
-		log.Errorf("Failed to delete collection, might result in bad state (%v)", deleteErr)
+		log.Errorf("Failed to remove collection from internal state object (%v)", deleteErr)
 	}
 	return err
 }
