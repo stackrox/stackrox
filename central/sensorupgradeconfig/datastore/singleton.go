@@ -20,9 +20,10 @@ var (
 	singleton DataStore
 )
 
-func upgradeConfig(autoUpgrade bool) *storage.SensorUpgradeConfig {
+func upgradeConfig(allowed bool) *storage.SensorUpgradeConfig {
 	return &storage.SensorUpgradeConfig{
-		EnableAutoUpgrade: autoUpgrade,
+		EnableAutoUpgrade: allowed,
+		AutoUpgradeAllowed: allowed,
 	}
 }
 

@@ -57,6 +57,16 @@ func (d *dataStore) UpsertSensorUpgradeConfig(ctx context.Context, sensorUpgrade
 		return errors.New("auto-upgrade not allowed on managed central")
 	}
 
+	config, _, err := d.store.Get(ctx)
+	if err != nil {
+		return err
+	}
+
+	if config != nil {
+		// AutoUpgradeAllowed can't be overwritten
+		sensorUpgradeConfig.AutoUpgradeAllowed = config.AutoUpgradeAllowed
+	}
+
 	if err := d.store.Upsert(ctx, sensorUpgradeConfig); err != nil {
 		return err
 	}

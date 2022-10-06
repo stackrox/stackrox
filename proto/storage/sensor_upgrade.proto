@@ -9,4 +9,6 @@ package storage;
 message SensorUpgradeConfig {
     // Whether to automatically trigger upgrades for out-of-date sensors.
     bool enable_auto_upgrade = 1;
+    // Whether auto-upgrades can be set to true
+    bool auto_upgrade_allowed = 2;
 }

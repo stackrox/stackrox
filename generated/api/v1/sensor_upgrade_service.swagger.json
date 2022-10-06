@@ -167,6 +167,10 @@
         "enableAutoUpgrade": {
           "type": "boolean",
           "description": "Whether to automatically trigger upgrades for out-of-date sensors."
+        },
+        "autoUpgradeAllowed": {
+          "type": "boolean",
+          "title": "Whether auto-upgrades can be set to true"
         }
       },
       "description": "SensorUpgradeConfig encapsulates configuration relevant to sensor auto-upgrades."
