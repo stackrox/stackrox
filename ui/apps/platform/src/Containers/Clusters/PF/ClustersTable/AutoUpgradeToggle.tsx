@@ -13,6 +13,7 @@ function AutoUpgradeToggle(): ReactElement {
     const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig>({
         enableAutoUpgrade: false,
     });
+    const [isFetched, setIsFetched] = useState(false);
 
     function fetchConfig(): void {
         getAutoUpgradeConfig()
@@ -23,6 +24,9 @@ function AutoUpgradeToggle(): ReactElement {
             .catch(() => {
                 // TODO display message when there is a place for minor errors
                 setIsDisabled(false);
+            })
+            .finally(() => {
+                setIsFetched(true);
             });
     }
 
@@ -59,7 +63,10 @@ function AutoUpgradeToggle(): ReactElement {
 
     const label = 'Automatically upgrade secured clusters';
 
-    return (
+    if (!isFetched) {
+        return <></>;
+    }
+    return autoUpgradeConfig.autoUpgradeAllowed ? (
         <Switch
             id="auto-upgrade-toggle"
             label={label}
@@ -68,6 +75,8 @@ function AutoUpgradeToggle(): ReactElement {
             isReversed
             isDisabled={isDisabled}
         />
+    ) : (
+        <>Auto upgrade not allowed in managed central</>
     );
 }
 

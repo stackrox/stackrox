@@ -22,7 +22,7 @@ var (
 
 func upgradeConfig(allowed bool) *storage.SensorUpgradeConfig {
 	return &storage.SensorUpgradeConfig{
-		EnableAutoUpgrade: allowed,
+		EnableAutoUpgrade:  allowed,
 		AutoUpgradeAllowed: allowed,
 	}
 }

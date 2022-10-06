@@ -99,6 +99,7 @@ export function fetchClusterWithRetentionInformation(id: string): Promise<Cluste
 
 export type AutoUpgradeConfig = {
     enableAutoUpgrade?: boolean;
+    autoUpgradeAllowed?: boolean;
 };
 
 /**

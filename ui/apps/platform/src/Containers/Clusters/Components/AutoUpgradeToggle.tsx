@@ -8,7 +8,10 @@ import {
 } from 'services/ClustersService';
 
 function AutoUpgradeToggle(): ReactElement {
-    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig>({});
+    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig>({
+        enableAutoUpgrade: false,
+    });
+    const [isFetched, setIsFetched] = useState(false);
 
     function fetchConfig(): void {
         getAutoUpgradeConfig()
@@ -17,6 +20,9 @@ function AutoUpgradeToggle(): ReactElement {
             })
             .catch(() => {
                 // TODO display message when there is a place for minor errors
+            })
+            .finally(() => {
+                setIsFetched(true);
             });
     }
 
@@ -47,13 +53,18 @@ function AutoUpgradeToggle(): ReactElement {
         });
     }
 
-    return (
+    if (!isFetched) {
+        return <></>;
+    }
+    return autoUpgradeConfig.autoUpgradeAllowed ? (
         <ToggleSwitch
             id="enableAutoUpgrade"
             toggleHandler={toggleAutoUpgrade}
             label="Automatically upgrade secured clusters"
             enabled={autoUpgradeConfig.enableAutoUpgrade}
         />
+    ) : (
+        <>Auto upgrade not allowed in managed central</>
     );
 }
 
