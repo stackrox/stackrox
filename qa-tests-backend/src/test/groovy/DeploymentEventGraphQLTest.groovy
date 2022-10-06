@@ -3,6 +3,7 @@ import static Services.waitForViolation
 
 import java.util.stream.Collectors
 
+import groups.BAT
 import groups.GraphQL
 import objects.Deployment
 import services.GraphQLService
@@ -11,6 +12,7 @@ import util.Env
 import org.junit.experimental.categories.Category
 import spock.lang.IgnoreIf
 
+@Category([BAT, GraphQL])
 class DeploymentEventGraphQLTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "eventnginx"
     private static final String PARENT_NAME = "/bin/sh"
@@ -91,7 +93,6 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
     private final gqlService = new GraphQLService()
 
-    @Category(GraphQL)
     @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Deployment Events in GraphQL"() {
         when:
