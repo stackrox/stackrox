@@ -1223,46 +1223,70 @@ __EOM__
     commit_msg="${commit_msg%%$'\n'*}" # use first line of commit msg
     local commit_url
     commit_url=$(jq -r <<<"$commit_details" '.html_url') || exitstatus="$?"
-    local author
-    author=$(jq -r <<<"$commit_details" '.commit.author.name') || exitstatus="$?"
+    local author_name
+    author_name=$(jq -r <<<"$commit_details" '.commit.author.name') || exitstatus="$?"
+    local author_login
+    author_login=$(jq -r <<<"$commit_details" '.author.login') || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
         slack_error "Error parsing the commit details: ${commit_details}"
         return 1
     fi
 
+    local slack_mention
+    slack_mention="$("$SCRIPTS_ROOT"/scripts/ci/get-slack-user-id.sh "$author_login")"
+    if [[ -n "$slack_mention" ]]; then
+      slack_mention="<@${slack_mention}>"
+    else
+      slack_mention="_unable to resolve Slack user for GitHub login ${author_login}_"
+    fi
+
     # shellcheck disable=SC2016
     local body='
 {
-    "text": "*Job Name:* \($job_name)",
+    "text": "Prow job failure: \($job_name)",
     "blocks": [
-		{
-			"type": "header",
-			"text": {
-				"type": "plain_text",
-				"text": "Prow job failure: \($job_name)"
-			}
-		},
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Prow job failure: \($job_name)"
+            }
+        },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author)\n*Log:* \($log_url)"
+                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author_name), \($slack_mention)\n*Log:* \($log_url)"
             }
         },
-		{
-			"type": "divider"
-		}
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "Wrong or missing user mapping? Update <https://github.com/stackrox/stackrox/blob/master/scripts/ci/get-slack-user-id.sh|scripts/ci/get-slack-user-id.sh>."
+                }
+            ]
+        },
+        {
+            "type": "divider"
+        }
     ]
 }
 '
 
-    echo "About to post:"
-    jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
-       --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body"
+    payload="$(jq --null-input \
+      --arg job_name "$job_name" \
+      --arg commit_url "$commit_url" \
+      --arg commit_msg "$commit_msg" \
+      --arg repo "$repo" \
+      --arg author_name "$author_name" \
+      --arg slack_mention "$slack_mention" \
+      --arg log_url "$log_url" \
+      "$body")"
+    echo -e "About to post:\n$payload"
 
-    jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
-       --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body" | \
-    curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" || {
+    echo "$payload" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" || {
         slack_error "Error posting to Slack"
         return 1
     }
