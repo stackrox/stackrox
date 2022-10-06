@@ -28,8 +28,6 @@ import {
 import StyleNode from './StyleNode';
 import StyleGroup from './StyleGroup';
 import StyleEdge from './StyleEdge';
-import CustomPathNode from './CustomPathNode';
-import CustomPolygonNode from './CustomPolygonNode';
 
 const CONNECTOR_SOURCE_DROP = 'connector-src-drop';
 const CONNECTOR_TARGET_DROP = 'connector-target-drop';
@@ -107,10 +105,6 @@ const stylesComponentFactory: ComponentFactory = (kind: ModelKind, type: string)
                     )
                 )
             );
-        case 'node-path':
-            return CustomPathNode;
-        case 'node-polygon':
-            return CustomPolygonNode;
         case 'group':
             return withDndDrop(groupDropTargetSpec)(
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment

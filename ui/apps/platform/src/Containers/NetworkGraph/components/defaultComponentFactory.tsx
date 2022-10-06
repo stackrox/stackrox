@@ -7,9 +7,7 @@ import {
     DefaultNode,
 } from '@patternfly/react-topology';
 import Edge from './DefaultEdge';
-import MultiEdge from './MultiEdge';
 import Group from './DefaultGroup';
-import GroupHull from './GroupHull';
 
 // @ts-expect-error TODO: raise type error issue with patternfly/react-topology team
 const defaultComponentFactory: ComponentFactory = (
@@ -17,20 +15,14 @@ const defaultComponentFactory: ComponentFactory = (
     type: string
 ):
     | ComponentType<{ element: GraphElement }>
-    | typeof MultiEdge
     | typeof Group
-    | typeof GroupHull
     | typeof GraphComponent
     | typeof DefaultNode
     | typeof Edge
     | typeof undefined => {
     switch (type) {
-        case 'multi-edge':
-            return MultiEdge;
         case 'group':
             return Group;
-        case 'group-hull':
-            return GroupHull;
         default:
             switch (kind) {
                 case ModelKind.graph:
