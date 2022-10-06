@@ -7,8 +7,10 @@ import groups.BAT
 import groups.GraphQL
 import objects.Deployment
 import services.GraphQLService
+import util.Env
 
 import org.junit.experimental.categories.Category
+import spock.lang.IgnoreIf
 
 @Category([BAT, GraphQL])
 class DeploymentEventGraphQLTest extends BaseSpecification {
@@ -91,6 +93,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
     private final gqlService = new GraphQLService()
 
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Deployment Events in GraphQL"() {
         when:
         "Validate Policy Violation is Triggered"
