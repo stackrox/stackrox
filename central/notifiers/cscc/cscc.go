@@ -32,7 +32,7 @@ var (
 
 func init() {
 	notifiers.Add("cscc", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		j, err := newCSCC(notifier)
+		j, err := newCSCC(notifier, clusterDatastore.Singleton())
 		return j, err
 	})
 }
@@ -42,9 +42,9 @@ type cscc struct {
 	// The Service Account is a Google JSON service account key.
 	// The GCP Organization ID is a numeric identifier for the Google Cloud Platform
 	// organization. It is required so that we can tag findings to the right org.
-	client client.Config
-	config *config
-
+	client       client.Config
+	config       *config
+	clusterStore clusterDatastore.DataStore
 	*storage.Notifier
 }
 
@@ -81,18 +81,18 @@ func (c *cscc) getAlertDescription(alert *storage.Alert) string {
 	return strings.Join(distinctSlice, " ")
 }
 
-func transformSeverity(s storage.Severity) string {
+func transformSeverity(s storage.Severity) findings.Severity {
 	switch s {
 	case storage.Severity_LOW_SEVERITY:
-		return "low"
+		return findings.Low
 	case storage.Severity_MEDIUM_SEVERITY:
-		return "medium"
+		return findings.Medium
 	case storage.Severity_HIGH_SEVERITY:
-		return "high"
+		return findings.High
 	case storage.Severity_CRITICAL_SEVERITY:
-		return "critical"
+		return findings.Critical
 	default:
-		return "info"
+		return findings.Default
 	}
 }
 
@@ -132,7 +132,7 @@ func processUUID(u string) string {
 }
 
 func (c *cscc) getCluster(id string) (*storage.Cluster, error) {
-	cluster, exists, err := clusterDatastore.Singleton().GetCluster(clusterForAlertContext, id)
+	cluster, exists, err := c.clusterStore.GetCluster(clusterForAlertContext, id)
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +158,30 @@ func (c *cscc) Close(ctx context.Context) error {
 
 // AlertNotify takes in an alert and generates the notification
 func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
+
+	findingID, finding, err := c.initFinding(ctx, alert)
+
+	if err != nil {
+		return err
+	}
+
+	return retry.WithRetry(
+		func() error {
+			return c.client.CreateFinding(ctx, finding, findingID)
+		},
+		retry.OnlyRetryableErrors(),
+		retry.Tries(3),
+		retry.BetweenAttempts(func(previousAttempt int) {
+			wait := time.Duration(previousAttempt * previousAttempt * 100)
+			time.Sleep(wait * time.Millisecond)
+		}),
+	)
+}
+
+// initFinding takes in an alert and generates the notification
+func (c *cscc) initFinding(ctx context.Context, alert *storage.Alert) (string, *findings.Finding, error) {
 	if alert.GetImage() != nil {
-		return errors.New("CSCC integration can only handle alerts for deployments and resources")
+		return "", nil, errors.New("CSCC integration can only handle alerts for deployments and resources")
 	}
 
 	alertLink := notifiers.AlertLink(c.Notifier.UiEndpoint, alert)
@@ -169,7 +191,7 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 
 	cluster, err := c.getCluster(alert.GetDeployment().GetClusterId())
 	if err != nil {
-		return err
+		return "", nil, err
 	}
 	providerMetadata := cluster.GetStatus().GetProviderMetadata()
 
@@ -186,12 +208,12 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		Category:  category,
 		URL:       alertLink,
 		Timestamp: protoconv.ConvertTimestampToTimeOrNow(alert.GetTime()).Format(time.RFC3339Nano),
+		Severity:  severity,
 	}
 
 	switch alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:
 		finding.Properties = findings.Properties{
-			Severity: severity,
 
 			Namespace:      alert.GetDeployment().GetNamespace(),
 			Service:        alert.GetDeployment().GetName(),
@@ -202,7 +224,6 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		}.Map()
 	case *storage.Alert_Resource_:
 		findings.Properties{
-			Severity: severity,
 
 			Namespace:    alert.GetResource().GetNamespace(),
 			Service:      alert.GetResource().GetName(),
@@ -218,21 +239,11 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	} else {
 		finding.State = findings.StateActive
 	}
+	return findingID, finding, nil
 
-	return retry.WithRetry(
-		func() error {
-			return c.client.CreateFinding(ctx, finding, findingID)
-		},
-		retry.OnlyRetryableErrors(),
-		retry.Tries(3),
-		retry.BetweenAttempts(func(previousAttempt int) {
-			wait := time.Duration(previousAttempt * previousAttempt * 100)
-			time.Sleep(wait * time.Millisecond)
-		}),
-	)
 }
 
-func newCSCC(protoNotifier *storage.Notifier) (*cscc, error) {
+func newCSCC(protoNotifier *storage.Notifier, clusterStore clusterDatastore.DataStore) (*cscc, error) {
 	csccConfig, ok := protoNotifier.GetConfig().(*storage.Notifier_Cscc)
 	if !ok {
 		return nil, errors.New("Cloud SCC config is required")
@@ -246,10 +257,10 @@ func newCSCC(protoNotifier *storage.Notifier) (*cscc, error) {
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
-	return newWithConfig(protoNotifier, cfg), nil
+	return newWithConfig(protoNotifier, cfg, clusterStore), nil
 }
 
-func newWithConfig(protoNotifier *storage.Notifier, cfg *config) *cscc {
+func newWithConfig(protoNotifier *storage.Notifier, cfg *config, clusterStore clusterDatastore.DataStore) *cscc {
 	return &cscc{
 		Notifier: protoNotifier,
 		client: client.Config{
@@ -257,7 +268,8 @@ func newWithConfig(protoNotifier *storage.Notifier, cfg *config) *cscc {
 			SourceID:       cfg.SourceID,
 			Logger:         log,
 		},
-		config: cfg,
+		config:       cfg,
+		clusterStore: clusterStore,
 	}
 }
 
