@@ -164,7 +164,6 @@ func docIDQuery(ids []string) *v1.Query {
 }
 
 // QueryModifier describes the query modifiers for a specific individual query
-//
 //go:generate stringer -type=QueryModifier
 type QueryModifier int
 
