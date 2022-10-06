@@ -32,7 +32,7 @@ func addDefaultConfigIfEmpty(d DataStore) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to check initial sensor upgrade config")
 	}
-	if currentConfig != nil {
+	if currentConfig != nil && (!env.ManagedCentral.BooleanSetting() || !currentConfig.GetEnableAutoUpgrade()) {
 		return nil
 	}
 
