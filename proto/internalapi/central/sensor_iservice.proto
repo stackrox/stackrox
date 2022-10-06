@@ -14,6 +14,7 @@ import "internalapi/central/baseline_sync.proto";
 import "internalapi/central/hello.proto";
 import "internalapi/central/network_baseline_sync.proto";
 import "internalapi/central/local_scanner.proto";
+import "internalapi/central/process_listening_on_ports_update.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
 
@@ -34,6 +35,7 @@ message MsgFromSensor {
         AuditLogStatusInfo            audit_log_status_info             = 11;
         IssueLocalScannerCertsRequest issue_local_scanner_certs_request = 12;
         ClusterMetrics                cluster_metrics                   = 13;
+	ProcessListeningOnPortsUpdate	process_listening_on_port_update	= 14;
     }
 }
 
