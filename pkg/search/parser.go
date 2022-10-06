@@ -86,7 +86,7 @@ func parsePair(pair string, allowEmpty bool) (key string, values string, valid b
 			spl[1] = spl[1] + WildcardString
 		}
 	}
-	return spl[0], strings.TrimSpace(spl[1]), true
+	return strings.TrimSpace(spl[0]), strings.TrimSpace(spl[1]), true
 }
 
 func queryFromFieldValues(field string, values []string, highlight bool) *v1.Query {
@@ -164,6 +164,7 @@ func docIDQuery(ids []string) *v1.Query {
 }
 
 // QueryModifier describes the query modifiers for a specific individual query
+//
 //go:generate stringer -type=QueryModifier
 type QueryModifier int
 

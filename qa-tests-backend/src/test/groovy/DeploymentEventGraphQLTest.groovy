@@ -4,11 +4,13 @@ import static Services.waitForViolation
 import java.util.stream.Collectors
 
 import groups.BAT
+import groups.GraphQL
 import objects.Deployment
 import services.GraphQLService
 
 import org.junit.experimental.categories.Category
 
+@Category([BAT, GraphQL])
 class DeploymentEventGraphQLTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "eventnginx"
     private static final String PARENT_NAME = "/bin/sh"
@@ -89,7 +91,6 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
     private final gqlService = new GraphQLService()
 
-    @Category(BAT)
     def "Verify Deployment Events in GraphQL"() {
         when:
         "Validate Policy Violation is Triggered"
