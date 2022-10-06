@@ -378,6 +378,8 @@ func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuer
 func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery string) (common.Result, error) {
 	offset := 0
 	var resultData common.Result
+	log.Infof("Reporting Info : scope Query %s", scopeQuery)
+	log.Infof("Reporting Info : cve Query %s", cveQuery)
 	for {
 		var gqlQuery string
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
