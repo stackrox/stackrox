@@ -6,8 +6,10 @@ import java.util.stream.Collectors
 import groups.GraphQL
 import objects.Deployment
 import services.GraphQLService
+import util.Env
 
 import org.junit.experimental.categories.Category
+import spock.lang.IgnoreIf
 
 class DeploymentEventGraphQLTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "eventnginx"
@@ -90,6 +92,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
     private final gqlService = new GraphQLService()
 
     @Category(GraphQL)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Deployment Events in GraphQL"() {
         when:
         "Validate Policy Violation is Triggered"
