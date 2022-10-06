@@ -24,8 +24,8 @@ type datastoreImpl struct {
 	indexer  index.Indexer
 	searcher search.Searcher
 
-	graph     *dag.DAG
 	graphLock sync.Mutex
+	graph     *dag.DAG
 }
 
 func resetLocalGraph(ds *datastoreImpl) {
