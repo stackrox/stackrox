@@ -8,17 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/netutil"
 )
 
-var (
-	privateSubnets = []*net.IPNet{
-		netutil.MustParseCIDR("127.0.0.0/8"),    // IPv4 localhost
-		netutil.MustParseCIDR("10.0.0.0/8"),     // class A
-		netutil.MustParseCIDR("172.16.0.0/12"),  // class B
-		netutil.MustParseCIDR("192.168.0.0/16"), // class C
-		netutil.MustParseCIDR("::1/128"),        // IPv6 localhost
-		netutil.MustParseCIDR("fd00::/8"),       // IPv6 ULA
-	}
-)
-
 func insecureRegistries(ctx framework.ComplianceContext, info *compliance.ContainerRuntimeInfo) {
 	if info == nil {
 		framework.Fail(ctx, "No container runtime information is available to determine insecure registry configs")
@@ -30,8 +19,8 @@ func insecureRegistries(ctx framework.ComplianceContext, info *compliance.Contai
 		_, cidr, _ := net.ParseCIDR(cidrStr)
 		isPrivate := false
 		if cidr != nil {
-			for _, privateSubnets := range privateSubnets {
-				if netutil.IsIPNetSubset(privateSubnets, cidr) {
+			for _, privateSubnet := range netutil.GetPrivateSubnets() {
+				if netutil.IsIPNetSubset(privateSubnet, cidr) {
 					isPrivate = true
 					break
 				}
