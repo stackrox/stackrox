@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -66,7 +67,13 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "need to specify a config")
 	}
-	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, req.GetConfig()); err != nil {
+	storedConfig, err := s.configDataStore.GetSensorUpgradeConfig(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get existing config")
+	}
+	storedConfig.EnableAutoUpgrade = req.GetConfig().GetEnableAutoUpgrade()
+
+	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, storedConfig); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
