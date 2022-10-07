@@ -186,11 +186,19 @@
         }
       }
     },
+    "v1SensorUpgradeToggleConfig": {
+      "type": "object",
+      "properties": {
+        "enableAutoUpgrade": {
+          "type": "boolean"
+        }
+      }
+    },
     "v1UpdateSensorUpgradeConfigRequest": {
       "type": "object",
       "properties": {
         "config": {
-          "$ref": "#/definitions/storageSensorUpgradeConfig"
+          "$ref": "#/definitions/v1SensorUpgradeToggleConfig"
         }
       }
     }

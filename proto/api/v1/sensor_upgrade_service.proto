@@ -10,8 +10,12 @@ import "storage/sensor_upgrade.proto";
 
 package v1;
 
+message SensorUpgradeToggleConfig {
+    bool enable_auto_upgrade = 1;
+}
+
 message UpdateSensorUpgradeConfigRequest {
-    storage.SensorUpgradeConfig config = 1;
+    SensorUpgradeToggleConfig config = 1;
 }
 
 message GetSensorUpgradeConfigResponse {
