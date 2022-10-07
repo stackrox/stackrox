@@ -1264,7 +1264,7 @@ __EOM__
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "Wrong or missing user mapping? Update <https://github.com/stackrox/stackrox/blob/master/scripts/ci/get-slack-user-id.sh|scripts/ci/get-slack-user-id.sh>."
+                    "text": "You got tagged but have no idea why or what to do? Check <https://docs.google.com/document/d/1d5ga073jkv4CO1kAJqp8MPGpC6E1bwyrCGZ7S5wKg3w/edit#heading=h.li2pdsxtk1hu|this document>."
                 }
             ]
         },
