@@ -3,10 +3,12 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -49,6 +51,10 @@ func (d *dataStore) UpsertSensorUpgradeConfig(ctx context.Context, sensorUpgrade
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
+	}
+
+	if env.ManagedCentral.BooleanSetting() && sensorUpgradeConfig.GetEnableAutoUpgrade() {
+		return errors.New("auto-upgrade not allowed on managed central")
 	}
 
 	if err := d.store.Upsert(ctx, sensorUpgradeConfig); err != nil {
