@@ -12,12 +12,14 @@ import {
     VisualizationSurface,
 } from '@patternfly/react-topology';
 
-import './Topology.css';
+import { SearchFilter } from 'types/search';
 
 import stylesComponentFactory from './components/stylesComponentFactory';
 import defaultLayoutFactory from './layouts/defaultLayoutFactory';
 import defaultComponentFactory from './components/defaultComponentFactory';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
+
+import './Topology.css';
 
 const model: Model = {
     graph: {
@@ -83,8 +85,9 @@ const model: Model = {
     ],
 };
 
-const TopologyComponent = () => {
+const TopologyComponent = ({ searchFilter }: NetworkGraphProps) => {
     const [selectedObj, setSelectedObj] = useState<NodeModel | EdgeModel | null>(null);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
 
     const controller = useVisualizationController();
 
@@ -125,20 +128,26 @@ const TopologyComponent = () => {
     );
 };
 
-const NetworkGraph: React.FunctionComponent = React.memo(() => {
-    const controller = new Visualization();
-    controller.registerLayoutFactory(defaultLayoutFactory);
-    controller.registerComponentFactory(defaultComponentFactory);
-    controller.registerComponentFactory(stylesComponentFactory);
+type NetworkGraphProps = {
+    searchFilter?: SearchFilter;
+};
 
-    return (
-        <div className="pf-ri__topology-demo">
-            <VisualizationProvider controller={controller}>
-                <TopologyComponent />
-            </VisualizationProvider>
-        </div>
-    );
-});
+const NetworkGraph: React.FunctionComponent<NetworkGraphProps> = React.memo(
+    ({ searchFilter }: NetworkGraphProps) => {
+        const controller = new Visualization();
+        controller.registerLayoutFactory(defaultLayoutFactory);
+        controller.registerComponentFactory(defaultComponentFactory);
+        controller.registerComponentFactory(stylesComponentFactory);
+
+        return (
+            <div className="pf-ri__topology-demo">
+                <VisualizationProvider controller={controller}>
+                    <TopologyComponent />
+                </VisualizationProvider>
+            </div>
+        );
+    }
+);
 
 NetworkGraph.displayName = 'NetworkGraph';
 

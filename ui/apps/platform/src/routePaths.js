@@ -148,7 +148,7 @@ const vulnManagementPathToLabelMap = {
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
     [networkBasePath]: 'Network Graph',
-    [networkPathPF]: 'Network Graph-Patterfly',
+    [networkPathPF]: 'Network Graph-Patternfly',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
     ...vulnManagementPathToLabelMap,
