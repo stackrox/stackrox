@@ -29,7 +29,12 @@ function generated_files-are-up-to-date() {
         exit 1
     fi
 }
-generated_files-are-up-to-date
+generated_files-are-up-to-date || {
+    save_junit_failure "Check_Generated_Files" \
+        "Found new untracked files after running \`make proto-generated-srcs\` and \`make go-generated-srcs\`" \
+        "$(cat /tmp/untracked-new)"
+    exit 1
+}
 
 # shellcheck disable=SC2016
 echo 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
@@ -44,7 +49,12 @@ function check-operator-generated-files-up-to-date() {
     echo 'needs to change due to formatting changes in the generated files.'
     git diff --exit-code HEAD
 }
-check-operator-generated-files-up-to-date
+check-operator-generated-files-up-to-date || {
+    save_junit_failure "Check_Generated_Files" \
+        "Operator generated files are not up to date" \
+        "$(git diff HEAD || true)"
+    exit 1
+}
 
 # shellcheck disable=SC2016
 echo 'Check if a script that was on the failed shellcheck list is now fixed. (If this fails, run `make update-shellcheck-skip` and commit the result.)'
@@ -55,7 +65,7 @@ function check-shellcheck-failing-list() {
 }
 check-shellcheck-failing-list || {
     save_junit_failure "Check_Generated_Files" \
-        "Check if a script that was on the failed shellcheck list is now fixed" \
+        "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
         "$(git diff HEAD || true)"
     exit 1
 }
