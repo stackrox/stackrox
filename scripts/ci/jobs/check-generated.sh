@@ -10,7 +10,7 @@ go mod tidy
 FAIL_FLAG="/tmp/fail"
 
 # shellcheck disable=SC2016
-echo 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
+info 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
 function generated_files-are-up-to-date() {
     git ls-files --others --exclude-standard >/tmp/untracked
     make proto-generated-srcs
@@ -35,11 +35,12 @@ generated_files-are-up-to-date || {
     save_junit_failure "Check_Generated_Files" \
         "Found new untracked files after running \`make proto-generated-srcs\` and \`make go-generated-srcs\`" \
         "$(cat /tmp/untracked-new)"
+    git reset --hard HEAD
     exit 1
 } || echo generated_files-are-up-to-date >> "$FAIL_FLAG"
 
 # shellcheck disable=SC2016
-echo 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
+info 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
 function check-operator-generated-files-up-to-date() {
     make -C operator/ generate
     make -C operator/ manifests
@@ -52,9 +53,10 @@ function check-operator-generated-files-up-to-date() {
     git diff --exit-code HEAD
 }
 check-operator-generated-files-up-to-date || {
-    save_junit_failure "Check_Generated_Files" \
+    save_junit_failure "Check_Operator_Generated_Files" \
         "Operator generated files are not up to date" \
         "$(git diff HEAD || true)"
+    git reset --hard HEAD
     exit 1
 } || echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 
@@ -66,14 +68,15 @@ function check-shellcheck-failing-list() {
     git diff --exit-code HEAD
 }
 check-shellcheck-failing-list || {
-    save_junit_failure "Check_Generated_Files" \
+    save_junit_failure "Check_Shellcheck_Skip_List" \
         "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
         "$(git diff HEAD || true)"
+    git reset --hard HEAD
     exit 1
 } || echo check-shellcheck-failing-list >> "$FAIL_FLAG"
 
 if [[ -e "$FAIL_FLAG" ]]; then
-    info "Some generated file checks failed:"
+    echo "ERROR: Some generated file checks failed:"
     cat "$FAIL_FLAG"
     exit 1
 fi
