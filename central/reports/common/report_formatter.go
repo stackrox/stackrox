@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -130,14 +130,14 @@ func Format(results []Result) (*bytes.Buffer, error) {
 }
 
 func (img *image) getComponents() []*imageComponent {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
+	if features.PostgresDatastore.Enabled() {
 		return img.ImageComponents
 	}
 	return img.Components
 }
 
 func (component *imageComponent) getVulnerabilities() []*imageVulnerability {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
+	if features.PostgresDatastore.Enabled() {
 		return component.ImageVulnerabilities
 	}
 	return component.Vulns

@@ -23,7 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
@@ -380,7 +380,7 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 	var resultData common.Result
 	for {
 		var gqlQuery string
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
+		if features.PostgresDatastore.Enabled() {
 			gqlQuery = reportQueryPostgres
 		} else {
 			gqlQuery = reportDataQuery
