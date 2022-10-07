@@ -112,15 +112,16 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) TestDefault() {
 	testCases := map[string]struct {
 		env                     bool
 		expectedAutoUpgradeFlag bool
+		autoUpgradeAllowed      storage.SensorAutoUpgrade
 	}{
-		"ROX_MANAGED_CENTRAL=true":  {true, false},
-		"ROX_MANAGED_CENTRAL=false": {false, true},
+		"ROX_MANAGED_CENTRAL=true":  {true, false, storage.SensorAutoUpgrade_NOT_ALLOWED},
+		"ROX_MANAGED_CENTRAL=false": {false, true, storage.SensorAutoUpgrade_ALLOWED},
 	}
 
 	for _, testCase := range testCases {
 		s.envIsolator.Setenv("ROX_MANAGED_CENTRAL", strconv.FormatBool(testCase.env))
 		s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil)
-		s.storage.EXPECT().Upsert(gomock.Any(), gomock.Eq(upgradeConfig(testCase.expectedAutoUpgradeFlag))).Return(nil)
+		s.storage.EXPECT().Upsert(gomock.Any(), gomock.Eq(upgradeConfig(testCase.expectedAutoUpgradeFlag, testCase.autoUpgradeAllowed))).Return(nil)
 		s.Require().NoError(addDefaultConfigIfEmpty(s.dataStore))
 	}
 }
