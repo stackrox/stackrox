@@ -132,15 +132,13 @@ func Format(results []Result) (*bytes.Buffer, error) {
 func (img *image) getComponents() []*imageComponent {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return img.ImageComponents
-	} else {
-		return img.Components
 	}
+	return img.Components
 }
 
 func (component *imageComponent) getVulnerabilities() []*imageVulnerability {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return component.ImageVulnerabilities
-	} else {
-		return component.Vulns
 	}
+	return component.Vulns
 }
