@@ -321,7 +321,7 @@ export function clickBaselineSettingsTab() {
         {
             routeMatcherMap: {
                 [networkBaselineAlias]: {
-                    method: 'POST',
+                    method: 'GET',
                     url: api.network.networkBaseline,
                 },
             },
