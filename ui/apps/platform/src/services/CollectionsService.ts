@@ -2,32 +2,21 @@ import qs from 'qs';
 
 import { ListDeployment } from 'types/deployment.proto';
 import { SearchFilter, ApiSortOption } from 'types/search';
+import {
+    Collection,
+    ResourceSelector,
+    SelectorEntityType,
+    SelectorField,
+} from 'Containers/Collections/types';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import axios from './instance';
+import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import { Empty, Pagination } from './types';
 
 export const collectionsBaseUrl = '/v1/collections';
 export const collectionsCountUrl = '/v1/collections/count';
 export const collectionsDryRunUrl = '/v1/collections/dryrun';
 export const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
-
-type SelectorEntityType = 'Cluster' | 'Namespace' | 'Deployment';
-
-type SelectorField =
-    | `${SelectorEntityType}`
-    | `${SelectorEntityType} Label`
-    | `${SelectorEntityType} Annotation`;
-
-type SelectorRule = {
-    fieldName: SelectorField;
-    operator: 'OR';
-    values: { value: string }[];
-};
-
-type ResourceSelector = {
-    rules: SelectorRule[];
-};
 
 export type CollectionRequest = {
     name: string;
@@ -81,6 +70,88 @@ export type ResolvedCollectionResponse = {
     deployments: ListDeployment[];
 };
 
+const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
+    Deployment: 'Deployment',
+    'Deployment Label': 'Deployment',
+    'Deployment Annotation': 'Deployment',
+    Namespace: 'Namespace',
+    'Namespace Label': 'Namespace',
+    'Namespace Annotation': 'Namespace',
+    Cluster: 'Cluster',
+    'Cluster Label': 'Cluster',
+    'Cluster Annotation': 'Cluster',
+};
+
+function isAggregateError(value: Collection | AggregateError): value is AggregateError {
+    return value instanceof AggregateError;
+}
+
+/**
+ * This function takes a raw `CollectionResponse` from the server and parses it into a representation
+ * of a `Collection` that can be supported by the current UI controls. If any incompatibilities are detected
+ * it will return a list of validation errors to the caller.
+ */
+function parseCollection(data: CollectionResponse): Collection | AggregateError {
+    const collection: Collection = {
+        name: data.name,
+        description: data.description,
+        inUse: data.inUse,
+        embeddedCollectionIds: data.embeddedCollections.map(({ id }) => id),
+        selectorRules: {
+            Deployment: {},
+            Namespace: {},
+            Cluster: {},
+        },
+    };
+
+    const errors: string[] = [];
+
+    if (data.resourceSelectors.length > 1) {
+        errors.push(
+            `Multiple 'ResourceSelectors' were found for this collection. Only a single resource selector is supported in the UI. Further validation errors will only apply to the first resource selector in the response.`
+        );
+    }
+
+    data.resourceSelectors[0]?.rules.forEach((rule) => {
+        const entity = fieldToEntityMap[rule.fieldName];
+        const field = rule.fieldName;
+        collection.selectorRules[entity] = collection.selectorRules[entity] ?? {
+            field,
+            rules: [],
+        };
+
+        const hasMultipleFieldsForEntity = collection.selectorRules[entity].field !== field;
+        const isRuleForAnnotationField = rule.fieldName.endsWith('Annotation');
+        const isUnsupportedRuleOperator = rule.operator !== 'OR';
+
+        if (hasMultipleFieldsForEntity) {
+            errors.push(
+                `Each entity type can only contain rules for a single field. A new rule was found for [${entity} -> ${field}], when rules have already been applied for [${entity} -> ${collection.selectorRules[entity].field}].`
+            );
+        }
+        if (isRuleForAnnotationField) {
+            errors.push(
+                `Collection rules for 'Annotation' field names are not supported at this time. Found field name [${rule.fieldName}].`
+            );
+        }
+        if (isUnsupportedRuleOperator) {
+            errors.push(
+                `Only the disjunction operation ('OR') is currently supported in the front end collection editor. Received an operator of [${rule.operator}].`
+            );
+        }
+
+        if (
+            !hasMultipleFieldsForEntity &&
+            !isRuleForAnnotationField &&
+            !isUnsupportedRuleOperator
+        ) {
+            collection.selectorRules[entity].rules.push(rule);
+        }
+    });
+
+    return errors.length > 0 ? new AggregateError(errors) : collection;
+}
+
 /**
  * Fetch a single collection by id
  *
@@ -93,12 +164,18 @@ export type ResolvedCollectionResponse = {
 export function getCollection(
     id: string,
     options: { withMatches: boolean } = { withMatches: false }
-): CancellableRequest<ResolvedCollectionResponse> {
+): CancellableRequest<Collection> {
     const params = qs.stringify(options);
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<ResolvedCollectionResponse>(`${collectionsBaseUrl}/${id}?${params}`, { signal })
-            .then((response) => response.data)
+            .then((response) => {
+                const parsedCollection = parseCollection(response.data.collection);
+                if (isAggregateError(parsedCollection)) {
+                    return Promise.reject(parsedCollection);
+                }
+                return parsedCollection;
+            })
     );
 }
 
