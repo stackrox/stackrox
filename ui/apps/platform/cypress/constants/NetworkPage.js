@@ -1,8 +1,6 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 import search from '../selectors/search';
 
-export const url = '/main/network';
-
 const networkPanels = {
     creatorPanel: '[data-testid="network-creator-panel"]',
     simulatorPanel: '[data-testid="network-simulator-panel"]',
