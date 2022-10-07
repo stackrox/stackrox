@@ -28,11 +28,7 @@ var (
 
 	// allImageFlavors describes all available image flavors.
 	allImageFlavors = []imageFlavorDescriptor{
-		{
-			imageFlavorName:         ImageFlavorNameDevelopmentBuild,
-			isVisibleInReleaseBuild: false,
-			constructorFunc:         DevelopmentBuildImageFlavor,
-		},
+
 		{
 			// TODO(ROX-11642): This was just hidden in release builds but should go away completely.
 			imageFlavorName:         ImageFlavorNameStackRoxIORelease,
@@ -100,47 +96,6 @@ type ImageFlavor struct {
 	Versions         version.Versions
 }
 
-// DevelopmentBuildImageFlavor returns image values for `development_build` flavor.
-func DevelopmentBuildImageFlavor() ImageFlavor {
-	v := version.GetAllVersionsDevelopment()
-	collectorTag := v.CollectorVersion + "-latest"
-	collectorSlimName := "collector"
-	collectorSlimTag := v.CollectorVersion + "-slim"
-	if buildinfo.ReleaseBuild {
-		v = version.GetAllVersionsUnified()
-		collectorTag = v.CollectorVersion
-		collectorSlimName = "collector-slim"
-		collectorSlimTag = v.CollectorVersion
-	}
-	return ImageFlavor{
-		MainRegistry:       "quay.io/rhacs-eng",
-		MainImageName:      "main",
-		MainImageTag:       v.MainVersion,
-		CentralDBImageTag:  v.MainVersion,
-		CentralDBImageName: "central-db",
-
-		CollectorRegistry:      "quay.io/rhacs-eng",
-		CollectorImageName:     "collector",
-		CollectorImageTag:      collectorTag,
-		CollectorSlimImageName: collectorSlimName,
-		CollectorSlimImageTag:  collectorSlimTag,
-
-		ScannerImageName:       "scanner",
-		ScannerSlimImageName:   "scanner-slim",
-		ScannerImageTag:        v.ScannerVersion,
-		ScannerDBImageName:     "scanner-db",
-		ScannerDBSlimImageName: "scanner-db-slim",
-
-		ChartRepo: ChartRepo{
-			URL:     "https://mirror.openshift.com/pub/rhacs/charts",
-			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
-		},
-		ImagePullSecrets: ImagePullSecrets{
-			AllowNone: true,
-		},
-		Versions: v,
-	}
-}
 
 // StackRoxIOReleaseImageFlavor returns image values for `stackrox.io` flavor.
 // TODO(ROX-11642): remove stackrox.io flavor as stackrox.io image distribution is shut down.
@@ -291,10 +246,7 @@ func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, 
 // This function will panic if running a ReleaseBuild and ROX_IMAGE_FLAVOR is not available.
 func GetImageFlavorNameFromEnv() string {
 	envValue := strings.TrimSpace(imageFlavorEnv())
-	if envValue == "" && !buildinfo.ReleaseBuild {
-		envValue = ImageFlavorNameDevelopmentBuild
-		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", imageFlavorEnvName, envValue)
-	}
+
 	err := checkImageFlavorName(envValue, buildinfo.ReleaseBuild)
 	if err != nil {
 		// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively

@@ -43,9 +43,7 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 		shouldPanicOnRelease bool
 		shouldPanicAlways    bool
 	}{
-		"development_build": {
-			expectedFlavor: DevelopmentBuildImageFlavor(),
-		},
+
 		"stackrox.io": {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
 		},
@@ -93,11 +91,7 @@ func (s *imageFlavorTestSuite) TestChartRepoAndIcon() {
 		expectedRepoURL  string
 		expectedRepoIcon string
 	}{
-		"development_build": {
-			isRelease:        []bool{false},
-			expectedRepoURL:  acsRepoURL,
-			expectedRepoIcon: acsRepoIcon,
-		},
+
 		"rhacs": {
 			isRelease:        []bool{false},
 			expectedRepoURL:  acsRepoURL,
@@ -150,9 +144,7 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorByName() {
 		expectedFlavor ImageFlavor
 		expectedError  string
 	}{
-		"development_build": {
-			expectedFlavor: DevelopmentBuildImageFlavor(),
-		},
+
 		"stackrox.io": {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
 		},
@@ -194,7 +186,7 @@ func TestGetVisibleImageFlavorNames(t *testing.T) {
 		isRelease bool
 		want      []string
 	}{
-		{"development", false, []string{"development_build", "stackrox.io", "rhacs", "opensource"}},
+		{"development", false, []string{"stackrox.io", "rhacs", "opensource"}},
 		{"release", true, []string{"rhacs", "opensource"}},
 	}
 	for _, tt := range tests {
