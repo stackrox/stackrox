@@ -658,7 +658,7 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 	return nil
 }
 
-func isOpenshiftGlobalRegistry(source *storage.ImageIntegration_Source) bool {
+func isOpenshiftGlobalPullSecret(source *storage.ImageIntegration_Source) bool {
 	return source.GetNamespace() == openshiftConfigNamespace && source.GetName() == openshiftConfigPullSecret
 }
 
@@ -683,7 +683,7 @@ func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registr
 				continue
 			}
 			// Check if the integration source is the global OpenShift registry
-			if isOpenshiftGlobalRegistry(source) {
+			if isOpenshiftGlobalPullSecret(source) {
 				filteredRegistries = append(filteredRegistries, registry)
 				continue
 			}
