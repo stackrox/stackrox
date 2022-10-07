@@ -37,6 +37,20 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// AddCollection mocks base method.
+func (m *MockDataStore) AddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddCollection", ctx, collection)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddCollection indicates an expected call of AddCollection.
+func (mr *MockDataStoreMockRecorder) AddCollection(ctx, collection interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCollection", reflect.TypeOf((*MockDataStore)(nil).AddCollection), ctx, collection)
+}
+
 // Count mocks base method.
 func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
@@ -50,6 +64,20 @@ func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
+}
+
+// DeleteCollection mocks base method.
+func (m *MockDataStore) DeleteCollection(ctx context.Context, id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCollection", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCollection indicates an expected call of DeleteCollection.
+func (mr *MockDataStoreMockRecorder) DeleteCollection(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCollection", reflect.TypeOf((*MockDataStore)(nil).DeleteCollection), ctx, id)
 }
 
 // Exists mocks base method.
