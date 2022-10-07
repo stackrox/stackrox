@@ -142,10 +142,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		case *sensor.MsgFromCompliance_AuditEvents:
 			s.auditEvents <- t.AuditEvents
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
-		case *sensor.MsgFromCompliance_NodeScan:
-			log.Infof("NodeScan received %v", msg)
 		}
-
 	}
 }
 
