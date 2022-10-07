@@ -5,10 +5,15 @@ option java_package = "io.stackrox.proto.storage";
 
 package storage;
 
+enum SensorAutoUpgrade {
+    ALLOWED = 0;
+    NOT_ALLOWED = 1;
+}
+
 // SensorUpgradeConfig encapsulates configuration relevant to sensor auto-upgrades.
 message SensorUpgradeConfig {
     // Whether to automatically trigger upgrades for out-of-date sensors.
     bool enable_auto_upgrade = 1;
     // Whether auto-upgrades can be set to true
-    bool auto_upgrade_allowed = 2;
+    SensorAutoUpgrade auto_upgrade_allowed = 2;
 }

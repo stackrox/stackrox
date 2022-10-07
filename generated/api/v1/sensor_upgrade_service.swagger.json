@@ -161,6 +161,14 @@
         }
       }
     },
+    "storageSensorAutoUpgrade": {
+      "type": "string",
+      "enum": [
+        "ALLOWED",
+        "NOT_ALLOWED"
+      ],
+      "default": "ALLOWED"
+    },
     "storageSensorUpgradeConfig": {
       "type": "object",
       "properties": {
@@ -169,7 +177,7 @@
           "description": "Whether to automatically trigger upgrades for out-of-date sensors."
         },
         "autoUpgradeAllowed": {
-          "type": "boolean",
+          "$ref": "#/definitions/storageSensorAutoUpgrade",
           "title": "Whether auto-upgrades can be set to true"
         }
       },
