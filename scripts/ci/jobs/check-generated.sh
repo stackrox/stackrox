@@ -53,4 +53,9 @@ function check-shellcheck-failing-list() {
     echo 'Checking for diffs after updating shellcheck failing list...'
     git diff --exit-code HEAD
 }
-check-shellcheck-failing-list
+check-shellcheck-failing-list || {
+    save_junit_failure "Check_Generated_Files" \
+        "Check if a script that was on the failed shellcheck list is now fixed" \
+        "$(git diff HEAD || true)"
+    exit 1
+}
