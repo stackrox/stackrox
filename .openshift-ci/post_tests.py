@@ -81,7 +81,7 @@ class StoreArtifacts(RunWithBestEffortMixin):
         self.handle_run_failure()
 
     def add_test_results(self, test_results):
-        if test_results is None:
+        if not test_results:
             return
         print("Storing test results in JUnit format")
         for to_dir, from_dir in test_results.items():
@@ -139,8 +139,8 @@ class PostClusterTest(StoreArtifacts):
         self.collect_service_logs()
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
-        self.add_test_results(test_results)
         self.store_artifacts(test_outputs)
+        self.add_test_results(test_results)
         self.handle_run_failure()
 
     def wait_for_central_api(self):
