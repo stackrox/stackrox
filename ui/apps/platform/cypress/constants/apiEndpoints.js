@@ -104,6 +104,7 @@ export const dashboard = {
 export const metadata = 'v1/metadata';
 
 export const network = {
+    networkBaseline: '/v1/networkbaseline/*', // deployment id
     networkBaselineLock: '/v1/networkbaseline/*/lock',
     networkBaselineUnlock: '/v1/networkbaseline/*/unlock',
     networkBaselinePeers: '/v1/networkbaseline/*/peers',
