@@ -90,6 +90,12 @@ func TestParsePairs(t *testing.T) {
 			valid:      false,
 		},
 		{
+			query:      "Deployment Label",
+			allowEmpty: true,
+			pairs:      []string{"", ""},
+			valid:      false,
+		},
+		{
 			query:      "Deployment Label:",
 			allowEmpty: false,
 			pairs:      []string{"", ""},
