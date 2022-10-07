@@ -12,12 +12,12 @@ var (
 )
 
 type NodeScanner interface {
-	Scan(nodeName string) (*sensor.MsgFromCompliance, error)
+	Scan(nodeName string) (*sensor.FullNodeScan, error)
 }
 
 type NodeScan struct {
 }
 
-func (n *NodeScan) Scan(nodeName string) (*sensor.MsgFromCompliance, error) {
+func (n *NodeScan) Scan(nodeName string) (*sensor.FullNodeScan, error) {
 	return nil, errors.New("Not implemented")
 }

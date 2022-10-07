@@ -33,7 +33,7 @@ var (
 	node string
 	once sync.Once
 
-	fullNodeScanInterval time.Duration = 10 * time.Second
+	fullNodeScanInterval = 10 * time.Second // FIXME: Change to global setting
 )
 
 func getNode() string {

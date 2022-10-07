@@ -1,8 +1,9 @@
 package full_nodescan
 
 import (
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 var (
@@ -12,9 +13,9 @@ var (
 type FakeNodeScanner struct {
 }
 
-func (f *FakeNodeScanner) Scan(nodeName string) (*sensor.MsgFromCompliance, error) {
+func (f *FakeNodeScanner) Scan(nodeName string) (*sensor.FullNodeScan, error) {
 	log.Infof("Generating fake scan result message...")
-	msg := &sensor.MsgFromCompliance{
+	/*msg := &sensor.MsgFromCompliance{
 		Node: nodeName,
 		Msg: &sensor.MsgFromCompliance_NodeScan{
 			NodeScan: &storage.NodeScan{
@@ -27,6 +28,24 @@ func (f *FakeNodeScanner) Scan(nodeName string) (*sensor.MsgFromCompliance, erro
 				},
 			},
 		},
+	}*/
+	msg := &sensor.FullNodeScan{
+		Id:       "",
+		Name:     "Fake Testnode",
+		ScanTime: &timestamp.Timestamp{Seconds: 42, Nanos: 24},
+		Components: &scannerV1.Components{
+			Namespace: "Testme OS",
+			OsComponents: []*scannerV1.OSComponent{
+				{
+					Name:      "Test Component",
+					Namespace: "tos4",
+					Version:   "42.24",
+				},
+			},
+			RhelComponents:     nil,
+			LanguageComponents: nil,
+		},
+		Notes: nil,
 	}
 	return msg, nil
 }
