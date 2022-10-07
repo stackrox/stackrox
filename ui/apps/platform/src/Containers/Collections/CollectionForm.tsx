@@ -80,7 +80,7 @@ function CollectionForm({
                                     <DrawerCloseButton onClick={closeDrawer} />
                                 </DrawerActions>
                             </DrawerHead>
-                            <DrawerPanelBody style={{ overflow: 'auto', height: '100%' }}>
+                            <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
                                 <CollectionResults />
                             </DrawerPanelBody>
                         </DrawerPanelContent>
