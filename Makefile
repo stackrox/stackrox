@@ -201,6 +201,12 @@ shell-style:
 	@echo "+ $@"
 	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh
 
+.PHONY: update-shellcheck-skip
+update-shellcheck-skip:
+	@echo "+ $@"
+	$(SILENT)rm -f scripts/style/shellcheck_skip.txt
+	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh update_failing_list
+
 .PHONY: ci-config-validate
 ci-config-validate:
 	@echo "+ $@"

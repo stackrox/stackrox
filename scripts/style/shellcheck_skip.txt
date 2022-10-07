@@ -1,5 +1,4 @@
 .github/workflows/scripts/cherry-pick.sh
-.github/workflows/scripts/common.sh
 .github/workflows/scripts/patch-changelog.sh
 deploy/common/deploy.sh
 deploy/common/docker-auth.sh
