@@ -273,8 +273,6 @@ export function renderListAndSidePanel(entitiesKey, entityName = null) {
             .eq(1)
             .click();
     }, entitiesKey);
-
-    cy.get(configManagementSelectors.widgets);
 }
 
 export function navigateToSingleEntityPage(entitiesKey) {
