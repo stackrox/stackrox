@@ -1,21 +1,21 @@
-import { selectors as networkPageSelectors } from '../constants/NetworkPage';
-import selectors from '../selectors/index';
-import toastSelectors from '../selectors/toast';
-import navigationSelectors from '../selectors/navigation';
+import { selectors as networkPageSelectors } from '../../constants/NetworkPage';
+import selectors from '../../selectors/index';
+import toastSelectors from '../../selectors/toast';
+import navigationSelectors from '../../selectors/navigation';
 
-import * as api from '../constants/apiEndpoints';
-import withAuth from '../helpers/basicAuth';
+import * as api from '../../constants/apiEndpoints';
+import withAuth from '../../helpers/basicAuth';
 import {
     viewRiskDeploymentByName,
     viewRiskDeploymentInNetworkGraph,
     visitRiskDeployments,
-} from '../helpers/risk';
+} from '../../helpers/risk';
 import {
     visitNetworkGraph,
     visitNetworkGraphFromLeftNav,
     visitNetworkGraphWithMockedData,
     visitNetworkGraphWithNamespaceFilter,
-} from '../helpers/networkGraph';
+} from '../../helpers/networkGraph';
 
 function uploadYAMLFile(fileName, selector) {
     cy.intercept('POST', api.network.simulate).as('postNetworkPolicySimulate');
