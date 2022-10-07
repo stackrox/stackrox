@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -47,11 +48,13 @@ type imageVulnerability struct {
 type imageComponent struct {
 	Name                 string                `json:"name,omitempty"`
 	ImageVulnerabilities []*imageVulnerability `json:"imageVulnerabilities,omitempty"`
+	Vulns                []*imageVulnerability `json:"vulns,omitempty"`
 }
 
 type image struct {
 	Name            *storage.ImageName `json:"name,omitempty"`
 	ImageComponents []*imageComponent  `json:"imageComponents,omitempty"`
+	Components      []*imageComponent  `json:"components,omitempty"`
 }
 
 type deployment struct {
@@ -73,8 +76,8 @@ func Format(results []Result) (*bytes.Buffer, error) {
 	for _, r := range results {
 		for _, d := range r.Deployments {
 			for _, i := range d.Images {
-				for _, c := range i.ImageComponents {
-					for _, v := range c.ImageVulnerabilities {
+				for _, c := range i.getComponents() {
+					for _, v := range c.getVulnerabilities() {
 						discoveredTs := "Not Available"
 						if v.DiscoveredAtImage != nil {
 							discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
@@ -124,4 +127,18 @@ func Format(results []Result) (*bytes.Buffer, error) {
 		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
 	return &zipBuf, nil
+}
+
+func (img *image) getComponents() []*imageComponent {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return img.ImageComponents
+	}
+	return img.Components
+}
+
+func (component *imageComponent) getVulnerabilities() []*imageVulnerability {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return component.ImageVulnerabilities
+	}
+	return component.Vulns
 }
