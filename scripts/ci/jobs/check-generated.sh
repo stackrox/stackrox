@@ -27,8 +27,7 @@ function generated_files-are-up-to-date() {
         if is_OPENSHIFT_CI; then
             cp /tmp/untracked-new "${ARTIFACT_DIR:-}/untracked-new"
         fi
-
-        exit 1
+        return 1
     fi
 }
 generated_files-are-up-to-date || {
