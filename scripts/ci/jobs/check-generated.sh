@@ -7,6 +7,8 @@ set -euo pipefail
 
 go mod tidy
 
+FAIL_FLAG="/tmp/fail"
+
 # shellcheck disable=SC2016
 info 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
 function generated_files-are-up-to-date() {
@@ -33,8 +35,9 @@ generated_files-are-up-to-date || {
     save_junit_failure "Check_Generated_Files" \
         "Found new untracked files after running \`make proto-generated-srcs\` and \`make go-generated-srcs\`" \
         "$(cat /tmp/untracked-new)"
+    git reset --hard HEAD
     exit 1
-}
+} || echo generated_files-are-up-to-date >> "$FAIL_FLAG"
 
 # shellcheck disable=SC2016
 info 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
@@ -53,11 +56,12 @@ check-operator-generated-files-up-to-date || {
     save_junit_failure "Check_Operator_Generated_Files" \
         "Operator generated files are not up to date" \
         "$(git diff HEAD || true)"
+    git reset --hard HEAD
     exit 1
-}
+} || echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 
 # shellcheck disable=SC2016
-info 'Check if a script that was on the failed shellcheck list is now fixed. (If this fails, run `make update-shellcheck-skip` and commit the result.)'
+echo 'Check if a script that was on the failed shellcheck list is now fixed. (If this fails, run `make update-shellcheck-skip` and commit the result.)'
 function check-shellcheck-failing-list() {
     make update-shellcheck-skip
     echo 'Checking for diffs after updating shellcheck failing list...'
@@ -67,5 +71,12 @@ check-shellcheck-failing-list || {
     save_junit_failure "Check_Shellcheck_Skip_List" \
         "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
         "$(git diff HEAD || true)"
+    git reset --hard HEAD
     exit 1
-}
+} || echo check-shellcheck-failing-list >> "$FAIL_FLAG"
+
+if [[ -e "$FAIL_FLAG" ]]; then
+    echo "ERROR: Some generated file checks failed:"
+    cat "$FAIL_FLAG"
+    exit 1
+fi
