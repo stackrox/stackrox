@@ -23,7 +23,7 @@ function generated_files-are-up-to-date() {
         cat /tmp/untracked-new
 
         if is_OPENSHIFT_CI; then
-            cp /tmp/untracked-new "${ARTIFACTS_DIR}/untracked-new"
+            cp /tmp/untracked-new "${ARTIFACT_DIR:-}/untracked-new"
         fi
 
         exit 1
