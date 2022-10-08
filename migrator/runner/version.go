@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/tecbot/gorocksdb"
@@ -64,7 +65,7 @@ func getCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
 }
 
 func getCurrentSeqNumPostgres(databases *types.Databases) (int, error) {
-	migVer, err := migrations.ReadVersionPostgres(databases.PostgresDB)
+	migVer, err := version.ReadVersionGormDB(databases.GormDB)
 	if err != nil {
 		return 0, errors.Wrap(err, "getting current postgres sequence number")
 	}
@@ -116,7 +117,7 @@ func updateVersion(databases *types.Databases, newVersion *storage.Version) erro
 	// is needed for the migrations themselves.
 	if int(newVersion.GetSeqNum()) > migrations.CurrentDBVersionSeqNumWithoutPostgres()+1 {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			migrations.SetVersionPostgres(databases.PostgresDB, newVersion)
+			version.SetVersionGormDB(databases.GormDB, newVersion)
 			return nil
 		}
 		return fmt.Errorf("running migration that rocks does not support: %d", newVersion.GetSeqNum())

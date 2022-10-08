@@ -9,6 +9,8 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
+	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
+	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -23,6 +25,7 @@ type dbCloneManagerImpl struct {
 	forceRollbackVersion string
 	adminConfig          *pgxpool.Config
 	sourceMap            map[string]string
+	gc                   migGorm.Config
 }
 
 // New - returns a new ready-to-use store.
@@ -47,9 +50,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 		switch name := clone; {
 		case knownClones.Contains(name):
 			// Get a short-lived connection for the purposes of checking the version of the clone.
-			pool := pgadmin.GetClonePool(d.adminConfig, name)
-
-			ver, err := migrations.ReadVersionPostgres(pool)
+			ver, err := migVer.ReadVersionPostgres(name)
 			if err != nil {
 				return err
 			}
@@ -57,7 +58,6 @@ func (d *dbCloneManagerImpl) Scan() error {
 
 			d.cloneMap[name] = metadata.NewPostgres(ver, name)
 			log.Debugf("Closing the pool from scan %q", name)
-			pool.Close()
 		case name == TempClone:
 			clonesToRemove.Add(name)
 		}
@@ -403,14 +403,10 @@ func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 
 // GetCurrentVersion -- gets the version of the current clone
 func (d *dbCloneManagerImpl) GetCurrentVersion() *migrations.MigrationVersion {
-	// Get a short-lived connection for the purposes of checking the version of the clone.
-	pool := pgadmin.GetClonePool(d.adminConfig, CurrentClone)
-
-	ver, err := migrations.ReadVersionPostgres(pool)
+	ver, err := migVer.ReadVersionPostgres(CurrentClone)
 	if err != nil {
 		return nil
 	}
-	pool.Close()
 
 	return ver
 }
