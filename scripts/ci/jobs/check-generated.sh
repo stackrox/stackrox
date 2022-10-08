@@ -36,8 +36,8 @@ generated_files-are-up-to-date || {
         "Found new untracked files after running \`make proto-generated-srcs\` and \`make go-generated-srcs\`" \
         "$(cat /tmp/untracked-new)"
     git reset --hard HEAD
-    exit 1
-} || echo generated_files-are-up-to-date >> "$FAIL_FLAG"
+    echo generated_files-are-up-to-date >> "$FAIL_FLAG"
+}
 
 # shellcheck disable=SC2016
 info 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
@@ -57,8 +57,8 @@ check-operator-generated-files-up-to-date || {
         "Operator generated files are not up to date" \
         "$(git diff HEAD || true)"
     git reset --hard HEAD
-    exit 1
-} || echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
+    echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
+}
 
 # shellcheck disable=SC2016
 echo 'Check if a script that was on the failed shellcheck list is now fixed. (If this fails, run `make update-shellcheck-skip` and commit the result.)'
@@ -72,8 +72,8 @@ check-shellcheck-failing-list || {
         "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
         "$(git diff HEAD || true)"
     git reset --hard HEAD
-    exit 1
-} || echo check-shellcheck-failing-list >> "$FAIL_FLAG"
+    echo check-shellcheck-failing-list >> "$FAIL_FLAG"
+}
 
 if [[ -e "$FAIL_FLAG" ]]; then
     echo "ERROR: Some generated file checks failed:"
