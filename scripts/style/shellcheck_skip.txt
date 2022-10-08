@@ -62,7 +62,6 @@ scripts/ci/bench-and-graph.sh
 scripts/ci/collect-qa-service-logs.sh
 scripts/ci/complianceoperator/create.sh
 scripts/ci/deployment-minder.sh
-scripts/ci/jobs/check-generated.sh
 scripts/ci/logcheck/check-restart-logs.sh
 scripts/ci/logcheck/check.sh
 scripts/ci/roxctl-publish/prepare.sh
