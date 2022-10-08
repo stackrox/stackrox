@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/tecbot/gorocksdb"
 	"go.etcd.io/bbolt"
 	"gorm.io/gorm"
@@ -156,7 +157,8 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 		// Close when needed
 		defer postgreshelper.Close()
 
-		ver, err := migVer.ReadVersionGormDB(gormDB)
+		ctx := sac.WithAllAccess(context.Background())
+		ver, err := migVer.ReadVersionGormDB(ctx, gormDB)
 		if err != nil {
 			return errors.Wrap(err, "failed to get version from the database")
 		}

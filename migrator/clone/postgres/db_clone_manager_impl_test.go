@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/version"
@@ -27,25 +26,13 @@ import (
 )
 
 const (
-	tempDB = "central_temp"
-
-	// Database with no typical connections that will be used as a template in a create
-	adminDB = "template1"
+	tempDB = TempClone
 )
 
 var (
-	preHistoryVer = versionPair{version: "3.0.56.0", seqNum: 62}
-	preVer        = versionPair{version: "3.0.57.0", seqNum: 65}
-	currVer       = versionPair{version: "3.0.58.0", seqNum: 65}
-	futureVer     = versionPair{version: "10001.0.0.0", seqNum: 6533}
-
-	// Current versions
-	rcVer      = versionPair{version: "3.0.58.0-rc.1", seqNum: 65}
-	releaseVer = versionPair{version: "3.0.58.0", seqNum: 65}
-	devVer     = versionPair{version: "3.0.58.x-19-g6bd31dae22-dirty", seqNum: 65}
-	nightlyVer = versionPair{version: "3.0.58.x-nightly-20210407", seqNum: 65}
-
-	invalidClones = set.NewStringSet(tempDB, "central_123", "central_garbage")
+	preVer    = versionPair{version: "3.0.57.0", seqNum: 65}
+	currVer   = versionPair{version: "3.0.58.0", seqNum: 65}
+	futureVer = versionPair{version: "10001.0.0.0", seqNum: 6533}
 )
 
 type versionPair struct {
@@ -164,7 +151,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 		Version:       futureVer.version,
 		LastPersisted: timestamp.Now().GogoProtobuf(),
 	}
-	migVer.SetVersionPostgres(migrations.GetCurrentClone(), futureVersion)
+	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), futureVersion)
 
 	// Drop previous
 	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
@@ -179,7 +166,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 		Version:       currVer.version,
 		LastPersisted: timestamp.Now().GogoProtobuf(),
 	}
-	migVer.SetVersionPostgres(migrations.GetPreviousClone(), verForPrevClone)
+	migVer.SetVersionPostgres(s.ctx, migrations.GetPreviousClone(), verForPrevClone)
 
 	// Scan the clones
 	s.EqualError(dbm.Scan(), metadata.ErrForceUpgradeDisabled)
@@ -190,7 +177,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 		Version:       preVer.version,
 		LastPersisted: timestamp.Now().GogoProtobuf(),
 	}
-	migVer.SetVersionPostgres(migrations.GetPreviousClone(), verForPrevClone)
+	migVer.SetVersionPostgres(s.ctx, migrations.GetPreviousClone(), verForPrevClone)
 
 	// New manager with force rollback version set
 	dbm = New(currVer.version, s.config, s.sourceMap)
@@ -210,7 +197,7 @@ func (s *PostgresCloneManagerSuite) TestScanRestoreFromFuture() {
 		Version:       futureVer.version,
 		LastPersisted: timestamp.Now().GogoProtobuf(),
 	}
-	migVer.SetVersionPostgres(migrations.GetRestoreClone(), futureVersion)
+	migVer.SetVersionPostgres(s.ctx, migrations.GetRestoreClone(), futureVersion)
 
 	s.EqualError(dbm.Scan(), fmt.Sprintf(metadata.ErrUnableToRestore, futureVersion.GetVersion(), version.GetMainVersion()))
 }
@@ -238,7 +225,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 		Version:       currVer.version,
 		LastPersisted: timestamp.Now().GogoProtobuf(),
 	}
-	migVer.SetVersionPostgres(migrations.GetCurrentClone(), currVersion)
+	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
 
 	dbm := New("", s.config, s.sourceMap)
 
@@ -308,7 +295,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneCurrentCurrent() {
 		Version:       currVer.version,
 		LastPersisted: timestamp.Now().GogoProtobuf(),
 	}
-	migVer.SetVersionPostgres(migrations.GetCurrentClone(), currVersion)
+	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
 
 	dbm := New("", s.config, s.sourceMap)
 
@@ -331,7 +318,7 @@ func (s *PostgresCloneManagerSuite) TestGetClonePrevious() {
 		Version:       futureVer.version,
 		LastPersisted: timestamp.Now().GogoProtobuf(),
 	}
-	migVer.SetVersionPostgres(migrations.GetCurrentClone(), futureVersion)
+	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), futureVersion)
 
 	// Set previous to the current version to simulate a rollback
 	currVersion := &storage.Version{
@@ -339,7 +326,7 @@ func (s *PostgresCloneManagerSuite) TestGetClonePrevious() {
 		Version:       currVer.version,
 		LastPersisted: timestamp.Now().GogoProtobuf(),
 	}
-	migVer.SetVersionPostgres(migrations.GetPreviousClone(), currVersion)
+	migVer.SetVersionPostgres(s.ctx, migrations.GetPreviousClone(), currVersion)
 
 	dbm := New(currVer.version, s.config, s.sourceMap)
 

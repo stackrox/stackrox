@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -19,7 +18,7 @@ import (
 )
 
 // ReadVersionPostgres - reads the version from the postgres database.
-func ReadVersionPostgres(dbName string) (*migrations.MigrationVersion, error) {
+func ReadVersionPostgres(t context.Context, dbName string) (*migrations.MigrationVersion, error) {
 	gc := migGorm.GetConfig()
 
 	ver := migrations.MigrationVersion{MainVersion: "0", SeqNum: 0}
@@ -28,16 +27,15 @@ func ReadVersionPostgres(dbName string) (*migrations.MigrationVersion, error) {
 		return &ver, nil
 	}
 	defer migGorm.Close(db)
-	return ReadVersionGormDB(db)
+	return ReadVersionGormDB(t, db)
 }
 
 // ReadVersionGormDB - reads the version from the postgres database with a gorm instance.
-func ReadVersionGormDB(db *gorm.DB) (*migrations.MigrationVersion, error) {
-	ctx := sac.WithAllAccess(context.Background())
+func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationVersion, error) {
 	pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
 	var modelVersion pkgSchema.Versions
 	ver := migrations.MigrationVersion{MainVersion: "0", SeqNum: 0}
-	result := db.Table(pkgSchema.VersionsSchema.Table).First(&modelVersion)
+	result := db.WithContext(ctx).Table(pkgSchema.VersionsSchema.Table).First(&modelVersion)
 	if result.Error != nil {
 		return &ver, nil
 	}
@@ -56,18 +54,17 @@ func ReadVersionGormDB(db *gorm.DB) (*migrations.MigrationVersion, error) {
 }
 
 // SetVersionPostgres - sets the version in the named postgres database
-func SetVersionPostgres(dbName string, updatedVersion *storage.Version) {
+func SetVersionPostgres(ctx context.Context, dbName string, updatedVersion *storage.Version) {
 	db, err := migGorm.GetConfig().ConnectWithRetries(dbName)
 	if err != nil {
 		utils.Must(errors.Wrapf(err, "failed to connect to database %s", dbName))
 	}
 	defer migGorm.Close(db)
-	SetVersionGormDB(db, updatedVersion)
+	SetVersionGormDB(ctx, db, updatedVersion)
 }
 
 // SetVersionGormDB - sets the version in the postgres database specified with the Gorm instance
-func SetVersionGormDB(db *gorm.DB, updatedVersion *storage.Version) {
-	ctx := sac.WithAllAccess(context.Background())
+func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.Version) {
 	pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
 	modelVersion, err := migSchema.ConvertVersionFromProto(updatedVersion)
 	if err != nil {
@@ -83,11 +80,11 @@ func SetVersionGormDB(db *gorm.DB, updatedVersion *storage.Version) {
 }
 
 // SetCurrentVersionPostgres - sets the current version in the postgres database
-func SetCurrentVersionPostgres() {
+func SetCurrentVersionPostgres(ctx context.Context) {
 	newVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       version.GetMainVersion(),
 		LastPersisted: timestamp.Now().GogoProtobuf(),
 	}
-	SetVersionPostgres(migrations.GetCurrentClone(), newVersion)
+	SetVersionPostgres(ctx, migrations.GetCurrentClone(), newVersion)
 }

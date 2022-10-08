@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -42,6 +43,7 @@ func New(forceVersion string, adminConfig *pgxpool.Config, sourceMap map[string]
 // from disk.
 func (d *dbCloneManagerImpl) Scan() error {
 	clones := pgadmin.GetDatabaseClones(d.adminConfig)
+	ctx := sac.WithAllAccess(context.Background())
 
 	// We use clones to collect all db clones (directory starting with db- or .restore-) matching upgrade or restore pattern.
 	// We maintain clones with a known link in cloneMap. All unknown clones are to be removed.
@@ -50,7 +52,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 		switch name := clone; {
 		case knownClones.Contains(name):
 			// Get a short-lived connection for the purposes of checking the version of the clone.
-			ver, err := migVer.ReadVersionPostgres(name)
+			ver, err := migVer.ReadVersionPostgres(ctx, name)
 			if err != nil {
 				return err
 			}
@@ -403,7 +405,8 @@ func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 
 // GetCurrentVersion -- gets the version of the current clone
 func (d *dbCloneManagerImpl) GetCurrentVersion() *migrations.MigrationVersion {
-	ver, err := migVer.ReadVersionPostgres(CurrentClone)
+	ctx := sac.WithAllAccess(context.Background())
+	ver, err := migVer.ReadVersionPostgres(ctx, CurrentClone)
 	if err != nil {
 		return nil
 	}
