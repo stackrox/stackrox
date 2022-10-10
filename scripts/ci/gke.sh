@@ -52,13 +52,6 @@ assign_env_variables() {
     echo "Machine type is set as to $machine_type"
 
     local gke_release_channel="stable"
-    if is_CIRCLECI; then
-        if "$SCRIPTS_ROOT/.circleci/pr_has_label.sh" ci-gke-release-channel-rapid; then
-            gke_release_channel="rapid"
-        elif "$SCRIPTS_ROOT/.circleci/pr_has_label.sh" ci-gke-release-channel-regular; then
-            gke_release_channel="regular"
-        fi
-    fi
     ci_export GKE_RELEASE_CHANNEL "$gke_release_channel"
     echo "Using gke release channel: $gke_release_channel"
 }
@@ -134,9 +127,6 @@ create_cluster() {
     zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ' | shuf)
     success=0
     for zone in $zones; do
-        if is_CIRCLECI; then
-            "$SCRIPTS_ROOT/.circleci/check-workflow-live.sh" || return 1
-        fi
         echo "Trying zone $zone"
         ci_export ZONE "$zone"
         gcloud config set compute/zone "${zone}"
