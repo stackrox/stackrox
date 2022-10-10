@@ -384,7 +384,7 @@ $ ./deploy/k8s/deploy-local.sh
 $ logmein
 ```
 
-See the [Installation via Scripts](#installation-via-scripts) for further reading. To read more about the environment variables see the
+See [Installation via Scripts](#installation-via-scripts) for further reading. To read more about the environment variables, consult
 [deploy/README.md](https://github.com/stackrox/stackrox/blob/master/deploy/README.md#env-variables).
 
 #### Common Makefile Targets
