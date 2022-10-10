@@ -273,10 +273,11 @@ func main() {
 		}
 
 		fm := k8s.FakeEventsManager{
-			Delay:  localConfig.Delay,
-			Mode:   localConfig.CreateMode,
-			Client: fakeClient,
-			Reader: trReader,
+			Delay:   localConfig.Delay,
+			Mode:    localConfig.CreateMode,
+			Client:  fakeClient,
+			Reader:  trReader,
+			Verbose: localConfig.Verbose,
 		}
 		min, errCh := fm.CreateEvents(ctx)
 		select {
