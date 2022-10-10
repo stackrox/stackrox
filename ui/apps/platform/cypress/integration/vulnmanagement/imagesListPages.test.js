@@ -6,9 +6,9 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
-import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
 import {
     getCountAndNounFromImageCVEsLinkResults,
+    hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyFixableCVEsLinkAndRiskAcceptanceTabs,
     verifySecondaryEntities,
@@ -29,7 +29,8 @@ describe('Vulnerability Management Images', () => {
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
-        hasExpectedHeaderColumns([
+        hasTableColumnHeadings([
+            '', // hidden
             'Image',
             'CVEs',
             'Top CVSS',
