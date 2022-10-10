@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,8 +24,7 @@ type CollectionServiceTestSuite struct {
 	mockCtrl *gomock.Controller
 	ei       *envisolator.EnvIsolator
 
-	dataStore          *datastoreMocks.MockDataStore
-	sysConfigDatastore *configDatastoreMocks.MockDataStore
+	dataStore *datastoreMocks.MockDataStore
 }
 
 var _ suite.TearDownTestSuite = (*CollectionServiceTestSuite)(nil)
@@ -34,7 +32,6 @@ var _ suite.TearDownTestSuite = (*CollectionServiceTestSuite)(nil)
 func (suite *CollectionServiceTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
-	suite.sysConfigDatastore = configDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.ei = envisolator.NewEnvIsolator(suite.T())
 
 	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
@@ -57,6 +54,7 @@ func (suite *CollectionServiceTestSuite) TestGetCollection() {
 	collection := &storage.ResourceCollection{
 		Id: "a",
 	}
+
 	// successful get
 	suite.dataStore.EXPECT().Get(gomock.Any(), request.Id).Times(1).Return(collection, true, nil)
 	collectionService := New(suite.dataStore)
