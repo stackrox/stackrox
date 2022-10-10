@@ -3,7 +3,7 @@ package full_nodescan
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,5 +19,5 @@ func (n *NodeScanSuite) TestMessageFormat() {
 	fns, err := (&FakeNodeScanner{}).Scan("someNode")
 	n.Nil(err)
 	n.NotNil(fns)
-	n.IsType(&sensor.MsgFromCompliance{}, fns)
+	n.IsType(&storage.NodeScanV2{}, fns)
 }
