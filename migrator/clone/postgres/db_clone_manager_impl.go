@@ -168,17 +168,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 			err := pgadmin.DropDB(d.sourceMap, d.adminConfig, CurrentClone)
 			if err != nil {
 				log.Errorf("Unable to drop current clone: %v", err)
-
-				// The drop of the current clone is unlikely to fail, in the event it does; we can try to
-				// process with temp.
-				err = pgadmin.DropDB(d.sourceMap, d.adminConfig, TempClone)
-				if err != nil {
-					log.Errorf("Unable to clean databases for migration: %v", err)
-					return "", true, err
-				}
-
-				d.cloneMap[TempClone] = metadata.NewPostgres(d.cloneMap[CurrentClone].GetMigVersion(), TempClone)
-				return TempClone, true, nil
+				return "", true, err
 			}
 
 			return CurrentClone, true, nil
