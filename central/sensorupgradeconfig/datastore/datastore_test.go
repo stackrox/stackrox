@@ -131,4 +131,3 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) TestDefault_NonManagedCentral() 
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Eq(expectedConfig)).Return(nil).Times(1)
 	s.Require().NoError(addDefaultConfigIfEmpty(s.dataStore))
 }
-
