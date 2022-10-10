@@ -3,7 +3,7 @@ kind: SecuredCluster
 metadata:
   name: stackrox-secured-cluster-services
 status:
-  clusterName: testing-cluster
+  clusterName: testing-cluster-this-should-fail
   conditions:
   - status: "True"
     type: Deployed
