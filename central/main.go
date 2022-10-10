@@ -315,6 +315,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		certgen.ServiceSingleton(),
 		clusterInitService.Singleton(),
 		clusterService.Singleton(),
+		collectionService.Singleton(),
 		complianceManagerService.Singleton(),
 		complianceService.Singleton(),
 		configService.Singleton(),
