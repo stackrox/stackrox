@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/resource_collection.proto",
+    "title": "api/v1/resource_collection_service.proto",
     "version": "version not set"
   },
   "consumes": [
