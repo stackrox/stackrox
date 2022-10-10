@@ -1,0 +1,21 @@
+FROM replaced-by-osci:root as builder
+# note the above FROM line is ignored and OpenShift CI uses build_root image instead
+
+COPY . /go/src/github.com/stackrox/stackrox
+WORKDIR /go/src/github.com/stackrox/stackrox
+
+
+RUN sed -i 's|.*git .*|done < <(grep -rn '//XDef:' --include=${SCRIPT_DIR}/../*.go)|' scripts/go-tool.sh
+RUN sed -i 's|STABLE_MAIN_VERSION .*|STABLE_MAIN_VERSION 3.72.x-231-g7e13305647|' status.sh
+RUN sed -i 's|STABLE_GIT_SHORT_SHA .*|STABLE_GIT_SHORT_SHA 7e13305647|' status.sh
+RUN cat scripts/go-tool.sh
+
+RUN make mock-grpc-server-build; cp bin/linux_amd64/mock-grpc-server /
+
+FROM scratch
+
+COPY --from=builder /mock-grpc-server /mock-grpc-server
+
+EXPOSE 9090
+USER 1000:1000
+ENTRYPOINT ["/mock-grpc-server"]
