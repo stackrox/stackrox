@@ -120,7 +120,7 @@ func updateVersion(databases *types.Databases, newVersion *storage.Version) erro
 	// is needed for the migrations themselves.
 	if int(newVersion.GetSeqNum()) > migrations.CurrentDBVersionSeqNumWithoutPostgres()+1 {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			version.SetVersionGormDB(ctx, databases.GormDB, newVersion)
+			version.SetVersionGormDB(ctx, databases.GormDB, newVersion, false)
 			return nil
 		}
 		return fmt.Errorf("running migration that rocks does not support: %d", newVersion.GetSeqNum())

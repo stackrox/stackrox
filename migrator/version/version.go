@@ -60,12 +60,14 @@ func SetVersionPostgres(ctx context.Context, dbName string, updatedVersion *stor
 		utils.Must(errors.Wrapf(err, "failed to connect to database %s", dbName))
 	}
 	defer migGorm.Close(db)
-	SetVersionGormDB(ctx, db, updatedVersion)
+	SetVersionGormDB(ctx, db, updatedVersion, true)
 }
 
 // SetVersionGormDB - sets the version in the postgres database specified with the Gorm instance
-func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.Version) {
-	pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
+func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.Version, ensureSchema bool) {
+	if ensureSchema {
+		pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
+	}
 	modelVersion, err := migSchema.ConvertVersionFromProto(updatedVersion)
 	if err != nil {
 		utils.Must(errors.Wrapf(err, "failed to write migration version to %s", "name"))
