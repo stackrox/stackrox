@@ -18,11 +18,9 @@ import (
 	"google.golang.org/grpc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubectl/pkg/validation"
 )
 
@@ -37,7 +35,6 @@ type UpgradeContext struct {
 
 	config config.UpgraderConfig
 
-	scheme                 *runtime.Scheme
 	resources              map[schema.GroupVersionKind]*resources.Metadata
 	clientSet              kubernetes.Interface
 	dynamicClientGenerator dynamic.Interface
@@ -136,12 +133,9 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 		return nil, errors.Wrap(err, "creating validator from OpenAPI schema")
 	}
 
-	schm := scheme.Scheme
-
 	c := &UpgradeContext{
 		ctx:                    ctx,
 		config:                 *config,
-		scheme:                 schm,
 		resources:              resourceMap,
 		clientSet:              k8sClientSet,
 		dynamicClientGenerator: dynamicClientGenerator,
@@ -230,11 +224,6 @@ func (c *UpgradeContext) DynamicClientForGVK(gvk schema.GroupVersionKind, purpos
 // ProcessID returns the ID of the current upgrade process.
 func (c *UpgradeContext) ProcessID() string {
 	return c.config.ProcessID
-}
-
-// Scheme returns the Kubernetes resource scheme we are using.
-func (c *UpgradeContext) Scheme() *runtime.Scheme {
-	return c.scheme
 }
 
 // InCertRotationMode returns whether this is a cert rotation upgrade.

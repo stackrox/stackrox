@@ -17,7 +17,7 @@ var (
 	// Created via
 	//   kubectl get --raw /openapi/v2 | gzip -c
 	//go:embed testdata/k8s-1.22.json.gz
-	k8sSchemaJSONGZ_1_22 []byte
+	k8sSchemaJSONGZ1_22 []byte
 )
 
 func TestValidateObject(t *testing.T) {
@@ -30,10 +30,10 @@ metadata:
 `)
 	require.NoError(t, err)
 
-	k8sSchemaJSON_1_22, err := gziputil.Decompress(k8sSchemaJSONGZ_1_22)
+	k8sSchemaJSON1_22, err := gziputil.Decompress(k8sSchemaJSONGZ1_22)
 	require.NoError(t, err)
 
-	schemaDoc, err := openapi_v2.ParseDocument(k8sSchemaJSON_1_22)
+	schemaDoc, err := openapi_v2.ParseDocument(k8sSchemaJSON1_22)
 	require.NoError(t, err)
 
 	validator, err := common.ValidatorFromOpenAPIDoc(schemaDoc)

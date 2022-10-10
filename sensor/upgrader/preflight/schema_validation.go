@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	defaultJsonEncoder = json.NewSerializerWithOptions(json.DefaultMetaFactory, nil, nil, json.SerializerOptions{})
+	defaultJSONEncoder = json.NewSerializerWithOptions(json.DefaultMetaFactory, nil, nil, json.SerializerOptions{})
 )
 
 type schemaValidationCheck struct{}
@@ -37,7 +37,7 @@ func (schemaValidationCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *pla
 
 func validateObject(obj k8sutil.Object, validator validation.Schema) error {
 	var buf bytes.Buffer
-	if err := defaultJsonEncoder.Encode(obj, &buf); err != nil {
+	if err := defaultJSONEncoder.Encode(obj, &buf); err != nil {
 		return fmt.Errorf("failed to serialize to JSON: %w", err)
 	}
 
