@@ -99,7 +99,7 @@ export function fetchClusterWithRetentionInformation(id: string): Promise<Cluste
 
 export type AutoUpgradeConfig = {
     enableAutoUpgrade?: boolean;
-    autoUpgradeAllowed?: boolean;
+    autoUpgradeAllowed?: 'NOT_ALLOWED' | 'ALLOWED';
 };
 
 /**
@@ -115,7 +115,7 @@ export function getAutoUpgradeConfig(): Promise<AutoUpgradeConfig> {
  * Saves the cluster autoupgrade config.
  */
 export function saveAutoUpgradeConfig(config: AutoUpgradeConfig): Promise<AutoUpgradeConfig> {
-    const wrappedObject = { config };
+    const wrappedObject = { config: { enableAutoUpgrade: config.enableAutoUpgrade } };
     return axios.post(autoUpgradeConfigUrl, wrappedObject);
 }
 

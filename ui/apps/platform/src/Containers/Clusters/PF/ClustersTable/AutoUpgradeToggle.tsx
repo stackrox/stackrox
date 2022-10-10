@@ -66,7 +66,7 @@ function AutoUpgradeToggle(): ReactElement {
     if (!isFetched) {
         return <></>;
     }
-    return autoUpgradeConfig.autoUpgradeAllowed ? (
+    return autoUpgradeConfig.autoUpgradeAllowed === 'ALLOWED' ? (
         <Switch
             id="auto-upgrade-toggle"
             label={label}

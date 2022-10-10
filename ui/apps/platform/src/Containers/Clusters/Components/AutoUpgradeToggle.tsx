@@ -56,7 +56,7 @@ function AutoUpgradeToggle(): ReactElement {
     if (!isFetched) {
         return <></>;
     }
-    return autoUpgradeConfig.autoUpgradeAllowed ? (
+    return autoUpgradeConfig.autoUpgradeAllowed === 'ALLOWED' ? (
         <ToggleSwitch
             id="enableAutoUpgrade"
             toggleHandler={toggleAutoUpgrade}
