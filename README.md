@@ -61,7 +61,7 @@ To [report a vulnerability or bug](https://github.com/stackrox/stackrox/security
 StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
 Then run the helm quick install script or proceed to section [Manual Helm Installation](#manual-helm-installation) for configuration options.
 
-**<details><summary>Install StackRox via Helm Installation Script </summary>**
+<details><summary>Install StackRox via Helm Installation Script</summary>
 
 ```sh
 /bin/bash <(curl -fsSL https://raw.githubusercontent.com/stackrox/stackrox/master/scripts/quick-helm-install.sh)
@@ -91,7 +91,7 @@ Deploying using Helm consists of 4 steps
 3. Create a cluster configuration and a service identity (init bundle)
 4. Deploy the **StackRox Secured Cluster Services** using that configuration and those credentials (this step can be done multiple times to add more clusters to the StackRox Central Service)
 
-**<details><summary>Install StackRox Central Services </summary>**
+<details><summary>Install StackRox Central Services</summary>
 
 #### Default Central Installation
 First, the StackRox Central Services will be added to your Kubernetes cluster. This includes the UI and Scanner. To start, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
@@ -132,7 +132,7 @@ helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-ser
 
 </details>
 
-**<details><summary>Install StackRox Secured Cluster Services </summary>**
+<details><summary>Install StackRox Secured Cluster Services</summary>
 
 #### Default Secured Cluster Installation
 Next, the secured cluster component will need to be deployed to collect information on from the Kubernetes nodes.
