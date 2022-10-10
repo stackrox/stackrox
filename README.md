@@ -9,7 +9,7 @@
         - [Installation via Scripts](#installation-via-scripts)
             - [Kubernetes Distributions (EKS, AKS, GKE)](#kubernetes-distributions-eks-aks-gke)
             - [OpenShift](#openshift)
-            - [Docker for Desktop or Minikube](#docker-for-desktop-or-minikube)
+            - [Docker Desktop, Colima, or minikube](#docker-desktop-colima-or-minikube)
         - [Accessing the StackRox User Interface (UI)](#accessing-the-stackrox-user-interface-ui)
     - [Development](#development)
         - [Quickstart](#quickstart)
@@ -59,7 +59,7 @@ To [report a vulnerability or bug](https://github.com/stackrox/stackrox/security
 ### Quick Installation using Helm
 
 StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
-Then run the helm quick install script or proceed to section [Manual Helm Installation](#manual-helm-installation) for configuration options.
+Then run the helm quick install script or proceed to section [Manual Installation using Helm](#manual-installation-using-helm) for configuration options.
 
 <details><summary>Install StackRox via Helm Installation Script</summary>
 
@@ -384,7 +384,7 @@ $ ./deploy/k8s/deploy-local.sh
 $ logmein
 ```
 
-See the [deployment guide](#how-to-deploy) for further reading. To read more about the environment variables see the
+See the [Installation via Scripts](#installation-via-scripts) for further reading. To read more about the environment variables see the
 [deploy/README.md](https://github.com/stackrox/stackrox/blob/master/deploy/README.md#env-variables).
 
 #### Common Makefile Targets
