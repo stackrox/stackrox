@@ -3,6 +3,7 @@ package plan
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -10,6 +11,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -138,10 +142,19 @@ func TestPreserveResources(t *testing.T) {
 		},
 	}
 
-	mergedDS, err := applyPreservedProperties(scheme.Scheme, newDS, oldDS)
+	newDSUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(newDS)
+	require.NoError(t, err)
+	oldDSUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(oldDS)
+	require.NoError(t, err)
+	mergedDSUnstructured, err := applyPreservedProperties(
+		&unstructured.Unstructured{Object: newDSUnstructured},
+		&unstructured.Unstructured{Object: oldDSUnstructured})
 	require.NoError(t, err)
 
-	assert.Equal(t, expectedMergedDS, mergedDS)
+	var mergedDS v1.DaemonSet
+	require.NoError(t, convert(scheme.Scheme, mergedDSUnstructured, &mergedDS))
+
+	assert.Equal(t, expectedMergedDS, &mergedDS)
 }
 
 func Test_applyPreservedProperties(t *testing.T) {
@@ -170,8 +183,29 @@ func Test_applyPreservedProperties(t *testing.T) {
 		},
 	}
 
-	r, err := applyPreservedProperties(scheme.Scheme, newObj, oldObj)
+	oldObjUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(oldObj)
 	require.NoError(t, err)
+	newObjUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(newObj)
+	require.NoError(t, err)
+
+	r, err := applyPreservedProperties(
+		&unstructured.Unstructured{Object: newObjUnstructured},
+		&unstructured.Unstructured{Object: oldObjUnstructured})
+	require.NoError(t, err)
+
+	var rSvc corev1.Service
 	assert.Equal(t, serviceGVK, r.GetObjectKind().GroupVersionKind())
-	assert.Equal(t, "1.2.3.4", r.(*corev1.Service).Spec.ClusterIP)
+	require.NoError(t, convert(scheme.Scheme, r, &rSvc))
+	assert.Equal(t, "1.2.3.4", rSvc.Spec.ClusterIP)
+}
+
+// convert converts objects, adequately transferring type metadata.
+func convert(scheme *runtime.Scheme, oldObj k8sutil.Object, newObj k8sutil.Object) error {
+	if err := scheme.Convert(oldObj, newObj, nil); err != nil {
+		return err
+	}
+	if newObj.GetObjectKind().GroupVersionKind() == (schema.GroupVersionKind{}) {
+		newObj.GetObjectKind().SetGroupVersionKind(oldObj.GetObjectKind().GroupVersionKind())
+	}
+	return nil
 }

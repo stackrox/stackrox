@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func readFile(openFn OpenFunc) ([]byte, error) {
@@ -22,7 +24,7 @@ func readFile(openFn OpenFunc) ([]byte, error) {
 	return io.ReadAll(reader)
 }
 
-func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents Contents) (k8sutil.Object, error) {
+func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents Contents) (*unstructured.Unstructured, error) {
 	dataMap := make(map[string][]byte)
 
 	// If the object is optional, perform a first pass to check if all files are present (and return nil if files are
@@ -93,11 +95,15 @@ func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents 
 	}
 	lbls[common.UpgradeResourceLabelKey] = common.UpgradeResourceLabelValue
 	obj.SetLabels(lbls)
-	return obj, nil
+	objData, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting object to unstructured")
+	}
+	return &unstructured.Unstructured{Object: objData}, nil
 }
 
-func createDynamicObjects(bundleContents Contents) ([]k8sutil.Object, error) {
-	var allObjects []k8sutil.Object
+func createDynamicObjects(bundleContents Contents) ([]*unstructured.Unstructured, error) {
+	var allObjects []*unstructured.Unstructured
 	for _, objDesc := range common.DynamicBundleObjects {
 		obj, err := createDynamicObject(objDesc, bundleContents)
 		if err != nil {

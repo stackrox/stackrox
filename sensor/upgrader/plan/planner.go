@@ -3,7 +3,6 @@ package plan
 import (
 	"reflect"
 
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
@@ -15,22 +14,17 @@ type planner struct {
 	rollback bool
 }
 
-func (p *planner) objectsAreEqual(a, b k8sutil.Object) bool {
-	var ua, ub unstructured.Unstructured
-	if err := p.ctx.Scheme().Convert(a, &ua, nil); err != nil {
-		return false
-	}
-	if err := p.ctx.Scheme().Convert(b, &ub, nil); err != nil {
-		return false
-	}
+func (p *planner) objectsAreEqual(a, b *unstructured.Unstructured) bool {
+	aCopy := a.DeepCopy()
+	bCopy := b.DeepCopy()
 
-	normalizeObject(&ua)
-	normalizeObject(&ub)
+	normalizeObject(aCopy)
+	normalizeObject(bCopy)
 
-	return reflect.DeepEqual(ua.Object, ub.Object)
+	return reflect.DeepEqual(aCopy.Object, bCopy.Object)
 }
 
-func (p *planner) GenerateExecutionPlan(desired []k8sutil.Object) (*ExecutionPlan, error) {
+func (p *planner) GenerateExecutionPlan(desired []*unstructured.Unstructured) (*ExecutionPlan, error) {
 	currObjs, err := p.ctx.ListCurrentObjects()
 	if err != nil {
 		return nil, err
@@ -53,7 +47,7 @@ func (p *planner) GenerateExecutionPlan(desired []k8sutil.Object) (*ExecutionPla
 			lastModifiedByThisProcessID := currObj.GetAnnotations()[common.LastUpgradeIDAnnotationKey] == p.ctx.ProcessID()
 
 			if !p.rollback {
-				newObj, err := applyPreservedProperties(p.ctx.Scheme(), desiredObj, currObj)
+				newObj, err := applyPreservedProperties(desiredObj, currObj)
 				if err != nil {
 					log.Errorf("Failed to preserve properties for object %v: %v", ref, err)
 				} else {
