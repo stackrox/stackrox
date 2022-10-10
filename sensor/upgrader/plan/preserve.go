@@ -149,7 +149,7 @@ func applyPreservedTolerations(newObj, oldObj *unstructured.Unstructured) error 
 		return errors.Wrap(err, "failed to extract pod spec from new object")
 	}
 
-	if tolerations := nestedValueNoCopyOrDefault[map[string]interface{}](oldPodSpec, nil, "tolerations"); tolerations != nil {
+	if tolerations := nestedValueNoCopyOrDefault[[]interface{}](oldPodSpec, nil, "tolerations"); tolerations != nil {
 		if err := unstructured.SetNestedField(newPodSpec, tolerations, "tolerations"); err != nil {
 			return errors.Wrap(err, "failed to preserve tolerations from old pod spec")
 		}
