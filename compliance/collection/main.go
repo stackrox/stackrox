@@ -246,10 +246,15 @@ func scanNode(client sensor.ComplianceService_CommunicateClient, scanner full_no
 	// from compliance, we need to get the following info to central
 	// List of components, comprised of Name & Version for each one, plus some metadata like OS, Scan time, etc
 	log.Infof("scanNode: Sending data to sensor.")
+	nodeName := getNode()
 
-	msg, err := scanner.Scan(getNode())
+	result, err := scanner.Scan(nodeName)
 	if err != nil {
 		return errors.Wrap(err, "error scanning node")
 	}
-	return client.Send(msg)
+	msg := sensor.MsgFromCompliance{
+		Node: nodeName,
+		Msg:  &sensor.MsgFromCompliance_NodeScanV2{NodeScanV2: result},
+	}
+	return client.Send(&msg)
 }
