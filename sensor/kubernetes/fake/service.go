@@ -9,14 +9,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getRandProtocol() string {
-	protocols := []string{"TCP", "UDP", "SCTP"}
-	return protocols[rand.Intn(len(protocols))]
-}
+var (
+	protocols  = [...]string{"TCP", "UDP", "SCTP"}
+	ipFamilies = [...]string{"IPv4", "IPv6"}
+)
 
-func getRandIP() string {
-	ip := generateIP()
-	return ip
+func getRandProtocol() string {
+	return protocols[rand.Intn(len(protocols))]
 }
 
 func getRandPort() uint32 {
@@ -24,7 +23,6 @@ func getRandPort() uint32 {
 }
 
 func getIPFamily() string {
-	ipFamilies := []string{"IPv4", "IPv6"}
 	return ipFamilies[rand.Intn(len(ipFamilies))]
 }
 
@@ -36,7 +34,7 @@ func getClusterIP(numLabels int) *v1.Service {
 	} else {
 		labels = createMap(numLabels)
 	}
-	clusterIP := getRandIP()
+	clusterIP := generateIP()
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randStringWithLength(16),
@@ -71,7 +69,7 @@ func getNodePort(numLabels int) *v1.Service {
 	} else {
 		labels = createMap(numLabels)
 	}
-	clusterIP := getRandIP()
+	clusterIP := generateIP()
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randStringWithLength(16),
@@ -107,7 +105,7 @@ func getLoadBalancer(numLabels int) *v1.Service {
 	} else {
 		labels = createMap(numLabels)
 	}
-	clusterIP := getRandIP()
+	clusterIP := generateIP()
 	internalTrafficPolicy := v1.ServiceInternalTrafficPolicyCluster
 	allocateLoadBalancerNodePorts := true
 	ipFamilyPolicy := v1.IPFamilyPolicySingleStack
@@ -144,7 +142,7 @@ func getLoadBalancer(numLabels int) *v1.Service {
 			LoadBalancer: v1.LoadBalancerStatus{
 				Ingress: []v1.LoadBalancerIngress{
 					{
-						IP: getRandIP(),
+						IP: generateIP(),
 					},
 				},
 			},
@@ -159,12 +157,12 @@ func getService(workload ServiceWorkload) []runtime.Object {
 		objects = append(objects, clusterIP)
 	}
 	for i := 0; i < workload.NumNodePorts; i++ {
-		clusterIP := getNodePort(workload.NumLabels)
-		objects = append(objects, clusterIP)
+		nodePort := getNodePort(workload.NumLabels)
+		objects = append(objects, nodePort)
 	}
 	for i := 0; i < workload.NumLoadBalancers; i++ {
-		clusterIP := getLoadBalancer(workload.NumLabels)
-		objects = append(objects, clusterIP)
+		loadBalancer := getLoadBalancer(workload.NumLabels)
+		objects = append(objects, loadBalancer)
 	}
 	return objects
 }
