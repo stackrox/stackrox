@@ -297,9 +297,6 @@ func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*s
 }
 
 func (b *datastoreImpl) SearchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return b.store.GetByQuery(ctx, q)
-	}
 	namespaces, _, err := b.searchNamespaces(ctx, q)
 	b.updateNamespacePriority(namespaces...)
 	return namespaces, err

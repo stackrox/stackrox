@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -244,17 +245,16 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 		rbacUtils.NewClusterPermissionEvaluator(saClusterID,
 			resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 
-	pq := PaginatedQuery{}
-	q, err := pq.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-	namespaces, err := resolver.root.NamespaceDataStore.SearchNamespaces(ctx, q)
+	namespaces, err := resolver.root.Namespaces(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_CLUSTERS,
+		ID:    saClusterID,
+	}), PaginatedQuery{})
+
 	if err != nil {
 		return evaluators, err
 	}
-	for _, namespaceMetadata := range namespaces {
-		namespaceName := namespaceMetadata.GetName()
+	for _, namespace := range namespaces {
+		namespaceName := namespace.data.GetMetadata().GetName()
 		evaluators[namespaceName] = rbacUtils.NewNamespacePermissionEvaluator(saClusterID,
 			namespaceName, resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 	}
