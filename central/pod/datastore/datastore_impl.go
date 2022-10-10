@@ -191,6 +191,25 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 
 	ds.processFilter.UpdateByPod(pod)
 
+	// Since we no longer need to do the dackbox type indexing with Postgres, we no longer need to hold
+	// the lock while the operation completes to ensure consistency.  So don't lock and don't bother to
+	// call the no-op indexing code.
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		oldPod, found, err := ds.podStore.Get(ctx, pod.GetId())
+		if err != nil {
+			return errors.Wrapf(err, "retrieving pod %q from store", pod.GetName())
+		}
+		if found {
+			mergeContainerInstances(pod, oldPod)
+		}
+
+		if err := ds.podStore.Upsert(ctx, pod); err != nil {
+			return errors.Wrapf(err, "inserting pod %q to store", pod.GetName())
+		}
+
+		return nil
+	}
+
 	err := ds.keyedMutex.DoStatusWithLock(pod.GetId(), func() error {
 		oldPod, found, err := ds.podStore.Get(ctx, pod.GetId())
 		if err != nil {
@@ -270,20 +289,29 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 	}
 	ds.processFilter.DeleteByPod(pod)
 
-	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
+	// Since we no longer need to do the dackbox type indexing with Postgres, we no longer need to hold
+	// the lock while the operation completes to ensure consistency.  So don't lock and don't bother to
+	// call the no-op indexing code.
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		if err := ds.podStore.Delete(ctx, id); err != nil {
 			return err
 		}
-		if err := ds.podIndexer.DeletePod(id); err != nil {
+	} else {
+		err = ds.keyedMutex.DoStatusWithLock(id, func() error {
+			if err := ds.podStore.Delete(ctx, id); err != nil {
+				return err
+			}
+			if err := ds.podIndexer.DeletePod(id); err != nil {
+				return err
+			}
+			if err := ds.podStore.AckKeysIndexed(ctx, id); err != nil {
+				return err
+			}
+			return nil
+		})
+		if err != nil {
 			return err
 		}
-		if err := ds.podStore.AckKeysIndexed(ctx, id); err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return err
 	}
 
 	deleteIndicatorsCtx := sac.WithGlobalAccessScopeChecker(ctx,

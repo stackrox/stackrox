@@ -291,15 +291,24 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		errorList.AddError(err)
 	}
 
-	// Delete should be last to ensure that the above is always cleaned up even in the case of crash
-	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
-		if err := ds.deploymentStore.Delete(ctx, id); err != nil {
-			return err
+	// With Postgres we are no longer have to remove indexes and things from a separate store.  So no need
+	// to acquire a lock.
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		err = ds.deploymentStore.Delete(ctx, id)
+		if err != nil {
+			errorList.AddError(err)
 		}
-		return nil
-	})
-	if err != nil {
-		errorList.AddError(err)
+	} else {
+		// Delete should be last to ensure that the above is always cleaned up even in the case of crash
+		err = ds.keyedMutex.DoStatusWithLock(id, func() error {
+			if err := ds.deploymentStore.Delete(ctx, id); err != nil {
+				return err
+			}
+			return nil
+		})
+		if err != nil {
+			errorList.AddError(err)
+		}
 	}
 
 	return errorList.ToError()
