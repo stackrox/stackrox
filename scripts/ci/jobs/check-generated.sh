@@ -7,8 +7,10 @@ set -euo pipefail
 
 go mod tidy
 
+FAIL_FLAG="/tmp/fail"
+
 # shellcheck disable=SC2016
-echo 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
+info 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
 function generated_files-are-up-to-date() {
     git ls-files --others --exclude-standard >/tmp/untracked
     make proto-generated-srcs
@@ -23,16 +25,21 @@ function generated_files-are-up-to-date() {
         cat /tmp/untracked-new
 
         if is_OPENSHIFT_CI; then
-            cp /tmp/untracked-new "${ARTIFACTS_DIR}/untracked-new"
+            cp /tmp/untracked-new "${ARTIFACT_DIR:-}/untracked-new"
         fi
-
-        exit 1
+        return 1
     fi
 }
-generated_files-are-up-to-date
+generated_files-are-up-to-date || {
+    save_junit_failure "Check_Generated_Files" \
+        "Found new untracked files after running \`make proto-generated-srcs\` and \`make go-generated-srcs\`" \
+        "$(cat /tmp/untracked-new)"
+    git reset --hard HEAD
+    echo generated_files-are-up-to-date >> "$FAIL_FLAG"
+}
 
 # shellcheck disable=SC2016
-echo 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
+info 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
 function check-operator-generated-files-up-to-date() {
     make -C operator/ generate
     make -C operator/ manifests
@@ -44,7 +51,13 @@ function check-operator-generated-files-up-to-date() {
     echo 'needs to change due to formatting changes in the generated files.'
     git diff --exit-code HEAD
 }
-check-operator-generated-files-up-to-date
+check-operator-generated-files-up-to-date || {
+    save_junit_failure "Check_Operator_Generated_Files" \
+        "Operator generated files are not up to date" \
+        "$(git diff HEAD || true)"
+    git reset --hard HEAD
+    echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
+}
 
 # shellcheck disable=SC2016
 echo 'Check if a script that was on the failed shellcheck list is now fixed. (If this fails, run `make update-shellcheck-skip` and commit the result.)'
@@ -53,4 +66,16 @@ function check-shellcheck-failing-list() {
     echo 'Checking for diffs after updating shellcheck failing list...'
     git diff --exit-code HEAD
 }
-check-shellcheck-failing-list
+check-shellcheck-failing-list || {
+    save_junit_failure "Check_Shellcheck_Skip_List" \
+        "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
+        "$(git diff HEAD || true)"
+    git reset --hard HEAD
+    echo check-shellcheck-failing-list >> "$FAIL_FLAG"
+}
+
+if [[ -e "$FAIL_FLAG" ]]; then
+    echo "ERROR: Some generated file checks failed:"
+    cat "$FAIL_FLAG"
+    exit 1
+fi

@@ -71,6 +71,7 @@ find_fork_point() {
     set -o pipefail
 }
 
+# shellcheck disable=SC2154
 PR_COMMITS=$(gh pr list -s merged \
     --search "milestone:$MILESTONE" \
     --base "$main_branch" \
