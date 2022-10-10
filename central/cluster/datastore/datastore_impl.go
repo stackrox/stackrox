@@ -403,6 +403,13 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 		return err
 	}
 
+	// Postgres does not need to update indexes and things of that nature and thus does not need to obtain a lock
+	// to perform a simple database upsert.
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		clusterHealthStatus.Id = id
+		return ds.clusterHealthStorage.Upsert(ctx, clusterHealthStatus)
+	}
+
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
