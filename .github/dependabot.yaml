@@ -33,7 +33,6 @@ updates:
       - "ci-no-api-tests"
       - "ci-no-ui-tests"
       - "ci-openshift-4-tests"
-      - "ci-rhel-tests"
       - "dependencies"
     reviewers:
       - "stackrox/backend-dep-updaters"
