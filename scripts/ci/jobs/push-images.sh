@@ -65,6 +65,9 @@ push_images() {
             push_operator_image_set "$push_context" "$brand"
         fi
     fi
+    if [[ -n "${MOCK_GRPC_SERVER_IMAGE:-}" ]]; then
+        push_mock_grpc_server_image
+    fi
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]] && [[ -n "${MAIN_IMAGE}" ]]; then
         add_build_comment_to_pr || {
