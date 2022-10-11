@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -315,6 +316,7 @@ func applyPaginationForSearchAfter(query *query) error {
 	return nil
 }
 
+// TODO: we should modify innerJoins and queryEntry. If we would introduce new query type (like Query_SAC) - we can easy manipulate WHERE part, but we are not able to manipulate join part!!! In theory, we should change inner join part and ignore where part!!!
 func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
 	nowForQuery := time.Now()
 	standardizeFieldNamesInQuery(q)
@@ -565,6 +567,27 @@ func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Que
 
 func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db *pgxpool.Pool) ([]searchPkg.Result, error) {
 	queryStr := query.AsSQL()
+
+	// TODO: Let's try!!!
+	indexInner := strings.Index(queryStr, "inner join deployments on")
+	if indexInner != -1 {
+		reSacWhere := regexp.MustCompile(` (and|where) (([(]{1,2})deployments.ClusterId.* \$[0-9]+([)]{1,3}))`)
+		matchesSacWhere := reSacWhere.FindStringSubmatch(queryStr)
+
+		// Index 3 = "(", Index 4 = ")"
+		endLen := len(matchesSacWhere[3])
+		if strings.Index(matchesSacWhere[2], "or deployments.Namespace") != -1 {
+			endLen += 1
+		}
+
+		if endLen < len(matchesSacWhere[4]) {
+			matchesSacWhere[2] = matchesSacWhere[2][:len(matchesSacWhere[2])-1]
+			matchesSacWhere[0] = matchesSacWhere[0][:len(matchesSacWhere[0])-1]
+		}
+
+		queryStr = strings.Replace(queryStr, matchesSacWhere[0], " ", -1)
+		queryStr = strings.Replace(queryStr[:indexInner], "deployments.", "sub_query_deployments.", -1) + "inner join (select * from deployments where " + matchesSacWhere[2] + " LIMIT 2000000) AS sub_query_deployments " + strings.Replace(queryStr[indexInner+22:], "deployments.", "sub_query_deployments.", -1)
+	}
 
 	// Assumes that ids are strings.
 	numPrimaryKeys := len(schema.PrimaryKeys())
