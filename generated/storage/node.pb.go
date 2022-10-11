@@ -622,7 +622,6 @@ func (m *NodeScan) Clone() *NodeScan {
 	return cloned
 }
 
-// Names and data types are designed to follow NodeScan as close as possible
 type NodeScanV2 struct {
 	NodeId               string           `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" search:"Node ID,store" sql:"pk"`
 	NodeName             string           `protobuf:"bytes,2,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty" search:"Node,store"`
