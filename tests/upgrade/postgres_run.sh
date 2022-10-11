@@ -18,6 +18,10 @@ source "$TEST_ROOT/tests/upgrade/validation.sh"
 test_upgrade() {
     info "Starting Rocks to Postgres upgrade test"
 
+    # Need to push the flag to ci so that is where it needs to be for the part
+    # of the test.  We start this test with RocksDB
+    ci_export ROX_POSTGRES_DATASTORE "false"
+
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: test_upgrade <log-output-dir>"
     fi
