@@ -242,6 +242,7 @@ func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searche
 		sacQueryFilter = nil
 	}
 	scopedQuery := search.ConjunctionQuery(q, sacQueryFilter)
+	scopedQuery.Pagination = q.GetPagination()
 
 	var opts []blevesearch.SearchOption
 	results, err := searcher.Search(ctx, scopedQuery, opts...)
