@@ -2,12 +2,7 @@ import qs from 'qs';
 
 import { ListDeployment } from 'types/deployment.proto';
 import { SearchFilter, ApiSortOption } from 'types/search';
-import {
-    Collection,
-    ResourceSelector,
-    SelectorEntityType,
-    SelectorField,
-} from 'Containers/Collections/types';
+import { ResourceSelector, SelectorField } from 'Containers/Collections/types';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';

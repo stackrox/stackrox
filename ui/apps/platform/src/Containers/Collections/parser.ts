@@ -1,5 +1,5 @@
 import { CollectionResponse } from 'services/CollectionsService';
-import { Collection, SelectorField, SelectorEntityType } from './types';
+import { Collection, SelectorField, SelectorEntityType, isSupportedSelectorField } from './types';
 
 const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
     Deployment: 'Deployment',
@@ -44,7 +44,7 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
         const field = rule.fieldName;
         const existingEntityField = collection.selectorRules[entity]?.field;
         const hasMultipleFieldsForEntity = existingEntityField && existingEntityField !== field;
-        const isRuleForAnnotationField = rule.fieldName.endsWith('Annotation');
+        const isUnsupportedField = !isSupportedSelectorField(field);
         const isUnsupportedRuleOperator = rule.operator !== 'OR';
 
         if (hasMultipleFieldsForEntity) {
@@ -52,9 +52,9 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
                 `Each entity type can only contain rules for a single field. A new rule was found for [${entity} -> ${field}], when rules have already been applied for [${entity} -> ${existingEntityField}].`
             );
         }
-        if (isRuleForAnnotationField) {
+        if (isUnsupportedField) {
             errors.push(
-                `Collection rules for 'Annotation' field names are not supported at this time. Found field name [${rule.fieldName}].`
+                `Collection rules for 'Annotation' field names are not supported at this time. Found field name [${field}].`
             );
         }
         if (isUnsupportedRuleOperator) {
@@ -63,7 +63,7 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
             );
         }
 
-        if (hasMultipleFieldsForEntity || isRuleForAnnotationField || isUnsupportedRuleOperator) {
+        if (hasMultipleFieldsForEntity || isUnsupportedField || isUnsupportedRuleOperator) {
             return;
         }
 
@@ -77,5 +77,9 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
         collection.selectorRules[entity]?.rules.push(rule);
     });
 
-    return errors.length > 0 ? new AggregateError(errors) : collection;
+    if (errors.length > 0) {
+        return new AggregateError(errors);
+    }
+
+    return collection;
 }
