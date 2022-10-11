@@ -1,0 +1,5 @@
+/* Force a light background behind integration images to prevent contrast issues with existing logos
+when using PF Dark theme */
+.pf-theme-dark .integration-tile .pf-c-card__header {
+  background-color: var(--pf-global--Color--light-100);
+}

@@ -10,6 +10,8 @@ import {
 } from '@patternfly/react-core';
 import { Link } from 'react-router-dom';
 
+import './IntegrationTile.css';
+
 type IntegrationType = {
     label: string;
     image: string;
@@ -34,7 +36,7 @@ function IntegrationTile({
     const { image, label, categories } = integration;
 
     return (
-        <Link to={linkTo} data-testid="integration-tile">
+        <Link to={linkTo} data-testid="integration-tile" className="integration-tile">
             <Card isHoverable isCompact isFlat style={styleCard}>
                 <CardHeader className="pf-u-mb-lg">
                     <CardHeaderMain>
