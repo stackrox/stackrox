@@ -97,13 +97,13 @@ type Deployments struct {
 	Id                            string                  `gorm:"column:id;type:varchar;primaryKey"`
 	Name                          string                  `gorm:"column:name;type:varchar"`
 	Type                          string                  `gorm:"column:type;type:varchar"`
-	Namespace                     string                  `gorm:"column:namespace;type:varchar;index:sac_filter,type:btree"`
+	Namespace                     string                  `gorm:"column:namespace;type:varchar;index:deployments_sac_filter,type:btree"`
 	NamespaceId                   string                  `gorm:"column:namespaceid;type:varchar"`
 	OrchestratorComponent         bool                    `gorm:"column:orchestratorcomponent;type:bool"`
 	Labels                        map[string]string       `gorm:"column:labels;type:jsonb"`
 	PodLabels                     map[string]string       `gorm:"column:podlabels;type:jsonb"`
 	Created                       *time.Time              `gorm:"column:created;type:timestamp"`
-	ClusterId                     string                  `gorm:"column:clusterid;type:varchar;index:sac_filter,type:btree"`
+	ClusterId                     string                  `gorm:"column:clusterid;type:varchar;index:deployments_sac_filter,type:btree"`
 	ClusterName                   string                  `gorm:"column:clustername;type:varchar"`
 	Annotations                   map[string]string       `gorm:"column:annotations;type:jsonb"`
 	Priority                      int64                   `gorm:"column:priority;type:bigint"`
