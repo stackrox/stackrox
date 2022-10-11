@@ -12,6 +12,7 @@ from common import popen_graceful_kill
 class BaseTest:
     def __init__(self):
         self.test_outputs = []
+        self.test_results = {}
 
     def run_with_graceful_kill(self, args, timeout, post_start_hook=None):
         with subprocess.Popen(args) as cmd:
@@ -61,6 +62,10 @@ class OperatorE2eTest(BaseTest):
             "operator/build/kuttl-test-artifacts",
             "operator/build/kuttl-test-artifacts-upgrade",
         ]
+        self.test_results = {
+            "kuttl-test-artifacts": "operator/build/kuttl-test-artifacts",
+            "kuttl-test-artifacts-upgrade": "operator/build/kuttl-test-artifacts-upgrade",
+        }
 
     def run(self):
         print("Deploying operator")
@@ -72,7 +77,7 @@ class OperatorE2eTest(BaseTest):
         print("Executing operator upgrade test")
         self.run_with_graceful_kill(
             ["make", "-C", "operator", "test-upgrade"],
-            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
+            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC
         )
 
         print("Executing operator e2e tests")

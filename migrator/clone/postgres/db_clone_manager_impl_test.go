@@ -240,7 +240,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 
 	// Need to migrate from Rocks because Rocks is more current.
 	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion)
-	s.Equal(clone, tempDB)
+	s.Equal(clone, CurrentClone)
 	s.True(migrateRocks)
 	s.Nil(err)
 
@@ -265,7 +265,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 	// Need to re-scan to get the clone deletion
 	s.Nil(dbm.Scan())
 	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion)
-	s.Equal(clone, tempDB)
+	s.Equal(clone, CurrentClone)
 	s.True(migrateRocks)
 	s.Nil(err)
 }

@@ -23,5 +23,3 @@ pkg/auth/**/*   @stackrox/merlin
 pkg/sac/**/*    @stackrox/merlin
 
 pkg/images/defaults/**/* @stackrox/maple
-
-.circleci/**/* @stackrox/circleci

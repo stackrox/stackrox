@@ -200,6 +200,7 @@ function PolicyScopeForm() {
                             selections={excludedImageNames}
                             onSelect={handleChangeMultiSelect}
                             isCreatable
+                            createText="Images starting with "
                             onCreateOption={() => {}}
                             isDisabled={hasAuditLogEventSource || !hasBuildLifecycle}
                             onClear={() => setFieldValue('excludedImageNames', [])}

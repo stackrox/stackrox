@@ -88,7 +88,7 @@ var (
             type:{{$field.Options.Index}}{{- /**/ -}}
         {{end}}{{- /**/ -}}
         {{if $field|isSacScoping }};{{- /**/ -}}
-            index:sac_filter,type:{{- if $obj.IsClusterScope }}hash{{else}}btree{{end}}{{- /**/ -}}
+            index:{{$schema.Table|lowerCamelCase|lowerCase}}_sac_filter,type:{{- if $obj.IsClusterScope }}hash{{else}}btree{{end}}{{- /**/ -}}
         {{end}}{{- /**/ -}}
         "`
     {{- end}}

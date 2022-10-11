@@ -127,11 +127,6 @@ $(CONTROLLER_GEN_BIN): deps
 	@# We need to install a legacy version for compatibility reasons.
 	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
 
-GOVERALLS_BIN := $(GOBIN)/goveralls
-$(GOVERALLS_BIN): deps
-	@echo "+ $@"
-	$(SILENT)cd tools/test/ && go install github.com/mattn/goveralls
-
 ROXVET_BIN := $(GOBIN)/roxvet
 .PHONY: $(ROXVET_BIN)
 $(ROXVET_BIN): deps
@@ -527,7 +522,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
