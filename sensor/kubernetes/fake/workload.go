@@ -67,6 +67,14 @@ type RBACWorkload struct {
 	NumServiceAccounts int `yaml:"numServiceAccounts"`
 }
 
+// ServiceWorkload defines the workload of services
+type ServiceWorkload struct {
+	NumLabels        int `yaml:"numLabels"`
+	NumClusterIPs    int `yaml:"numClusterIPs"`
+	NumNodePorts     int `yaml:"numNodePorts"`
+	NumLoadBalancers int `yaml:"numLoadBalancers"`
+}
+
 // Workload is the definition of a scale workload
 type Workload struct {
 	DeploymentWorkload    []DeploymentWorkload    `yaml:"deploymentWorkload"`
@@ -74,5 +82,6 @@ type Workload struct {
 	NodeWorkload          NodeWorkload            `yaml:"nodeWorkload"`
 	NetworkWorkload       NetworkWorkload         `yaml:"networkWorkload"`
 	RBACWorkload          RBACWorkload            `yaml:"rbacWorkload"`
+	ServiceWorkload       ServiceWorkload         `yaml:"serviceWorkload"`
 	NumNamespaces         int                     `yaml:"numNamespaces"`
 }
