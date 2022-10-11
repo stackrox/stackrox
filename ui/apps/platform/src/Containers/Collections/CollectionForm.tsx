@@ -64,15 +64,24 @@ function CollectionForm({
     showBreadcrumbs,
 }: CollectionFormProps) {
     const history = useHistory();
-    const drawerToggle = useSelectToggle(useInlineDrawer);
-    const actionMenuToggle = useSelectToggle();
+    const {
+        isOpen: drawerIsOpen,
+        toggleSelect: toggleDrawer,
+        closeSelect: closeDrawer,
+        openSelect: openDrawer,
+    } = useSelectToggle(useInlineDrawer);
+    const {
+        isOpen: menuIsOpen,
+        toggleSelect: toggleMenu,
+        closeSelect: closeMenu,
+    } = useSelectToggle();
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const { toasts, addToast, removeToast } = useToasts();
 
     useEffect(() => {
-        drawerToggle.toggleSelect(useInlineDrawer);
-    }, [drawerToggle, useInlineDrawer]);
+        toggleDrawer(useInlineDrawer);
+    }, [toggleDrawer, useInlineDrawer]);
 
     const pageTitle = initialData ? initialData.collection.name : 'Create collection';
 
@@ -116,7 +125,7 @@ function CollectionForm({
 
     return (
         <>
-            <Drawer isExpanded={drawerToggle.isOpen} isInline={useInlineDrawer}>
+            <Drawer isExpanded={drawerIsOpen} isInline={useInlineDrawer}>
                 <DrawerContent
                     panelContent={
                         <DrawerPanelContent
@@ -128,7 +137,7 @@ function CollectionForm({
                                 <Title headingLevel="h2">Collection results</Title>
                                 <Text>See a live preview of current matches.</Text>
                                 <DrawerActions>
-                                    <DrawerCloseButton onClick={drawerToggle.closeSelect} />
+                                    <DrawerCloseButton onClick={closeDrawer} />
                                 </DrawerActions>
                             </DrawerHead>
                             <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
@@ -157,18 +166,18 @@ function CollectionForm({
                                 {action.type === 'view' && hasWriteAccessForCollections && (
                                     <>
                                         <Dropdown
-                                            onSelect={actionMenuToggle.closeSelect}
+                                            onSelect={closeMenu}
                                             position="right"
                                             toggle={
                                                 <DropdownToggle
                                                     isPrimary
-                                                    onToggle={actionMenuToggle.onToggle}
+                                                    onToggle={toggleMenu}
                                                     toggleIndicator={CaretDownIcon}
                                                 >
                                                     Actions
                                                 </DropdownToggle>
                                             }
-                                            isOpen={actionMenuToggle.isOpen}
+                                            isOpen={menuIsOpen}
                                             dropdownItems={[
                                                 <DropdownItem
                                                     key="Edit collection"
@@ -207,12 +216,12 @@ function CollectionForm({
                                         />
                                     </>
                                 )}
-                                {drawerToggle.isOpen ? (
-                                    <Button variant="secondary" onClick={drawerToggle.closeSelect}>
+                                {drawerIsOpen ? (
+                                    <Button variant="secondary" onClick={closeDrawer}>
                                         Hide collection results
                                     </Button>
                                 ) : (
-                                    <Button variant="secondary" onClick={drawerToggle.openSelect}>
+                                    <Button variant="secondary" onClick={openDrawer}>
                                         Preview collection results
                                     </Button>
                                 )}
