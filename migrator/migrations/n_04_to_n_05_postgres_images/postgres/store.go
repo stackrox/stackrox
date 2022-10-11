@@ -1,5 +1,5 @@
 // This file was originally generated with
-// //go:generate cp ../../../../central/image/datastore/store/postgres/store.go store_impl.go
+// //go:generate cp ../../../../central/image/datastore/store/postgres/store.go store.go
 
 package postgres
 
@@ -28,8 +28,7 @@ const (
 	imageCVEsTable           = pkgSchema.ImageCvesTableName
 	imageCVEEdgesTable       = pkgSchema.ImageCveEdgesTableName
 
-	countStmt  = "SELECT COUNT(*) FROM " + imagesTable
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM " + imagesTable + " WHERE Id = $1)"
+	countStmt = "SELECT COUNT(*) FROM " + imagesTable
 
 	getImageMetaStmt = "SELECT serialized FROM " + imagesTable + " WHERE Id = $1"
 	getImageIDsStmt  = "SELECT Id FROM " + imagesTable
@@ -582,21 +581,31 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Image) error {
 
 // Upsert upserts image into the store.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Image) error {
-	return s.upsert(ctx, obj)
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
-		return 0, err
-	}
-	return count, nil
+	return pgutils.Retry2(func() (int, error) {
+		row := s.db.QueryRow(ctx, countStmt)
+		var count int
+		if err := row.Scan(&count); err != nil {
+			return 0, err
+		}
+		return count, nil
+	})
 }
 
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, error) {
+	return pgutils.Retry3(func() (*storage.Image, bool, error) {
+		return s.retryableGet(ctx, id)
+	})
+}
+
+func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image, bool, error) {
 	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return nil, false, err
@@ -817,6 +826,12 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	return pgutils.Retry2(func() ([]string, error) {
+		return s.retryableGetIDs(ctx)
+	})
+}
+
+func (s *storeImpl) retryableGetIDs(ctx context.Context) ([]string, error) {
 	rows, err := s.db.Query(ctx, getImageIDsStmt)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
@@ -835,6 +850,12 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
+	return pgutils.Retry3(func() ([]*storage.Image, []int, error) {
+		return s.retryableGetMany(ctx, ids)
+	})
+}
+
+func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return nil, nil, err
