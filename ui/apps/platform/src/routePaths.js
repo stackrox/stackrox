@@ -12,7 +12,8 @@ export const authResponsePrefix = '/auth/response/';
 export const dashboardPath = `${mainPath}/dashboard`;
 export const networkBasePath = `${mainPath}/network`;
 export const networkPath = `${networkBasePath}/:deploymentId?/:externalType?`;
-export const networkPathPF = `${mainPath}/network-graph`;
+export const networkBasePathPF = `${mainPath}/network-graph`;
+export const networkPathPF = `${networkBasePathPF}/:detailType?/:detailId?`;
 export const violationsBasePath = `${mainPath}/violations`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const clustersBasePath = `${mainPath}/clusters`;
@@ -148,7 +149,7 @@ const vulnManagementPathToLabelMap = {
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
     [networkBasePath]: 'Network Graph',
-    [networkPathPF]: 'Network Graph-Patternfly',
+    [networkBasePathPF]: 'Network Graph-Patternfly',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
     ...vulnManagementPathToLabelMap,

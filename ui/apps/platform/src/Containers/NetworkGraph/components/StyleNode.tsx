@@ -151,6 +151,7 @@ const StyleNode: React.FunctionComponent<StyleNodeProps> = ({
     regrouping,
     onShowCreateConnector,
     onHideCreateConnector,
+    onSelect,
     ...rest
 }) => {
     const data = element.getData();
@@ -174,6 +175,16 @@ const StyleNode: React.FunctionComponent<StyleNodeProps> = ({
     }, [detailsLevel, onHideCreateConnector]);
 
     const LabelIcon = passedData.labelIcon;
+
+    function onSelectWithData(id) {
+        console.log(id);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        onSelect(id, passedData);
+    }
+    console.log('in StyleNode.tsx');
+    console.log({ passedData });
+    console.log(rest);
     return (
         <Layer id={hover ? TOP_LAYER : DEFAULT_LAYER}>
             <g ref={hoverRef as React.LegacyRef<SVGGElement>}>
@@ -181,6 +192,7 @@ const StyleNode: React.FunctionComponent<StyleNodeProps> = ({
                     element={element}
                     scaleLabel={detailsLevel !== ScaleDetailsLevel.high}
                     scaleNode={hover && detailsLevel === ScaleDetailsLevel.low}
+                    onSelect={onSelectWithData}
                     {...rest}
                     {...passedData}
                     dragging={dragging}

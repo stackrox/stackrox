@@ -92,6 +92,94 @@ const TopologyComponent = ({ searchFilter }: NetworkGraphProps) => {
     const controller = useVisualizationController();
 
     React.useEffect(() => {
+        const model: Model = {
+            graph: {
+                id: 'g1',
+                type: 'graph',
+                layout: 'ColaGroupsLayout',
+            },
+            nodes: [
+                {
+                    id: 'n1',
+                    label: 'Central',
+                    type: 'node',
+                    width: 75,
+                    height: 75,
+                    data: {
+                        id: 'n1',
+                        label: 'Central',
+                        type: 'node',
+                        width: 75,
+                        height: 75,
+                        nodeType: 'DEPLOYMENT',
+                    },
+                },
+                {
+                    id: 'n2',
+                    label: 'Sensor',
+                    type: 'node',
+                    width: 75,
+                    height: 75,
+                    data: {
+                        id: 'n2',
+                        label: 'Sensor',
+                        type: 'node',
+                        width: 75,
+                        height: 75,
+                        nodeType: 'DEPLOYMENT',
+                    },
+                },
+                {
+                    id: 'group1',
+                    type: 'group',
+                    children: ['n1', 'n2'],
+                    group: true,
+                    label: 'stackrox',
+                    style: { padding: 15 },
+                    data: {
+                        collapsible: false,
+                        showContextMenu: false,
+                        nodeType: 'NAMESPACE',
+                    },
+                },
+                {
+                    id: 'n3',
+                    label: 'Google/us-central1 | 34.72.0.0/16',
+                    type: 'node',
+                    width: 75,
+                    height: 75,
+                    data: {
+                        id: 'n3',
+                        label: 'Google/us-central1 | 34.72.0.0/16',
+                        type: 'node',
+                        width: 150,
+                        height: 150,
+                        nodeType: 'DEPLOYMENT',
+                    },
+                },
+            ],
+            edges: [
+                {
+                    id: 'e1',
+                    type: 'edge',
+                    source: 'n1',
+                    target: 'n2',
+                },
+                {
+                    id: 'e2',
+                    type: 'edge',
+                    source: 'n2',
+                    target: 'n1',
+                },
+                {
+                    id: 'e3',
+                    type: 'edge',
+                    source: 'n1',
+                    target: 'n3',
+                },
+            ],
+        };
+
         function onSelect(ids: string[]) {
             const newSelectedId = ids?.[0] || null;
             // check if selected id is for a node
@@ -130,10 +218,12 @@ const TopologyComponent = ({ searchFilter }: NetworkGraphProps) => {
 
 type NetworkGraphProps = {
     searchFilter?: SearchFilter;
+    detailType?: string;
+    detailId?: string;
 };
 
 const NetworkGraph: React.FunctionComponent<NetworkGraphProps> = React.memo(
-    ({ searchFilter }: NetworkGraphProps) => {
+    ({ searchFilter, detailType, detailId }: NetworkGraphProps) => {
         const controller = new Visualization();
         controller.registerLayoutFactory(defaultLayoutFactory);
         controller.registerComponentFactory(defaultComponentFactory);
@@ -142,7 +232,11 @@ const NetworkGraph: React.FunctionComponent<NetworkGraphProps> = React.memo(
         return (
             <div className="pf-ri__topology-demo">
                 <VisualizationProvider controller={controller}>
-                    <TopologyComponent />
+                    <TopologyComponent
+                        searchFilter={searchFilter}
+                        detailType={detailType}
+                        detailId={detailId}
+                    />
                 </VisualizationProvider>
             </div>
         );

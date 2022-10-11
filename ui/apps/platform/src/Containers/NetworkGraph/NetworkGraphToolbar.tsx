@@ -1,14 +1,6 @@
 /* eslint-disable react/no-array-index-key */
 import React from 'react';
-import {
-    Select,
-    SelectOption,
-    SelectVariant,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
-} from '@patternfly/react-core';
+import { Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { SearchFilter } from 'types/search';
@@ -18,13 +10,6 @@ type NetworkGraphToolbarProps = {
     searchFilter?: SearchFilter;
     searchOptions: string[];
 };
-
-const firstOptions = [
-    { value: 'Filter 1', disabled: false, isPlaceholder: true },
-    { value: 'A', disabled: false },
-    { value: 'B', disabled: false },
-    { value: 'C', disabled: false },
-];
 
 function NetworkGraphToolbar({
     handleChangeSearchFilter,

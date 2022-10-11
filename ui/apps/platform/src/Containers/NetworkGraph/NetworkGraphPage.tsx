@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
+import { useParams } from 'react-router-dom';
+import { Divider, PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
 import useURLSearch from 'hooks/useURLSearch';
@@ -10,9 +11,11 @@ import NetworkGraph from './NetworkGraph';
 import './NetworkGraphPage.css';
 
 function NetworkGraphPage() {
+    const { detailType, detailId } = useParams();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
 
+    // console.log({ detailType, detailId });
     useEffect(() => {
         const { request, cancel } = getSearchOptionsForCategory('DEPLOYMENTS');
         request
@@ -42,8 +45,13 @@ function NetworkGraphPage() {
                     searchOptions={searchOptions}
                 />
             </PageSection>
+            <Divider />
             <PageSection className="network-graph no-padding">
-                <NetworkGraph searchFilter={searchFilter} />
+                <NetworkGraph
+                    searchFilter={searchFilter}
+                    detailType={detailType}
+                    detailId={detailId}
+                />
             </PageSection>
         </>
     );
