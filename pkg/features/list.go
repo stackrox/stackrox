@@ -29,7 +29,7 @@ var (
 	SearchPageUI = registerFeature("Enable search page instead of search modal in UI", "ROX_SEARCH_PAGE_UI", false)
 
 	// PatternFlyDarkTheme enables dark theme support on PatternFly pages and components
-	PatternFlyDarkTheme = registerFeature("Enabled dark theme support on PatternFly pages", "ROX_PF_DARK_THEME", false)
+	PatternFlyDarkTheme = registerFeature("Enable dark theme support on PatternFly pages", "ROX_PF_DARK_THEME", false)
 
 	// DecommissionedClusterRetention enables the setting in System Configuration.
 	DecommissionedClusterRetention = registerFeature("Enable Decommissioned Cluster Retention in System Configuration", "ROX_DECOMMISSIONED_CLUSTER_RETENTION", true)
