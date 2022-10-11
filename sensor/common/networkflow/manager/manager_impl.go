@@ -127,9 +127,9 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 		Process: &storage.ProcessIndicatorUniqueKey{
 			PodId:               i.key.podID,
 			ContainerName:       i.key.containerName,
-			ProcessName:         i.key.process.process_name,
-			ProcessExecFilePath: i.key.process.process_exec,
-			ProcessArgs:         i.key.process.process_args,
+			ProcessName:         i.key.process.processName,
+			ProcessExecFilePath: i.key.process.processExec,
+			ProcessArgs:         i.key.process.processArgs,
 		},
 	}
 
@@ -155,13 +155,13 @@ func (c *connection) String() string {
 }
 
 type processInfo struct {
-	process_name string
-	process_args string
-	process_exec string
+	processName string
+	processArgs string
+	processExec string
 }
 
 func (p *processInfo) String() string {
-	return fmt.Sprintf("%s: %s %s", p.process_exec, p.process_name, p.process_args)
+	return fmt.Sprintf("%s: %s %s", p.processExec, p.processName, p.processArgs)
 }
 
 type containerEndpoint struct {
@@ -487,8 +487,6 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		protocol: ep.endpoint.L4Proto.ToProtobuf(),
 	}
 
-	log.Debugf("Enriched: %s", indicator)
-
 	// Multiple endpoints from a collector can result in a single enriched endpoint,
 	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
 	if oldTS, found := processesListening[indicator]; !found || oldTS < status.lastSeen {
@@ -801,9 +799,9 @@ func getProcessKey(originator *storage.NetworkProcessUniqueKey) *processInfo {
 	log.Debugf("Got process key: %s %s %s", originator.ProcessExecFilePath, originator.ProcessName, originator.ProcessArgs)
 
 	return &processInfo{
-		process_name: originator.ProcessName,
-		process_args: originator.ProcessArgs,
-		process_exec: originator.ProcessExecFilePath,
+		processName: originator.ProcessName,
+		processArgs: originator.ProcessArgs,
+		processExec: originator.ProcessExecFilePath,
 	}
 }
 

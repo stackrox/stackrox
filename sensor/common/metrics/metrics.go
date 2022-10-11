@@ -170,12 +170,12 @@ func IncrementTotalNetworkEndpointsReceivedCounter(numberOfEndpoints int) {
 	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfEndpoints))
 }
 
-// IncrementTotalNetworkEndpointsSentCounter increments the total number of endpoints sent
+// IncrementTotalProcessesSentCounter increments the total number of endpoints sent
 func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
 	totalNetworkEndpointsSentCounter.Add(float64(numberOfProcesses))
 }
 
-// IncrementTotalNetworkEndpointsReceivedCounter increments the total number of endpoints received
+// IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
 func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
 	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfProcesses))
 }
