@@ -969,6 +969,7 @@ openshift_ci_mods() {
     info "Env A-Z dump:"
     env | sort | grep -E '^[A-Z]' || true
     cat /logs/process-log.txt
+    die
 
     info "Git log:"
     git log --oneline --decorate -n 20 || true
