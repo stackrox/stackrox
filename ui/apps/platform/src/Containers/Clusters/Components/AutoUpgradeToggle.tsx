@@ -8,10 +8,7 @@ import {
 } from 'services/ClustersService';
 
 function AutoUpgradeToggle(): ReactElement {
-    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig>({
-        enableAutoUpgrade: false,
-    });
-    const [isFetched, setIsFetched] = useState(false);
+    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig | null>(null);
 
     function fetchConfig(): void {
         getAutoUpgradeConfig()
@@ -20,9 +17,6 @@ function AutoUpgradeToggle(): ReactElement {
             })
             .catch(() => {
                 // TODO display message when there is a place for minor errors
-            })
-            .finally(() => {
-                setIsFetched(true);
             });
     }
 
@@ -31,6 +25,10 @@ function AutoUpgradeToggle(): ReactElement {
     }, []);
 
     function toggleAutoUpgrade(): void {
+        if (!autoUpgradeConfig) {
+            return;
+        }
+
         // @TODO, wrap this settings change in a confirmation prompt of some sort
         const previousValue = autoUpgradeConfig.enableAutoUpgrade;
         const newConfig = {
@@ -53,7 +51,7 @@ function AutoUpgradeToggle(): ReactElement {
         });
     }
 
-    if (!isFetched) {
+    if (!autoUpgradeConfig) {
         return <></>;
     }
     return autoUpgradeConfig.autoUpgradeAllowed === 'ALLOWED' ? (

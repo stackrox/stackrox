@@ -10,10 +10,7 @@ import {
 // TODO: Connect this to the APIs and use real data
 function AutoUpgradeToggle(): ReactElement {
     const [isDisabled, setIsDisabled] = useState(true);
-    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig>({
-        enableAutoUpgrade: false,
-    });
-    const [isFetched, setIsFetched] = useState(false);
+    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig | null>(null);
 
     function fetchConfig(): void {
         getAutoUpgradeConfig()
@@ -24,9 +21,6 @@ function AutoUpgradeToggle(): ReactElement {
             .catch(() => {
                 // TODO display message when there is a place for minor errors
                 setIsDisabled(false);
-            })
-            .finally(() => {
-                setIsFetched(true);
             });
     }
 
@@ -63,7 +57,7 @@ function AutoUpgradeToggle(): ReactElement {
 
     const label = 'Automatically upgrade secured clusters';
 
-    if (!isFetched) {
+    if (!autoUpgradeConfig) {
         return <></>;
     }
     return autoUpgradeConfig.autoUpgradeAllowed === 'ALLOWED' ? (
