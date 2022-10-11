@@ -43,7 +43,8 @@ describe('Configuration Management Controls', () => {
         hasCountWidgetsFor(['Nodes']);
     });
 
-    it('should click on the nodes count widget in the entity page and show the nodes tab', () => {
+    // ROX-13028: skip pending investigation why sometimes 0 nodes for control, therefore widget is disabled.
+    it.skip('should click on the nodes count widget in the entity page and show the nodes tab', () => {
         renderListAndSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('nodes', 'entityList');
@@ -81,7 +82,8 @@ describe('Configuration Management Controls', () => {
         cy.get(configManagementSelectors.failingNodes).should('have.length', 0);
     });
 
-    it('should show failing nodes in the control findings section of a failing control', () => {
+    // ROX-13028: skip pending investigation why sometimes table has 0 failing nodes.
+    it.skip('should show failing nodes in the control findings section of a failing control', () => {
         visitConfigurationManagementEntities(entitiesKey);
 
         cy.get(configManagementSelectors.tableCells)
