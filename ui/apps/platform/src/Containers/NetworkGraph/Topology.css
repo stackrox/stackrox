@@ -70,3 +70,7 @@
     --pf-c-page__main-section--PaddingLeft: 0;
     --pf-c-page__main-section--PaddingBottom: 0;
 }
+
+.pf-c-tab-content[hidden] {
+    display: none !important;
+}
