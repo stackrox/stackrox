@@ -307,7 +307,7 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 		Time:                      types.TimestampNow(),
 	}
 
-	//metrics.IncrementTotalNetworkFlowsSentCounter(len(flowsToSend.Updated))
+	metrics.IncrementTotalProcessesSentCounter(len(processesToSend.ProcessesListeningOnPorts))
 	log.Debugf("Processes update : %v", processesToSend)
 	select {
 	case <-m.done.Done():
@@ -469,7 +469,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
-			//flowMetrics.ContainerIDMisses.Inc()
+			flowMetrics.ContainerIDMisses.Inc()
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
 		}
 		return
@@ -489,7 +489,6 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 
 	log.Debugf("Enriched: %s", indicator)
 
-	// TODO: We can probably remove this check for processes
 	// Multiple endpoints from a collector can result in a single enriched endpoint,
 	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
 	if oldTS, found := processesListening[indicator]; !found || oldTS < status.lastSeen {
@@ -544,7 +543,7 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 			delete(hostConns.endpoints, ep)
 		}
 	}
-	flowMetrics.HostEndpointsRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
+	flowMetrics.HostProcessesRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
 }
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS) {
@@ -891,8 +890,6 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 			ts = timestamp.InfiniteFuture
 		}
 		updatedEndpoints[ep] = ts
-
-		log.Debugf("Received endpoint: %s", ep)
 	}
 
 	return updatedEndpoints
