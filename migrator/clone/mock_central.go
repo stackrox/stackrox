@@ -218,6 +218,12 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 	m.updateBoth = false
 	if clone != "" && pgClone != "" {
 		m.updateBoth = true
+
+		// If we are migrating from Rocks, it could be a subsequent upgrade.  If so we will
+		// have deleted the current Postgres DB.  We need to re-create it here for the rest
+		// of the test.  This will naturally be recreated in migrator, but we are focused on the clones
+		// here and such that code is not executed as part of this test
+		pgtest.CreateDatabase(m.t, migrations.GetCurrentClone())
 	}
 
 	require.NoError(m.t, dbm.Persist(clone, pgClone, m.updateBoth))

@@ -99,7 +99,7 @@ dependencies {
 
     implementation 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
-    implementation group: 'com.opencsv', name: 'opencsv', version: '5.5.1'
+    implementation group: 'com.opencsv', name: 'opencsv', version: '5.7.0'
 
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
 
@@ -119,7 +119,7 @@ dependencies {
     // See https://github.com/gradle/gradle/issues/12646.
     constraints {
         "codenarc"("org.codehaus.groovy:groovy:2.5.10")
-        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.10")
+        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.18")
     }
 
     implementation 'org.javers:javers-core:6.7.0'

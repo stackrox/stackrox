@@ -1,5 +1,4 @@
 **/go.sum
-.circleci/config.yml
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
 central/cluster/datastore/datastore_impl_test.go
