@@ -166,7 +166,7 @@ func (p *processInfo) String() string {
 type containerEndpoint struct {
 	endpoint    net.NumericEndpoint
 	containerID string
-	processKey  processInfo
+	processKey  *processInfo
 }
 
 func (e *containerEndpoint) String() string {
@@ -478,7 +478,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		key: processUniqueKey{
 			podID:         container.PodID,
 			containerName: container.ContainerName,
-			process:       ep.processKey,
+			process:       *ep.processKey,
 		},
 		port:     ep.endpoint.IPAndPort.Port,
 		protocol: ep.endpoint.L4Proto.ToProtobuf(),
@@ -530,6 +530,11 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
+		if ep.processKey == nil {
+			// No way to update a process if the data isn't there
+			continue
+		}
+
 		m.enrichProcessListening(&ep, status, processesListening)
 		if status.used && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
@@ -786,18 +791,14 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	return nil
 }
 
-func getProcessKey(originator *storage.NetworkProcessUniqueKey) processInfo {
+func getProcessKey(originator *storage.NetworkProcessUniqueKey) *processInfo {
 	if originator == nil {
-		return processInfo{
-			process_name: "",
-			process_args: "",
-			process_exec: "",
-		}
+		return nil
 	}
 
 	log.Debugf("Got process key: %s %s %s", originator.ProcessExecFilePath, originator.ProcessName, originator.ProcessArgs)
 
-	return processInfo{
+	return &processInfo{
 		process_name: originator.ProcessName,
 		process_args: originator.ProcessArgs,
 		process_exec: originator.ProcessExecFilePath,
