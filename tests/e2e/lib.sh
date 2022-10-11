@@ -163,8 +163,8 @@ patch_resources_for_test() {
     require_environment "TEST_ROOT"
     require_environment "API_HOSTNAME"
 
-    kubectl -n stackrox patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/tests/yamls/endpoints-test-lb-patch.yaml)"
-    kubectl -n stackrox apply -f "$TEST_ROOT/tests/yamls/endpoints-test-netpol.yaml"
+    kubectl -n stackrox patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/tests/e2e/yaml/endpoints-test-lb-patch.yaml)"
+    kubectl -n stackrox apply -f "$TEST_ROOT/tests/e2e/yaml/endpoints-test-netpol.yaml"
     # shellcheck disable=SC2034
     for i in $(seq 1 20); do
         if curl -sk --fail "https://${API_HOSTNAME}:8446/v1/metadata" &>/dev/null; then
