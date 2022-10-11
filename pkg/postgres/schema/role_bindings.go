@@ -46,8 +46,8 @@ const (
 type RoleBindings struct {
 	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`
-	Namespace   string            `gorm:"column:namespace;type:varchar;index:sac_filter,type:btree"`
-	ClusterId   string            `gorm:"column:clusterid;type:varchar;index:sac_filter,type:btree"`
+	Namespace   string            `gorm:"column:namespace;type:varchar;index:rolebindings_sac_filter,type:btree"`
+	ClusterId   string            `gorm:"column:clusterid;type:varchar;index:rolebindings_sac_filter,type:btree"`
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
 	ClusterRole bool              `gorm:"column:clusterrole;type:bool"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
