@@ -9,6 +9,7 @@ export type FeatureFlagEnvVar =
     | 'ROX_QUAY_ROBOT_ACCOUNTS'
     | 'ROX_SEARCH_PAGE_UI'
     | 'ROX_SYSTEM_HEALTH_PF'
+    | 'ROX_PF_DARK_THEME'
     | 'ROX_POSTGRES_DATASTORE'
     | 'ROX_NETWORK_GRAPH_PATTERNFLY'
     ;

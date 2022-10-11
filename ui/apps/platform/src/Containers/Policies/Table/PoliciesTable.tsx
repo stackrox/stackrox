@@ -33,6 +33,7 @@ import EnableDisableNotificationModal, {
 } from 'Containers/Policies/Modal/EnableDisableNotificationModal';
 import useTableSelection from 'hooks/useTableSelection';
 import { AlertVariantType } from 'hooks/patternfly/useToasts';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { policiesBasePath } from 'routePaths';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { SearchFilter } from 'types/search';
@@ -112,6 +113,8 @@ function PoliciesTable({
     searchFilter,
     searchOptions,
 }: PoliciesTableProps): React.ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const pfDarkThemeEnabled = isFeatureFlagEnabled('ROX_PF_DARK_THEME');
     const history = useHistory();
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
         LabelAndNotifierIdsForType[]
@@ -236,7 +239,9 @@ function PoliciesTable({
                             className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
                         >
                             <SearchFilterInput
-                                className="w-full pf-search-shim"
+                                className={`${
+                                    pfDarkThemeEnabled ? '' : 'theme-light'
+                                } w-full pf-search-shim`}
                                 handleChangeSearchFilter={handleChangeSearchFilter}
                                 placeholder="Filter policies"
                                 searchCategory="POLICIES"

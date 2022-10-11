@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useMediaQuery } from 'react-responsive';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
+
 const defaultContextData = {
     isDarkMode: false,
     toggle: () => {},
@@ -38,16 +40,20 @@ const useEffectDarkMode = () => {
 
 const ThemeProvider = ({ children }) => {
     const [themeState, setThemeState] = useEffectDarkMode();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const pfDarkThemeEnabled = isFeatureFlagEnabled('ROX_PF_DARK_THEME');
 
     // to prevent theme flicker while getting theme from localStorage
     if (!themeState.hasThemeMounted) {
         return <div />;
     }
 
+    const lightThemeClasses = ['theme-light'];
+    const darkThemeClasses = pfDarkThemeEnabled ? ['theme-dark', 'pf-theme-dark'] : ['theme-dark'];
+
     // Note: Once the app has been fully migrated to PatternFly the `theme-light` and
     // `theme-dark` classes can be removed
-    const getThemeClasses = (isDarkMode) =>
-        isDarkMode ? ['theme-dark', 'pf-theme-dark'] : ['theme-light'];
+    const getThemeClasses = (isDarkMode) => (isDarkMode ? darkThemeClasses : lightThemeClasses);
     document.documentElement.classList.add(...getThemeClasses(themeState.isDarkMode));
     document.documentElement.classList.remove(...getThemeClasses(!themeState.isDarkMode));
 

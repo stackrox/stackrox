@@ -12,6 +12,7 @@ import {
 
 import PageTitle from 'Components/PageTitle';
 import SearchFilterInput from 'Components/SearchFilterInput';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import {
     SearchResponse,
     fetchGlobalSearchResults,
@@ -34,6 +35,8 @@ import {
 import './SearchPage.css';
 
 function SearchPage(): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const pfDarkThemeEnabled = isFeatureFlagEnabled('ROX_PF_DARK_THEME');
     const history = useHistory();
     const { search } = useLocation();
 
@@ -183,7 +186,9 @@ function SearchPage(): ReactElement {
                         </Alert>
                     ) : (
                         <SearchFilterInput
-                            className="pf-search-shim z-xs-101"
+                            className={`${
+                                pfDarkThemeEnabled ? '' : 'theme-light'
+                            } pf-search-shim z-xs-101`}
                             handleChangeSearchFilter={handleChangeSearchFilter}
                             isDisabled={isLoadingSearchOptions || isLoadingSearchResponse}
                             placeholder="Filter resources"

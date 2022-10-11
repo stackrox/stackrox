@@ -1,6 +1,7 @@
 import React from 'react';
 import { Toolbar, ToolbarGroup, ToolbarItem, ToolbarItemVariant } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import NetworkSearch from './NetworkSearch';
 import ClusterSelect from './ClusterSelect';
 import NamespaceSelect from './NamespaceSelect';
@@ -11,10 +12,17 @@ interface FilterToolbarProps {
 }
 
 function FilterToolbar({ isDisabled }: FilterToolbarProps) {
+    // Note that the outermost element of this component has the "theme-light" className. This
+    // is to prevent rendering the NetworkSearch component with dark mode styles, which are not supported
+    // in the PatternFly UI. Once we have a pure PF equivalent of the NetworkSearch component we can remove this.
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const pfDarkThemeEnabled = isFeatureFlagEnabled('ROX_PF_DARK_THEME');
     return (
         <Toolbar
             data-testid="network-graph-toolbar"
-            className="pf-u-px-md pf-u-px-lg-on-xl pf-u-py-sm"
+            className={`${
+                pfDarkThemeEnabled ? '' : 'theme-light'
+            } pf-u-px-md pf-u-px-lg-on-xl pf-u-py-sm`}
         >
             <ToolbarGroup spacer={{ default: 'spacerNone' }}>
                 <ToolbarItem>

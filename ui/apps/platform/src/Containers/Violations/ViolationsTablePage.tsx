@@ -10,6 +10,7 @@ import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import VIOLATION_STATES from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useURLSort from 'hooks/useURLSort';
 import { SortOption } from 'types/table';
@@ -26,6 +27,8 @@ import './ViolationsTablePage.css';
 const searchCategory = 'ALERTS';
 
 function ViolationsTablePage(): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const pfDarkThemeEnabled = isFeatureFlagEnabled('ROX_PF_DARK_THEME');
     // Handle changes to applied search options.
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -161,7 +164,7 @@ function ViolationsTablePage(): ReactElement {
                 <Title headingLevel="h1">Violations</Title>
                 <Divider className="pf-u-py-md" />
                 <SearchFilterInput
-                    className="pf-search-shim"
+                    className={`${pfDarkThemeEnabled ? '' : 'theme-light'} pf-search-shim`}
                     handleChangeSearchFilter={setSearchFilter}
                     placeholder="Filter violations"
                     searchCategory={searchCategory}
