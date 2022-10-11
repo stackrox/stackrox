@@ -1,10 +1,29 @@
 export const selectorEntityTypes = ['Cluster', 'Namespace', 'Deployment'] as const;
 export type SelectorEntityType = typeof selectorEntityTypes[number];
 
-export type SelectorField =
-    | `${SelectorEntityType}`
-    | `${SelectorEntityType} Label`
-    | `${SelectorEntityType} Annotation`;
+export type ByNameSelectorField = `${SelectorEntityType}`;
+export type ByLabelSelectorField = `${SelectorEntityType} Label`;
+export type ByAnnotationSelectorField = `${SelectorEntityType} Annotation`;
+
+export type SelectorField = ByNameSelectorField | ByLabelSelectorField | ByAnnotationSelectorField;
+
+const byNameRegExp = new RegExp(selectorEntityTypes.join('|'));
+const byLabelRegExp = new RegExp(`(${selectorEntityTypes.join('|')}) Label`);
+const byAnnotationRegExp = new RegExp(`(${selectorEntityTypes.join('|')}) Annotation`);
+
+export function isByNameSelectorField(field: SelectorField): field is ByNameSelectorField {
+    return byNameRegExp.test(field);
+}
+
+export function isByLabelSelectorField(field: SelectorField): field is ByLabelSelectorField {
+    return byLabelRegExp.test(field);
+}
+
+export function isByAnnotationSelectorField(
+    field: SelectorField
+): field is ByAnnotationSelectorField {
+    return byAnnotationRegExp.test(field);
+}
 
 type BaseSelectorRule = {
     fieldName: SelectorField;
@@ -26,10 +45,10 @@ export type ResourceSelector = {
 /**
  * The front end currently only supports rules defined for names and labels, annotations are excluded.
  */
-export type SupportedSelectorField = Exclude<SelectorField, `${SelectorEntityType} Annotation`>;
+export type SupportedSelectorField = ByNameSelectorField | ByLabelSelectorField;
 
 export function isSupportedSelectorField(field: SelectorField): field is SupportedSelectorField {
-    return !field.endsWith('Annotation');
+    return isByNameSelectorField(field) || isByLabelSelectorField(field);
 }
 
 /**
