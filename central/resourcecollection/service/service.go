@@ -18,9 +18,7 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(
-	datastore datastore.DataStore,
-) Service {
+func New(datastore datastore.DataStore) Service {
 	return &serviceImpl{
 		datastore: datastore,
 	}
