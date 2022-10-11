@@ -27,15 +27,11 @@ export type ResourceSelector = {
  * This type extracts the `fieldName` property from the individual rules and groups them
  * using a single `field` property due to the UI only supporting a single field per entity
  * type in collection rules.
- *
- * This also excludes `Annotation` selector fields that are not supported by the UI.
  */
-export type ScopedResourceSelector =
-    | {
-          field: Exclude<SelectorField, `${SelectorEntityType} Annotation`>;
-          rules: Omit<DisjunctionSelectorRule, 'fieldName'>[];
-      }
-    | Record<string, never>;
+export type ScopedResourceSelector = {
+    field: SelectorField;
+    rules: Omit<DisjunctionSelectorRule, 'fieldName'>[];
+} | null;
 
 /**
  * `Collection` is the front end representation of a valid collection, which is more

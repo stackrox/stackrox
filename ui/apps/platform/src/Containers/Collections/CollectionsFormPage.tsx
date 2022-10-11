@@ -6,26 +6,15 @@ import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import { getCollection } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import CollectionForm from './CollectionForm';
-import { Collection } from './types';
+import { parseCollection } from './parser';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
     pageAction: CollectionPageAction;
 };
 
-const emptyCollection: Collection = {
-    name: '',
-    description: '',
-    inUse: false,
-    embeddedCollectionIds: [],
-    selectorRules: {
-        Deployment: {},
-        Namespace: {},
-        Cluster: {},
-    },
-};
 const noopRequest = {
-    request: Promise.resolve(emptyCollection),
+    request: Promise.resolve(undefined),
     cancel: () => {},
 };
 
@@ -39,24 +28,23 @@ function CollectionsFormPage({
         () => (collectionId ? getCollection(collectionId) : noopRequest),
         [collectionId]
     );
-    const { data, loading, error } = useRestQuery<Collection, AggregateError>(collectionFetcher);
+    const { data, loading, error } = useRestQuery(collectionFetcher);
+    const collection = data ? parseCollection(data.collection) : undefined;
 
     let content: ReactElement | undefined;
 
     if (error) {
+        content = <>{/* TODO - Handle UI for network errors */}</>;
+    } else if (collection instanceof AggregateError) {
         content = <>{/* TODO - Handle UI for parse errors */}</>;
-    }
-
-    if (loading) {
+    } else if (loading && !collection) {
         content = <>{/* TODO - Handle UI for loading state */}</>;
-    }
-
-    if (data) {
+    } else if (collection) {
         content = (
             <CollectionForm
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
                 action={pageAction}
-                initialData={data}
+                initialData={collection}
                 useInlineDrawer={isLargeScreen}
                 showBreadcrumbs
                 appendTableLinkAction={() => {
