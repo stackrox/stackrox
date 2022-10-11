@@ -126,6 +126,10 @@ dependencies {
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
     implementation 'commons-codec:commons-codec:1.15'
+
+    // This should disable coloring when output is redirected.
+    // See https://logback.qos.ch/manual/layouts.html#coloring
+    runtimeOnly group: 'org.fusesource.jansi', name: 'jansi', version: '2.4.0'
 }
 
 tasks.withType(Test) {
