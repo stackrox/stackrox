@@ -79,6 +79,8 @@ type FakeEventsManager struct {
 	clientMap map[string]func(string) interface{}
 	// resourceMap map with the k8s resources
 	resourceMap map[string]interface{}
+	// Verbose prints messages to stdout
+	Verbose bool
 }
 
 const (
@@ -299,7 +301,9 @@ func (f *FakeEventsManager) eventsCreation() (<-chan string, <-chan error) {
 				errorCh <- err
 				return
 			}
-			log.Printf("%s Event: %s", msg.Action, msg.ObjectType)
+			if f.Verbose {
+				log.Printf("%s Event: %s", msg.Action, msg.ObjectType)
+			}
 			if err := f.createEvent(msg, ch); err != nil {
 				errorCh <- errors.Wrapf(err, "cannot create event for %s", msg.ObjectType)
 				return
