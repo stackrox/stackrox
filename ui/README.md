@@ -75,9 +75,6 @@ root level.
 Finally, make build modifications:
 
 -   update [.ossls.yml](../.ossls.yml) to include package's `node_modules` dir;
--   update [CircleCI config.yml](../.circleci/config.yml) to include package's
-    `node_modules` into the `save_cache` paths of the `save-npm-deps-cache`
-    command.
 
 #### Adding a Dependency to Another Package
 
