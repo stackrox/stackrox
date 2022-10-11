@@ -8,6 +8,7 @@ import { CollectionPageAction } from './collections.utils';
 import CollectionForm from './CollectionForm';
 
 export type CollectionsFormPageProps = {
+    hasWriteAccessForCollections: boolean;
     pageAction: CollectionPageAction;
 };
 
@@ -16,7 +17,10 @@ const noopRequest = {
     cancel: () => {},
 };
 
-function CollectionsFormPage({ pageAction }: CollectionsFormPageProps) {
+function CollectionsFormPage({
+    hasWriteAccessForCollections,
+    pageAction,
+}: CollectionsFormPageProps) {
     const isLargeScreen = useMediaQuery({ query: '(min-width: 992px)' }); // --pf-global--breakpoint--lg
     const action = pageAction.type;
     const collectionId = action !== 'create' ? pageAction.collectionId : undefined;
@@ -30,6 +34,7 @@ function CollectionsFormPage({ pageAction }: CollectionsFormPageProps) {
         <>
             <PageSection className="pf-u-h-100" padding={{ default: 'noPadding' }}>
                 <CollectionForm
+                    hasWriteAccessForCollections={hasWriteAccessForCollections}
                     action={pageAction}
                     initialData={data}
                     useInlineDrawer={isLargeScreen}

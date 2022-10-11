@@ -41,6 +41,7 @@ import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
 
 export type CollectionFormProps = {
+    hasWriteAccessForCollections: boolean;
     /* The user's workflow action for this collection */
     action: CollectionPageAction;
     /* initial data used to populate the form, or `undefined` in the case of a new collection */
@@ -56,6 +57,7 @@ export type CollectionFormProps = {
 };
 
 function CollectionForm({
+    hasWriteAccessForCollections,
     action,
     initialData,
     useInlineDrawer,
@@ -152,7 +154,7 @@ function CollectionForm({
                                 <Title headingLevel="h1">{pageTitle}</Title>
                             </FlexItem>
                             <FlexItem align={{ default: 'alignRight' }}>
-                                {action.type === 'view' && (
+                                {action.type === 'view' && hasWriteAccessForCollections && (
                                     <>
                                         <Dropdown
                                             onSelect={actionMenuToggle.closeSelect}

@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import useURLParameter from 'hooks/useURLParameter';
 
 import CollectionsTablePage from './CollectionsTablePage';
-import CollectionsFormPage from './CollectionFormPage';
+import CollectionsFormPage from './CollectionsFormPage';
 import { parsePageActionProp } from './collections.utils';
 
 function CollectionsPage() {
@@ -25,7 +25,12 @@ function CollectionsPage() {
     }, [pageAction, validPageActionProp, setPageAction]);
 
     if (validPageActionProp) {
-        return <CollectionsFormPage pageAction={validPageActionProp} />;
+        return (
+            <CollectionsFormPage
+                hasWriteAccessForCollections={hasWriteAccessForCollections}
+                pageAction={validPageActionProp}
+            />
+        );
     }
 
     return <CollectionsTablePage hasWriteAccessForCollections={hasWriteAccessForCollections} />;
