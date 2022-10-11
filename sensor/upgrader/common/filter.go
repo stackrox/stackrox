@@ -4,14 +4,13 @@ import (
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // K8sObjectPredicateFunc represents a predicate function which takes in a k8s object.
 type K8sObjectPredicateFunc func(object k8sutil.Object) bool
 
 // Filter modifies the given slice to remove any elements which do not pass the predicate.
-func Filter(objects *[]*unstructured.Unstructured, predicate K8sObjectPredicateFunc) {
+func Filter[T k8sutil.Object](objects *[]T, predicate K8sObjectPredicateFunc) {
 	if objects == nil {
 		return
 	}

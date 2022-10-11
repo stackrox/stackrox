@@ -42,27 +42,22 @@ func (p *planner) GenerateExecutionPlan(desired []*unstructured.Unstructured) (*
 		if currObj == nil {
 			plan.Creations = append(plan.Creations, desiredObj)
 		} else {
-			// We need to store this here because objectsAreEqual clobbers the resource version and annotations.
-			currObjResourceVersion := currObj.GetResourceVersion()
-			lastModifiedByThisProcessID := currObj.GetAnnotations()[common.LastUpgradeIDAnnotationKey] == p.ctx.ProcessID()
-
+			objectToCreate := desiredObj.DeepCopy()
 			if !p.rollback {
-				newObj, err := applyPreservedProperties(desiredObj, currObj)
-				if err != nil {
-					log.Errorf("Failed to preserve properties for object %v: %v", ref, err)
-				} else {
-					desiredObj = newObj
+				if err := applyPreservedProperties(objectToCreate, currObj); err != nil {
+					log.Errorf("Failed to preserve some properties for object %v: %v", ref, err)
 				}
 			}
-			objectsAreEqual := p.objectsAreEqual(currObj, desiredObj)
+			objectsAreEqual := p.objectsAreEqual(currObj, objectToCreate)
 
 			// We don't update if the objects are equal.
 			// If the objects are not equal, we check if the object was already modified during this upgrade.
 			// If it was, we skip the update.
 			// If we're rolling back, though, we DO the update ONLY if it was modified during this upgrade.
+			lastModifiedByThisProcessID := currObj.GetAnnotations()[common.LastUpgradeIDAnnotationKey] == p.ctx.ProcessID()
 			if !objectsAreEqual && lastModifiedByThisProcessID == p.rollback {
-				desiredObj.SetResourceVersion(currObjResourceVersion)
-				plan.Updates = append(plan.Updates, desiredObj)
+				objectToCreate.SetResourceVersion(currObj.GetResourceVersion())
+				plan.Updates = append(plan.Updates, objectToCreate)
 			} else {
 				log.Infof("Skipping update of object %v as it is unchanged or was already updated. Objects are equal: %v; last modified by this process ID: %v, rollback: %v",
 					ref, objectsAreEqual, lastModifiedByThisProcessID, p.rollback)

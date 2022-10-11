@@ -1,6 +1,7 @@
 package plan
 
 import (
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/common"
@@ -115,7 +116,7 @@ func getPodSpec(obj *unstructured.Unstructured) (map[string]interface{}, error) 
 	return podSpec, nil
 }
 
-func applyPreservedResources(newObj, oldObj *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+func applyPreservedResources(newObj, oldObj *unstructured.Unstructured) error {
 	newAnns := newObj.GetAnnotations()
 	if newAnns == nil {
 		newAnns = make(map[string]string)
@@ -125,18 +126,18 @@ func applyPreservedResources(newObj, oldObj *unstructured.Unstructured) (*unstru
 
 	oldPodSpec, err := getPodSpec(oldObj)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to extract pod spec from old object")
+		return errors.Wrap(err, "failed to extract pod spec from old object")
 	}
 	newPodSpec, err := getPodSpec(newObj)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to extract pod spec from new object")
+		return errors.Wrap(err, "failed to extract pod spec from new object")
 	}
 
 	if err := applyOldResourcesConfig(newPodSpec, oldPodSpec); err != nil {
-		return nil, errors.Wrap(err, "failed to preserve resources")
+		return errors.Wrap(err, "failed to preserve resources")
 	}
 
-	return newObj, nil
+	return nil
 }
 
 func applyPreservedTolerations(newObj, oldObj *unstructured.Unstructured) error {
@@ -157,46 +158,42 @@ func applyPreservedTolerations(newObj, oldObj *unstructured.Unstructured) error 
 	return nil
 }
 
-func applyServicePreservedProperties(newObj, oldObj *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+func applyServicePreservedProperties(newObj, oldObj *unstructured.Unstructured) error {
 	clusterIP := nestedValueNoCopyOrDefault[string](oldObj.Object, "", "spec", "clusterIP")
 	if clusterIP != "" {
 		if err := unstructured.SetNestedField(newObj.Object, clusterIP, "spec", "clusterIP"); err != nil {
-			return nil, errors.Wrap(err, "setting cluster IP")
+			return errors.Wrap(err, "setting cluster IP")
 		}
 	}
-	return newObj, nil
+	return nil
 }
 
-func applyPreservedProperties(newObj, oldObj *unstructured.Unstructured) (*unstructured.Unstructured, error) {
-	newObj = newObj.DeepCopy()
+func applyPreservedProperties(newObj, oldObj *unstructured.Unstructured) error {
+	var overallErr *multierror.Error
 	if newObj.GetObjectKind().GroupVersionKind() == serviceGVK {
-		var err error
-		newObj, err = applyServicePreservedProperties(newObj, oldObj)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to preserve properties for object %v", k8sobjects.RefOf(newObj))
+		if err := applyServicePreservedProperties(newObj, oldObj); err != nil {
+			overallErr = multierror.Append(overallErr, errors.Wrap(err, "failed to preserve service properties"))
 		}
 	}
 	if oldObj.GetAnnotations()[common.PreserveResourcesAnnotationKey] == "true" {
-		var err error
-		newObj, err = applyPreservedResources(newObj, oldObj)
-		if err != nil {
-			return nil, err
+		if err := applyPreservedResources(newObj, oldObj); err != nil {
+			overallErr = multierror.Append(overallErr, errors.Wrap(err, "failed to preserve resources"))
 		}
 	}
 
 	switch newObj.GetObjectKind().GroupVersionKind() {
 	case deploymentGVK, daemonSetGVK:
 	default:
-		return newObj, nil
+		return overallErr.ErrorOrNil()
 	}
 
 	// Ignore collector because tolerations are explicitly set
 	if newObj.GetObjectKind().GroupVersionKind() == daemonSetGVK && newObj.GetName() == collectorName {
-		return newObj, nil
+		return overallErr.ErrorOrNil()
 	}
 
 	if err := applyPreservedTolerations(newObj, oldObj); err != nil {
-		return nil, err
+		overallErr = multierror.Append(overallErr, errors.Wrap(err, "failed to preserve tolerations"))
 	}
-	return newObj, nil
+	return overallErr.ErrorOrNil()
 }

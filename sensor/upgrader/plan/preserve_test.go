@@ -142,17 +142,15 @@ func TestPreserveResources(t *testing.T) {
 		},
 	}
 
-	newDSUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(newDS)
+	newDSUnstructured, err := toUnstructuredObject(newDS)
 	require.NoError(t, err)
-	oldDSUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(oldDS)
+	oldDSUnstructured, err := toUnstructuredObject(oldDS)
 	require.NoError(t, err)
-	mergedDSUnstructured, err := applyPreservedProperties(
-		&unstructured.Unstructured{Object: newDSUnstructured},
-		&unstructured.Unstructured{Object: oldDSUnstructured})
+	err = applyPreservedProperties(newDSUnstructured, oldDSUnstructured)
 	require.NoError(t, err)
 
 	var mergedDS v1.DaemonSet
-	require.NoError(t, convert(scheme.Scheme, mergedDSUnstructured, &mergedDS))
+	require.NoError(t, convert(scheme.Scheme, newDSUnstructured, &mergedDS))
 
 	assert.Equal(t, expectedMergedDS, &mergedDS)
 }
@@ -241,17 +239,15 @@ func TestPreserveTolerations(t *testing.T) {
 		},
 	}
 
-	newDeployUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(newDeploy)
+	newDeployUnstructured, err := toUnstructuredObject(newDeploy)
 	require.NoError(t, err)
-	oldDeployUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(oldDeploy)
+	oldDeployUnstructured, err := toUnstructuredObject(oldDeploy)
 	require.NoError(t, err)
-	mergedDeployUnstructured, err := applyPreservedProperties(
-		&unstructured.Unstructured{Object: newDeployUnstructured},
-		&unstructured.Unstructured{Object: oldDeployUnstructured})
+	err = applyPreservedProperties(newDeployUnstructured, oldDeployUnstructured)
 	require.NoError(t, err)
 
 	var mergedDeploy v1.Deployment
-	require.NoError(t, convert(scheme.Scheme, mergedDeployUnstructured, &mergedDeploy))
+	require.NoError(t, convert(scheme.Scheme, newDeployUnstructured, &mergedDeploy))
 
 	assert.Equal(t, expectedMergedDeploy, &mergedDeploy)
 }
@@ -282,19 +278,16 @@ func Test_applyPreservedProperties(t *testing.T) {
 		},
 	}
 
-	oldObjUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(oldObj)
+	oldObjUnstructured, err := toUnstructuredObject(oldObj)
 	require.NoError(t, err)
-	newObjUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(newObj)
+	newObjUnstructured, err := toUnstructuredObject(newObj)
 	require.NoError(t, err)
 
-	r, err := applyPreservedProperties(
-		&unstructured.Unstructured{Object: newObjUnstructured},
-		&unstructured.Unstructured{Object: oldObjUnstructured})
+	err = applyPreservedProperties(newObjUnstructured, oldObjUnstructured)
 	require.NoError(t, err)
 
 	var rSvc corev1.Service
-	assert.Equal(t, serviceGVK, r.GetObjectKind().GroupVersionKind())
-	require.NoError(t, convert(scheme.Scheme, r, &rSvc))
+	require.NoError(t, convert(scheme.Scheme, newObjUnstructured, &rSvc))
 	assert.Equal(t, "1.2.3.4", rSvc.Spec.ClusterIP)
 }
 
@@ -307,4 +300,12 @@ func convert(scheme *runtime.Scheme, oldObj k8sutil.Object, newObj k8sutil.Objec
 		newObj.GetObjectKind().SetGroupVersionKind(oldObj.GetObjectKind().GroupVersionKind())
 	}
 	return nil
+}
+
+func toUnstructuredObject(typedObj k8sutil.Object) (*unstructured.Unstructured, error) {
+	objData, err := runtime.DefaultUnstructuredConverter.ToUnstructured(typedObj)
+	if err != nil {
+		return nil, err
+	}
+	return &unstructured.Unstructured{Object: objData}, nil
 }

@@ -323,7 +323,8 @@ func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav
 	return result, nil
 }
 
-// ListCurrentObjects returns all Kubernetes objects that are relevant for the upgrade process.
+// ListCurrentObjects returns all Kubernetes objects that are relevant for the upgrade process. The caller is free
+// to modify the objects.
 func (c *UpgradeContext) ListCurrentObjects() ([]*unstructured.Unstructured, error) {
 	listOpts := metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", common.UpgradeResourceLabelKey, common.UpgradeResourceLabelValue),
