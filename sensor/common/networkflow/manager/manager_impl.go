@@ -107,6 +107,34 @@ func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.Netw
 	return proto
 }
 
+type processUniqueKey struct {
+	podID         string
+	containerName string
+	process       processInfo
+}
+
+type processListeningIndicator struct {
+	key      processUniqueKey
+	port     uint16
+	protocol storage.L4Protocol
+}
+
+func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPort {
+	proto := &storage.ProcessListeningOnPort{
+		Port:     uint32(i.port),
+		Protocol: i.protocol,
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               i.key.podID,
+			ContainerName:       i.key.containerName,
+			ProcessName:         i.key.process.process_name,
+			ProcessExecFilePath: i.key.process.process_exec,
+			ProcessArgs:         i.key.process.process_args,
+		},
+	}
+
+	return proto
+}
+
 // connection is an instance of a connection as reported by collector
 type connection struct {
 	local       net.NetworkPeerID
@@ -125,13 +153,24 @@ func (c *connection) String() string {
 	return fmt.Sprintf("%s: %s %s %s", c.containerID, c.local, arrow, c.remote)
 }
 
+type processInfo struct {
+	process_name string
+	process_args string
+	process_exec string
+}
+
+func (p *processInfo) String() string {
+	return fmt.Sprintf("%s: %s %s", p.process_exec, p.process_name, p.process_args)
+}
+
 type containerEndpoint struct {
 	endpoint    net.NumericEndpoint
 	containerID string
+	processKey  processInfo
 }
 
 func (e *containerEndpoint) String() string {
-	return fmt.Sprintf("%s: %s", e.containerID, e.endpoint)
+	return fmt.Sprintf("%s %s: %s", e.containerID, e.processKey, e.endpoint)
 }
 
 // NewManager creates a new instance of network flow manager
@@ -144,7 +183,7 @@ func NewManager(
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
 		clusterEntities:   clusterEntities,
-		flowUpdates:       make(chan *central.MsgFromSensor),
+		sensorUpdates:     make(chan *central.MsgFromSensor),
 		publicIPs:         newPublicIPsManager(),
 		externalSrcs:      externalSrcs,
 		policyDetector:    policyDetector,
@@ -162,9 +201,10 @@ type networkFlowManager struct {
 
 	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS
 	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
+	enrichedProcessesLastSentState map[processListeningIndicator]timestamp.MicroTS
 
-	done        concurrency.Signal
-	flowUpdates chan *central.MsgFromSensor
+	done          concurrency.Signal
+	sensorUpdates chan *central.MsgFromSensor
 
 	publicIPs *publicIPsManager
 
@@ -190,11 +230,12 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (m *networkFlowManager) ResponsesC() <-chan *central.MsgFromSensor {
-	return m.flowUpdates
+	return m.sensorUpdates
 }
 
 func (m *networkFlowManager) enrichConnections() {
 	ticker := time.NewTicker(time.Second * 30)
+	processTicker := time.NewTicker(time.Second * 30)
 
 	for {
 		select {
@@ -202,6 +243,8 @@ func (m *networkFlowManager) enrichConnections() {
 			return
 		case <-ticker.C:
 			m.enrichAndSend()
+		case <-processTicker.C:
+			m.enrichAndSendProcesses()
 		}
 	}
 }
@@ -236,9 +279,39 @@ func (m *networkFlowManager) enrichAndSend() {
 	select {
 	case <-m.done.Done():
 		return
-	case m.flowUpdates <- &central.MsgFromSensor{
+	case m.sensorUpdates <- &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
+		},
+	}:
+		return
+	}
+}
+
+func (m *networkFlowManager) enrichAndSendProcesses() {
+	currentProcesses := m.currentEnrichedProcesses()
+
+	updatedProcesses := computeUpdatedProcesses(currentProcesses, m.enrichedProcessesLastSentState)
+
+	m.enrichedProcessesLastSentState = currentProcesses
+
+	if len(updatedProcesses) == 0 {
+		return
+	}
+
+	processesToSend := &central.ProcessListeningOnPortsUpdate{
+		ProcessesListeningOnPorts: updatedProcesses,
+		Time:                      types.TimestampNow(),
+	}
+
+	//metrics.IncrementTotalNetworkFlowsSentCounter(len(flowsToSend.Updated))
+	log.Debugf("Processes update : %v", processesToSend)
+	select {
+	case <-m.done.Done():
+		return
+	case m.sensorUpdates <- &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
+			ProcessListeningOnPortUpdate: processesToSend,
 		},
 	}:
 		return
@@ -380,6 +453,47 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	}
 }
 
+func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, status *connStatus, processesListening map[processListeningIndicator]timestamp.MicroTS) {
+	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
+	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
+	if !isFresh {
+		status.used = true
+	}
+
+	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
+	if !ok {
+		// Expire the process if the container cannot be found within the clusterEntityResolutionWaitPeriod
+		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+			status.rotten = true
+			// Only increment metric once the connection is marked rotten
+			//flowMetrics.ContainerIDMisses.Inc()
+			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
+		}
+		return
+	}
+
+	status.used = true
+
+	indicator := processListeningIndicator{
+		key: processUniqueKey{
+			podID:         container.PodID,
+			containerName: container.ContainerName,
+			process:       ep.processKey,
+		},
+		port:     ep.endpoint.IPAndPort.Port,
+		protocol: ep.endpoint.L4Proto.ToProtobuf(),
+	}
+
+	log.Debugf("Enriched: %s", indicator)
+
+	// TODO: We can probably remove this check for processes
+	// Multiple endpoints from a collector can result in a single enriched endpoint,
+	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
+	if oldTS, found := processesListening[indicator]; !found || oldTS < status.lastSeen {
+		processesListening[indicator] = status.lastSeen
+	}
+}
+
 func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
@@ -410,6 +524,21 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	flowMetrics.HostEndpointsRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
 }
 
+func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections, processesListening map[processListeningIndicator]timestamp.MicroTS) {
+	hostConns.mutex.Lock()
+	defer hostConns.mutex.Unlock()
+
+	prevSize := len(hostConns.endpoints)
+	for ep, status := range hostConns.endpoints {
+		m.enrichProcessListening(&ep, status, processesListening)
+		if status.used && status.lastSeen != timestamp.InfiniteFuture {
+			// endpoints that are no longer active and have already been used can be deleted.
+			delete(hostConns.endpoints, ep)
+		}
+	}
+	flowMetrics.HostEndpointsRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
+}
+
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS) {
 	allHostConns := m.getAllHostConnections()
 
@@ -421,6 +550,17 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConn
 	}
 
 	return enrichedConnections, enrichedEndpoints
+}
+
+func (m *networkFlowManager) currentEnrichedProcesses() map[processListeningIndicator]timestamp.MicroTS {
+	allHostConns := m.getAllHostConnections()
+
+	enrichedProcesses := make(map[processListeningIndicator]timestamp.MicroTS)
+	for _, hostConns := range allHostConns {
+		m.enrichProcessesListening(hostConns, enrichedProcesses)
+	}
+
+	return enrichedProcesses
 }
 
 func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS) []*storage.NetworkFlow {
@@ -449,6 +589,25 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 		prevTS, ok := previous[ep]
 		if !ok || currTS > prevTS {
 			updates = append(updates, ep.toProto(currTS))
+		}
+	}
+
+	for ep, prevTS := range previous {
+		if _, ok := current[ep]; !ok {
+			updates = append(updates, ep.toProto(prevTS))
+		}
+	}
+
+	return updates
+}
+
+func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.MicroTS, previous map[processListeningIndicator]timestamp.MicroTS) []*storage.ProcessListeningOnPort {
+	var updates []*storage.ProcessListeningOnPort
+
+	for pl, currTS := range current {
+		prevTS, ok := previous[pl]
+		if !ok || currTS > prevTS {
+			updates = append(updates, pl.toProto(currTS))
 		}
 	}
 
@@ -627,6 +786,24 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	return nil
 }
 
+func getProcessKey(originator *storage.NetworkProcessUniqueKey) processInfo {
+	if originator == nil {
+		return processInfo{
+			process_name: "",
+			process_args: "",
+			process_exec: "",
+		}
+	}
+
+	log.Debugf("Got process key: %s %s %s", originator.ProcessExecFilePath, originator.ProcessName, originator.ProcessArgs)
+
+	return processInfo{
+		process_name: originator.ProcessName,
+		process_args: originator.ProcessArgs,
+		process_exec: originator.ProcessExecFilePath,
+	}
+}
+
 func getIPAndPort(address *sensor.NetworkAddress) net.NetworkPeerID {
 	tuple := net.NetworkPeerID{
 		// For private address, both address and IPNetwork are expected to be set by Collector.
@@ -701,6 +878,7 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 				IPAndPort: getIPAndPort(endpoint.GetListenAddress()),
 				L4Proto:   net.L4ProtoFromProtobuf(endpoint.GetProtocol()),
 			},
+			processKey: getProcessKey(endpoint.GetOriginator()),
 		}
 
 		// timestamp will be set to close timestamp for closed connections, and zero for newly added connection.
@@ -709,6 +887,8 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 			ts = timestamp.InfiniteFuture
 		}
 		updatedEndpoints[ep] = ts
+
+		log.Debugf("Received endpoint: %s", ep)
 	}
 
 	return updatedEndpoints
