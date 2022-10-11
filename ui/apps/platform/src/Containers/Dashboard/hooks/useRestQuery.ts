@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CancellableRequest } from 'services/cancellationUtils';
 
-export type UseRestQueryReturn<ReturnType, ErrorType extends Error> = {
+export type UseRestQueryReturn<ReturnType> = {
     data: ReturnType | undefined;
     loading: boolean;
-    error?: ErrorType;
+    error?: Error;
     refetch: () => void;
 };
 
-export default function useRestQuery<ReturnType, ErrorType extends Error>(
+export default function useRestQuery<ReturnType>(
     cancellableRequestFn: () => CancellableRequest<ReturnType>
-): UseRestQueryReturn<ReturnType, ErrorType> {
+): UseRestQueryReturn<ReturnType> {
     const [data, setData] = useState<ReturnType>();
     const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<ErrorType | undefined>();
+    const [error, setError] = useState<Error | undefined>();
 
     const execFetch = useCallback(() => {
         const { request, cancel } = cancellableRequestFn();

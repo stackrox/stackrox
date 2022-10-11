@@ -4,8 +4,8 @@ import { ListDeployment } from 'types/deployment.proto';
 import { SearchFilter, ApiSortOption } from 'types/search';
 import { ResourceSelector, SelectorField } from 'Containers/Collections/types';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import axios from './instance';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import axios from './instance';
 import { Empty, Pagination } from './types';
 
 export const collectionsBaseUrl = '/v1/collections';
