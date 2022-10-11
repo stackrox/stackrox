@@ -36,17 +36,12 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
 import { deleteCollection } from 'services/CollectionsService';
+import { Formik } from 'formik';
 import { CollectionPageAction } from './collections.utils';
-import RuleSelector, { RuleSelectorOption, SelectorOption } from './RuleSelector';
+import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
-import {
-    Collection,
-    ResourceSelector,
-    ScopedResourceSelector,
-    SelectorEntityType,
-    SelectorRule,
-} from './types';
+import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
 
 type FormStateReducerAction =
     | { type: 'setName'; name: string }
@@ -108,18 +103,6 @@ function CollectionForm({
     showBreadcrumbs,
 }: CollectionFormProps) {
     const history = useHistory();
-    const [resourceSelectors, setResourceSelectors] = useState<ResourceSelector>();
-    const [deploymentSelectorOption, setDeploymentSelectorOption] = useState<RuleSelectorOption>(
-        SelectorOption.All
-    );
-    const [namespaceSelectorOption, setNamespaceSelectorOption] = useState<RuleSelectorOption>(
-        SelectorOption.All
-    );
-    const [clusterSelectorOption, setClusterSelectorOption] = useState<RuleSelectorOption>(
-        SelectorOption.All
-    );
-
-    function onRulesChange(entityType: SelectorEntityType, rules: SelectorRule[]) {}
 
     const {
         isOpen: drawerIsOpen,
@@ -288,66 +271,72 @@ function CollectionForm({
                             </FlexItem>
                         </Flex>
                         <Divider component="div" />
-                        <Flex
-                            className="pf-u-background-color-200 pf-u-p-lg"
-                            spaceItems={{ default: 'spaceItemsMd' }}
-                            direction={{ default: 'column' }}
+                        <Formik
+                            initialValues={initialData}
+                            onSubmit={(values) => {
+                                console.log(values);
+                            }}
                         >
-                            <Card>
-                                <CardBody>
-                                    <Title headingLevel="h2">Collection details</Title>
-                                </CardBody>
-                            </Card>
-                            <Card>
-                                <CardBody>
-                                    <Title headingLevel="h2">Add new collection rules</Title>
-                                    <RuleSelector
-                                        entityType="Deployment"
-                                        selectedOption={deploymentSelectorOption}
-                                        onOptionChange={setDeploymentSelectorOption}
-                                        onRulesChange={(rules: SelectorRule[]) =>
-                                            onRulesChange('Deployment', rules)
-                                        }
-                                    />
-                                    <Label variant="outline" isCompact>
-                                        in
-                                    </Label>
-                                    <RuleSelector
-                                        entityType="Namespace"
-                                        selectedOption={namespaceSelectorOption}
-                                        onOptionChange={setNamespaceSelectorOption}
-                                        onRulesChange={(rules: SelectorRule[]) =>
-                                            onRulesChange('Namespace', rules)
-                                        }
-                                    />
-                                    <Label variant="outline" isCompact>
-                                        in
-                                    </Label>
-                                    <RuleSelector
-                                        entityType="Cluster"
-                                        selectedOption={clusterSelectorOption}
-                                        onOptionChange={setClusterSelectorOption}
-                                        onRulesChange={(rules: SelectorRule[]) =>
-                                            onRulesChange('Cluster', rules)
-                                        }
-                                    />
-                                </CardBody>
-                            </Card>
-                            <Card>
-                                <CardBody>
-                                    <Title headingLevel="h2">Attach existing collections</Title>
-                                    <CollectionAttacher />
-                                </CardBody>
-                            </Card>
-                        </Flex>
-                        {action.type !== 'view' && (
-                            <div className="pf-u-p-lg pf-u-py-md">
+                            {({ values, handleChange }) => (
                                 <>
-                                    <Button className="pf-u-mr-md">Save</Button>
-                                    <Button variant="secondary">Cancel</Button>
+                                    <Flex
+                                        className="pf-u-background-color-200 pf-u-p-lg"
+                                        spaceItems={{ default: 'spaceItemsMd' }}
+                                        direction={{ default: 'column' }}
+                                    >
+                                        <Card>
+                                            <CardBody>
+                                                <Title headingLevel="h2">Collection details</Title>
+                                            </CardBody>
+                                        </Card>
+                                        <Card>
+                                            <CardBody>
+                                                <Title headingLevel="h2">
+                                                    Add new collection rules
+                                                </Title>
+                                                <RuleSelector
+                                                    entityType="Deployment"
+                                                    selectedOption={values.selectorRules.Deployment}
+                                                    onOptionChange={handleChange}
+                                                />
+                                                <Label variant="outline" isCompact>
+                                                    in
+                                                </Label>
+                                                <RuleSelector
+                                                    entityType="Namespace"
+                                                    selectedOption={values.selectorRules.Namespace}
+                                                    onOptionChange={handleChange}
+                                                />
+                                                <Label variant="outline" isCompact>
+                                                    in
+                                                </Label>
+                                                <RuleSelector
+                                                    entityType="Cluster"
+                                                    selectedOption={values.selectorRules.Cluster}
+                                                    onOptionChange={handleChange}
+                                                />
+                                            </CardBody>
+                                        </Card>
+                                        <Card>
+                                            <CardBody>
+                                                <Title headingLevel="h2">
+                                                    Attach existing collections
+                                                </Title>
+                                                <CollectionAttacher />
+                                            </CardBody>
+                                        </Card>
+                                    </Flex>
+                                    {action.type !== 'view' && (
+                                        <div className="pf-u-p-lg pf-u-py-md">
+                                            <>
+                                                <Button className="pf-u-mr-md">Save</Button>
+                                                <Button variant="secondary">Cancel</Button>
+                                            </>
+                                        </div>
+                                    )}
                                 </>
-                            </div>
-                        )}
+                            )}
+                        </Formik>
                     </DrawerContentBody>
                 </DrawerContent>
             </Drawer>
