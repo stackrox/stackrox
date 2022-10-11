@@ -162,24 +162,17 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 		// Rocks more recently updated than Postgres so need to migrate from there.  Otherwise, Postgres is more recent
 		// so just fall through to the rest of the processing.
 		if currClone.GetMigVersion().LastPersisted.Before(rocksVersion.LastPersisted) {
-			// Rollback is not enabled, so process the Rocks -> Postgres migration on CurrentClone.
-			if !d.rollbackEnabled() {
-				return CurrentClone, true, nil
+			// We want to start fresh as we are migrating from Rocks->Postgres.  So any data that exists in
+			// Postgres from a previous upgrade followed by a rollback needs to be ignored.  So just drop current
+			// and let it create anew.
+			log.Infof("To start with a clean Postgres, dropping database %q", CurrentClone)
+			err := pgadmin.DropDB(d.sourceMap, d.adminConfig, CurrentClone)
+			if err != nil {
+				log.Errorf("Unable to drop current clone: %v", err)
+				return "", true, err
 			}
 
-			// Create a temp clone for processing of current
-			// Seed it from an empty database because we need to run migrations from Rocks to Postgres.
-			if !d.databaseExists(TempClone) {
-				err := pgadmin.CreateDB(d.sourceMap, d.adminConfig, pgadmin.EmptyDB, TempClone)
-
-				// If for some reason, we cannot create a temp clone we will need to continue to upgrade
-				// with the current and thus no fallback.
-				if err != nil {
-					log.Errorf("Unable to create temp clone: %v", err)
-				}
-			}
-			d.cloneMap[TempClone] = metadata.NewPostgres(d.cloneMap[CurrentClone].GetMigVersion(), TempClone)
-			return TempClone, true, nil
+			return CurrentClone, true, nil
 		}
 		log.Info("Postgres is the more recent version so we will process that.")
 	}
