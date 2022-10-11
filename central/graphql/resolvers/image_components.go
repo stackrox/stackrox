@@ -457,13 +457,16 @@ func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graph
 // Location returns the location of the component.
 func (resolver *imageComponentResolver) Location(ctx context.Context, args RawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Location")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 
 	// Short path. Full image is embedded when image scan resolver is called.
 	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
 		return embeddedComponent.GetLocation(), nil
 	}
 
-	imageID := getImageIDFromScope(ctx, resolver.ctx)
+	imageID := getImageIDFromScope(resolver.ctx)
 	if imageID == "" {
 		var err error
 		imageID, err = getImageIDFromIfImageShaQuery(resolver.ctx, resolver.root, args)

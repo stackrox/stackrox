@@ -120,6 +120,12 @@ func (resolver *Resolver) NodeCount(ctx context.Context, args RawQuery) (int32, 
 
 func (resolver *nodeResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Cluster")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		if err := readClusters(ctx); err != nil {
+			return nil, err
+		}
+		return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetClusterId()))
+	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -319,6 +325,10 @@ func (resolver *nodeResolver) Components(ctx context.Context, args PaginatedQuer
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
 	return resolver.root.componentsV2(resolver.nodeScopeContext(), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
@@ -330,6 +340,10 @@ func (resolver *nodeResolver) ComponentCount(ctx context.Context, args RawQuery)
 	}
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 
 	return resolver.root.componentCountV2(resolver.nodeScopeContext(), RawQuery{Query: &query})
 }

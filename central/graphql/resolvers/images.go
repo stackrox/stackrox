@@ -135,6 +135,15 @@ func (resolver *Resolver) Image(ctx context.Context, args struct{ ID graphql.ID 
 // Deployments returns the deployments which use this image for the identified image, if it exists
 func (resolver *imageResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Deployments")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		if err := readDeployments(ctx); err != nil {
+			return nil, err
+		}
+
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
+
+		return resolver.root.Deployments(ctx, PaginatedQuery{Pagination: args.Pagination, Query: &query})
+	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -144,6 +153,15 @@ func (resolver *imageResolver) Deployments(ctx context.Context, args PaginatedQu
 // DeploymentCount returns the number of deployments which use this image for the identified image, if it exists
 func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "DeploymentCount")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		if err := readDeployments(ctx); err != nil {
+			return 0, err
+		}
+
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
+
+		return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
+	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -159,6 +177,9 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 			return nil, err
 		}
 		return vulnResolver, nil
+	}
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
 	}
 	return resolver.root.TopImageVulnerability(resolver.imageScopeContext(), args)
 }

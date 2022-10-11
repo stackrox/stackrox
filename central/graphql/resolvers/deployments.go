@@ -123,6 +123,14 @@ func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (i
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
 func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Cluster")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		if err := readClusters(ctx); err != nil {
+			return nil, err
+		}
+
+		clusterID := graphql.ID(resolver.data.GetClusterId())
+		return resolver.root.Cluster(ctx, struct{ graphql.ID }{clusterID})
+	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -132,6 +140,14 @@ func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolv
 // NamespaceObject returns a GraphQL resolver for the namespace where this deployment runs
 func (resolver *deploymentResolver) NamespaceObject(ctx context.Context) (*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "NamespaceObject")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		if err := readNamespaces(ctx); err != nil {
+			return nil, err
+		}
+
+		namespaceID := graphql.ID(resolver.data.GetNamespaceId())
+		return resolver.root.Namespace(ctx, struct{ graphql.ID }{namespaceID})
+	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -523,6 +539,11 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 
 func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Images")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		if err := readImages(ctx); err != nil {
+			return nil, err
+		}
+	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -534,6 +555,11 @@ func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQu
 
 func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCount")
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		if err := readImages(ctx); err != nil {
+			return 0, err
+		}
+	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}

@@ -157,6 +157,12 @@ func (resolver *nodeComponentResolver) nodeComponentScopeContext() context.Conte
 		log.Errorf("attempted to scope context on nil")
 		return nil
 	}
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return scoped.Context(resolver.ctx, scoped.Scope{
+			Level: v1.SearchCategory_IMAGE_COMPONENTS,
+			ID:    resolver.data.GetId(),
+		})
+	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODE_COMPONENTS,
 		ID:    resolver.data.GetId(),
