@@ -487,7 +487,7 @@ export function hasTableColumnHeadings(tableColumnHeadings) {
         if (tableColumnHeading.length === 0) {
             cy.get(`.rt-th:nth-child(${index1})`);
         } else {
-            cy.get(`.rt-th:nth-child(${index1}) > div:contains("${tableColumnHeading}")`);
+            cy.get(`.rt-th:nth-child(${index1}):contains("${tableColumnHeading}")`);
         }
     });
 
