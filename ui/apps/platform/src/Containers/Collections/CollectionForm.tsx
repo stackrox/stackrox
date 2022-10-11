@@ -1,5 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
     Breadcrumb,
     BreadcrumbItem,
     Button,
@@ -14,16 +18,23 @@ import {
     DrawerHead,
     DrawerPanelBody,
     DrawerPanelContent,
+    Dropdown,
+    DropdownItem,
+    DropdownSeparator,
+    DropdownToggle,
     Flex,
     FlexItem,
     Text,
     Title,
 } from '@patternfly/react-core';
+import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
-import { ResolvedCollectionResponse } from 'services/CollectionsService';
+import { deleteCollection, ResolvedCollectionResponse } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
@@ -31,7 +42,7 @@ import CollectionResults from './CollectionResults';
 
 export type CollectionFormProps = {
     /* The user's workflow action for this collection */
-    action: CollectionPageAction['type'];
+    action: CollectionPageAction;
     /* initial data used to populate the form, or `undefined` in the case of a new collection */
     initialData: ResolvedCollectionResponse | undefined;
     /* Whether or not to display the collection results in an inline drawer. If false, will
@@ -50,22 +61,60 @@ function CollectionForm({
     useInlineDrawer,
     showBreadcrumbs,
 }: CollectionFormProps) {
-    const {
-        isOpen,
-        closeSelect: closeDrawer,
-        openSelect: openDrawer,
-        toggleSelect: toggleDrawer,
-    } = useSelectToggle(useInlineDrawer);
+    const history = useHistory();
+    const drawerToggle = useSelectToggle(useInlineDrawer);
+    const actionMenuToggle = useSelectToggle();
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const { toasts, addToast, removeToast } = useToasts();
 
     useEffect(() => {
-        toggleDrawer(useInlineDrawer);
-    }, [toggleDrawer, useInlineDrawer]);
+        drawerToggle.toggleSelect(useInlineDrawer);
+    }, [drawerToggle, useInlineDrawer]);
 
     const pageTitle = initialData ? initialData.collection.name : 'Create collection';
 
+    function onEditCollection(id: string) {
+        history.push({
+            pathname: `${collectionsBasePath}/${id}`,
+            search: 'action=edit',
+        });
+    }
+
+    function onCloneCollection(id: string) {
+        history.push({
+            pathname: `${collectionsBasePath}/${id}`,
+            search: 'action=clone',
+        });
+    }
+
+    function onConfirmDeleteCollection() {
+        if (!deleteId) {
+            return;
+        }
+        setIsDeleting(true);
+        deleteCollection(deleteId)
+            .request.then(history.goBack)
+            .catch((err) => {
+                addToast(
+                    `Could not delete collection ${initialData?.collection.name ?? ''}`,
+                    'danger',
+                    err.message
+                );
+            })
+            .finally(() => {
+                setDeleteId(null);
+                setIsDeleting(false);
+            });
+    }
+
+    function onCancelDeleteCollection() {
+        setDeleteId(null);
+    }
+
     return (
         <>
-            <Drawer isExpanded={isOpen} isInline={useInlineDrawer}>
+            <Drawer isExpanded={drawerToggle.isOpen} isInline={useInlineDrawer}>
                 <DrawerContent
                     panelContent={
                         <DrawerPanelContent
@@ -77,7 +126,7 @@ function CollectionForm({
                                 <Title headingLevel="h2">Collection results</Title>
                                 <Text>See a live preview of current matches.</Text>
                                 <DrawerActions>
-                                    <DrawerCloseButton onClick={closeDrawer} />
+                                    <DrawerCloseButton onClick={drawerToggle.closeSelect} />
                                 </DrawerActions>
                             </DrawerHead>
                             <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
@@ -103,12 +152,65 @@ function CollectionForm({
                                 <Title headingLevel="h1">{pageTitle}</Title>
                             </FlexItem>
                             <FlexItem align={{ default: 'alignRight' }}>
-                                {isOpen ? (
-                                    <Button variant="secondary" onClick={closeDrawer}>
+                                {action.type === 'view' && (
+                                    <>
+                                        <Dropdown
+                                            onSelect={actionMenuToggle.closeSelect}
+                                            position="right"
+                                            toggle={
+                                                <DropdownToggle
+                                                    isPrimary
+                                                    onToggle={actionMenuToggle.onToggle}
+                                                    toggleIndicator={CaretDownIcon}
+                                                >
+                                                    Actions
+                                                </DropdownToggle>
+                                            }
+                                            isOpen={actionMenuToggle.isOpen}
+                                            dropdownItems={[
+                                                <DropdownItem
+                                                    key="Edit collection"
+                                                    component="button"
+                                                    onClick={() =>
+                                                        onEditCollection(action.collectionId)
+                                                    }
+                                                >
+                                                    Edit collection
+                                                </DropdownItem>,
+                                                <DropdownItem
+                                                    key="Clone collection"
+                                                    component="button"
+                                                    onClick={() =>
+                                                        onCloneCollection(action.collectionId)
+                                                    }
+                                                >
+                                                    Clone collection
+                                                </DropdownItem>,
+                                                <DropdownSeparator key="Separator" />,
+                                                <DropdownItem
+                                                    key="Delete collection"
+                                                    component="button"
+                                                    isDisabled={initialData?.collection.inUse}
+                                                    onClick={() => setDeleteId(action.collectionId)}
+                                                >
+                                                    {initialData?.collection.inUse
+                                                        ? 'Cannot delete (in use)'
+                                                        : 'Delete collection'}
+                                                </DropdownItem>,
+                                            ]}
+                                        />
+                                        <Divider
+                                            className="pf-u-px-xs"
+                                            orientation={{ default: 'vertical' }}
+                                        />
+                                    </>
+                                )}
+                                {drawerToggle.isOpen ? (
+                                    <Button variant="secondary" onClick={drawerToggle.closeSelect}>
                                         Hide collection results
                                     </Button>
                                 ) : (
-                                    <Button variant="secondary" onClick={openDrawer}>
+                                    <Button variant="secondary" onClick={drawerToggle.openSelect}>
                                         Preview collection results
                                     </Button>
                                 )}
@@ -140,16 +242,47 @@ function CollectionForm({
                                 </CardBody>
                             </Card>
                         </Flex>
-
-                        <div className="pf-u-p-lg pf-u-py-md">
-                            <Button className="pf-u-mr-md">
-                                {action === 'view' ? 'Edit' : 'Save'}
-                            </Button>
-                            <Button variant="secondary">Cancel</Button>
-                        </div>
+                        {action.type !== 'view' && (
+                            <div className="pf-u-p-lg pf-u-py-md">
+                                <>
+                                    <Button className="pf-u-mr-md">Save</Button>
+                                    <Button variant="secondary">Cancel</Button>
+                                </>
+                            </div>
+                        )}
                     </DrawerContentBody>
                 </DrawerContent>
             </Drawer>
+            <AlertGroup isToast isLiveRegion>
+                {toasts.map(({ key, variant, title, children }: Toast) => (
+                    <Alert
+                        key={key}
+                        variant={variant}
+                        title={title}
+                        timeout
+                        onTimeout={() => removeToast(key)}
+                        actionClose={
+                            <AlertActionCloseButton
+                                title={title}
+                                variantLabel={variant}
+                                onClose={() => removeToast(key)}
+                            />
+                        }
+                    >
+                        {children}
+                    </Alert>
+                ))}
+            </AlertGroup>
+            <ConfirmationModal
+                ariaLabel="Confirm delete"
+                confirmText="Delete"
+                isLoading={isDeleting}
+                isOpen={deleteId !== null}
+                onConfirm={onConfirmDeleteCollection}
+                onCancel={onCancelDeleteCollection}
+            >
+                Are you sure you want to delete this collection?
+            </ConfirmationModal>
         </>
     );
 }

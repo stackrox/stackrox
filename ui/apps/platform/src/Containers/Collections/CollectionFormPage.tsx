@@ -30,7 +30,7 @@ function CollectionsFormPage({ pageAction }: CollectionsFormPageProps) {
         <>
             <PageSection className="pf-u-h-100" padding={{ default: 'noPadding' }}>
                 <CollectionForm
-                    action={action}
+                    action={pageAction}
                     initialData={data}
                     useInlineDrawer={isLargeScreen}
                     showBreadcrumbs
