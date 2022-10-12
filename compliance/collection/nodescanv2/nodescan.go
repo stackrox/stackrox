@@ -1,4 +1,4 @@
-package full_nodescan
+package nodescanv2
 
 import (
 	"github.com/pkg/errors"
@@ -10,13 +10,16 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// NodeScanner defines an interface for V2 NodeScanning
 type NodeScanner interface {
 	Scan(nodeName string) (*storage.NodeScanV2, error)
 }
 
+// NodeScan is the V2 NodeScanning implementation
 type NodeScan struct {
 }
 
+// Scan scans the current node and returns the results as a predefined message
 func (n *NodeScan) Scan(nodeName string) (*storage.NodeScanV2, error) {
 	return nil, errors.New("Not implemented")
 }

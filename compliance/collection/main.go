@@ -10,7 +10,7 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
-	"github.com/stackrox/rox/compliance/collection/full-nodescan"
+	"github.com/stackrox/rox/compliance/collection/nodescanv2"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -189,7 +189,7 @@ func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient)
 		log.Fatalf("error initializing stream to sensor: %v", err)
 	}
 	t := time.NewTicker(env.NodeScanInterval.DurationSetting())
-	scanner := full_nodescan.FakeNodeScanner{} // FIXME: Replace with real scanner (ROX-12971)
+	scanner := nodescanv2.FakeNodeScanner{} // FIXME: Replace with real scanner (ROX-12971)
 
 	// send scan result once at startup, then every NodeScanInterval
 	if err := scanNode(client, &scanner); err != nil {
@@ -210,7 +210,7 @@ func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient)
 	}
 }
 
-func scanNode(client sensor.ComplianceService_CommunicateClient, scanner full_nodescan.NodeScanner) error {
+func scanNode(client sensor.ComplianceService_CommunicateClient, scanner nodescanv2.NodeScanner) error {
 	nodeName := getNode()
 
 	result, err := scanner.Scan(nodeName)

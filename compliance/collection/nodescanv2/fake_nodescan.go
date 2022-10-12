@@ -1,4 +1,4 @@
-package full_nodescan
+package nodescanv2
 
 import (
 	timestamp "github.com/gogo/protobuf/types"
@@ -6,9 +6,11 @@ import (
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
+// FakeNodeScanner can be used to send fake messages that would be emitted by NodeScanV2
 type FakeNodeScanner struct {
 }
 
+// Scan returns a fake message in the same format a real NodeScanV2 would produce
 func (f *FakeNodeScanner) Scan(nodeName string) (*storage.NodeScanV2, error) {
 	log.Infof("Generating fake scan result message...")
 	msg := &storage.NodeScanV2{
