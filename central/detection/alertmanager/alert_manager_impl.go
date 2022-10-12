@@ -276,7 +276,7 @@ func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 	if newAlert.GetLifecycleStage() == storage.LifecycleStage_DEPLOY && old.GetLifecycleStage() == storage.LifecycleStage_DEPLOY {
 		newAlert.Enforcement = old.GetEnforcement()
 		// Don't keep updating the timestamp of the violation _unless_ the violations are actually different.
-		if protoutils.EqualStorageAlert_ViolationSlices(newAlert.GetViolations(), old.GetViolations()) {
+		if protoutils.SlicesEqual(newAlert.GetViolations(), old.GetViolations()) {
 			newAlert.Time = old.GetTime()
 		}
 	}

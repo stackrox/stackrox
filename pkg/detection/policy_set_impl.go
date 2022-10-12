@@ -5,10 +5,11 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/maputil"
 )
 
 type setImpl struct {
-	policyIDToCompiled StringCompiledPolicyFastRMap
+	policyIDToCompiled *maputil.FastRMap[string, CompiledPolicy]
 }
 
 func (p *setImpl) ForEach(f func(policy CompiledPolicy) error) error {
