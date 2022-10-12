@@ -65,7 +65,9 @@ spec:
                       connectionString:
                         description: Specify a connection string that corresponds
                           to an existing database. If set, the operator will not manage
-                          Central DB.
+                          Central DB. When using this option, you must explicitly
+                          set a password secret; automatically generating a password
+                          will not be supported.
                         type: string
                       nodeSelector:
                         additionalProperties:
@@ -74,10 +76,13 @@ spec:
                           nodes, you can configure a node selector here.
                         type: object
                       passwordGenerationDisabled:
-                        description: Disable database password generation. Do not
+                        description: 'Disable database password generation. Do not
                           use this for first-time installations in which the operator
                           is managing Central DB as Central will have no way to connect
-                          to the database.
+                          to the database. Deprecated: do not set this explicitly;
+                          instead, set or don''t set the passwordSecret property to
+                          govern whether a secret is generated, or whether a user-supplied
+                          one is used.'
                         type: boolean
                       passwordSecret:
                         description: Specify a secret that contains the password in
