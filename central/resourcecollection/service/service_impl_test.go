@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
@@ -27,24 +28,26 @@ type CollectionServiceTestSuite struct {
 	dataStore *datastoreMocks.MockDataStore
 }
 
-var _ suite.TearDownTestSuite = (*CollectionServiceTestSuite)(nil)
-
-func (suite *CollectionServiceTestSuite) SetupTest() {
+func (suite *CollectionServiceTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.ei = envisolator.NewEnvIsolator(suite.T())
+	suite.ei.Setenv(features.ObjectCollections.EnvVar(), "true")
 
-	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }
 
-func (suite *CollectionServiceTestSuite) TearDownTest() {
+func (suite *CollectionServiceTestSuite) TearDownSuite() {
 	suite.ei.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 
 func (suite *CollectionServiceTestSuite) TestGetCollection() {
+	if !features.ObjectCollections.Enabled() {
+		suite.T().Skip("skipping because env var is not set")
+	}
+
 	request := &v1.GetCollectionRequest{
 		Id: "a",
 		Options: &v1.GetCollectionRequest_Options{
