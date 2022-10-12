@@ -24,7 +24,7 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 		proxy.InjectProxyEnvVars(translation.NewTranslator(mgr.GetClient()), proxyEnv),
 		pkgReconciler.WithExtraWatch(
 			&source.Kind{Type: &platform.Central{}},
-			handleSiblingSecuredClusters(mgr),
+			reconciler.HandleSiblings(platform.SecuredClusterGVK, mgr),
 			// Only appearance and disappearance of a Central resource can influence whether
 			// a local scanner should be deployed by the SecuredCluster controller.
 			utils.CreateAndDeleteOnlyPredicate{}),

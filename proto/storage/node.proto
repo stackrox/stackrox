@@ -4,9 +4,12 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
+import "scanner/api/v1/note.proto";
+import "scanner/api/v1/component.proto";
 import "storage/container_runtime.proto";
 import "storage/taints.proto";
 import "storage/vulnerability.proto";
+
 
 import "gogoproto/gogo.proto";
 
@@ -80,6 +83,14 @@ message NodeScan {
         KERNEL_UNSUPPORTED = 2;
     }
     repeated Note                      notes            = 4;
+}
+
+message NodeScanV2 {
+    string                         node_id    = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk"'];
+    string                         node_name  = 2 [(gogoproto.moretags) = 'search:"Node,store"'];
+    google.protobuf.Timestamp      scan_time  = 3 [(gogoproto.moretags) = 'search:"Node Scan Time,store"'];
+    scannerV1.Components           components = 4;
+    repeated scannerV1.Note        notes      = 5;
 }
 
 message EmbeddedNodeScanComponent {
