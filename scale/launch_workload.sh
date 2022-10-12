@@ -27,8 +27,8 @@ fi
 # Create signature integrations to verify image signatures.
 "${DIR}"/signatures/create-signature-integrations.sh
 
-kubectl -n "${namespace}" delete deploy/admission-control
-kubectl -n "${namespace}" delete daemonset collector
+kubectl -n "${namespace}" delete deploy/admission-control || true
+kubectl -n "${namespace}" delete daemonset collector || true
 
 kubectl -n "${namespace}" set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
 kubectl -n "${namespace}" set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0  ROX_SCALE_TEST=true
