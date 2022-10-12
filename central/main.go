@@ -315,7 +315,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		certgen.ServiceSingleton(),
 		clusterInitService.Singleton(),
 		clusterService.Singleton(),
-		collectionService.Singleton(),
 		complianceManagerService.Singleton(),
 		complianceService.Singleton(),
 		configService.Singleton(),
@@ -378,6 +377,10 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
+	}
+
+	if features.ObjectCollections.Enabled() {
+		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
 	}
 
 	if features.NewPolicyCategories.Enabled() {
