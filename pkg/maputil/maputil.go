@@ -26,7 +26,7 @@ func Equal[K, V comparable](a, b map[K]V) bool {
 	return true
 }
 
-// FastRMap[K,V] is a thread-safe map from K to V that is optimized for read-heavy access patterns.
+// FastRMap is a thread-safe map from K to V that is optimized for read-heavy access patterns.
 // Writes are expensive because it clones, mutates and replaces the map instead of an in-place addition.
 // Use NewFastRMap to instantiate.
 type FastRMap[K comparable, V any] struct {
@@ -34,7 +34,7 @@ type FastRMap[K comparable, V any] struct {
 	m    *map[K]V
 }
 
-// NewKeyTypeValueTypeFastRMap returns an empty, read-to-use, KeyTypeValueTypeFastRMap.
+// NewFastRMap returns an empty, ready-to-use, KeyTypeValueTypeFastRMap.
 func NewFastRMap[K comparable, V any]() *FastRMap[K, V] {
 	initialMap := make(map[K]V)
 	return &FastRMap[K, V]{m: &initialMap}
