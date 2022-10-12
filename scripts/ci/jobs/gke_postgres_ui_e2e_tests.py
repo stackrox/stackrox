@@ -21,7 +21,7 @@ os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["OUTPUT_FORMAT"] = "helm"
 
 ClusterTestRunner(
-    cluster=GKECluster("ui-e2e-test"),
+    cluster=GKECluster("ui-postgres-e2e-test"),
     pre_test=PreSystemTests(),
     test=UIE2eTest(),
     post_test=PostClusterTest(
