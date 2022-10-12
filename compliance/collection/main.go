@@ -36,7 +36,6 @@ var (
 )
 
 func getNode() string {
-
 	once.Do(func() {
 		node = os.Getenv(string(orchestrators.NodeName))
 		if node == "" {
