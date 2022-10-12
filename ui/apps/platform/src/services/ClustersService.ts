@@ -116,7 +116,7 @@ export function getAutoUpgradeConfig(): Promise<AutoUpgradeConfig> {
  */
 export function saveAutoUpgradeConfig(config: AutoUpgradeConfig): Promise<Empty> {
     const wrappedObject = { config: { enableAutoUpgrade: config.enableAutoUpgrade } };
-    return axios.post(autoUpgradeConfigUrl, wrappedObject);
+    return axios.post(autoUpgradeConfigUrl, wrappedObject).then((response) => response.data);
 }
 
 /**
