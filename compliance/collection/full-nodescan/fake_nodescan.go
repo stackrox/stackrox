@@ -6,10 +6,6 @@ import (
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
-var (
-	_ NodeScanner = (*FakeNodeScanner)(nil) // FIXME: Remove
-)
-
 type FakeNodeScanner struct {
 }
 

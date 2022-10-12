@@ -7,8 +7,7 @@ import (
 )
 
 var (
-	log             = logging.LoggerForModule()
-	_   NodeScanner = (*NodeScan)(nil) // FIXME: Remove
+	log = logging.LoggerForModule()
 )
 
 type NodeScanner interface {
