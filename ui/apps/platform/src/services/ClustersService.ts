@@ -97,9 +97,14 @@ export function fetchClusterWithRetentionInformation(id: string): Promise<Cluste
     });
 }
 
+export enum Upgradability {
+    ALLOWED = 'ALLOWED',
+    NOT_ALLOWED = 'NOT_ALLOWED',
+}
+
 export type AutoUpgradeConfig = {
     enableAutoUpgrade?: boolean;
-    autoUpgradeAllowed: 'NOT_ALLOWED' | 'ALLOWED';
+    autoUpgradeAllowed: Upgradability;
 };
 
 /**

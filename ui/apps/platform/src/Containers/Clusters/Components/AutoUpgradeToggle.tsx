@@ -5,6 +5,7 @@ import {
     getAutoUpgradeConfig,
     saveAutoUpgradeConfig,
     AutoUpgradeConfig,
+    Upgradability,
 } from 'services/ClustersService';
 
 function AutoUpgradeToggle(): ReactElement {
@@ -34,6 +35,7 @@ function AutoUpgradeToggle(): ReactElement {
         const newConfig = {
             ...autoUpgradeConfig,
             enableAutoUpgrade: !previousValue,
+            autoUpgradeAllowed: Upgradability.NOT_ALLOWED,
         };
 
         setAutoUpgradeConfig(newConfig); // optimistically set value before API call
@@ -43,6 +45,7 @@ function AutoUpgradeToggle(): ReactElement {
             const rollbackConfig = {
                 ...autoUpgradeConfig,
                 enableAutoUpgrade: previousValue,
+                autoUpgradeAllowed: Upgradability.NOT_ALLOWED,
             };
             setAutoUpgradeConfig(rollbackConfig);
 
@@ -54,7 +57,7 @@ function AutoUpgradeToggle(): ReactElement {
     if (!autoUpgradeConfig) {
         return <></>;
     }
-    return autoUpgradeConfig.autoUpgradeAllowed === 'ALLOWED' ? (
+    return autoUpgradeConfig.autoUpgradeAllowed === Upgradability.ALLOWED ? (
         <ToggleSwitch
             id="enableAutoUpgrade"
             toggleHandler={toggleAutoUpgrade}
