@@ -74,7 +74,7 @@ dependencies {
     testImplementation group: 'junit', name: 'junit', version: '4.11'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '1.29'
     implementation group: 'com.jayway.restassured', name: 'rest-assured', version: '2.9.0'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.11'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.4'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
@@ -129,7 +129,7 @@ dependencies {
 
     // This should disable coloring when output is redirected.
     // See https://logback.qos.ch/manual/layouts.html#coloring
-    runtimeOnly group: 'org.fusesource.jansi', name: 'jansi', version: '2.4.0'
+    implementation group: 'org.fusesource.jansi', name: 'jansi', version: '1.18'
 }
 
 tasks.withType(Test) {
