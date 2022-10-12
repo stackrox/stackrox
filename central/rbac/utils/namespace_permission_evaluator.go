@@ -60,6 +60,6 @@ func (c *namespacePermissionEvaluator) getBindingsAndRoles(ctx context.Context, 
 		return nil, nil
 	}
 
-	roles := getRolesForBindings(ctx, c.roleStore, rolebindings)
+	roles := GetRolesForBindings(ctx, c.roleStore, rolebindings)
 	return rolebindings, roles
 }
