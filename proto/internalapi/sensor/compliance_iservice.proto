@@ -6,6 +6,7 @@ import "internalapi/compliance/compliance_data.proto";
 import "storage/cluster.proto";
 import "storage/container_runtime.proto";
 import "storage/kube_event.proto";
+import "storage/node.proto";
 
 package sensor;
 
@@ -25,6 +26,7 @@ message MsgFromCompliance {
     oneof msg {
         compliance.ComplianceReturn return       = 2;
         AuditEvents                 audit_events = 3;
+        storage.NodeScanV2          node_scan_v2 = 4;
     }
 }
 
