@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -14,5 +13,4 @@ type Store interface {
 	Walk(context.Context, func(namespace *storage.NamespaceMetadata) error) error
 	Upsert(context.Context, *storage.NamespaceMetadata) error
 	Delete(ctx context.Context, id string) error
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NamespaceMetadata, error)
 }

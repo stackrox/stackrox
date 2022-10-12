@@ -9,6 +9,7 @@ import (
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -184,7 +185,7 @@ func (resolver *serviceAccountResolver) DeploymentCount(ctx context.Context, arg
 	return int32(count), nil
 }
 
-// Permission returns which scopes do the permissions for the service acc
+// ScopedPermissions returns which scopes do the permissions for the service acc
 func (resolver *serviceAccountResolver) ScopedPermissions(ctx context.Context) ([]*scopedPermissionsResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "ScopedPermissions")
 	if err := readK8sRoles(ctx); err != nil {
@@ -245,10 +246,13 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 		rbacUtils.NewClusterPermissionEvaluator(saClusterID,
 			resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 
-	namespaces, err := resolver.root.Namespaces(scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_CLUSTERS,
-		ID:    saClusterID,
-	}), PaginatedQuery{})
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		ctx = scoped.Context(ctx, scoped.Scope{
+			Level: v1.SearchCategory_CLUSTERS,
+			ID:    saClusterID,
+		})
+	}
+	namespaces, err := resolver.root.Namespaces(ctx, PaginatedQuery{})
 
 	if err != nil {
 		return evaluators, err
