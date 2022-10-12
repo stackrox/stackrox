@@ -100,6 +100,16 @@ test_gt_non_silent() {
   fi
 }
 
+test_empty_non_silent() {
+  if [[ "$#" -lt 1 ]]; then
+    die "usage: test_empty_non_silent <arg1>"
+  fi
+
+  if [[ -n "$1" ]]; then
+    die "Comparison failed: \"$1\" is not empty"
+  fi
+}
+
 require_environment() {
     if [[ "$#" -lt 1 ]]; then
         die "usage: require_environment NAME [reason]"

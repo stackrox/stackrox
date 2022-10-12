@@ -62,7 +62,7 @@ validate_upgrade() {
 
     if [[ -n "${API_TOKEN:-}" ]]; then
         info "Verifying API token generated can access the central"
-        echo "$API_TOKEN" | "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl" --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" --token-file /dev/stdin central whoami > /dev/null
+        echo "${API_TOKEN}" | "${TEST_ROOT}/bin/${TEST_HOST_PLATFORM}/roxctl" --insecure-skip-tls-verify --insecure -e "${API_ENDPOINT}" --token-file /dev/stdin central whoami > /dev/null
     fi
 
     info "Validating the upgrade with upgrade tests: $stage_description"
@@ -79,4 +79,53 @@ function roxcurl() {
   local url="$1"
   shift
   curl -u "admin:${ROX_PASSWORD}" -k "https://${API_ENDPOINT}${url}" "$@"
+}
+
+deploy_earlier_central() {
+    info "Deploying: $EARLIER_TAG..."
+
+    mkdir -p "bin/$TEST_HOST_PLATFORM"
+    if is_CI; then
+        gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_PLATFORM/roxctl"
+    else
+        make cli
+    fi
+    chmod +x "bin/$TEST_HOST_PLATFORM/roxctl"
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
+    MAIN_IMAGE_TAG="$EARLIER_TAG" \
+    SCANNER_IMAGE="$REGISTRY/scanner:$(cat SCANNER_VERSION)" \
+    SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
+    ./deploy/k8s/central.sh
+
+    get_central_basic_auth_creds
+}
+
+restore_backup_test() {
+    info "Restoring a 56.1 backup into a newer central"
+
+    restore_56_1_backup
+}
+
+force_rollback() {
+    info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
+
+    local upgradeStatus
+    upgradeStatus=$(curl -sSk -X GET -u "admin:${ROX_PASSWORD}" https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
+    echo "upgrade status: ${upgradeStatus}"
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "$(make --quiet tag)"
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" "true"
+    test_gt_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceAvailableForRollbackAfterUpgrade' -r)" "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceRequiredForRollbackAfterUpgrade' -r)"
+
+    kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - >/tmp/force_rollback_patch
+    local central_config
+    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"$FORCE_ROLLBACK_VERSION\"" -)
+    local config_patch
+    config_patch=$(yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch)
+    echo "config patch: $config_patch"
+
+    kubectl -n stackrox patch configmap/central-config -p "$config_patch"
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
 }
