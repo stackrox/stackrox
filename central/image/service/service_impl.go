@@ -231,11 +231,11 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	img := types.ToImage(request.GetImage())
 
 	var source *enricher.RequestSource
-	if request.GetClusterId() != "" {
+	if request.GetSource() != nil {
 		source = &enricher.RequestSource{
-			ClusterID:        request.GetClusterId(),
-			Namespace:        request.GetNamespace(),
-			ImagePullSecrets: set.NewStringSet(request.GetImagePullSecrets()...),
+			ClusterID:        request.GetSource().GetClusterId(),
+			Namespace:        request.GetSource().GetNamespace(),
+			ImagePullSecrets: set.NewStringSet(request.GetSource().GetImagePullSecrets()...),
 		}
 	}
 

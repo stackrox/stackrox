@@ -529,7 +529,7 @@
         "namespace": {
           "type": "string"
         },
-        "name": {
+        "imagePullSecretName": {
           "type": "string"
         }
       }

@@ -1501,6 +1501,23 @@
       },
       "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
+    "v1ScanImageInternalRequestSource": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "v1ScanImageInternalResponse": {
       "type": "object",
       "properties": {

@@ -37,9 +37,9 @@ message ImageIntegration {
     reserved 19; // Previously, scannerv2
 
     message Source {
-        string cluster_id = 1;
-        string namespace  = 2;
-        string name       = 3;
+        string cluster_id             = 1;
+        string namespace              = 2;
+        string image_pull_secret_name = 3;
     }
     Source source = 21;
 }
