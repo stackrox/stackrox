@@ -78,7 +78,7 @@ func (s *k8sRoleSACSuite) TearDownSuite() {
 func (s *k8sRoleSACSuite) SetupTest() {
 	s.testK8sRoleIDs = make([]string, 0)
 
-	k8sRoles := fixtures.GetSACTestStorageK8SRoleSet(fixtures.GetScopedK8SRole)
+	k8sRoles := fixtures.GetSACTestResourceSet(fixtures.GetScopedK8SRole)
 
 	for i := range k8sRoles {
 		err := s.datastore.UpsertRole(s.testContexts[testutils.UnrestrictedReadWriteCtx], k8sRoles[i])
