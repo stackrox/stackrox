@@ -144,22 +144,44 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 	}
 }
 
-func (s *CollectionPostgresDataStoreTestSuite) TestAddCollection() {
+func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	ctx := sac.WithAllAccess(context.Background())
 
-	// add 'a'
-	err := s.datastore.AddCollection(ctx, s.getTestCollection("a", nil))
+	// dryrun 'a', verify not present
+	err := s.datastore.DryRunCollection(ctx, s.getTestCollection("a", nil))
 	s.NoError(err)
 	obj, ok, err := s.datastore.Get(ctx, "a")
+	s.NoError(err)
+	s.False(ok)
+	s.Nil(obj)
+
+	// add 'a', verify present
+	err = s.datastore.AddCollection(ctx, s.getTestCollection("a", nil))
+	s.NoError(err)
+	obj, ok, err = s.datastore.Get(ctx, "a")
 	s.NoError(err)
 	s.True(ok)
 	s.Equal("a", obj.GetId())
 
-	// try to add duplicate 'a' and check that we fail
+	// dryrun duplicate 'a'
+	err = s.datastore.DryRunCollection(ctx, s.getTestCollection("a", nil))
+	s.NotNil(err)
+	_, ok = err.(dag.VertexDuplicateError)
+	s.True(ok)
+
+	// try to add duplicate 'a'
 	err = s.datastore.AddCollection(ctx, s.getTestCollection("a", nil))
 	s.NotNil(err)
 	_, ok = err.(dag.VertexDuplicateError)
 	s.True(ok)
+
+	// dryrun 'b' which points to 'a'
+	err = s.datastore.DryRunCollection(ctx, s.getTestCollection("b", []string{"a"}))
+	s.NoError(err)
+	obj, ok, err = s.datastore.Get(ctx, "b")
+	s.NoError(err)
+	s.False(ok)
+	s.Nil(obj)
 
 	// add 'b' which points to 'a'
 	err = s.datastore.AddCollection(ctx, s.getTestCollection("b", []string{"a"}))
@@ -172,6 +194,12 @@ func (s *CollectionPostgresDataStoreTestSuite) TestAddCollection() {
 	// try to delete 'a' while 'b' points to it
 	err = s.datastore.DeleteCollection(ctx, "a")
 	s.NotNil(err)
+
+	// dryrun 'c' which has a self reference
+	err = s.datastore.DryRunCollection(ctx, s.getTestCollection("c", []string{"c"}))
+	s.NotNil(err)
+	_, ok = err.(dag.SrcDstEqualError)
+	s.True(ok)
 
 	// try to add 'c' which has a self reference
 	err = s.datastore.AddCollection(ctx, s.getTestCollection("c", []string{"c"}))

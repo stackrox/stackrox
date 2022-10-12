@@ -119,6 +119,33 @@ func (ds *datastoreImpl) deleteCollectionFromGraph(id string) error {
 	return ds.graph.DeleteVertex(id)
 }
 
+func (ds *datastoreImpl) dryRunCollectionInGraph(obj *storage.ResourceCollection) error {
+	ds.graphLock.Lock()
+	defer ds.graphLock.Unlock()
+
+	var ret error
+
+	// we essentially just add the obj to the graph and delete it before returning
+	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetId())
+	if err != nil {
+		return err
+	}
+	for _, edge := range obj.GetEmbeddedCollections() {
+		err = ds.graph.AddEdge(obj.GetId(), edge.GetId())
+		if err != nil {
+			ret = err
+			break
+		}
+	}
+
+	err = ds.graph.DeleteVertex(obj.GetId())
+	if err != nil && ret == nil {
+		ret = err
+	}
+
+	return ret
+}
+
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
 	return ds.searcher.Search(ctx, q)
 }
@@ -180,6 +207,10 @@ func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.
 		return err
 	}
 	return err
+}
+
+func (ds *datastoreImpl) DryRunCollection(_ context.Context, collection *storage.ResourceCollection) error {
+	return ds.dryRunCollectionInGraph(collection)
 }
 
 func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error {
