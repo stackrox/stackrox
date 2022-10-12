@@ -78,7 +78,7 @@ func (s *serviceAccountSACSuite) TearDownSuite() {
 func (s *serviceAccountSACSuite) SetupTest() {
 	s.testServiceAccountIDs = make([]string, 0)
 
-	serviceAccounts := fixtures.GetSACTestStorageServiceAccountSet(fixtures.GetScopedServiceAccount)
+	serviceAccounts := fixtures.GetSACTestResourceSet(fixtures.GetScopedServiceAccount)
 
 	for i := range serviceAccounts {
 		err := s.datastore.UpsertServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], serviceAccounts[i])

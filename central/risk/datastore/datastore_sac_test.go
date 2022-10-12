@@ -79,7 +79,7 @@ func (s *riskDatastoreSACSuite) TearDownSuite() {
 func (s *riskDatastoreSACSuite) SetupTest() {
 	s.testRiskIDs = make([]string, 0)
 
-	risks := fixtures.GetSACTestStorageRiskSet(fixtures.GetScopedRisk)
+	risks := fixtures.GetSACTestResourceSet(fixtures.GetScopedRisk)
 
 	for i := range risks {
 		err := s.datastore.UpsertRisk(s.testContexts[testutils.UnrestrictedReadWriteCtx], risks[i])

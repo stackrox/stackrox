@@ -79,7 +79,7 @@ func (s *processBaselineSACTestSuite) TearDownSuite() {
 func (s *processBaselineSACTestSuite) SetupTest() {
 	s.testProcessBaselineIDs = make([]string, 0)
 
-	processBaselines := fixtures.GetSACTestStorageProcessBaselineSet(fixtures.GetScopedProcessBaseline)
+	processBaselines := fixtures.GetSACTestResourceSet(fixtures.GetScopedProcessBaseline)
 
 	for i := range processBaselines {
 		_, err := s.datastore.AddProcessBaseline(s.testContexts[testutils.UnrestrictedReadWriteCtx],
