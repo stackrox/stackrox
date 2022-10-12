@@ -78,10 +78,10 @@ func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) er
 
 	if dbSpec.PasswordGenerationDisabled != nil {
 		if *dbSpec.PasswordGenerationDisabled && dbPasswordSecret == nil {
-			return errors.Errorf("when explicitly disabling password generation, a password secret must be specified")
+			return errors.New("when explicitly disabling password generation, a password secret must be specified")
 		}
 		if !*dbSpec.PasswordGenerationDisabled && dbPasswordSecret != nil {
-			return errors.Errorf("when explicitly enabling password generation, a password secret must not be specified")
+			return errors.New("when explicitly enabling password generation, a password secret must not be specified")
 		}
 	}
 
