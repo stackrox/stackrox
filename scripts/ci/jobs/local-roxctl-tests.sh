@@ -8,7 +8,7 @@ set -euo pipefail
 local_roxctl_tests() {
     info "Starting local roxctl tests"
 
-    MAIN_TAG=$(make --quiet tag)
+    MAIN_TAG=$(make --quiet --no-print-directory tag)
     export MAIN_TAG
 
     run_roxctl_bats_tests "roxctl-test-output" "local"  || touch FAIL

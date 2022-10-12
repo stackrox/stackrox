@@ -127,10 +127,10 @@ test_upgrade_paths() {
 
     info "Installing sensor"
     ./sensor-remote/sensor.sh
-    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$(make --quiet tag)"
-    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$(make --quiet tag)"
+    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$(make --quiet --no-print-directory tag)"
+    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$(make --quiet --no-print-directory tag)"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
-        "compliance=$REGISTRY/main:$(make --quiet tag)"
+        "compliance=$REGISTRY/main:$(make --quiet --no-print-directory tag)"
 
     sensor_wait
 

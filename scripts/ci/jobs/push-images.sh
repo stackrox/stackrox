@@ -20,7 +20,7 @@ push_images() {
     [[ "${OPENSHIFT_CI:-false}" == "true" ]] || { die "Only supported in OpenShift CI"; }
 
     local tag
-    tag="$(make --quiet tag)"
+    tag="$(make --quiet --no-print-directory tag)"
 
     if [[ "$brand" == "STACKROX_BRANDING" ]] && [[ -n "${MAIN_IMAGE}" ]]; then
         slack_build_notice "$tag"

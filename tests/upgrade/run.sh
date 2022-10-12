@@ -370,7 +370,7 @@ test_upgrade_paths() {
     cd "$TEST_ROOT"
 
     kubectl -n stackrox set env deploy/central ROX_NETPOL_FIELDS="true"
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet --no-print-directory tag)"
     wait_for_api
 
     validate_upgrade "00-3-63-x-to-current" "central upgrade to 3.63.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
@@ -414,10 +414,10 @@ test_upgrade_paths() {
 
     info "Installing sensor"
     ./sensor-remote/sensor.sh
-    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$(make --quiet tag)"
-    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$(make --quiet tag)"
+    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$(make --quiet --no-print-directory tag)"
+    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$(make --quiet --no-print-directory tag)"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
-        "compliance=$REGISTRY/main:$(make --quiet tag)"
+        "compliance=$REGISTRY/main:$(make --quiet --no-print-directory tag)"
 
     sensor_wait
 
@@ -460,7 +460,7 @@ force_rollback() {
     local upgradeStatus
     upgradeStatus="$(curl -sSk -X GET -u "admin:$ROX_PASSWORD" "https://$API_ENDPOINT/v1/centralhealth/upgradestatus")"
     echo "upgrade status: $upgradeStatus"
-    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "$(make --quiet tag)"
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "$(make --quiet --no-print-directory tag)"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" "true"
     test_gt_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceAvailableForRollbackAfterUpgrade' -r)" "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceRequiredForRollbackAfterUpgrade' -r)"

@@ -369,44 +369,23 @@ ifeq ($(UNAME_S),Darwin)
     HOST_OS:=darwin
 endif
 
+HOST_BIN_PLATFORM := bin/$(HOST_OS)_$(GOARCH)
+
 .PHONY: build-prep
 build-prep: deps
 	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
-.PHONY: cli-build
-cli-build: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
-ifdef CI
-	RACE=0 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) ./roxctl
-endif
-
 .PHONY: cli
-cli: cli-build
-	# Workaround a bug on MacOS
-	rm -f $(GOPATH)/bin/roxctl
-	# Copy the user's specific OS into gopath
-	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
-	chmod u+w $(GOPATH)/bin/roxctl
+cli:
+# Build and install roxctl for host platform
+	$(CURDIR)/scripts/go-install.sh ./roxctl
 
-cli-linux: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
+upgrader: $(HOST_BIN_PLATFORM)/upgrader
 
-cli-darwin: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
-
-upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
-
-bin/$(HOST_OS)_$(GOARCH)/upgrader: build-prep
+$(HOST_BIN_PLATFORM)/upgrader: build-prep
 	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/upgrader
 
-bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
+$(HOST_BIN_PLATFORM)/admission-control: build-prep
 	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/admission-control
 
 .PHONY: build-volumes
@@ -453,16 +432,27 @@ ifeq ($(CIRCLE_JOB),build-race-condition-debug-image)
 	docker start -i builder
 	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
 else
-	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make cli-build main-build-nodeps
+endif
+
+.PHONY: cli-build
+cli-build:
+ifndef CI
+	RACE=0 CGO_ENABLED=0 GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./roxctl
+else
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=ppc64le $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=s390x $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) ./roxctl
 endif
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
 	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
-ifndef CI
-    CGO_ENABLED=0 $(GOBUILD) roxctl
-endif
 
 .PHONY: scale-build
 scale-build: build-prep
@@ -623,15 +613,14 @@ copy-go-binaries-to-image-dir:
 	cp bin/linux_$(GOARCH)/central image/bin/central
 ifdef CI
 	cp bin/linux_amd64/roxctl image/bin/roxctl-linux-amd64
+	cp bin/linux_arm64/roxctl image/bin/roxctl-linux-arm64
 	cp bin/linux_ppc64le/roxctl image/bin/roxctl-linux-ppc64le
 	cp bin/linux_s390x/roxctl image/bin/roxctl-linux-s390x
 	cp bin/darwin_amd64/roxctl image/bin/roxctl-darwin-amd64
+	cp bin/darwin_arm64/roxctl image/bin/roxctl-darwin-arm64
 	cp bin/windows_amd64/roxctl.exe image/bin/roxctl-windows-amd64.exe
 else
-ifneq ($(HOST_OS),linux)
 	cp bin/linux_$(GOARCH)/roxctl image/bin/roxctl-linux-$(GOARCH)
-endif
-	cp bin/$(HOST_OS)_amd64/roxctl image/bin/roxctl-$(HOST_OS)-amd64
 endif
 	cp bin/linux_$(GOARCH)/migrator image/bin/migrator
 	cp bin/linux_$(GOARCH)/kubernetes        image/bin/kubernetes-sensor
@@ -739,6 +728,10 @@ default-image-registry:
 .PHONY: product-branding
 product-branding:
 	@echo $(ROX_PRODUCT_BRANDING)
+
+.PHONY: host-bin-platform
+host-bin-platform:
+	@echo $(HOST_BIN_PLATFORM)
 
 .PHONY: ossls-audit
 ossls-audit: deps
