@@ -9,11 +9,16 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -82,4 +87,20 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		return errors.Wrapf(err, "unable to setup %s reconciler", gvk)
 	}
 	return nil
+}
+
+// HandleSiblings returns an event handler which generates reconcile requests for
+// every (in our case typically one) resource of specified type, which resides in the same namespace as the
+// observed resource.
+func HandleSiblings(gvk schema.GroupVersionKind, manager ctrl.Manager) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(object ctrlClient.Object) []reconcile.Request {
+		list := &unstructured.UnstructuredList{}
+		list.SetGroupVersionKind(gvk)
+		utils.ListSiblings(list, object, manager.GetClient())
+		var ret []reconcile.Request
+		for _, c := range list.Items {
+			ret = append(ret, utils.RequestFor(&c)) // #nosec
+		}
+		return ret
+	})
 }

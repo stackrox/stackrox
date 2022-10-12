@@ -65,6 +65,9 @@ type mockCentral struct {
 // the condition where we have Rocks data that needs migrated to Postgres.  Need to test that
 // we calculate the destination clone appropriately.
 func createCentral(t *testing.T, runBoth bool) *mockCentral {
+	// Initialize mock test config
+	_ = migGorm.SetupAndGetMockConfig(t)
+
 	mountDir, err := os.MkdirTemp("", "mock-central-")
 	require.NoError(t, err)
 	mock := mockCentral{t: t, mountPath: mountDir, runBoth: runBoth}

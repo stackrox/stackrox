@@ -21,7 +21,7 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithExtraWatch(
 			&source.Kind{Type: &platform.SecuredCluster{}},
-			handleSiblingCentrals(mgr),
+			reconciler.HandleSiblings(platform.CentralGVK, mgr),
 			// Only appearance and disappearance of a SecuredCluster resource can influence whether
 			// an init bundle should be created by the Central controller.
 			utils.CreateAndDeleteOnlyPredicate{},

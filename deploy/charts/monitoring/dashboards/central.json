@@ -117,7 +117,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "increase(process_cpu_seconds_total{instance=~\"$Instance\"}[1m])",
+          "expr": "increase(process_cpu_seconds_total{instance=~\"$Instance\",job!=\"kubernetes-pods\"}[1m])",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -207,7 +207,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "go_memstats_heap_alloc_bytes{instance=~\"$Instance\"} / 1024^2",
+          "expr": "go_memstats_heap_alloc_bytes{instance=~\"$Instance\",job!=\"kubernetes-pods\"} / 1024^2",
           "interval": "",
           "legendFormat": "{{job}}: alloc",
           "refId": "A"
@@ -218,7 +218,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "go_memstats_heap_inuse_bytes{instance=~\"$Instance\"} / 1024^2",
+          "expr": "go_memstats_heap_inuse_bytes{instance=~\"$Instance\",job!=\"kubernetes-pods\"} / 1024^2",
           "interval": "",
           "legendFormat": "{{job}}: inuse",
           "refId": "B"
@@ -229,7 +229,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "go_memstats_heap_idle_bytes{instance=~\"$Instance\"} / 1024^2",
+          "expr": "go_memstats_heap_idle_bytes{instance=~\"$Instance\",job!=\"kubernetes-pods\"} / 1024^2",
           "interval": "",
           "legendFormat": "{{job}}: idle",
           "refId": "C"
