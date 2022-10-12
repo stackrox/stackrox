@@ -166,10 +166,14 @@ type CentralDBSpec struct {
 
 	// Disable database password generation. Do not use this for first-time installations in which the operator
 	// is managing Central DB as Central will have no way to connect to the database.
+	// Deprecated: do not set this explicitly; instead, set or don't set the passwordSecret property to govern whether
+	// a secret is generated, or whether a user-supplied one is used.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	PasswordGenerationDisabled *bool `json:"passwordGenerationDisabled,omitempty"`
 
 	// Specify a connection string that corresponds to an existing database. If set, the operator will not manage Central DB.
+	// When using this option, you must explicitly set a password secret; automatically generating a password will not
+	// be supported.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ConnectionStringOverride *string `json:"connectionString,omitempty"`
 
@@ -188,13 +192,6 @@ func (c *CentralDBSpec) GetPasswordSecret() *LocalSecretReference {
 		return nil
 	}
 	return c.PasswordSecret
-}
-
-func (c *CentralDBSpec) GetPasswordGenerationDisabled() bool {
-	if c == nil {
-		return false
-	}
-	return pointer.BoolPtrDerefOr(c.PasswordGenerationDisabled, false)
 }
 
 // IsExternal specifies that the database should not be managed by the Operator

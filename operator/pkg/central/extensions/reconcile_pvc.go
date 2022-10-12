@@ -67,24 +67,24 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence) *platform.Pers
 	}
 }
 
-func getPersistenceByClaimName(central *platform.Central, claim string) *platform.Persistence {
-	switch claim {
-	case DefaultCentralPVCName:
+func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platform.Persistence {
+	switch target {
+	case PVCTargetCentral:
 		return central.Spec.Central.GetPersistence()
-	case DefaultCentralDBPVCName:
+	case PVCTargetCentralDB:
 		if central.Spec.Central.DB.IsExternal() {
 			return nil
 		}
 		return convertDBPersistenceToPersistence(central.Spec.Central.DB.GetPersistence())
 	default:
-		panic("unknown default claim name")
+		panic(errors.Errorf("unknown pvc target %q", target))
 	}
 }
 
 // ReconcilePVCExtension reconciles PVCs created by the operator
 func ReconcilePVCExtension(client ctrlClient.Client, target PVCTarget, defaultClaimName string) extensions.ReconcileExtension {
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
-		persistence := getPersistenceByClaimName(central, defaultClaimName)
+		persistence := getPersistenceByTarget(central, target)
 		if persistence == nil {
 			return nil
 		}

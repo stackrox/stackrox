@@ -18,7 +18,10 @@ import (
 const (
 	centralDBPasswordKey = `password`
 
-	defaultCentralDBPasswordSecretName = `central-db-password`
+	// canonicalCentralDBPasswordSecretName is the name of the secret that is mounted into Central (and Central DB).
+	// This is not configurable; if a user specifies a different password secret, the password from that needs to be
+	// mirrored into the canonical password secret.
+	canonicalCentralDBPasswordSecretName = `central-db-password`
 )
 
 // ReconcileCentralDBPasswordExtension returns an extension that takes care of reconciling the central-db-password secret.
@@ -42,7 +45,7 @@ type reconcileCentralDBPasswordExtensionRun struct {
 
 func (r *reconcileCentralDBPasswordExtensionRun) readPasswordFromReferencedSecret(ctx context.Context) error {
 	if r.centralObj.Spec.Central.DB.GetPasswordSecret() == nil {
-		return nil
+		return errors.New("no password secret was specified")
 	}
 
 	passwordSecretName := r.centralObj.Spec.Central.DB.PasswordSecret.Name
@@ -53,9 +56,9 @@ func (r *reconcileCentralDBPasswordExtensionRun) readPasswordFromReferencedSecre
 		return errors.Wrapf(err, "failed to retrieve central db password secret %q", passwordSecretName)
 	}
 
-	password := strings.TrimSpace(string(passwordSecret.Data[centralDBPasswordKey]))
-	if password == "" || strings.ContainsAny(password, "\r\n") {
-		return errors.Errorf("central db password secret %s must contain a non-empty, single-line %q entry", passwordSecretName, centralDBPasswordKey)
+	password, err := passwordFromSecretData(passwordSecret.Data)
+	if err != nil {
+		return errors.Wrapf(err, "reading central db password from secret %s", passwordSecretName)
 	}
 
 	r.password = password
@@ -63,32 +66,53 @@ func (r *reconcileCentralDBPasswordExtensionRun) readPasswordFromReferencedSecre
 }
 
 func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) error {
-	if r.centralObj.DeletionTimestamp != nil {
-		return r.ReconcileSecret(ctx, defaultCentralDBPasswordSecretName, false, nil, nil, false)
+	if r.centralObj.DeletionTimestamp != nil || !r.centralObj.Spec.Central.CentralDBEnabled() {
+		return r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, false, nil, nil, false)
 	}
 
-	if r.centralObj.Spec.Central.DB.GetPasswordGenerationDisabled() && r.centralObj.Spec.Central.DB.GetPasswordSecret() == nil {
-		err := r.ReconcileSecret(ctx, defaultCentralDBPasswordSecretName, false, nil, nil, false)
-		if err != nil {
+	dbSpec := r.centralObj.Spec.Central.DB // non-nil thanks to CentralDBEnabled() check above
+	dbPasswordSecret := dbSpec.PasswordSecret
+	if dbSpec.IsExternal() && dbPasswordSecret == nil {
+		return errors.New("specifying a DB password secret is mandatory when using an external DB")
+	}
+
+	if dbSpec.PasswordGenerationDisabled != nil {
+		if *dbSpec.PasswordGenerationDisabled && dbPasswordSecret == nil {
+			return errors.Errorf("when explicitly disabling password generation, a password secret must be specified")
+		}
+		if !*dbSpec.PasswordGenerationDisabled && dbPasswordSecret != nil {
+			return errors.Errorf("when explicitly enabling password generation, a password secret must not be specified")
+		}
+	}
+
+	if dbPasswordSecret != nil {
+		if err := r.readPasswordFromReferencedSecret(ctx); err != nil {
 			return err
 		}
-		return nil
+		// If the user wants to use the central-db-password secret directly, that's fine, and we don't have anything more to do.
+		if dbPasswordSecret.Name == canonicalCentralDBPasswordSecretName {
+			return nil
+		}
 	}
-
-	if err := r.readPasswordFromReferencedSecret(ctx); err != nil {
-		return err
-	}
-	// If the user puts the password into central-db-password secret then don't reconcile
-	if secret := r.centralObj.Spec.Central.DB.GetPasswordSecret(); secret != nil && secret.Name == defaultCentralDBPasswordSecretName {
-		return nil
-	}
-	if err := r.ReconcileSecret(ctx, defaultCentralDBPasswordSecretName, true, r.validateSecretData, r.generateDBPassword, true); err != nil {
-		return errors.Wrap(err, "reconciling central-db-password secret")
+	// At this point, r.password was set via readPasswordFromReferencedSecret above (user-specified mode), or is unset,
+	// in which case the auto-generation logic will take effect.
+	if err := r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, true, r.validateSecretData, r.generateDBPassword, true); err != nil {
+		return errors.Wrapf(err, "reconciling %s secret", canonicalCentralDBPasswordSecretName)
 	}
 	return nil
 }
 
 func (r *reconcileCentralDBPasswordExtensionRun) validateSecretData(data types.SecretDataMap, controllerOwned bool) error {
+	password, err := passwordFromSecretData(data)
+	if err != nil {
+		return errors.Wrap(err, "validating existing secret data")
+	}
+	if r.password != "" && r.password != password {
+		return errors.New("existing password does not match expected one")
+	}
+	// The following assignment shouldn't have any consequences, as a successful validation should prevent generation
+	// from being invoked, but better safe than sorry (about clobbering a user-set password).
+	r.password = password
 	return nil
 }
 
@@ -100,4 +124,12 @@ func (r *reconcileCentralDBPasswordExtensionRun) generateDBPassword() (types.Sec
 	return types.SecretDataMap{
 		centralDBPasswordKey: []byte(r.password),
 	}, nil
+}
+
+func passwordFromSecretData(data types.SecretDataMap) (string, error) {
+	password := strings.TrimSpace(string(data[centralDBPasswordKey]))
+	if password == "" || strings.ContainsAny(password, "\r\n") {
+		return "", errors.Errorf("secret must contain a non-empty, single-line %q entry", centralDBPasswordKey)
+	}
+	return password, nil
 }

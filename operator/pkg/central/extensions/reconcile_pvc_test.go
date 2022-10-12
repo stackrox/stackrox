@@ -451,7 +451,7 @@ func newReconcilePVCExtensionRun(testCase pvcReconciliationTestCase, client ctrl
 		centralObj:       testCase.Central,
 		target:           testCase.Target,
 		defaultClaimName: testCase.DefaultClaim,
-		persistence:      getPersistenceByClaimName(testCase.Central, testCase.DefaultClaim),
+		persistence:      getPersistenceByTarget(testCase.Central, testCase.Target),
 		log:              logr.Discard(),
 	}
 }
