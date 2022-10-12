@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-func GetRolesForBindings(ctx context.Context, roleStore datastore.DataStore, bindings []*storage.K8SRoleBinding) []*storage.K8SRole {
+func getRolesForBindings(ctx context.Context, roleStore datastore.DataStore, bindings []*storage.K8SRoleBinding) []*storage.K8SRole {
 	roleIDs := set.NewStringSet()
 	for _, binding := range bindings {
 		roleID := binding.GetRoleId()

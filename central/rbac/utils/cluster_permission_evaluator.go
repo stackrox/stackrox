@@ -64,6 +64,6 @@ func (c *clusterPermissionEvaluator) getBindingsAndRoles(ctx context.Context, su
 		return nil, nil
 	}
 
-	roles := GetRolesForBindings(ctx, c.roleStore, clusterRoleBindings)
+	roles := getRolesForBindings(ctx, c.roleStore, clusterRoleBindings)
 	return clusterRoleBindings, roles
 }

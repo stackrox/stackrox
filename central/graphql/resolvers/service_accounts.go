@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -195,28 +196,13 @@ func (resolver *serviceAccountResolver) ScopedPermissions(ctx context.Context) (
 		return nil, err
 	}
 
-	subject := k8srbac.GetSubjectForServiceAccount(resolver.data)
-	permissionScopeMap := make(map[string]map[string]set.StringSet)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		evaluators, err := resolver.getEvaluators(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		for scope, evaluator := range evaluators {
-			permissions := evaluator.ForSubject(subject).GetPermissionMap()
-			if len(permissions) != 0 {
-				permissionScopeMap[scope] = permissions
-			}
-		}
-		return wrapPermissions(permissionScopeMap), nil
-	}
-
-	evaluators, err := resolver.getEvaluatorsForContext(ctx)
+	evaluators, err := resolver.getEvaluators(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	subject := k8srbac.GetSubjectForServiceAccount(resolver.data)
+	permissionScopeMap := make(map[string]map[string]set.StringSet)
 	for scope, evaluator := range evaluators {
 		permissions := evaluator.ForSubject(ctx, subject).GetPermissionMap()
 		if len(permissions) != 0 {
@@ -252,7 +238,7 @@ func (resolver *serviceAccountResolver) ClusterAdmin(ctx context.Context) (bool,
 	return evaluator.IsClusterAdmin(ctx, sa), nil
 }
 
-func (resolver *serviceAccountResolver) getEvaluatorsForContext(ctx context.Context) (map[string]k8srbac.EvaluatorForContext, error) {
+func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[string]k8srbac.EvaluatorForContext, error) {
 	evaluators := make(map[string]k8srbac.EvaluatorForContext)
 	saClusterID := resolver.data.GetClusterId()
 
@@ -260,6 +246,12 @@ func (resolver *serviceAccountResolver) getEvaluatorsForContext(ctx context.Cont
 		rbacUtils.NewClusterPermissionEvaluator(saClusterID,
 			resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		ctx = scoped.Context(ctx, scoped.Scope{
+			Level: v1.SearchCategory_CLUSTERS,
+			ID:    saClusterID,
+		})
+	}
 	namespaces, err := resolver.root.Namespaces(ctx, PaginatedQuery{})
 
 	if err != nil {
@@ -272,68 +264,6 @@ func (resolver *serviceAccountResolver) getEvaluatorsForContext(ctx context.Cont
 	}
 
 	return evaluators, nil
-}
-
-func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[string]k8srbac.Evaluator, error) {
-	evaluators := make(map[string]k8srbac.Evaluator)
-
-	clusterEval, err := resolver.getClusterRolesEvaluator(ctx)
-	if err != nil {
-		return evaluators, err
-	}
-
-	evaluators["Cluster"] = clusterEval
-
-	roleBindings, err := resolver.getRoleBindings(ctx)
-	if err != nil {
-		return evaluators, err
-	}
-
-	namespaceToRoleBindings := make(map[string][]*storage.K8SRoleBinding)
-	for _, binding := range roleBindings {
-		namespaceName := binding.GetNamespace()
-		if _, hasEntry := namespaceToRoleBindings[namespaceName]; !hasEntry {
-			namespaceToRoleBindings[namespaceName] = make([]*storage.K8SRoleBinding, 0)
-		}
-		namespaceToRoleBindings[namespaceName] = append(namespaceToRoleBindings[namespaceName], binding)
-	}
-
-	for namespaceName, bindings := range namespaceToRoleBindings {
-		roles := rbacUtils.GetRolesForBindings(ctx, resolver.root.K8sRoleStore, bindings)
-		evaluators[namespaceName] = k8srbac.NewEvaluator(roles, bindings)
-	}
-	return evaluators, nil
-}
-
-func (resolver *serviceAccountResolver) getRoleBindings(ctx context.Context) ([]*storage.K8SRoleBinding, error) {
-	q := search.NewQueryBuilder().
-		AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
-		AddBools(search.ClusterRole, false).
-		AddExactMatches(search.SubjectName, resolver.data.GetName()).
-		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
-		ProtoQuery()
-
-	rolebindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return rolebindings, nil
-}
-
-func (resolver *serviceAccountResolver) getClusterRolesEvaluator(ctx context.Context) (k8srbac.Evaluator, error) {
-	q := search.NewQueryBuilder().
-		AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
-		AddBools(search.ClusterRole, true).
-		AddExactMatches(search.SubjectName, resolver.data.GetName()).
-		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
-		ProtoQuery()
-
-	clusterRoleBindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	clusterRoles := rbacUtils.GetRolesForBindings(ctx, resolver.root.K8sRoleStore, clusterRoleBindings)
-	return k8srbac.NewEvaluator(clusterRoles, clusterRoleBindings), nil
 }
 
 func (resolver *serviceAccountResolver) getClusterEvaluator(ctx context.Context) k8srbac.EvaluatorForContext {
