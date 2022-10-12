@@ -17,6 +17,9 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 # (for defaults see: tests/e2e/lib.sh export_test_environment())
 os.environ["OUTPUT_FORMAT"] = "helm"
 
+# use postgres
+os.environ["ROX_POSTGRES_DATASTORE"] = "true"
+
 ClusterTestRunner(
     cluster=GKECluster("ui-e2e-test"),
     pre_test=PreSystemTests(),
