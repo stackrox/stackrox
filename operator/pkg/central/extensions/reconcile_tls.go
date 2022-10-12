@@ -61,10 +61,9 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
-	if r.centralObj.Spec.Central.CentralDBEnabled() && !r.centralObj.Spec.Central.DB.IsExternal() {
-		if err := r.ReconcileSecret(ctx, "central-db-tls", !shouldDelete, r.validateCentralDBTLSData, r.generateCentralDBTLSData, true); err != nil {
-			return errors.Wrap(err, "reconciling central-db-tls secret")
-		}
+	internalCentralDBEnabled := r.centralObj.Spec.Central.CentralDBEnabled() && !r.centralObj.Spec.Central.DB.IsExternal()
+	if err := r.ReconcileSecret(ctx, "central-db-tls", internalCentralDBEnabled && !shouldDelete, r.validateCentralDBTLSData, r.generateScannerDBTLSData, true); err != nil {
+		return errors.Wrap(err, "reconciling central-db-tls secret")
 	}
 
 	// scanner and scanner-db certs can be re-issued without a problem.
