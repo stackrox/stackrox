@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -32,8 +33,6 @@ var (
 
 	node string
 	once sync.Once
-
-	fullNodeScanInterval = 10 * time.Second // FIXME: Change to global setting
 )
 
 func getNode() string {
@@ -185,6 +184,45 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 	return client, config, nil
 }
 
+func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient) {
+	client, _, err := initializeStream(ctx, cli)
+	if err != nil {
+		log.Fatalf("error initializing stream to sensor: %v", err)
+	}
+	t := time.NewTicker(env.NodeScanInterval.DurationSetting())
+	scanner := full_nodescan.FakeNodeScanner{} // FIXME: Replace with real scanner (ROX-12971)
+
+	// send scan result once at startup, then every NodeScanInterval
+	scanNode(client, &scanner)
+
+	log.Infof("Node Scan interval: %v", env.NodeScanInterval.DurationSetting())
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			if err := scanNode(client, &scanner); err != nil {
+				log.Errorf("error running recv: %v", err)
+			}
+		}
+	}
+}
+
+func scanNode(client sensor.ComplianceService_CommunicateClient, scanner full_nodescan.NodeScanner) error {
+	nodeName := getNode()
+
+	result, err := scanner.Scan(nodeName)
+	if err != nil {
+		return errors.Wrap(err, "error scanning node")
+	}
+	msg := sensor.MsgFromCompliance{
+		Node: nodeName,
+		Msg:  &sensor.MsgFromCompliance_NodeScanV2{NodeScanV2: result},
+	}
+	return client.Send(&msg)
+}
+
 func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
@@ -200,7 +238,6 @@ func main() {
 	}()
 
 	cli := sensor.NewComplianceServiceClient(conn)
-	cliNode := sensor.NewComplianceServiceClient(conn)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = metadata.AppendToOutgoingContext(ctx, "rox-compliance-nodename", getNode())
@@ -208,7 +245,11 @@ func main() {
 	stoppedSig := concurrency.NewSignal()
 
 	go manageStream(ctx, cli, &stoppedSig)
-	go manageNodescanLoop(ctx, cliNode)
+
+	if features.RHCOSNodeScanning.Enabled() {
+		cliNode := sensor.NewComplianceServiceClient(conn)
+		go manageNodescanLoop(ctx, cliNode)
+	}
 
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
@@ -219,42 +260,4 @@ func main() {
 	cancel()
 	stoppedSig.Wait()
 	log.Info("Successfully closed Sensor communication")
-}
-
-func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient) {
-	client, _, err := initializeStream(ctx, cli)
-	if err != nil {
-		log.Fatalf("error initializing stream to sensor: %v", err)
-	}
-	t := time.NewTicker(fullNodeScanInterval)  // FIXME: Increase time, make this globally configurable
-	scanner := full_nodescan.FakeNodeScanner{} // FIXME: Replace with real scanner
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-			log.Infof("manageNodescanLoop: Calling scanNode")
-			if err := scanNode(client, &scanner); err != nil {
-				log.Errorf("error running recv: %v", err)
-			}
-		}
-	}
-}
-
-func scanNode(client sensor.ComplianceService_CommunicateClient, scanner full_nodescan.NodeScanner) error {
-	// from compliance, we need to get the following info to central
-	// List of components, comprised of Name & Version for each one, plus some metadata like OS, Scan time, etc
-	log.Infof("scanNode: Sending data to sensor.")
-	nodeName := getNode()
-
-	result, err := scanner.Scan(nodeName)
-	if err != nil {
-		return errors.Wrap(err, "error scanning node")
-	}
-	msg := sensor.MsgFromCompliance{
-		Node: nodeName,
-		Msg:  &sensor.MsgFromCompliance_NodeScanV2{NodeScanV2: result},
-	}
-	return client.Send(&msg)
 }
