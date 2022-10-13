@@ -1,20 +1,13 @@
 import React from 'react';
-import { Form, FormGroup, Select, SelectOption } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core';
 import pluralize from 'pluralize';
+import cloneDeep from 'lodash/cloneDeep';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { ensureExhaustive } from 'utils/type.utils';
+import { TrashIcon } from '@patternfly/react-icons';
 import { SelectorEntityType } from './collections.utils';
 import { isByLabelSelectorField, isByNameSelectorField, ScopedResourceSelector } from './types';
-
-export type RuleSelectorProps = {
-    entityType: SelectorEntityType;
-    selectedOption: ScopedResourceSelector | null;
-    onOptionChange: (
-        entityType: SelectorEntityType,
-        scopedResourceSelector: ScopedResourceSelector | null
-    ) => void;
-};
 
 export const selectorOption = {
     All: 'All',
@@ -28,22 +21,64 @@ function isRuleSelectorOption(value: string): value is RuleSelectorOption {
     return Object.values(selectorOption).includes(value as RuleSelectorOption);
 }
 
-function AutoCompleteSelector({ onChange }) {
+type AutoCompleteSelectorProps = {
+    onChange: (
+        entityType: SelectorEntityType,
+        scopedResourceSelector: ScopedResourceSelector | null
+    ) => void;
+    entityType: SelectorEntityType;
+    resourceSelector: ScopedResourceSelector;
+    selectedOption: string;
+};
+
+function AutoCompleteSelector({
+    onChange,
+    entityType,
+    resourceSelector,
+    selectedOption,
+}: AutoCompleteSelectorProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
 
     function onSelect(_, value) {
+        const newSelector = cloneDeep(resourceSelector);
+
+        if (newSelector.rules.length > 0) {
+            newSelector.rules[0].values.push({ value });
+        } else {
+            newSelector.rules = [{ operator: 'OR', values: [{ value }] }];
+        }
+
+        onChange(entityType, newSelector);
+        closeSelect();
         closeSelect();
     }
 
     return (
         <>
-            <Select isOpen={isOpen} onToggle={onToggle} selections={[]} onSelect={onSelect}>
+            <Select
+                variant="typeahead"
+                isCreatable
+                isOpen={isOpen}
+                onToggle={onToggle}
+                selections={selectedOption}
+                onSelect={onSelect}
+            >
                 <SelectOption value="test">test</SelectOption>
                 <SelectOption value="test2">test2</SelectOption>
+                <SelectOption value="test3">test3</SelectOption>
             </Select>
         </>
     );
 }
+
+export type RuleSelectorProps = {
+    entityType: SelectorEntityType;
+    selectedOption: ScopedResourceSelector | null;
+    onOptionChange: (
+        entityType: SelectorEntityType,
+        scopedResourceSelector: ScopedResourceSelector | null
+    ) => void;
+};
 
 function RuleSelector({ entityType, selectedOption, onOptionChange }: RuleSelectorProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
@@ -58,18 +93,13 @@ function RuleSelector({ entityType, selectedOption, onOptionChange }: RuleSelect
 
         switch (value) {
             case 'All':
+                selector = null;
                 break;
             case 'ByName':
-                selector = {
-                    field: entityType,
-                    rules: [{ operator: 'OR', values: [{ value: 'test1' }] }],
-                };
+                selector = { field: entityType, rules: [] };
                 break;
             case 'ByLabel':
-                selector = {
-                    field: `${entityType} Label`,
-                    rules: [{ operator: 'OR', values: [{ value: 'test2' }] }],
-                };
+                selector = { field: `${entityType} Label`, rules: [] };
                 break;
             default:
                 ensureExhaustive(value);
@@ -103,9 +133,35 @@ function RuleSelector({ entityType, selectedOption, onOptionChange }: RuleSelect
                 </SelectOption>
             </Select>
 
-            {selections === selectorOption.ByName && (
-                <AutoCompleteSelector onChange={onOptionChange} />
-            )}
+            <>
+                {selectedOption && selections === selectorOption.ByName && (
+                    <>
+                        {selectedOption.rules[0]?.values?.map(({ value }, index) => (
+                            <>
+                                <AutoCompleteSelector
+                                    onChange={onOptionChange}
+                                    entityType={entityType}
+                                    resourceSelector={selectedOption}
+                                    selectedOption={value}
+                                />
+                                <TrashIcon
+                                    onClick={() => {
+                                        const newSelector = cloneDeep(selectedOption);
+                                        newSelector.rules[0]?.values.splice(index, 1);
+                                        onOptionChange(entityType, newSelector);
+                                    }}
+                                />
+                            </>
+                        ))}
+                        <AutoCompleteSelector
+                            onChange={onOptionChange}
+                            entityType={entityType}
+                            resourceSelector={selectedOption}
+                            selectedOption=""
+                        />
+                    </>
+                )}
+            </>
             {selections === selectorOption.ByLabel && <></>}
         </>
     );

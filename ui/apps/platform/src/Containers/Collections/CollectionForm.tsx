@@ -286,7 +286,9 @@ function CollectionForm({
                                                 <RuleSelector
                                                     entityType="Namespace"
                                                     selectedOption={values.selectorRules.Namespace}
-                                                    onOptionChange={handleChange}
+                                                    onOptionChange={onRuleSelectorChange(
+                                                        setFieldValue
+                                                    )}
                                                 />
                                                 <Label variant="outline" isCompact>
                                                     in
@@ -294,7 +296,9 @@ function CollectionForm({
                                                 <RuleSelector
                                                     entityType="Cluster"
                                                     selectedOption={values.selectorRules.Cluster}
-                                                    onOptionChange={handleChange}
+                                                    onOptionChange={onRuleSelectorChange(
+                                                        setFieldValue
+                                                    )}
                                                 />
                                             </CardBody>
                                         </Card>
