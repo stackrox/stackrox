@@ -3,6 +3,7 @@ package rocksdb
 import (
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -327,27 +328,46 @@ func (d *dbCloneManagerImpl) GetDirName(cloneName string) string {
 func (d *dbCloneManagerImpl) DecommissionRocksDB() {
 	log.Info("DecommissionRocksDB")
 	for k := range d.cloneMap {
-		path := d.getPath(k)
-		if exists, err := fileutils.Exists(path); err != nil {
+		dirPath := d.getPath(k)
+		if exists, err := fileutils.Exists(dirPath); err != nil {
 			log.Error(err)
 			continue
 		} else if exists {
-			log.Infof("Removing database %s", path)
-			linkTo, err := fileutils.ResolveIfSymlink(path)
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-			log.Infof("Remove path = %q", path)
-			if err = os.RemoveAll(path); err != nil {
-				log.Error(err)
-				continue
-			}
-			// Remove any rocks database if in postgres mode
-			log.Infof("Remove linkTo = %q", linkTo)
-			if err = os.RemoveAll(linkTo); err != nil {
-				log.Error(err)
-				continue
+			// TODO(ROX-9882): While there is still stuff on the PVC there is an expectation that current
+			// exists in a certain state.  So until then we will simply clear the contents
+			if k == CurrentClone {
+				if exists, err := fileutils.Exists(dirPath); err != nil {
+					log.Error(err)
+					continue
+				} else if exists {
+					dir, err := os.ReadDir(dirPath)
+					if err != nil {
+						log.Error(err)
+						continue
+					}
+					for _, d := range dir {
+						log.Infof("SHREWS -- removing %q", d.Name())
+						os.RemoveAll(path.Join([]string{dirPath, d.Name()}...))
+					}
+				}
+			} else {
+				log.Infof("Removing database %s", dirPath)
+				linkTo, err := fileutils.ResolveIfSymlink(dirPath)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+				log.Infof("Remove path = %q", dirPath)
+				if err = os.RemoveAll(dirPath); err != nil {
+					log.Error(err)
+					continue
+				}
+				// Remove any rocks database if in postgres mode
+				log.Infof("Remove linkTo = %q", linkTo)
+				if err = os.RemoveAll(linkTo); err != nil {
+					log.Error(err)
+					continue
+				}
 			}
 		}
 		delete(d.cloneMap, k)
