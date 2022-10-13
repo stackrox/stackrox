@@ -66,6 +66,21 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
+// GetBatch mocks base method.
+func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBatch", ctx, id)
+	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBatch indicates an expected call of GetBatch.
+func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
+}
+
 // GetNamespace mocks base method.
 func (m *MockDataStore) GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error) {
 	m.ctrl.T.Helper()

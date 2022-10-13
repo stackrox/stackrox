@@ -45,6 +45,8 @@ import (
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
 	GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetBatch(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
+
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
 	UpdateNamespace(context.Context, *storage.NamespaceMetadata) error
 	RemoveNamespace(ctx context.Context, id string) error
@@ -187,6 +189,14 @@ func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.Namespace
 	}
 	b.updateNamespacePriority(allowedNamespaces...)
 	return allowedNamespaces, nil
+}
+
+func (b *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
+	namespaces, _, err := b.store.GetMany(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	return namespaces, nil
 }
 
 // AddNamespace adds a namespace to bolt

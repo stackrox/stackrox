@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/namespace/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
@@ -17,16 +18,28 @@ import (
 // ResolveAll resolves all namespaces, populating volatile runtime data (like deployment and secret counts) by querying related stores.
 func ResolveAll(ctx context.Context, dataStore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
 	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore, query *v1.Query) ([]*v1.Namespace, error) {
-	metadataSlice, err := dataStore.SearchNamespaces(ctx, query)
+	metadataSlice, err := getNamespaceMetadataSliceFromQuery(ctx, dataStore, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving namespaces")
 	}
 	return populateFromMetadataSlice(ctx, metadataSlice, deploymentDataStore, secretDataStore, npStore)
 }
 
+func getNamespaceMetadataSliceFromQuery(ctx context.Context, dataStore datastore.DataStore, query *v1.Query) ([]*storage.NamespaceMetadata, error) {
+	if loaders.HasLoaderContext(ctx) {
+		loader, err := loaders.GetNamespaceLoader(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return loader.FromQuery(ctx, query)
+	}
+	return dataStore.SearchNamespaces(ctx, query)
+}
+
 // ResolveMetadataOnlyByQuery resolves all namespaces based on a query. This will _not_ populate volatile runtime data and that must be requested separately.
 func ResolveMetadataOnlyByQuery(ctx context.Context, q *v1.Query, dataStore datastore.DataStore) ([]*v1.Namespace, error) {
-	metadataSlice, err := dataStore.SearchNamespaces(ctx, q)
+
+	metadataSlice, err := getNamespaceMetadataSliceFromQuery(ctx, dataStore, q)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving namespaces")
 	}
@@ -70,7 +83,7 @@ func populateFromMetadataSlice(ctx context.Context, metadataSlice []*storage.Nam
 func ResolveByClusterIDAndName(ctx context.Context, clusterID string, name string, dataStore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
 	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) (*v1.Namespace, bool, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.Namespace, name).AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	namespaces, err := dataStore.SearchNamespaces(ctx, q)
+	namespaces, err := getNamespaceMetadataSliceFromQuery(ctx, dataStore, q)
 	if err != nil {
 		return nil, false, err
 	}
