@@ -345,7 +345,10 @@ func (d *dbCloneManagerImpl) DecommissionRocksDB() {
 				}
 				for _, d := range dir {
 					log.Infof("Removing %q", d.Name())
-					os.RemoveAll(path.Join([]string{dirPath, d.Name()}...))
+					if err = os.RemoveAll(path.Join([]string{dirPath, d.Name()}...)); err != nil {
+						log.Error(err)
+						continue
+					}
 				}
 			} else {
 				log.Infof("Removing database %s", dirPath)
