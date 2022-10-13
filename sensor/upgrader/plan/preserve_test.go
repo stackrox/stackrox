@@ -3,6 +3,7 @@ package plan
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -10,6 +11,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -138,10 +142,114 @@ func TestPreserveResources(t *testing.T) {
 		},
 	}
 
-	mergedDS, err := applyPreservedProperties(scheme.Scheme, newDS, oldDS)
+	newDSUnstructured, err := toUnstructuredObject(newDS)
+	require.NoError(t, err)
+	oldDSUnstructured, err := toUnstructuredObject(oldDS)
+	require.NoError(t, err)
+	err = applyPreservedProperties(newDSUnstructured, oldDSUnstructured)
 	require.NoError(t, err)
 
-	assert.Equal(t, expectedMergedDS, mergedDS)
+	var mergedDS v1.DaemonSet
+	require.NoError(t, convert(scheme.Scheme, newDSUnstructured, &mergedDS))
+
+	assert.Equal(t, expectedMergedDS, &mergedDS)
+}
+
+func TestPreserveTolerations(t *testing.T) {
+	oldDeploy := &v1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sensor",
+			Namespace: "stackrox",
+		},
+		Spec: v1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "sensor",
+							Image: "foo",
+						},
+					},
+					Tolerations: []corev1.Toleration{
+						{
+							Effect:   corev1.TaintEffectNoSchedule,
+							Key:      "node-role.kubernetes.io/master",
+							Operator: corev1.TolerationOpExists,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	newDeploy := &v1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sensor",
+			Namespace: "stackrox",
+		},
+		Spec: v1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "sensor",
+							Image: "bar",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	expectedMergedDeploy := &v1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sensor",
+			Namespace: "stackrox",
+		},
+		Spec: v1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "sensor",
+							Image: "bar",
+						},
+					},
+					Tolerations: []corev1.Toleration{
+						{
+							Effect:   corev1.TaintEffectNoSchedule,
+							Key:      "node-role.kubernetes.io/master",
+							Operator: corev1.TolerationOpExists,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	newDeployUnstructured, err := toUnstructuredObject(newDeploy)
+	require.NoError(t, err)
+	oldDeployUnstructured, err := toUnstructuredObject(oldDeploy)
+	require.NoError(t, err)
+	err = applyPreservedProperties(newDeployUnstructured, oldDeployUnstructured)
+	require.NoError(t, err)
+
+	var mergedDeploy v1.Deployment
+	require.NoError(t, convert(scheme.Scheme, newDeployUnstructured, &mergedDeploy))
+
+	assert.Equal(t, expectedMergedDeploy, &mergedDeploy)
 }
 
 func Test_applyPreservedProperties(t *testing.T) {
@@ -170,8 +278,34 @@ func Test_applyPreservedProperties(t *testing.T) {
 		},
 	}
 
-	r, err := applyPreservedProperties(scheme.Scheme, newObj, oldObj)
+	oldObjUnstructured, err := toUnstructuredObject(oldObj)
 	require.NoError(t, err)
-	assert.Equal(t, serviceGVK, r.GetObjectKind().GroupVersionKind())
-	assert.Equal(t, "1.2.3.4", r.(*corev1.Service).Spec.ClusterIP)
+	newObjUnstructured, err := toUnstructuredObject(newObj)
+	require.NoError(t, err)
+
+	err = applyPreservedProperties(newObjUnstructured, oldObjUnstructured)
+	require.NoError(t, err)
+
+	var rSvc corev1.Service
+	require.NoError(t, convert(scheme.Scheme, newObjUnstructured, &rSvc))
+	assert.Equal(t, "1.2.3.4", rSvc.Spec.ClusterIP)
+}
+
+// convert converts objects, adequately transferring type metadata.
+func convert(scheme *runtime.Scheme, oldObj k8sutil.Object, newObj k8sutil.Object) error {
+	if err := scheme.Convert(oldObj, newObj, nil); err != nil {
+		return err
+	}
+	if newObj.GetObjectKind().GroupVersionKind() == (schema.GroupVersionKind{}) {
+		newObj.GetObjectKind().SetGroupVersionKind(oldObj.GetObjectKind().GroupVersionKind())
+	}
+	return nil
+}
+
+func toUnstructuredObject(typedObj k8sutil.Object) (*unstructured.Unstructured, error) {
+	objData, err := runtime.DefaultUnstructuredConverter.ToUnstructured(typedObj)
+	if err != nil {
+		return nil, err
+	}
+	return &unstructured.Unstructured{Object: objData}, nil
 }

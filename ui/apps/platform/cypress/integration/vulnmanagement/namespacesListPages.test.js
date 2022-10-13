@@ -14,6 +14,7 @@ import {
 } from '../../helpers/vmWorkflowUtils';
 import {
     getCountAndNounFromImageCVEsLinkResults,
+    hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyFilteredSecondaryEntitiesLink,
     verifySecondaryEntities,
@@ -78,7 +79,8 @@ describe('Vulnerability Management Namespaces', () => {
         it('should display table columns', () => {
             visitVulnerabilityManagementEntities(entitiesKey);
 
-            hasExpectedHeaderColumns([
+            hasTableColumnHeadings([
+                '', // hidden
                 'Namespace',
                 'Image CVEs',
                 'Cluster',

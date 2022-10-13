@@ -283,7 +283,7 @@ activate_metrics_server() {
     echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
     local success=0
     # shellcheck disable=SC2034
-    for i in $(seq 1 10); do
+    for i in $(seq 1 30); do
         if kubectl api-resources 2>&1 | sed -e 's/^/out: /' | grep metrics.k8s.io; then
             success=1
             break

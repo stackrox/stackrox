@@ -73,7 +73,7 @@ func (s *podDatastoreSACSuite) TearDownSuite() {
 func (s *podDatastoreSACSuite) SetupTest() {
 	s.testPodIDs = make([]string, 0)
 
-	pods := fixtures.GetSACTestStoragePodSet(fixtures.GetScopedPod)
+	pods := fixtures.GetSACTestResourceSet(fixtures.GetScopedPod)
 	for i := range pods {
 		s.Require().NoError(s.datastore.UpsertPod(s.testContexts[testutils.UnrestrictedReadWriteCtx], pods[i]))
 	}
