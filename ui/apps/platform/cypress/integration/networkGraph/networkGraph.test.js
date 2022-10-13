@@ -55,7 +55,7 @@ describe('Network Graph Search', () => {
         });
     });
 
-    it('should filter to show only a specific deployment and deployments connected to it', function() {
+    it('should filter to show only a specific deployment and deployments connected to it', function () {
         if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }

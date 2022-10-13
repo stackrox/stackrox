@@ -94,7 +94,7 @@ describe('Network page', () => {
         // Stop here because after Policies processed, local deployment differs from CI.
     });
 
-    it('should show the network policy simulator screen after generating network policies', function() {
+    it('should show the network policy simulator screen after generating network policies', function () {
         if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }
@@ -117,7 +117,7 @@ describe('Network page', () => {
 describe('Network Deployment Details', () => {
     withAuth();
 
-    it('should show the deployment name and namespace', function() {
+    it('should show the deployment name and namespace', function () {
         if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }
@@ -177,7 +177,7 @@ describe('Network Policy Simulator', () => {
 describe('Network Flows Table', () => {
     withAuth();
 
-    it('should show the proper table column headers for the network flows table', function() {
+    it('should show the proper table column headers for the network flows table', function () {
         if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }
