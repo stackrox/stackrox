@@ -27,7 +27,7 @@ func adjacentNodeIDsToMap(adjacencies []string) map[string]*v1.NetworkEdgeProper
 }
 
 func getPolicyIDs(node *v1.NetworkNode) []string {
-	result := sliceutils.StringClone(node.GetPolicyIds())
+	result := sliceutils.ShallowClone(node.GetPolicyIds())
 	sort.Strings(result)
 	return result
 }

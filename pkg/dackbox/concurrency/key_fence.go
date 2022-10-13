@@ -151,8 +151,8 @@ func (rks *rangeKeySetImpl) Equals(in KeySet) bool {
 
 func (rks *rangeKeySetImpl) Clone() KeySet {
 	return &rangeKeySetImpl{
-		lower: sliceutils.ByteClone(rks.lower),
-		upper: sliceutils.ByteClone(rks.upper),
+		lower: sliceutils.ShallowClone(rks.lower),
+		upper: sliceutils.ShallowClone(rks.upper),
 	}
 }
 
@@ -193,7 +193,7 @@ func (pkr *prefixKeySetImpl) Equals(in KeySet) bool {
 
 func (pkr *prefixKeySetImpl) Clone() KeySet {
 	return &prefixKeySetImpl{
-		prefix: sliceutils.ByteClone(pkr.prefix),
+		prefix: sliceutils.ShallowClone(pkr.prefix),
 	}
 }
 

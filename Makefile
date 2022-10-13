@@ -143,11 +143,6 @@ $(MOCKGEN_BIN): deps
 	@echo "+ $@"
 	go install github.com/golang/mock/mockgen
 
-GENNY_BIN := $(GOBIN)/genny
-$(GENNY_BIN): deps
-	@echo "+ $@"
-	go install github.com/mauricelam/genny
-
 GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN): deps
 	@echo "+ $@"

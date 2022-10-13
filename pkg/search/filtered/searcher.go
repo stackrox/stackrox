@@ -90,7 +90,7 @@ func ApplySACFilter(ctx context.Context, ids []string, filter Filter) ([]string,
 	if all || len(filteredIndices) == len(ids) {
 		return ids, nil
 	}
-	return sliceutils.StringSelect(ids, filteredIndices...), nil
+	return sliceutils.Select(ids, filteredIndices...), nil
 }
 
 // ApplySACFilterToSearchResults filters search results with a SAC filter.

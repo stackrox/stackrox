@@ -31,7 +31,7 @@ func (c *checkRequiredAttributesImpl) Verify(attributes map[string][]string) err
 	for _, required := range c.required {
 		if observedValue, ok := attributes[required.GetAttributeKey()]; !ok || observedValue == nil {
 			missingAttributes = append(missingAttributes, required.GetAttributeKey())
-		} else if ok && sliceutils.StringFind(observedValue, required.GetAttributeValue()) == -1 {
+		} else if ok && sliceutils.Find(observedValue, required.GetAttributeValue()) == -1 {
 			return fmt.Errorf("required attribute %q did not have the required value", required.GetAttributeKey())
 		}
 	}

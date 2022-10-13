@@ -43,7 +43,7 @@ func NewServiceCertInjectingRoundTripper(cert *tls.Certificate, rt http.RoundTri
 		reqShallowCopy := *req
 		newHeader := make(http.Header)
 		for k, vs := range req.Header {
-			newHeader[k] = sliceutils.StringClone(vs)
+			newHeader[k] = sliceutils.ShallowClone(vs)
 		}
 
 		newHeader.Set("authorization", fmt.Sprintf("%s %s", servicecerttoken.TokenType, token))

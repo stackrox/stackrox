@@ -16,7 +16,7 @@ const (
 // The original config is not modified.
 func ApplyPureGRPCALPNConfig(tlsConf *tls.Config) *tls.Config {
 	confForGRPC := tlsConf.Clone()
-	confForGRPC.NextProtos = sliceutils.StringUnique(
+	confForGRPC.NextProtos = sliceutils.Unique(
 		append([]string{PureGRPCALPNString, "h2"}, confForGRPC.NextProtos...))
 
 	getConfForClient := confForGRPC.GetConfigForClient
