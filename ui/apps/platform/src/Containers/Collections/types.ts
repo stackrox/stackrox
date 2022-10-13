@@ -59,7 +59,7 @@ export function isSupportedSelectorField(field: SelectorField): field is Support
 export type ScopedResourceSelector = {
     field: SupportedSelectorField;
     rules: Omit<DisjunctionSelectorRule, 'fieldName'>[];
-} | null;
+};
 
 /**
  * `Collection` is the front end representation of a valid collection, which is more
@@ -70,6 +70,6 @@ export type Collection = {
     name: string;
     description: string;
     inUse: boolean;
-    selectorRules: Record<SelectorEntityType, ScopedResourceSelector>;
+    selectorRules: Record<SelectorEntityType, ScopedResourceSelector | null>;
     embeddedCollectionIds: string[];
 };

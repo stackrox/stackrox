@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Alert,
@@ -36,48 +36,23 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
 import { deleteCollection } from 'services/CollectionsService';
-import { Formik } from 'formik';
+import { Form, Formik, FormikHelpers, useFormikContext } from 'formik';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
 import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
 
-type FormStateReducerAction =
-    | { type: 'setName'; name: string }
-    | { type: 'setDescription'; description: string }
-    | { type: 'setRules'; entity: SelectorEntityType; selector: ScopedResourceSelector }
-    | { type: 'attachCollection'; collectionId: string }
-    | { type: 'detachCollection'; collectionId: string };
+const FormikWatcher = ({ onChange }) => {
+    const { values, isValid } = useFormikContext();
 
-function formStateReducer(state: Collection, payload: FormStateReducerAction): Collection {
-    switch (payload.type) {
-        case 'setName':
-            return { ...state, name: payload.name };
-        case 'setDescription':
-            return { ...state, name: payload.description };
-        case 'setRules': {
-            const selectorRules = { ...state.selectorRules };
-            selectorRules[payload.entity] = payload.selector;
-            return { ...state, selectorRules };
-        }
-        case 'attachCollection':
-            return {
-                ...state,
-                embeddedCollectionIds: state.embeddedCollectionIds.concat(payload.collectionId),
-            };
-        case 'detachCollection':
-            return {
-                ...state,
-                embeddedCollectionIds: state.embeddedCollectionIds.filter(
-                    (id) => id !== payload.collectionId
-                ),
-            };
-        default:
-            // Type safe fallback to ensure we don't miss any cases
-            return ((_: never) => _)(payload);
-    }
-}
+    useEffect(() => {
+        //  TODO Beware that this fires twice
+        onChange(values, isValid);
+    }, [onChange, isValid, values]);
+
+    return null;
+};
 
 export type CollectionFormProps = {
     hasWriteAccessForCollections: boolean;
@@ -125,9 +100,6 @@ function CollectionForm({
 
     const pageTitle = action.type === 'create' ? 'Create collection' : initialData.name;
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [formState, dispatch] = useReducer(formStateReducer, initialData);
-
     function onEditCollection(id: string) {
         history.push({
             pathname: `${collectionsBasePath}/${id}`,
@@ -164,6 +136,13 @@ function CollectionForm({
 
     function onCancelDeleteCollection() {
         setDeleteId(null);
+    }
+
+    function onRuleSelectorChange(setFieldValue: FormikHelpers<unknown>['setFieldValue']) {
+        return (
+            entityType: SelectorEntityType,
+            scopedResourceSelector: ScopedResourceSelector | null
+        ) => setFieldValue(`selectorRules.${entityType}`, scopedResourceSelector);
     }
 
     return (
@@ -271,14 +250,14 @@ function CollectionForm({
                             </FlexItem>
                         </Flex>
                         <Divider component="div" />
-                        <Formik
-                            initialValues={initialData}
-                            onSubmit={(values) => {
-                                console.log(values);
-                            }}
-                        >
-                            {({ values, handleChange }) => (
-                                <>
+                        <Formik initialValues={initialData} onSubmit={() => {}}>
+                            {({ values, handleChange, setFieldValue }) => (
+                                <Form>
+                                    <FormikWatcher
+                                        onChange={(formValue: Collection) =>
+                                            console.log('formik change', formValue.selectorRules)
+                                        }
+                                    />
                                     <Flex
                                         className="pf-u-background-color-200 pf-u-p-lg"
                                         spaceItems={{ default: 'spaceItemsMd' }}
@@ -297,7 +276,9 @@ function CollectionForm({
                                                 <RuleSelector
                                                     entityType="Deployment"
                                                     selectedOption={values.selectorRules.Deployment}
-                                                    onOptionChange={handleChange}
+                                                    onOptionChange={onRuleSelectorChange(
+                                                        setFieldValue
+                                                    )}
                                                 />
                                                 <Label variant="outline" isCompact>
                                                     in
@@ -334,7 +315,7 @@ function CollectionForm({
                                             </>
                                         </div>
                                     )}
-                                </>
+                                </Form>
                             )}
                         </Formik>
                     </DrawerContentBody>
