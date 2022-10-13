@@ -207,6 +207,20 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	_, ok = err.(dag.SrcDstEqualError)
 	s.True(ok)
 
+	// dryrun 'd' which has a duplicate name
+	obj = s.getTestCollection("c", nil)
+	obj.Name = "a"
+	err = s.datastore.DryRunCollection(ctx, obj)
+	s.NotNil(err)
+	_, ok = err.(dag.VertexDuplicateError)
+	s.True(ok)
+
+	// try to add 'd' which has duplicate name
+	err = s.datastore.AddCollection(ctx, obj)
+	s.NotNil(err)
+	_, ok = err.(dag.VertexDuplicateError)
+	s.True(ok)
+
 	// clean up testing data
 	s.NoError(s.datastore.DeleteCollection(ctx, "b"))
 	s.NoError(s.datastore.DeleteCollection(ctx, "a"))

@@ -54,15 +54,28 @@ func (ds *datastoreImpl) initGraph() error {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
-	// add ids first
+	// get ids first
 	ids, err := ds.storage.GetIDs(ctx)
 	if err != nil {
 		return err
 	}
-	for _, id := range ids {
-		err = ds.graph.AddVertexByID(id, id)
+
+	// add vertices by batches
+	for i := 0; i < len(ids); i += initBatchSize {
+		var objs []*storage.ResourceCollection
+		if i+initBatchSize < len(ids) {
+			objs, _, err = ds.storage.GetMany(ctx, ids[i:i+initBatchSize])
+		} else {
+			objs, _, err = ds.storage.GetMany(ctx, ids[i:])
+		}
 		if err != nil {
 			return err
+		}
+		for _, obj := range objs {
+			err = ds.graph.AddVertexByID(obj.GetId(), obj.GetName())
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -94,7 +107,7 @@ func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) e
 	ds.graphLock.Lock()
 	defer ds.graphLock.Unlock()
 
-	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetId())
+	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetName())
 	if err != nil {
 		return err
 	}
@@ -126,7 +139,7 @@ func (ds *datastoreImpl) dryRunCollectionInGraph(obj *storage.ResourceCollection
 	var ret error
 
 	// we essentially just add the obj to the graph and delete it before returning
-	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetId())
+	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetName())
 	if err != nil {
 		return err
 	}
