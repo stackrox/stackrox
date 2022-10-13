@@ -25,13 +25,13 @@ VERBOSE="false"
 
 function build_local_sensor() {
   [[ "$VERBOSE" == "false" ]] || echo "Building local-sensor: $LOCAL_SENSOR_BIN"
-  go build -o $EXEC $LOCAL_SENSOR_DIR/main.go > $OUTPUT_DIR/build.log 2>&1
+  go build -o "$EXEC" "$LOCAL_SENSOR_DIR"/main.go > "$OUTPUT_DIR"/build.log 2>&1
   [[ "$VERBOSE" == "false" ]] || echo "Build done"
 }
 
 function generate_k8s_events() {
   [[ "$VERBOSE" == "false" ]] || echo "Generating k8s events file: $K8S_EVENTS_FILE"
-  $EXEC -record -record-out=$K8S_EVENTS_FILE -with-fakeworkload=$FAKE_WORKLOAD_FILE -resync=0s -central-out=/dev/null -no-cpu-prof -no-mem-prof > $OUTPUT_DIR/generate.log 2>&1 &
+  $EXEC -record -record-out="$K8S_EVENTS_FILE" -with-fakeworkload="$FAKE_WORKLOAD_FILE" -resync=0s -central-out=/dev/null -no-cpu-prof -no-mem-prof > "$OUTPUT_DIR"/generate.log 2>&1 &
   PID=$!
   [[ "$VERBOSE" == "false" ]] || echo "$LOCAL_SENSOR_BIN PID: $PID"
   sleep $GENERATE_TIMEOUT
@@ -42,14 +42,14 @@ function generate_k8s_events() {
 function run_test() {
   [[ "$VERBOSE" == "false" ]] || echo "Running tests with: $K8S_EVENTS_FILE"
   export ROX_METRICS_PORT=$ROX_METRICS_PORT
-  { time $EXEC -replay -replay-in=$K8S_EVENTS_FILE -resync=10s -delay=0s -with-metrics -with-policies=$POLICIES_FILE -central-out=/dev/null > $OUTPUT_DIR/test.log 2>&1 ; } > $TIME_FILE 2>&1 &
+  { time $EXEC -replay -replay-in="$K8S_EVENTS_FILE" -resync=10s -delay=0s -with-metrics -with-policies="$POLICIES_FILE" -central-out=/dev/null > "$OUTPUT_DIR"/test.log 2>&1 ; } > "$TIME_FILE" 2>&1 &
   TIME_PID=$!
   SENSOR_PID=$(pgrep -P $TIME_PID)
   [[ "$VERBOSE" == "false" ]] || echo "time PID: $TIME_PID"
   [[ "$VERBOSE" == "false" ]] || echo "$LOCAL_SENSOR_BIN PID: $SENSOR_PID"
   sleep $TEST_TIMEOUT
-  curl -s $PROMETHEUS_ENDPOINT/api/v1/query?query=$PROMETHEUS_QUERY > $PROMETHEUS_DUMP || true
-  kill $SENSOR_PID
+  curl -s $PROMETHEUS_ENDPOINT/api/v1/query?query=$PROMETHEUS_QUERY > "$PROMETHEUS_DUMP" || true
+  kill "$SENSOR_PID"
   [[ "$VERBOSE" == "false" ]] || echo "Test done"
 }
 
@@ -198,7 +198,7 @@ function parse_args() {
         PROMETHEUS_DUMP=$OUTPUT_DIR/$arg
         shift
         ;;
-      -*|--*)
+      -*)
         echo "Unknown argument $i"
         exit 1
         ;;
