@@ -18,8 +18,8 @@ var (
 		},
 	}
 
-	roleName = "ComplianceRunSchedule"
-	prefix   = []byte("permission_sets")
+	permissionName = "ComplianceRunSchedule"
+	prefix         = []byte("permission_sets")
 
 	readOpts  = gorocksdb.NewDefaultReadOptions()
 	writeOpts = gorocksdb.NewDefaultWriteOptions()
@@ -34,10 +34,10 @@ func removeComplianceRunScheduleFromPermissionSets(db *gorocksdb.DB) error {
 		if err := proto.Unmarshal(it.Value().Data(), ps); err != nil {
 			return errors.Wrap(err, "unable to unmarshal permission set")
 		}
-		if _, ok := ps.ResourceToAccess[roleName]; !ok {
+		if _, ok := ps.ResourceToAccess[permissionName]; !ok {
 			continue
 		}
-		delete(ps.ResourceToAccess, roleName)
+		delete(ps.ResourceToAccess, permissionName)
 		data, err := proto.Marshal(ps)
 		if err != nil {
 			return errors.Wrap(err, "unable to marshal permission set")
