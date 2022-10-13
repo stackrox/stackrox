@@ -76,7 +76,7 @@ func (c *ClusterGatherer) Gather(ctx context.Context, pullFromSensors bool) []*d
 		case ret := <-clusterRetC:
 			outstanding--
 			if ret.err != nil {
-				log.Errorf("Error pulling telemetry data from cluster %s: %v", ret.clusterID, err)
+				log.Errorf("Error pulling telemetry data from cluster %s: %v", ret.clusterID, ret.err)
 				continue
 			}
 			clusterList = append(clusterList, ret.clusterInfo)
