@@ -104,7 +104,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 		}
 	}
 
-	// Remove unknown clones that is not in use
+	// Remove unknown clones that are not in use
 	for _, r := range d.cloneMap {
 		clonesToRemove.Remove(r.GetDirName())
 	}
