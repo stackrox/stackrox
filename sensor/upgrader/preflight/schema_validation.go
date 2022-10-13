@@ -2,8 +2,8 @@ package preflight
 
 import (
 	"bytes"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
@@ -38,11 +38,11 @@ func (schemaValidationCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *pla
 func validateObject(obj k8sutil.Object, validator validation.Schema) error {
 	var buf bytes.Buffer
 	if err := defaultJSONEncoder.Encode(obj, &buf); err != nil {
-		return fmt.Errorf("failed to serialize to JSON: %w", err)
+		return errors.Wrap(err, "failed to serialize to JSON")
 	}
 
 	if err := validator.ValidateBytes(buf.Bytes()); err != nil {
-		return fmt.Errorf("schema validation failed: %w", err)
+		return errors.Wrap(err, "schema validation failed")
 	}
 	return nil
 }
