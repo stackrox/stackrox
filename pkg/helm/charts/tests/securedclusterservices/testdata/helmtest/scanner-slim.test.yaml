@@ -3,6 +3,17 @@ server:
   - openshift-4.1.0
   availableSchemas:
   - openshift-4.1.0
+values:
+  meta:
+    useLookup: false
+    useFakeLookup: true
+    fakeLookupResources:
+      v1/Secret/stackrox:
+        data:
+          foo: bar
+      v1/Secret/stackrox-scanner:
+        data:
+          foo: bar
 tests:
 - name: "scanner with default settings in slim mode"
   set:
@@ -65,13 +76,12 @@ tests:
     .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)
     .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
 
-- name: "scanner slim service account can access image pull secrets"
+- name: "scanner slim service account can access image pull secrets when they are present"
   set:
     scanner.disable: false
     scanner.mode: "slim"
   expect: |
     .serviceaccounts["scanner"] | assertThat(. != null)
-    .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "secured-cluster-services-main")
     .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox")
     .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox-scanner")
   tests:
@@ -83,17 +93,20 @@ tests:
       .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 3)
       .secrets["secured-cluster-services-main"] | assertThat(. != null)
   - name: "no secret is created"
-    expect: .secrets["secured-cluster-services-main"] | assertThat(. == null)
+    expect: |
+      .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox")
+      .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox-scanner")
+      .secrets["secured-cluster-services-main"] | assertThat(. == null)
     tests:
     - name: "when allowNone is true"
       set:
         imagePullSecrets.allowNone: true
-      expect: .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 3)
+      expect: .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 2)
     - name: "when using existing secrets"
       set:
         imagePullSecrets.useExisting: "existing-secret1; existing-secret2"
       expect: |
-        .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 5)
+        .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 4)
         .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "existing-secret1")
         .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "existing-secret2")
 

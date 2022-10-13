@@ -20,6 +20,14 @@
   {{ end }}
   {{ include "srox._doLookup" . }}
   {{ $_ := set $out "reliable" $._rox._state.lookupWorks }}
+{{ else if $._rox.meta.useFakeLookup }}
+  {{ $apiVersion := index . 2 }}
+  {{ $kind := index . 3 }}
+  {{ $resource := index . 4 }}
+  {{ $resourceRef := printf "%s/%s/%s" $apiVersion $kind $resource }}
+  {{ $fakeObj := get $._rox.meta.fakeLookupResources $resourceRef }}
+  {{ $_ := set $out "result" $fakeObj }}
+  {{ $_ := set $out "reliable" true }}
 {{ end }}
 {{ end }}
 
