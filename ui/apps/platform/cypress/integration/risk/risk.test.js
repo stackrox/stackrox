@@ -138,7 +138,7 @@ describe('Risk page', () => {
     });
 
     describe('with actual API', () => {
-        it('should navigate to network page with selected deployment', () => {
+        it('should navigate to network page with selected deployment', function () {
             if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
                 this.skip();
             }
@@ -198,7 +198,7 @@ describe('Risk page', () => {
             });
         });
 
-        it('should have multiple URL search param key/value pairs in its search bar', () => {
+        it('should have multiple URL search param key/value pairs in its search bar', function () {
             if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
                 this.skip();
             }
