@@ -69,6 +69,9 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
 	{{$name}} := &{{.Type}}{}
 	s.NoError(testutils.FullInit({{$name}}, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	{{- if .Cycle}}
+	{{$name}}.{{.EmbeddedFK}} = {{$name}}.{{.ReferencedField}}
+	{{- end}}
 
 	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
