@@ -458,10 +458,11 @@ func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, er
 		scan = image.GetScan()
 	}
 
-	res, err := resolver.root.wrapImageScanWithContext(ctx, scan, true, nil)
+	res, err := resolver.root.wrapImageScan(scan, true, nil)
 	if err != nil || res == nil {
 		return nil, err
 	}
+	res.ctx = resolver.imageScopeContext()
 	return res, nil
 }
 

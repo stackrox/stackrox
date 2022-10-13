@@ -542,13 +542,14 @@ func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, ar
 }
 
 func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
-	res, err := resolver.root.wrapNodeScanWithContext(resolver.ctx, resolver.data.GetScan(), true, nil)
+	res, err := resolver.root.wrapNodeScan(resolver.data.GetScan(), true, nil)
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
 	if err != nil || res == nil {
 		return nil, err
 	}
+	res.ctx = resolver.nodeScopeContext()
 	return res, nil
 }
 
