@@ -12,13 +12,13 @@ import (
 	"k8s.io/utils/env"
 )
 
-// GetConnectionString returns a connection string for integration testing with Postgres.
-func GetConnectionString(_ *testing.T) string {
-	return GetConnectionStringWithDatabaseName(env.GetString("POSTGRES_DB", "postgres"))
+// GetConnectionStringWithDatabaseName returns a connection string with the passed database
+func GetConnectionStringWithDatabaseName(t testing.TB, database string) string {
+	return fmt.Sprintf("%s database=%s", GetConnectionString(t), database)
 }
 
-// GetConnectionStringWithDatabaseName returns a connection string with the passed database
-func GetConnectionStringWithDatabaseName(database string) string {
+// GetConnectionString returns a connection string for integration testing with Postgres w/o database name.
+func GetConnectionString(_ testing.TB) string {
 	user := os.Getenv("USER")
 	if _, ok := os.LookupEnv("CI"); ok {
 		user = "postgres"
@@ -26,7 +26,7 @@ func GetConnectionStringWithDatabaseName(database string) string {
 	pass := env.GetString("POSTGRES_PASSWORD", "")
 	host := env.GetString("POSTGRES_HOST", "localhost")
 	port := env.GetString("POSTGRES_PORT", "5432")
-	src := fmt.Sprintf("host=%s port=%s user=%s database=%s sslmode=disable statement_timeout=600000 client_encoding=UTF-8", host, port, user, database)
+	src := fmt.Sprintf("host=%s port=%s user=%s sslmode=disable statement_timeout=600000 client_encoding=UTF-8", host, port, user)
 	if pass != "" {
 		src += fmt.Sprintf(" password=%s", pass)
 	}

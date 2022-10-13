@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role"
+	versionUtils "github.com/stackrox/rox/central/version/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
@@ -87,7 +88,7 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 				defer pool.Close()
 
 				// Get rollback to version
-				migVer, err := migrations.ReadVersionPostgres(pool)
+				migVer, err := versionUtils.ReadVersionPostgres(pool)
 				if err != nil {
 					log.Infof("Unable to get previous version, leaving ForceRollbackTo empty.  %v", err)
 				}
