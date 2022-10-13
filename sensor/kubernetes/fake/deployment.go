@@ -34,12 +34,27 @@ func createRandMap(stringSize, entries int) map[string]string {
 	return m
 }
 
+func createMap(entries int) map[string]string {
+	m := make(map[string]string, entries)
+	for i := 0; i < entries; i++ {
+		m[fmt.Sprintf("key-%d", i)] = fmt.Sprintf("value-%d", i)
+	}
+	return m
+}
+
+func createDeploymentLabels(random bool, numLabels int) map[string]string {
+	if random {
+		return createRandMap(16, numLabels)
+	}
+	return createMap(numLabels)
+}
+
 func (w *WorkloadManager) getDeployment(workload DeploymentWorkload) *deploymentResourcesToBeManaged {
 	var labels map[string]string
 	if workload.NumLabels == 0 {
-		labels = createRandMap(16, 3)
+		labels = createDeploymentLabels(workload.RandomLabels, 3)
 	} else {
-		labels = createMap(workload.NumLabels)
+		labels = createDeploymentLabels(workload.RandomLabels, workload.NumLabels)
 	}
 
 	var containers []corev1.Container
@@ -51,6 +66,10 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload) *deployment
 	if !valid {
 		namespace = "default"
 	}
+
+	labelsPool.add(namespace, labels)
+	namespacesWithDeploymentsPool.add(namespace)
+
 	var serviceAccount string
 	potentialServiceAccounts := serviceAccountPool[namespace]
 	if len(potentialServiceAccounts) == 0 {
