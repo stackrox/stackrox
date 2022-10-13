@@ -3,7 +3,6 @@ package plan
 import (
 	"reflect"
 
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
@@ -15,22 +14,17 @@ type planner struct {
 	rollback bool
 }
 
-func (p *planner) objectsAreEqual(a, b k8sutil.Object) bool {
-	var ua, ub unstructured.Unstructured
-	if err := p.ctx.Scheme().Convert(a, &ua, nil); err != nil {
-		return false
-	}
-	if err := p.ctx.Scheme().Convert(b, &ub, nil); err != nil {
-		return false
-	}
+func (p *planner) objectsAreEqual(a, b *unstructured.Unstructured) bool {
+	aCopy := a.DeepCopy()
+	bCopy := b.DeepCopy()
 
-	normalizeObject(&ua)
-	normalizeObject(&ub)
+	normalizeObject(aCopy)
+	normalizeObject(bCopy)
 
-	return reflect.DeepEqual(ua.Object, ub.Object)
+	return reflect.DeepEqual(aCopy.Object, bCopy.Object)
 }
 
-func (p *planner) GenerateExecutionPlan(desired []k8sutil.Object) (*ExecutionPlan, error) {
+func (p *planner) GenerateExecutionPlan(desired []*unstructured.Unstructured) (*ExecutionPlan, error) {
 	currObjs, err := p.ctx.ListCurrentObjects()
 	if err != nil {
 		return nil, err
@@ -48,27 +42,22 @@ func (p *planner) GenerateExecutionPlan(desired []k8sutil.Object) (*ExecutionPla
 		if currObj == nil {
 			plan.Creations = append(plan.Creations, desiredObj)
 		} else {
-			// We need to store this here because objectsAreEqual clobbers the resource version and annotations.
-			currObjResourceVersion := currObj.GetResourceVersion()
-			lastModifiedByThisProcessID := currObj.GetAnnotations()[common.LastUpgradeIDAnnotationKey] == p.ctx.ProcessID()
-
+			objectToCreate := desiredObj.DeepCopy()
 			if !p.rollback {
-				newObj, err := applyPreservedProperties(p.ctx.Scheme(), desiredObj, currObj)
-				if err != nil {
-					log.Errorf("Failed to preserve properties for object %v: %v", ref, err)
-				} else {
-					desiredObj = newObj
+				if err := applyPreservedProperties(objectToCreate, currObj); err != nil {
+					log.Errorf("Failed to preserve some properties for object %v: %v", ref, err)
 				}
 			}
-			objectsAreEqual := p.objectsAreEqual(currObj, desiredObj)
+			objectsAreEqual := p.objectsAreEqual(currObj, objectToCreate)
 
 			// We don't update if the objects are equal.
 			// If the objects are not equal, we check if the object was already modified during this upgrade.
 			// If it was, we skip the update.
 			// If we're rolling back, though, we DO the update ONLY if it was modified during this upgrade.
+			lastModifiedByThisProcessID := currObj.GetAnnotations()[common.LastUpgradeIDAnnotationKey] == p.ctx.ProcessID()
 			if !objectsAreEqual && lastModifiedByThisProcessID == p.rollback {
-				desiredObj.SetResourceVersion(currObjResourceVersion)
-				plan.Updates = append(plan.Updates, desiredObj)
+				objectToCreate.SetResourceVersion(currObj.GetResourceVersion())
+				plan.Updates = append(plan.Updates, objectToCreate)
 			} else {
 				log.Infof("Skipping update of object %v as it is unchanged or was already updated. Objects are equal: %v; last modified by this process ID: %v, rollback: %v",
 					ref, objectsAreEqual, lastModifiedByThisProcessID, p.rollback)
