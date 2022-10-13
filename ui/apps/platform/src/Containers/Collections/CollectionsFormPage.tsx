@@ -18,6 +18,18 @@ const noopRequest = {
     cancel: () => {},
 };
 
+const defaultCollectionData = {
+    name: '',
+    description: '',
+    inUse: false,
+    embeddedCollectionIds: [],
+    selectorRules: {
+        Deployment: null,
+        Namespace: null,
+        Cluster: null,
+    },
+};
+
 function CollectionsFormPage({
     hasWriteAccessForCollections,
     pageAction,
@@ -29,22 +41,32 @@ function CollectionsFormPage({
         [collectionId]
     );
     const { data, loading, error } = useRestQuery(collectionFetcher);
-    const collection = data ? parseCollection(data.collection) : undefined;
+    const initialData = data ? parseCollection(data.collection) : defaultCollectionData;
 
     let content: ReactElement | undefined;
 
     if (error) {
-        content = <>{/* TODO - Handle UI for network errors */}</>;
-    } else if (collection instanceof AggregateError) {
-        content = <>{/* TODO - Handle UI for parse errors */}</>;
-    } else if (loading && !collection) {
+        content = (
+            <>
+                {error.message}
+                {/* TODO - Handle UI for network errors */}
+            </>
+        );
+    } else if (initialData instanceof AggregateError) {
+        content = (
+            <>
+                {initialData.errors}
+                {/* TODO - Handle UI for parse errors */}
+            </>
+        );
+    } else if (loading && !initialData) {
         content = <>{/* TODO - Handle UI for loading state */}</>;
-    } else if (collection) {
+    } else if (initialData) {
         content = (
             <CollectionForm
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
                 action={pageAction}
-                initialData={collection}
+                initialData={initialData}
                 useInlineDrawer={isLargeScreen}
                 showBreadcrumbs
                 appendTableLinkAction={() => {
