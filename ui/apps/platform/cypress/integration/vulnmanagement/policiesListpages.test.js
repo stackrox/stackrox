@@ -6,8 +6,8 @@ import {
     callbackForPairOfAscendingPolicySeverityValuesFromElements,
     callbackForPairOfDescendingPolicySeverityValuesFromElements,
 } from '../../helpers/sort';
-import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
 import {
+    hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyFilteredSecondaryEntitiesLink,
     visitVulnerabilityManagementEntities,
@@ -27,20 +27,21 @@ describe('Vulnerability Management Policies', () => {
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
-        hasExpectedHeaderColumns(
-            [
-                'Policy',
-                'Description',
-                'Policy Status',
-                'Last Updated',
-                'Latest Violation',
-                'Severity',
-                'Deployments',
-                'Lifecycle',
-                'Enforcement',
-            ],
-            2 // skip 2 additional columns to account for checkbox column, and untitled Statuses column
-        );
+        hasTableColumnHeadings([
+            '', // checkbox
+            '', // hidden
+            '', // invisible
+            'Policy',
+            'Description',
+            'Policy Status',
+            'Last Updated',
+            'Latest Violation',
+            'Severity',
+            'Deployments',
+            'Lifecycle',
+            'Enforcement',
+            '', // hidden
+        ]);
     });
 
     it('should sort the Severity column', () => {
