@@ -163,7 +163,7 @@ describe('Risk page', () => {
             cy.get(RiskPageSelectors.search.searchLabels).should('not.exist');
         });
 
-        it('should have a single URL search param key/value pair in its search bar', () => {
+        it('should have a single URL search param key/value pair in its search bar', function () {
             if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
                 this.skip();
             }
