@@ -130,7 +130,13 @@ validate_sensor_bundle_via_upgrader() {
         "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" \
         -kube-config kubectl \
         -local-bundle "$deploy_dir/sensor-deploy" \
-        -workflow validate-bundle
+        -workflow validate-bundle || {
+            kill "$proxy_pid" || true
+            save_junit_failure "Validate_Sensor_Bundle_Via_Upgrader" \
+                "Failed" \
+                "Check build_log"
+            return 1
+        }
 
     kill "$proxy_pid"
 }
@@ -315,7 +321,13 @@ deploy_sensor_via_upgrader() {
         ROX_MTLS_CERT_FILE="$TEST_ROOT/sensor-remote-new/sensor-cert.pem" \
         ROX_MTLS_KEY_FILE="$TEST_ROOT/sensor-remote-new/sensor-key.pem" \
         KUBECONFIG="$TEST_ROOT/scripts/ci/kube-api-proxy/config.yml" \
-        "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
+        "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl || {
+            kill "$proxy_pid" || true
+            save_junit_failure "Deploy_Sensor_Via_Upgrader" \
+                "Failed: $stage" \
+                "Check build_log"
+            return 1
+        }
 
     kill "$proxy_pid"
 
@@ -341,7 +353,13 @@ rollback_sensor_via_upgrader() {
         ROX_MTLS_CERT_FILE="$TEST_ROOT/sensor-remote-new/sensor-cert.pem" \
         ROX_MTLS_KEY_FILE="$TEST_ROOT/sensor-remote-new/sensor-key.pem" \
         KUBECONFIG="$TEST_ROOT/scripts/ci/kube-api-proxy/config.yml" \
-        "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" -workflow roll-back -kube-config kubectl
+        "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" -workflow roll-back -kube-config kubectl || {
+            kill "$proxy_pid" || true
+            save_junit_failure "Rollback_Sensor_Via_Upgrader" \
+                "Failed" \
+                "Check build_log"
+            return 1
+        }
 
     kill "$proxy_pid"
 }
