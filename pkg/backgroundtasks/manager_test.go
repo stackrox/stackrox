@@ -98,7 +98,7 @@ func TestTaskExpirationCleanup(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, completed)
 	assert.Nil(t, res)
-	assert.Len(t, metadata, 0)
+	assert.Empty(t, metadata)
 	t.Log("Passed..")
 
 	// Let job to complete.
