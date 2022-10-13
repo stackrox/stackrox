@@ -10,7 +10,7 @@ import (
 type K8sObjectPredicateFunc func(object k8sutil.Object) bool
 
 // Filter modifies the given slice to remove any elements which do not pass the predicate.
-func Filter(objects *[]k8sutil.Object, predicate K8sObjectPredicateFunc) {
+func Filter[T k8sutil.Object](objects *[]T, predicate K8sObjectPredicateFunc) {
 	if objects == nil {
 		return
 	}

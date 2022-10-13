@@ -17,8 +17,8 @@ var (
 	)
 )
 
-// PatchOpenAPISchema modifies the OpenAPI schema to fix some issues, particularly on OpenShift.
-func PatchOpenAPISchema(doc *openapi_v2.Document) error {
+// patchOpenAPISchema modifies the OpenAPI schema to fix some issues, particularly on OpenShift.
+func patchOpenAPISchema(doc *openapi_v2.Document) error {
 	for _, def := range doc.GetDefinitions().GetAdditionalProperties() {
 		if def.GetName() != "com.github.openshift.api.security.v1.SecurityContextConstraints" {
 			continue

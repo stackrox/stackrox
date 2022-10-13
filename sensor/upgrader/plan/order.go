@@ -13,7 +13,7 @@ var (
 	gvkPriorities = utils.InvertSlice(common.OrderedBundleResourceTypes)
 )
 
-func sortObjects(objects []k8sutil.Object, reverse bool) {
+func sortObjects[T k8sutil.Object](objects []T, reverse bool) {
 	sort.Slice(objects, func(i, j int) bool {
 		return reverse != (gvkPriorities[objects[i].GetObjectKind().GroupVersionKind()] < gvkPriorities[objects[j].GetObjectKind().GroupVersionKind()])
 	})

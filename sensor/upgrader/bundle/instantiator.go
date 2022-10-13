@@ -8,11 +8,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -20,10 +20,10 @@ type instantiator struct {
 	ctx upgradeContext
 }
 
-func (i *instantiator) Instantiate(bundleContents Contents) ([]k8sutil.Object, error) {
+func (i *instantiator) Instantiate(bundleContents Contents) ([]*unstructured.Unstructured, error) {
 	trackedBundleContents := trackContents(bundleContents)
 
-	var allObjects []k8sutil.Object
+	var allObjects []*unstructured.Unstructured
 	dynamicObjs, err := createDynamicObjects(trackedBundleContents)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating config objects from sensor bundle")
@@ -59,8 +59,8 @@ func (i *instantiator) Instantiate(bundleContents Contents) ([]k8sutil.Object, e
 	return allObjects, nil
 }
 
-func (i *instantiator) loadObjectsFromYAMLs(c Contents) ([]k8sutil.Object, error) {
-	var result []k8sutil.Object
+func (i *instantiator) loadObjectsFromYAMLs(c Contents) ([]*unstructured.Unstructured, error) {
+	var result []*unstructured.Unstructured
 	for _, fileName := range c.ListFiles() {
 		if !strings.HasSuffix(fileName, ".yaml") {
 			continue
@@ -76,7 +76,7 @@ func (i *instantiator) loadObjectsFromYAMLs(c Contents) ([]k8sutil.Object, error
 	return result, nil
 }
 
-func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error)) ([]k8sutil.Object, error) {
+func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error)) ([]*unstructured.Unstructured, error) {
 	reader, err := openFn()
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 		return nil, err
 	}
 
-	var objects []k8sutil.Object
+	var objects []*unstructured.Unstructured
 
 	yamlReader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBuffer(contents)))
 	yamlDoc, err := yamlReader.Read()
@@ -104,7 +104,7 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 		}
 
 		// Then, decode it as a Kubernetes object.
-		var obj k8sutil.Object
+		var obj *unstructured.Unstructured
 		obj, err = i.ctx.ParseAndValidateObject(yamlDoc)
 		if err != nil {
 			break
@@ -119,7 +119,7 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 	return objects, nil
 }
 
-func validateMetadata(objs []k8sutil.Object) error {
+func validateMetadata(objs []*unstructured.Unstructured) error {
 	errs := errorhelpers.NewErrorList("object metadata validation failed")
 	for i := range objs {
 		obj := objs[i]
