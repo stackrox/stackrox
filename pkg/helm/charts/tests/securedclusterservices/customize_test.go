@@ -109,7 +109,7 @@ func (s *customizeSuite) TestCustomizeMetadata() {
 		obj := objs[i]
 		for _, mdType := range []string{"labels", "annotations"} {
 			objRef := k8sobjects.RefOf(&obj)
-			expectedMD := maputil.CloneStringStringMap(expectedMDs[mdType][objRef])
+			expectedMD := maputil.ShallowClone(expectedMDs[mdType][objRef])
 
 			actualMD, found, err := unstructured.NestedStringMap(obj.Object, "metadata", mdType)
 			s.Require().NoErrorf(err, "could not retrieve %s metadata for object %v", mdType, objRef)
@@ -226,7 +226,7 @@ func (s *customizeSuite) TestCustomizePodMetadata() {
 
 		for _, mdType := range []string{"labels", "annotations"} {
 			objRef := k8sobjects.RefOf(&obj)
-			expectedMD := maputil.CloneStringStringMap(expectedMDs[mdType][objRef])
+			expectedMD := maputil.ShallowClone(expectedMDs[mdType][objRef])
 
 			actualMD, found, err := unstructured.NestedStringMap(obj.Object, "spec", "template", "metadata", mdType)
 			s.Require().NoErrorf(err, "could not retrieve %s metadata for object %v", mdType, objRef)

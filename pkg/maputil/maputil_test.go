@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStringClone(t *testing.T) {
+func TestShallowClone(t *testing.T) {
 	a := assert.New(t)
 
 	m := map[string]string{
@@ -17,7 +17,7 @@ func TestStringClone(t *testing.T) {
 		"b": "2",
 	}
 
-	cloned := CloneStringStringMap(m)
+	cloned := ShallowClone(m)
 	cloned["c"] = "3"
 	delete(cloned, "a")
 
@@ -31,10 +31,10 @@ func TestStringClone(t *testing.T) {
 	}, cloned)
 }
 
-func TestStringFastRMap(t *testing.T) {
+func TestFastRMap(t *testing.T) {
 	a := assert.New(t)
 
-	m := NewStringStringFastRMap()
+	m := NewFastRMap[string, string]()
 	m.Set("a", "1")
 
 	a.Equal(map[string]string{"a": "1"}, m.GetMap())
@@ -50,11 +50,11 @@ func TestStringFastRMap(t *testing.T) {
 	a.Equal(map[string]string{}, m.GetMap())
 }
 
-func TestStringFastRMapThreadSafe(t *testing.T) {
+func TestFastRMapThreadSafe(t *testing.T) {
 	a := assert.New(t)
 	var wg sync.WaitGroup
 
-	m := NewStringStringFastRMap()
+	m := NewFastRMap[string, string]()
 
 	numThreads := 1000
 	if buildinfo.RaceEnabled {
