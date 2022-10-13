@@ -236,7 +236,6 @@ func (m *networkFlowManager) ResponsesC() <-chan *central.MsgFromSensor {
 
 func (m *networkFlowManager) enrichConnections() {
 	ticker := time.NewTicker(time.Second * 30)
-	processTicker := time.NewTicker(time.Second * 30)
 
 	for {
 		select {
@@ -244,7 +243,7 @@ func (m *networkFlowManager) enrichConnections() {
 			return
 		case <-ticker.C:
 			m.enrichAndSend()
-		case <-processTicker.C:
+
 			if features.ProcessesListeningOnPort.Enabled() {
 				m.enrichAndSendProcesses()
 			}
