@@ -10,14 +10,14 @@ func TestClone(t *testing.T) {
 	a := assert.New(t)
 
 	var slice []string
-	a.Nil(StringClone(slice))
+	a.Nil(ShallowClone(slice))
 
 	slice = make([]string, 0)
-	a.NotNil(StringClone(slice))
-	a.Equal(StringClone(slice), []string{})
+	a.NotNil(ShallowClone(slice))
+	a.Equal(ShallowClone(slice), []string{})
 
 	slice = append(slice, "a", "b")
-	cloned := StringClone(slice)
+	cloned := ShallowClone(slice)
 	a.Equal([]string{"a", "b"}, cloned)
 	slice[1] = "c"
 	a.Equal([]string{"a", "b"}, cloned)
