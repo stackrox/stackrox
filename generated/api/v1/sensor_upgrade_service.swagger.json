@@ -125,6 +125,14 @@
     }
   },
   "definitions": {
+    "SensorToggleConfigSensorAutoUpgradeFeatureStatus": {
+      "type": "string",
+      "enum": [
+        "SUPPORTED",
+        "NOT_SUPPORTED"
+      ],
+      "default": "SUPPORTED"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -161,24 +169,12 @@
         }
       }
     },
-    "storageSensorAutoUpgrade": {
-      "type": "string",
-      "enum": [
-        "ALLOWED",
-        "NOT_ALLOWED"
-      ],
-      "default": "ALLOWED"
-    },
     "storageSensorUpgradeConfig": {
       "type": "object",
       "properties": {
         "enableAutoUpgrade": {
           "type": "boolean",
           "description": "Whether to automatically trigger upgrades for out-of-date sensors."
-        },
-        "autoUpgradeAllowed": {
-          "$ref": "#/definitions/storageSensorAutoUpgrade",
-          "title": "Whether auto-upgrades can be set to true"
         }
       },
       "description": "SensorUpgradeConfig encapsulates configuration relevant to sensor auto-upgrades."
@@ -190,15 +186,18 @@
       "type": "object",
       "properties": {
         "config": {
-          "$ref": "#/definitions/storageSensorUpgradeConfig"
+          "$ref": "#/definitions/v1SensorToggleConfig"
         }
       }
     },
-    "v1SensorUpgradeToggleConfig": {
+    "v1SensorToggleConfig": {
       "type": "object",
       "properties": {
         "enableAutoUpgrade": {
           "type": "boolean"
+        },
+        "autoUpgradeFeature": {
+          "$ref": "#/definitions/SensorToggleConfigSensorAutoUpgradeFeatureStatus"
         }
       }
     },
@@ -206,7 +205,7 @@
       "type": "object",
       "properties": {
         "config": {
-          "$ref": "#/definitions/v1SensorUpgradeToggleConfig"
+          "$ref": "#/definitions/storageSensorUpgradeConfig"
         }
       }
     }

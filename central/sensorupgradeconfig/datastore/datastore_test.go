@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -10,7 +9,6 @@ import (
 	storeMocks "github.com/stackrox/rox/central/sensorupgradeconfig/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,12 +29,10 @@ type sensorUpgradeConfigDataStoreTestSuite struct {
 	storage   *storeMocks.MockStore
 
 	mockCtrl *gomock.Controller
-
-	envIsolator *envisolator.EnvIsolator
 }
 
 var (
-	defaultUpgradeConfig = upgradeConfig(true, storage.SensorAutoUpgrade_ALLOWED)
+	defaultUpgradeConfig = upgradeConfig(true)
 )
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) SetupTest() {
@@ -60,14 +56,10 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) SetupTest() {
 	var err error
 	s.dataStore, err = New(s.storage)
 	s.Require().NoError(err)
-
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv("ROX_MANAGED_CENTRAL", strconv.FormatBool(false))
 }
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
-	s.envIsolator.RestoreAll()
 }
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TestEnforcesGet() {
@@ -105,29 +97,10 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) TestEnforcesUpdate() {
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TestAllowsUpdate() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
-	s.storage.EXPECT().Get(gomock.Any()).Return(defaultUpgradeConfig, false, nil).Times(2)
 
 	err := s.dataStore.UpsertSensorUpgradeConfig(s.hasWriteCtx, &storage.SensorUpgradeConfig{})
 	s.NoError(err, "expected no error trying to write with permissions")
 
 	err = s.dataStore.UpsertSensorUpgradeConfig(s.hasWriteAdministrationCtx, &storage.SensorUpgradeConfig{})
 	s.NoError(err, "expected no error trying to write with Administration permissions")
-}
-
-func (s *sensorUpgradeConfigDataStoreTestSuite) TestDefault_ManagedCentral() {
-	s.envIsolator.Setenv("ROX_MANAGED_CENTRAL", strconv.FormatBool(true))
-	expectedConfig := upgradeConfig(false, storage.SensorAutoUpgrade_NOT_ALLOWED)
-
-	s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil).Times(2)
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Eq(expectedConfig)).Return(nil).Times(1)
-	s.Require().NoError(addDefaultConfigIfEmpty(s.dataStore))
-}
-
-func (s *sensorUpgradeConfigDataStoreTestSuite) TestDefault_NonManagedCentral() {
-	s.envIsolator.Setenv("ROX_MANAGED_CENTRAL", strconv.FormatBool(false))
-	expectedConfig := upgradeConfig(true, storage.SensorAutoUpgrade_ALLOWED)
-
-	s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil).Times(2)
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Eq(expectedConfig)).Return(nil).Times(1)
-	s.Require().NoError(addDefaultConfigIfEmpty(s.dataStore))
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -51,6 +52,15 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
+func (s *service) wrapToggleResponse(config *storage.SensorUpgradeConfig) *v1.GetSensorUpgradeConfigResponse {
+	return &v1.GetSensorUpgradeConfigResponse{
+		Config: &v1.SensorToggleConfig{
+			EnableAutoUpgrade:  config.GetEnableAutoUpgrade(),
+			AutoUpgradeFeature: isSupported(),
+		},
+	}
+}
+
 func (s *service) GetSensorUpgradeConfig(ctx context.Context, _ *v1.Empty) (*v1.GetSensorUpgradeConfigResponse, error) {
 	config, err := s.configDataStore.GetSensorUpgradeConfig(ctx)
 	if err != nil {
@@ -59,20 +69,14 @@ func (s *service) GetSensorUpgradeConfig(ctx context.Context, _ *v1.Empty) (*v1.
 	if config == nil {
 		return nil, errors.Wrap(errox.NotFound, "couldn't find sensor upgrade config")
 	}
-	return &v1.GetSensorUpgradeConfigResponse{Config: config}, nil
+	return s.wrapToggleResponse(config), nil
 }
 
 func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateSensorUpgradeConfigRequest) (*v1.Empty, error) {
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "need to specify a config")
 	}
-	storedConfig, err := s.configDataStore.GetSensorUpgradeConfig(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get existing config")
-	}
-	storedConfig.EnableAutoUpgrade = req.GetConfig().GetEnableAutoUpgrade()
-
-	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, storedConfig); err != nil {
+	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
