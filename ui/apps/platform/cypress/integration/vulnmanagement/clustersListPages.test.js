@@ -5,10 +5,10 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
-import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
 import {
     getCountAndNounFromImageCVEsLinkResults,
     getCountAndNounFromNodeCVEsLinkResults,
+    hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyFilteredSecondaryEntitiesLink,
     verifySecondaryEntities,
@@ -37,7 +37,8 @@ describe('Vulnerability Management Clusters', () => {
     it('should display all the columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
-        hasExpectedHeaderColumns([
+        hasTableColumnHeadings([
+            '', // hidden
             'Cluster',
             'Image CVEs',
             'Node CVEs',

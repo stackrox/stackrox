@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { ReactElement, useCallback } from 'react';
 import { PageSection } from '@patternfly/react-core';
 import { useMediaQuery } from 'react-responsive';
 
@@ -6,6 +6,7 @@ import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import { getCollection } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import CollectionForm from './CollectionForm';
+import { parseCollection } from './parser';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
@@ -17,32 +18,68 @@ const noopRequest = {
     cancel: () => {},
 };
 
+const defaultCollectionData = {
+    name: '',
+    description: '',
+    inUse: false,
+    embeddedCollectionIds: [],
+    selectorRules: {
+        Deployment: null,
+        Namespace: null,
+        Cluster: null,
+    },
+};
+
 function CollectionsFormPage({
     hasWriteAccessForCollections,
     pageAction,
 }: CollectionsFormPageProps) {
     const isLargeScreen = useMediaQuery({ query: '(min-width: 992px)' }); // --pf-global--breakpoint--lg
-    const action = pageAction.type;
-    const collectionId = action !== 'create' ? pageAction.collectionId : undefined;
+    const collectionId = pageAction.type !== 'create' ? pageAction.collectionId : undefined;
     const collectionFetcher = useCallback(
         () => (collectionId ? getCollection(collectionId) : noopRequest),
         [collectionId]
     );
-    const { data } = useRestQuery(collectionFetcher);
+    const { data, loading, error } = useRestQuery(collectionFetcher);
+    const initialData = data ? parseCollection(data.collection) : defaultCollectionData;
+
+    let content: ReactElement | undefined;
+
+    if (error) {
+        content = (
+            <>
+                {error.message}
+                {/* TODO - Handle UI for network errors */}
+            </>
+        );
+    } else if (initialData instanceof AggregateError) {
+        content = (
+            <>
+                {initialData.errors}
+                {/* TODO - Handle UI for parse errors */}
+            </>
+        );
+    } else if (loading && !initialData) {
+        content = <>{/* TODO - Handle UI for loading state */}</>;
+    } else if (initialData) {
+        content = (
+            <CollectionForm
+                hasWriteAccessForCollections={hasWriteAccessForCollections}
+                action={pageAction}
+                initialData={initialData}
+                useInlineDrawer={isLargeScreen}
+                showBreadcrumbs
+                appendTableLinkAction={() => {
+                    /* TODO */
+                }}
+            />
+        );
+    }
 
     return (
         <>
             <PageSection className="pf-u-h-100" padding={{ default: 'noPadding' }}>
-                <CollectionForm
-                    hasWriteAccessForCollections={hasWriteAccessForCollections}
-                    action={pageAction}
-                    initialData={data}
-                    useInlineDrawer={isLargeScreen}
-                    showBreadcrumbs
-                    appendTableLinkAction={() => {
-                        /* TODO */
-                    }}
-                />
+                {content}
             </PageSection>
         </>
     );

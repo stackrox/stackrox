@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useReducer, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Alert,
@@ -34,18 +34,55 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
-import { deleteCollection, ResolvedCollectionResponse } from 'services/CollectionsService';
+import { deleteCollection } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
+import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
+
+type FormStateReducerAction =
+    | { type: 'setName'; name: string }
+    | { type: 'setDescription'; description: string }
+    | { type: 'setRules'; entity: SelectorEntityType; selector: ScopedResourceSelector }
+    | { type: 'attachCollection'; collectionId: string }
+    | { type: 'detachCollection'; collectionId: string };
+
+function formStateReducer(state: Collection, payload: FormStateReducerAction): Collection {
+    switch (payload.type) {
+        case 'setName':
+            return { ...state, name: payload.name };
+        case 'setDescription':
+            return { ...state, name: payload.description };
+        case 'setRules': {
+            const selectorRules = { ...state.selectorRules };
+            selectorRules[payload.entity] = payload.selector;
+            return { ...state, selectorRules };
+        }
+        case 'attachCollection':
+            return {
+                ...state,
+                embeddedCollectionIds: state.embeddedCollectionIds.concat(payload.collectionId),
+            };
+        case 'detachCollection':
+            return {
+                ...state,
+                embeddedCollectionIds: state.embeddedCollectionIds.filter(
+                    (id) => id !== payload.collectionId
+                ),
+            };
+        default:
+            // Type safe fallback to ensure we don't miss any cases
+            return ((_: never) => _)(payload);
+    }
+}
 
 export type CollectionFormProps = {
     hasWriteAccessForCollections: boolean;
     /* The user's workflow action for this collection */
     action: CollectionPageAction;
-    /* initial data used to populate the form, or `undefined` in the case of a new collection */
-    initialData: ResolvedCollectionResponse | undefined;
+    /* initial data used to populate the form */
+    initialData: Collection;
     /* Whether or not to display the collection results in an inline drawer. If false, will
     display collection results in an overlay drawer. */
     useInlineDrawer: boolean;
@@ -83,7 +120,10 @@ function CollectionForm({
         toggleDrawer(useInlineDrawer);
     }, [toggleDrawer, useInlineDrawer]);
 
-    const pageTitle = initialData ? initialData.collection.name : 'Create collection';
+    const pageTitle = action.type === 'create' ? 'Create collection' : initialData.name;
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [formState, dispatch] = useReducer(formStateReducer, initialData);
 
     function onEditCollection(id: string) {
         history.push({
@@ -108,7 +148,7 @@ function CollectionForm({
             .request.then(history.goBack)
             .catch((err) => {
                 addToast(
-                    `Could not delete collection ${initialData?.collection.name ?? ''}`,
+                    `Could not delete collection ${initialData.name ?? ''}`,
                     'danger',
                     err.message
                 );
@@ -201,10 +241,10 @@ function CollectionForm({
                                                 <DropdownItem
                                                     key="Delete collection"
                                                     component="button"
-                                                    isDisabled={initialData?.collection.inUse}
+                                                    isDisabled={initialData.inUse}
                                                     onClick={() => setDeleteId(action.collectionId)}
                                                 >
-                                                    {initialData?.collection.inUse
+                                                    {initialData.inUse
                                                         ? 'Cannot delete (in use)'
                                                         : 'Delete collection'}
                                                 </DropdownItem>,

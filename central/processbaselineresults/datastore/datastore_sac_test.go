@@ -64,7 +64,7 @@ func (s *processBaselineResultsDatastoreSACSuite) TearDownSuite() {
 func (s *processBaselineResultsDatastoreSACSuite) SetupTest() {
 	s.testProcessBaselineResults = make([]string, 0)
 
-	processBaselineResults := fixtures.GetSACTestStorageProcessBaselineResultsSet(fixtures.GetScopedProcessBaselineResult)
+	processBaselineResults := fixtures.GetSACTestResourceSet(fixtures.GetScopedProcessBaselineResult)
 
 	for i := range processBaselineResults {
 		err := s.datastore.UpsertBaselineResults(s.testContexts[testutils.UnrestrictedReadWriteCtx], processBaselineResults[i])

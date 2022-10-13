@@ -28,7 +28,6 @@ const stateSelector = createStructuredSelector<{
 const replacedResourceMapping = new Map<ResourceName, string>([
     ['AllComments', 'Administration'],
     ['ComplianceRuns', 'Compliance'],
-    ['ComplianceRunSchedule', 'Administration'],
     ['Config', 'Administration'],
     ['DebugLogs', 'Administration'],
     ['NetworkGraphConfig', 'Administration'],
