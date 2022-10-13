@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/central/version/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/env"
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
-	"github.com/stackrox/rox/pkg/version/postgres"
 	"github.com/stretchr/testify/suite"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
@@ -43,7 +43,7 @@ func (suite *VersionStoreTestSuite) SetupTest() {
 		pool, _ := pgxpool.ConnectConfig(suite.ctx, config)
 		suite.pool = pool
 
-		suite.store = NewPostgres(suite.ctx, pool)
+		suite.store = NewPostgres(pool)
 	} else {
 		boltDB, err := bolthelper.NewTemp(suite.T().Name() + ".db")
 		suite.Require().NoError(err, "Failed to make BoltDB")

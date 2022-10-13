@@ -134,6 +134,7 @@ import (
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
+	versionUtils "github.com/stackrox/rox/central/version/utils"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	"github.com/stackrox/rox/generated/storage"
@@ -256,9 +257,7 @@ func main() {
 		if err != nil {
 			log.Errorf("Failed to remove backup DB: %v", err)
 		}
-
-		migrations.SetCurrentVersionPostgres(globaldb.GetPostgres())
-
+		versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 	} else {
 		// Now that we verified that the DB can be loaded, remove the .backup directory
 		if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupClone())); err != nil {
@@ -281,7 +280,7 @@ func main() {
 func ensureDB(ctx context.Context) {
 	var versionStore vStore.Store
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		versionStore = vStore.NewPostgres(ctx, globaldb.InitializePostgres(ctx))
+		versionStore = vStore.NewPostgres(globaldb.InitializePostgres(ctx))
 	} else {
 		versionStore = vStore.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
 	}

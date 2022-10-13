@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/central/version/postgres"
 	"github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -15,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
-	"github.com/stackrox/rox/pkg/version/postgres"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
 )
@@ -45,7 +45,7 @@ func (suite *EnsurerTestSuite) SetupTest() {
 
 		// Ensure we are starting fresh
 		postgres.Destroy(ctx, pool)
-		suite.versionStore = store.NewPostgres(context.Background(), pool)
+		suite.versionStore = store.NewPostgres(pool)
 	} else {
 		boltDB, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 		suite.Require().NoError(err, "Failed to make BoltDB")
@@ -72,7 +72,7 @@ func (suite *EnsurerTestSuite) TearDownTest() {
 
 func (suite *EnsurerTestSuite) TestWithEmptyDB() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.NoError(Ensure(store.NewPostgres(context.Background(), suite.pool)))
+		suite.NoError(Ensure(store.NewPostgres(suite.pool)))
 	} else {
 		suite.NoError(Ensure(store.New(suite.boltDB, suite.rocksDB)))
 	}
@@ -84,7 +84,7 @@ func (suite *EnsurerTestSuite) TestWithEmptyDB() {
 func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: int32(migrations.CurrentDBVersionSeqNum())}))
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.NoError(Ensure(store.NewPostgres(context.Background(), suite.pool)))
+		suite.NoError(Ensure(store.NewPostgres(suite.pool)))
 	} else {
 		suite.NoError(Ensure(store.New(suite.boltDB, suite.rocksDB)))
 	}
@@ -97,7 +97,7 @@ func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 func (suite *EnsurerTestSuite) TestWithIncorrectVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: int32(migrations.CurrentDBVersionSeqNum()) - 2}))
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Error(Ensure(store.NewPostgres(context.Background(), suite.pool)))
+		suite.Error(Ensure(store.NewPostgres(suite.pool)))
 	} else {
 		suite.Error(Ensure(store.New(suite.boltDB, suite.rocksDB)))
 	}

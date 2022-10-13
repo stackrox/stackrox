@@ -2,20 +2,16 @@ package postgreshelper
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/migrator/log"
+	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -37,6 +33,7 @@ var (
 // Load loads a Postgres instance and returns a GormDB.
 func Load(conf *config.Config, databaseName string) (*pgxpool.Pool, *gorm.DB, error) {
 	log.WriteToStderrf("Load database = %q", databaseName)
+	gc := migGorm.GetConfig()
 	once.Do(func() {
 		ctx := context.Background()
 
@@ -53,10 +50,6 @@ func Load(conf *config.Config, databaseName string) (*pgxpool.Pool, *gorm.DB, er
 			}
 		}
 
-		// Add the active database and password to the source
-		gormSource := fmt.Sprintf("%s password=%s database=%s client_encoding=UTF-8", conf.CentralDB.Source, adminConfig.ConnConfig.Password, databaseName)
-		gormSource = pgutils.PgxpoolDsnToPgxDsn(gormSource)
-
 		// Waits for central-db ready with retries
 		err = retry.WithRetry(func() error {
 			if postgresDB == nil {
@@ -72,11 +65,10 @@ func Load(conf *config.Config, databaseName string) (*pgxpool.Pool, *gorm.DB, er
 					return err
 				}
 			}
-			log.WriteToStderrf("connect to gorm: %v", strings.Replace(gormSource, adminConfig.ConnConfig.Password, "<REDACTED>", -1))
-
-			gormDB, err = gorm.Open(postgres.Open(gormSource), &gorm.Config{
-				NamingStrategy:  pgutils.NamingStrategy,
-				CreateBatchSize: 1000})
+			gormDB, err = gc.Connect(databaseName)
+			if err != nil {
+				postgresDB.Close()
+			}
 			return err
 		}, retry.Tries(postgresConnectionRetries), retry.BetweenAttempts(func(attempt int) {
 			time.Sleep(postgresConnectRetryInterval)
@@ -97,15 +89,7 @@ func Load(conf *config.Config, databaseName string) (*pgxpool.Pool, *gorm.DB, er
 // Close closes postgres databases
 func Close() {
 	closeOnce.Do(func() {
-		if gormDB != nil {
-			sqlDB, err := gormDB.DB()
-			if err != nil {
-				return
-			}
-			if sqlDB != nil {
-				utils.IgnoreError(sqlDB.Close)
-			}
-		}
+		migGorm.Close(gormDB)
 		if postgresDB != nil {
 			postgresDB.Close()
 		}

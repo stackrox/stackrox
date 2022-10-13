@@ -39,7 +39,7 @@ func CreateADatabaseForT(t testing.TB) string {
 // CreateDatabase - creates a database for testing
 func CreateDatabase(t testing.TB, database string) {
 	// Bootstrap the test database by connecting to the default postgres database and running create
-	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName("postgres")
+	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, "postgres")
 
 	db, err := sql.Open("postgres", sourceWithPostgresDatabase)
 	require.NoError(t, err)
@@ -65,7 +65,7 @@ func CreateDatabase(t testing.TB, database string) {
 func DropDatabase(t testing.TB, database string) {
 	// Connect to the admin postgres database to drop the test database.
 	if database != "postgres" {
-		sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName("postgres")
+		sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, "postgres")
 		db, err := sql.Open("postgres", sourceWithPostgresDatabase)
 		require.NoError(t, err)
 
@@ -79,7 +79,7 @@ func ForT(t testing.TB) *TestPostgres {
 	// Bootstrap a test database
 	database := CreateADatabaseForT(t)
 
-	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(database)
+	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, database)
 
 	CreateDatabase(t, database)
 
@@ -116,7 +116,7 @@ func ForTCustomDB(t testing.TB, dbName string) *TestPostgres {
 
 // ForTCustomPool - gets a connection pool to a specific database.
 func ForTCustomPool(t testing.TB, dbName string) *pgxpool.Pool {
-	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(dbName)
+	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, dbName)
 	ctx := context.Background()
 
 	// initialize pool to be used
@@ -137,8 +137,8 @@ func (tp *TestPostgres) Teardown(t testing.TB) {
 }
 
 // GetConnectionString returns a connection string for integration testing with Postgres
-func GetConnectionString(_ testing.TB) string {
-	return conn.GetConnectionStringWithDatabaseName(env.GetString("POSTGRES_DB", "postgres"))
+func GetConnectionString(t testing.TB) string {
+	return conn.GetConnectionStringWithDatabaseName(t, env.GetString("POSTGRES_DB", "postgres"))
 }
 
 // OpenGormDB opens a Gorm DB to the Postgres DB

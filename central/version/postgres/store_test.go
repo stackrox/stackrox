@@ -36,7 +36,7 @@ func (s *VersionsStoreSuite) SetupTest() {
 	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(sac.WithAllAccess(context.Background()), s.testDB.Pool)
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *VersionsStoreSuite) TearDownTest() {
