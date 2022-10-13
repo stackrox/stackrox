@@ -77,14 +77,14 @@ func (f *factory) ResolveProviderAndClientState(state string) (string, string, e
 
 func (f *factory) RedactConfig(config map[string]string) map[string]string {
 	if config[clientSecretConfigKey] != "" {
-		config = maputil.CloneStringStringMap(config)
+		config = maputil.ShallowClone(config)
 		config[clientSecretConfigKey] = "*****"
 	}
 	return config
 }
 
 func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
-	mergedCfg := maputil.CloneStringStringMap(newCfg)
+	mergedCfg := maputil.ShallowClone(newCfg)
 	// This handles the case where the client sends an "unchanged" client secret. In that case,
 	// we will take the client secret from the stored config and put it into the merged config.
 	// We only put secret into the merged config if the new config says it wants to use a client secret, AND the client

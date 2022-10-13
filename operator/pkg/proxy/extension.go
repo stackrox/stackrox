@@ -113,7 +113,7 @@ func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 		strData[k] = string(v)
 	}
 
-	if maputil.StringStringMapsEqual(strData, proxyEnvVars) {
+	if maputil.Equal(strData, proxyEnvVars) {
 		return nil
 	}
 
