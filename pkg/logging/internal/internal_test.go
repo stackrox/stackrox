@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/logging"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCurrentModule(t *testing.T) {
