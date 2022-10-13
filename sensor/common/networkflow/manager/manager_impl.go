@@ -307,7 +307,6 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 
 	metrics.IncrementTotalProcessesSentCounter(len(processesToSend.ProcessesListeningOnPorts))
-	log.Debugf("Processes update : %v", processesToSend)
 	select {
 	case <-m.done.Done():
 		return
@@ -794,8 +793,6 @@ func getProcessKey(originator *storage.NetworkProcessUniqueKey) *processInfo {
 	if originator == nil {
 		return nil
 	}
-
-	log.Debugf("Got process key: %s %s %s", originator.ProcessExecFilePath, originator.ProcessName, originator.ProcessArgs)
 
 	return &processInfo{
 		processName: originator.ProcessName,
