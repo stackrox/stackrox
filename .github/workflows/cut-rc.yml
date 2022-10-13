@@ -353,7 +353,8 @@ jobs:
           chmod +x ~/.local/bin/infractl
       - name: Test readiness
         run: |
-          if [ "$(infractl get "${NAME//./-}" --json | jq -r .Status)" != "2" ]; then
+          STATUS=$(infractl get "${NAME//./-}" --json | jq -r .Status)
+          if [ "$STATUS" != "2" ] && [ "$STATUS" != "READY" ]; then
             exit 1
           fi
       - name: Download artifacts
@@ -445,9 +446,8 @@ jobs:
           chmod +x ~/.local/bin/infractl
       - name: Test readiness
         run: |
-          CLUSTER_STATUS=$(infractl get "${NAME//./-}" --json)
-          echo "$CLUSTER_STATUS"
-          if [ "$(echo "$CLUSTER_STATUS" | jq -r .Status)" != "2" ]; then
+          STATUS=$(infractl get "${NAME//./-}" --json | jq -r .Status)
+          if [ "$STATUS" != "2" ] && [ "$STATUS" != "READY" ]; then
             exit 1
           fi
       - name: Install kubectl
