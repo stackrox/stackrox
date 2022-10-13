@@ -59,8 +59,7 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.store = postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	index := postgres.NewIndexer(s.db)
-	s.datastore, err = New(s.store, index, search.New(s.store, index))
-	s.NoError(err)
+	s.datastore = New(s.store, index, search.New(s.store, index))
 }
 
 // SetupTest removes the local graph before every test
