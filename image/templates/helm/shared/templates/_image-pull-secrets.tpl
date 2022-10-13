@@ -49,7 +49,15 @@
   {{ include "srox.fail" $msg }}
 {{ end }}
 
-{{ $imagePullSecretNames = concat (append $imagePullSecretNames $secretResourceName) $defaultSecretNames | uniq | sortAlpha }}
+{{ range $defaultSecretName := $defaultSecretNames }}
+  {{ $secret := dict }}
+  {{ include "srox.safeLookup" (list $ $secret "v1" "Secret" $namespace $defaultSecretName) }}
+  {{ if $secret.result }}
+    {{ $imagePullSecretNames = append $imagePullSecretNames $defaultSecretName }}
+  {{ end }}
+{{ end }}
+
+{{ $imagePullSecretNames = $imagePullSecretNames | uniq | sortAlpha }}
 {{ $_ := set $imagePullSecrets "_names" $imagePullSecretNames }}
 {{ $_ := set $imagePullSecrets "_creds" $imagePullCreds }}
 
