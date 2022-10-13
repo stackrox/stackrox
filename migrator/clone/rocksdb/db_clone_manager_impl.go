@@ -334,21 +334,18 @@ func (d *dbCloneManagerImpl) DecommissionRocksDB() {
 			continue
 		} else if exists {
 			// TODO(ROX-9882): While there is still stuff on the PVC there is an expectation that current
-			// exists in a certain state.  So until then we will simply clear the contents
+			// exists in a certain state.  So until we can remove the rest of the components on the PVC, it
+			// is safer to clear the contents.  This will keep the link and directory in place to ensure
+			// things behave in a safe manner on restarts.
 			if k == CurrentClone {
-				if exists, err := fileutils.Exists(dirPath); err != nil {
+				dir, err := os.ReadDir(dirPath)
+				if err != nil {
 					log.Error(err)
 					continue
-				} else if exists {
-					dir, err := os.ReadDir(dirPath)
-					if err != nil {
-						log.Error(err)
-						continue
-					}
-					for _, d := range dir {
-						log.Infof("SHREWS -- removing %q", d.Name())
-						os.RemoveAll(path.Join([]string{dirPath, d.Name()}...))
-					}
+				}
+				for _, d := range dir {
+					log.Infof("Removing %q", d.Name())
+					os.RemoveAll(path.Join([]string{dirPath, d.Name()}...))
 				}
 			} else {
 				log.Infof("Removing database %s", dirPath)
