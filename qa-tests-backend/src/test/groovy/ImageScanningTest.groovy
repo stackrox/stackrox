@@ -283,7 +283,7 @@ class ImageScanningTest extends BaseSpecification {
             assert vuln.link && vuln.link != ""
         }
         assert imageDetail.components >= components
-        assert ((imageDetail.cves - 5)..(imageDetail.cves + 5)).contains(totalCves)
+        assert ((imageDetail.cves - 10)..(imageDetail.cves + 10)).contains(totalCves)
         assert imageDetail.fixableCves >= fixable
 
         where:
