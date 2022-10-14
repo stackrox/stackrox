@@ -1325,6 +1325,8 @@ class ComplianceTest extends BaseSpecification {
                 remoteStackroxAccessScope.id, [
                 "AllComments"          : READ_WRITE_ACCESS,
                 "Access"               : READ_WRITE_ACCESS,
+                // TODO: ROX-12750 Remove AllComments, ComplianceRuns, ComplianceRunSchedule, Config, DebugLogs, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity permissions
+                // TODO: ROX-12750 Add Administration permission
                 "AllComments"          : READ_WRITE_ACCESS,
                 "Config"               : READ_WRITE_ACCESS,
                 "DebugLogs"            : READ_WRITE_ACCESS,
@@ -1332,6 +1334,7 @@ class ComplianceTest extends BaseSpecification {
                 "Integration"          : READ_WRITE_ACCESS,
                 "Policy"               : READ_WRITE_ACCESS,
                 "ProbeUpload"          : READ_WRITE_ACCESS,
+                "Role"                 : READ_WRITE_ACCESS,
                 "ScannerBundle"        : READ_WRITE_ACCESS,
                 "ScannerDefinitions"   : READ_WRITE_ACCESS,
                 "SensorUpgradeConfig"  : READ_WRITE_ACCESS,
