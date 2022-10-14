@@ -240,7 +240,7 @@ refresh_gke_token() {
     # refresh token every 15m
     while true; do
         # sleep & wait so that it will exit on TERM
-        sleep 900 &
+        sleep 3600 &
         wait $!
         info "Refreshing the GKE auth token"
         gcloud config config-helper --force-auth-refresh >/dev/null
