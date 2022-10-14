@@ -583,13 +583,15 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
 		uiRoute(),
 		{
-			Route:         "/api/extensions/clusters/zip",
+			Route: "/api/extensions/clusters/zip",
+			// TODO: ROX-12750 Replace ServiceIdentity with Administration.
 			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity))),
 			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},
 		{
-			Route:         "/api/extensions/scanner/zip",
+			Route: "/api/extensions/scanner/zip",
+			// TODO: ROX-12750 Replace ScannerBundle with Administration.
 			Authorizer:    user.With(permissions.View(resources.ScannerBundle)),
 			ServerHandler: scanner.Handler(),
 			Compression:   false,
@@ -740,9 +742,11 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
 				or.SensorOrAuthorizer(
 					or.ScannerOr(
+						// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
 						user.With(permissions.View(resources.ScannerDefinitions)))): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
 				},
+				// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
 				user.With(permissions.Modify(resources.ScannerDefinitions)): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodPost),
 				},

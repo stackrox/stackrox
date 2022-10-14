@@ -954,6 +954,7 @@ func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, rawQ string
 func (s *serviceImpl) getNetworkTree(clusterID string) (tree.ReadOnlyNetworkTree, error) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-12750 Replace NetworkGraphConfig with Administration.
 			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
 
 	cfg, err := s.graphConfig.GetNetworkGraphConfig(ctx)

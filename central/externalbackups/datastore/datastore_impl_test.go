@@ -78,18 +78,14 @@ func (s *extBkpDataStoreTestSuite) TestUpsertExtBkps() {
 	s.NoError(err)
 	s.Empty(result)
 
-	s.storage.EXPECT().Upsert(gomock.Any(), NewFakeExtBkp()).Return(nil).Times(2)
+	s.storage.EXPECT().Upsert(gomock.Any(), NewFakeExtBkp()).Return(nil).Times(1)
 
 	err = s.dataStore.UpsertBackup(s.hasWriteCtx, NewFakeExtBkp())
 	s.NoError(err)
 
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(NewFakeListExtBkps(), nil).Times(2)
+	s.storage.EXPECT().GetAll(gomock.Any()).Return(NewFakeListExtBkps(), nil).Times(1)
 
 	bkps, err := s.dataStore.ListBackups(s.hasReadCtx)
-	s.Equal(NewFakeListExtBkps(), bkps)
-	s.NoError(err)
-
-	bkps, err = s.dataStore.ListBackups(s.hasReadCtx)
 	s.Equal(NewFakeListExtBkps(), bkps)
 	s.NoError(err)
 }
@@ -103,7 +99,7 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesList() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsList() {
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(NewFakeListExtBkps(), nil).Times(2)
+	s.storage.EXPECT().GetAll(gomock.Any()).Return(NewFakeListExtBkps(), nil).Times(1)
 
 	result, err := s.dataStore.ListBackups(s.hasReadCtx)
 	s.NoError(err, "expected no error, should return nil without access")
@@ -120,7 +116,7 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(2)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
 
 	_, _, err := s.dataStore.GetBackup(s.hasReadCtx, FakeID)
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -137,7 +133,7 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesUpsert() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsUpsert() {
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.UpsertBackup(s.hasWriteCtx, &storage.ExternalBackup{})
 	s.NoError(err, "expected no error trying to write with permissions")
@@ -154,7 +150,7 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsRemove() {
-	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.RemoveBackup(s.hasWriteCtx, FakeID)
 	s.NoError(err, "expected no error trying to write with permissions")

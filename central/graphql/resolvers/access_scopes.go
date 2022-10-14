@@ -21,7 +21,7 @@ func init() {
 // SimpleAccessScopes returns GraphQL resolvers for all simple access scopes.
 func (resolver *Resolver) SimpleAccessScopes(ctx context.Context) ([]*simpleAccessScopeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "SimpleAccessScopes")
-	err := readAccess(ctx)
+	err := readRoles(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (resolver *Resolver) SimpleAccessScopes(ctx context.Context) ([]*simpleAcce
 // if it exists.
 func (resolver *Resolver) SimpleAccessScope(ctx context.Context, args struct{ *graphql.ID }) (*simpleAccessScopeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "SimpleAccessScope")
-	err := readAccess(ctx)
+	err := readRoles(ctx)
 	if err != nil {
 		return nil, err
 	}

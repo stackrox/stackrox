@@ -24,7 +24,7 @@ func init() {
 // PermissionSets returns GraphQL resolvers for all permission sets
 func (resolver *Resolver) PermissionSets(ctx context.Context) ([]*permissionSetResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "PermissionSets")
-	err := readAccess(ctx)
+	err := readRoles(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (resolver *Resolver) PermissionSets(ctx context.Context) ([]*permissionSetR
 // PermissionSet returns a GraphQL resolver for the matching permission set, if it exists
 func (resolver *Resolver) PermissionSet(ctx context.Context, args struct{ *graphql.ID }) (*permissionSetResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "PermissionSet")
-	err := readAccess(ctx)
+	err := readRoles(ctx)
 	if err != nil {
 		return nil, err
 	}

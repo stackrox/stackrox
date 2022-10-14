@@ -34,6 +34,11 @@ func TestAllDefaultRolesAreCovered(t *testing.T) {
 	}
 }
 
+// TODO ROX-12750 Replace DebugLogs with Administration.
+// TODO ROX-12750 Additionally Announce in CHANGELOG the behaviour change.
+// Announce suggestion (in Technical Changes):
+// ROX-12750: The Analyst permission set which used to have read access on all permissions except
+// the now deprecated `DebugLogs` permission now has read access to all permissions except `Administration`.
 func TestAnalystRoleDoesNotContainDebugLogs(t *testing.T) {
 	analystRole, found := defaultRoles[role.Analyst]
 	// Analyst is one of the default roles.
@@ -42,8 +47,10 @@ func TestAnalystRoleDoesNotContainDebugLogs(t *testing.T) {
 	resourceToAccess := analystRole.resourceWithAccess
 	// Contains all resources except one.
 	assert.Len(t, resourceToAccess, len(resources.ListAll())-1)
+	// TODO ROX-12750 Replace DebugLogs with Administration.
 	// Does not contain DebugLogs resource.
 	for _, resource := range resourceToAccess {
+		// TODO ROX-12750 Replace DebugLogs with Administration.
 		assert.NotEqual(t, resource.Resource.GetResource(), resources.DebugLogs.GetResource())
 	}
 }
@@ -80,11 +87,11 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Access)))
+			sac.ResourceScopeKeys(resources.Role)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Access)))
+			sac.ResourceScopeKeys(resources.Role)))
 
 	s.initDataStore()
 }

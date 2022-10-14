@@ -94,7 +94,8 @@ var (
 		permissions.GlobalScope, Administration)
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ProbeUpload = newDeprecatedResourceMetadata("ProbeUpload", permissions.GlobalScope,
-		Administration) // To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
+		Administration)
+	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).
 	ScannerBundle = newDeprecatedResourceMetadata("ScannerBundle",
 		permissions.GlobalScope, Administration)
 	// To-be-deprecated in 3.75 with ROX-12750 (deprecation notice in 3.73).

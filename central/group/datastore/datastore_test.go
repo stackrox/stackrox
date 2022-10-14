@@ -86,7 +86,7 @@ func (s *groupDataStoreTestSuite) TestAllowsGet() {
 	_, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(2)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
 
 	_, err = s.dataStore.Get(s.hasWriteCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -133,7 +133,7 @@ func (s *groupDataStoreTestSuite) TestAllowsGetAll() {
 	_, err := s.dataStore.GetAll(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil).Times(2)
+	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil).Times(1)
 
 	_, err = s.dataStore.GetAll(s.hasWriteCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -153,7 +153,7 @@ func (s *groupDataStoreTestSuite) TestAllowsGetFiltered() {
 	_, err := s.dataStore.GetFiltered(s.hasReadCtx, func(_ *storage.GroupProperties) bool { return true })
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	_, err = s.dataStore.GetFiltered(s.hasWriteCtx, func(_ *storage.GroupProperties) bool { return true })
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -192,7 +192,7 @@ func (s *groupDataStoreTestSuite) TestAllowsWalk() {
 	_, err := s.dataStore.Walk(s.hasReadCtx, "provider", nil)
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	_, err = s.dataStore.Walk(s.hasWriteCtx, "provider", nil)
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -243,7 +243,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsAdd() {
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	grp := &storage.Group{Props: &storage.GroupProperties{
 		AuthProviderId: "123",
@@ -275,8 +275,8 @@ func (s *groupDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsUpdate() {
-	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	s.expectGet(1, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	grp := &storage.Group{Props: &storage.GroupProperties{
 		Id:             "1",
@@ -312,9 +312,9 @@ func (s *groupDataStoreTestSuite) TestEnforcesMutate() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsMutate() {
-	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(4) // two calls * two operations (add, update)
-	s.storage.EXPECT().DeleteMany(gomock.Any(), gomock.Any()).Return(nil).Times(2)
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE), true, nil).Times(4)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(2) // two calls * two operations (add, update)
+	s.storage.EXPECT().DeleteMany(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE), true, nil).Times(2)
 
 	grp := &storage.Group{Props: &storage.GroupProperties{
 		AuthProviderId: "123",
@@ -550,8 +550,8 @@ func (s *groupDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsRemove() {
-	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
-	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	s.expectGet(1, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.Remove(s.hasWriteCtx, groupWithID.GetProps(), false)
 	s.NoError(err, "expected no error trying to write with permissions")
