@@ -70,7 +70,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	{{$name}} := &{{.Type}}{}
 	s.NoError(testutils.FullInit({{$name}}, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 	{{- if .Cycle}}
-	{{$name}}.{{.EmbeddedFK}} = {{$name}}.{{.ReferencedField}}
+	{{$name}}.{{.EmbeddedFK}} = nil
 	{{- end}}
 
 	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get(ctx, {{template "paramList" $}})
@@ -129,7 +129,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
         {{$name}} := &{{.Type}}{}
         s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
         {{- if .Cycle}}
-        {{$name}}.{{.EmbeddedFK}} = {{$name}}.{{.ReferencedField}}
+        {{$name}}.{{.EmbeddedFK}} = nil
         {{- end}}
         {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
     }

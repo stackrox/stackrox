@@ -206,7 +206,7 @@ func main() {
 	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from, including \"rocksdb\", \"dackbox\" and \"boltdb\"")
 	c.Flags().IntVar(&props.MigrateSeq, "migration-seq", 0, "the unique sequence number to migrate to Postgres")
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
-	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, of the form <foreign_key>:<referenced_field>")
+	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if (props.MigrateSeq == 0) != (props.MigrateFrom == "") {
@@ -274,13 +274,9 @@ func main() {
 			}
 		}
 
-		var embeddedFK, referencedField string
+		var embeddedFK string
 		if props.Cycle != "" {
-			if strings.Contains(props.Cycle, ":") {
-				embeddedFK, referencedField = stringutils.Split2(props.Cycle, ":")
-			} else {
-				log.Fatalf("cycle flag passed with invalid form (%s)", props.Cycle)
-			}
+			embeddedFK = props.Cycle
 		}
 
 		// remove any self references
@@ -305,13 +301,12 @@ func main() {
 				permissionCheckerEnabled: permissionCheckerEnabled,
 				schema:                   schema,
 			},
-			"NoCopyFrom":      props.NoCopyFrom,
-			"Cycle":           embeddedFK != "" && referencedField != "",
-			"EmbeddedFK":      embeddedFK,
-			"ReferencedField": referencedField,
-			"References":      filteredReferences,
-			"SearchScope":     searchScope,
-			"RegisterSchema":  !props.ConversionFuncs,
+			"NoCopyFrom":     props.NoCopyFrom,
+			"Cycle":          embeddedFK != "",
+			"EmbeddedFK":     embeddedFK,
+			"References":     filteredReferences,
+			"SearchScope":    searchScope,
+			"RegisterSchema": !props.ConversionFuncs,
 		}
 
 		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
