@@ -8,6 +8,7 @@ import {
     FormGroup,
     Select,
     SelectOption,
+    Stack,
 } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
@@ -165,7 +166,7 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
             newSelector.rules[ruleIndex].values.splice(valueIndex, 1);
             onOptionChange(entityType, newSelector);
         } else if (newSelector.rules.length > 1) {
-            // This is the last value, so drop the rule
+            // This was the last value, so drop the rule
             newSelector.rules.splice(ruleIndex, 1);
             onOptionChange(entityType, newSelector);
         } else {
@@ -204,28 +205,33 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
 
                 {shouldRenderByNameInputs && (
                     <FormGroup label={`${entityType} name`} isRequired>
-                        {scopedResourceSelector.rules.map((rule) =>
-                            rule.values.map(({ value }, index) => (
-                                <Flex key={value}>
-                                    <FlexItem grow={{ default: 'grow' }}>
-                                        <AutoCompleteSelector
-                                            selectedOption={value}
-                                            onChange={onChangeNameValue(
-                                                scopedResourceSelector,
-                                                0,
-                                                index
-                                            )}
+                        <Flex
+                            spaceItems={{ default: 'spaceItemsSm' }}
+                            direction={{ default: 'column' }}
+                        >
+                            {scopedResourceSelector.rules.map((rule) =>
+                                rule.values.map(({ value }, index) => (
+                                    <Flex key={value}>
+                                        <FlexItem grow={{ default: 'grow' }}>
+                                            <AutoCompleteSelector
+                                                selectedOption={value}
+                                                onChange={onChangeNameValue(
+                                                    scopedResourceSelector,
+                                                    0,
+                                                    index
+                                                )}
+                                            />
+                                        </FlexItem>
+                                        <TrashIcon
+                                            className="pf-u-flex-shrink-1"
+                                            style={{ cursor: 'pointer' }}
+                                            color="var(--pf-global--Color--dark-200)"
+                                            onClick={() => onDeleteValue(0, index)}
                                         />
-                                    </FlexItem>
-                                    <TrashIcon
-                                        className="pf-u-flex-shrink-1"
-                                        style={{ cursor: 'pointer' }}
-                                        color="var(--pf-global--Color--dark-200)"
-                                        onClick={() => onDeleteValue(0, index)}
-                                    />
-                                </Flex>
-                            ))
-                        )}
+                                    </Flex>
+                                ))
+                            )}
+                        </Flex>
                         <Button
                             className="pf-u-pl-0 pf-u-pt-md"
                             variant="link"
@@ -242,45 +248,66 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
                             const labelKey = rule.values[0]?.value?.split('=')[0] ?? '';
                             return (
                                 <Flex>
-                                    <FormGroup label="Label key" key={labelKey}>
-                                        <AutoCompleteSelector
-                                            selectedOption={labelKey}
-                                            onChange={onChangeLabelKey(
-                                                scopedResourceSelector,
-                                                ruleIndex
-                                            )}
-                                        />
-                                    </FormGroup>
-                                    <FlexItem>=</FlexItem>
-                                    <FormGroup label="Label value(s)">
-                                        {rule.values.map(({ value }, valueIndex) => (
-                                            <Flex key={value}>
-                                                <FlexItem grow={{ default: 'grow' }}>
+                                    <FlexItem grow={{ default: 'grow' }}>
+                                        <Flex>
+                                            <FlexItem grow={{ default: 'grow' }}>
+                                                <FormGroup label="Label key" key={labelKey}>
                                                     <AutoCompleteSelector
-                                                        selectedOption={value.replace(/.*=/, '')}
-                                                        onChange={onChangeLabelValue(
+                                                        selectedOption={labelKey}
+                                                        onChange={onChangeLabelKey(
                                                             scopedResourceSelector,
-                                                            ruleIndex,
-                                                            valueIndex
+                                                            ruleIndex
                                                         )}
                                                     />
-                                                </FlexItem>
-                                                <TrashIcon
-                                                    style={{ cursor: 'pointer' }}
-                                                    color="var(--pf-global--Color--dark-200)"
-                                                    onClick={() =>
-                                                        onDeleteValue(ruleIndex, valueIndex)
-                                                    }
-                                                />
+                                                </FormGroup>
+                                            </FlexItem>
+                                            <FlexItem
+                                                className="pf-u-pb-xs"
+                                                alignSelf={{ default: 'alignSelfFlexEnd' }}
+                                            >
+                                                =
+                                            </FlexItem>
+                                        </Flex>
+                                    </FlexItem>
+                                    <FlexItem grow={{ default: 'grow' }}>
+                                        <FormGroup label="Label value(s)">
+                                            <Flex
+                                                spaceItems={{ default: 'spaceItemsSm' }}
+                                                direction={{ default: 'column' }}
+                                            >
+                                                {rule.values.map(({ value }, valueIndex) => (
+                                                    <Flex key={value}>
+                                                        <FlexItem grow={{ default: 'grow' }}>
+                                                            <AutoCompleteSelector
+                                                                selectedOption={value.replace(
+                                                                    /.*=/,
+                                                                    ''
+                                                                )}
+                                                                onChange={onChangeLabelValue(
+                                                                    scopedResourceSelector,
+                                                                    ruleIndex,
+                                                                    valueIndex
+                                                                )}
+                                                            />
+                                                        </FlexItem>
+                                                        <TrashIcon
+                                                            style={{ cursor: 'pointer' }}
+                                                            color="var(--pf-global--Color--dark-200)"
+                                                            onClick={() =>
+                                                                onDeleteValue(ruleIndex, valueIndex)
+                                                            }
+                                                        />
+                                                    </Flex>
+                                                ))}
                                             </Flex>
-                                        ))}
-                                        <Button
-                                            variant="link"
-                                            onClick={() => onAddLabelValue(ruleIndex, labelKey)}
-                                        >
-                                            Add value
-                                        </Button>
-                                    </FormGroup>
+                                            <Button
+                                                variant="link"
+                                                onClick={() => onAddLabelValue(ruleIndex, labelKey)}
+                                            >
+                                                Add value
+                                            </Button>
+                                        </FormGroup>
+                                    </FlexItem>
                                 </Flex>
                             );
                         })}
