@@ -39,6 +39,20 @@ ci_exit_trap() {
         info "Holding this job for debug"
         sleep 60
     done
+
+    info "Process state at exit:"
+    ps -e -O ppid
+
+    local pid
+    for psline in $(ps -e -O ppid); do
+        if [[ "$psline" =~ ^$$ ]]; then
+            echo "Skipping self: $psline"
+            continue
+        fi
+        echo "A candidate to kill: $psline"
+        pid="$(echo "$psline" | cut -d' ' -f1)"
+        echo "Would like to kill $pid"
+    done
 }
 
 create_exit_trap() {
