@@ -255,7 +255,7 @@ export const basePath = '/main/network';
 
 /*
  * Reach clusters by interaction from another container.
- * For example, click View All button from System Health.
+ * For example, click View Deployment in Network Graph button from Risk.
  */
 export function reachNetworkGraph(interactionCallback, staticResponseMap) {
     interactAndWaitForResponses(interactionCallback, requestConfigToVisitGraph, staticResponseMap);
