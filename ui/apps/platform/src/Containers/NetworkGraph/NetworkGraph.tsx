@@ -112,14 +112,9 @@ const TopologyComponent = () => {
     return (
         <TopologyView
             sideBar={
-                <TopologySideBar
-                    show={!!selectedObj}
-                    resizable
-                    onClose={() => setSelectedObj(null)}
-                >
+                <TopologySideBar resizable onClose={() => setSelectedObj(null)}>
                     {selectedObj?.type === 'group' && <div>Group</div>}
                     {selectedObj?.type === 'node' && <DeploymentSideBar />}
-                    {selectedObj?.type === 'edge' && <div>Edge</div>}
                 </TopologySideBar>
             }
             sideBarOpen={!!selectedObj}
