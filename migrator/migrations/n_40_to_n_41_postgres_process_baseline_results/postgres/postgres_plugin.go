@@ -183,9 +183,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseli
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED process_baseline_results")
+	_, err = s.db.Exec(ctx, "ANALYZE process_baseline_results")
 	if err != nil {
-		log.Warnf("unable to force analyze restore process_baseline_results:  %v", err)
+		log.Warnf("unable to force analyze on process_baseline_results:  %v", err)
 	}
 
 	return nil

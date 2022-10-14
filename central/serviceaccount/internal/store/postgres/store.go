@@ -210,9 +210,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ServiceAccoun
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED service_accounts")
+	_, err = s.db.Exec(ctx, "ANALYZE service_accounts")
 	if err != nil {
-		log.Warnf("unable to force analyze restore service_accounts:  %v", err)
+		log.Warnf("unable to force analyze on service_accounts:  %v", err)
 	}
 
 	return nil

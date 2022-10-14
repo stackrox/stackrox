@@ -172,9 +172,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.IntegrationHe
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED integration_healths")
+	_, err = s.db.Exec(ctx, "ANALYZE integration_healths")
 	if err != nil {
-		log.Warnf("unable to force analyze restore integration_healths:  %v", err)
+		log.Warnf("unable to force analyze on integration_healths:  %v", err)
 	}
 
 	return nil

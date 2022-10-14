@@ -214,9 +214,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ImageComponen
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED image_components")
+	_, err = s.db.Exec(ctx, "ANALYZE image_components")
 	if err != nil {
-		log.Warnf("unable to force analyze restore image_components:  %v", err)
+		log.Warnf("unable to force analyze on image_components:  %v", err)
 	}
 
 	return nil

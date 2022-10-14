@@ -869,9 +869,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Deployment) e
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED deployments")
+	_, err = s.db.Exec(ctx, "ANALYZE deployments")
 	if err != nil {
-		log.Warnf("unable to force analyze restore deployments:  %v", err)
+		log.Warnf("unable to force analyze on deployments:  %v", err)
 	}
 
 	return nil

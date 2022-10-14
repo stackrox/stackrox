@@ -172,9 +172,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ComplianceStr
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED compliance_strings")
+	_, err = s.db.Exec(ctx, "ANALYZE compliance_strings")
 	if err != nil {
-		log.Warnf("unable to force analyze restore compliance_strings:  %v", err)
+		log.Warnf("unable to force analyze on compliance_strings:  %v", err)
 	}
 
 	return nil

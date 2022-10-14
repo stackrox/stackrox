@@ -298,9 +298,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.K8SRoleBindin
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED role_bindings")
+	_, err = s.db.Exec(ctx, "ANALYZE role_bindings")
 	if err != nil {
-		log.Warnf("unable to force analyze restore role_bindings:  %v", err)
+		log.Warnf("unable to force analyze on role_bindings:  %v", err)
 	}
 
 	return nil

@@ -375,9 +375,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Secret) error
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED secrets")
+	_, err = s.db.Exec(ctx, "ANALYZE secrets")
 	if err != nil {
-		log.Warnf("unable to force analyze restore secrets:  %v", err)
+		log.Warnf("unable to force analyze on secrets:  %v", err)
 	}
 
 	return nil

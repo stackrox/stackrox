@@ -273,9 +273,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Pod) error {
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED pods")
+	_, err = s.db.Exec(ctx, "ANALYZE pods")
 	if err != nil {
-		log.Warnf("unable to force analyze restore pods:  %v", err)
+		log.Warnf("unable to force analyze on pods:  %v", err)
 	}
 
 	return nil

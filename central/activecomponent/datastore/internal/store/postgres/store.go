@@ -274,9 +274,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ActiveCompone
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED active_components")
+	_, err = s.db.Exec(ctx, "ANALYZE active_components")
 	if err != nil {
-		log.Warnf("unable to force analyze restore active_components:  %v", err)
+		log.Warnf("unable to force analyze on active_components:  %v", err)
 	}
 
 	return nil

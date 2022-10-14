@@ -177,9 +177,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TokenMetadata
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED api_tokens")
+	_, err = s.db.Exec(ctx, "ANALYZE api_tokens")
 	if err != nil {
-		log.Warnf("unable to force analyze restore api_tokens:  %v", err)
+		log.Warnf("unable to force analyze on api_tokens:  %v", err)
 	}
 
 	return nil

@@ -325,9 +325,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Alert) error 
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED alerts")
+	_, err = s.db.Exec(ctx, "ANALYZE alerts")
 	if err != nil {
-		log.Warnf("unable to force analyze restore alerts:  %v", err)
+		log.Warnf("unable to force analyze on alerts:  %v", err)
 	}
 
 	return nil

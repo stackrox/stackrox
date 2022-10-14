@@ -182,9 +182,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.SignatureInte
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED signature_integrations")
+	_, err = s.db.Exec(ctx, "ANALYZE signature_integrations")
 	if err != nil {
-		log.Warnf("unable to force analyze restore signature_integrations:  %v", err)
+		log.Warnf("unable to force analyze on signature_integrations:  %v", err)
 	}
 
 	return nil

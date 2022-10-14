@@ -172,9 +172,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkGraphC
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED network_graph_configs")
+	_, err = s.db.Exec(ctx, "ANALYZE network_graph_configs")
 	if err != nil {
-		log.Warnf("unable to force analyze restore network_graph_configs:  %v", err)
+		log.Warnf("unable to force analyze on network_graph_configs:  %v", err)
 	}
 
 	return nil

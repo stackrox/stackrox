@@ -172,9 +172,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkPolicy
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED networkpolicyapplicationundorecords")
+	_, err = s.db.Exec(ctx, "ANALYZE networkpolicyapplicationundorecords")
 	if err != nil {
-		log.Warnf("unable to force analyze restore networkpolicyapplicationundorecords:  %v", err)
+		log.Warnf("unable to force analyze on networkpolicyapplicationundorecords:  %v", err)
 	}
 
 	return nil

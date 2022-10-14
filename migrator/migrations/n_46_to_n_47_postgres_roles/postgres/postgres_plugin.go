@@ -172,9 +172,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Role) error {
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED roles")
+	_, err = s.db.Exec(ctx, "ANALYZE roles")
 	if err != nil {
-		log.Warnf("unable to force analyze restore roles:  %v", err)
+		log.Warnf("unable to force analyze on roles:  %v", err)
 	}
 
 	return nil

@@ -172,9 +172,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ComplianceOpe
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED compliance_operator_scan_setting_bindings")
+	_, err = s.db.Exec(ctx, "ANALYZE compliance_operator_scan_setting_bindings")
 	if err != nil {
-		log.Warnf("unable to force analyze restore compliance_operator_scan_setting_bindings:  %v", err)
+		log.Warnf("unable to force analyze on compliance_operator_scan_setting_bindings:  %v", err)
 	}
 
 	return nil

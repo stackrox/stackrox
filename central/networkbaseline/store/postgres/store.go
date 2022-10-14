@@ -190,9 +190,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkBaseli
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED network_baselines")
+	_, err = s.db.Exec(ctx, "ANALYZE network_baselines")
 	if err != nil {
-		log.Warnf("unable to force analyze restore network_baselines:  %v", err)
+		log.Warnf("unable to force analyze on network_baselines:  %v", err)
 	}
 
 	return nil

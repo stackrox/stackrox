@@ -182,9 +182,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.SimpleAccessS
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED simple_access_scopes")
+	_, err = s.db.Exec(ctx, "ANALYZE simple_access_scopes")
 	if err != nil {
-		log.Warnf("unable to force analyze restore simple_access_scopes:  %v", err)
+		log.Warnf("unable to force analyze on simple_access_scopes:  %v", err)
 	}
 
 	return nil

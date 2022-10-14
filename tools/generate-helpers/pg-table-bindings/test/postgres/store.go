@@ -230,9 +230,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestSingleKey
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED test_single_key_structs")
+	_, err = s.db.Exec(ctx, "ANALYZE test_single_key_structs")
 	if err != nil {
-		log.Warnf("unable to force analyze restore test_single_key_structs:  %v", err)
+		log.Warnf("unable to force analyze on test_single_key_structs:  %v", err)
 	}
 
 	return nil

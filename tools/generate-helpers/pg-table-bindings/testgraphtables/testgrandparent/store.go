@@ -359,9 +359,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestGrandpare
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED test_grandparents")
+	_, err = s.db.Exec(ctx, "ANALYZE test_grandparents")
 	if err != nil {
-		log.Warnf("unable to force analyze restore test_grandparents:  %v", err)
+		log.Warnf("unable to force analyze on test_grandparents:  %v", err)
 	}
 
 	return nil

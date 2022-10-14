@@ -229,9 +229,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED policies")
+	_, err = s.db.Exec(ctx, "ANALYZE policies")
 	if err != nil {
-		log.Warnf("unable to force analyze restore policies:  %v", err)
+		log.Warnf("unable to force analyze on policies:  %v", err)
 	}
 
 	return nil

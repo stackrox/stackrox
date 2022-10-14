@@ -181,9 +181,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkEntity
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED network_entities")
+	_, err = s.db.Exec(ctx, "ANALYZE network_entities")
 	if err != nil {
-		log.Warnf("unable to force analyze restore network_entities:  %v", err)
+		log.Warnf("unable to force analyze on network_entities:  %v", err)
 	}
 
 	return nil

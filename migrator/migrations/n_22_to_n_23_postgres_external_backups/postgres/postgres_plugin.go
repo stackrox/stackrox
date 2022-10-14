@@ -173,9 +173,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ExternalBacku
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED external_backups")
+	_, err = s.db.Exec(ctx, "ANALYZE external_backups")
 	if err != nil {
-		log.Warnf("unable to force analyze restore external_backups:  %v", err)
+		log.Warnf("unable to force analyze on external_backups:  %v", err)
 	}
 
 	return nil

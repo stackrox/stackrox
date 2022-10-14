@@ -178,9 +178,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Group) error 
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED groups")
+	_, err = s.db.Exec(ctx, "ANALYZE groups")
 	if err != nil {
-		log.Warnf("unable to force analyze restore groups:  %v", err)
+		log.Warnf("unable to force analyze on groups:  %v", err)
 	}
 
 	return nil

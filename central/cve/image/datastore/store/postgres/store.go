@@ -224,9 +224,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ImageCVE) err
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED image_cves")
+	_, err = s.db.Exec(ctx, "ANALYZE image_cves")
 	if err != nil {
-		log.Warnf("unable to force analyze restore image_cves:  %v", err)
+		log.Warnf("unable to force analyze on image_cves:  %v", err)
 	}
 
 	return nil

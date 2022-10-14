@@ -172,9 +172,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.InitBundleMet
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED cluster_init_bundles")
+	_, err = s.db.Exec(ctx, "ANALYZE cluster_init_bundles")
 	if err != nil {
-		log.Warnf("unable to force analyze restore cluster_init_bundles:  %v", err)
+		log.Warnf("unable to force analyze on cluster_init_bundles:  %v", err)
 	}
 
 	return nil

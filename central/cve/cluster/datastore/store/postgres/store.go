@@ -224,9 +224,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ClusterCVE) e
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED cluster_cves")
+	_, err = s.db.Exec(ctx, "ANALYZE cluster_cves")
 	if err != nil {
-		log.Warnf("unable to force analyze restore cluster_cves:  %v", err)
+		log.Warnf("unable to force analyze on cluster_cves:  %v", err)
 	}
 
 	return nil

@@ -182,9 +182,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PermissionSet
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED permission_sets")
+	_, err = s.db.Exec(ctx, "ANALYZE permission_sets")
 	if err != nil {
-		log.Warnf("unable to force analyze restore permission_sets:  %v", err)
+		log.Warnf("unable to force analyze on permission_sets:  %v", err)
 	}
 
 	return nil

@@ -193,9 +193,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Risk) error {
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED risks")
+	_, err = s.db.Exec(ctx, "ANALYZE risks")
 	if err != nil {
-		log.Warnf("unable to force analyze restore risks:  %v", err)
+		log.Warnf("unable to force analyze on risks:  %v", err)
 	}
 
 	return nil

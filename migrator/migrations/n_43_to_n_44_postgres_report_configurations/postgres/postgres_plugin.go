@@ -183,9 +183,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportConfigu
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED report_configurations")
+	_, err = s.db.Exec(ctx, "ANALYZE report_configurations")
 	if err != nil {
-		log.Warnf("unable to force analyze restore report_configurations:  %v", err)
+		log.Warnf("unable to force analyze on report_configurations:  %v", err)
 	}
 
 	return nil

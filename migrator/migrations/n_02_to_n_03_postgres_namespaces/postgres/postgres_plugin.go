@@ -198,9 +198,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NamespaceMeta
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED namespaces")
+	_, err = s.db.Exec(ctx, "ANALYZE namespaces")
 	if err != nil {
-		log.Warnf("unable to force analyze restore namespaces:  %v", err)
+		log.Warnf("unable to force analyze on namespaces:  %v", err)
 	}
 
 	return nil
