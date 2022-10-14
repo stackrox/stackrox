@@ -1,8 +1,6 @@
 import React from 'react';
 import {
     Button,
-    Card,
-    CardBody,
     Divider,
     Flex,
     FlexItem,
@@ -16,7 +14,6 @@ import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { Divide } from 'react-feather';
 import { SelectorEntityType } from './collections.utils';
 import { isByLabelField, isByNameField, ScopedResourceSelector } from './types';
 
@@ -30,11 +27,16 @@ function isRuleSelectorOption(value: string): value is RuleSelectorOption {
 
 type AutoCompleteSelectorProps = {
     selectedOption: string;
+    className?: string;
     onChange: (value: string) => void;
 };
 
 /* TODO Implement autocompletion */
-function AutoCompleteSelector({ selectedOption, onChange }: AutoCompleteSelectorProps) {
+function AutoCompleteSelector({
+    selectedOption,
+    className = '',
+    onChange,
+}: AutoCompleteSelectorProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
 
     function onSelect(_, value) {
@@ -45,6 +47,7 @@ function AutoCompleteSelector({ selectedOption, onChange }: AutoCompleteSelector
     return (
         <>
             <Select
+                className={className}
                 variant="typeahead"
                 isCreatable
                 isOpen={isOpen}
@@ -195,173 +198,160 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
     const shouldRenderByLabelInputs = scopedResourceSelector && selection === 'ByLabel';
 
     return (
-        <Card>
-            <CardBody>
-                <Select
-                    className={`${selection === 'All' ? '' : 'pf-u-mb-lg'}`}
-                    isOpen={isOpen}
-                    onToggle={onToggle}
-                    selections={selection}
-                    onSelect={onRuleOptionSelect}
-                >
-                    <SelectOption value="All">All {pluralEntity.toLowerCase()}</SelectOption>
-                    <SelectOption value="ByName">{pluralEntity} with names matching</SelectOption>
-                    <SelectOption value="ByLabel">{pluralEntity} with labels matching</SelectOption>
-                </Select>
+        <div
+            className="pf-u-p-lg"
+            style={{ border: '1px solid var(--pf-global--BorderColor--100' }}
+        >
+            <Select
+                className={`${selection === 'All' ? '' : 'pf-u-mb-lg'}`}
+                isOpen={isOpen}
+                onToggle={onToggle}
+                selections={selection}
+                onSelect={onRuleOptionSelect}
+            >
+                <SelectOption value="All">All {pluralEntity.toLowerCase()}</SelectOption>
+                <SelectOption value="ByName">{pluralEntity} with names matching</SelectOption>
+                <SelectOption value="ByLabel">{pluralEntity} with labels matching</SelectOption>
+            </Select>
 
-                {shouldRenderByNameInputs && (
-                    <FormGroup label={`${entityType} name`} isRequired>
-                        <Flex
-                            spaceItems={{ default: 'spaceItemsSm' }}
-                            direction={{ default: 'column' }}
-                        >
-                            {scopedResourceSelector.rules.flatMap((rule) =>
-                                rule.values.map(({ value }, index) => (
-                                    <Flex key={value}>
-                                        <FlexItem grow={{ default: 'grow' }}>
-                                            <AutoCompleteSelector
-                                                selectedOption={value}
-                                                onChange={onChangeNameValue(
-                                                    scopedResourceSelector,
-                                                    0,
-                                                    index
-                                                )}
-                                            />
-                                        </FlexItem>
-                                        <TrashIcon
-                                            className="pf-u-flex-shrink-1"
-                                            style={{ cursor: 'pointer' }}
-                                            color="var(--pf-global--Color--dark-200)"
-                                            onClick={() => onDeleteValue(0, index)}
+            {shouldRenderByNameInputs && (
+                <FormGroup label={`${entityType} name`} isRequired>
+                    <Flex
+                        spaceItems={{ default: 'spaceItemsSm' }}
+                        direction={{ default: 'column' }}
+                    >
+                        {scopedResourceSelector.rules.flatMap((rule) =>
+                            rule.values.map(({ value }, index) => (
+                                <Flex key={value}>
+                                    <AutoCompleteSelector
+                                        className="pf-u-flex-grow-1 pf-u-w-auto"
+                                        selectedOption={value}
+                                        onChange={onChangeNameValue(
+                                            scopedResourceSelector,
+                                            0,
+                                            index
+                                        )}
+                                    />
+                                    <TrashIcon
+                                        className="pf-u-flex-shrink-1"
+                                        style={{ cursor: 'pointer' }}
+                                        color="var(--pf-global--Color--dark-200)"
+                                        onClick={() => onDeleteValue(0, index)}
+                                    />
+                                </Flex>
+                            ))
+                        )}
+                    </Flex>
+                    <Button
+                        className="pf-u-pl-0 pf-u-pt-md"
+                        variant="link"
+                        onClick={onAddNameValue}
+                    >
+                        Add value
+                    </Button>
+                </FormGroup>
+            )}
+
+            {shouldRenderByLabelInputs && (
+                <>
+                    {scopedResourceSelector.rules.map((rule, ruleIndex) => {
+                        const labelKey = rule.values[0]?.value?.split('=')[0] ?? '';
+                        return (
+                            <div key={labelKey}>
+                                {ruleIndex > 0 && (
+                                    <Flex
+                                        className="pf-u-pt-md pf-u-pb-xl"
+                                        spaceItems={{ default: 'spaceItemsNone' }}
+                                        alignItems={{ default: 'alignItemsCenter' }}
+                                    >
+                                        <Label variant="outline" isCompact>
+                                            and
+                                        </Label>
+                                        <span
+                                            style={{
+                                                borderBottom:
+                                                    '2px dashed var(--pf-global--Color--light-300)',
+                                                flex: '1 1 0',
+                                            }}
                                         />
                                     </Flex>
-                                ))
-                            )}
-                        </Flex>
-                        <Button
-                            className="pf-u-pl-0 pf-u-pt-md"
-                            variant="link"
-                            onClick={onAddNameValue}
-                        >
-                            Add value
-                        </Button>
-                    </FormGroup>
-                )}
+                                )}
 
-                {shouldRenderByLabelInputs && (
-                    <>
-                        {scopedResourceSelector.rules.map((rule, ruleIndex) => {
-                            const labelKey = rule.values[0]?.value?.split('=')[0] ?? '';
-                            return (
-                                <>
-                                    {ruleIndex > 0 && (
-                                        <Flex
-                                            className="pf-u-pt-md pf-u-pb-xl"
-                                            spaceItems={{ default: 'spaceItemsNone' }}
-                                            alignItems={{ default: 'alignItemsCenter' }}
+                                <Flex>
+                                    <Flex className="pf-u-flex-grow-1">
+                                        <FormGroup
+                                            className="pf-u-flex-grow-1"
+                                            label={ruleIndex === 0 ? 'Label key' : ''}
+                                            isRequired
                                         >
-                                            <Label variant="outline" isCompact>
-                                                and
-                                            </Label>
-                                            <span
-                                                style={{
-                                                    borderBottom:
-                                                        '2px dashed var(--pf-global--Color--light-300)',
-                                                    flex: '1 1 0',
-                                                }}
+                                            <AutoCompleteSelector
+                                                selectedOption={labelKey}
+                                                onChange={onChangeLabelKey(
+                                                    scopedResourceSelector,
+                                                    ruleIndex
+                                                )}
                                             />
-                                        </Flex>
-                                    )}
-
-                                    <Flex key={labelKey}>
-                                        <FlexItem grow={{ default: 'grow' }}>
-                                            <Flex>
-                                                <FlexItem grow={{ default: 'grow' }}>
-                                                    <FormGroup
-                                                        label={ruleIndex === 0 ? 'Label key' : ''}
-                                                        isRequired
-                                                    >
-                                                        <AutoCompleteSelector
-                                                            selectedOption={labelKey}
-                                                            onChange={onChangeLabelKey(
-                                                                scopedResourceSelector,
-                                                                ruleIndex
-                                                            )}
-                                                        />
-                                                    </FormGroup>
-                                                </FlexItem>
-                                                <FlexItem
-                                                    className="pf-u-pb-xs"
-                                                    alignSelf={{ default: 'alignSelfFlexEnd' }}
-                                                >
-                                                    =
-                                                </FlexItem>
-                                            </Flex>
-                                        </FlexItem>
-                                        <FlexItem grow={{ default: 'grow' }}>
-                                            <FormGroup
-                                                label={ruleIndex === 0 ? 'Label value(s)' : ''}
-                                                isRequired
-                                            >
-                                                <Flex
-                                                    spaceItems={{ default: 'spaceItemsSm' }}
-                                                    direction={{ default: 'column' }}
-                                                >
-                                                    {rule.values.map(({ value }, valueIndex) => (
-                                                        <Flex key={value}>
-                                                            <FlexItem grow={{ default: 'grow' }}>
-                                                                <AutoCompleteSelector
-                                                                    selectedOption={value.replace(
-                                                                        /.*=/,
-                                                                        ''
-                                                                    )}
-                                                                    onChange={onChangeLabelValue(
-                                                                        scopedResourceSelector,
-                                                                        ruleIndex,
-                                                                        valueIndex
-                                                                    )}
-                                                                />
-                                                            </FlexItem>
-                                                            <TrashIcon
-                                                                style={{ cursor: 'pointer' }}
-                                                                color="var(--pf-global--Color--dark-200)"
-                                                                onClick={() =>
-                                                                    onDeleteValue(
-                                                                        ruleIndex,
-                                                                        valueIndex
-                                                                    )
-                                                                }
-                                                            />
-                                                        </Flex>
-                                                    ))}
-                                                </Flex>
-                                                <Button
-                                                    className="pf-u-pl-0 pf-u-pt-md"
-                                                    variant="link"
-                                                    onClick={() =>
-                                                        onAddLabelValue(ruleIndex, labelKey)
-                                                    }
-                                                >
-                                                    Add value
-                                                </Button>
-                                            </FormGroup>
+                                        </FormGroup>
+                                        <FlexItem
+                                            className="pf-u-pb-xs"
+                                            alignSelf={{ default: 'alignSelfFlexEnd' }}
+                                        >
+                                            =
                                         </FlexItem>
                                     </Flex>
-                                </>
-                            );
-                        })}
-                        <Divider component="div" className="pf-u-pt-lg" />
-                        <Button
-                            className="pf-u-pl-0 pf-u-pt-md"
-                            variant="link"
-                            onClick={onAddLabelRule}
-                        >
-                            Add label rule
-                        </Button>
-                    </>
-                )}
-            </CardBody>
-        </Card>
+                                    <FormGroup
+                                        className="pf-u-flex-grow-1"
+                                        label={ruleIndex === 0 ? 'Label value(s)' : ''}
+                                        isRequired
+                                    >
+                                        <Flex
+                                            spaceItems={{ default: 'spaceItemsSm' }}
+                                            direction={{ default: 'column' }}
+                                        >
+                                            {rule.values.map(({ value }, valueIndex) => (
+                                                <Flex key={value}>
+                                                    <AutoCompleteSelector
+                                                        className="pf-u-flex-grow-1 pf-u-w-auto"
+                                                        selectedOption={value.replace(/.*=/, '')}
+                                                        onChange={onChangeLabelValue(
+                                                            scopedResourceSelector,
+                                                            ruleIndex,
+                                                            valueIndex
+                                                        )}
+                                                    />
+                                                    <TrashIcon
+                                                        style={{ cursor: 'pointer' }}
+                                                        color="var(--pf-global--Color--dark-200)"
+                                                        onClick={() =>
+                                                            onDeleteValue(ruleIndex, valueIndex)
+                                                        }
+                                                    />
+                                                </Flex>
+                                            ))}
+                                        </Flex>
+                                        <Button
+                                            className="pf-u-pl-0 pf-u-pt-md"
+                                            variant="link"
+                                            onClick={() => onAddLabelValue(ruleIndex, labelKey)}
+                                        >
+                                            Add value
+                                        </Button>
+                                    </FormGroup>
+                                </Flex>
+                            </div>
+                        );
+                    })}
+                    <Divider component="div" className="pf-u-pt-lg" />
+                    <Button
+                        className="pf-u-pl-0 pf-u-pt-md"
+                        variant="link"
+                        onClick={onAddLabelRule}
+                    >
+                        Add label rule
+                    </Button>
+                </>
+            )}
+        </div>
     );
 }
 
