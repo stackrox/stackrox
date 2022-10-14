@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"k8s.io/utils/env"
 )
 
@@ -40,6 +41,7 @@ func OpenGormDB(t testing.TB, source string, disableConstraint bool) *gorm.DB {
 		&gorm.Config{
 			NamingStrategy:                           pgutils.NamingStrategy,
 			DisableForeignKeyConstraintWhenMigrating: disableConstraint,
+			Logger:                                   logger.Discard,
 		},
 	)
 	require.NoError(t, err, "failed to connect to connect with gorm db")
