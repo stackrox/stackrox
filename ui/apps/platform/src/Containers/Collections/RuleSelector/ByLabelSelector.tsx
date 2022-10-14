@@ -4,7 +4,7 @@ import { TrashIcon } from '@patternfly/react-icons';
 import { cloneDeep } from 'lodash';
 
 import { SelectorEntityType, ScopedResourceSelector } from '../types';
-import { AutoCompleteSelector } from './AutoCompleteSelector';
+import { AutoCompleteSelect } from './AutoCompleteSelect';
 
 export type ByLabelSelectorProps = {
     entityType: SelectorEntityType;
@@ -121,7 +121,7 @@ function ByLabelSelector({
                                     label={ruleIndex === 0 ? 'Label key' : ''}
                                     isRequired
                                 >
-                                    <AutoCompleteSelector
+                                    <AutoCompleteSelect
                                         selectedOption={labelKey}
                                         onChange={onChangeLabelKey(
                                             scopedResourceSelector,
@@ -147,7 +147,7 @@ function ByLabelSelector({
                                 >
                                     {rule.values.map(({ value }, valueIndex) => (
                                         <Flex key={value}>
-                                            <AutoCompleteSelector
+                                            <AutoCompleteSelect
                                                 className="pf-u-flex-grow-1 pf-u-w-auto"
                                                 selectedOption={value.replace(/.*=/, '')}
                                                 onChange={onChangeLabelValue(
