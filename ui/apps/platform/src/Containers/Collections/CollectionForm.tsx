@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Alert,
@@ -31,6 +31,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
+import { isEqual } from 'lodash';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
@@ -47,10 +48,14 @@ import { Collection, ScopedResourceSelector, SelectorEntityType } from './types'
 
 const FormikWatcher = ({ onChange }) => {
     const { values, isValid } = useFormikContext();
+    const valueRef = useRef(values);
 
     useEffect(() => {
-        //  TODO Beware that this fires twice
-        onChange(values, isValid);
+        // Only fire onChange event if the underlying values have changes
+        if (!isEqual(valueRef.current, values)) {
+            valueRef.current = values;
+            onChange(values, isValid);
+        }
     }, [onChange, isValid, values]);
 
     return null;
@@ -281,7 +286,7 @@ function CollectionForm({
                                                 </Title>
                                                 <RuleSelector
                                                     entityType="Deployment"
-                                                    resourceSelector={
+                                                    scopedResourceSelector={
                                                         values.selectorRules.Deployment
                                                     }
                                                     onOptionChange={onRuleSelectorChange(
@@ -297,7 +302,7 @@ function CollectionForm({
                                                 </Label>
                                                 <RuleSelector
                                                     entityType="Namespace"
-                                                    resourceSelector={
+                                                    scopedResourceSelector={
                                                         values.selectorRules.Namespace
                                                     }
                                                     onOptionChange={onRuleSelectorChange(
@@ -313,7 +318,9 @@ function CollectionForm({
                                                 </Label>
                                                 <RuleSelector
                                                     entityType="Cluster"
-                                                    resourceSelector={values.selectorRules.Cluster}
+                                                    scopedResourceSelector={
+                                                        values.selectorRules.Cluster
+                                                    }
                                                     onOptionChange={onRuleSelectorChange(
                                                         setFieldValue
                                                     )}
