@@ -183,11 +183,7 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
         selection = 'ByLabel';
     }
 
-    const shouldRenderByNameInputs =
-        scopedResourceSelector &&
-        scopedResourceSelector.rules.length === 1 &&
-        selection === 'ByName';
-
+    const shouldRenderByNameInputs = scopedResourceSelector && selection === 'ByName';
     const shouldRenderByLabelInputs = scopedResourceSelector && selection === 'ByLabel';
 
     return (
@@ -207,26 +203,28 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
 
                 {shouldRenderByNameInputs && (
                     <FormGroup label={`${entityType} name`} isRequired>
-                        {scopedResourceSelector.rules[0].values.map(({ value }, index) => (
-                            <Flex key={value}>
-                                <FlexItem grow={{ default: 'grow' }}>
-                                    <AutoCompleteSelector
-                                        selectedOption={value}
-                                        onChange={onChangeNameValue(
-                                            scopedResourceSelector,
-                                            0,
-                                            index
-                                        )}
+                        {scopedResourceSelector.rules.map((rule) =>
+                            rule.values.map(({ value }, index) => (
+                                <Flex key={value}>
+                                    <FlexItem grow={{ default: 'grow' }}>
+                                        <AutoCompleteSelector
+                                            selectedOption={value}
+                                            onChange={onChangeNameValue(
+                                                scopedResourceSelector,
+                                                0,
+                                                index
+                                            )}
+                                        />
+                                    </FlexItem>
+                                    <TrashIcon
+                                        className="pf-u-flex-shrink-1"
+                                        style={{ cursor: 'pointer' }}
+                                        color="var(--pf-global--Color--dark-200)"
+                                        onClick={() => onDeleteValue(0, index)}
                                     />
-                                </FlexItem>
-                                <TrashIcon
-                                    className="pf-u-flex-shrink-1"
-                                    style={{ cursor: 'pointer' }}
-                                    color="var(--pf-global--Color--dark-200)"
-                                    onClick={() => onDeleteValue(0, index)}
-                                />
-                            </Flex>
-                        ))}
+                                </Flex>
+                            ))
+                        )}
                         <Button
                             className="pf-u-pl-0 pf-u-pt-md"
                             variant="link"
