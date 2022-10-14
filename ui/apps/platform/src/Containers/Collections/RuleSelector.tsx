@@ -31,32 +31,16 @@ function isRuleSelectorOption(value: string): value is RuleSelectorOption {
 }
 
 type AutoCompleteSelectorProps = {
-    onChange: (
-        entityType: SelectorEntityType,
-        scopedResourceSelector: ScopedResourceSelector | null
-    ) => void;
-    entityType: SelectorEntityType;
-    resourceSelector: ScopedResourceSelector;
     selectedOption: string;
-    index: number;
+    onChange: (value: string) => void;
 };
 
 /* TODO Implement autocompletion */
-function AutoCompleteSelector({
-    onChange,
-    entityType,
-    resourceSelector,
-    selectedOption,
-    index,
-}: AutoCompleteSelectorProps) {
+function AutoCompleteSelector({ selectedOption, onChange }: AutoCompleteSelectorProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
 
     function onSelect(_, value) {
-        const newSelector = cloneDeep(resourceSelector);
-
-        newSelector.rules[0].values[index] = { value };
-
-        onChange(entityType, newSelector);
+        onChange(value);
         closeSelect();
     }
 
@@ -87,17 +71,7 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const pluralEntity = pluralize(entityType);
 
-    let selection: RuleSelectorOption = 'All';
-
-    if (!scopedResourceSelector) {
-        selection = 'All';
-    } else if (isByNameField(scopedResourceSelector.field)) {
-        selection = 'ByName';
-    } else if (isByLabelField(scopedResourceSelector.field)) {
-        selection = 'ByLabel';
-    }
-
-    function onSelect(_, value) {
+    function onRuleOptionSelect(_, value) {
         if (!isRuleSelectorOption(value)) {
             return;
         }
@@ -117,6 +91,37 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
         closeSelect();
     }
 
+    function onChangeNameValue(resourceSelector, ruleIndex, valueIndex) {
+        return (value: string) => {
+            const newSelector = cloneDeep(resourceSelector);
+            newSelector.rules[ruleIndex].values[valueIndex] = { value };
+            onOptionChange(entityType, newSelector);
+        };
+    }
+
+    // TODO Better validation for regex (disallow '=' in user entered values ??)
+    function onChangeLabelKey(resourceSelector, ruleIndex) {
+        return (value: string) => {
+            const newSelector = cloneDeep(resourceSelector);
+            const currentValues = newSelector.rules[ruleIndex].values;
+            newSelector.rules[ruleIndex].values = currentValues.map((label) => ({
+                value: label.value.replace(/.*=/, `${value}=`),
+            }));
+            onOptionChange(entityType, newSelector);
+        };
+    }
+
+    function onChangeLabelValue(resourceSelector, ruleIndex, valueIndex) {
+        return (value: string) => {
+            const newSelector = cloneDeep(resourceSelector);
+            const targetValue = newSelector.rules[ruleIndex].values[valueIndex].value;
+            newSelector.rules[ruleIndex].values[valueIndex] = {
+                value: targetValue.replace(/=.*/, `=${value}`),
+            };
+            onOptionChange(entityType, newSelector);
+        };
+    }
+
     function onAddNameValue() {
         const selector = cloneDeep(scopedResourceSelector);
         const rule = selector?.rules[0];
@@ -128,6 +133,10 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
 
         selector.rules[0].values.push({ value: '' });
         onOptionChange(entityType, selector);
+    }
+
+    function onAddLabelRule() {
+        console.log('add label rule');
     }
 
     function onAddLabelValue(ruleIndex: number, labelKey: string) {
@@ -144,9 +153,42 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
         onOptionChange(entityType, selector);
     }
 
-    function onAddLabelRule() {
-        console.log('add label rule');
+    function onDeleteValue(ruleIndex: number, valueIndex: number) {
+        if (!scopedResourceSelector || !scopedResourceSelector.rules[ruleIndex]) {
+            return;
+        }
+
+        const newSelector = cloneDeep(scopedResourceSelector);
+
+        if (newSelector.rules[ruleIndex].values.length > 1) {
+            newSelector.rules[ruleIndex].values.splice(valueIndex, 1);
+            onOptionChange(entityType, newSelector);
+        } else if (newSelector.rules.length > 1) {
+            // This is the last value, so drop the rule
+            newSelector.rules.splice(ruleIndex, 1);
+            onOptionChange(entityType, newSelector);
+        } else {
+            // This was the last value in the last rule, so drop the selector
+            onOptionChange(entityType, null);
+        }
     }
+
+    let selection: RuleSelectorOption = 'All';
+
+    if (!scopedResourceSelector || scopedResourceSelector.rules.length === 0) {
+        selection = 'All';
+    } else if (isByNameField(scopedResourceSelector.field)) {
+        selection = 'ByName';
+    } else if (isByLabelField(scopedResourceSelector.field)) {
+        selection = 'ByLabel';
+    }
+
+    const shouldRenderByNameInputs =
+        scopedResourceSelector &&
+        scopedResourceSelector.rules.length === 1 &&
+        selection === 'ByName';
+
+    const shouldRenderByLabelInputs = scopedResourceSelector && selection === 'ByLabel';
 
     return (
         <Card>
@@ -156,51 +198,46 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
                     isOpen={isOpen}
                     onToggle={onToggle}
                     selections={selection}
-                    onSelect={onSelect}
+                    onSelect={onRuleOptionSelect}
                 >
                     <SelectOption value="All">All {pluralEntity.toLowerCase()}</SelectOption>
                     <SelectOption value="ByName">{pluralEntity} with names matching</SelectOption>
                     <SelectOption value="ByLabel">{pluralEntity} with labels matching</SelectOption>
                 </Select>
 
-                {scopedResourceSelector &&
-                    scopedResourceSelector.rules.length === 1 &&
-                    selection === 'ByName' && (
-                        <FormGroup label={`${entityType} name`} isRequired>
-                            {scopedResourceSelector.rules[0].values.map(({ value }, index) => (
-                                <Flex key={value}>
-                                    <FlexItem grow={{ default: 'grow' }}>
-                                        <AutoCompleteSelector
-                                            onChange={onOptionChange}
-                                            entityType={entityType}
-                                            resourceSelector={scopedResourceSelector}
-                                            selectedOption={value}
-                                            index={index}
-                                        />
-                                    </FlexItem>
-                                    <TrashIcon
-                                        className="pf-u-flex-shrink-1"
-                                        style={{ cursor: 'pointer' }}
-                                        color="var(--pf-global--Color--dark-200)"
-                                        onClick={() => {
-                                            const newSelector = cloneDeep(scopedResourceSelector);
-                                            newSelector.rules[0]?.values.splice(index, 1);
-                                            onOptionChange(entityType, newSelector);
-                                        }}
+                {shouldRenderByNameInputs && (
+                    <FormGroup label={`${entityType} name`} isRequired>
+                        {scopedResourceSelector.rules[0].values.map(({ value }, index) => (
+                            <Flex key={value}>
+                                <FlexItem grow={{ default: 'grow' }}>
+                                    <AutoCompleteSelector
+                                        selectedOption={value}
+                                        onChange={onChangeNameValue(
+                                            scopedResourceSelector,
+                                            0,
+                                            index
+                                        )}
                                     />
-                                </Flex>
-                            ))}
-                            <Button
-                                className="pf-u-pl-0 pf-u-pt-md"
-                                variant="link"
-                                onClick={onAddNameValue}
-                            >
-                                Add value
-                            </Button>
-                        </FormGroup>
-                    )}
+                                </FlexItem>
+                                <TrashIcon
+                                    className="pf-u-flex-shrink-1"
+                                    style={{ cursor: 'pointer' }}
+                                    color="var(--pf-global--Color--dark-200)"
+                                    onClick={() => onDeleteValue(0, index)}
+                                />
+                            </Flex>
+                        ))}
+                        <Button
+                            className="pf-u-pl-0 pf-u-pt-md"
+                            variant="link"
+                            onClick={onAddNameValue}
+                        >
+                            Add value
+                        </Button>
+                    </FormGroup>
+                )}
 
-                {scopedResourceSelector && selection === 'ByLabel' && (
+                {shouldRenderByLabelInputs && (
                     <>
                         {scopedResourceSelector.rules.map((rule, ruleIndex) => {
                             const labelKey = rule.values[0]?.value?.split('=')[0] ?? '';
@@ -208,11 +245,11 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
                                 <Flex>
                                     <FormGroup label="Label key" key={labelKey}>
                                         <AutoCompleteSelector
-                                            onChange={onOptionChange}
-                                            entityType={entityType}
-                                            resourceSelector={scopedResourceSelector}
                                             selectedOption={labelKey}
-                                            index={ruleIndex}
+                                            onChange={onChangeLabelKey(
+                                                scopedResourceSelector,
+                                                ruleIndex
+                                            )}
                                         />
                                     </FormGroup>
                                     <FlexItem>=</FlexItem>
@@ -220,24 +257,19 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
                                         {rule.values.map(({ value }, valueIndex) => (
                                             <>
                                                 <AutoCompleteSelector
-                                                    onChange={onOptionChange}
-                                                    entityType={entityType}
-                                                    resourceSelector={scopedResourceSelector}
                                                     selectedOption={value}
-                                                    index={valueIndex}
+                                                    onChange={onChangeLabelValue(
+                                                        scopedResourceSelector,
+                                                        ruleIndex,
+                                                        valueIndex
+                                                    )}
                                                 />
                                                 <TrashIcon
                                                     style={{ cursor: 'pointer' }}
                                                     color="var(--pf-global--Color--dark-200)"
-                                                    onClick={() => {
-                                                        const newSelector =
-                                                            cloneDeep(scopedResourceSelector);
-                                                        newSelector.rules[ruleIndex]?.values.splice(
-                                                            valueIndex,
-                                                            1
-                                                        );
-                                                        onOptionChange(entityType, newSelector);
-                                                    }}
+                                                    onClick={() =>
+                                                        onDeleteValue(ruleIndex, valueIndex)
+                                                    }
                                                 />
                                             </>
                                         ))}

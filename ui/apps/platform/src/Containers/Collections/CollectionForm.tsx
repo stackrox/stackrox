@@ -281,7 +281,7 @@ function CollectionForm({
                                                 </Title>
                                                 <RuleSelector
                                                     entityType="Deployment"
-                                                    scopedResourceSelector={
+                                                    resourceSelector={
                                                         values.selectorRules.Deployment
                                                     }
                                                     onOptionChange={onRuleSelectorChange(
@@ -297,7 +297,7 @@ function CollectionForm({
                                                 </Label>
                                                 <RuleSelector
                                                     entityType="Namespace"
-                                                    scopedResourceSelector={
+                                                    resourceSelector={
                                                         values.selectorRules.Namespace
                                                     }
                                                     onOptionChange={onRuleSelectorChange(
@@ -313,9 +313,7 @@ function CollectionForm({
                                                 </Label>
                                                 <RuleSelector
                                                     entityType="Cluster"
-                                                    scopedResourceSelector={
-                                                        values.selectorRules.Cluster
-                                                    }
+                                                    resourceSelector={values.selectorRules.Cluster}
                                                     onOptionChange={onRuleSelectorChange(
                                                         setFieldValue
                                                     )}
