@@ -39,8 +39,6 @@ test_upgrade() {
     export OUTPUT_FORMAT="helm"
     export STORAGE="pvc"
     export CLUSTER_TYPE_FOR_TEST=K8S
-    require_environment "LONGTERM_LICENSE"
-    export ROX_LICENSE_KEY="${LONGTERM_LICENSE}"
 
     if is_CI; then
         export ROXCTL_IMAGE_REPO="quay.io/$QUAY_REPO/roxctl"
