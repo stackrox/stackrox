@@ -45,4 +45,7 @@ var (
 
 	// RHCOSNodeScanning enables phase 1 functions of "Full host level vulnerability scanning for RHCOS nodes" (ROX-10818)
 	RHCOSNodeScanning = registerFeature("Enable RHCOS node scanning of OS and installed packages", "ROX_RHCOS_NODE_SCANNING", false)
+
+	// ProcessesListeningOnPort enables the NetworkFlow code to also update the processes that are listening on ports
+	ProcessesListeningOnPort = registerFeature("Enable Processes Listening on Port", "ROX_PROCESSES_LISTENING_ON_PORT", false)
 )
