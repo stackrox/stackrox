@@ -44,7 +44,13 @@ ci_exit_trap() {
     ps -e -O ppid
 
     local pid
-    for psline in $(ps -e -O ppid); do
+    ps -e -O ppid | while read -r psline; do
+        # trim leading whitespace
+        psline="$(echo "$psline" | xargs)"
+        if [[ "$psline" =~ ^PID ]]; then
+            echo "Skipping header: $psline"
+            continue
+        fi
         if [[ "$psline" =~ ^$$ ]]; then
             echo "Skipping self: $psline"
             continue
