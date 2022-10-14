@@ -85,6 +85,20 @@ var (
 		Help:      "A counter of the total number of network endpoints received by Sensor from Collector",
 	})
 
+	totalProcessesSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "total_processes_sent_counter",
+		Help:      "A counter of the total number of processes sent to Central by Sensor",
+	})
+
+	totalProcessesReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "total_processes_received_counter",
+		Help:      "A counter of the total number of processes received by Sensor from Collector",
+	})
+
 	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -154,6 +168,16 @@ func IncrementTotalNetworkEndpointsSentCounter(numberOfEndpoints int) {
 // IncrementTotalNetworkEndpointsReceivedCounter increments the total number of endpoints received
 func IncrementTotalNetworkEndpointsReceivedCounter(numberOfEndpoints int) {
 	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfEndpoints))
+}
+
+// IncrementTotalProcessesSentCounter increments the total number of endpoints sent
+func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
+	totalNetworkEndpointsSentCounter.Add(float64(numberOfProcesses))
+}
+
+// IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
+func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
+	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfProcesses))
 }
 
 // IncrementProcessEnrichmentDrops increments the number of times we could not enrich.

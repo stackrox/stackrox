@@ -76,4 +76,10 @@ var (
 		Name:      "network_flow_host_endpoints_removed",
 		Help:      "Total number of endpoints stored in the host connections maps",
 	})
+	HostProcessesRemoved = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "processes_listening_on_port_removed",
+		Help:      "Total number of processes listening on ports",
+	})
 )
