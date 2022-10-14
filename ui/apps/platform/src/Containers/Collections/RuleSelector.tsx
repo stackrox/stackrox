@@ -76,15 +76,16 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
             return;
         }
 
-        const emptyRule: ScopedResourceSelectorRule = {
-            operator: 'OR',
-            values: [{ value: '' }],
-        };
-
         const selectorMap: Record<RuleSelectorOption, ScopedResourceSelector | null> = {
             All: null,
-            ByName: { field: entityType, rules: [emptyRule] },
-            ByLabel: { field: `${entityType} Label`, rules: [emptyRule] },
+            ByName: {
+                field: entityType,
+                rules: [{ operator: 'OR', values: [{ value: '' }] }],
+            },
+            ByLabel: {
+                field: `${entityType} Label`,
+                rules: [{ operator: 'OR', values: [{ value: '=' }] }],
+            },
         };
 
         onOptionChange(entityType, selectorMap[value]);
@@ -253,15 +254,17 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
                                     <FlexItem>=</FlexItem>
                                     <FormGroup label="Label value(s)">
                                         {rule.values.map(({ value }, valueIndex) => (
-                                            <>
-                                                <AutoCompleteSelector
-                                                    selectedOption={value}
-                                                    onChange={onChangeLabelValue(
-                                                        scopedResourceSelector,
-                                                        ruleIndex,
-                                                        valueIndex
-                                                    )}
-                                                />
+                                            <Flex key={value}>
+                                                <FlexItem grow={{ default: 'grow' }}>
+                                                    <AutoCompleteSelector
+                                                        selectedOption={value.replace(/.*=/, '')}
+                                                        onChange={onChangeLabelValue(
+                                                            scopedResourceSelector,
+                                                            ruleIndex,
+                                                            valueIndex
+                                                        )}
+                                                    />
+                                                </FlexItem>
                                                 <TrashIcon
                                                     style={{ cursor: 'pointer' }}
                                                     color="var(--pf-global--Color--dark-200)"
@@ -269,7 +272,7 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
                                                         onDeleteValue(ruleIndex, valueIndex)
                                                     }
                                                 />
-                                            </>
+                                            </Flex>
                                         ))}
                                         <Button
                                             variant="link"
