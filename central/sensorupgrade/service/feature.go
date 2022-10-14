@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 )
 
-func isSupported() v1.SensorToggleConfig_SensorAutoUpgradeFeatureStatus {
+func getAutoUpgradeFeatureStatus() v1.SensorToggleConfig_SensorAutoUpgradeFeatureStatus {
 	if env.ManagedCentral.BooleanSetting() {
 		return v1.SensorToggleConfig_NOT_SUPPORTED
 	}

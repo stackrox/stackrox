@@ -56,7 +56,7 @@ func (s *service) wrapToggleResponse(config *storage.SensorUpgradeConfig) *v1.Ge
 	return &v1.GetSensorUpgradeConfigResponse{
 		Config: &v1.SensorToggleConfig{
 			EnableAutoUpgrade:  config.GetEnableAutoUpgrade(),
-			AutoUpgradeFeature: isSupported(),
+			AutoUpgradeFeature: getAutoUpgradeFeatureStatus(),
 		},
 	}
 }
@@ -76,6 +76,11 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "need to specify a config")
 	}
+
+	if req.GetConfig().GetEnableAutoUpgrade() && getAutoUpgradeFeatureStatus() == v1.SensorToggleConfig_NOT_SUPPORTED {
+		return nil, errors.Wrap(errox.InvalidArgs, "auto-upgrade not supported on managed ACS")
+	}
+
 	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
 	}
