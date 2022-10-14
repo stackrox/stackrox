@@ -301,7 +301,7 @@ function CollectionForm({
                                                     scopedResourceSelector={
                                                         values.selectorRules.Deployment
                                                     }
-                                                    onOptionChange={onRuleSelectorChange(
+                                                    handleChange={onRuleSelectorChange(
                                                         setFieldValue
                                                     )}
                                                 />
@@ -317,7 +317,7 @@ function CollectionForm({
                                                     scopedResourceSelector={
                                                         values.selectorRules.Namespace
                                                     }
-                                                    onOptionChange={onRuleSelectorChange(
+                                                    handleChange={onRuleSelectorChange(
                                                         setFieldValue
                                                     )}
                                                 />
@@ -333,7 +333,7 @@ function CollectionForm({
                                                     scopedResourceSelector={
                                                         values.selectorRules.Cluster
                                                     }
-                                                    onOptionChange={onRuleSelectorChange(
+                                                    handleChange={onRuleSelectorChange(
                                                         setFieldValue
                                                     )}
                                                 />
