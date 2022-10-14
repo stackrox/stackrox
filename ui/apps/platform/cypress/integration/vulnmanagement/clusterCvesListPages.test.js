@@ -101,7 +101,10 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display links for clusters', () => {
+    it('should display links for clusters', function () {
+        if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+            this.skip();
+        }
         verifySecondaryEntities(
             entitiesKey,
             'clusters',
