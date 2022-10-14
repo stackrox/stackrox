@@ -2,18 +2,18 @@ import React from 'react';
 import { Select } from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
-export type AutoCompleteSelectorProps = {
+export type AutoCompleteSelectProps = {
     selectedOption: string;
     className?: string;
     onChange: (value: string) => void;
 };
 
 /* TODO Implement autocompletion */
-export function AutoCompleteSelector({
+export function AutoCompleteSelect({
     selectedOption,
     className = '',
     onChange,
-}: AutoCompleteSelectorProps) {
+}: AutoCompleteSelectProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
 
     function onSelect(_, value) {

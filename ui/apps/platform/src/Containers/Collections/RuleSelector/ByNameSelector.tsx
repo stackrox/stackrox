@@ -3,7 +3,7 @@ import { Button, Flex, FormGroup } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import { cloneDeep } from 'lodash';
 
-import { AutoCompleteSelector } from './AutoCompleteSelector';
+import { AutoCompleteSelect } from './AutoCompleteSelect';
 import { ScopedResourceSelector, SelectorEntityType } from '../types';
 
 export type ByNameSelectorProps = {
@@ -62,7 +62,7 @@ function ByNameSelector({ entityType, scopedResourceSelector, handleChange }: By
             <Flex spaceItems={{ default: 'spaceItemsSm' }} direction={{ default: 'column' }}>
                 {scopedResourceSelector.rules[0]?.values.map(({ value }, index) => (
                     <Flex key={value}>
-                        <AutoCompleteSelector
+                        <AutoCompleteSelect
                             className="pf-u-flex-grow-1 pf-u-w-auto"
                             selectedOption={value}
                             onChange={onChangeValue(scopedResourceSelector, 0, index)}
