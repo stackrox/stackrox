@@ -138,7 +138,16 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
     }
 
     function onAddLabelRule() {
-        console.log('add label rule');
+        const selector = cloneDeep(scopedResourceSelector);
+        const lastRule = selector?.rules[selector?.rules.length - 1];
+
+        // Only add a new form row if there are no blank entries
+        if (!lastRule || lastRule.values.every(({ value }) => value === '=')) {
+            return;
+        }
+
+        selector.rules.push({ operator: 'OR', values: [{ value: '=' }] });
+        onOptionChange(entityType, selector);
     }
 
     function onAddLabelValue(ruleIndex: number, labelKey: string) {
