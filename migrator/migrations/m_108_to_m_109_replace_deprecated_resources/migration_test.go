@@ -28,6 +28,7 @@ const (
 	NetworkPolicy                    = "NetworkPolicy"
 	Node                             = "Node"
 	Policy                           = "Policy"
+	Role                             = "Role"
 	Secret                           = "Secret"
 	ServiceAccount                   = "ServiceAccount"
 	VulnerabilityManagementApprovals = "VulnerabilityManagementApprovals"
@@ -181,7 +182,6 @@ var (
 				Notifier:             storage.Access_READ_WRITE_ACCESS,
 				ProcessWhitelist:     storage.Access_READ_WRITE_ACCESS,
 				Risk:                 storage.Access_READ_WRITE_ACCESS,
-				Role:                 storage.Access_READ_WRITE_ACCESS,
 				SignatureIntegration: storage.Access_NO_ACCESS,
 				User:                 storage.Access_READ_WRITE_ACCESS,
 				// To-be-replaced-later resources
@@ -210,6 +210,7 @@ var (
 				NetworkPolicy:                    storage.Access_NO_ACCESS,
 				Node:                             storage.Access_READ_ACCESS,
 				Policy:                           storage.Access_READ_WRITE_ACCESS,
+				Role:                             storage.Access_READ_WRITE_ACCESS,
 				Secret:                           storage.Access_READ_ACCESS,
 				ServiceAccount:                   storage.Access_NO_ACCESS,
 				VulnerabilityManagementApprovals: storage.Access_READ_WRITE_ACCESS,
@@ -247,7 +248,6 @@ var (
 				Notifier:             storage.Access_READ_ACCESS,
 				ProcessWhitelist:     storage.Access_READ_ACCESS,
 				Risk:                 storage.Access_READ_ACCESS,
-				Role:                 storage.Access_READ_ACCESS,
 				SignatureIntegration: storage.Access_READ_ACCESS,
 				User:                 storage.Access_READ_ACCESS,
 				// To-be-replaced-later resources
@@ -276,6 +276,7 @@ var (
 				NetworkPolicy:                    storage.Access_READ_ACCESS,
 				Node:                             storage.Access_READ_ACCESS,
 				Policy:                           storage.Access_READ_ACCESS,
+				Role:                             storage.Access_READ_ACCESS,
 				Secret:                           storage.Access_READ_ACCESS,
 				ServiceAccount:                   storage.Access_READ_ACCESS,
 				VulnerabilityManagementApprovals: storage.Access_READ_ACCESS,
@@ -415,6 +416,7 @@ var (
 				NetworkPolicy:                    storage.Access_NO_ACCESS,
 				Node:                             storage.Access_READ_ACCESS,
 				Policy:                           storage.Access_READ_WRITE_ACCESS,
+				Role:                             storage.Access_READ_WRITE_ACCESS,
 				Secret:                           storage.Access_READ_ACCESS,
 				ServiceAccount:                   storage.Access_NO_ACCESS,
 				VulnerabilityManagementApprovals: storage.Access_READ_WRITE_ACCESS,
@@ -465,6 +467,7 @@ var (
 				NetworkPolicy:                    storage.Access_READ_ACCESS,
 				Node:                             storage.Access_READ_ACCESS,
 				Policy:                           storage.Access_READ_ACCESS,
+				Role:                             storage.Access_READ_ACCESS,
 				Secret:                           storage.Access_READ_ACCESS,
 				ServiceAccount:                   storage.Access_READ_ACCESS,
 				VulnerabilityManagementApprovals: storage.Access_READ_ACCESS,

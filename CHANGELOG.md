@@ -46,10 +46,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - The permission `Compliance` will deprecate the permission `ComplianceRuns`.
 ### Technical Changes
 - ROX-11101: As announced in 3.71.0 (ROX-8520), some permissions for permissionsets are being grouped for simplification. The deprecation process will remove and replace the deprecated permissions with the replacing permission as listed below. The access level granted to the replacing permission will be the lowest of its defined access level if any and the defined access levels for all the permissions it replaces.  
-  - Permission `Access` deprecates and replaces the permissions `AuthPlugin, AuthProvider, Group, Licenses, Role, User`.
+  - Permission `Access` deprecates and replaces the permissions `AuthPlugin, AuthProvider, Group, Licenses, User`.
   - Permission `DeploymentExtension` deprecates and replaces the permissions `Indicator, NetworkBaseline, ProcessWhitelist, Risk`.
   - Permission `Integration` deprecates and replaces the permissions `APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration`.
   - Permission `Image` deprecates and replaces the permission `ImageComponent`.
+  - Note: the `Role` permission, previously announced as being grouped under `Access` remains a standalone permission.
 
 ## [3.72.0]
 

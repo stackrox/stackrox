@@ -35,7 +35,6 @@ const (
 	Notifier             = "Notifier"
 	ProcessWhitelist     = "ProcessWhitelist"
 	Risk                 = "Risk"
-	Role                 = "Role"
 	SignatureIntegration = "SignatureIntegration"
 	User                 = "User"
 )
@@ -64,7 +63,6 @@ var (
 		Notifier:             Integration,
 		ProcessWhitelist:     DeploymentExtension,
 		Risk:                 DeploymentExtension,
-		Role:                 Access,
 		SignatureIntegration: Integration,
 		User:                 Access,
 	}
