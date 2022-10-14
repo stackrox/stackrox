@@ -104,6 +104,7 @@ import (
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	reportService "github.com/stackrox/rox/central/reports/service"
 	"github.com/stackrox/rox/central/reprocessor"
+	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	"github.com/stackrox/rox/central/role"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
@@ -376,6 +377,10 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
+	}
+
+	if features.ObjectCollections.Enabled() {
+		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
 	}
 
 	if features.NewPolicyCategories.Enabled() {
