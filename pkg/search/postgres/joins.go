@@ -53,6 +53,11 @@ func (j *joinTreeNode) addPathToTree(path []joinPathElem, finalNode *walker.Sche
 // toInnerJoins walks the tree to construct the linearized set of inner joins that we need to do.
 func (j *joinTreeNode) toInnerJoins() []innerJoin {
 	innerJoins := make([]innerJoin, 0)
+
+	if j == nil {
+		return innerJoins
+	}
+
 	j.appendInnerJoinsHelper(&innerJoins)
 	return innerJoins
 }
@@ -185,5 +190,77 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 		}
 	}
 
+	joinTreeRoot.removeUnnecessaryRelations(reachableFields)
+
 	return joinTreeRoot.toInnerJoins(), reachableFields
+}
+
+// removeUnnecessaryRelations removes inner join tables where the same column
+// is used by the previous and next table in the join chain. i.e.
+// a INNER JOIN b ON a.id = b.same_column
+// b INNER JOIN c ON b.same_column = c.id
+// If table b is not used in any other way, we can remove it from the join chain.
+// Outcome: a INNER JOIN c ON a.id = c.id
+func (j *joinTreeNode) removeUnnecessaryRelations(requiredFields map[string]searchFieldMetadata) {
+	if j == nil {
+		return
+	}
+
+	requiredTables := make(map[string]struct{})
+	for _, fieldMetadata := range requiredFields {
+		requiredTables[fieldMetadata.baseField.Schema.Table] = struct{}{}
+	}
+
+	rootChildren := make(map[*joinTreeNode][]walker.ColumnNamePair)
+	for child, columnPairs := range j.children {
+		child.removeUnnecessaryRelations(requiredFields)
+
+		if _, isRequired := requiredTables[child.currNode.Table]; isRequired {
+			rootChildren[child] = columnPairs
+
+			continue
+		}
+
+		childColumns := make(map[string]string)
+		for _, pair := range columnPairs {
+			childColumns[pair.ColumnNameInOtherSchema] = pair.ColumnNameInThisSchema
+		}
+
+		childChildren := make(map[*joinTreeNode][]walker.ColumnNamePair)
+		for childChild, childColumnPairs := range child.children {
+			if len(columnPairs) != len(childColumnPairs) {
+				childChildren[childChild] = childColumnPairs
+
+				continue
+			}
+
+			rootColumnPairs := make([]walker.ColumnNamePair, 0)
+			for _, childColumnPair := range childColumnPairs {
+				if _, found := childColumns[childColumnPair.ColumnNameInThisSchema]; !found {
+					break
+				}
+
+				rootColumnPairs = append(rootColumnPairs, walker.ColumnNamePair{
+					ColumnNameInThisSchema:  childColumns[childColumnPair.ColumnNameInThisSchema],
+					ColumnNameInOtherSchema: childColumnPair.ColumnNameInOtherSchema,
+				})
+			}
+
+			if len(columnPairs) == len(rootColumnPairs) {
+				rootChildren[childChild] = rootColumnPairs
+			} else {
+				childChildren[childChild] = childColumnPairs
+			}
+		}
+
+		// Remove the table because all next tables are paired with the previous table.
+		if len(child.children) != 0 && len(childChildren) == 0 {
+			continue
+		}
+
+		child.children = childChildren
+		rootChildren[child] = columnPairs
+	}
+
+	j.children = rootChildren
 }
