@@ -5,7 +5,6 @@ import {
     getAutoUpgradeConfig,
     saveAutoUpgradeConfig,
     AutoUpgradeConfig,
-    Upgradability,
 } from 'services/ClustersService';
 
 function AutoUpgradeToggle(): ReactElement {
@@ -25,17 +24,20 @@ function AutoUpgradeToggle(): ReactElement {
         fetchConfig();
     }, []);
 
-    function toggleAutoUpgrade(): void {
-        if (!autoUpgradeConfig) {
-            return;
-        }
+    if (!autoUpgradeConfig) {
+        return <></>;
+    }
 
+    if (autoUpgradeConfig.autoUpgradeFeature === 'NOT_SUPPORTED') {
+        return <>Auto upgrade not allowed in managed central</>;
+    }
+
+    const toggleAutoUpgrade = () => {
         // @TODO, wrap this settings change in a confirmation prompt of some sort
         const previousValue = autoUpgradeConfig.enableAutoUpgrade;
         const newConfig = {
             ...autoUpgradeConfig,
             enableAutoUpgrade: !previousValue,
-            autoUpgradeAllowed: Upgradability.NOT_ALLOWED,
         };
 
         setAutoUpgradeConfig(newConfig); // optimistically set value before API call
@@ -45,27 +47,21 @@ function AutoUpgradeToggle(): ReactElement {
             const rollbackConfig = {
                 ...autoUpgradeConfig,
                 enableAutoUpgrade: previousValue,
-                autoUpgradeAllowed: Upgradability.NOT_ALLOWED,
             };
             setAutoUpgradeConfig(rollbackConfig);
 
             // also, re-fetch the data from the server, just in case it did update but we didn't get the network response
             fetchConfig();
         });
-    }
+    };
 
-    if (!autoUpgradeConfig) {
-        return <></>;
-    }
-    return autoUpgradeConfig.autoUpgradeAllowed === Upgradability.ALLOWED ? (
+    return (
         <ToggleSwitch
             id="enableAutoUpgrade"
             toggleHandler={toggleAutoUpgrade}
             label="Automatically upgrade secured clusters"
             enabled={autoUpgradeConfig.enableAutoUpgrade}
         />
-    ) : (
-        <>Auto upgrade not allowed in managed central</>
     );
 }
 
