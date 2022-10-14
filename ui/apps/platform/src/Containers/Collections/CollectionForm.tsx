@@ -26,7 +26,6 @@ import {
     FlexItem,
     Form,
     Label,
-    Stack,
     Text,
     Title,
 } from '@patternfly/react-core';
@@ -46,6 +45,7 @@ import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
 import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
 
+// TODO Possible we don't even need this if we pass the new value declaratively
 const FormikWatcher = ({ onChange }) => {
     const { values, isValid } = useFormikContext();
     const valueRef = useRef(values);
@@ -154,117 +154,129 @@ function CollectionForm({
 
     return (
         <>
-            <Drawer isExpanded={drawerIsOpen} isInline={useInlineDrawer}>
-                <DrawerContent
-                    panelContent={
-                        <DrawerPanelContent
-                            style={{
-                                borderLeft: 'var(--pf-global--BorderColor--100) 1px solid',
-                            }}
+            <Formik initialValues={initialData} onSubmit={() => {}}>
+                {({ values, handleChange, setFieldValue }) => (
+                    <Drawer isExpanded={drawerIsOpen} isInline={useInlineDrawer}>
+                        <FormikWatcher
+                            onChange={(formValue: Collection) =>
+                                console.log('formik change', formValue.selectorRules)
+                            }
+                        />
+                        <DrawerContent
+                            panelContent={
+                                <DrawerPanelContent
+                                    style={{
+                                        borderLeft: 'var(--pf-global--BorderColor--100) 1px solid',
+                                    }}
+                                >
+                                    <DrawerHead>
+                                        <Title headingLevel="h2">Collection results</Title>
+                                        <Text>See a live preview of current matches.</Text>
+                                        <DrawerActions>
+                                            <DrawerCloseButton onClick={closeDrawer} />
+                                        </DrawerActions>
+                                    </DrawerHead>
+                                    <DrawerPanelBody
+                                        className="pf-u-h-100"
+                                        style={{ overflow: 'auto' }}
+                                    >
+                                        <CollectionResults />
+                                    </DrawerPanelBody>
+                                </DrawerPanelContent>
+                            }
                         >
-                            <DrawerHead>
-                                <Title headingLevel="h2">Collection results</Title>
-                                <Text>See a live preview of current matches.</Text>
-                                <DrawerActions>
-                                    <DrawerCloseButton onClick={closeDrawer} />
-                                </DrawerActions>
-                            </DrawerHead>
-                            <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
-                                <CollectionResults />
-                            </DrawerPanelBody>
-                        </DrawerPanelContent>
-                    }
-                >
-                    <DrawerContentBody className="pf-u-background-color-100 pf-u-display-flex pf-u-flex-direction-column">
-                        {showBreadcrumbs && (
-                            <>
-                                <Breadcrumb className="pf-u-my-xs pf-u-px-lg pf-u-py-md">
-                                    <BreadcrumbItemLink to={collectionsBasePath}>
-                                        Collections
-                                    </BreadcrumbItemLink>
-                                    <BreadcrumbItem>{pageTitle}</BreadcrumbItem>
-                                </Breadcrumb>
-                                <Divider component="div" />
-                            </>
-                        )}
-                        <Flex className="pf-u-p-lg" alignItems={{ default: 'alignItemsCenter' }}>
-                            <FlexItem flex={{ default: 'flex_1' }}>
-                                <Title headingLevel="h1">{pageTitle}</Title>
-                            </FlexItem>
-                            <FlexItem align={{ default: 'alignRight' }}>
-                                {action.type === 'view' && hasWriteAccessForCollections && (
+                            <DrawerContentBody className="pf-u-background-color-100 pf-u-display-flex pf-u-flex-direction-column">
+                                {showBreadcrumbs && (
                                     <>
-                                        <Dropdown
-                                            onSelect={closeMenu}
-                                            position="right"
-                                            toggle={
-                                                <DropdownToggle
-                                                    isPrimary
-                                                    onToggle={toggleMenu}
-                                                    toggleIndicator={CaretDownIcon}
-                                                >
-                                                    Actions
-                                                </DropdownToggle>
-                                            }
-                                            isOpen={menuIsOpen}
-                                            dropdownItems={[
-                                                <DropdownItem
-                                                    key="Edit collection"
-                                                    component="button"
-                                                    onClick={() =>
-                                                        onEditCollection(action.collectionId)
-                                                    }
-                                                >
-                                                    Edit collection
-                                                </DropdownItem>,
-                                                <DropdownItem
-                                                    key="Clone collection"
-                                                    component="button"
-                                                    onClick={() =>
-                                                        onCloneCollection(action.collectionId)
-                                                    }
-                                                >
-                                                    Clone collection
-                                                </DropdownItem>,
-                                                <DropdownSeparator key="Separator" />,
-                                                <DropdownItem
-                                                    key="Delete collection"
-                                                    component="button"
-                                                    isDisabled={initialData.inUse}
-                                                    onClick={() => setDeleteId(action.collectionId)}
-                                                >
-                                                    {initialData.inUse
-                                                        ? 'Cannot delete (in use)'
-                                                        : 'Delete collection'}
-                                                </DropdownItem>,
-                                            ]}
-                                        />
-                                        <Divider
-                                            className="pf-u-px-xs"
-                                            orientation={{ default: 'vertical' }}
-                                        />
+                                        <Breadcrumb className="pf-u-my-xs pf-u-px-lg pf-u-py-md">
+                                            <BreadcrumbItemLink to={collectionsBasePath}>
+                                                Collections
+                                            </BreadcrumbItemLink>
+                                            <BreadcrumbItem>{pageTitle}</BreadcrumbItem>
+                                        </Breadcrumb>
+                                        <Divider component="div" />
                                     </>
                                 )}
-                                {drawerIsOpen ? (
-                                    <Button variant="secondary" onClick={closeDrawer}>
-                                        Hide collection results
-                                    </Button>
-                                ) : (
-                                    <Button variant="secondary" onClick={openDrawer}>
-                                        Preview collection results
-                                    </Button>
-                                )}
-                            </FlexItem>
-                        </Flex>
-                        <Divider component="div" />
-                        <Formik initialValues={initialData} onSubmit={() => {}}>
-                            {({ values, handleChange, setFieldValue }) => (
+                                <Flex
+                                    className="pf-u-p-lg"
+                                    alignItems={{ default: 'alignItemsCenter' }}
+                                >
+                                    <FlexItem flex={{ default: 'flex_1' }}>
+                                        <Title headingLevel="h1">{pageTitle}</Title>
+                                    </FlexItem>
+                                    <FlexItem align={{ default: 'alignRight' }}>
+                                        {action.type === 'view' && hasWriteAccessForCollections && (
+                                            <>
+                                                <Dropdown
+                                                    onSelect={closeMenu}
+                                                    position="right"
+                                                    toggle={
+                                                        <DropdownToggle
+                                                            isPrimary
+                                                            onToggle={toggleMenu}
+                                                            toggleIndicator={CaretDownIcon}
+                                                        >
+                                                            Actions
+                                                        </DropdownToggle>
+                                                    }
+                                                    isOpen={menuIsOpen}
+                                                    dropdownItems={[
+                                                        <DropdownItem
+                                                            key="Edit collection"
+                                                            component="button"
+                                                            onClick={() =>
+                                                                onEditCollection(
+                                                                    action.collectionId
+                                                                )
+                                                            }
+                                                        >
+                                                            Edit collection
+                                                        </DropdownItem>,
+                                                        <DropdownItem
+                                                            key="Clone collection"
+                                                            component="button"
+                                                            onClick={() =>
+                                                                onCloneCollection(
+                                                                    action.collectionId
+                                                                )
+                                                            }
+                                                        >
+                                                            Clone collection
+                                                        </DropdownItem>,
+                                                        <DropdownSeparator key="Separator" />,
+                                                        <DropdownItem
+                                                            key="Delete collection"
+                                                            component="button"
+                                                            isDisabled={initialData.inUse}
+                                                            onClick={() =>
+                                                                setDeleteId(action.collectionId)
+                                                            }
+                                                        >
+                                                            {initialData.inUse
+                                                                ? 'Cannot delete (in use)'
+                                                                : 'Delete collection'}
+                                                        </DropdownItem>,
+                                                    ]}
+                                                />
+                                                <Divider
+                                                    className="pf-u-px-xs"
+                                                    orientation={{ default: 'vertical' }}
+                                                />
+                                            </>
+                                        )}
+                                        {drawerIsOpen ? (
+                                            <Button variant="secondary" onClick={closeDrawer}>
+                                                Hide collection results
+                                            </Button>
+                                        ) : (
+                                            <Button variant="secondary" onClick={openDrawer}>
+                                                Preview collection results
+                                            </Button>
+                                        )}
+                                    </FlexItem>
+                                </Flex>
+                                <Divider component="div" />
                                 <Form>
-                                    <FormikWatcher
-                                        onChange={(formValue: Collection) =>
-                                            console.log('formik change', formValue.selectorRules)
-                                        }
-                                    />
                                     <Flex
                                         className="pf-u-background-color-200 pf-u-p-lg"
                                         spaceItems={{ default: 'spaceItemsMd' }}
@@ -345,11 +357,11 @@ function CollectionForm({
                                         </div>
                                     )}
                                 </Form>
-                            )}
-                        </Formik>
-                    </DrawerContentBody>
-                </DrawerContent>
-            </Drawer>
+                            </DrawerContentBody>
+                        </DrawerContent>
+                    </Drawer>
+                )}
+            </Formik>
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }: Toast) => (
                     <Alert
