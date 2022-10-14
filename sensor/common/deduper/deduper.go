@@ -5,7 +5,7 @@ import (
 	"hash/fnv"
 	"reflect"
 
-	"github.com/mitchellh/hashstructure"
+	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -66,7 +66,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	}
 
 	d.hasher.Reset()
-	hashValue, err := hashstructure.Hash(event.GetResource(), &hashstructure.HashOptions{
+	hashValue, err := hashstructure.Hash(event.GetResource(), hashstructure.FormatV2, &hashstructure.HashOptions{
 		TagName: "sensorhash",
 		Hasher:  d.hasher,
 	})

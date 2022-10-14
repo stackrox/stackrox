@@ -1,7 +1,7 @@
 package detector
 
 import (
-	"github.com/mitchellh/hashstructure"
+	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
@@ -27,7 +27,7 @@ func (d *deduper) reset() {
 }
 
 func (d *deduper) addDeployment(deployment *storage.Deployment) {
-	hashValue, err := hashstructure.Hash(deployment, &hashstructure.HashOptions{})
+	hashValue, err := hashstructure.Hash(deployment, hashstructure.FormatV2, &hashstructure.HashOptions{})
 	if err != nil {
 		log.Errorf("error calculating hash of deployment %q: %v", deployment.GetName(), err)
 		return
@@ -37,11 +37,12 @@ func (d *deduper) addDeployment(deployment *storage.Deployment) {
 	defer d.hashLock.Unlock()
 
 	d.hash[deployment.GetId()] = hashValue
+	deployment.Hash = hashValue
 }
 
 func (d *deduper) needsProcessing(deployment *storage.Deployment) bool {
 	// if removal then remove from hash and send empty alerts
-	hashValue, err := hashstructure.Hash(deployment, &hashstructure.HashOptions{})
+	hashValue, err := hashstructure.Hash(deployment, hashstructure.FormatV2, &hashstructure.HashOptions{})
 	if err != nil {
 		log.Errorf("error calculating hash of deployment %q: %v", deployment.GetName(), err)
 		return true
@@ -60,6 +61,7 @@ func (d *deduper) needsProcessing(deployment *storage.Deployment) bool {
 	defer d.hashLock.Unlock()
 
 	d.hash[deployment.GetId()] = hashValue
+	deployment.Hash = hashValue
 	return true
 }
 

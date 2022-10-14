@@ -3,7 +3,6 @@ package deploymentevents
 import (
 	"context"
 
-	"github.com/mitchellh/hashstructure"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -160,14 +159,8 @@ func compareMap(m1, m2 map[string]string) bool {
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) error {
-	// Validate the the deployment we receive has necessary fields set.
+	// Validate the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
-		return err
-	}
-
-	var err error
-	deployment.Hash, err = hashstructure.Hash(deployment, &hashstructure.HashOptions{})
-	if err != nil {
 		return err
 	}
 
