@@ -177,6 +177,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.LogImbue) err
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED log_imbues")
+	if err != nil {
+		log.Warnf("unable to force analyze restore log_imbues:  %v", err)
+	}
+
 	return nil
 }
 

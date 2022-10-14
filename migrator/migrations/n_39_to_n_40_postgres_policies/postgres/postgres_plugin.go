@@ -228,6 +228,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED policies")
+	if err != nil {
+		log.Warnf("unable to force analyze restore policies:  %v", err)
+	}
+
 	return nil
 }
 
@@ -520,7 +526,7 @@ func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.
 	return New(db)
 }
 
-//// Stubs for satisfying legacy interfaces
+// // Stubs for satisfying legacy interfaces
 func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
 	return errors.New("unimplemented")
 }

@@ -271,6 +271,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
 {{- if not .JoinTable }}
 {{- if not .NoCopyFrom }}
+{{- $schema := . }}
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
     conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {
@@ -292,6 +293,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
     if err := tx.Commit(ctx); err != nil {
         return err
     }
+
+    _, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED {{$schema.Table|lowerCase}}")
+    if err != nil {
+        log.Warnf("unable to force analyze restore {{$schema.Table|lowerCase}}:  %v", err)
+    }
+
     return nil
 }
 {{- end}}

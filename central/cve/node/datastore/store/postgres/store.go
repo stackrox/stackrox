@@ -223,6 +223,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NodeCVE) erro
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED node_cves")
+	if err != nil {
+		log.Warnf("unable to force analyze restore node_cves:  %v", err)
+	}
+
 	return nil
 }
 

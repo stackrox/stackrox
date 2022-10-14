@@ -272,6 +272,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ResourceColle
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED collections")
+	if err != nil {
+		log.Warnf("unable to force analyze restore collections:  %v", err)
+	}
+
 	return nil
 }
 

@@ -174,6 +174,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.InitBundleMet
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED cluster_init_bundles")
+	if err != nil {
+		log.Warnf("unable to force analyze restore cluster_init_bundles:  %v", err)
+	}
+
 	return nil
 }
 

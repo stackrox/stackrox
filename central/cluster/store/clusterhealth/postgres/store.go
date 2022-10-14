@@ -208,6 +208,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ClusterHealth
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED cluster_health_statuses")
+	if err != nil {
+		log.Warnf("unable to force analyze restore cluster_health_statuses:  %v", err)
+	}
+
 	return nil
 }
 

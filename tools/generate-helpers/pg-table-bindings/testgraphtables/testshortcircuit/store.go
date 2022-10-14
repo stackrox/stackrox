@@ -188,6 +188,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestShortCirc
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED test_short_circuits")
+	if err != nil {
+		log.Warnf("unable to force analyze restore test_short_circuits:  %v", err)
+	}
+
 	return nil
 }
 

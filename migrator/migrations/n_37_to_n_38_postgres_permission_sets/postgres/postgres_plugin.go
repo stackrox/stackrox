@@ -176,6 +176,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PermissionSet
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED permission_sets")
+	if err != nil {
+		log.Warnf("unable to force analyze restore permission_sets:  %v", err)
+	}
+
 	return nil
 }
 

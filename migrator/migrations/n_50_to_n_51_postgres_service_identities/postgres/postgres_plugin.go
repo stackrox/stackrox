@@ -172,6 +172,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ServiceIdenti
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED service_identities")
+	if err != nil {
+		log.Warnf("unable to force analyze restore service_identities:  %v", err)
+	}
+
 	return nil
 }
 

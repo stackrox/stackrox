@@ -188,6 +188,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestParent3) 
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED test_parent3")
+	if err != nil {
+		log.Warnf("unable to force analyze restore test_parent3:  %v", err)
+	}
+
 	return nil
 }
 

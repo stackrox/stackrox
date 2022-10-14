@@ -213,6 +213,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ImageComponen
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED image_components")
+	if err != nil {
+		log.Warnf("unable to force analyze restore image_components:  %v", err)
+	}
+
 	return nil
 }
 

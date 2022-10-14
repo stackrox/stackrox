@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -199,6 +200,13 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 
 	if gormDB != nil {
 		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
+
+		// After copy and migrations we should analyze the database to ensure proper statistics
+		_, adminConfig, err := pgconfig.GetPostgresConfig()
+		err = pgadmin.AnalyzeDatabase(adminConfig, dbClone)
+		if err != nil {
+			log.WriteToStderrf("unable to force analyze database:  %v", err)
+		}
 	}
 
 	return nil

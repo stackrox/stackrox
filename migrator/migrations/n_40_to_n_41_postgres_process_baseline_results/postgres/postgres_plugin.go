@@ -182,6 +182,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseli
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED process_baseline_results")
+	if err != nil {
+		log.Warnf("unable to force analyze restore process_baseline_results:  %v", err)
+	}
+
 	return nil
 }
 

@@ -344,6 +344,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestMultiKeyS
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED test_multi_key_structs")
+	if err != nil {
+		log.Warnf("unable to force analyze restore test_multi_key_structs:  %v", err)
+	}
+
 	return nil
 }
 

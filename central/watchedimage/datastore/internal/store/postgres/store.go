@@ -176,6 +176,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.WatchedImage)
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED watched_images")
+	if err != nil {
+		log.Warnf("unable to force analyze restore watched_images:  %v", err)
+	}
+
 	return nil
 }
 

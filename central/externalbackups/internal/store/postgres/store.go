@@ -177,6 +177,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ExternalBacku
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED external_backups")
+	if err != nil {
+		log.Warnf("unable to force analyze restore external_backups:  %v", err)
+	}
+
 	return nil
 }
 

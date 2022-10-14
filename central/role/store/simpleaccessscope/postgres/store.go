@@ -181,6 +181,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.SimpleAccessS
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED simple_access_scopes")
+	if err != nil {
+		log.Warnf("unable to force analyze restore simple_access_scopes:  %v", err)
+	}
+
 	return nil
 }
 

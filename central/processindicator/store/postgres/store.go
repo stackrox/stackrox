@@ -234,6 +234,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessIndica
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED process_indicators")
+	if err != nil {
+		log.Warnf("unable to force analyze restore process_indicators:  %v", err)
+	}
+
 	return nil
 }
 

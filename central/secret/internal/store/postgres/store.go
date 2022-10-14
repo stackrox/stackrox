@@ -374,6 +374,12 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Secret) error
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	_, err = s.db.Exec(ctx, "ANALYZE SKIP_LOCKED secrets")
+	if err != nil {
+		log.Warnf("unable to force analyze restore secrets:  %v", err)
+	}
+
 	return nil
 }
 
