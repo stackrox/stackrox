@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Flex, FormGroup } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
-import { cloneDeep } from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
 
 import { AutoCompleteSelect } from './AutoCompleteSelect';
 import { ScopedResourceSelector, SelectorEntityType } from '../types';
@@ -67,12 +67,13 @@ function ByNameSelector({ entityType, scopedResourceSelector, handleChange }: By
                             selectedOption={value}
                             onChange={onChangeValue(scopedResourceSelector, 0, index)}
                         />
-                        <TrashIcon
-                            className="pf-u-flex-shrink-1"
-                            style={{ cursor: 'pointer' }}
-                            color="var(--pf-global--Color--dark-200)"
-                            onClick={() => onDeleteValue(0, index)}
-                        />
+                        <Button variant="plain" onClick={() => onDeleteValue(0, index)}>
+                            <TrashIcon
+                                className="pf-u-flex-shrink-1"
+                                style={{ cursor: 'pointer' }}
+                                color="var(--pf-global--Color--dark-200)"
+                            />
+                        </Button>
                     </Flex>
                 ))}
             </Flex>

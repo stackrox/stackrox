@@ -1,7 +1,7 @@
 import React from 'react';
 import { Flex, Label, FormGroup, FlexItem, Button, Divider } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
-import { cloneDeep } from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
 
 import { SelectorEntityType, ScopedResourceSelector } from '../types';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
@@ -156,11 +156,15 @@ function ByLabelSelector({
                                                     valueIndex
                                                 )}
                                             />
-                                            <TrashIcon
-                                                style={{ cursor: 'pointer' }}
-                                                color="var(--pf-global--Color--dark-200)"
+                                            <Button
+                                                variant="plain"
                                                 onClick={() => onDeleteValue(ruleIndex, valueIndex)}
-                                            />
+                                            >
+                                                <TrashIcon
+                                                    style={{ cursor: 'pointer' }}
+                                                    color="var(--pf-global--Color--dark-200)"
+                                                />
+                                            </Button>
                                         </Flex>
                                     ))}
                                 </Flex>
