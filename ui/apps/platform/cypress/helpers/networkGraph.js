@@ -253,6 +253,17 @@ const requestConfigToVisitGraph = {
 
 export const basePath = '/main/network';
 
+/*
+ * Reach clusters by interaction from another container.
+ * For example, click View All button from System Health.
+ */
+export function reachNetworkGraph(interactionCallback, staticResponseMap) {
+    interactAndWaitForResponses(interactionCallback, requestConfigToVisitGraph, staticResponseMap);
+
+    cy.location('pathname').should('contain', basePath); // contain because pathname might have id
+    cy.get(networkGraphSelectors.networkGraphHeading);
+}
+
 export function visitNetworkGraphFromLeftNav() {
     visitFromLeftNav('Network', requestConfigToVisitGraph);
 
