@@ -73,12 +73,7 @@ func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
-	vulnResolver, err := resolver.wrapClusterCVE(ret, true, err)
-	if err != nil {
-		return nil, err
-	}
-	vulnResolver.ctx = ctx
-	return vulnResolver, nil
+	return resolver.wrapClusterCVEWithContext(ctx, ret, true, err)
 }
 
 // ClusterVulnerabilities resolves a set of image vulnerabilities for the input query
@@ -108,7 +103,8 @@ func (resolver *Resolver) ClusterVulnerabilities(ctx context.Context, q Paginate
 
 	// get values
 	query = tryUnsuppressedQuery(query)
-	cveResolvers, err := resolver.wrapClusterCVEs(loader.FromQuery(ctx, query))
+	vulns, err := loader.FromQuery(ctx, query)
+	cveResolvers, err := resolver.wrapClusterCVEsWithContext(ctx, vulns, err)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +112,6 @@ func (resolver *Resolver) ClusterVulnerabilities(ctx context.Context, q Paginate
 	// cast as return type
 	ret := make([]ClusterVulnerabilityResolver, 0, len(cveResolvers))
 	for _, res := range cveResolvers {
-		res.ctx = ctx
 		ret = append(ret, res)
 	}
 	return ret, nil
@@ -317,16 +312,14 @@ func withOpenShiftTypeFiltering(q string) string {
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_OPENSHIFT_CVE.String()).Query())
 }
 
-func (resolver *clusterCVEResolver) withClusterVulnerabilityScope(ctx context.Context) context.Context {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return scoped.Context(ctx, scoped.Scope{
-			ID:    resolver.data.GetId(),
-			Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
-		})
+func (resolver *clusterCVEResolver) clusterVulnerabilityScopeContext() context.Context {
+	if resolver.ctx == nil {
+		log.Errorf("attempted to scope context on nil")
+		return nil
 	}
-	return scoped.Context(ctx, scoped.Scope{
+	return scoped.Context(resolver.ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
-		Level: v1.SearchCategory_VULNERABILITIES,
+		Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
 	})
 }
 
@@ -349,21 +342,19 @@ Sub Resolver Functions
 // Clusters returns resolvers for clusters affected by cluster vulnerability.
 func (resolver *clusterCVEResolver) Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "Clusters")
-
-	if err := readClusters(ctx); err != nil {
-		return nil, err
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
 	}
-	return resolver.root.Clusters(resolver.withClusterVulnerabilityScope(ctx), args)
+	return resolver.root.Clusters(resolver.clusterVulnerabilityScopeContext(), args)
 }
 
 // ClusterCount returns a number of clusters affected by cluster vulnerability.
 func (resolver *clusterCVEResolver) ClusterCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "ClusterCount")
-
-	if err := readClusters(ctx); err != nil {
-		return 0, err
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
 	}
-	return resolver.root.ClusterCount(resolver.withClusterVulnerabilityScope(ctx), args)
+	return resolver.root.ClusterCount(resolver.clusterVulnerabilityScopeContext(), args)
 }
 
 func (resolver *clusterCVEResolver) VulnerabilityType() string {
@@ -380,20 +371,24 @@ func (resolver *clusterCVEResolver) EnvImpact(ctx context.Context) (float64, err
 	if err != nil || allCount == 0 {
 		return 0, err
 	}
-	scopedCount, err := resolver.root.ClusterCount(resolver.withClusterVulnerabilityScope(ctx), RawQuery{})
+	ctx = scoped.Context(ctx, scoped.Scope{
+		ID:    resolver.data.GetId(),
+		Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
+	})
+	scopedCount, err := resolver.root.ClusterCount(ctx, RawQuery{})
 	if err != nil {
 		return 0, err
 	}
 	return float64(scopedCount) / float64(allCount), nil
 }
 
-func (resolver *clusterCVEResolver) FixedByVersion(_ context.Context) (string, error) {
+func (resolver *clusterCVEResolver) FixedByVersion(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "FixedByVersion")
-	scope, hasScope := scoped.GetScope(resolver.ctx)
-	if !hasScope {
-		return "", nil
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
 	}
-	if scope.Level != v1.SearchCategory_CLUSTERS {
+	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_CLUSTERS)
+	if !hasScope {
 		return "", nil
 	}
 
@@ -405,8 +400,11 @@ func (resolver *clusterCVEResolver) FixedByVersion(_ context.Context) (string, e
 	return edges[0].GetFixedBy(), nil
 }
 
-func (resolver *clusterCVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, error) {
+func (resolver *clusterCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "IsFixable")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID))
 	if err != nil {
 		return false, err
@@ -433,9 +431,9 @@ func (resolver *clusterCVEResolver) IsFixable(_ context.Context, args RawQuery) 
 	return count != 0, nil
 }
 
-func (resolver *clusterCVEResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
+func (resolver *clusterCVEResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
 	// TODO we're temporarily pointing it at LastModified until this information is actually in the data model
-	return resolver.LastModified(ctx)
+	return resolver.LastModified(resolver.ctx)
 }
 
 func (resolver *clusterCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver {

@@ -292,13 +292,6 @@ func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, args RawQue
 	return mapCVEsToVulnerabilityCounter(cveToVulnerabilityWithSeverity(fixableVulns), cveToVulnerabilityWithSeverity(unFixableCVEs)), nil
 }
 
-func (eicr *imageComponentResolver) imageComponentScopeContext() context.Context {
-	return scoped.Context(eicr.ctx, scoped.Scope{
-		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-		ID:    eicr.data.GetId(),
-	})
-}
-
 // Nodes are the nodes that contain the Component.
 func (eicr *imageComponentResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
 	if err := readNodes(ctx); err != nil {
