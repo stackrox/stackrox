@@ -32,7 +32,6 @@ updates:
       - "ci-eks-tests"
       - "ci-no-api-tests"
       - "ci-no-ui-tests"
-      - "ci-openshift-4-tests"
       - "dependencies"
     reviewers:
       - "stackrox/backend-dep-updaters"
@@ -42,6 +41,12 @@ updates:
     schedule:
       interval: 'daily'
     open-pull-requests-limit: 3
+    labels:
+      - "ci-aks-tests"
+      - "ci-all-qa-tests"
+      - "ci-postgres-tests"
+      - "ci-eks-tests"
+      - "dependencies"
     reviewers:
       - "stackrox/backend-dep-updaters"
     ignore:
@@ -81,6 +86,12 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 1
+    labels:
+    - "ci-aks-tests"
+    - "ci-all-qa-tests"
+    - "ci-postgres-tests"
+    - "ci-eks-tests"
+    - "dependencies"
     reviewers:
     - "stackrox/backend-dep-updaters"
 
@@ -90,5 +101,11 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 1
+    labels:
+    - "ci-aks-tests"
+    - "ci-all-qa-tests"
+    - "ci-postgres-tests"
+    - "ci-eks-tests"
+    - "dependencies"
     reviewers:
     - "stackrox/backend-dep-updaters"
