@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
-	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -28,12 +28,6 @@ const (
 
 	// EmptyDB - name of an empty database (automatically created by postgres)
 	EmptyDB = "template0"
-
-	// postgresOpenRetries - number of retries when trying to open a connection
-	postgresOpenRetries = 10
-
-	// postgresTimeBetweenRetries - time to wait between retries
-	postgresTimeBetweenRetries = 10 * time.Second
 
 	// PostgresQueryTimeout - timeout time for query
 	PostgresQueryTimeout = 5 * time.Second
@@ -256,14 +250,11 @@ func getPool(postgresConfig *pgxpool.Config) *pgxpool.Pool {
 	var err error
 	var postgresDB *pgxpool.Pool
 
-	if err := retry.WithRetry(func() error {
+	err = pgutils.Retry(func() error {
 		postgresDB, err = pgxpool.ConnectConfig(context.Background(), postgresConfig)
 		return err
-	}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
-		time.Sleep(postgresTimeBetweenRetries)
-	}), retry.OnFailedAttempts(func(err error) {
-		log.Errorf("open database: %v", err)
-	})); err != nil {
+	})
+	if err != nil {
 		log.Fatalf("Timed out trying to open database: %v", err)
 	}
 

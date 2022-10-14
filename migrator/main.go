@@ -150,7 +150,7 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 	var gormDB *gorm.DB
 	var pgPool *pgxpool.Pool
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgPool, gormDB, err = postgreshelper.Load(conf, dbClone)
+		pgPool, gormDB, err = postgreshelper.Load(dbClone)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to postgres DB")
 		}

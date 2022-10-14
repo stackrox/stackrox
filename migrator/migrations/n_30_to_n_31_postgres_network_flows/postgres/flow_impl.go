@@ -36,23 +36,12 @@ const (
 	// the fields in the join.
 	joinStmt = " INNER JOIN (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId, MAX(Flow_Id) AS MaxFlow FROM network_flows GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) tmpflow on nf.Props_SrcEntity_Type = tmpflow.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = tmpflow.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = tmpflow.Props_DstEntity_Type AND nf.Props_DstEntity_Id = tmpflow.Props_DstEntity_Id AND nf.Props_DstPort = tmpflow.Props_DstPort AND nf.Props_L4Protocol = tmpflow.Props_L4Protocol AND nf.ClusterId = tmpflow.ClusterId and nf.Flow_id = tmpflow.MaxFlow "
 
-	countStmt  = "SELECT COUNT(*) FROM network_flows nf " + joinStmt
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM network_flows WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7)"
-
-	getStmt = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM network_flows nf " + joinStmt +
-		" WHERE nf.Props_SrcEntity_Type = $1 AND nf.Props_SrcEntity_Id = $2 AND nf.Props_DstEntity_Type = $3 AND nf.Props_DstEntity_Id = $4 AND nf.Props_DstPort = $5 AND nf.Props_L4Protocol = $6 AND nf.ClusterId = $7"
-	deleteStmt         = "DELETE FROM network_flows WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
-	deleteStmtWithTime = "DELETE FROM network_flows WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp = $8"
-	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM network_flows nf " + joinStmt
+	deleteStmt = "DELETE FROM network_flows WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
+	walkStmt   = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM network_flows nf " + joinStmt
 
 	// These mimic how the RocksDB version of the flow store work
 	getSinceStmt         = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM network_flows nf " + joinStmt + " WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2"
 	deleteDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
-
-	// This seemed OK in scale and long running tests because it is not executed that frequently.  A metric
-	// for this was added so we can keep an eye on the time and adjust if necessary.
-	getByDeploymentStmt = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM network_flows nf " + joinStmt +
-		" WHERE ((nf.Props_SrcEntity_Type = 1 AND nf.Props_SrcEntity_Id = $1) OR (nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1)) AND nf.ClusterId = $2"
 )
 
 var (
@@ -69,14 +58,6 @@ var (
 	batchSize = 10000
 )
 
-/*
-type FlowStore interface {
-	// GetAllFlows The methods below are the ones that match the flow interface which is what we probably have to match.
-	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
-	// UpsertFlows Same as other Upserts but it takes in a time
-	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
-}
-*/
 type flowStoreImpl struct {
 	db        *pgxpool.Pool
 	clusterID string
@@ -212,20 +193,13 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 	return nil
 }
 
-func (s *flowStoreImpl) Upsert(ctx context.Context, obj *storage.NetworkFlow) error {
-	return s.upsert(ctx, obj)
-}
-
-func (s *flowStoreImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkFlow) error {
-	// for small batches, simply write them 1 at a time.
-	if len(objs) < batchAfter {
-		return s.upsert(ctx, objs...)
-	}
-
-	return s.copyFrom(ctx, objs...)
-}
-
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
+	return pgutils.Retry(func() error {
+		return s.retryableUpsertFlows(ctx, flows, lastUpdateTS)
+	})
+}
+
+func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
 	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
 	if len(flows) < batchAfter {
@@ -233,50 +207,6 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 	}
 
 	return s.copyFrom(ctx, flows...)
-}
-
-// Count returns the number of objects in the store
-func (s *flowStoreImpl) Count(ctx context.Context) (int, error) {
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-// Exists returns if the id exists in the store
-func (s *flowStoreImpl) Exists(ctx context.Context, propsSrcEntityType storage.NetworkEntityInfo_Type, propsSrcEntityID string, propsDstEntityType storage.NetworkEntityInfo_Type, propsDstEntityID string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) (bool, error) {
-	row := s.db.QueryRow(ctx, existsStmt, propsSrcEntityType, propsSrcEntityID, propsDstEntityType, propsDstEntityID, propsDstPort, propsL4Protocol, s.clusterID)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
-	}
-	return exists, nil
-}
-
-// Get returns the object, if it exists from the store
-func (s *flowStoreImpl) Get(ctx context.Context, propsSrcEntityType storage.NetworkEntityInfo_Type, propsSrcEntityID string, propsDstEntityType storage.NetworkEntityInfo_Type, propsDstEntityID string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) (*storage.NetworkFlow, bool, error) {
-	conn, release, err := s.acquireConn(ctx)
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
-
-	// We can discuss this a bit, but this statement should only ever return 1 row.  Doing it this way allows
-	// us to use the readRows function
-	rows, err := conn.Query(ctx, getStmt, propsSrcEntityType, propsSrcEntityID, propsDstEntityType, propsDstEntityID, propsDstPort, propsL4Protocol, s.clusterID)
-	if err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-	defer rows.Close()
-
-	flows, err := s.readRows(rows, nil)
-	if err != nil || flows == nil {
-		return nil, false, err
-	}
-
-	return flows[0], true, nil
 }
 
 func (s *flowStoreImpl) acquireConn(ctx context.Context) (*pgxpool.Conn, func(), error) {
@@ -403,6 +333,12 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
+	return pgutils.Retry(func() error {
+		return s.retryableRemoveFlowsForDeployment(ctx, id)
+	})
+}
+
+func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, id string) error {
 	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
@@ -430,6 +366,12 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
 func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, types.Timestamp, error) {
+		return s.retryableGetAllFlows(ctx, since)
+	})
+}
+
+func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
@@ -456,6 +398,12 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
 func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, types.Timestamp, error) {
+		return s.retryableGetMatchingFlows(ctx, pred, since)
+	})
+}
+
+func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	var rows pgx.Rows
 	var err error
 
