@@ -48,12 +48,14 @@ function create_ns {
 }
 
 function create_file {
+  echo "SHREWS -- template create_file"
 	local file="$1"
 	create_or_replace secret -n "stackrox" generic {{$secretName}} --from-file="ca.crt=$file"
 	label -n "stackrox" secret/{{$secretName}} app.kubernetes.io/name=stackrox
 }
 
 function create_directory {
+  echo "SHREWS -- template create_directory"
 	local dir="$1"
 	echo "The following certificates will be used as additional CAs:"
 	from_file_args=()

@@ -213,9 +213,12 @@ function launch_central {
 
     echo
     if [[ -n "${TRUSTED_CA_FILE}" ]]; then
+      echo "SHREWS -- we have a trusted CA file"
         if [[ -x "${unzip_dir}/scripts/ca-setup.sh" ]]; then
+          echo "SHREWS -- certs 1"
           "${unzip_dir}/scripts/ca-setup.sh" -f "${TRUSTED_CA_FILE}"
         else
+          echo "SHREWS -- certs 2"
           "${unzip_dir}/central/scripts/ca-setup.sh" -f "${TRUSTED_CA_FILE}"
         fi
     fi
@@ -312,8 +315,11 @@ function launch_central {
       fi
 
       if [[ -n "$CI" ]]; then
+        echo "SHREWS -- lint 1"
         helm lint "$unzip_dir/chart"
+        echo "SHREWS -- lint 2"
         helm lint "$unzip_dir/chart" -n stackrox
+        echo "SHREWS -- lint 3"
         helm lint "$unzip_dir/chart" -n stackrox "${helm_args[@]}"
       fi
       helm upgrade --install -n stackrox stackrox-central-services "$unzip_dir/chart" \
