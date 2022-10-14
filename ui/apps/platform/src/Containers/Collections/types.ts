@@ -7,7 +7,7 @@ export type ByAnnotationSelectorField = `${SelectorEntityType} Annotation`;
 
 export type SelectorField = ByNameSelectorField | ByLabelSelectorField | ByAnnotationSelectorField;
 
-const byNameRegExp = new RegExp(`^${selectorEntityTypes.join('|')}$`);
+const byNameRegExp = new RegExp(`^(${selectorEntityTypes.join('|')})$`);
 const byLabelRegExp = new RegExp(`^(${selectorEntityTypes.join('|')}) Label$`);
 const byAnnotationRegExp = new RegExp(`^(${selectorEntityTypes.join('|')}) Annotation$`);
 

@@ -8,7 +8,6 @@ import {
     FormGroup,
     Select,
     SelectOption,
-    Stack,
 } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
@@ -16,12 +15,7 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { SelectorEntityType } from './collections.utils';
-import {
-    isByLabelField,
-    isByNameField,
-    ScopedResourceSelector,
-    ScopedResourceSelectorRule,
-} from './types';
+import { isByLabelField, isByNameField, ScopedResourceSelector } from './types';
 
 const selectorOptions = ['All', 'ByName', 'ByLabel'] as const;
 
@@ -260,7 +254,11 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
                                     <FlexItem grow={{ default: 'grow' }}>
                                         <Flex>
                                             <FlexItem grow={{ default: 'grow' }}>
-                                                <FormGroup label="Label key" key={labelKey}>
+                                                <FormGroup
+                                                    label="Label key"
+                                                    key={labelKey}
+                                                    isRequired
+                                                >
                                                     <AutoCompleteSelector
                                                         selectedOption={labelKey}
                                                         onChange={onChangeLabelKey(
@@ -279,7 +277,7 @@ function RuleSelector({ entityType, scopedResourceSelector, onOptionChange }: Ru
                                         </Flex>
                                     </FlexItem>
                                     <FlexItem grow={{ default: 'grow' }}>
-                                        <FormGroup label="Label value(s)">
+                                        <FormGroup label="Label value(s)" isRequired>
                                             <Flex
                                                 spaceItems={{ default: 'spaceItemsSm' }}
                                                 direction={{ default: 'column' }}
