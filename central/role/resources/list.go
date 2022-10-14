@@ -64,6 +64,7 @@ var (
 	NetworkPolicy                    = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
 	Node                             = newResourceMetadata("Node", permissions.ClusterScope)
 	Policy                           = newResourceMetadata("Policy", permissions.GlobalScope)
+	Role                             = newResourceMetadata("Role", permissions.GlobalScope)
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
 	VulnerabilityManagementApprovals = newResourceMetadata("VulnerabilityManagementApprovals",
