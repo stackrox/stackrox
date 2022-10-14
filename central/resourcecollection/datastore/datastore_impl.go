@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -28,6 +29,15 @@ type datastoreImpl struct {
 
 	graphLock sync.Mutex
 	graph     *dag.DAG
+}
+
+func (ds *datastoreImpl) initGraphOnce() {
+	once.Do(ds.initGraphCrashOnError)
+}
+
+func (ds *datastoreImpl) initGraphCrashOnError() {
+	err := ds.initGraph()
+	utils.CrashOnError(err)
 }
 
 func (ds *datastoreImpl) initGraph() error {
@@ -80,6 +90,7 @@ func (ds *datastoreImpl) initGraph() error {
 }
 
 func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) error {
+	ds.initGraphOnce()
 	ds.graphLock.Lock()
 	defer ds.graphLock.Unlock()
 
@@ -101,6 +112,7 @@ func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) e
 }
 
 func (ds *datastoreImpl) deleteCollectionFromGraph(id string) error {
+	ds.initGraphOnce()
 	ds.graphLock.Lock()
 	defer ds.graphLock.Unlock()
 
