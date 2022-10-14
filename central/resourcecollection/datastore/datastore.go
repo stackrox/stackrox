@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
+	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,22 +28,23 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ResourceCollection, error)
 
-	// AddCollection(ctx context.Context, collection *storage.ResourceCollection) (string, error) TODO ROX-12612
+	AddCollection(ctx context.Context, collection *storage.ResourceCollection) error
+	DeleteCollection(ctx context.Context, id string) error
 	// AddCollectionDryRun(ctx context.Context, collection *storage.ResourceCollection) error TODO ROX-12615
 	// UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error TODO ROX-12614
-	// DeleteCollection(ctx context.Context, id string) error TODO ROX-12613
 	// autocomplete workflow, maybe SearchResults? TODO ROX-12616
 }
 
 // New returns a new instance of a DataStore.
-func New(storage postgres.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
 		searcher: searcher,
+		graph:    nil,
 	}
 
-	return ds
+	return ds, ds.initGraph()
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
@@ -54,5 +56,5 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 	dbstore := postgres.New(pool)
 	indexer := postgres.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher), nil
+	return New(dbstore, indexer, searcher)
 }

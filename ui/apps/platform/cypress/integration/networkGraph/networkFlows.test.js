@@ -1,24 +1,30 @@
 import { selectors as networkPageSelectors } from '../../constants/NetworkPage';
-import selectors from '../../selectors';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import {
+    clickBaselineSettingsTab,
     clickOnDeploymentNodeByName,
+    interactAndWaitForChangeToNetworkFlows,
     visitNetworkGraphWithNamespaceFilter,
 } from '../../helpers/networkGraph';
 
-const tableDataRows = 'table tr[data-testid="data-row"]';
 const tableStatusHeaders = 'table tr[data-testid="subhead-row"]';
+
+const tableDataRows = 'table tr[data-testid="data-row"]';
 const sensorTableRow = `${tableDataRows}:contains("sensor")`;
-const markAsAnomalousButton = `${sensorTableRow} button:contains("Mark as anomalous")`;
-const baselineSettingsTab = `${selectors.tab.tabs}:contains('Baseline Settings')`;
+
+// Too bad, so sad: Anomalous Flows and Baseline Flows are not in separate tbody elements.
+
+const sensorTableRowUnderAnomalousFlows = `${tableDataRows}.bg-alert-200:contains("sensor")`;
+const addToBaselineButton = `${sensorTableRowUnderAnomalousFlows} button:contains("Add to baseline")`;
+
+const sensorTableRowUnderBaselineFlows = `${tableDataRows}.bg-base-100:contains("sensor")`;
+const markAsAnomalousButton = `${sensorTableRowUnderBaselineFlows} button:contains("Mark as anomalous")`;
 
 function clickFlowsConfirmationButton() {
-    cy.intercept('GET', api.network.networkGraph).as('networkGraph');
-    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPoliciesGraph');
-    cy.intercept('POST', api.network.networkBaselineStatus).as('networkBaselineStatus');
-    cy.get(networkPageSelectors.buttons.confirmationButton).click();
-    cy.wait(['@networkGraph', '@networkPoliciesGraph', '@networkBaselineStatus']);
+    interactAndWaitForChangeToNetworkFlows(() => {
+        cy.get(networkPageSelectors.buttons.confirmationButton).click();
+    });
 }
 
 describe('Network Baseline Flows', () => {
@@ -62,25 +68,22 @@ describe('Network Baseline Flows', () => {
             visitNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
-                const addToBaselineButton = `${sensorTableRow} button:contains("Add to baseline")`;
-
                 clickOnDeploymentNodeByName(cytoscape, 'central');
 
-                cy.intercept('GET', api.network.networkGraph).as('networkGraph');
-                cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPoliciesGraph');
-                cy.intercept('POST', api.network.networkBaselineStatus).as('networkBaselineStatus');
-
                 // marking a baseline flow as anomalous should show up as anomalous
-                cy.get(sensorTableRow).trigger('mouseover');
-                cy.get(markAsAnomalousButton).click();
-                cy.wait(['@networkGraph', '@networkPoliciesGraph', '@networkBaselineStatus']);
-                cy.get(sensorTableRow).trigger('mouseover');
-                cy.get(addToBaselineButton);
+                cy.get(sensorTableRowUnderBaselineFlows).trigger('mouseover');
+                interactAndWaitForChangeToNetworkFlows(() => {
+                    cy.get(markAsAnomalousButton).click({ force: true }); // because network-zoom-buttons can cover it
+                });
 
                 // marking an anomalous flow as baseline should show up as baseline
-                cy.get(addToBaselineButton).click();
-                cy.wait(['@networkGraph', '@networkPoliciesGraph', '@networkBaselineStatus']);
-                cy.get(sensorTableRow).trigger('mouseover');
+                cy.get(sensorTableRowUnderAnomalousFlows).trigger('mouseover');
+                interactAndWaitForChangeToNetworkFlows(() => {
+                    cy.get(addToBaselineButton).click({ force: true }); // because network-zoom-buttons can cover it
+                });
+
+                // Assert that test leaves table row in its initial state.
+                cy.get(sensorTableRowUnderBaselineFlows).trigger('mouseover');
                 cy.get(markAsAnomalousButton);
             });
         });
@@ -105,6 +108,8 @@ describe('Network Baseline Flows', () => {
                 cy.get(addAllToBaselineButton).click();
                 clickFlowsConfirmationButton();
                 cy.get(noAnomalousFlows);
+
+                // The following test seems to depend the result of this test.
             });
         });
 
@@ -129,6 +134,8 @@ describe('Network Baseline Flows', () => {
                             prevNumAnomalousFlows + 1
                         } Anomalous Flow")`;
 
+                        // This test seems to depend the result of the preceding test.
+
                         // marking selected baseline flows as anomalous should show up as anomalous
                         cy.get(sensorTableRowCheckbox).check();
                         cy.get(markSelectedAsAnomalousButton).click();
@@ -152,7 +159,8 @@ describe('Network Baseline Flows', () => {
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 clickOnDeploymentNodeByName(cytoscape, 'central');
 
-                cy.get(baselineSettingsTab).click();
+                clickBaselineSettingsTab();
+
                 cy.get(tableStatusHeaders).eq(0).contains('Baseline Flow');
             });
         });
@@ -165,7 +173,8 @@ describe('Network Baseline Flows', () => {
 
                 clickOnDeploymentNodeByName(cytoscape, 'central');
 
-                cy.get(baselineSettingsTab).click();
+                clickBaselineSettingsTab();
+
                 cy.get(baselineStatusHeader)
                     .invoke('text')
                     .then((baselineFlowsText) => {
@@ -184,7 +193,7 @@ describe('Network Baseline Flows', () => {
                             'networkPoliciesGraph'
                         );
                         cy.get(sensorTableRow).trigger('mouseover');
-                        cy.get(markAsAnomalousButton).click();
+                        cy.get(markAsAnomalousButton).click({ force: true }); // because network-zoom-buttons can cover it
                         cy.wait([
                             '@networkBaselinePeers',
                             '@networkGraph',
@@ -203,7 +212,7 @@ describe('Network Baseline Flows', () => {
                 cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                     clickOnDeploymentNodeByName(cytoscape, 'central');
 
-                    cy.get(baselineSettingsTab).click();
+                    clickBaselineSettingsTab();
 
                     const baselineViolationsToggle = '[data-testid="toggle-switch-checkbox"]';
 

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/migrator/rockshelper"
 	"github.com/stackrox/rox/migrator/runner"
 	"github.com/stackrox/rox/migrator/types"
+	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/routes"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/tecbot/gorocksdb"
 	"go.etcd.io/bbolt"
 	"gorm.io/gorm"
@@ -148,14 +150,15 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 	var gormDB *gorm.DB
 	var pgPool *pgxpool.Pool
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgPool, gormDB, err = postgreshelper.Load(conf, dbClone)
+		pgPool, gormDB, err = postgreshelper.Load(dbClone)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to postgres DB")
 		}
 		// Close when needed
 		defer postgreshelper.Close()
 
-		ver, err := migrations.ReadVersionPostgres(pgPool)
+		ctx := sac.WithAllAccess(context.Background())
+		ver, err := migVer.ReadVersionGormDB(ctx, gormDB)
 		if err != nil {
 			return errors.Wrap(err, "failed to get version from the database")
 		}
@@ -167,7 +170,6 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 			pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
 			return nil
 		}
-
 		log.WriteToStderrf("version for %q is %v", dbClone, ver)
 	}
 

@@ -42,6 +42,10 @@ import (
 const (
 	// DefaultNamespace the default namespace used to create the resources
 	DefaultNamespace string = "sensor-integration"
+
+	// defaultCreationTimeout maximum time the test will wait until sensor emits
+	// resource creation event to central after fake resource was applied.
+	defaultCreationTimeout time.Duration = 10 * time.Second
 )
 
 // YamlTestFile is a test file in YAML
@@ -403,7 +407,7 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 	}
 
 	if file.Kind == "Deployment" || file.Kind == "Pod" {
-		if err := c.waitForResource(5*time.Second, deploymentName(obj.GetName())); err != nil {
+		if err := c.waitForResource(defaultCreationTimeout, deploymentName(obj.GetName())); err != nil {
 			return nil, err
 		}
 	}

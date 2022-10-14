@@ -11,6 +11,7 @@ import {
     visitNetworkGraph,
     visitNetworkGraphWithNamespaceFilter,
 } from '../../helpers/networkGraph';
+import { hasFeatureFlag } from '../../helpers/features';
 
 describe('Network Deployment Details', () => {
     withAuth();
@@ -54,7 +55,10 @@ describe('Network Graph Search', () => {
         });
     });
 
-    it('should filter to show only a specific deployment and deployments connected to it', () => {
+    it('should filter to show only a specific deployment and deployments connected to it', function () {
+        if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+            this.skip();
+        }
         visitNetworkGraphWithNamespaceFilter('stackrox');
         selectDeploymentFilter('central');
 

@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
@@ -8,8 +9,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 )
@@ -17,6 +20,7 @@ import (
 var (
 	versionBucketName = []byte("version")
 	versionKey        = []byte("\x00")
+	ctx               = sac.WithAllAccess(context.Background())
 )
 
 // getCurrentSeqNumBolt returns the current seq-num found in the bolt DB.
@@ -64,12 +68,12 @@ func getCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
 }
 
 func getCurrentSeqNumPostgres(databases *types.Databases) (int, error) {
-	migVer, err := migrations.ReadVersionPostgres(databases.PostgresDB)
+	ver, err := version.ReadVersionGormDB(ctx, databases.GormDB)
 	if err != nil {
 		return 0, errors.Wrap(err, "getting current postgres sequence number")
 	}
 
-	return migVer.SeqNum, nil
+	return ver.SeqNum, nil
 }
 func getCurrentSeqNum(databases *types.Databases) (int, error) {
 	// If Rocks and Bolt are passed into this function when Postgres is enabled, that means
@@ -116,7 +120,7 @@ func updateVersion(databases *types.Databases, newVersion *storage.Version) erro
 	// is needed for the migrations themselves.
 	if int(newVersion.GetSeqNum()) > migrations.CurrentDBVersionSeqNumWithoutPostgres()+1 {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			migrations.SetVersionPostgres(databases.PostgresDB, newVersion)
+			version.SetVersionGormDB(ctx, databases.GormDB, newVersion, false)
 			return nil
 		}
 		return fmt.Errorf("running migration that rocks does not support: %d", newVersion.GetSeqNum())

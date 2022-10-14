@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 type convertTestCase struct {
@@ -59,8 +59,8 @@ func TestCloneAndEnsureConverted(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			got, err := CloneAndEnsureConverted(tc.policy)
-			assert.Assert(t, tc.hasError == (err != nil))
-			assert.DeepEqual(t, tc.expected, got)
+			assert.Equal(t, tc.hasError, err != nil)
+			assert.Equal(t, tc.expected, got)
 		})
 	}
 }

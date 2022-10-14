@@ -6,8 +6,8 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
-import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
 import {
+    hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
@@ -38,19 +38,19 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
-        hasExpectedHeaderColumns(
-            [
-                'CVE',
-                'Type',
-                'Fixable',
-                'CVSS Score',
-                'Env. Impact',
-                'Impact Score',
-                'Entities',
-                'Published',
-            ],
-            1 // skip 1 additional column to account for checkbox column
-        );
+        hasTableColumnHeadings([
+            '', // checkbox
+            '', // hidden
+            'CVE',
+            'Type',
+            'Fixable',
+            'CVSS Score',
+            'Env. Impact',
+            'Impact Score',
+            'Entities',
+            'Published',
+            '', // hidden
+        ]);
     });
 
     it('should sort the CVSS Score column', () => {
@@ -101,7 +101,10 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display links for clusters', () => {
+    it('should display links for clusters', function () {
+        if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+            this.skip();
+        }
         verifySecondaryEntities(
             entitiesKey,
             'clusters',

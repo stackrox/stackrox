@@ -64,7 +64,9 @@ func NilOrTime(t *types.Timestamp) *time.Time {
 
 // CreateTableFromModel executes input create statement using the input connection.
 func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres.CreateStmts) {
-	err := db.WithContext(ctx).AutoMigrate(createStmt.GormModel)
+	err := Retry(func() error {
+		return db.WithContext(ctx).AutoMigrate(createStmt.GormModel)
+	})
 	err = errors.Wrapf(err, "Error creating table for %q: %v", reflect.TypeOf(createStmt.GormModel), err)
 	utils.Must(err)
 

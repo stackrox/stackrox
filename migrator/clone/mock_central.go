@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
+	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
+	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/version"
-	vStore "github.com/stackrox/rox/pkg/version/postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -48,6 +49,7 @@ type versionPair struct {
 
 type mockCentral struct {
 	t         *testing.T
+	ctx       context.Context
 	mountPath string
 	tp        *pgtest.TestPostgres
 	// Set version function has to be provided by test itself.
@@ -56,15 +58,20 @@ type mockCentral struct {
 	// May need to run both databases if testing case of upgrading from rocks version to a postgres version
 	runBoth    bool
 	updateBoth bool
+	gc         migGorm.Config
 }
 
 // createCentral - creates a central that runs Rocks OR Postgres OR both.  Need to cover
 // the condition where we have Rocks data that needs migrated to Postgres.  Need to test that
 // we calculate the destination clone appropriately.
 func createCentral(t *testing.T, runBoth bool) *mockCentral {
+	// Initialize mock test config
+	_ = migGorm.SetupAndGetMockConfig(t)
+
 	mountDir, err := os.MkdirTemp("", "mock-central-")
 	require.NoError(t, err)
 	mock := mockCentral{t: t, mountPath: mountDir, runBoth: runBoth}
+	mock.ctx = sac.WithAllAccess(context.Background())
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() || runBoth {
 		dbPath := filepath.Join(mountDir, ".db-init")
@@ -143,10 +150,7 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 func (m *mockCentral) upgradeDB(path, clone, pgClone string) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		if pgadmin.CheckIfDBExists(m.adminConfig, pgClone) {
-			pool := pgadmin.GetClonePool(m.adminConfig, pgClone)
-			defer pool.Close()
-
-			cloneVer, err := migrations.ReadVersionPostgres(pool)
+			cloneVer, err := migVer.ReadVersionPostgres(m.ctx, pgClone)
 			require.NoError(m.t, err)
 			require.LessOrEqual(m.t, cloneVer.SeqNum, migrations.CurrentDBVersionSeqNum())
 		}
@@ -217,6 +221,12 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 	m.updateBoth = false
 	if clone != "" && pgClone != "" {
 		m.updateBoth = true
+
+		// If we are migrating from Rocks, it could be a subsequent upgrade.  If so we will
+		// have deleted the current Postgres DB.  We need to re-create it here for the rest
+		// of the test.  This will naturally be recreated in migrator, but we are focused on the clones
+		// here and such that code is not executed as part of this test
+		pgtest.CreateDatabase(m.t, migrations.GetCurrentClone())
 	}
 
 	require.NoError(m.t, dbm.Persist(clone, pgClone, m.updateBoth))
@@ -240,10 +250,7 @@ func (m *mockCentral) runCentral() {
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		if version.CompareVersions(version.GetMainVersion(), "3.0.57.0") >= 0 {
-			pool := pgadmin.GetClonePool(m.adminConfig, migrations.GetCurrentClone())
-
-			migrations.SetCurrentVersionPostgres(pool)
-			pool.Close()
+			migVer.SetCurrentVersionPostgres(m.ctx)
 		}
 	}
 	m.verifyCurrent()
@@ -336,15 +343,7 @@ func (m *mockCentral) setMigrationVersion(path string, ver *versionPair) {
 }
 
 func (m *mockCentral) setMigrationVersionPostgres(clone string, ver *versionPair) {
-	pool := pgadmin.GetClonePool(m.tp.Config(), clone)
-	defer pool.Close()
-
-	ctx := sac.WithAllAccess(context.Background())
-	store := vStore.New(ctx, pool)
-
-	err := store.Upsert(ctx, &storage.Version{SeqNum: int32(ver.seqNum), Version: ver.version})
-	require.NoError(m.t, err)
-
+	migVer.SetVersionPostgres(m.ctx, clone, &storage.Version{SeqNum: int32(ver.seqNum), Version: ver.version})
 }
 
 func (m *mockCentral) verifyMigrationVersion(dbPath string, ver *versionPair) {
@@ -355,10 +354,7 @@ func (m *mockCentral) verifyMigrationVersion(dbPath string, ver *versionPair) {
 }
 
 func (m *mockCentral) verifyMigrationVersionPostgres(clone string, ver *versionPair) {
-	pool := pgadmin.GetClonePool(m.adminConfig, clone)
-	defer pool.Close()
-
-	migVer, err := migrations.ReadVersionPostgres(pool)
+	migVer, err := migVer.ReadVersionPostgres(m.ctx, clone)
 	require.NoError(m.t, err)
 	log.Infof("clone => %q.  Version incoming => %v", clone, ver)
 	assert.Equal(m.t, ver.seqNum, migVer.SeqNum)
@@ -366,28 +362,7 @@ func (m *mockCentral) verifyMigrationVersionPostgres(clone string, ver *versionP
 }
 
 func (m *mockCentral) getCloneVersion(clone string) (*migrations.MigrationVersion, error) {
-	var pool *pgxpool.Pool
-	if clone == migrations.GetCurrentClone() {
-		pool = m.tp.Pool
-	} else {
-		pool = pgtest.ForTCustomPool(m.t, clone)
-	}
-	defer pool.Close()
-
-	ctx := sac.WithAllAccess(context.Background())
-
-	store := vStore.New(ctx, pool)
-
-	version, exists, err := store.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if !exists {
-		return &migrations.MigrationVersion{MainVersion: "0", SeqNum: 0}, nil
-	}
-
-	return &migrations.MigrationVersion{MainVersion: version.Version, SeqNum: int(version.SeqNum)}, nil
+	return migVer.ReadVersionPostgres(m.ctx, clone)
 }
 
 func (m *mockCentral) verifyDBVersion(dbPath string, seqNum int) {

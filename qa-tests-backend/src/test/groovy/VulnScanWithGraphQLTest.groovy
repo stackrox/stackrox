@@ -2,6 +2,7 @@ import static org.junit.Assume.assumeFalse
 
 import org.apache.commons.lang3.StringUtils
 
+import groups.BAT
 import groups.GraphQL
 import objects.Deployment
 import services.GraphQLService
@@ -12,6 +13,7 @@ import org.junit.experimental.categories.Category
 import spock.lang.Shared
 import spock.lang.Unroll
 
+@Category([BAT, GraphQL])
 class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
     static final private Deployment STRUTS_DEP = new Deployment()
@@ -158,7 +160,6 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(GraphQL)
     def "Verify image vuln,cves,cvss on #depName in GraphQL"() {
         when:
         "Fetch the results of the images from GraphQL "
@@ -184,7 +185,6 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(GraphQL)
     def "Verify image info from #CVEID in GraphQL"() {
         when:
         "Fetch the results of the CVE,image from GraphQL "

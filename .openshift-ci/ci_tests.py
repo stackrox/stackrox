@@ -12,6 +12,7 @@ from common import popen_graceful_kill
 class BaseTest:
     def __init__(self):
         self.test_outputs = []
+        self.test_results = {}
 
     def run_with_graceful_kill(self, args, timeout, post_start_hook=None):
         with subprocess.Popen(args) as cmd:
@@ -48,6 +49,22 @@ class UpgradeTest(BaseTest):
             post_start_hook=set_dirs_after_start,
         )
 
+class PostgresUpgradeTest(BaseTest):
+    TEST_TIMEOUT = 60 * 60
+    TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
+
+    def run(self):
+        print("Executing the Postgres Upgrade Test")
+
+        def set_dirs_after_start():
+            # let post test know where logs are
+            self.test_outputs = [PostgresUpgradeTest.TEST_OUTPUT_DIR]
+
+        self.run_with_graceful_kill(
+            ["tests/upgrade/postgres_run.sh", PostgresUpgradeTest.TEST_OUTPUT_DIR],
+            PostgresUpgradeTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
 
 class OperatorE2eTest(BaseTest):
     # TODO(ROX-12348): adjust these timeouts once we know average run times
@@ -61,6 +78,10 @@ class OperatorE2eTest(BaseTest):
             "operator/build/kuttl-test-artifacts",
             "operator/build/kuttl-test-artifacts-upgrade",
         ]
+        self.test_results = {
+            "kuttl-test-artifacts": "operator/build/kuttl-test-artifacts",
+            "kuttl-test-artifacts-upgrade": "operator/build/kuttl-test-artifacts-upgrade",
+        }
 
     def run(self):
         print("Deploying operator")
@@ -72,7 +93,7 @@ class OperatorE2eTest(BaseTest):
         print("Executing operator upgrade test")
         self.run_with_graceful_kill(
             ["make", "-C", "operator", "test-upgrade"],
-            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
+            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC
         )
 
         print("Executing operator e2e tests")

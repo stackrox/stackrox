@@ -17,8 +17,10 @@
         "@patternfly/react-icons": "4.82.8",
         "@patternfly/react-styles": "4.81.8",
         "@patternfly/react-table": "4.100.8",
+        "@patternfly/react-topology": "^4.86.0",
         "@stackrox/ui-components": "*",
         "axios": "^0.25.0",
+        "classnames": "^2.3.2",
         "computed-style-to-inline-style": "^3.0.0",
         "connected-react-router": "^6.9.2",
         "core-js": "^3.1.4",
@@ -28,6 +30,7 @@
         "cytoscape-popper": "^2.0.0",
         "d3-axis": "^1.0.12",
         "d3-brush": "^3.0.0",
+        "d3-polygon": "^3.0.1",
         "d3-scale": "^3.2.3",
         "d3-selection": "^2.0.0",
         "d3-zoom": "^2.0.0",
@@ -45,6 +48,7 @@
         "jspdf-autotable": "^3.5.14",
         "lodash": "^4.17.21",
         "mobx": "^6.3.2",
+        "mobx-react": "^7.5.3",
         "normalizr": "^3.6.1",
         "object-resolve-path": "^1.1.1",
         "pluralize": "^8.0.0",
@@ -161,7 +165,7 @@
         "redux-immutable-state-invariant": "^2.1.0",
         "redux-saga-test-plan": "^3.7.0",
         "tailwindcss": "^2.0.3",
-        "typescript": "^4.8.3"
+        "typescript": "^4.8.4"
     },
     "browserslist": [
         ">0.2%",

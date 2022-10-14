@@ -28,7 +28,7 @@ func ForT(t testing.TB, disableConstraint bool) *TestPostgres {
 	// Bootstrap a test database
 	database := pgtest.CreateADatabaseForT(t)
 
-	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(database)
+	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, database)
 	ctx := context.Background()
 
 	// initialize pool to be used

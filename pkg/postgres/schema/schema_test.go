@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
+	k8sEnv "k8s.io/utils/env"
 )
 
 var (
@@ -51,7 +52,7 @@ func (s *SchemaTestSuite) SetupSuite() {
 
 	ctx := sac.WithAllAccess(context.Background())
 
-	source := conn.GetConnectionString(s.T())
+	source := conn.GetConnectionStringWithDatabaseName(s.T(), k8sEnv.GetString("POSTGRES_DB", "postgres"))
 
 	config, err := pgxpool.ParseConfig(source)
 	s.NoError(err)

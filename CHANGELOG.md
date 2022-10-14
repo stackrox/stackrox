@@ -24,6 +24,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - `ids` field in `/v1/cves/suppress` and `/v1/cves/unsuppress` API payload renamed to `cves`.
 - ROX-11592: Support to Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field
   being set in the `/v1/groups` endpoint have been removed.
+- The unused "ComplianceRunSchedule" resource has been removed.
 
 ### Deprecated Features
 
@@ -33,6 +34,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   The default SCC for sensor is now `restricted[-v2]` or `stackrox-sensor` depending on the settings.
   Both the `runAsUser` and `fsGroup` for the admission-control and sensor deployments are no longer hardcoded to 4000 on Openshift clusters
   to allow using the `restricted` and `restricted-v2` SCCs.
+- The service account "central", which is used by the central deployment, will now include `get and list` access to the pod resource in the namespace
+  where central is deployed to. This fixes an issue when generating diagnostic bundles to now correctly include all logs within the namespace of central.
 
 ## [3.72.0]
 

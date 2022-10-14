@@ -9,9 +9,12 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
+	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
+	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -23,6 +26,7 @@ type dbCloneManagerImpl struct {
 	forceRollbackVersion string
 	adminConfig          *pgxpool.Config
 	sourceMap            map[string]string
+	gc                   migGorm.Config
 }
 
 // New - returns a new ready-to-use store.
@@ -39,6 +43,7 @@ func New(forceVersion string, adminConfig *pgxpool.Config, sourceMap map[string]
 // from disk.
 func (d *dbCloneManagerImpl) Scan() error {
 	clones := pgadmin.GetDatabaseClones(d.adminConfig)
+	ctx := sac.WithAllAccess(context.Background())
 
 	// We use clones to collect all db clones (directory starting with db- or .restore-) matching upgrade or restore pattern.
 	// We maintain clones with a known link in cloneMap. All unknown clones are to be removed.
@@ -47,9 +52,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 		switch name := clone; {
 		case knownClones.Contains(name):
 			// Get a short-lived connection for the purposes of checking the version of the clone.
-			pool := pgadmin.GetClonePool(d.adminConfig, name)
-
-			ver, err := migrations.ReadVersionPostgres(pool)
+			ver, err := migVer.ReadVersionPostgres(ctx, name)
 			if err != nil {
 				return err
 			}
@@ -57,7 +60,6 @@ func (d *dbCloneManagerImpl) Scan() error {
 
 			d.cloneMap[name] = metadata.NewPostgres(ver, name)
 			log.Debugf("Closing the pool from scan %q", name)
-			pool.Close()
 		case name == TempClone:
 			clonesToRemove.Add(name)
 		}
@@ -162,24 +164,17 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 		// Rocks more recently updated than Postgres so need to migrate from there.  Otherwise, Postgres is more recent
 		// so just fall through to the rest of the processing.
 		if currClone.GetMigVersion().LastPersisted.Before(rocksVersion.LastPersisted) {
-			// Rollback is not enabled, so process the Rocks -> Postgres migration on CurrentClone.
-			if !d.rollbackEnabled() {
-				return CurrentClone, true, nil
+			// We want to start fresh as we are migrating from Rocks->Postgres.  So any data that exists in
+			// Postgres from a previous upgrade followed by a rollback needs to be ignored.  So just drop current
+			// and let it create anew.
+			log.Infof("To start with a clean Postgres, dropping database %q", CurrentClone)
+			err := pgadmin.DropDB(d.sourceMap, d.adminConfig, CurrentClone)
+			if err != nil {
+				log.Errorf("Unable to drop current clone: %v", err)
+				return "", true, err
 			}
 
-			// Create a temp clone for processing of current
-			// Seed it from an empty database because we need to run migrations from Rocks to Postgres.
-			if !d.databaseExists(TempClone) {
-				err := pgadmin.CreateDB(d.sourceMap, d.adminConfig, pgadmin.EmptyDB, TempClone)
-
-				// If for some reason, we cannot create a temp clone we will need to continue to upgrade
-				// with the current and thus no fallback.
-				if err != nil {
-					log.Errorf("Unable to create temp clone: %v", err)
-				}
-			}
-			d.cloneMap[TempClone] = metadata.NewPostgres(d.cloneMap[CurrentClone].GetMigVersion(), TempClone)
-			return TempClone, true, nil
+			return CurrentClone, true, nil
 		}
 		log.Info("Postgres is the more recent version so we will process that.")
 	}
@@ -403,14 +398,11 @@ func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 
 // GetCurrentVersion -- gets the version of the current clone
 func (d *dbCloneManagerImpl) GetCurrentVersion() *migrations.MigrationVersion {
-	// Get a short-lived connection for the purposes of checking the version of the clone.
-	pool := pgadmin.GetClonePool(d.adminConfig, CurrentClone)
-
-	ver, err := migrations.ReadVersionPostgres(pool)
+	ctx := sac.WithAllAccess(context.Background())
+	ver, err := migVer.ReadVersionPostgres(ctx, CurrentClone)
 	if err != nil {
 		return nil
 	}
-	pool.Close()
 
 	return ver
 }

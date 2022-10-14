@@ -37,7 +37,6 @@ export type ResourceName =
     // To-be-deprecated resources.
     | 'AllComments'
     | 'ComplianceRuns'
-    | 'ComplianceRunSchedule'
     | 'Config'
     | 'DebugLogs'
     | 'NetworkGraphConfig'

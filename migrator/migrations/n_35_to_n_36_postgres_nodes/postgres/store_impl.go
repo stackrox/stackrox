@@ -479,7 +479,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 
 // Upsert upserts node into the store.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
-	return s.upsert(ctx, obj)
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID string, objs ...*storage.Taint) error {
@@ -524,12 +526,24 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID s
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
+	return pgutils.Retry2(func() (int, error) {
+		return s.retryableCount(ctx)
+	})
+}
+
+func (s *storeImpl) retryableCount(ctx context.Context) (int, error) {
 	var sacQueryFilter *v1.Query
 	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Node, bool, error) {
+	return pgutils.Retry3(func() (*storage.Node, bool, error) {
+		return s.retryableGet(ctx, id)
+	})
+}
+
+func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node, bool, error) {
 	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return nil, false, err

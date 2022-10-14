@@ -344,6 +344,21 @@ push_race_condition_debug_image() {
     oc_image_mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet tag)-rcd"
 }
 
+push_mock_grpc_server_image() {
+    local registry="quay.io/rhacs-eng"
+    image="${registry}/grpc-server:$(make --quiet tag)"
+    info "Pushing the mock grpc server image: $MOCK_GRPC_SERVER_IMAGE to $image"
+
+    if ! is_OPENSHIFT_CI; then
+        die "Only supported in OpenShift CI"
+    fi
+
+    oc registry login
+
+    registry_rw_login "$registry"
+    oc_image_mirror "$MOCK_GRPC_SERVER_IMAGE" "$image"
+}
+
 registry_rw_login() {
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: registry_rw_login <registry>"

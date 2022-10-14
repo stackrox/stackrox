@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Masterminds/semver"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestChartVersionGeneration(t *testing.T) {
@@ -86,10 +86,10 @@ func TestChartVersionGeneration(t *testing.T) {
 			if testCase.chartVersion == "" {
 				assert.ErrorContains(t, err, "failed to parse main version")
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, testCase.chartVersion, generatedChartVersion)
 				_, err = semver.NewVersion(generatedChartVersion)
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
