@@ -140,11 +140,6 @@ function launch_central {
 
     add_args "--offline=$OFFLINE_MODE"
 
-    if [[ -n "$ROX_LICENSE_KEY" ]]; then
-      add_args "--license"
-      add_maybe_file_arg "${ROX_LICENSE_KEY}"
-    fi
-
     if [[ -n "$SCANNER_IMAGE" ]]; then
         add_args "--scanner-image=$SCANNER_IMAGE"
     fi
