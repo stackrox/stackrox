@@ -24,7 +24,9 @@ import {
     DropdownToggle,
     Flex,
     FlexItem,
+    Form,
     Label,
+    Stack,
     Text,
     Title,
 } from '@patternfly/react-core';
@@ -36,7 +38,7 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
 import { deleteCollection } from 'services/CollectionsService';
-import { Form, Formik, FormikHelpers, useFormikContext } from 'formik';
+import { Formik, FormikHelpers, useFormikContext } from 'formik';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
@@ -268,40 +270,58 @@ function CollectionForm({
                                                 <Title headingLevel="h2">Collection details</Title>
                                             </CardBody>
                                         </Card>
-                                        <Card>
-                                            <CardBody>
+
+                                        <div className="pf-u-background-color-100 pf-u-p-lg">
+                                            <Flex
+                                                direction={{ default: 'column' }}
+                                                spaceItems={{ default: 'spaceItemsMd' }}
+                                            >
                                                 <Title headingLevel="h2">
                                                     Add new collection rules
                                                 </Title>
                                                 <RuleSelector
                                                     entityType="Deployment"
-                                                    selectedOption={values.selectorRules.Deployment}
+                                                    scopedResourceSelector={
+                                                        values.selectorRules.Deployment
+                                                    }
                                                     onOptionChange={onRuleSelectorChange(
                                                         setFieldValue
                                                     )}
                                                 />
-                                                <Label variant="outline" isCompact>
+                                                <Label
+                                                    variant="outline"
+                                                    isCompact
+                                                    className="pf-u-align-self-center"
+                                                >
                                                     in
                                                 </Label>
                                                 <RuleSelector
                                                     entityType="Namespace"
-                                                    selectedOption={values.selectorRules.Namespace}
+                                                    scopedResourceSelector={
+                                                        values.selectorRules.Namespace
+                                                    }
                                                     onOptionChange={onRuleSelectorChange(
                                                         setFieldValue
                                                     )}
                                                 />
-                                                <Label variant="outline" isCompact>
+                                                <Label
+                                                    variant="outline"
+                                                    isCompact
+                                                    className="pf-u-align-self-center"
+                                                >
                                                     in
                                                 </Label>
                                                 <RuleSelector
                                                     entityType="Cluster"
-                                                    selectedOption={values.selectorRules.Cluster}
+                                                    scopedResourceSelector={
+                                                        values.selectorRules.Cluster
+                                                    }
                                                     onOptionChange={onRuleSelectorChange(
                                                         setFieldValue
                                                     )}
                                                 />
-                                            </CardBody>
-                                        </Card>
+                                            </Flex>
+                                        </div>
                                         <Card>
                                             <CardBody>
                                                 <Title headingLevel="h2">

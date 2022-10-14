@@ -7,21 +7,19 @@ export type ByAnnotationSelectorField = `${SelectorEntityType} Annotation`;
 
 export type SelectorField = ByNameSelectorField | ByLabelSelectorField | ByAnnotationSelectorField;
 
-const byNameRegExp = new RegExp(selectorEntityTypes.join('|'));
-const byLabelRegExp = new RegExp(`(${selectorEntityTypes.join('|')}) Label`);
-const byAnnotationRegExp = new RegExp(`(${selectorEntityTypes.join('|')}) Annotation`);
+const byNameRegExp = new RegExp(`^${selectorEntityTypes.join('|')}$`);
+const byLabelRegExp = new RegExp(`^(${selectorEntityTypes.join('|')}) Label$`);
+const byAnnotationRegExp = new RegExp(`^(${selectorEntityTypes.join('|')}) Annotation$`);
 
-export function isByNameSelectorField(field: SelectorField): field is ByNameSelectorField {
+export function isByNameField(field: SelectorField): field is ByNameSelectorField {
     return byNameRegExp.test(field);
 }
 
-export function isByLabelSelectorField(field: SelectorField): field is ByLabelSelectorField {
+export function isByLabelField(field: SelectorField): field is ByLabelSelectorField {
     return byLabelRegExp.test(field);
 }
 
-export function isByAnnotationSelectorField(
-    field: SelectorField
-): field is ByAnnotationSelectorField {
+export function isByAnnotationField(field: SelectorField): field is ByAnnotationSelectorField {
     return byAnnotationRegExp.test(field);
 }
 
@@ -48,7 +46,7 @@ export type ResourceSelector = {
 export type SupportedSelectorField = ByNameSelectorField | ByLabelSelectorField;
 
 export function isSupportedSelectorField(field: SelectorField): field is SupportedSelectorField {
-    return isByNameSelectorField(field) || isByLabelSelectorField(field);
+    return isByNameField(field) || isByLabelField(field);
 }
 
 /**
@@ -60,6 +58,8 @@ export type ScopedResourceSelector = {
     field: SupportedSelectorField;
     rules: Omit<DisjunctionSelectorRule, 'fieldName'>[];
 };
+
+export type ScopedResourceSelectorRule = ScopedResourceSelector['rules'][number];
 
 /**
  * `Collection` is the front end representation of a valid collection, which is more
