@@ -240,7 +240,7 @@ refresh_gke_token() {
     # refresh token every 15m
     local pid
     while true; do
-        sleep 3600 &
+        sleep 900 &
         pid="$!"
         kill_sleep() {
             echo "refresh_gke_token() terminated, killing the background sleep ($pid)"
