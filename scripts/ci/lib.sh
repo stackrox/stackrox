@@ -48,26 +48,29 @@ ci_exit_trap() {
         # trim leading whitespace
         psline="$(echo "$psline" | xargs)"
         if [[ "$psline" =~ ^PID ]]; then
-            echo "Skipping header: $psline"
+            # Ignoring header
             continue
         fi
         this_pid="$$"
         if [[ "$psline" =~ ^$this_pid ]]; then
-            echo "Skipping self: $psline"
+            echo "Ignoring self: $psline"
             continue
         fi
         # shellcheck disable=SC1087
         if [[ "$psline" =~ [[:space:]]$this_pid[[:space:]] ]]; then
-            echo "Skipping child: $psline"
+            echo "Ignoring child: $psline"
             continue
         fi
         if [[ "$psline" =~ entrypoint|defunct ]]; then
-            echo "Skipping ci-operator entrypoint and defunct processes: $psline"
+            echo "Ignoring ci-operator entrypoint or defunct process: $psline"
             continue
         fi
         echo "A candidate to kill: $psline"
         pid="$(echo "$psline" | cut -d' ' -f1)"
-        echo "Would like to kill $pid"
+        echo "Will kill $pid"
+        kill "$pid" || {
+            echo "Error killing $pid"
+        }
     done
 }
 
