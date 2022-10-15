@@ -40,6 +40,10 @@ ci_exit_trap() {
         sleep 60
     done
 
+    #handle_dangling_processes
+}
+
+handle_dangling_processes() {
     info "Process state at exit:"
     ps -e -O ppid
 
@@ -72,6 +76,7 @@ ci_exit_trap() {
             echo "Error killing $pid"
         }
     done
+
 }
 
 create_exit_trap() {
