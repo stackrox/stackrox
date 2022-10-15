@@ -43,7 +43,7 @@ ci_exit_trap() {
     info "Process state at exit:"
     ps -e -O ppid
 
-    local pid
+    local psline this_pid pid
     ps -e -O ppid | while read -r psline; do
         # trim leading whitespace
         psline="$(echo "$psline" | xargs)"
@@ -51,8 +51,18 @@ ci_exit_trap() {
             echo "Skipping header: $psline"
             continue
         fi
-        if [[ "$psline" =~ ^$$ ]]; then
+        this_pid="$$"
+        if [[ "$psline" =~ ^$this_pid ]]; then
             echo "Skipping self: $psline"
+            continue
+        fi
+        # shellcheck disable=SC1087
+        if [[ "$psline" =~ [[:space:]]$this_pid[[:space:]] ]]; then
+            echo "Skipping child: $psline"
+            continue
+        fi
+        if [[ "$psline" =~ entrypoint|defunct ]]; then
+            echo "Skipping ci-operator entrypoint and defunct processes: $psline"
             continue
         fi
         echo "A candidate to kill: $psline"
