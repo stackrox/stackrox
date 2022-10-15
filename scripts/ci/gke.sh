@@ -240,16 +240,14 @@ refresh_gke_token() {
     # refresh token every 15m
     local pid
     while true; do
-        # background sleep & wait so that it will exit on TERM from parent
-        sleep 900 &
+        sleep 3600 &
         pid="$!"
         kill_sleep() {
-            echo "refresh_gke_token() interrupted, killing the background sleep"
+            echo "refresh_gke_token() terminated, killing the background sleep ($pid)"
             kill "$pid"
         }
-        # kill sleep on INT from OpenShift CI or it will hang
-        trap kill_sleep SIGINT
-        wait $pid
+        trap kill_sleep SIGINT SIGTERM
+        wait "$pid"
 
         info "Refreshing the GKE auth token"
         gcloud config config-helper --force-auth-refresh >/dev/null
