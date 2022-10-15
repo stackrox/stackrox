@@ -22,4 +22,3 @@ fetch_stackrox_data() {
 }
 
 fetch_stackrox_data
-
