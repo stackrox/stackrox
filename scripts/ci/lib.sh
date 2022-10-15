@@ -40,9 +40,13 @@ ci_exit_trap() {
         sleep 60
     done
 
-    #handle_dangling_processes
+    handle_dangling_processes
 }
 
+# handle_dangling_processes() - The OpenShift CI ci-operator will not complete a
+# test job if there are processes remaining that were started by the job. While
+# processes _should_ be cleaned up by their creators it is common that some are
+# not, so this exists as a fail safe.
 handle_dangling_processes() {
     info "Process state at exit:"
     ps -e -O ppid
@@ -76,7 +80,6 @@ handle_dangling_processes() {
             echo "Error killing $pid"
         }
     done
-
 }
 
 create_exit_trap() {
