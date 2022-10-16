@@ -69,6 +69,7 @@ function RuleSelector({ entityType, scopedResourceSelector, handleChange }: Rule
             style={{ border: '1px solid var(--pf-global--BorderColor--100' }}
         >
             <Select
+                toggleAriaLabel={`Select ${pluralEntity.toLowerCase()} by name or label`}
                 className={`${selection === 'All' ? '' : 'pf-u-mb-lg'}`}
                 isOpen={isOpen}
                 onToggle={onToggle}
