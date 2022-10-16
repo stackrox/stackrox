@@ -140,7 +140,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 
 	if c.NoHTTP2 && tlsConf != nil {
 		tlsConf = tlsConf.Clone()
-		tlsConf.NextProtos = sliceutils.Difference(tlsConf.NextProtos, []string{"h2", alpn.PureGRPCALPNString})
+		tlsConf.NextProtos = sliceutils.Without(tlsConf.NextProtos, []string{"h2", alpn.PureGRPCALPNString})
 	}
 
 	if tlsConf != nil {

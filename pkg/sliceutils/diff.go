@@ -2,28 +2,28 @@ package sliceutils
 
 // Diff returns, given two slices a and b sorted according to lessFunc, a slice of the elements occurring in a and b
 // only, respectively.
-func Diff[T any](a, b []T, lessFunc func(a, b T) bool) (aOnly, bOnly []T) {
-	i, j := 0, 0
-	for i < len(a) && j < len(b) {
-		if lessFunc(a[i], b[j]) {
-			aOnly = append(aOnly, a[i])
+func Diff[T any](slice1, slice2 []T, lessFunc func(a, b T) bool) (aOnly, bOnly []T) {
+	var i, j int
+	for i < len(slice1) && j < len(slice2) {
+		if lessFunc(slice1[i], slice2[j]) {
+			aOnly = append(aOnly, slice1[i])
 			i++
-		} else if lessFunc(b[j], a[i]) {
-			bOnly = append(bOnly, b[j])
+		} else if lessFunc(slice2[j], slice1[i]) {
+			bOnly = append(bOnly, slice2[j])
 			j++
-		} else { // a[i] and b[j] are "equal"
+		} else { // slice1[i] and slice2[j] are "equal"
 			i++
 			j++
 		}
 	}
 
-	aOnly = append(aOnly, a[i:]...)
-	bOnly = append(bOnly, b[j:]...)
+	aOnly = append(aOnly, slice1[i:]...)
+	bOnly = append(bOnly, slice2[j:]...)
 	return
 }
 
-// Difference returns the array of elements in the first slice that aren't in the second slice
-func Difference[T comparable](slice1, slice2 []T) []T {
+// Without returns the slice of elements in the first slice that aren't in the second slice.
+func Without[T comparable](slice1, slice2 []T) []T {
 	if len(slice1) == 0 || len(slice2) == 0 {
 		return slice1
 	}

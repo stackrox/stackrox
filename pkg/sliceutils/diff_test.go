@@ -51,7 +51,7 @@ func TestDifference(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s - %s", strings.Join(c.slice1, " "), strings.Join(c.slice2, " ")), func(t *testing.T) {
-			assert.Equal(t, c.expectedSlice, Difference(c.slice1, c.slice2))
+			assert.Equal(t, c.expectedSlice, Without(c.slice1, c.slice2))
 		})
 	}
 }

@@ -3,7 +3,7 @@ package sliceutils
 // Concat concatenates slices, returning a slice with newly allocated backing storage of the exact
 // size.
 func Concat[T any](slices ...[]T) []T {
-	length := 0
+	var length int
 	for _, slice := range slices {
 		length += len(slice)
 	}
