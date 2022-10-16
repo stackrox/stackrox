@@ -3,8 +3,12 @@ import { Select, SelectOption } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { SelectorEntityType } from '../collections.utils';
-import { isByLabelField, isByNameField, ScopedResourceSelector } from '../types';
+import {
+    isByLabelField,
+    isByNameField,
+    ScopedResourceSelector,
+    SelectorEntityType,
+} from '../types';
 import ByNameSelector from './ByNameSelector';
 import ByLabelSelector from './ByLabelSelector';
 
