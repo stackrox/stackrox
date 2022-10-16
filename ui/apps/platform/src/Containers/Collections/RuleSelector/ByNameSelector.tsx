@@ -63,12 +63,14 @@ function ByNameSelector({ entityType, scopedResourceSelector, handleChange }: By
                 {scopedResourceSelector.rules[0]?.values.map(({ value }, index) => (
                     <Flex key={value}>
                         <AutoCompleteSelect
+                            typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} name`}
                             className="pf-u-flex-grow-1 pf-u-w-auto"
                             selectedOption={value}
                             onChange={onChangeValue(scopedResourceSelector, 0, index)}
                         />
                         <Button variant="plain" onClick={() => onDeleteValue(0, index)}>
                             <TrashIcon
+                                aria-label={`Delete ${value}`}
                                 className="pf-u-flex-shrink-1"
                                 style={{ cursor: 'pointer' }}
                                 color="var(--pf-global--Color--dark-200)"

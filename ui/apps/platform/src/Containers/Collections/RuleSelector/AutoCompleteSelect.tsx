@@ -5,6 +5,7 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 export type AutoCompleteSelectProps = {
     selectedOption: string;
     className?: string;
+    typeAheadAriaLabel?: string;
     onChange: (value: string) => void;
 };
 
@@ -12,6 +13,7 @@ export type AutoCompleteSelectProps = {
 export function AutoCompleteSelect({
     selectedOption,
     className = '',
+    typeAheadAriaLabel,
     onChange,
 }: AutoCompleteSelectProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
@@ -24,6 +26,7 @@ export function AutoCompleteSelect({
     return (
         <>
             <Select
+                typeAheadAriaLabel={typeAheadAriaLabel}
                 className={className}
                 variant="typeahead"
                 isCreatable
