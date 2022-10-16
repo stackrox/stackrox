@@ -28,6 +28,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
+import * as yup from 'yup';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
@@ -58,6 +59,27 @@ export type CollectionFormProps = {
     appendTableLinkAction?: (collectionId: string) => void;
 };
 
+function yupSelectorRuleObjects() {
+    return yup.lazy(({ field }) => {
+        const valueMatcher =
+            typeof field === 'string' && field.endsWith('Label')
+                ? yup.string().trim().required().matches(/.+=.+/)
+                : yup.string().trim().required();
+        return yup.object().shape({
+            field: yup.string().required().matches(new RegExp(field)),
+            rules: yup.array().of(
+                yup.object().shape({
+                    operator: yup.string().required().matches(/OR/),
+                    values: yup
+                        .array()
+                        .of(yup.object().shape({ value: valueMatcher }))
+                        .required(),
+                })
+            ),
+        });
+    });
+}
+
 function CollectionForm({
     hasWriteAccessForCollections,
     action,
@@ -82,13 +104,23 @@ function CollectionForm({
     const [isDeleting, setIsDeleting] = useState(false);
     const { toasts, addToast, removeToast } = useToasts();
 
-    const { values, setFieldValue } = useFormik({
+    const { values, isValid, errors, setFieldValue } = useFormik({
         initialValues: initialData,
         onSubmit: () => {},
+        validationSchema: yup.object({
+            name: yup.string().trim().required(),
+            description: yup.string().required(),
+            embeddedCollectionIds: yup.array(yup.string()),
+            selectorRules: yup.object({
+                Deployment: yupSelectorRuleObjects(),
+                Namespace: yupSelectorRuleObjects(),
+                Cluster: yupSelectorRuleObjects(),
+            }),
+        }),
     });
 
     // eslint-disable-next-line no-console
-    console.log('formik change', values);
+    console.log('formik change', isValid, values, errors);
 
     useEffect(() => {
         toggleDrawer(useInlineDrawer);

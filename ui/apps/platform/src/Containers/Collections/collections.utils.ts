@@ -1,5 +1,3 @@
-export type SelectorEntityType = 'Cluster' | 'Namespace' | 'Deployment';
-
 export type CollectionPageAction =
     | {
           type: 'create';
