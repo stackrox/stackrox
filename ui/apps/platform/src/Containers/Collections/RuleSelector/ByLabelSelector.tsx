@@ -65,7 +65,7 @@ function ByLabelSelector({
     }
 
     function onDeleteValue(ruleIndex: number, valueIndex: number) {
-        if (!scopedResourceSelector || !scopedResourceSelector.rules[ruleIndex]) {
+        if (!scopedResourceSelector.rules[ruleIndex]) {
             return;
         }
 
