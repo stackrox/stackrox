@@ -83,7 +83,7 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
                 rules: [],
             };
         }
-        const selector = collection.selectorRules[entity] as ScopedResourceSelector;
+        const selector = collection.selectorRules[entity];
 
         if (isByLabelSelector(selector)) {
             const firstValue = rule.values[0]?.value;
@@ -91,14 +91,14 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
             if (firstValue && firstValue.includes(LABEL_SEPARATOR)) {
                 const key = firstValue.split(LABEL_SEPARATOR)[0] ?? '';
                 selector.rules.push({
-                    operator: rule.operator,
+                    operator: 'OR',
                     key,
                     values: rule.values.map(({ value }) => value.split('=')[1] ?? ''),
                 });
             }
         } else if (isByNameSelector(selector)) {
             selector.rules.push({
-                operator: rule.operator,
+                operator: 'OR',
                 values: rule.values.map(({ value }) => value),
             });
         }

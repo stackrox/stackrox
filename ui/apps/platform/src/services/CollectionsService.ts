@@ -13,17 +13,12 @@ export const collectionsCountUrl = '/v1/collections/count';
 export const collectionsDryRunUrl = '/v1/collections/dryrun';
 export const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
 
-type BaseSelectorRule = {
+export type SelectorRule = {
     fieldName: SelectorField;
     values: { value: string }[];
+    operator: 'AND' | 'OR';
 };
-export type DisjunctionSelectorRule = BaseSelectorRule & { operator: 'OR' };
-export type ConjunctionSelectorRule = BaseSelectorRule & { operator: 'AND' };
-/**
- * A valid `SelectorRule` can use either 'AND' or 'OR' operations to resolve values, but
- * since the current UI implementation only supports 'OR', we need to maintain separate types here.
- */
-export type SelectorRule = DisjunctionSelectorRule | ConjunctionSelectorRule;
+
 export type ResourceSelector = {
     rules: SelectorRule[];
 };
