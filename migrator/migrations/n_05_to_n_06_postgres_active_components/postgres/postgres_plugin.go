@@ -414,7 +414,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Activ
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.ActiveComponent](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -425,12 +425,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Activ
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.ActiveComponent)
-	for _, data := range rows {
-		msg := &storage.ActiveComponent{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.ActiveComponent, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
