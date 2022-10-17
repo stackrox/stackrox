@@ -60,10 +60,6 @@ func Singleton() DataStore {
 		roles, permissionSets, accessScopes := getDefaultObjects()
 		utils.Must(roleStorage.UpsertMany(ctx, roles))
 		utils.Must(permissionSetStorage.UpsertMany(ctx, permissionSets))
-		log.Info("Permission sets upserted")
-		for _, ps := range permissionSets {
-			displayPermissionSet(ps)
-		}
 		utils.Must(accessScopeStorage.UpsertMany(ctx, accessScopes))
 	})
 	return ds

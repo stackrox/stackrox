@@ -121,5 +121,3 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/n_55_to_n_56_postgres_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/n_56_to_n_57_postgres_groups"
 )
-
-// _ "github.com/stackrox/rox/migrator/migrations/m_109_to_m_110_replace_deprecated_resources"
