@@ -89,6 +89,9 @@ func (d *dbCloneManagerImpl) Scan() error {
 	if !currExists && !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return errors.Errorf("Cannot find database at %s", filepath.Join(d.basePath, CurrentClone))
 	}
+	if currExists && !env.PostgresDatastoreEnabled.BooleanSetting() && currClone.GetDirName() == decommissionedCurrent {
+		return errors.New(metadata.ErrUnsupportedDatabase)
+	}
 	if currExists && (currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0) {
 		// If there is no previous clone or force rollback is not requested, we cannot downgrade.
 		prevClone, prevExists := d.cloneMap[PreviousClone]
@@ -346,25 +349,30 @@ func (d *dbCloneManagerImpl) DecommissionRocksDB() {
 					log.Error(err)
 					continue
 				}
-				log.Infof("SHREWS -- curent dir = %q", dir)
-				// Remove the migrations versions to ensure we do not try to use this data for migrations
-				migrationVersionPath := filepath.Join(dirPath, migrations.MigrationVersionFile)
-				if err = os.RemoveAll(migrationVersionPath); err != nil {
-					log.Error(err)
-				}
 				// Move the data to the decommissioned rocks directory and point current there.
 				linkTo, err := fileutils.ResolveIfSymlink(dirPath)
 				if err != nil {
 					log.Error(err)
 					continue
 				}
-				log.Infof("SHREWS -- linked dir = %q", linkTo)
-				err = os.Rename(linkTo, decommissionedCurrent)
-				if err != nil {
-					log.Error(err)
+				if linkTo == d.getPath(decommissionedCurrent) {
+					log.Info("we have already moved to the RocksDB current to be decomissioned")
 					continue
 				}
-				if err := fileutils.AtomicSymlink(dirPath, decommissionedCurrent); err != nil {
+				// Remove the migrations versions to ensure we do not try to use this data for migrations
+				migrationVersionPath := filepath.Join(dirPath, migrations.MigrationVersionFile)
+				if err = os.RemoveAll(migrationVersionPath); err != nil {
+					log.Error(err)
+				}
+				// Move directory: not following link, do not overwrite
+				cmd := exec.Command("mv", linkTo, d.getPath(decommissionedCurrent))
+				if output, err := cmd.CombinedOutput(); err != nil {
+					log.Error(errors.Wrapf(err, "failed to copy current db %s", output))
+					continue
+				}
+				// Remove clone symbolic link only, if exists.
+				_ = os.Remove(d.getPath(CurrentClone))
+				if err := fileutils.AtomicSymlink(decommissionedCurrent, d.getPath(CurrentClone)); err != nil {
 					log.Error(err)
 					continue
 				}
