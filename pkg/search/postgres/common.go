@@ -12,6 +12,8 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -598,13 +600,12 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
-		// TODO(ROX-12858)
 		debug.PrintStack()
-		log.Errorf("Query issue: %s %+v: %v", queryStr, query.Data, err)
+		log.Errorf("Query issue: %s %+v: %v", queryStr, redactedQueryData(query), err)
 		return nil, err
 	}
 	defer rows.Close()
-	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, query.Data)
+	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, redactedQueryData(query))
 
 	for rows.Next() {
 		if err := rows.Scan(bufferToScanRowInto...); err != nil {
@@ -661,7 +662,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	defer func() {
 		if r := recover(); r != nil {
 			if query != nil {
-				log.Errorf("Query issue: %s %+v: %v", query.AsSQL(), query.Data, r)
+				log.Errorf("Query issue: %s %+v: %v", query.AsSQL(), redactedQueryData(query), r)
 			} else {
 				log.Errorf("Unexpected error running search request: %v", r)
 			}
@@ -704,9 +705,8 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		var count int
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		if err := row.Scan(&count); err != nil {
-			// TODO(ROX-12858)
 			debug.PrintStack()
-			log.Errorf("Query issue: %s %+v: %v", queryStr, query.Data, err)
+			log.Errorf("Query issue: %s %+v: %v", queryStr, redactedQueryData(query), err)
 			return 0, err
 		}
 		return count, nil
@@ -834,4 +834,15 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 		}
 		return err
 	})
+}
+
+// redactedQueryData returns query.Data for logging purposes if this is a dev build. Otherwise, it redacts it as it
+// may contain sensitive data.
+func redactedQueryData(query *query) interface{} {
+	if !devbuild.IsEnabled() || buildinfo.ReleaseBuild {
+		// On a release build or non-dev build, redact query data
+		return "[REDACTED]"
+	}
+	// Otherwise, allow the logging
+	return query.Data
 }
