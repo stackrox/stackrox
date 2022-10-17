@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac"
 	"google.golang.org/grpc"
 )
 
@@ -60,13 +61,36 @@ func (s *service) wrapToggleResponse(config *storage.SensorUpgradeConfig) *v1.Ge
 	}
 }
 
+func defaultUpgradeConfig() *storage.SensorUpgradeConfig {
+	if getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_SUPPORTED {
+		return &storage.SensorUpgradeConfig{EnableAutoUpgrade: true}
+	}
+	return &storage.SensorUpgradeConfig{EnableAutoUpgrade: false}
+}
+
+func (s *service) insertDefaultSensorConfig(ctx context.Context) (*storage.SensorUpgradeConfig, error) {
+	// This is needed in case the first `GET` request to SensorUpgradeConfig is done by a user
+	// without permission to add sensor configs. We still want to create the default
+	// config entry.
+	// allAccessContext := sac.WithAllAccess(ctx)
+	allAccessContext := sac.WithAllAccess(ctx)
+	config := defaultUpgradeConfig()
+	if err := s.configDataStore.UpsertSensorUpgradeConfig(allAccessContext, config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
 func (s *service) GetSensorUpgradeConfig(ctx context.Context, _ *v1.Empty) (*v1.GetSensorUpgradeConfigResponse, error) {
 	config, err := s.configDataStore.GetSensorUpgradeConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if config == nil {
-		return nil, errors.Wrap(errox.NotFound, "couldn't find sensor upgrade config")
+		config, err = s.insertDefaultSensorConfig(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "couldn't add default upgrade config")
+		}
 	}
 	return s.wrapToggleResponse(config), nil
 }
