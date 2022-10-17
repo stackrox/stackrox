@@ -341,15 +341,9 @@ func (d *dbCloneManagerImpl) DecommissionRocksDB() {
 		} else if exists {
 			// TODO(ROX-9882): While there is still stuff on the PVC there is an expectation that current
 			// exists in a certain state.  So until we can remove the rest of the components on the PVC, it
-			// is safer to clear the contents.  This will keep the link and directory in place to ensure
-			// things behave in a safe manner on restarts.
+			// is safer to put the contents in an obviously deprecated location.
 			if k == CurrentClone {
-				dir, err := os.ReadDir(dirPath)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-				// Move the data to the decommissioned rocks directory and point current there.
+				// Get the location Current points to
 				linkTo, err := fileutils.ResolveIfSymlink(dirPath)
 				if err != nil {
 					log.Error(err)
@@ -372,6 +366,7 @@ func (d *dbCloneManagerImpl) DecommissionRocksDB() {
 				}
 				// Remove clone symbolic link only, if exists.
 				_ = os.Remove(d.getPath(CurrentClone))
+				// Set the new symbolic link
 				if err := fileutils.AtomicSymlink(decommissionedCurrent, d.getPath(CurrentClone)); err != nil {
 					log.Error(err)
 					continue
