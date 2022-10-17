@@ -37,6 +37,7 @@ import useToasts from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
 import { deleteCollection } from 'services/CollectionsService';
 import { useFormik } from 'formik';
+import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
@@ -66,22 +67,33 @@ function yupSelectorRuleObject() {
         }
 
         const { field } = ruleObject;
-        const valueMatcher =
-            typeof field === 'string' && field.endsWith('Label')
-                ? yup.string().trim().required().matches(/.+=.+/)
-                : yup.string().trim().required();
-        return yup.object().shape({
-            field: yup.string().required().matches(new RegExp(field)),
-            rules: yup.array().of(
-                yup.object().shape({
-                    operator: yup.string().required().matches(/OR/),
-                    values: yup
-                        .array()
-                        .of(yup.object().shape({ value: valueMatcher }))
-                        .required(),
-                })
-            ),
-        });
+        return typeof field === 'string' && field.endsWith('Label')
+            ? yup.object().shape({
+                  field: yup.string().required().matches(new RegExp(field)),
+                  rules: yup.array().of(
+                      yup.object().shape({
+                          operator: yup.string().required().matches(/OR/),
+                          key: yup.string().trim().required().test(getIsValidLabelKey),
+                          values: yup
+                              .array()
+                              .of(
+                                  yup
+                                      .string()
+                                      .trim()
+                                      .required()
+                                      .test((val) => getIsValidLabelValue(val))
+                              )
+                              .required(),
+                      })
+                  ),
+              })
+            : yup.object().shape({
+                  field: yup.string().required().matches(new RegExp(field)),
+                  rule: yup.object().shape({
+                      operator: yup.string().required().matches(/OR/),
+                      values: yup.array().of(yup.string().trim().required()).required(),
+                  }),
+              });
     });
 }
 
@@ -296,7 +308,14 @@ function CollectionForm({
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsMd' }}
                                 >
-                                    <Title headingLevel="h2">Add new collection rules</Title>
+                                    <Title className="pf-u-mb-xs" headingLevel="h2">
+                                        Add new collection rules
+                                    </Title>
+                                    <p>
+                                        Target deployments via selector rules. Regular expressions
+                                        (RE2) are supported across all fields.
+                                    </p>
+                                    <Divider className="pf-u-mb-lg" component="div" />
                                     <RuleSelector
                                         entityType="Deployment"
                                         scopedResourceSelector={values.selectorRules.Deployment}
