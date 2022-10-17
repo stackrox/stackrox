@@ -525,6 +525,8 @@ func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, erro
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
+
+	// If Postgres is not enabled, node loader always pulls full node along with scan
 	scan := resolver.data.GetScan()
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// If scan is pulled, it is most likely to fetch all components and vulns contained in node.
@@ -534,7 +536,6 @@ func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, erro
 			return nil, err
 		}
 
-		// If Postgres is not enabled, node loader always pulls full node.
 		node, err := nodeLoader.FullNodeWithID(ctx, resolver.data.GetId())
 		if err != nil {
 			return nil, err

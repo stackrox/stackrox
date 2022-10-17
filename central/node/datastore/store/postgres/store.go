@@ -62,8 +62,9 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.Node) error
 	Delete(ctx context.Context, id string) error
 	GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
-	// GetNodeMetadata and GetManyNodeMetadata returns the node without scan/component data.
+	// GetNodeMetadata gets the node without scan/component data.
 	GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error)
+	// GetManyNodeMetadata returns nodes without scan/component data.
 	GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
 }
 

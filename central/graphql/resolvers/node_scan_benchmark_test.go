@@ -72,14 +72,14 @@ func BenchmarkNodeResolver(b *testing.B) {
 	defer pgtest.CloseGormDB(b, gormDB)
 	defer db.Close()
 
-	nodeDataStore := createNodeDatastoreForPostgres(b, mockCtrl, db, gormDB)
-	nodeComponentDataStore := createNodeComponentDatastoreForPostgres(b, mockCtrl, db, gormDB)
-	cveDataStore := createNodeCVEDatastoreForPostgres(b, db, gormDB)
-	nodeComponentCVEEdgeDataStore := createNodeComponentCVEEdgeDatastoreForPostgres(b, db, gormDB)
-	schema := setupResolverForNodeGraphQLTestsWithPostgres(b, nodeDataStore, nodeComponentDataStore, cveDataStore, nodeComponentCVEEdgeDataStore)
+	nodeDataStore := createNodeDatastore(b, mockCtrl, db, gormDB)
+	nodeComponentDataStore := createNodeComponentDatastore(b, mockCtrl, db, gormDB)
+	cveDataStore := createNodeCVEDatastore(b, db, gormDB)
+	nodeComponentCVEEdgeDataStore := createNodeComponentCVEEdgeDatastore(b, db, gormDB)
+	schema := setupResolverNodeScanTest(b, nodeDataStore, nodeComponentDataStore, cveDataStore, nodeComponentCVEEdgeDataStore)
 	ctx := contextWithNodePerm(b, mockCtrl)
 
-	nodes := getTestNodesForPostgres(100)
+	nodes := getTestNodes(100)
 	for _, node := range nodes {
 		require.NoError(b, nodeDataStore.UpsertNode(ctx, node))
 	}

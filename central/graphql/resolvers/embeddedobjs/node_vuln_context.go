@@ -3,7 +3,6 @@ package embeddedobjs
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -12,8 +11,7 @@ type nodeVulnContextKey struct{}
 
 // nodeVulnContextValue holds the value of the distro in the context.
 type nodeVulnContextValue struct {
-	vuln        *storage.NodeVulnerability
-	lastScanned *types.Timestamp
+	vuln *storage.NodeVulnerability
 }
 
 // NodeVulnContext returns a new context with the vuln attached.

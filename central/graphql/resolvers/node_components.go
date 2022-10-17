@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	nodeComponentPredicateFactory = predicate.NewFactory("component", &storage.EmbeddedNodeScanComponent{})
+	nodeVulnerabilityPredicateFactory = predicate.NewFactory("vulnerability", &storage.NodeVulnerability{})
 )
 
 func init() {
@@ -191,6 +191,48 @@ func (resolver *nodeComponentResolver) nodeComponentRawQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetId()).Query()
 }
 
+func getNodeCVEResolvers(ctx context.Context, root *Resolver, os string, vulns []*storage.NodeVulnerability, query *v1.Query) ([]NodeVulnerabilityResolver, error) {
+	query, _ = search.FilterQueryWithMap(query, mappings.NodeVulnerabilityOptionsMap)
+	predicate, err := nodeVulnerabilityPredicateFactory.GeneratePredicate(query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the nodes to map CVEs to the nodes and components.
+	idToVals := make(map[string]*nodeCVEResolver)
+	for _, vuln := range vulns {
+		if !predicate.Matches(vuln) {
+			continue
+		}
+		id := cve.ID(vuln.GetCveBaseInfo().GetCve(), os)
+		if _, exists := idToVals[id]; !exists {
+			converted := cveConverter.NodeVulnerabilityToNodeCVE(os, vuln)
+			resolver, err := root.wrapNodeCVE(converted, true, nil)
+			if err != nil {
+				return nil, err
+			}
+			resolver.ctx = embeddedobjs.NodeVulnContext(ctx, vuln)
+			idToVals[id] = resolver
+		}
+	}
+
+	// For now, sort by ID.
+	resolverObjs := make([]*nodeCVEResolver, 0, len(idToVals))
+	for _, vuln := range idToVals {
+		resolverObjs = append(resolverObjs, vuln)
+	}
+	if len(query.GetPagination().GetSortOptions()) == 0 {
+		sort.SliceStable(resolverObjs, func(i, j int) bool {
+			return resolverObjs[i].data.GetId() < resolverObjs[j].data.GetId()
+		})
+	}
+	nodeVulnResolvers := make([]NodeVulnerabilityResolver, 0, len(resolverObjs))
+	for _, resolver := range resolverObjs {
+		nodeVulnResolvers = append(nodeVulnResolvers, resolver)
+	}
+	return paginate(query.GetPagination(), nodeVulnResolvers, nil)
+}
+
 /*
 Sub Resolver Functions
 */
@@ -276,7 +318,7 @@ func (resolver *nodeComponentResolver) NodeVulnerabilities(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	return getNodeCVEResolvers(resolver.ctx, resolver.root, embeddedobjs.OSFromContext(resolver.ctx), embeddedComponent.GetVulnerabilities(), query)
+	return getNodeCVEResolvers(resolver.ctx, resolver.root, resolver.data.GetOperatingSystem(), embeddedComponent.GetVulnerabilities(), query)
 }
 
 // NodeVulnerabilityCount resolves the number of node vulnerabilities contained in the node component
@@ -353,7 +395,7 @@ func (resolver *nodeComponentResolver) TopNodeVulnerability(ctx context.Context)
 			return nil, nil
 		}
 		return resolver.root.wrapNodeCVE(
-			cveConverter.NodeVulnerabilityToNodeCVE(embeddedobjs.OSFromContext(resolver.ctx), topVuln), true, nil,
+			cveConverter.NodeVulnerabilityToNodeCVE(resolver.data.GetOperatingSystem(), topVuln), true, nil,
 		)
 	}
 
@@ -363,46 +405,4 @@ func (resolver *nodeComponentResolver) TopNodeVulnerability(ctx context.Context)
 // UnusedVarSink represents a query sink
 func (resolver *nodeComponentResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
-}
-
-func getNodeCVEResolvers(ctx context.Context, root *Resolver, os string, vulns []*storage.NodeVulnerability, query *v1.Query) ([]NodeVulnerabilityResolver, error) {
-	query, _ = search.FilterQueryWithMap(query, mappings.NodeVulnerabilityOptionsMap)
-	predicate, err := nodeVulnerabilityPredicateFactory.GeneratePredicate(query)
-	if err != nil {
-		return nil, err
-	}
-
-	// Use the nodes to map CVEs to the nodes and components.
-	idToVals := make(map[string]*nodeCVEResolver)
-	for _, vuln := range vulns {
-		if !predicate.Matches(vuln) {
-			continue
-		}
-		id := cve.ID(vuln.GetCveBaseInfo().GetCve(), os)
-		if _, exists := idToVals[id]; !exists {
-			converted := cveConverter.NodeVulnerabilityToNodeCVE(os, vuln)
-			resolver, err := root.wrapNodeCVE(converted, true, nil)
-			if err != nil {
-				return nil, err
-			}
-			resolver.ctx = embeddedobjs.NodeVulnContext(ctx, vuln)
-			idToVals[id] = resolver
-		}
-	}
-
-	// For now, sort by ID.
-	resolvers := make([]*nodeCVEResolver, 0, len(idToVals))
-	for _, vuln := range idToVals {
-		resolvers = append(resolvers, vuln)
-	}
-	if len(query.GetPagination().GetSortOptions()) == 0 {
-		sort.SliceStable(resolvers, func(i, j int) bool {
-			return resolvers[i].data.GetId() < resolvers[j].data.GetId()
-		})
-	}
-	resolverI := make([]NodeVulnerabilityResolver, 0, len(resolvers))
-	for _, resolver := range resolvers {
-		resolverI = append(resolverI, resolver)
-	}
-	return paginate(query.GetPagination(), resolverI, nil)
 }

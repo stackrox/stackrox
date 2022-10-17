@@ -11,7 +11,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	nodeComponentPredicateFactory = predicate.NewFactory("component", &storage.EmbeddedNodeScanComponent{})
 )
 
 func init() {
@@ -65,24 +70,24 @@ func getNodeComponentResolvers(ctx context.Context, root *Resolver, nodeScan *st
 			if err != nil {
 				return nil, err
 			}
-			resolver.ctx = embeddedobjs.NodeComponentContext(ctx, os, nodeScan.GetScanTime(), embeddedComponent)
+			resolver.ctx = embeddedobjs.NodeComponentContext(ctx, nodeScan.GetScanTime(), embeddedComponent)
 			idToComponent[id] = resolver
 		}
 	}
 
 	// For now, sort by IDs.
-	resolvers := make([]*nodeComponentResolver, 0, len(idToComponent))
+	resolverObjs := make([]*nodeComponentResolver, 0, len(idToComponent))
 	for _, component := range idToComponent {
-		resolvers = append(resolvers, component)
+		resolverObjs = append(resolverObjs, component)
 	}
 	if len(query.GetPagination().GetSortOptions()) == 0 {
-		sort.SliceStable(resolvers, func(i, j int) bool {
-			return resolvers[i].data.GetId() < resolvers[j].data.GetId()
+		sort.SliceStable(resolverObjs, func(i, j int) bool {
+			return resolverObjs[i].data.GetId() < resolverObjs[j].data.GetId()
 		})
 	}
-	resolverI := make([]NodeComponentResolver, 0, len(resolvers))
-	for _, resolver := range resolvers {
-		resolverI = append(resolverI, resolver)
+	nodeCompResolvers := make([]NodeComponentResolver, 0, len(resolverObjs))
+	for _, resolver := range resolverObjs {
+		nodeCompResolvers = append(nodeCompResolvers, resolver)
 	}
-	return paginate(query.GetPagination(), resolverI, nil)
+	return paginate(query.GetPagination(), nodeCompResolvers, nil)
 }

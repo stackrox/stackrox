@@ -114,7 +114,8 @@ func (b *storeImpl) GetNodeMetadata(_ context.Context, id string) (*storage.Node
 	return node, node != nil, err
 }
 
-func (b *storeImpl) GetManyNodeMetadata(ctx context.Context, id []string) ([]*storage.Node, []int, error) {
+// GetManyNodeMetadata returns nodes without scan/component data.
+func (b *storeImpl) GetManyNodeMetadata(_ context.Context, _ []string) ([]*storage.Node, []int, error) {
 	utils.Must(errors.New("Unexpected call to GetManyNodeMetadata in Dackbox when running on Postgres"))
 	return nil, nil, nil
 }

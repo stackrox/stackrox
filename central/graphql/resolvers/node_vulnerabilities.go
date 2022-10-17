@@ -14,13 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	nodeVulnerabilityPredicateFactory = predicate.NewFactory("vulnerability", &storage.NodeVulnerability{})
 )
 
 func init() {

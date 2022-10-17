@@ -82,7 +82,7 @@ func (s *NodeScanResolverTestSuite) SetupTest() {
 	s.nodeComponentDataStore = nodeComponentsDSMocks.NewMockDataStore(s.mockCtrl)
 	s.nodeCVEDataStore = nodeCVEsDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.schema = setupResolverForNodeGraphQLTestsWithPostgres(s.T(), s.nodeDataStore, s.nodeComponentDataStore, s.nodeCVEDataStore, nil)
+	s.schema = setupResolverNodeScanTest(s.T(), s.nodeDataStore, s.nodeComponentDataStore, s.nodeCVEDataStore, nil)
 }
 
 func (s *NodeScanResolverTestSuite) TearDownTest() {
