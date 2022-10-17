@@ -181,6 +181,9 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		d.endpointManager.OnDeploymentRemove(deploymentWrap)
 		d.processFilter.Delete(deploymentWrap.GetId())
 	}
+	if err := deploymentWrap.updateHash(); err != nil {
+		log.Errorf("UNEXPECTED: could not calculate hash of deployment %s: %v", deploymentWrap.GetId(), err)
+	}
 	d.detector.ProcessDeployment(deploymentWrap.GetDeployment(), action)
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
 	events = append(events, deploymentWrap.toEvent(action))

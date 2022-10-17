@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/mitchellh/hashstructure/v2"
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -549,4 +550,16 @@ func (w *deploymentWrap) Clone() *deploymentWrap {
 	}
 
 	return ret
+}
+
+func (w *deploymentWrap) updateHash() error {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	hashValue, err := hashstructure.Hash(w.GetDeployment(), hashstructure.FormatV2, &hashstructure.HashOptions{})
+	if err != nil {
+		return errors.Wrap(err, "calculating deployment hash")
+	}
+	w.Hash = hashValue
+	return nil
 }
