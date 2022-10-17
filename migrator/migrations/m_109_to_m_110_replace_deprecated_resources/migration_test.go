@@ -385,7 +385,7 @@ var (
 			ResourceToAccess: map[string]storage.Access{
 				// Replacing resources
 				Access:              storage.Access_NO_ACCESS,
-				Administration:      storage.Access_NO_ACCESS,
+				Administration:      storage.Access_READ_ACCESS,
 				Compliance:          storage.Access_NO_ACCESS,
 				DeploymentExtension: storage.Access_NO_ACCESS,
 				Image:               storage.Access_NO_ACCESS,
