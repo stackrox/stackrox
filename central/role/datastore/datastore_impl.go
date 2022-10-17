@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 	rolePkg "github.com/stackrox/rox/central/role"
@@ -133,12 +134,33 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 // Permission sets                                                            //
 //                                                                            //
 
+func displayPermissionSet(ps *storage.PermissionSet) {
+	var sb strings.Builder
+	sb.WriteString("Permission set ID [")
+	sb.WriteString(ps.GetId())
+	sb.WriteString("] name [")
+	sb.WriteString(ps.GetName())
+	sb.WriteString("]\n")
+	sb.WriteString(" - permissions:\n")
+	for k, v := range ps.GetResourceToAccess() {
+		sb.WriteString("    - ")
+		sb.WriteString(k)
+		sb.WriteString(" : ")
+		sb.WriteString(v.String())
+		sb.WriteString("\n")
+	}
+	sb.WriteString(" --- end perms ---")
+	log.Info(sb.String())
+}
+
 func (ds *dataStoreImpl) GetPermissionSet(ctx context.Context, id string) (*storage.PermissionSet, bool, error) {
 	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, false, err
 	}
 
-	return ds.permissionSetStorage.Get(ctx, id)
+	ps := ds.permissionSetStorage.Get(ctx, id)
+	displayPermissionSet(ps)
+	return ps
 }
 
 func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.PermissionSet, error) {
