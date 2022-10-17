@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -124,22 +125,22 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 
 			// add objs directly through the store
 			err := s.store.UpsertMany(ctx, objs)
-			s.NoError(err)
+			assert.NoError(s.T(), err)
 
 			// trigger graph init
 			err = resetLocalGraph(s.datastore.(*datastoreImpl))
-			s.NoError(err)
+			assert.NoError(s.T(), err)
 
 			// get data and check it
 			batch, err := s.datastore.GetBatch(ctx, objIDs)
-			s.NoError(err)
-			s.ElementsMatch(objs, batch)
+			assert.NoError(s.T(), err)
+			assert.ElementsMatch(s.T(), objs, batch)
 
 			// clean up data
 			for i := len(objIDs) - 1; i >= 0; i-- {
-				s.NoError(s.datastore.DeleteCollection(ctx, objIDs[i]))
+				assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objIDs[i]))
 			}
-			s.NoError(resetLocalGraph(s.datastore.(*datastoreImpl)))
+			assert.NoError(s.T(), resetLocalGraph(s.datastore.(*datastoreImpl)))
 		})
 	}
 }
@@ -149,81 +150,81 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 
 	// dryrun 'a', verify not present
 	err := s.datastore.DryRunCollection(ctx, s.getTestCollection("a", nil))
-	s.NoError(err)
+	assert.NoError(s.T(), err)
 	obj, ok, err := s.datastore.Get(ctx, "a")
-	s.NoError(err)
-	s.False(ok)
-	s.Nil(obj)
+	assert.NoError(s.T(), err)
+	assert.False(s.T(), ok)
+	assert.Nil(s.T(), obj)
 
 	// add 'a', verify present
 	err = s.datastore.AddCollection(ctx, s.getTestCollection("a", nil))
-	s.NoError(err)
+	assert.NoError(s.T(), err)
 	obj, ok, err = s.datastore.Get(ctx, "a")
-	s.NoError(err)
-	s.True(ok)
-	s.Equal("a", obj.GetId())
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), ok)
+	assert.Equal(s.T(), "a", obj.GetId())
 
 	// dryrun duplicate 'a'
 	err = s.datastore.DryRunCollection(ctx, s.getTestCollection("a", nil))
-	s.NotNil(err)
+	assert.Error(s.T(), err)
 	_, ok = err.(dag.VertexDuplicateError)
-	s.True(ok)
+	assert.True(s.T(), ok)
 
 	// try to add duplicate 'a'
 	err = s.datastore.AddCollection(ctx, s.getTestCollection("a", nil))
-	s.NotNil(err)
+	assert.Error(s.T(), err)
 	_, ok = err.(dag.VertexDuplicateError)
-	s.True(ok)
+	assert.True(s.T(), ok)
 
 	// dryrun 'b' which points to 'a'
 	err = s.datastore.DryRunCollection(ctx, s.getTestCollection("b", []string{"a"}))
-	s.NoError(err)
+	assert.NoError(s.T(), err)
 	obj, ok, err = s.datastore.Get(ctx, "b")
-	s.NoError(err)
-	s.False(ok)
-	s.Nil(obj)
+	assert.NoError(s.T(), err)
+	assert.False(s.T(), ok)
+	assert.Nil(s.T(), obj)
 
 	// add 'b' which points to 'a'
 	err = s.datastore.AddCollection(ctx, s.getTestCollection("b", []string{"a"}))
-	s.NoError(err)
+	assert.NoError(s.T(), err)
 	obj, ok, err = s.datastore.Get(ctx, "b")
-	s.NoError(err)
-	s.True(ok)
-	s.Equal("b", obj.GetId())
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), ok)
+	assert.Equal(s.T(), "b", obj.GetId())
 
 	// try to delete 'a' while 'b' points to it
 	err = s.datastore.DeleteCollection(ctx, "a")
-	s.NotNil(err)
+	assert.Error(s.T(), err)
 
 	// dryrun 'c' which has a self reference
 	err = s.datastore.DryRunCollection(ctx, s.getTestCollection("c", []string{"c"}))
-	s.NotNil(err)
+	assert.Error(s.T(), err)
 	_, ok = err.(dag.SrcDstEqualError)
-	s.True(ok)
+	assert.True(s.T(), ok)
 
 	// try to add 'c' which has a self reference
 	err = s.datastore.AddCollection(ctx, s.getTestCollection("c", []string{"c"}))
-	s.NotNil(err)
+	assert.Error(s.T(), err)
 	_, ok = err.(dag.SrcDstEqualError)
-	s.True(ok)
+	assert.True(s.T(), ok)
 
 	// dryrun 'd' which has a duplicate name
 	obj = s.getTestCollection("c", nil)
 	obj.Name = "a"
 	err = s.datastore.DryRunCollection(ctx, obj)
-	s.NotNil(err)
+	assert.Error(s.T(), err)
 	_, ok = err.(dag.VertexDuplicateError)
-	s.True(ok)
+	assert.True(s.T(), ok)
 
 	// try to add 'd' which has duplicate name
 	err = s.datastore.AddCollection(ctx, obj)
-	s.NotNil(err)
+	assert.Error(s.T(), err)
 	_, ok = err.(dag.VertexDuplicateError)
-	s.True(ok)
+	assert.True(s.T(), ok)
 
 	// clean up testing data
-	s.NoError(s.datastore.DeleteCollection(ctx, "b"))
-	s.NoError(s.datastore.DeleteCollection(ctx, "a"))
+	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, "b"))
+	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, "a"))
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TestFoo() {
