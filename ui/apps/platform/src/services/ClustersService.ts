@@ -106,8 +106,8 @@ export type AutoUpgradeConfig = {
  * Gets the cluster autoupgrade config.
  */
 export function getAutoUpgradeConfig(): Promise<AutoUpgradeConfig> {
-    return axios.get<{ config: AutoUpgradeConfig }>(autoUpgradeConfigUrl).then((response) => {
-        return response?.data?.config ?? {};
+    return axios.get<AutoUpgradeConfig>(autoUpgradeConfigUrl).then((response) => {
+        return response?.data;
     });
 }
 

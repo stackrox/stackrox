@@ -125,7 +125,7 @@
     }
   },
   "definitions": {
-    "SensorToggleConfigSensorAutoUpgradeFeatureStatus": {
+    "GetSensorUpgradeConfigResponseSensorAutoUpgradeFeatureStatus": {
       "type": "string",
       "enum": [
         "SUPPORTED",
@@ -185,19 +185,11 @@
     "v1GetSensorUpgradeConfigResponse": {
       "type": "object",
       "properties": {
-        "config": {
-          "$ref": "#/definitions/v1SensorToggleConfig"
-        }
-      }
-    },
-    "v1SensorToggleConfig": {
-      "type": "object",
-      "properties": {
         "enableAutoUpgrade": {
           "type": "boolean"
         },
         "autoUpgradeFeature": {
-          "$ref": "#/definitions/SensorToggleConfigSensorAutoUpgradeFeatureStatus"
+          "$ref": "#/definitions/GetSensorUpgradeConfigResponseSensorAutoUpgradeFeatureStatus"
         }
       }
     },

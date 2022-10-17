@@ -10,7 +10,11 @@ import "storage/sensor_upgrade.proto";
 
 package v1;
 
-message SensorToggleConfig {
+message UpdateSensorUpgradeConfigRequest {
+    storage.SensorUpgradeConfig config = 1;
+}
+
+message GetSensorUpgradeConfigResponse {
     enum SensorAutoUpgradeFeatureStatus {
         SUPPORTED = 0;
         NOT_SUPPORTED = 1;
@@ -18,14 +22,6 @@ message SensorToggleConfig {
 
     bool enable_auto_upgrade = 1;
     SensorAutoUpgradeFeatureStatus auto_upgrade_feature = 2;
-}
-
-message UpdateSensorUpgradeConfigRequest {
-    storage.SensorUpgradeConfig config = 1;
-}
-
-message GetSensorUpgradeConfigResponse {
-    SensorToggleConfig config = 1;
 }
 
 service SensorUpgradeService {

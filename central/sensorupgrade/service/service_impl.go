@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -54,10 +55,8 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 
 func (s *service) wrapToggleResponse(config *storage.SensorUpgradeConfig) *v1.GetSensorUpgradeConfigResponse {
 	return &v1.GetSensorUpgradeConfigResponse{
-		Config: &v1.SensorToggleConfig{
-			EnableAutoUpgrade:  config.GetEnableAutoUpgrade(),
-			AutoUpgradeFeature: getAutoUpgradeFeatureStatus(),
-		},
+		EnableAutoUpgrade:  config.GetEnableAutoUpgrade(),
+		AutoUpgradeFeature: getAutoUpgradeFeatureStatus(),
 	}
 }
 
@@ -72,12 +71,19 @@ func (s *service) GetSensorUpgradeConfig(ctx context.Context, _ *v1.Empty) (*v1.
 	return s.wrapToggleResponse(config), nil
 }
 
+func getAutoUpgradeFeatureStatus() v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus {
+	if env.ManagedCentral.BooleanSetting() {
+		return v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED
+	}
+	return v1.GetSensorUpgradeConfigResponse_SUPPORTED
+}
+
 func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateSensorUpgradeConfigRequest) (*v1.Empty, error) {
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "need to specify a config")
 	}
 
-	if req.GetConfig().GetEnableAutoUpgrade() && getAutoUpgradeFeatureStatus() == v1.SensorToggleConfig_NOT_SUPPORTED {
+	if req.GetConfig().GetEnableAutoUpgrade() && getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED {
 		return nil, errors.Wrap(errox.InvalidArgs, "auto-upgrade not supported on managed ACS")
 	}
 

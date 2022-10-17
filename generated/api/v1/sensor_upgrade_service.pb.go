@@ -27,97 +27,29 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type SensorToggleConfig_SensorAutoUpgradeFeatureStatus int32
+type GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus int32
 
 const (
-	SensorToggleConfig_SUPPORTED     SensorToggleConfig_SensorAutoUpgradeFeatureStatus = 0
-	SensorToggleConfig_NOT_SUPPORTED SensorToggleConfig_SensorAutoUpgradeFeatureStatus = 1
+	GetSensorUpgradeConfigResponse_SUPPORTED     GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus = 0
+	GetSensorUpgradeConfigResponse_NOT_SUPPORTED GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus = 1
 )
 
-var SensorToggleConfig_SensorAutoUpgradeFeatureStatus_name = map[int32]string{
+var GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus_name = map[int32]string{
 	0: "SUPPORTED",
 	1: "NOT_SUPPORTED",
 }
 
-var SensorToggleConfig_SensorAutoUpgradeFeatureStatus_value = map[string]int32{
+var GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus_value = map[string]int32{
 	"SUPPORTED":     0,
 	"NOT_SUPPORTED": 1,
 }
 
-func (x SensorToggleConfig_SensorAutoUpgradeFeatureStatus) String() string {
-	return proto.EnumName(SensorToggleConfig_SensorAutoUpgradeFeatureStatus_name, int32(x))
+func (x GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus) String() string {
+	return proto.EnumName(GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus_name, int32(x))
 }
 
-func (SensorToggleConfig_SensorAutoUpgradeFeatureStatus) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_35a4744ac589f88a, []int{0, 0}
-}
-
-type SensorToggleConfig struct {
-	EnableAutoUpgrade    bool                                              `protobuf:"varint,1,opt,name=enable_auto_upgrade,json=enableAutoUpgrade,proto3" json:"enable_auto_upgrade,omitempty"`
-	AutoUpgradeFeature   SensorToggleConfig_SensorAutoUpgradeFeatureStatus `protobuf:"varint,2,opt,name=auto_upgrade_feature,json=autoUpgradeFeature,proto3,enum=v1.SensorToggleConfig_SensorAutoUpgradeFeatureStatus" json:"auto_upgrade_feature,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                                          `json:"-"`
-	XXX_unrecognized     []byte                                            `json:"-"`
-	XXX_sizecache        int32                                             `json:"-"`
-}
-
-func (m *SensorToggleConfig) Reset()         { *m = SensorToggleConfig{} }
-func (m *SensorToggleConfig) String() string { return proto.CompactTextString(m) }
-func (*SensorToggleConfig) ProtoMessage()    {}
-func (*SensorToggleConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_35a4744ac589f88a, []int{0}
-}
-func (m *SensorToggleConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *SensorToggleConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_SensorToggleConfig.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *SensorToggleConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SensorToggleConfig.Merge(m, src)
-}
-func (m *SensorToggleConfig) XXX_Size() int {
-	return m.Size()
-}
-func (m *SensorToggleConfig) XXX_DiscardUnknown() {
-	xxx_messageInfo_SensorToggleConfig.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SensorToggleConfig proto.InternalMessageInfo
-
-func (m *SensorToggleConfig) GetEnableAutoUpgrade() bool {
-	if m != nil {
-		return m.EnableAutoUpgrade
-	}
-	return false
-}
-
-func (m *SensorToggleConfig) GetAutoUpgradeFeature() SensorToggleConfig_SensorAutoUpgradeFeatureStatus {
-	if m != nil {
-		return m.AutoUpgradeFeature
-	}
-	return SensorToggleConfig_SUPPORTED
-}
-
-func (m *SensorToggleConfig) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *SensorToggleConfig) Clone() *SensorToggleConfig {
-	if m == nil {
-		return nil
-	}
-	cloned := new(SensorToggleConfig)
-	*cloned = *m
-
-	return cloned
+func (GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_35a4744ac589f88a, []int{1, 0}
 }
 
 type UpdateSensorUpgradeConfigRequest struct {
@@ -131,7 +63,7 @@ func (m *UpdateSensorUpgradeConfigRequest) Reset()         { *m = UpdateSensorUp
 func (m *UpdateSensorUpgradeConfigRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateSensorUpgradeConfigRequest) ProtoMessage()    {}
 func (*UpdateSensorUpgradeConfigRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_35a4744ac589f88a, []int{1}
+	return fileDescriptor_35a4744ac589f88a, []int{0}
 }
 func (m *UpdateSensorUpgradeConfigRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -182,17 +114,18 @@ func (m *UpdateSensorUpgradeConfigRequest) Clone() *UpdateSensorUpgradeConfigReq
 }
 
 type GetSensorUpgradeConfigResponse struct {
-	Config               *SensorToggleConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
-	XXX_unrecognized     []byte              `json:"-"`
-	XXX_sizecache        int32               `json:"-"`
+	EnableAutoUpgrade    bool                                                          `protobuf:"varint,1,opt,name=enable_auto_upgrade,json=enableAutoUpgrade,proto3" json:"enable_auto_upgrade,omitempty"`
+	AutoUpgradeFeature   GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus `protobuf:"varint,2,opt,name=auto_upgrade_feature,json=autoUpgradeFeature,proto3,enum=v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus" json:"auto_upgrade_feature,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                                      `json:"-"`
+	XXX_unrecognized     []byte                                                        `json:"-"`
+	XXX_sizecache        int32                                                         `json:"-"`
 }
 
 func (m *GetSensorUpgradeConfigResponse) Reset()         { *m = GetSensorUpgradeConfigResponse{} }
 func (m *GetSensorUpgradeConfigResponse) String() string { return proto.CompactTextString(m) }
 func (*GetSensorUpgradeConfigResponse) ProtoMessage()    {}
 func (*GetSensorUpgradeConfigResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_35a4744ac589f88a, []int{2}
+	return fileDescriptor_35a4744ac589f88a, []int{1}
 }
 func (m *GetSensorUpgradeConfigResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -221,11 +154,18 @@ func (m *GetSensorUpgradeConfigResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetSensorUpgradeConfigResponse proto.InternalMessageInfo
 
-func (m *GetSensorUpgradeConfigResponse) GetConfig() *SensorToggleConfig {
+func (m *GetSensorUpgradeConfigResponse) GetEnableAutoUpgrade() bool {
 	if m != nil {
-		return m.Config
+		return m.EnableAutoUpgrade
 	}
-	return nil
+	return false
+}
+
+func (m *GetSensorUpgradeConfigResponse) GetAutoUpgradeFeature() GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus {
+	if m != nil {
+		return m.AutoUpgradeFeature
+	}
+	return GetSensorUpgradeConfigResponse_SUPPORTED
 }
 
 func (m *GetSensorUpgradeConfigResponse) MessageClone() proto.Message {
@@ -238,13 +178,11 @@ func (m *GetSensorUpgradeConfigResponse) Clone() *GetSensorUpgradeConfigResponse
 	cloned := new(GetSensorUpgradeConfigResponse)
 	*cloned = *m
 
-	cloned.Config = m.Config.Clone()
 	return cloned
 }
 
 func init() {
-	proto.RegisterEnum("v1.SensorToggleConfig_SensorAutoUpgradeFeatureStatus", SensorToggleConfig_SensorAutoUpgradeFeatureStatus_name, SensorToggleConfig_SensorAutoUpgradeFeatureStatus_value)
-	proto.RegisterType((*SensorToggleConfig)(nil), "v1.SensorToggleConfig")
+	proto.RegisterEnum("v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus", GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus_name, GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus_value)
 	proto.RegisterType((*UpdateSensorUpgradeConfigRequest)(nil), "v1.UpdateSensorUpgradeConfigRequest")
 	proto.RegisterType((*GetSensorUpgradeConfigResponse)(nil), "v1.GetSensorUpgradeConfigResponse")
 }
@@ -254,40 +192,38 @@ func init() {
 }
 
 var fileDescriptor_35a4744ac589f88a = []byte{
-	// 518 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0xd1, 0x6a, 0x13, 0x4f,
-	0x14, 0xc6, 0xb3, 0xf9, 0x43, 0xf9, 0x77, 0xa4, 0xd2, 0x4e, 0x43, 0x49, 0x62, 0x58, 0xd3, 0xb1,
-	0x60, 0x29, 0x32, 0x21, 0x51, 0x6f, 0xbc, 0x33, 0x6d, 0x15, 0x6f, 0x6c, 0xd8, 0x24, 0x50, 0x44,
-	0x58, 0xa6, 0x9b, 0xd3, 0x61, 0x75, 0xb3, 0xb3, 0xce, 0xcc, 0x2e, 0x16, 0xf1, 0xc6, 0x57, 0xf0,
-	0xc6, 0xe7, 0xf1, 0xca, 0x4b, 0xc1, 0x17, 0x90, 0xe8, 0x0b, 0xf8, 0x06, 0xb2, 0x3b, 0x53, 0x92,
-	0xb4, 0xdb, 0x78, 0x17, 0xbe, 0xef, 0x9c, 0xdf, 0x77, 0x72, 0xf6, 0x0c, 0xba, 0xc7, 0x92, 0xb0,
-	0x93, 0x75, 0x3b, 0x0a, 0x62, 0x25, 0xa4, 0x9f, 0x26, 0x5c, 0xb2, 0x09, 0xf8, 0x0a, 0x64, 0x16,
-	0x06, 0x40, 0x13, 0x29, 0xb4, 0xc0, 0xd5, 0xac, 0xdb, 0x6c, 0x71, 0x21, 0x78, 0x04, 0x9d, 0xbc,
-	0x9e, 0xc5, 0xb1, 0xd0, 0x4c, 0x87, 0x22, 0x56, 0xa6, 0xa2, 0x89, 0x2d, 0x06, 0xa6, 0x89, 0xbe,
-	0xb0, 0xda, 0xb6, 0xd5, 0x02, 0x31, 0x9d, 0x8a, 0xd8, 0x8a, 0x2d, 0xa5, 0x85, 0x64, 0x1c, 0xae,
-	0x04, 0x1a, 0x97, 0xfc, 0x71, 0x10, 0x1e, 0x16, 0xc6, 0x48, 0x70, 0x1e, 0xc1, 0xa1, 0x88, 0xcf,
-	0x43, 0x8e, 0x29, 0xda, 0x86, 0x98, 0x9d, 0x45, 0xe0, 0xb3, 0x54, 0x8b, 0xcb, 0x9e, 0xba, 0xd3,
-	0x76, 0xf6, 0xff, 0xf7, 0xb6, 0x8c, 0xf5, 0x34, 0xd5, 0x62, 0x6c, 0x0c, 0xcc, 0x51, 0x6d, 0xb1,
-	0xd0, 0x3f, 0x07, 0xa6, 0x53, 0x09, 0xf5, 0x6a, 0xdb, 0xd9, 0xbf, 0xdd, 0x7b, 0x4c, 0xb3, 0x2e,
-	0xbd, 0x9e, 0x62, 0xa5, 0x05, 0xce, 0x33, 0xd3, 0x36, 0xd4, 0x4c, 0xa7, 0xca, 0xc3, 0xec, 0x9a,
-	0x43, 0xfa, 0xc8, 0x5d, 0xdd, 0x85, 0x37, 0xd0, 0xfa, 0x70, 0x3c, 0x18, 0x9c, 0x78, 0xa3, 0xe3,
-	0xa3, 0xcd, 0x0a, 0xde, 0x42, 0x1b, 0x2f, 0x4f, 0x46, 0xfe, 0x5c, 0x72, 0xc8, 0x29, 0x6a, 0x8f,
-	0x93, 0x09, 0xd3, 0x60, 0x48, 0x96, 0x62, 0x66, 0xf2, 0xe0, 0x5d, 0x0a, 0x4a, 0xe3, 0x47, 0x68,
-	0x2d, 0x28, 0x84, 0xe2, 0x3f, 0xdf, 0xea, 0xb5, 0xa8, 0x5d, 0x23, 0x2d, 0x6b, 0xb2, 0xb5, 0x64,
-	0x80, 0xdc, 0xe7, 0xa0, 0x4b, 0xb1, 0x2a, 0x11, 0xb1, 0x02, 0x4c, 0xaf, 0x70, 0x77, 0xca, 0x57,
-	0x73, 0x49, 0xec, 0x7d, 0xfd, 0x0f, 0xd5, 0x96, 0x78, 0x43, 0x73, 0x27, 0xf8, 0x0d, 0xda, 0x29,
-	0x8f, 0xc2, 0xeb, 0x39, 0xf2, 0x38, 0x3f, 0x8b, 0x26, 0xc9, 0x7f, 0xae, 0x9e, 0x88, 0xec, 0x7e,
-	0xfa, 0xf1, 0xfb, 0x73, 0xf5, 0x0e, 0x6e, 0xcc, 0x8f, 0xd2, 0x7e, 0x45, 0xd5, 0x31, 0x43, 0x60,
-	0x89, 0x1a, 0x37, 0x2e, 0x0c, 0xef, 0xe5, 0x19, 0xff, 0xda, 0x67, 0x73, 0x3e, 0x14, 0xd9, 0x2b,
-	0x02, 0x5d, 0x72, 0x73, 0xe0, 0x13, 0xe7, 0x00, 0xbf, 0x46, 0xb5, 0x91, 0x0c, 0x39, 0x07, 0xb9,
-	0x44, 0xc5, 0x9b, 0x39, 0xc8, 0x03, 0x25, 0x52, 0x19, 0x40, 0xff, 0xe2, 0xc5, 0xd1, 0x22, 0xfa,
-	0x7e, 0x81, 0xde, 0x25, 0x77, 0xcb, 0xd0, 0x51, 0xaa, 0x34, 0xc8, 0xce, 0x87, 0x70, 0xf2, 0x11,
-	0x47, 0xa8, 0xb1, 0x44, 0x3f, 0x04, 0xa9, 0x3d, 0xfb, 0xc2, 0x56, 0x47, 0xf4, 0x8a, 0x88, 0x07,
-	0xe4, 0xa0, 0x24, 0x42, 0xe6, 0x04, 0xb0, 0x41, 0x01, 0x48, 0xad, 0x8a, 0xb4, 0x3e, 0xfd, 0x36,
-	0x73, 0x9d, 0xef, 0x33, 0xd7, 0xf9, 0x39, 0x73, 0x9d, 0x2f, 0xbf, 0xdc, 0x0a, 0xaa, 0x87, 0x82,
-	0x2a, 0xcd, 0x82, 0xb7, 0x52, 0xbc, 0x37, 0x2f, 0x91, 0xb2, 0x24, 0xa4, 0x59, 0xf7, 0x55, 0x35,
-	0xeb, 0x9e, 0x56, 0xce, 0xd6, 0x0a, 0xed, 0xe1, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff, 0xa9, 0x4d,
-	0x47, 0x6e, 0x2d, 0x04, 0x00, 0x00,
+	// 494 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0x41, 0x6b, 0x13, 0x41,
+	0x14, 0xc7, 0xb3, 0x11, 0x8a, 0x1d, 0xa9, 0xb4, 0xd3, 0x20, 0x49, 0x0c, 0x6b, 0x3a, 0x16, 0x2c,
+	0x45, 0x66, 0xd9, 0xe8, 0xc9, 0x5b, 0xd3, 0x56, 0xf1, 0x62, 0xcb, 0x26, 0x81, 0x22, 0xc2, 0x32,
+	0xdd, 0xbc, 0x2e, 0xab, 0xc9, 0xce, 0x3a, 0xf3, 0x76, 0xb1, 0x88, 0x17, 0x6f, 0x9e, 0xbd, 0xf8,
+	0x79, 0x3c, 0x79, 0x14, 0xfc, 0x02, 0x12, 0xfd, 0x20, 0xb2, 0xbb, 0x23, 0x49, 0x74, 0x9b, 0x5e,
+	0xff, 0xef, 0xcd, 0xef, 0xf7, 0x76, 0xdf, 0x0c, 0xb9, 0x2f, 0x92, 0xc8, 0xc9, 0x5c, 0x47, 0x43,
+	0xac, 0xa5, 0xf2, 0xd3, 0x24, 0x54, 0x62, 0x0c, 0xbe, 0x06, 0x95, 0x45, 0x01, 0xf0, 0x44, 0x49,
+	0x94, 0xb4, 0x9e, 0xb9, 0xed, 0x4e, 0x28, 0x65, 0x38, 0x01, 0x27, 0xef, 0x17, 0x71, 0x2c, 0x51,
+	0x60, 0x24, 0x63, 0x5d, 0x76, 0xb4, 0xa9, 0xc1, 0xc0, 0x34, 0xc1, 0x4b, 0x93, 0x6d, 0x9b, 0x2c,
+	0x90, 0xd3, 0xa9, 0x8c, 0x4d, 0xd8, 0xd1, 0x28, 0x95, 0x08, 0xe1, 0x1f, 0x61, 0x59, 0x65, 0x67,
+	0xa4, 0x3b, 0x4a, 0xc6, 0x02, 0x61, 0x50, 0x54, 0x47, 0x65, 0xf1, 0x50, 0xc6, 0x17, 0x51, 0xe8,
+	0xc1, 0xdb, 0x14, 0x34, 0xd2, 0xc7, 0x64, 0x2d, 0x28, 0x82, 0xa6, 0xd5, 0xb5, 0xf6, 0x6e, 0xf5,
+	0x3a, 0xdc, 0x20, 0x79, 0xd5, 0x21, 0xd3, 0xcb, 0x3e, 0xd5, 0x89, 0xfd, 0x0c, 0xb0, 0x92, 0xab,
+	0x13, 0x19, 0x6b, 0xa0, 0x9c, 0x6c, 0x43, 0x2c, 0xce, 0x27, 0xe0, 0x8b, 0x14, 0xe5, 0xdf, 0xc9,
+	0x0a, 0xcb, 0x4d, 0x6f, 0xab, 0x2c, 0x1d, 0xa4, 0x28, 0xcd, 0x69, 0xaa, 0x49, 0x63, 0xb1, 0xd1,
+	0xbf, 0x00, 0x81, 0xa9, 0x82, 0x66, 0xbd, 0x6b, 0xed, 0xdd, 0xee, 0x1d, 0xf0, 0xcc, 0xe5, 0xab,
+	0x8d, 0x66, 0xe0, 0x05, 0xe6, 0xd3, 0x12, 0x31, 0x40, 0x81, 0xa9, 0xf6, 0xa8, 0xf8, 0xaf, 0xc2,
+	0xfa, 0xc4, 0x5e, 0x7d, 0x8a, 0x6e, 0x90, 0xf5, 0xc1, 0xe8, 0xf4, 0xf4, 0xc4, 0x1b, 0x1e, 0x1f,
+	0x6d, 0xd6, 0xe8, 0x16, 0xd9, 0x78, 0x71, 0x32, 0xf4, 0xe7, 0x91, 0xd5, 0xfb, 0x7a, 0x83, 0x34,
+	0x96, 0xc6, 0x1a, 0x94, 0xdb, 0xa6, 0xaf, 0xc9, 0x9d, 0xea, 0x89, 0xe9, 0x7a, 0xfe, 0x35, 0xc7,
+	0xf9, 0x72, 0xdb, 0xec, 0xfa, 0x0f, 0x63, 0x3b, 0x1f, 0x7f, 0xfc, 0xfe, 0x5c, 0xbf, 0x4b, 0x5b,
+	0xf3, 0xab, 0x65, 0xfe, 0x92, 0x76, 0xca, 0x85, 0x50, 0x45, 0x5a, 0x57, 0xae, 0x9a, 0xee, 0xe6,
+	0x8e, 0xeb, 0x6e, 0x42, 0x7b, 0x3e, 0x14, 0xdb, 0x2d, 0x84, 0x36, 0xbb, 0x5a, 0xf8, 0xc4, 0xda,
+	0xa7, 0xaf, 0x48, 0x63, 0xa8, 0xa2, 0x30, 0x04, 0xb5, 0x44, 0xa5, 0x9b, 0x39, 0xc8, 0x03, 0x2d,
+	0x53, 0x15, 0x40, 0xff, 0xf2, 0xf9, 0xd1, 0x22, 0xfa, 0x41, 0x81, 0xde, 0x61, 0xf7, 0xaa, 0xd0,
+	0x93, 0x54, 0x23, 0x28, 0xe7, 0x7d, 0x34, 0xfe, 0x40, 0x27, 0xa4, 0xb5, 0x44, 0x3f, 0x04, 0x85,
+	0x9e, 0x79, 0x27, 0xab, 0x15, 0xbd, 0x42, 0xf1, 0x90, 0xed, 0x57, 0x28, 0x54, 0x4e, 0x00, 0x23,
+	0x0a, 0x40, 0xa1, 0x2e, 0x6c, 0x7d, 0xfe, 0x6d, 0x66, 0x5b, 0xdf, 0x67, 0xb6, 0xf5, 0x73, 0x66,
+	0x5b, 0x5f, 0x7e, 0xd9, 0x35, 0xd2, 0x8c, 0x24, 0xd7, 0x28, 0x82, 0x37, 0x4a, 0xbe, 0x2b, 0xdf,
+	0x13, 0x17, 0x49, 0xc4, 0x33, 0xf7, 0x65, 0x3d, 0x73, 0xcf, 0x6a, 0xe7, 0x6b, 0x45, 0xf6, 0xe8,
+	0x4f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xcc, 0xff, 0x45, 0x2d, 0xf3, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -478,48 +414,6 @@ var _SensorUpgradeService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/sensor_upgrade_service.proto",
 }
 
-func (m *SensorToggleConfig) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *SensorToggleConfig) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *SensorToggleConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.AutoUpgradeFeature != 0 {
-		i = encodeVarintSensorUpgradeService(dAtA, i, uint64(m.AutoUpgradeFeature))
-		i--
-		dAtA[i] = 0x10
-	}
-	if m.EnableAutoUpgrade {
-		i--
-		if m.EnableAutoUpgrade {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *UpdateSensorUpgradeConfigRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -583,17 +477,20 @@ func (m *GetSensorUpgradeConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.Config != nil {
-		{
-			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintSensorUpgradeService(dAtA, i, uint64(size))
+	if m.AutoUpgradeFeature != 0 {
+		i = encodeVarintSensorUpgradeService(dAtA, i, uint64(m.AutoUpgradeFeature))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.EnableAutoUpgrade {
+		i--
+		if m.EnableAutoUpgrade {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
 		}
 		i--
-		dAtA[i] = 0xa
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -609,24 +506,6 @@ func encodeVarintSensorUpgradeService(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *SensorToggleConfig) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.EnableAutoUpgrade {
-		n += 2
-	}
-	if m.AutoUpgradeFeature != 0 {
-		n += 1 + sovSensorUpgradeService(uint64(m.AutoUpgradeFeature))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *UpdateSensorUpgradeConfigRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -649,9 +528,11 @@ func (m *GetSensorUpgradeConfigResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Config != nil {
-		l = m.Config.Size()
-		n += 1 + l + sovSensorUpgradeService(uint64(l))
+	if m.EnableAutoUpgrade {
+		n += 2
+	}
+	if m.AutoUpgradeFeature != 0 {
+		n += 1 + sovSensorUpgradeService(uint64(m.AutoUpgradeFeature))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -664,96 +545,6 @@ func sovSensorUpgradeService(x uint64) (n int) {
 }
 func sozSensorUpgradeService(x uint64) (n int) {
 	return sovSensorUpgradeService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *SensorToggleConfig) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSensorUpgradeService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: SensorToggleConfig: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SensorToggleConfig: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EnableAutoUpgrade", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSensorUpgradeService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.EnableAutoUpgrade = bool(v != 0)
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AutoUpgradeFeature", wireType)
-			}
-			m.AutoUpgradeFeature = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSensorUpgradeService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.AutoUpgradeFeature |= SensorToggleConfig_SensorAutoUpgradeFeatureStatus(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSensorUpgradeService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthSensorUpgradeService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *UpdateSensorUpgradeConfigRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -872,10 +663,10 @@ func (m *GetSensorUpgradeConfigResponse) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EnableAutoUpgrade", wireType)
 			}
-			var msglen int
+			var v int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowSensorUpgradeService
@@ -885,28 +676,31 @@ func (m *GetSensorUpgradeConfigResponse) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				v |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
-				return ErrInvalidLengthSensorUpgradeService
+			m.EnableAutoUpgrade = bool(v != 0)
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AutoUpgradeFeature", wireType)
 			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthSensorUpgradeService
+			m.AutoUpgradeFeature = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSensorUpgradeService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AutoUpgradeFeature |= GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
 			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Config == nil {
-				m.Config = &SensorToggleConfig{}
-			}
-			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSensorUpgradeService(dAtA[iNdEx:])
