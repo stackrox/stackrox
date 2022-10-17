@@ -735,6 +735,35 @@ func RunGetQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Quer
 	})
 }
 
+// RunGetQueryForSchemaType executes a request for just the search against the database
+func RunGetQueryForSchemaType[T any, PT interface {
+	Unmarshal([]byte) error
+	*T
+}](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (*T, error) {
+	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	if err != nil {
+		return nil, err
+	}
+	if query == nil {
+		return nil, emptyQueryErr
+	}
+	queryStr := query.AsSQL()
+
+	return pgutils.Retry2(func() (*T, error) {
+		var data []byte
+		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
+		if err := row.Scan(&data); err != nil {
+			return nil, err
+		}
+		msg := PT(new(T))
+		if err := msg.Unmarshal(data); err != nil {
+			return nil, err
+		}
+
+		return (*T)(msg), nil
+	})
+}
+
 func retryableRunGetManyQueryForSchema(ctx context.Context, query *query, db *pgxpool.Pool) ([][]byte, error) {
 	queryStr := query.AsSQL()
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)

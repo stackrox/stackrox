@@ -260,16 +260,12 @@ func (s *storeImpl) Get(ctx context.Context, serialStr string) (*storage.Service
 		search.NewQueryBuilder().AddDocIDs(serialStr).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchemaType[storage.ServiceIdentity](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.ServiceIdentity
-	if err := msg.Unmarshal(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.ServiceIdentity, error) {
 

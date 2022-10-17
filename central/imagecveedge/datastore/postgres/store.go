@@ -137,16 +137,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageCVEEdge, 
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchemaType[storage.ImageCVEEdge](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.ImageCVEEdge
-	if err := msg.Unmarshal(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {

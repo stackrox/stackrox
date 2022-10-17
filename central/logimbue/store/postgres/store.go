@@ -294,16 +294,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.LogImbue, bool
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchemaType[storage.LogImbue](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.LogImbue
-	if err := msg.Unmarshal(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.LogImbue, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "LogImbue")

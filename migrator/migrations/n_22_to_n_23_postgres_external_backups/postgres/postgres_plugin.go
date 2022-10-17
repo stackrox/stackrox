@@ -260,16 +260,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ExternalBackup
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchemaType[storage.ExternalBackup](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.ExternalBackup
-	if err := msg.Unmarshal(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.ExternalBackup, error) {
 
