@@ -447,7 +447,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PermissionSet
 	if !scopeChecker.IsAllowed() {
 		return nil
 	}
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchemaType[storage.PermissionSet](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -458,11 +458,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PermissionSet
 			return pgutils.ErrNilIfNoRows(err)
 		}
 		for _, data := range rows {
-			var msg storage.PermissionSet
-			if err := msg.Unmarshal(data); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+			if err := fn(data); err != nil {
 				return err
 			}
 		}

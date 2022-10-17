@@ -640,7 +640,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Pod) error) e
 	if err != nil {
 		return err
 	}
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchemaType[storage.Pod](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -651,11 +651,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Pod) error) e
 			return pgutils.ErrNilIfNoRows(err)
 		}
 		for _, data := range rows {
-			var msg storage.Pod
-			if err := msg.Unmarshal(data); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+			if err := fn(data); err != nil {
 				return err
 			}
 		}

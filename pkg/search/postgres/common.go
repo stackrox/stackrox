@@ -897,6 +897,66 @@ func RunCursorQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Q
 	}, closer, nil
 }
 
+// RunCursorQueryForSchemaType creates a cursor against the database
+func RunCursorQueryForSchemaType[T any, PT interface {
+	Unmarshal([]byte) error
+	*T
+}](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (fetcher func(n int) ([]*T, error), closer func(), err error) {
+	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "error creating query")
+	}
+	if query == nil {
+		return nil, nil, emptyQueryErr
+	}
+
+	queryStr := query.AsSQL()
+
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating transaction")
+	}
+	closer = func() {
+		if err := tx.Commit(ctx); err != nil {
+			log.Errorf("error committing cursor transaction: %v", err)
+		}
+	}
+
+	cursor, err := random.GenerateString(16, random.CaseInsensitiveAlpha)
+	if err != nil {
+		closer()
+		return nil, nil, errors.Wrap(err, "creating cursor name")
+	}
+	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
+	if err != nil {
+		closer()
+		return nil, nil, errors.Wrap(err, "creating cursor")
+	}
+
+	return func(n int) ([]*T, error) {
+		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", n, cursor))
+		if err != nil {
+			return nil, errors.Wrap(err, "advancing in cursor")
+		}
+		defer rows.Close()
+
+		var results []*T
+		for rows.Next() {
+			var data []byte
+			if err := rows.Scan(&data); err != nil {
+				return nil, errors.Wrap(err, "scanning row")
+			}
+			msg := PT(new(T))
+
+			if err := msg.Unmarshal(data); err != nil {
+				return nil, err
+			}
+			results = append(results, (*T)(msg))
+		}
+		return results, nil
+	}, closer, nil
+}
+
 // RunDeleteRequestForSchema executes a request for just the delete against the database
 func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) error {
 	query, err := standardizeQueryAndPopulatePath(q, schema, DELETE)
