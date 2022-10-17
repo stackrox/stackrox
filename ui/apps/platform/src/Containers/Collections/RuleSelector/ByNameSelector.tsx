@@ -1,8 +1,9 @@
 import React from 'react';
-import { Button, Flex, FormGroup } from '@patternfly/react-core';
+import { Button, Flex, FormGroup, ValidatedOptions } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
+import { FormikErrors } from 'formik';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
 import { ByNameResourceSelector, ScopedResourceSelector, SelectorEntityType } from '../types';
 
@@ -11,11 +12,17 @@ export type ByNameSelectorProps = {
     scopedResourceSelector: ByNameResourceSelector;
     handleChange: (
         entityType: SelectorEntityType,
-        scopedResourceSelector: ScopedResourceSelector | null
+        scopedResourceSelector: ScopedResourceSelector
     ) => void;
+    validationErrors: FormikErrors<ByNameResourceSelector> | undefined;
 };
 
-function ByNameSelector({ entityType, scopedResourceSelector, handleChange }: ByNameSelectorProps) {
+function ByNameSelector({
+    entityType,
+    scopedResourceSelector,
+    handleChange,
+    validationErrors,
+}: ByNameSelectorProps) {
     function onAddValue() {
         const selector = cloneDeep(scopedResourceSelector);
         // Only add a new form row if there are no blank entries
@@ -43,7 +50,7 @@ function ByNameSelector({ entityType, scopedResourceSelector, handleChange }: By
             handleChange(entityType, newSelector);
         } else {
             // This was the last value in the rule, so drop the selector
-            handleChange(entityType, null);
+            handleChange(entityType, {});
         }
     }
 
@@ -57,6 +64,11 @@ function ByNameSelector({ entityType, scopedResourceSelector, handleChange }: By
                             className="pf-u-flex-grow-1 pf-u-w-auto"
                             selectedOption={value}
                             onChange={onChangeValue(scopedResourceSelector, index)}
+                            validated={
+                                validationErrors?.rule?.values?.[index]
+                                    ? ValidatedOptions.error
+                                    : ValidatedOptions.default
+                            }
                         />
                         <Button variant="plain" onClick={() => onDeleteValue(index)}>
                             <TrashIcon

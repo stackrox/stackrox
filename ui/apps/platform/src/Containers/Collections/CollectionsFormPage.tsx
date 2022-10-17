@@ -24,9 +24,9 @@ const defaultCollectionData = {
     inUse: false,
     embeddedCollectionIds: [],
     selectorRules: {
-        Deployment: null,
-        Namespace: null,
-        Cluster: null,
+        Deployment: {},
+        Namespace: {},
+        Cluster: {},
     },
 };
 

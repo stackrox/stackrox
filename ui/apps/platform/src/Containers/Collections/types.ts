@@ -55,18 +55,21 @@ export type ByLabelResourceSelector = {
     field: ByLabelSelectorField;
     rules: LabelSelectorRule[];
 };
-export type ScopedResourceSelector = ByNameResourceSelector | ByLabelResourceSelector;
+export type ScopedResourceSelector =
+    | ByNameResourceSelector
+    | ByLabelResourceSelector
+    | Record<string, never>;
 
 export function isByNameSelector(
-    selector: ScopedResourceSelector | null
+    selector: ScopedResourceSelector
 ): selector is ByNameResourceSelector {
-    return selector !== null && isByNameField(selector.field);
+    return isByNameField(selector.field);
 }
 
 export function isByLabelSelector(
-    selector: ScopedResourceSelector | null
+    selector: ScopedResourceSelector
 ): selector is ByLabelResourceSelector {
-    return selector !== null && isByLabelField(selector.field);
+    return isByLabelField(selector.field);
 }
 
 /**
@@ -78,6 +81,6 @@ export type Collection = {
     name: string;
     description: string;
     inUse: boolean;
-    selectorRules: Record<SelectorEntityType, ScopedResourceSelector | null>;
+    selectorRules: Record<SelectorEntityType, ScopedResourceSelector>;
     embeddedCollectionIds: string[];
 };

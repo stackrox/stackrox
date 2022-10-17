@@ -1,3 +1,5 @@
+import isEmpty from 'lodash/isEmpty';
+
 import { CollectionResponse } from 'services/CollectionsService';
 import {
     Collection,
@@ -36,9 +38,9 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
         inUse: data.inUse,
         embeddedCollectionIds: data.embeddedCollections.map(({ id }) => id),
         selectorRules: {
-            Deployment: null,
-            Namespace: null,
-            Cluster: null,
+            Deployment: {},
+            Namespace: {},
+            Cluster: {},
         },
     };
 
@@ -78,7 +80,7 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
             return;
         }
 
-        if (!collection.selectorRules[entity]) {
+        if (isEmpty(collection.selectorRules[entity])) {
             if (isByLabelField(field)) {
                 collection.selectorRules[entity] = {
                     field,

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Select, SelectOption } from '@patternfly/react-core';
 import pluralize from 'pluralize';
+import { FormikErrors } from 'formik';
+import isEmpty from 'lodash/isEmpty';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import {
@@ -22,14 +24,20 @@ function isRuleSelectorOption(value: string): value is RuleSelectorOption {
 
 export type RuleSelectorProps = {
     entityType: SelectorEntityType;
-    scopedResourceSelector: ScopedResourceSelector | null;
+    scopedResourceSelector: ScopedResourceSelector;
     handleChange: (
         entityType: SelectorEntityType,
-        scopedResourceSelector: ScopedResourceSelector | null
+        scopedResourceSelector: ScopedResourceSelector
     ) => void;
+    validationErrors: FormikErrors<ScopedResourceSelector> | undefined;
 };
 
-function RuleSelector({ entityType, scopedResourceSelector, handleChange }: RuleSelectorProps) {
+function RuleSelector({
+    entityType,
+    scopedResourceSelector,
+    handleChange,
+    validationErrors,
+}: RuleSelectorProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const pluralEntity = pluralize(entityType);
 
@@ -38,8 +46,8 @@ function RuleSelector({ entityType, scopedResourceSelector, handleChange }: Rule
             return;
         }
 
-        const selectorMap: Record<RuleSelectorOption, ScopedResourceSelector | null> = {
-            All: null,
+        const selectorMap: Record<RuleSelectorOption, ScopedResourceSelector> = {
+            All: {},
             ByName: {
                 field: entityType,
                 rule: { operator: 'OR', values: [''] },
@@ -57,7 +65,7 @@ function RuleSelector({ entityType, scopedResourceSelector, handleChange }: Rule
     let selection: RuleSelectorOption = 'All';
 
     if (
-        !scopedResourceSelector ||
+        isEmpty(scopedResourceSelector) ||
         ('rules' in scopedResourceSelector && scopedResourceSelector.rules.length === 0)
     ) {
         selection = 'All';
@@ -90,6 +98,7 @@ function RuleSelector({ entityType, scopedResourceSelector, handleChange }: Rule
                     entityType={entityType}
                     scopedResourceSelector={scopedResourceSelector}
                     handleChange={handleChange}
+                    validationErrors={validationErrors}
                 />
             )}
 
@@ -98,6 +107,7 @@ function RuleSelector({ entityType, scopedResourceSelector, handleChange }: Rule
                     entityType={entityType}
                     scopedResourceSelector={scopedResourceSelector}
                     handleChange={handleChange}
+                    validationErrors={validationErrors}
                 />
             )}
         </div>

@@ -1,8 +1,17 @@
 import React from 'react';
-import { Flex, Label, FormGroup, FlexItem, Button, Divider } from '@patternfly/react-core';
+import {
+    Flex,
+    Label,
+    FormGroup,
+    FlexItem,
+    Button,
+    Divider,
+    ValidatedOptions,
+} from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
+import { FormikErrors } from 'formik';
 import { SelectorEntityType, ScopedResourceSelector, ByLabelResourceSelector } from '../types';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
 
@@ -11,14 +20,16 @@ export type ByLabelSelectorProps = {
     scopedResourceSelector: ByLabelResourceSelector;
     handleChange: (
         entityType: SelectorEntityType,
-        scopedResourceSelector: ScopedResourceSelector | null
+        scopedResourceSelector: ScopedResourceSelector
     ) => void;
+    validationErrors: FormikErrors<ByLabelResourceSelector> | undefined;
 };
 
 function ByLabelSelector({
     entityType,
     scopedResourceSelector,
     handleChange,
+    validationErrors,
 }: ByLabelSelectorProps) {
     function onChangeLabelKey(resourceSelector, ruleIndex) {
         return (value: string) => {
@@ -80,12 +91,17 @@ function ByLabelSelector({
             handleChange(entityType, newSelector);
         } else {
             // This was the last value in the last rule, so drop the selector
-            handleChange(entityType, null);
+            handleChange(entityType, {});
         }
     }
     return (
         <>
             {scopedResourceSelector.rules.map((rule, ruleIndex) => {
+                const keyValidationError = validationErrors?.rules?.[ruleIndex];
+                const keyValidation =
+                    typeof keyValidationError === 'string' || keyValidationError?.key
+                        ? ValidatedOptions.error
+                        : ValidatedOptions.default;
                 return (
                     <div key={rule.key}>
                         {ruleIndex > 0 && (
@@ -120,6 +136,7 @@ function ByLabelSelector({
                                             scopedResourceSelector,
                                             ruleIndex
                                         )}
+                                        validated={keyValidation}
                                     />
                                 </FormGroup>
                                 <FlexItem
@@ -138,28 +155,40 @@ function ByLabelSelector({
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     direction={{ default: 'column' }}
                                 >
-                                    {rule.values.map((value, valueIndex) => (
-                                        <Flex key={value}>
-                                            <AutoCompleteSelect
-                                                className="pf-u-flex-grow-1 pf-u-w-auto"
-                                                selectedOption={value}
-                                                onChange={onChangeLabelValue(
-                                                    scopedResourceSelector,
-                                                    ruleIndex,
-                                                    valueIndex
-                                                )}
-                                            />
-                                            <Button
-                                                variant="plain"
-                                                onClick={() => onDeleteValue(ruleIndex, valueIndex)}
-                                            >
-                                                <TrashIcon
-                                                    style={{ cursor: 'pointer' }}
-                                                    color="var(--pf-global--Color--dark-200)"
+                                    {rule.values.map((value, valueIndex) => {
+                                        const valueValidationError =
+                                            validationErrors?.rules?.[ruleIndex];
+                                        const valueValidation =
+                                            typeof valueValidationError === 'string' ||
+                                            valueValidationError?.values?.[valueIndex]
+                                                ? ValidatedOptions.error
+                                                : ValidatedOptions.default;
+                                        return (
+                                            <Flex key={value}>
+                                                <AutoCompleteSelect
+                                                    className="pf-u-flex-grow-1 pf-u-w-auto"
+                                                    selectedOption={value}
+                                                    onChange={onChangeLabelValue(
+                                                        scopedResourceSelector,
+                                                        ruleIndex,
+                                                        valueIndex
+                                                    )}
+                                                    validated={valueValidation}
                                                 />
-                                            </Button>
-                                        </Flex>
-                                    ))}
+                                                <Button
+                                                    variant="plain"
+                                                    onClick={() =>
+                                                        onDeleteValue(ruleIndex, valueIndex)
+                                                    }
+                                                >
+                                                    <TrashIcon
+                                                        style={{ cursor: 'pointer' }}
+                                                        color="var(--pf-global--Color--dark-200)"
+                                                    />
+                                                </Button>
+                                            </Flex>
+                                        );
+                                    })}
                                 </Flex>
                                 <Button
                                     className="pf-u-pl-0 pf-u-pt-md"

@@ -11,9 +11,8 @@ jest.setTimeout(10000);
 
 // Component wrapper to allow a higher level component to feed updated state back to the RuleSelector.
 function DeploymentRuleSelector({ defaultSelector, onChange }) {
-    const [resourceSelector, setResourceSelector] = useState<ScopedResourceSelector | null>(
-        defaultSelector
-    );
+    const [resourceSelector, setResourceSelector] =
+        useState<ScopedResourceSelector>(defaultSelector);
 
     useEffect(() => {
         onChange(resourceSelector);
@@ -24,6 +23,7 @@ function DeploymentRuleSelector({ defaultSelector, onChange }) {
             entityType="Deployment"
             scopedResourceSelector={resourceSelector}
             handleChange={(_, newSelector) => setResourceSelector(newSelector)}
+            validationErrors={undefined}
         />
     );
 }

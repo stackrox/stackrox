@@ -185,7 +185,7 @@ function CollectionForm({
 
     const onRuleSelectorChange = (
         entityType: SelectorEntityType,
-        scopedResourceSelector: ScopedResourceSelector | null
+        scopedResourceSelector: ScopedResourceSelector
     ) => setFieldValue(`selectorRules.${entityType}`, scopedResourceSelector);
 
     return (
@@ -320,6 +320,7 @@ function CollectionForm({
                                         entityType="Deployment"
                                         scopedResourceSelector={values.selectorRules.Deployment}
                                         handleChange={onRuleSelectorChange}
+                                        validationErrors={errors.selectorRules?.Deployment}
                                     />
                                     <Label
                                         variant="outline"
@@ -332,6 +333,7 @@ function CollectionForm({
                                         entityType="Namespace"
                                         scopedResourceSelector={values.selectorRules.Namespace}
                                         handleChange={onRuleSelectorChange}
+                                        validationErrors={errors.selectorRules?.Namespace}
                                     />
                                     <Label
                                         variant="outline"
@@ -344,6 +346,7 @@ function CollectionForm({
                                         entityType="Cluster"
                                         scopedResourceSelector={values.selectorRules.Cluster}
                                         handleChange={onRuleSelectorChange}
+                                        validationErrors={errors.selectorRules?.Cluster}
                                     />
                                 </Flex>
 
