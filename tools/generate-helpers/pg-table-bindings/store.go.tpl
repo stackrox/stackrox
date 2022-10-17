@@ -25,7 +25,6 @@ import (
     "strings"
     "time"
 
-    "github.com/gogo/protobuf/proto"
     "github.com/hashicorp/go-multierror"
     "github.com/jackc/pgx/v4"
     "github.com/jackc/pgx/v4/pgxpool"
@@ -553,7 +552,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 	}
 
 	var msg {{.Type}}
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
         return nil, false, err
 	}
 	return &msg, true, nil
@@ -792,7 +791,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
 	resultsByID := make(map[{{$singlePK.Type}}]*{{.Type}})
     for _, data := range rows {
 		msg := &{{.Type}}{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 		    return nil, nil, err
 		}
 		resultsByID[{{$singlePK.Getter "msg"}}] = msg
@@ -864,7 +863,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
 	var results []*{{.Type}}
     for _, data := range rows {
 		msg := &{{.Type}}{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 		    return nil, err
 		}
 		results = append(results, msg)
@@ -964,7 +963,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 		}
 		for _, data := range rows {
 			var msg {{.Type}}
-			if err := proto.Unmarshal(data, &msg); err != nil {
+			if err := msg.Unmarshal(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

@@ -5,7 +5,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -266,7 +265,7 @@ func (s *storeImpl) Get(ctx context.Context, clusterId string) (*storage.Network
 	}
 
 	var msg storage.NetworkPolicyApplicationUndoRecord
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -349,7 +348,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Netwo
 	resultsByID := make(map[string]*storage.NetworkPolicyApplicationUndoRecord)
 	for _, data := range rows {
 		msg := &storage.NetworkPolicyApplicationUndoRecord{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, nil, err
 		}
 		resultsByID[msg.GetClusterId()] = msg
@@ -396,7 +395,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkPolicy
 		}
 		for _, data := range rows {
 			var msg storage.NetworkPolicyApplicationUndoRecord
-			if err := proto.Unmarshal(data, &msg); err != nil {
+			if err := msg.Unmarshal(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -429,7 +428,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Pod, bool, err
 	}
 
 	var msg storage.Pod
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -558,7 +557,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Pod, 
 	resultsByID := make(map[string]*storage.Pod)
 	for _, data := range rows {
 		msg := &storage.Pod{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, nil, err
 		}
 		resultsByID[msg.GetId()] = msg
@@ -610,7 +609,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	var results []*storage.Pod
 	for _, data := range rows {
 		msg := &storage.Pod{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		results = append(results, msg)
@@ -669,7 +668,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Pod) error) e
 		}
 		for _, data := range rows {
 			var msg storage.Pod
-			if err := proto.Unmarshal(data, &msg); err != nil {
+			if err := msg.Unmarshal(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {
