@@ -20,7 +20,7 @@ function ByLabelSelector({
     scopedResourceSelector,
     handleChange,
 }: ByLabelSelectorProps) {
-    function onChangeLabelKey(resourceSelector: ScopedResourceSelector, ruleIndex) {
+    function onChangeLabelKey(resourceSelector, ruleIndex) {
         return (value: string) => {
             const newSelector = cloneDeep(resourceSelector);
             const rule = newSelector.rules[ruleIndex];

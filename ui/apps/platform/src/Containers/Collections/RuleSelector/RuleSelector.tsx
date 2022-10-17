@@ -42,7 +42,7 @@ function RuleSelector({ entityType, scopedResourceSelector, handleChange }: Rule
             All: null,
             ByName: {
                 field: entityType,
-                rules: [{ operator: 'OR', values: [''] }],
+                rule: { operator: 'OR', values: [''] },
             },
             ByLabel: {
                 field: `${entityType} Label`,
@@ -56,7 +56,10 @@ function RuleSelector({ entityType, scopedResourceSelector, handleChange }: Rule
 
     let selection: RuleSelectorOption = 'All';
 
-    if (!scopedResourceSelector || scopedResourceSelector.rules.length === 0) {
+    if (
+        !scopedResourceSelector ||
+        ('rules' in scopedResourceSelector && scopedResourceSelector.rules.length === 0)
+    ) {
         selection = 'All';
     } else if (isByNameSelector(scopedResourceSelector)) {
         selection = 'ByName';
