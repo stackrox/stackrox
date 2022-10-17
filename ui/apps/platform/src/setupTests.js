@@ -27,7 +27,7 @@ class Spy {
         // To debug this, go to src/services/instance.js and uncomment the commented out code,
         // which will help you figure out which API requests are not being mocked.
         // expect is magically injected by the jest test runner.
-        // TODO expect(this.spy).not.toHaveBeenCalled();
+        expect(this.spy).not.toHaveBeenCalled();
         this.spy = null;
     }
 }
