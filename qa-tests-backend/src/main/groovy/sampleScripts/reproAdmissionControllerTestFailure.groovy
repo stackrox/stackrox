@@ -48,7 +48,7 @@ def killAllChaosMonkey = new ChaosMonkey(client, 0, 1L)
 
 def deployment = new Deployment()
         .setName("random-busybox")
-        .setImage("quay.io/rhacs-eng/qa:busybox-1-30")
+        .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-30")
         .addLabel("app", "random-busybox")
 assert client.createDeploymentNoWait(deployment)
 

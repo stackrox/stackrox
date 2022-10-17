@@ -34,7 +34,7 @@ class ImageScanningTest extends BaseSpecification {
     static final private String RHEL7_IMAGE =
             "richxsl/rhel7@sha256:8f3aae325d2074d2dc328cb532d6e7aeb0c588e15ddf847347038fe0566364d6"
     static final private String GCR_IMAGE   = "us.gcr.io/stackrox-ci/qa/registry-image:0.2"
-    static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-12-1"
+    static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1-12-1"
     static final private String OCI_IMAGE   = "quay.io/rhacs-eng/qa:oci-manifest"
     static final private String AR_IMAGE    = "us-west1-docker.pkg.dev/stackrox-ci/artifact-registry-test1/nginx:1.17"
     static final private String CENTOS_IMAGE = "quay.io/rhacs-eng/qa:centos7-base"
