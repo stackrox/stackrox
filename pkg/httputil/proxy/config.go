@@ -177,7 +177,7 @@ func (c *proxyConfig) Compile(envCfg environmentConfig) *compiledConfig {
 		}
 		allExcludes = append(allExcludes, elem)
 	}
-	allExcludes = sliceutils.StringUnique(allExcludes)
+	allExcludes = sliceutils.Unique(allExcludes)
 
 	validExcludes := allExcludes[:0]
 	for _, excl := range allExcludes {

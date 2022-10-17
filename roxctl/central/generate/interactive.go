@@ -294,8 +294,8 @@ func flagGroups(flags []*pflag.Flag) []*flagGroup {
 		groupsSlice = append(groupsSlice, group)
 	}
 	sort.Slice(groupsSlice, func(i, j int) bool {
-		iPos := sliceutils.StringFind(orderedFlagGroupNames, groupsSlice[i].name)
-		jPos := sliceutils.StringFind(orderedFlagGroupNames, groupsSlice[j].name)
+		iPos := sliceutils.Find(orderedFlagGroupNames, groupsSlice[i].name)
+		jPos := sliceutils.Find(orderedFlagGroupNames, groupsSlice[j].name)
 		// If they're both not in the list of ordered flag groups, just sort alphabetically.
 		if iPos == -1 && jPos == -1 {
 			return groupsSlice[i].name < groupsSlice[j].name

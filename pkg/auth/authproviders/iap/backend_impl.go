@@ -110,7 +110,7 @@ func (p *backendImpl) Validate(ctx context.Context, roxClaims *tokens.Claims) er
 		return errFingerPrintChanged
 	}
 
-	if !sliceutils.StringEqual([]string{extraClaims.Hd}, []string{roxClaims.ExternalUser.Attributes["hd"][0]}) {
+	if !sliceutils.Equal([]string{extraClaims.Hd}, []string{roxClaims.ExternalUser.Attributes["hd"][0]}) {
 		return errFingerPrintChanged
 	}
 

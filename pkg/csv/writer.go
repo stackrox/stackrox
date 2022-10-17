@@ -88,7 +88,7 @@ func (c *GenericWriter) Write(w http.ResponseWriter, filename string) {
 		})
 	}
 
-	header := sliceutils.StringClone(c.header)
+	header := sliceutils.ShallowClone(c.header)
 	header[0] = "\uFEFF" + header[0]
 	cw := csv.NewWriter(w)
 	cw.UseCRLF = true

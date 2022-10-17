@@ -92,7 +92,7 @@ func checkLatestImageTagPolicyEnforced(ctx framework.ComplianceContext) {
 }
 
 func policyHasLatestImageTag(p *storage.Policy) bool {
-	return sliceutils.StringFind(policyfields.GetImageTags(p), "latest") >= 0
+	return sliceutils.Find(policyfields.GetImageTags(p), "latest") >= 0
 }
 
 func policyHasImageAgeDays(p *storage.Policy) bool {

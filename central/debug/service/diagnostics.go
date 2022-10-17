@@ -104,7 +104,7 @@ func addMissingClustersInfo(ctx context.Context, remainingClusterNameMap map[str
 	var missingClustersFileContents bytes.Buffer
 	fmt.Fprintln(&missingClustersFileContents, "Data from the following clusters is unavailable:")
 	for _, clusterName := range remainingClusterNameMap {
-		if filterClusters != nil && sliceutils.StringFind(filterClusters, clusterName) != -1 {
+		if filterClusters != nil && sliceutils.Find(filterClusters, clusterName) != -1 {
 			fmt.Fprintf(&missingClustersFileContents, "- %s (not requested by user)\n", clusterName)
 		} else {
 			fmt.Fprintf(&missingClustersFileContents, "- %s (no active connection)\n", clusterName)
@@ -165,7 +165,7 @@ func getClusterCandidate(conn connection.SensorConnection, clusterNameMap map[st
 	delete(clusterNameMap, clusterID)
 
 	// if there are no cluster filters, all clusters must be considered.
-	if opts.clusters != nil && sliceutils.StringFind(opts.clusters, clusterName) == -1 {
+	if opts.clusters != nil && sliceutils.Find(opts.clusters, clusterName) == -1 {
 		return "", "", false
 	}
 

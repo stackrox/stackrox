@@ -10,7 +10,7 @@ import (
 // Unmarshal unmarshals a set of SortedKeys.
 func Unmarshal(marshalled []byte) (SortedKeys, error) {
 	var unmarshalled SortedKeys
-	buf := sliceutils.ByteClone(marshalled)
+	buf := sliceutils.ShallowClone(marshalled)
 	for len(buf) >= 2 {
 		// First two bytes encode the length.
 		length := decodeLength(buf[:2])

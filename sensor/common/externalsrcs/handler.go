@@ -1,6 +1,7 @@
 package externalsrcs
 
 import (
+	"bytes"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -12,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgNet "github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 )
@@ -156,8 +156,8 @@ func normalizeNetworkList(listProto *sensor.IPNetworkList) {
 }
 
 func networkListsEqual(a, b *sensor.IPNetworkList) bool {
-	return sliceutils.ByteEqual(a.GetIpv4Networks(), b.GetIpv4Networks()) &&
-		sliceutils.ByteEqual(a.GetIpv6Networks(), b.GetIpv6Networks())
+	return bytes.Equal(a.GetIpv4Networks(), b.GetIpv4Networks()) &&
+		bytes.Equal(a.GetIpv6Networks(), b.GetIpv6Networks())
 }
 
 func (h *handlerImpl) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList] {
