@@ -11,12 +11,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/sac"
 	"google.golang.org/grpc"
 )
 
@@ -40,6 +40,11 @@ type service struct {
 
 	configDataStore datastore.DataStore
 	manager         connection.Manager
+	autoTriggerFlag concurrency.Flag
+}
+
+func (s *service) initialize() {
+	s.autoTriggerFlag.Set(defaultUpgradeConfig().EnableAutoUpgrade)
 }
 
 func (s *service) RegisterServiceServer(server *grpc.Server) {
@@ -56,8 +61,10 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 
 func (s *service) wrapToggleResponse(config *storage.SensorUpgradeConfig) *v1.GetSensorUpgradeConfigResponse {
 	return &v1.GetSensorUpgradeConfigResponse{
-		EnableAutoUpgrade:  config.GetEnableAutoUpgrade(),
-		AutoUpgradeFeature: getAutoUpgradeFeatureStatus(),
+		Config: &v1.GetSensorUpgradeConfigResponse_UpgradeConfig{
+			EnableAutoUpgrade:  config.GetEnableAutoUpgrade(),
+			AutoUpgradeFeature: getAutoUpgradeFeatureStatus(),
+		},
 	}
 }
 
@@ -68,31 +75,20 @@ func defaultUpgradeConfig() *storage.SensorUpgradeConfig {
 	return &storage.SensorUpgradeConfig{EnableAutoUpgrade: false}
 }
 
-func (s *service) insertDefaultSensorConfig(ctx context.Context) (*storage.SensorUpgradeConfig, error) {
-	// This is needed in case the first `GET` request to SensorUpgradeConfig is done by a user
-	// without permission to add sensor configs. We still want to create the default
-	// config entry.
-	// allAccessContext := sac.WithAllAccess(ctx)
-	allAccessContext := sac.WithAllAccess(ctx)
-	config := defaultUpgradeConfig()
-	if err := s.configDataStore.UpsertSensorUpgradeConfig(allAccessContext, config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
 func (s *service) GetSensorUpgradeConfig(ctx context.Context, _ *v1.Empty) (*v1.GetSensorUpgradeConfigResponse, error) {
 	config, err := s.configDataStore.GetSensorUpgradeConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if config == nil {
-		config, err = s.insertDefaultSensorConfig(ctx)
-		if err != nil {
-			return nil, errors.Wrap(err, "couldn't add default upgrade config")
-		}
+		// If there's no config in the DB, return default config according to managed central flag
+		config = defaultUpgradeConfig()
 	}
 	return s.wrapToggleResponse(config), nil
+}
+
+func (s *service) GetAutoUpgradeConfig() *concurrency.Flag {
+	return &s.autoTriggerFlag
 }
 
 func getAutoUpgradeFeatureStatus() v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus {
@@ -114,6 +110,7 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
 	}
+	s.autoTriggerFlag.Set(req.GetConfig().EnableAutoUpgrade)
 	return &v1.Empty{}, nil
 }
 

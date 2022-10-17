@@ -128,10 +128,21 @@
     "GetSensorUpgradeConfigResponseSensorAutoUpgradeFeatureStatus": {
       "type": "string",
       "enum": [
-        "SUPPORTED",
-        "NOT_SUPPORTED"
+        "NOT_SUPPORTED",
+        "SUPPORTED"
       ],
-      "default": "SUPPORTED"
+      "default": "NOT_SUPPORTED"
+    },
+    "GetSensorUpgradeConfigResponseUpgradeConfig": {
+      "type": "object",
+      "properties": {
+        "enableAutoUpgrade": {
+          "type": "boolean"
+        },
+        "autoUpgradeFeature": {
+          "$ref": "#/definitions/GetSensorUpgradeConfigResponseSensorAutoUpgradeFeatureStatus"
+        }
+      }
     },
     "protobufAny": {
       "type": "object",
@@ -185,11 +196,8 @@
     "v1GetSensorUpgradeConfigResponse": {
       "type": "object",
       "properties": {
-        "enableAutoUpgrade": {
-          "type": "boolean"
-        },
-        "autoUpgradeFeature": {
-          "$ref": "#/definitions/GetSensorUpgradeConfigResponseSensorAutoUpgradeFeatureStatus"
+        "config": {
+          "$ref": "#/definitions/GetSensorUpgradeConfigResponseUpgradeConfig"
         }
       }
     },

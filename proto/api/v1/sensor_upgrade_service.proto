@@ -16,12 +16,16 @@ message UpdateSensorUpgradeConfigRequest {
 
 message GetSensorUpgradeConfigResponse {
     enum SensorAutoUpgradeFeatureStatus {
-        SUPPORTED = 0;
-        NOT_SUPPORTED = 1;
+        NOT_SUPPORTED = 0;
+        SUPPORTED = 1;
     }
 
-    bool enable_auto_upgrade = 1;
-    SensorAutoUpgradeFeatureStatus auto_upgrade_feature = 2;
+    message UpgradeConfig {
+        bool enable_auto_upgrade = 1;
+        SensorAutoUpgradeFeatureStatus auto_upgrade_feature = 2;
+    }
+
+    UpgradeConfig config = 1;
 }
 
 service SensorUpgradeService {
