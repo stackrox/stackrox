@@ -884,7 +884,7 @@ func TestBackend(t *testing.T) {
 			}
 
 			// create backend and perform related assertions
-			backendInterface, err := f.CreateBackend(context.TODO(), "abcde-12345", []string{"endpoint1", "endpoint2"}, tt.config)
+			backendInterface, err := f.CreateBackend(context.TODO(), "abcde-12345", []string{"endpoint1", "endpoint2"}, tt.config, nil)
 			gotBackend := backendInterface.(*backendImpl)
 			require.Equal(t, fmt.Sprint(tt.wantBackendErr), fmt.Sprint(err), "Unexpected newBackend() error")
 			tt.wantBackend.assertMatches(t, gotBackend)
@@ -987,8 +987,9 @@ type mockVerifier struct {
 
 func (m mockVerifier) Verify(_ context.Context, token string) (oidcIDToken, error) {
 	// undo claims.serialize
-	s := strings.Split(token, ":")
-	return mockOIDCToken{name: s[0], email: s[1], uid: s[2], nonce: s[3]}, nil
+	//s := strings.Split(token, ":")
+	//return mockOIDCToken{name: s[0], email: s[1], uid: s[2], nonce: s[3]}, nil
+	return nil, nil
 }
 
 type mockOIDCToken struct {

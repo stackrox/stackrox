@@ -171,6 +171,12 @@
         },
         "traits": {
           "$ref": "#/definitions/storageTraits"
+        },
+        "claimMappings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
       "title": "Next Tag: 13"

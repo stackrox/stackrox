@@ -24,6 +24,8 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2"
+
+	"github.com/jeremywohl/flatten/v2"
 )
 
 const (
@@ -66,7 +68,8 @@ type backendImpl struct {
 	responseMode  string
 	responseTypes set.FrozenStringSet
 
-	config map[string]string
+	config   map[string]string
+	mappings map[string]string
 
 	httpClient *http.Client
 }
@@ -187,10 +190,49 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonc
 	}
 
 	externalClaims := userInfoToExternalClaims(&userInfo)
+	if err := addCustomMappingsToClaims(externalClaims, p.mappings, idToken); err != nil {
+
+	}
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: idToken.GetExpiry(),
 	}, nil
+}
+
+type ClaimExtractor interface {
+	Claims(v interface{}) error
+}
+
+func addCustomMappingsToClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[string]string, claimExtractor ClaimExtractor) error {
+	claims := make(map[string]interface{}, 0)
+	if err := claimExtractor.Claims(&claims); err != nil {
+		return err
+	}
+	flattenedClaims, err := flatten.Flatten(claims, "", flatten.DotStyle, false)
+	if err != nil {
+		return err
+	}
+	for fromClaimName, toClaimName := range mappings {
+		if val, ok := flattenedClaims[fromClaimName]; ok {
+			switch val.(type) {
+			case []interface{}:
+				for _, arrayVal := range val.([]interface{}) {
+					if stringVal, ok := arrayVal.(string); ok {
+						externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], stringVal)
+					} else {
+						return errors.Errorf("Unsupported claim type: %s", val)
+					}
+				}
+			case string:
+				externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], val.(string))
+			case bool:
+				externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], strconv.FormatBool(val.(bool)))
+			default:
+				return errors.Errorf("Unsupported claim type: %s", val)
+			}
+		}
+	}
+	return nil
 }
 
 func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) (*authproviders.AuthResponse, error) {
@@ -219,8 +261,7 @@ var (
 	errQueryWithoutClientSecret  = errors.New("query response mode can only be used with a client secret")
 )
 
-func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string,
-	providerFactory providerFactoryFunc, exchange exchangeFunc, noncePool cryptoutils.NoncePool) (*backendImpl, error) {
+func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string, providerFactory providerFactoryFunc, exchange exchangeFunc, noncePool cryptoutils.NoncePool, mappings map[string]string) (*backendImpl, error) {
 	if len(uiEndpoints) == 0 {
 		return nil, errors.New("OIDC requires a default UI endpoint")
 	}
@@ -247,6 +288,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		provider:           provider,
 		httpClient:         issuerHelper.HTTPClient(),
 		oauthExchange:      exchange,
+		mappings:           mappings,
 	}
 
 	b.baseRedirectURL = url.URL{

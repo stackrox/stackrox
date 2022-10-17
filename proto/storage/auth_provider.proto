@@ -37,4 +37,6 @@ message AuthProvider {
     repeated RequiredAttribute required_attributes = 11;
 
     Traits traits = 12;
+
+    map<string, string> claim_mappings = 13;
 }

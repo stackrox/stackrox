@@ -128,6 +128,8 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
+require github.com/jeremywohl/flatten/v2 v2.0.0-20211013061545-07e4a09fb8e4
+
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.104.0 // indirect
@@ -422,6 +424,8 @@ replace (
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
 
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20220204234128-07f109db0819
+
+	github.com/jeremywohl/flatten/v2 => github.com/ivan-degtiarenko/flatten/v2 v2.0.0-20221017175026-d02049ad5c37
 
 	// github.com/mikefarah/yaml/v2 is a clone of github.com/go-yaml/yaml/v2.
 	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum

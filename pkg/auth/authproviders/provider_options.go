@@ -27,7 +27,7 @@ func WithBackendFromFactory(ctx context.Context, factory BackendFactory) Provide
 	return func(pr *providerImpl) error {
 		pr.backendFactory = factory
 
-		backend, err := factory.CreateBackend(ctx, pr.storedInfo.Id, AllUIEndpoints(&pr.storedInfo), pr.storedInfo.Config)
+		backend, err := factory.CreateBackend(ctx, pr.storedInfo.Id, AllUIEndpoints(&pr.storedInfo), pr.storedInfo.Config, nil)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create auth provider of type %s", pr.storedInfo.Type)
 		}
