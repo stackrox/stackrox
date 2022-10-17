@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -698,7 +697,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx pgx.Tx, imageID string)
 	}
 
 	var image storage.Image
-	if err := proto.Unmarshal(data, &image); err != nil {
+	if err := image.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 
@@ -789,7 +788,7 @@ func getImageComponentEdges(ctx context.Context, tx pgx.Tx, imageID string) (map
 			return nil, err
 		}
 		msg := &storage.ImageComponentEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = msg
@@ -826,7 +825,7 @@ func getImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string) (map[strin
 			return nil, err
 		}
 		msg := &storage.ImageCVEEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		cveIDToEdgeMap[msg.GetImageCveId()] = msg
@@ -849,7 +848,7 @@ func getImageComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (
 			return nil, err
 		}
 		msg := &storage.ImageComponent{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -872,7 +871,7 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 			return nil, err
 		}
 		msg := &storage.ComponentCVEEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = append(componentIDToEdgeMap[msg.GetImageComponentId()], msg)
@@ -895,7 +894,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 			return nil, err
 		}
 		msg := &storage.ImageCVE{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg
@@ -1088,7 +1087,7 @@ func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*
 	}
 
 	var msg storage.Image
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -1139,7 +1138,7 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 	resultsByID := make(map[string]*storage.Image)
 	for _, data := range rows {
 		msg := &storage.Image{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, nil, err
 		}
 		resultsByID[msg.GetId()] = msg
