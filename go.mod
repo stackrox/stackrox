@@ -23,7 +23,6 @@ require (
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/coreos/go-systemd/v22 v22.4.0
 	github.com/dave/jennifer v1.6.0
-	github.com/deckarep/golang-set v1.8.0
 	github.com/dexidp/dex v0.0.0-20220607113954-3836196af2e7
 	github.com/docker/distribution v2.8.1+incompatible
 	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
