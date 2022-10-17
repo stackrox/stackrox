@@ -12,6 +12,7 @@ import services.ImageService
 import services.PolicyService
 import spock.lang.Unroll
 import util.Env
+import util.Helpers
 
 class ImageManagementTest extends BaseSpecification {
 
@@ -28,6 +29,11 @@ class ImageManagementTest extends BaseSpecification {
 
         and:
         "Request Image Scan"
+        if (policy == "Apache Struts: CVE-2017-5638") {
+            Helpers.collectImageScanForDebug(
+                    imageRegistry + "/" + imageRemote + ":" + imageTag, 'image-scan-test-struts-app.json'
+            )
+        }
         def scanResults = Services.requestBuildImageScan(imageRegistry, imageRemote, imageTag)
 
         then:

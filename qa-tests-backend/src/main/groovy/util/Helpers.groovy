@@ -139,7 +139,7 @@ class Helpers {
             Path imageScans = Paths.get(Constants.FAILURE_DEBUG_DIR).resolve("image-scans")
             new File(imageScans.toAbsolutePath().toString()).mkdirs()
 
-            Process proc = "./scripts/ci/roxctl.sh image scan -i ${image}".execute(null, new File(".."))
+            Process proc = "./scripts/ci/roxctl.sh image scan -i ${image} -a -f".execute(null, new File(".."))
             String output = imageScans.resolve(saveName).toAbsolutePath()
             FileWriter sout = new FileWriter(output)
             StringBuilder serr = new StringBuilder()
