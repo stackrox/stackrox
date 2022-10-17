@@ -2,6 +2,7 @@ package generate
 
 import (
 	"encoding/pem"
+	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -115,10 +116,12 @@ func restoreCentralDBPassword(fileMap map[string][]byte, backupBundle string) er
 }
 
 func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
+	fmt.Sprintln("SHREWS -- populateMTLSFiles")
 	var ca mtls.CA
 	var err error
 	switch backupBundle {
 	case "":
+		fmt.Sprintln("SHREWS -- populateMTLSFiles -- no backup")
 		if ca, err = certgen.GenerateCA(); err != nil {
 			return err
 		}
@@ -155,6 +158,7 @@ func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, e
 
 	config.SecretsByteMap = make(map[string][]byte)
 	if config.BackupBundle == "" {
+		fmt.Sprintln("SHREWS -- about to generate signing key")
 		if err := generateJWTSigningKey(config.SecretsByteMap); err != nil {
 			return nil, err
 		}
@@ -167,6 +171,7 @@ func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, e
 	}
 
 	if len(config.DefaultTLSCertPEM) > 0 {
+		fmt.Sprintln("SHREWS -- setting default certs")
 		config.SecretsByteMap["default-tls.crt"] = config.DefaultTLSCertPEM
 		config.SecretsByteMap["default-tls.key"] = config.DefaultTLSKeyPEM
 	}

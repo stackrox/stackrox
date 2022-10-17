@@ -2,6 +2,7 @@ package derivelocalvalues
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -182,6 +183,7 @@ func helmValuesForCentralServices(ctx context.Context, namespace string, k8s k8s
 
 // Implementation for command `helm derive-local-values`.
 func derivePrivateLocalValuesForCentralServices(ctx context.Context, namespace string, k8s k8sObjectDescription) (map[string]interface{}, error) {
+	fmt.Sprintln("SHREWS -- derivePublicLocalValuesForCentralServices")
 	m := map[string]interface{}{
 		"licenseKey": k8s.lookupSecretStringP(ctx, "central-license", "license.lic"),
 		"env": map[string]interface{}{
@@ -227,7 +229,7 @@ func derivePrivateLocalValuesForCentralServices(ctx context.Context, namespace s
 
 // Implementation for command `helm derive-local-values`.
 func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace string, k8s k8sObjectDescription) (map[string]interface{}, error) {
-
+	fmt.Sprintln("SHREWS -- derivePublicLocalValuesForCentralServices")
 	// Note regarding custom metadata (annotations, labels and env vars): We make it easy for us:
 	// we simply retrieve the metadata from the central deployment and assume that any custom metadata
 	// on that resource is to be used globally for all StackRox resources.

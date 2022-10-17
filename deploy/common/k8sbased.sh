@@ -154,6 +154,7 @@ function launch_central {
     fi
 
     if [[ -n "$ROX_DEFAULT_TLS_CERT_FILE" ]]; then
+      echo "SHREWS -- default TLS Cert File"
     	add_args "--default-tls-cert"
     	add_file_arg "$ROX_DEFAULT_TLS_CERT_FILE"
     	add_args "--default-tls-key"
@@ -201,11 +202,13 @@ function launch_central {
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
     if ! (( use_docker )); then
+      echo "SHREWS -- roxctl generate not from docker"
         rm -rf central-bundle "${k8s_dir}/central-bundle"
         roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}" "${STORAGE_ARGS[@]}"
         cp -R central-bundle/ "${unzip_dir}/"
         rm -rf central-bundle
     else
+      echo "SHREWS -- roxctl generate from docker"
         docker run --rm ${DOCKER_PLATFORM_ARGS[@]} "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$ROXCTL_IMAGE" \
         	central generate "${ORCH}" "${EXTRA_ARGS[@]}" "${STORAGE}" "${STORAGE_ARGS[@]}" > "${k8s_dir}/central.zip"
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
