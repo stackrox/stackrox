@@ -1,5 +1,13 @@
 import { CollectionResponse } from 'services/CollectionsService';
-import { Collection, SelectorField, SelectorEntityType, isSupportedSelectorField } from './types';
+import {
+    Collection,
+    SelectorField,
+    SelectorEntityType,
+    isSupportedSelectorField,
+    ScopedResourceSelector,
+    isByNameSelector,
+    isByLabelSelector,
+} from './types';
 
 const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
     Deployment: 'Deployment',
@@ -12,6 +20,8 @@ const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
     'Cluster Label': 'Cluster',
     'Cluster Annotation': 'Cluster',
 };
+
+const LABEL_SEPARATOR = '=';
 
 /**
  * This function takes a raw `CollectionResponse` from the server and parses it into a representation
@@ -73,8 +83,25 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
                 rules: [],
             };
         }
+        const selector = collection.selectorRules[entity] as ScopedResourceSelector;
 
-        collection.selectorRules[entity]?.rules.push(rule);
+        if (isByLabelSelector(selector)) {
+            const firstValue = rule.values[0]?.value;
+
+            if (firstValue && firstValue.includes(LABEL_SEPARATOR)) {
+                const key = firstValue.split(LABEL_SEPARATOR)[0] ?? '';
+                selector.rules.push({
+                    operator: rule.operator,
+                    key,
+                    values: rule.values.map(({ value }) => value.split('=')[1] ?? ''),
+                });
+            }
+        } else if (isByNameSelector(selector)) {
+            selector.rules.push({
+                operator: rule.operator,
+                values: rule.values.map(({ value }) => value),
+            });
+        }
     });
 
     if (errors.length > 0) {

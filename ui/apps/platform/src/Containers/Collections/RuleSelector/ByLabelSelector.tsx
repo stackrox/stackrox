@@ -3,12 +3,12 @@ import { Flex, Label, FormGroup, FlexItem, Button, Divider } from '@patternfly/r
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
-import { SelectorEntityType, ScopedResourceSelector } from '../types';
+import { SelectorEntityType, ScopedResourceSelector, ByLabelResourceSelector } from '../types';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
 
 export type ByLabelSelectorProps = {
     entityType: SelectorEntityType;
-    scopedResourceSelector: ScopedResourceSelector;
+    scopedResourceSelector: ByLabelResourceSelector;
     handleChange: (
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector | null
@@ -20,53 +20,47 @@ function ByLabelSelector({
     scopedResourceSelector,
     handleChange,
 }: ByLabelSelectorProps) {
-    // TODO Better validation for regex (disallow '=' in user entered values ??)
-    function onChangeLabelKey(resourceSelector, ruleIndex) {
+    function onChangeLabelKey(resourceSelector: ScopedResourceSelector, ruleIndex) {
         return (value: string) => {
             const newSelector = cloneDeep(resourceSelector);
-            const currentValues = newSelector.rules[ruleIndex].values;
-            newSelector.rules[ruleIndex].values = currentValues.map((label) => ({
-                value: label.value.replace(/.*=/, `${value}=`),
-            }));
-            handleChange(entityType, newSelector);
+            const rule = newSelector.rules[ruleIndex];
+            if ('key' in rule) {
+                rule.key = value;
+                handleChange(entityType, newSelector);
+            }
         };
     }
 
     function onChangeLabelValue(resourceSelector, ruleIndex, valueIndex) {
         return (value: string) => {
             const newSelector = cloneDeep(resourceSelector);
-            const targetValue = newSelector.rules[ruleIndex].values[valueIndex].value;
-            newSelector.rules[ruleIndex].values[valueIndex] = {
-                value: targetValue.replace(/=.*/, `=${value}`),
-            };
+            newSelector.rules[ruleIndex].values[valueIndex] = value;
             handleChange(entityType, newSelector);
         };
     }
 
     function onAddLabelRule() {
         const selector = cloneDeep(scopedResourceSelector);
-        const lastRule = selector?.rules[selector?.rules.length - 1];
 
         // Only add a new form row if there are no blank entries
-        if (!lastRule || lastRule.values.every(({ value }) => value === '=')) {
+        if (!selector.rules.every(({ key, values }) => key && values.every((value) => value))) {
             return;
         }
 
-        selector.rules.push({ operator: 'OR', values: [{ value: '=' }] });
+        selector.rules.push({ operator: 'OR', key: '', values: [''] });
         handleChange(entityType, selector);
     }
 
-    function onAddLabelValue(ruleIndex: number, labelKey: string) {
+    function onAddLabelValue(ruleIndex: number) {
         const selector = cloneDeep(scopedResourceSelector);
         const rule = selector?.rules[ruleIndex];
-        const keyPrefix = `${labelKey}=`;
 
         // Only add a new form row if there are no blank entries
-        if (!rule || !rule.values.every(({ value }) => value.replace(keyPrefix, ''))) {
+        if (!rule || !rule.values.every((value) => value)) {
             return;
         }
 
-        rule.values.push({ value: keyPrefix });
+        rule.values.push('');
         handleChange(entityType, selector);
     }
 
@@ -92,9 +86,8 @@ function ByLabelSelector({
     return (
         <>
             {scopedResourceSelector.rules.map((rule, ruleIndex) => {
-                const labelKey = rule.values[0]?.value?.split('=')[0] ?? '';
                 return (
-                    <div key={labelKey}>
+                    <div key={rule.key}>
                         {ruleIndex > 0 && (
                             <Flex
                                 className="pf-u-pt-md pf-u-pb-xl"
@@ -122,7 +115,7 @@ function ByLabelSelector({
                                     isRequired
                                 >
                                     <AutoCompleteSelect
-                                        selectedOption={labelKey}
+                                        selectedOption={rule.key}
                                         onChange={onChangeLabelKey(
                                             scopedResourceSelector,
                                             ruleIndex
@@ -145,11 +138,11 @@ function ByLabelSelector({
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     direction={{ default: 'column' }}
                                 >
-                                    {rule.values.map(({ value }, valueIndex) => (
+                                    {rule.values.map((value, valueIndex) => (
                                         <Flex key={value}>
                                             <AutoCompleteSelect
                                                 className="pf-u-flex-grow-1 pf-u-w-auto"
-                                                selectedOption={value.replace(/.*=/, '')}
+                                                selectedOption={value}
                                                 onChange={onChangeLabelValue(
                                                     scopedResourceSelector,
                                                     ruleIndex,
@@ -171,7 +164,7 @@ function ByLabelSelector({
                                 <Button
                                     className="pf-u-pl-0 pf-u-pt-md"
                                     variant="link"
-                                    onClick={() => onAddLabelValue(ruleIndex, labelKey)}
+                                    onClick={() => onAddLabelValue(ruleIndex)}
                                 >
                                     Add value
                                 </Button>

@@ -59,8 +59,13 @@ export type CollectionFormProps = {
     appendTableLinkAction?: (collectionId: string) => void;
 };
 
-function yupSelectorRuleObjects() {
-    return yup.lazy(({ field }) => {
+function yupSelectorRuleObject() {
+    return yup.lazy((ruleObject) => {
+        if (!ruleObject) {
+            return yup.object().shape({}).nullable();
+        }
+
+        const { field } = ruleObject;
         const valueMatcher =
             typeof field === 'string' && field.endsWith('Label')
                 ? yup.string().trim().required().matches(/.+=.+/)
@@ -112,9 +117,9 @@ function CollectionForm({
             description: yup.string().required(),
             embeddedCollectionIds: yup.array(yup.string()),
             selectorRules: yup.object({
-                Deployment: yupSelectorRuleObjects(),
-                Namespace: yupSelectorRuleObjects(),
-                Cluster: yupSelectorRuleObjects(),
+                Deployment: yupSelectorRuleObject(),
+                Namespace: yupSelectorRuleObject(),
+                Cluster: yupSelectorRuleObject(),
             }),
         }),
     });
