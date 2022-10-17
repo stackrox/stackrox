@@ -341,8 +341,9 @@ func (d *dbCloneManagerImpl) DecommissionRocksDB() {
 		} else if exists {
 			// TODO(ROX-9882): While there is still stuff on the PVC there is an expectation that current
 			// exists in a certain state.  So until we can remove the rest of the components on the PVC, it
-			// is safer to put the contents in an obviously deprecated location.
+			// is safer to put an empty current to ensure everything else starts properly.
 			if k == CurrentClone {
+				dirName := d.GetDirName(CurrentClone)
 				// Get the location Current points to
 				linkTo, err := fileutils.ResolveIfSymlink(dirPath)
 				if err != nil {
@@ -353,21 +354,25 @@ func (d *dbCloneManagerImpl) DecommissionRocksDB() {
 					log.Info("we have already moved to the RocksDB current to be decomissioned")
 					continue
 				}
-				// Remove the migrations versions to ensure we do not try to use this data for migrations
-				migrationVersionPath := filepath.Join(dirPath, migrations.MigrationVersionFile)
-				if err = os.RemoveAll(migrationVersionPath); err != nil {
+				decommissionExists, err := fileutils.Exists(d.getPath(decommissionedCurrent))
+				if err != nil {
 					log.Error(err)
-				}
-				// Move directory: not following link, do not overwrite
-				cmd := exec.Command("mv", linkTo, d.getPath(decommissionedCurrent))
-				if output, err := cmd.CombinedOutput(); err != nil {
-					log.Error(errors.Wrapf(err, "failed to copy current db %s", output))
 					continue
 				}
-				// Remove clone symbolic link only, if exists.
-				_ = os.Remove(d.getPath(CurrentClone))
+				if !decommissionExists {
+					if err := os.Mkdir(d.getPath(decommissionedCurrent), 0755); err != nil {
+						log.Error(err)
+						continue
+					}
+				}
 				// Set the new symbolic link
 				if err := fileutils.AtomicSymlink(decommissionedCurrent, d.getPath(CurrentClone)); err != nil {
+					log.Error(err)
+					continue
+				}
+
+				// Remove the stale database
+				if err := os.RemoveAll(d.getPath(dirName)); err != nil {
 					log.Error(err)
 					continue
 				}
