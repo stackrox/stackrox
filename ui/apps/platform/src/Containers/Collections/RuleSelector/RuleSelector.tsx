@@ -4,8 +4,8 @@ import pluralize from 'pluralize';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import {
-    isByLabelField,
-    isByNameField,
+    isByLabelSelector,
+    isByNameSelector,
     ScopedResourceSelector,
     SelectorEntityType,
 } from '../types';
@@ -42,11 +42,11 @@ function RuleSelector({ entityType, scopedResourceSelector, handleChange }: Rule
             All: null,
             ByName: {
                 field: entityType,
-                rules: [{ operator: 'OR', values: [{ value: '' }] }],
+                rules: [{ operator: 'OR', values: [''] }],
             },
             ByLabel: {
                 field: `${entityType} Label`,
-                rules: [{ operator: 'OR', values: [{ value: '=' }] }],
+                rules: [{ operator: 'OR', key: '', values: [''] }],
             },
         };
 
@@ -58,14 +58,11 @@ function RuleSelector({ entityType, scopedResourceSelector, handleChange }: Rule
 
     if (!scopedResourceSelector || scopedResourceSelector.rules.length === 0) {
         selection = 'All';
-    } else if (isByNameField(scopedResourceSelector.field)) {
+    } else if (isByNameSelector(scopedResourceSelector)) {
         selection = 'ByName';
-    } else if (isByLabelField(scopedResourceSelector.field)) {
+    } else if (isByLabelSelector(scopedResourceSelector)) {
         selection = 'ByLabel';
     }
-
-    const shouldRenderByNameInputs = scopedResourceSelector && selection === 'ByName';
-    const shouldRenderByLabelInputs = scopedResourceSelector && selection === 'ByLabel';
 
     return (
         <div
@@ -85,7 +82,7 @@ function RuleSelector({ entityType, scopedResourceSelector, handleChange }: Rule
                 <SelectOption value="ByLabel">{pluralEntity} with labels matching</SelectOption>
             </Select>
 
-            {shouldRenderByNameInputs && (
+            {isByNameSelector(scopedResourceSelector) && (
                 <ByNameSelector
                     entityType={entityType}
                     scopedResourceSelector={scopedResourceSelector}
@@ -93,7 +90,7 @@ function RuleSelector({ entityType, scopedResourceSelector, handleChange }: Rule
                 />
             )}
 
-            {shouldRenderByLabelInputs && (
+            {isByLabelSelector(scopedResourceSelector) && (
                 <ByLabelSelector
                     entityType={entityType}
                     scopedResourceSelector={scopedResourceSelector}

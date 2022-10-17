@@ -23,21 +23,19 @@ export function isByAnnotationField(field: SelectorField): field is ByAnnotation
     return byAnnotationRegExp.test(field);
 }
 
-type BaseSelectorRule = {
-    fieldName: SelectorField;
-    values: { value: string }[];
+/**
+ * A valid server side `SelectorRule` can use either 'AND' or 'OR' operations to resolve values, but
+ * the current UI implementation only supports 'OR'.
+ */
+export type NameSelectorRule = {
+    operator: 'OR';
+    values: string[];
 };
 
-export type DisjunctionSelectorRule = BaseSelectorRule & { operator: 'OR' };
-export type ConjunctionSelectorRule = BaseSelectorRule & { operator: 'AND' };
-/**
- * A valid `SelectorRule` can use either 'AND' or 'OR' operations to resolve values, but
- * since the current UI implementation only supports 'OR', we need to maintain separate types here.
- */
-export type SelectorRule = DisjunctionSelectorRule | ConjunctionSelectorRule;
-
-export type ResourceSelector = {
-    rules: SelectorRule[];
+export type LabelSelectorRule = {
+    operator: 'OR';
+    key: string;
+    values: string[];
 };
 
 /**
@@ -49,15 +47,27 @@ export function isSupportedSelectorField(field: SelectorField): field is Support
     return isByNameField(field) || isByLabelField(field);
 }
 
-/**
- * This type extracts the `fieldName` property from the individual rules and groups them
- * using a single `field` property due to the UI only supporting a single field per entity
- * type in collection rules.
- */
-export type ScopedResourceSelector = {
-    field: SupportedSelectorField;
-    rules: Omit<DisjunctionSelectorRule, 'fieldName'>[];
+export type ByNameResourceSelector = {
+    field: ByNameSelectorField;
+    rules: NameSelectorRule[];
 };
+export type ByLabelResourceSelector = {
+    field: ByLabelSelectorField;
+    rules: LabelSelectorRule[];
+};
+export type ScopedResourceSelector = ByNameResourceSelector | ByLabelResourceSelector;
+
+export function isByNameSelector(
+    selector: ScopedResourceSelector | null
+): selector is ByNameResourceSelector {
+    return selector !== null && isByNameField(selector.field);
+}
+
+export function isByLabelSelector(
+    selector: ScopedResourceSelector | null
+): selector is ByLabelResourceSelector {
+    return selector !== null && isByLabelField(selector.field);
+}
 
 export type ScopedResourceSelectorRule = ScopedResourceSelector['rules'][number];
 

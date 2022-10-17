@@ -4,11 +4,11 @@ import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
 import { AutoCompleteSelect } from './AutoCompleteSelect';
-import { ScopedResourceSelector, SelectorEntityType } from '../types';
+import { ByNameResourceSelector, ScopedResourceSelector, SelectorEntityType } from '../types';
 
 export type ByNameSelectorProps = {
     entityType: SelectorEntityType;
-    scopedResourceSelector: ScopedResourceSelector;
+    scopedResourceSelector: ByNameResourceSelector;
     handleChange: (
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector | null
@@ -21,18 +21,18 @@ function ByNameSelector({ entityType, scopedResourceSelector, handleChange }: By
         const rule = selector?.rules[0];
 
         // Only add a new form row if there are no blank entries
-        if (!rule || !rule.values.every(({ value }) => value)) {
+        if (!rule || !rule.values.every((value) => value)) {
             return;
         }
 
-        selector.rules[0].values.push({ value: '' });
+        selector.rules[0].values.push('');
         handleChange(entityType, selector);
     }
 
     function onChangeValue(resourceSelector, ruleIndex, valueIndex) {
         return (value: string) => {
             const newSelector = cloneDeep(resourceSelector);
-            newSelector.rules[ruleIndex].values[valueIndex] = { value };
+            newSelector.rules[ruleIndex].values[valueIndex] = value;
             handleChange(entityType, newSelector);
         };
     }
@@ -60,7 +60,7 @@ function ByNameSelector({ entityType, scopedResourceSelector, handleChange }: By
     return (
         <FormGroup label={`${entityType} name`} isRequired>
             <Flex spaceItems={{ default: 'spaceItemsSm' }} direction={{ default: 'column' }}>
-                {scopedResourceSelector.rules[0]?.values.map(({ value }, index) => (
+                {scopedResourceSelector.rules[0]?.values.map((value, index) => (
                     <Flex key={value}>
                         <AutoCompleteSelect
                             typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} name`}
