@@ -30,7 +30,7 @@ function DeploymentRuleSelector({ defaultSelector, onChange }) {
 
 describe('Collection RuleSelector component', () => {
     it('Should render "All entities" option when selector is null', async () => {
-        let resourceSelector: ScopedResourceSelector | null = null;
+        let resourceSelector: ScopedResourceSelector = {};
 
         function onChange(newSelector) {
             resourceSelector = newSelector;
@@ -53,7 +53,7 @@ describe('Collection RuleSelector component', () => {
             resourceSelector = newSelector;
         }
 
-        render(<DeploymentRuleSelector defaultSelector={resourceSelector} onChange={onChange} />);
+        render(<DeploymentRuleSelector defaultSelector={{}} onChange={onChange} />);
 
         await user.click(screen.getByLabelText('Select deployments by name or label'));
         await user.click(screen.getByText('Deployments with names matching'));
@@ -70,7 +70,6 @@ describe('Collection RuleSelector component', () => {
         expect(typeAheadInput).toHaveValue('visa-processor');
 
         // Attempt to add multiple blank values
-        await user.click(screen.getByText('Add value'));
         await user.click(screen.getByText('Add value'));
         await user.click(screen.getByText('Add value'));
 
@@ -103,7 +102,7 @@ describe('Collection RuleSelector component', () => {
         await user.click(screen.getByLabelText('Delete visa-processor'));
         await user.click(screen.getByLabelText('Delete discover-processor'));
 
-        expect(resourceSelector).toBeNull();
+        expect(resourceSelector).toEqual({});
         expect(screen.getByText('All deployments')).toBeInTheDocument();
     });
 });

@@ -128,7 +128,7 @@ function CollectionForm({
             name: yup.string().trim().required(),
             description: yup.string().required(),
             embeddedCollectionIds: yup.array(yup.string()),
-            selectorRules: yup.object({
+            selectorRules: yup.object().shape({
                 Deployment: yupSelectorRuleObject(),
                 Namespace: yupSelectorRuleObject(),
                 Cluster: yupSelectorRuleObject(),
