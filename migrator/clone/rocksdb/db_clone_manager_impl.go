@@ -3,7 +3,6 @@ package rocksdb
 import (
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"time"
 
@@ -17,6 +16,10 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
+)
+
+const (
+	decommissionedCurrent = ".central.internal.database.decommissioned.roll.back.not.supported"
 )
 
 // dbCloneManagerImpl - scans and manage database clones within central.
@@ -343,12 +346,27 @@ func (d *dbCloneManagerImpl) DecommissionRocksDB() {
 					log.Error(err)
 					continue
 				}
-				for _, d := range dir {
-					log.Infof("Removing %q", d.Name())
-					if err = os.RemoveAll(path.Join([]string{dirPath, d.Name()}...)); err != nil {
-						log.Error(err)
-						continue
-					}
+				log.Infof("SHREWS -- curent dir = %q", dir)
+				// Remove the migrations versions to ensure we do not try to use this data for migrations
+				migrationVersionPath := filepath.Join(dirPath, migrations.MigrationVersionFile)
+				if err = os.RemoveAll(migrationVersionPath); err != nil {
+					log.Error(err)
+				}
+				// Move the data to the decommissioned rocks directory and point current there.
+				linkTo, err := fileutils.ResolveIfSymlink(dirPath)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+				log.Infof("SHREWS -- linked dir = %q", linkTo)
+				err = os.Rename(linkTo, decommissionedCurrent)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+				if err := fileutils.AtomicSymlink(dirPath, decommissionedCurrent); err != nil {
+					log.Error(err)
+					continue
 				}
 			} else {
 				log.Infof("Removing database %s", dirPath)
