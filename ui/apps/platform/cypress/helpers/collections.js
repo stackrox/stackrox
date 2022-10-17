@@ -1,0 +1,42 @@
+import navSelectors from '../selectors/navigation';
+
+import { visitFromLeftNavExpandable } from './nav';
+import { visit } from './visit';
+
+// visit
+
+const basePath = '/main/collections';
+
+export const collectionsAlias = 'collections';
+export const collectionsCountAlias = 'collections/count';
+
+const routeConfigForCollections = {
+    routeMatcherMap: {
+        [collectionsAlias]: {
+            method: 'GET',
+            url: '/v1/collections',
+        },
+        [collectionsCountAlias]: {
+            method: 'GET',
+            url: '/v1/collections/count',
+        },
+    },
+};
+
+export function visitCollections(staticResponseMap) {
+    visit(basePath, routeConfigForCollections, staticResponseMap);
+
+    cy.get('h1:contains("Collections")');
+    cy.get(`${navSelectors.navExpandable}:contains("Platform Configuration")`);
+    cy.get(`${navSelectors.nestedNavLinks}:contains("Collections")`).should(
+        'have.class',
+        'pf-m-current'
+    );
+}
+
+export function visitCollectionsFromLeftNav() {
+    visitFromLeftNavExpandable('Platform Configuration', 'Collections', routeConfigForCollections);
+
+    cy.get('h1:contains("Collections")');
+    cy.location('pathname').should('eq', basePath);
+}
