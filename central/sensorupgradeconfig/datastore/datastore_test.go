@@ -52,7 +52,6 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil)
 	var err error
 	s.dataStore, err = New(s.storage)
 	s.Require().NoError(err)
