@@ -404,8 +404,5 @@ func getNodeCVEResolvers(ctx context.Context, root *Resolver, os string, vulns [
 	for _, resolver := range resolvers {
 		resolverI = append(resolverI, resolver)
 	}
-	ret, err := paginationWrapper{
-		pv: query.GetPagination(),
-	}.paginate(resolverI, nil)
-	return ret.([]NodeVulnerabilityResolver), err
+	return paginate(query.GetPagination(), resolverI, nil)
 }

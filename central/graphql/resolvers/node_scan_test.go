@@ -10,7 +10,7 @@ import (
 	nodeDSMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
 	nodeComponentsDSMocks "github.com/stackrox/rox/central/nodecomponent/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/search"
@@ -66,9 +66,9 @@ type NodeScanResolverTestSuite struct {
 
 func (s *NodeScanResolverTestSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}

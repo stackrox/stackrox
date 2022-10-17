@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/require"
@@ -58,10 +58,10 @@ const (
 
 func BenchmarkNodeResolver(b *testing.B) {
 	envIsolator := envisolator.NewEnvIsolator(b)
-	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	defer envIsolator.RestoreAll()
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		b.Skip("Skip postgres store tests")
 		b.SkipNow()
 	}

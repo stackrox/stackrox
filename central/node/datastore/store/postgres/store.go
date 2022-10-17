@@ -65,9 +65,6 @@ type Store interface {
 	// GetNodeMetadata and GetManyNodeMetadata returns the node without scan/component data.
 	GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error)
 	GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {

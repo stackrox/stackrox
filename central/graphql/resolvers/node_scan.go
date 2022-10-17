@@ -84,8 +84,5 @@ func getNodeComponentResolvers(ctx context.Context, root *Resolver, nodeScan *st
 	for _, resolver := range resolvers {
 		resolverI = append(resolverI, resolver)
 	}
-	ret, err := paginationWrapper{
-		pv: query.GetPagination(),
-	}.paginate(resolverI, nil)
-	return ret.([]NodeComponentResolver), err
+	return paginate(query.GetPagination(), resolverI, nil)
 }

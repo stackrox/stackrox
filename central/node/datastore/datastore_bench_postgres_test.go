@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -26,10 +26,10 @@ import (
 
 func BenchmarkGetManyNodes(b *testing.B) {
 	envIsolator := envisolator.NewEnvIsolator(b)
-	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	defer envIsolator.RestoreAll()
 
-	if !features.PostgresDatastore.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		b.Skip("Skip postgres store tests")
 		b.SkipNow()
 	}
