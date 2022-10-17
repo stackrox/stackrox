@@ -13,7 +13,7 @@ class ApplicationHealth {
     Integer waitTimeForHealthiness
     final Integer delayBetweenChecks = 5
     final Map<String, String> readyLogMessages = [
-            "collector": "GRPC server connectivity is successful",
+            "collector": "Sensor connectivity is successful",
             "sensor": "TLS-enabled multiplexed HTTP/gRPC server listening on",
     ]
 
