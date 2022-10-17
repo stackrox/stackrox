@@ -98,7 +98,7 @@ class ReconciliationTest extends BaseSpecification {
         }
     }
 
-    @Category(SensorBounce, COMPATIBILITY)
+    @Category([SensorBounce, COMPATIBILITY])
     def "Verify the Sensor reconciles after being restarted"() {
         // RS-361 - Fails on OSD. Need help troubleshooting. Disabling for now.
         Assume.assumeFalse(ClusterService.isOpenShift3())

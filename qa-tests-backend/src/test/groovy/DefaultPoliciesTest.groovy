@@ -412,7 +412,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 //                 []
     }
 
-    @Category(BAT, COMPATIBILITY)
+    @Category([BAT, COMPATIBILITY])
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"
@@ -508,7 +508,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return total
     }
 
-    @Category(BAT, COMPATIBILITY)
+    @Category([BAT, COMPATIBILITY])
     def "Verify that alert counts API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()
@@ -542,7 +542,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return m
     }
 
-    @Category(BAT, COMPATIBILITY)
+    @Category([BAT, COMPATIBILITY])
     def "Verify that alert groups API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()

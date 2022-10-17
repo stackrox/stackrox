@@ -14,7 +14,7 @@ import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
 
-@Category(BAT, COMPATIBILITY)
+@Category([BAT, COMPATIBILITY])
 class DiagnosticBundleTest extends BaseSpecification {
 
     @Shared

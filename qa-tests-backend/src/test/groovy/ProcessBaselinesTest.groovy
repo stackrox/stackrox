@@ -200,7 +200,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     */
 
     @Unroll
-    @Category(BAT, COMPATIBILITY)
+    @Category([BAT, COMPATIBILITY])
     def "Verify baseline process violation after resolve baseline on #deploymentName"() {
                /*
                     a)Lock the processes in the baseline for the key

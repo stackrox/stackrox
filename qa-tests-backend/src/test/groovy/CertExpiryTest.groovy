@@ -4,7 +4,7 @@ import org.junit.experimental.categories.Category
 import services.CredentialExpiryService
 import util.Cert
 
-@Category(BAT, COMPATIBILITY)
+@Category([BAT, COMPATIBILITY])
 class CertExpiryTest extends BaseSpecification {
 
     def "Test Central cert expiry"() {

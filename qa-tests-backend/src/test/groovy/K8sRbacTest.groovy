@@ -51,7 +51,7 @@ class K8sRbacTest extends BaseSpecification {
         orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
     }
 
-    @Category(BAT, COMPATIBILITY)
+    @Category([BAT, COMPATIBILITY])
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null
@@ -93,7 +93,7 @@ class K8sRbacTest extends BaseSpecification {
         }
     }
 
-    @Category(BAT, COMPATIBILITY)
+    @Category([BAT, COMPATIBILITY])
     def "Add Service Account and verify it gets scraped"() {
         given:
         "create a new service account"

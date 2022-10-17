@@ -7,7 +7,7 @@ import org.junit.experimental.categories.Category
 import services.AuthService
 import services.BaseService
 
-@Category(BAT, COMPATIBILITY)
+@Category([BAT, COMPATIBILITY])
 class AuthServiceTest extends BaseSpecification {
 
     private static Map<String, List<String>> getAttrMap(List<AuthServiceOuterClass.UserAttribute> attrList) {

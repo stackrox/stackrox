@@ -25,7 +25,7 @@ class SecretsTest extends BaseSpecification {
         return deploy
     }
 
-    @Category(BAT, COMPATIBILITY)
+    @Category([BAT, COMPATIBILITY])
     def "Verify the secret api can return the secret's information when adding a new secret"() {
         when:
         "Create a Secret"
