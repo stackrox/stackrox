@@ -1,5 +1,5 @@
 import React from 'react';
-import { Select } from '@patternfly/react-core';
+import { Select, ValidatedOptions } from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 export type AutoCompleteSelectProps = {
@@ -7,6 +7,7 @@ export type AutoCompleteSelectProps = {
     className?: string;
     typeAheadAriaLabel?: string;
     onChange: (value: string) => void;
+    validated: ValidatedOptions;
 };
 
 /* TODO Implement autocompletion */
@@ -15,6 +16,7 @@ export function AutoCompleteSelect({
     className = '',
     typeAheadAriaLabel,
     onChange,
+    validated,
 }: AutoCompleteSelectProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
 
@@ -26,6 +28,7 @@ export function AutoCompleteSelect({
     return (
         <>
             <Select
+                validated={validated}
                 typeAheadAriaLabel={typeAheadAriaLabel}
                 className={className}
                 variant="typeahead"
