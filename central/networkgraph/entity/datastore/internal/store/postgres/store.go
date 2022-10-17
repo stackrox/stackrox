@@ -468,7 +468,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkEntity
 	if ok, err := permissionCheckerSingleton().WalkAllowed(ctx); err != nil || !ok {
 		return err
 	}
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.NetworkEntity](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -479,11 +479,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkEntity
 			return pgutils.ErrNilIfNoRows(err)
 		}
 		for _, data := range rows {
-			var msg storage.NetworkEntity
-			if err := msg.Unmarshal(data); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+			if err := fn(data); err != nil {
 				return err
 			}
 		}
