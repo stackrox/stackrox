@@ -189,6 +189,7 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string, unsup
 	}
 	if unsupportedRocks {
 		require.Error(m.t, err, metadata.ErrUnsupportedDatabase)
+		return
 	}
 	require.NoError(m.t, err)
 	if breakPoint == breakAfterScan {
