@@ -135,6 +135,9 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 //                                                                            //
 
 func displayPermissionSet(ps *storage.PermissionSet) {
+        if ps == nil {
+		log.Info("Empty permission set")
+	}
 	var sb strings.Builder
 	sb.WriteString("Permission set ID [")
 	sb.WriteString(ps.GetId())
@@ -158,9 +161,9 @@ func (ds *dataStoreImpl) GetPermissionSet(ctx context.Context, id string) (*stor
 		return nil, false, err
 	}
 
-	ps := ds.permissionSetStorage.Get(ctx, id)
+	ps, found, err := ds.permissionSetStorage.Get(ctx, id)
 	displayPermissionSet(ps)
-	return ps
+	return ps, found, err
 }
 
 func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.PermissionSet, error) {
