@@ -51,6 +51,22 @@ describe('Network Baseline Flows', () => {
     });
 
     describe('Active Network Flows', () => {
+        it('should show table column headings', () => {
+            visitNetworkGraphWithNamespaceFilter('stackrox');
+
+            cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
+                clickOnDeploymentNodeByName(cytoscape, 'central');
+
+                cy.get('th:contains("Entity")');
+                cy.get('th:contains("Traffic")');
+                cy.get('th:contains("Type")');
+                cy.get('th:contains("Namespace")');
+                cy.get('th:contains("State")');
+                cy.get('th:contains("Protocol")');
+                cy.get('th:contains("Port")');
+            });
+        });
+
         it('should show anomalous flows section above the baseline flows', () => {
             visitNetworkGraphWithNamespaceFilter('stackrox');
 

@@ -16,7 +16,6 @@ import {
     visitNetworkGraphWithMockedData,
     visitNetworkGraphWithNamespaceFilter,
 } from '../../helpers/networkGraph';
-import { hasFeatureFlag } from '../../helpers/features';
 
 function uploadYAMLFile(fileName, selector) {
     cy.intercept('POST', api.network.simulate).as('postNetworkPolicySimulate');
@@ -94,12 +93,9 @@ describe('Network page', () => {
         // Stop here because after Policies processed, local deployment differs from CI.
     });
 
-    it('should show the network policy simulator screen after generating network policies', function () {
-        if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
+    it('should show the network policy simulator screen after generating network policies', () => {
         visitRiskDeployments();
-        viewRiskDeploymentByName('central');
+        viewRiskDeploymentByName('sensor');
         viewRiskDeploymentInNetworkGraph();
 
         cy.get(networkPageSelectors.networkEntityTabbedOverlay.header).should('be.visible');
@@ -117,16 +113,15 @@ describe('Network page', () => {
 describe('Network Deployment Details', () => {
     withAuth();
 
-    it('should show the deployment name and namespace', function () {
-        if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
+    it('should show the deployment name and namespace', () => {
+        const deploymentName = 'sensor';
+
         visitRiskDeployments();
-        viewRiskDeploymentByName('central');
+        viewRiskDeploymentByName(deploymentName);
         viewRiskDeploymentInNetworkGraph();
 
         cy.get(`${selectors.tab.tabs}:contains('Details')`).click();
-        cy.get(`[data-testid="Deployment Name"]:contains('central')`);
+        cy.get(`[data-testid="Deployment Name"]:contains('${deploymentName}')`);
         cy.get(`[data-testid="Namespace"]:contains('stackrox')`);
     });
 });
@@ -171,28 +166,5 @@ describe('Network Policy Simulator', () => {
                 });
             });
         });
-    });
-});
-
-describe('Network Flows Table', () => {
-    withAuth();
-
-    it('should show the proper table column headers for the network flows table', function () {
-        if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-        visitRiskDeployments();
-        viewRiskDeploymentByName('central');
-        viewRiskDeploymentInNetworkGraph();
-
-        cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
-        cy.get(`${selectors.table.th}:contains('Entity')`);
-        cy.get(`${selectors.table.th}:contains('Traffic')`);
-        cy.get(`${selectors.table.th}:contains('Type')`);
-        cy.get(`${selectors.table.th}:contains('Namespace')`);
-        cy.get(`${selectors.table.th}:contains('State')`);
-
-        cy.get(`${selectors.table.th}:contains('Protocol')`);
-        cy.get(`${selectors.table.th}:contains('Port')`);
     });
 });
