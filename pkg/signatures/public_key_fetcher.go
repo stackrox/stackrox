@@ -223,12 +223,12 @@ func checkIfErrorContainsCode(err error, codes ...int) bool {
 
 	// Transport error is returned by go-containerregistry for any errors occurred post authentication.
 	if errors.As(err, &transportErr) {
-		return sliceutils.IntFind(codes, transportErr.StatusCode) != -1
+		return sliceutils.Find(codes, transportErr.StatusCode) != -1
 	}
 
 	// HttpStatusError is returned by heroku-client for any errors occurred during authentication.
 	if errors.As(err, &statusError) && statusError.Response != nil {
-		return sliceutils.IntFind(codes, statusError.Response.StatusCode) != -1
+		return sliceutils.Find(codes, statusError.Response.StatusCode) != -1
 	}
 
 	return false

@@ -144,7 +144,7 @@ func TestNoSACApplyWithoutIdentity(t *testing.T) {
 				if all {
 					assert.Equal(t, c.expectedKeys, c.keys)
 				} else {
-					assert.Equal(t, c.expectedKeys, sliceutils.StringSelect(c.keys, filteredIndices...))
+					assert.Equal(t, c.expectedKeys, sliceutils.Select(c.keys, filteredIndices...))
 				}
 			})
 		})

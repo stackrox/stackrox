@@ -93,7 +93,7 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		return nil, errors.Wrap(err, "unable to fetch roles")
 	}
 	if len(missingIndices) > 0 {
-		return nil, errors.Wrapf(errox.InvalidArgs, "role(s) %s don't exist", strings.Join(sliceutils.StringSelect(req.GetRoles(), missingIndices...), ","))
+		return nil, errors.Wrapf(errox.InvalidArgs, "role(s) %s don't exist", strings.Join(sliceutils.Select(req.GetRoles(), missingIndices...), ","))
 	}
 
 	id, err := authn.IdentityFromContext(ctx)

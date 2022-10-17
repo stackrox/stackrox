@@ -217,7 +217,7 @@ func loadGraphIntoMem(dbFactory transactions.DBTransactionFactory, graphPrefix [
 		if err != nil {
 			return err
 		}
-		initial.SetRefs(sliceutils.ByteClone(k), sk)
+		initial.SetRefs(sliceutils.ShallowClone(k), sk)
 		return nil
 	})
 	if err != nil {
