@@ -200,7 +200,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     */
 
     @Unroll
-    @Category(BAT)
+    @Category(BAT, COMPATIBILITY)
     def "Verify baseline process violation after resolve baseline on #deploymentName"() {
                /*
                     a)Lock the processes in the baseline for the key
@@ -431,7 +431,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT, COMPATIBILITY)
+    @Category(BAT)
     def "Processes come in after baseline deleted by API for #deploymentName"() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }

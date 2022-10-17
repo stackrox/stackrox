@@ -10,7 +10,7 @@ import spock.lang.Unroll
 class GraphQLResourcePaginationTest extends BaseSpecification {
 
     @Unroll
-    @Category(BAT, COMPATIBILITY)
+    @Category(BAT)
     def "Verify graphql/sublist pagination #topResource #topLevelQuery #topLevelSortOption #subResource"() {
         given:
         "Ensure on GKE"
@@ -72,7 +72,7 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT, COMPATIBILITY)
+    @Category(BAT)
     def "Verify graphql pagination and sublist pagination for namespaces #topLevelQuery #subResource"() {
         given:
         "Check on GKE"

@@ -163,7 +163,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, SMOKE, COMPATIBILITY])
+    @Category([BAT, SMOKE])
     def "Verify policy #policyName is triggered" (String policyName, String deploymentName,
                                                   String testId) {
         when:
@@ -239,7 +239,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         waitForViolation(K8S_DASHBOARD,  "Kubernetes Dashboard Deployed", 30)
     }
 
-    @Category(BAT)
+    @Category(BAT, COMPATIBILITY)
     @Retry(count = 0)
     @IgnoreIf({ Env.CI_TAG == null || !Env.CI_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {
@@ -412,7 +412,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 //                 []
     }
 
-    @Category(BAT)
+    @Category(BAT, COMPATIBILITY)
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"

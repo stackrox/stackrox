@@ -4,6 +4,7 @@ import static Services.roxDetectedDeployment
 import static Services.updatePolicy
 import static Services.updatePolicyToExclusionDeployment
 import groups.BAT
+import groups.COMPATIBILITY
 import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ProcessIndicatorOuterClass.ProcessIndicator
@@ -107,7 +108,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
     }
 */
 
-    @Category(BAT)
+    @Category(BAT, COMPATIBILITY)
     def "Verify runtime excluded scope lifecycle"() {
         setup:
         "Create the deployment, verify that policy exists"
@@ -177,7 +178,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         }
     }
 
-    @Category(BAT)
+    @Category(BAT, COMPATIBILITY)
     def "Verify runtime alert remains after deletion"() {
         setup:
         "Create the deployment, verify that policy exists"
