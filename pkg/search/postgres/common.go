@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -714,32 +715,13 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	})
 }
 
-// RunGetQueryForSchema executes a request for just the search against the database
-func RunGetQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) ([]byte, error) {
-	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
-	if err != nil {
-		return nil, err
-	}
-	if query == nil {
-		return nil, emptyQueryErr
-	}
-	queryStr := query.AsSQL()
-
-	return pgutils.Retry2(func() ([]byte, error) {
-		var data []byte
-		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
-		if err := row.Scan(&data); err != nil {
-			return nil, err
-		}
-		return data, nil
-	})
+type unmarshaler[T any] interface {
+	proto.Unmarshaler
+	*T
 }
 
 // RunGetQueryForSchemaType executes a request for just the search against the database
-func RunGetQueryForSchemaType[T any, PT interface {
-	Unmarshal([]byte) error
-	*T
-}](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (*T, error) {
+func RunGetQueryForSchemaType[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (*T, error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, err
@@ -764,30 +746,8 @@ func RunGetQueryForSchemaType[T any, PT interface {
 	})
 }
 
-func retryableRunGetManyQueryForSchema(ctx context.Context, query *query, db *pgxpool.Pool) ([][]byte, error) {
-	queryStr := query.AsSQL()
-	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var results [][]byte
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, err
-		}
-		results = append(results, data)
-	}
-	return results, nil
-}
-
 // RunGetManyQueryForSchemaType executes a request for just the search against the database and unmarshal it to given type.
-func RunGetManyQueryForSchemaType[T any, PT interface {
-	Unmarshal([]byte) error
-	*T
-}](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) ([]*T, error) {
+func RunGetManyQueryForSchemaType[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) ([]*T, error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, err
@@ -801,10 +761,7 @@ func RunGetManyQueryForSchemaType[T any, PT interface {
 	})
 }
 
-func retryableRunGetManyQueryForSchemaType[T any, PT interface {
-	Unmarshal([]byte) error
-	*T
-}](ctx context.Context, query *query, db *pgxpool.Pool) ([]*T, error) {
+func retryableRunGetManyQueryForSchemaType[T any, PT unmarshaler[T]](ctx context.Context, query *query, db *pgxpool.Pool) ([]*T, error) {
 	var results []*T
 
 	queryStr := query.AsSQL()
@@ -830,78 +787,8 @@ func retryableRunGetManyQueryForSchemaType[T any, PT interface {
 	return results, nil
 }
 
-// RunGetManyQueryForSchema executes a request for just the search against the database
-func RunGetManyQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) ([][]byte, error) {
-	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
-	if err != nil {
-		return nil, err
-	}
-	if query == nil {
-		return nil, emptyQueryErr
-	}
-
-	return pgutils.Retry2(func() ([][]byte, error) {
-		return retryableRunGetManyQueryForSchema(ctx, query, db)
-	})
-}
-
-// RunCursorQueryForSchema creates a cursor against the database
-func RunCursorQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (fetcher func(n int) ([][]byte, error), closer func(), err error) {
-	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "error creating query")
-	}
-	if query == nil {
-		return nil, nil, emptyQueryErr
-	}
-
-	queryStr := query.AsSQL()
-
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating transaction")
-	}
-	closer = func() {
-		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("error committing cursor transaction: %v", err)
-		}
-	}
-
-	cursor, err := random.GenerateString(16, random.CaseInsensitiveAlpha)
-	if err != nil {
-		closer()
-		return nil, nil, errors.Wrap(err, "creating cursor name")
-	}
-	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
-	if err != nil {
-		closer()
-		return nil, nil, errors.Wrap(err, "creating cursor")
-	}
-
-	return func(n int) ([][]byte, error) {
-		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", n, cursor))
-		if err != nil {
-			return nil, errors.Wrap(err, "advancing in cursor")
-		}
-		defer rows.Close()
-
-		var results [][]byte
-		for rows.Next() {
-			var data []byte
-			if err := rows.Scan(&data); err != nil {
-				return nil, errors.Wrap(err, "scanning row")
-			}
-			results = append(results, data)
-		}
-		return results, nil
-	}, closer, nil
-}
-
 // RunCursorQueryForSchemaType creates a cursor against the database
-func RunCursorQueryForSchemaType[T any, PT interface {
-	Unmarshal([]byte) error
-	*T
-}](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (fetcher func(n int) ([]*T, error), closer func(), err error) {
+func RunCursorQueryForSchemaType[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (fetcher func(n int) ([]*T, error), closer func(), err error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error creating query")
