@@ -16,6 +16,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
@@ -77,6 +78,7 @@ type localSensorConfig struct {
 	Delay              time.Duration
 	PoliciesFile       string
 	FakeWorkloadFile   string
+	WithMetrics        bool
 }
 
 const (
@@ -139,6 +141,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		CreateMode:         k8s.Delay,
 		PoliciesFile:       "",
 		FakeWorkloadFile:   "",
+		WithMetrics:        false,
 	}
 	flag.BoolVar(&sensorConfig.Verbose, "verbose", sensorConfig.Verbose, "prints all messages to stdout as well as to the output file")
 	flag.DurationVar(&sensorConfig.Duration, "duration", sensorConfig.Duration, "duration that the scenario should run (leave it empty to run it without timeout)")
@@ -152,6 +155,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.DurationVar(&sensorConfig.Delay, "delay", sensorConfig.Delay, "create events with a given delay")
 	flag.StringVar(&sensorConfig.PoliciesFile, "with-policies", sensorConfig.PoliciesFile, " a file containing a list of policies")
 	flag.StringVar(&sensorConfig.FakeWorkloadFile, "with-fakeworkload", sensorConfig.FakeWorkloadFile, " a file containing a FakeWorkload definition")
+	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
@@ -199,6 +203,11 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
 	localConfig := mustGetCommandLineArgs()
+	if localConfig.WithMetrics {
+		// Start the prometheus metrics server
+		metrics.NewDefaultHTTPServer().RunForever()
+		metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
+	}
 	var fakeClient client.Interface
 	fakeClient, err := k8s.MakeOutOfClusterClient()
 	// when replying a trace, there is no need to connect to K8s cluster
