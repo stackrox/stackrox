@@ -1334,6 +1334,11 @@ __EOM__
 }
 '
 
+    local slack_attachments = junit2slack
+    if [[ "${slack_attachments}" != "" ]]; then
+        body = jq '.attachments |= .+ $slack_attachments' body
+    fi
+
     payload="$(jq --null-input \
       --arg job_name "$job_name" \
       --arg commit_url "$commit_url" \
@@ -1431,6 +1436,22 @@ To use with deploy scripts, first \`export MAIN_IMAGE_TAG={{.Env._TAG}}\`.
 EOT
 
     hub-comment -type build -template-file "$tmpfile"
+}
+
+junit2slack() {
+    info "Converting junit failures to slack attachments"
+
+    if [[ -z "${ARTIFACT_DIR}" ]]; then
+        info "Warning: junit2slack() requires an ARTIFACT_DIR"
+        return
+    fi
+
+    local junit_file_names
+    junit_file_names=$(find "${ARTIFACT_DIR}" -type f -name 'junit-*.xml' | xargs)
+
+    pushd "$SCRIPTS_ROOT/scripts/ci/junit2slack" || return
+    go run main.go "$junit_file_names"
+    popd
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
