@@ -334,7 +334,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Netwo
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchemaType[storage.NetworkGraphConfig](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -345,12 +345,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Netwo
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.NetworkGraphConfig)
-	for _, data := range rows {
-		msg := &storage.NetworkGraphConfig{}
-		if err := msg.Unmarshal(data); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.NetworkGraphConfig, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))

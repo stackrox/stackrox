@@ -34,6 +34,7 @@ var (
 )
 
 // QueryType describe what type of query to execute
+//
 //go:generate stringer -type=QueryType
 type QueryType int
 
@@ -749,6 +750,53 @@ func retryableRunGetManyQueryForSchema(ctx context.Context, query *query, db *pg
 			return nil, err
 		}
 		results = append(results, data)
+	}
+	return results, nil
+}
+
+// RunGetManyQueryForSchemaType executes a request for just the search against the database and unmarshal it to given type.
+func RunGetManyQueryForSchemaType[T any, PT interface {
+	Unmarshal([]byte) error
+	*T
+}](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) ([]*T, error) {
+	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	if err != nil {
+		return nil, err
+	}
+	if query == nil {
+		return nil, emptyQueryErr
+	}
+
+	return pgutils.Retry2(func() ([]*T, error) {
+		return retryableRunGetManyQueryForSchemaType[T, PT](ctx, query, db)
+	})
+}
+
+func retryableRunGetManyQueryForSchemaType[T any, PT interface {
+	Unmarshal([]byte) error
+	*T
+}](ctx context.Context, query *query, db *pgxpool.Pool) ([]*T, error) {
+	var results []*T
+
+	queryStr := query.AsSQL()
+	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var data []byte
+	for rows.Next() {
+		if err := rows.Scan(&data); err != nil {
+			return nil, err
+		}
+
+		msg := PT(new(T))
+
+		if err := msg.Unmarshal(data); err != nil {
+			return nil, err
+		}
+		results = append(results, (*T)(msg))
 	}
 	return results, nil
 }

@@ -777,7 +777,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
         search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
     )
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchemaType[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -788,12 +788,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[{{$singlePK.Type}}]*{{.Type}})
-    for _, data := range rows {
-		msg := &{{.Type}}{}
-		if err := msg.Unmarshal(data); err != nil {
-		    return nil, nil, err
-		}
+	resultsByID := make(map[{{$singlePK.Type}}]*{{.Type}}, len(rows))
+    for _, msg := range rows {
 		resultsByID[{{$singlePK.Getter "msg"}}] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -853,22 +849,14 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
         query,
     )
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchemaType[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 		    return nil, nil
 		}
 		return nil, err
 	}
-	var results []*{{.Type}}
-    for _, data := range rows {
-		msg := &{{.Type}}{}
-		if err := msg.Unmarshal(data); err != nil {
-		    return nil, err
-		}
-		results = append(results, msg)
-	}
-	return results, nil
+	return rows, nil
 }
 {{- end }}
 
