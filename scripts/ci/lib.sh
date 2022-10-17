@@ -39,6 +39,47 @@ ci_exit_trap() {
         info "Holding this job for debug"
         sleep 60
     done
+
+    handle_dangling_processes
+}
+
+# handle_dangling_processes() - The OpenShift CI ci-operator will not complete a
+# test job if there are processes remaining that were started by the job. While
+# processes _should_ be cleaned up by their creators it is common that some are
+# not, so this exists as a fail safe.
+handle_dangling_processes() {
+    info "Process state at exit:"
+    ps -e -O ppid
+
+    local psline this_pid pid
+    ps -e -O ppid | while read -r psline; do
+        # trim leading whitespace
+        psline="$(echo "$psline" | xargs)"
+        if [[ "$psline" =~ ^PID ]]; then
+            # Ignoring header
+            continue
+        fi
+        this_pid="$$"
+        if [[ "$psline" =~ ^$this_pid ]]; then
+            echo "Ignoring self: $psline"
+            continue
+        fi
+        # shellcheck disable=SC1087
+        if [[ "$psline" =~ [[:space:]]$this_pid[[:space:]] ]]; then
+            echo "Ignoring child: $psline"
+            continue
+        fi
+        if [[ "$psline" =~ entrypoint|defunct ]]; then
+            echo "Ignoring ci-operator entrypoint or defunct process: $psline"
+            continue
+        fi
+        echo "A candidate to kill: $psline"
+        pid="$(echo "$psline" | cut -d' ' -f1)"
+        echo "Will kill $pid"
+        kill "$pid" || {
+            echo "Error killing $pid"
+        }
+    done
 }
 
 create_exit_trap() {
