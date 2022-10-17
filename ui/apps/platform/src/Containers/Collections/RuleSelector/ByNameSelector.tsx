@@ -18,41 +18,35 @@ export type ByNameSelectorProps = {
 function ByNameSelector({ entityType, scopedResourceSelector, handleChange }: ByNameSelectorProps) {
     function onAddValue() {
         const selector = cloneDeep(scopedResourceSelector);
-        const rule = selector?.rules[0];
-
         // Only add a new form row if there are no blank entries
-        if (!rule || !rule.values.every((value) => value)) {
+        if (!selector.rule.values.every((value) => value)) {
             return;
         }
 
-        selector.rules[0].values.push('');
+        selector.rule.values.push('');
         handleChange(entityType, selector);
     }
 
-    function onChangeValue(resourceSelector, ruleIndex, valueIndex) {
+    function onChangeValue(resourceSelector, valueIndex) {
         return (value: string) => {
             const newSelector = cloneDeep(resourceSelector);
-            newSelector.rules[ruleIndex].values[valueIndex] = value;
+            newSelector.rule.values[valueIndex] = value;
             handleChange(entityType, newSelector);
         };
     }
 
-    function onDeleteValue(ruleIndex: number, valueIndex: number) {
-        if (!scopedResourceSelector || !scopedResourceSelector.rules[ruleIndex]) {
+    function onDeleteValue(valueIndex: number) {
+        if (!scopedResourceSelector || !scopedResourceSelector.rule) {
             return;
         }
 
         const newSelector = cloneDeep(scopedResourceSelector);
 
-        if (newSelector.rules[ruleIndex].values.length > 1) {
-            newSelector.rules[ruleIndex].values.splice(valueIndex, 1);
-            handleChange(entityType, newSelector);
-        } else if (newSelector.rules.length > 1) {
-            // This was the last value, so drop the rule
-            newSelector.rules.splice(ruleIndex, 1);
+        if (newSelector.rule.values.length > 1) {
+            newSelector.rule.values.splice(valueIndex, 1);
             handleChange(entityType, newSelector);
         } else {
-            // This was the last value in the last rule, so drop the selector
+            // This was the last value in the rule, so drop the selector
             handleChange(entityType, null);
         }
     }
@@ -60,15 +54,15 @@ function ByNameSelector({ entityType, scopedResourceSelector, handleChange }: By
     return (
         <FormGroup label={`${entityType} name`} isRequired>
             <Flex spaceItems={{ default: 'spaceItemsSm' }} direction={{ default: 'column' }}>
-                {scopedResourceSelector.rules[0]?.values.map((value, index) => (
+                {scopedResourceSelector.rule.values.map((value, index) => (
                     <Flex key={value}>
                         <AutoCompleteSelect
                             typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} name`}
                             className="pf-u-flex-grow-1 pf-u-w-auto"
                             selectedOption={value}
-                            onChange={onChangeValue(scopedResourceSelector, 0, index)}
+                            onChange={onChangeValue(scopedResourceSelector, index)}
                         />
-                        <Button variant="plain" onClick={() => onDeleteValue(0, index)}>
+                        <Button variant="plain" onClick={() => onDeleteValue(index)}>
                             <TrashIcon
                                 aria-label={`Delete ${value}`}
                                 className="pf-u-flex-shrink-1"

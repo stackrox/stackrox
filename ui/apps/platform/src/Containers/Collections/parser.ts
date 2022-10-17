@@ -4,9 +4,10 @@ import {
     SelectorField,
     SelectorEntityType,
     isSupportedSelectorField,
-    ScopedResourceSelector,
     isByNameSelector,
     isByLabelSelector,
+    isByNameField,
+    isByLabelField,
 } from './types';
 
 const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
@@ -78,11 +79,19 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
         }
 
         if (!collection.selectorRules[entity]) {
-            collection.selectorRules[entity] = {
-                field,
-                rules: [],
-            };
+            if (isByLabelField(field)) {
+                collection.selectorRules[entity] = {
+                    field,
+                    rules: [],
+                };
+            } else if (isByNameField(field)) {
+                collection.selectorRules[entity] = {
+                    field,
+                    rule: { operator: 'OR', values: [] },
+                };
+            }
         }
+
         const selector = collection.selectorRules[entity];
 
         if (isByLabelSelector(selector)) {
@@ -97,10 +106,7 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
                 });
             }
         } else if (isByNameSelector(selector)) {
-            selector.rules.push({
-                operator: 'OR',
-                values: rule.values.map(({ value }) => value),
-            });
+            selector.rule.values = rule.values.map(({ value }) => value);
         }
     });
 

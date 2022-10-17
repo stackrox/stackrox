@@ -49,7 +49,7 @@ export function isSupportedSelectorField(field: SelectorField): field is Support
 
 export type ByNameResourceSelector = {
     field: ByNameSelectorField;
-    rules: NameSelectorRule[];
+    rule: NameSelectorRule;
 };
 export type ByLabelResourceSelector = {
     field: ByLabelSelectorField;
@@ -68,8 +68,6 @@ export function isByLabelSelector(
 ): selector is ByLabelResourceSelector {
     return selector !== null && isByLabelField(selector.field);
 }
-
-export type ScopedResourceSelectorRule = ScopedResourceSelector['rules'][number];
 
 /**
  * `Collection` is the front end representation of a valid collection, which is more
