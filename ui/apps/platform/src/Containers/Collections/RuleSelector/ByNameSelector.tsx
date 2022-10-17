@@ -36,10 +36,6 @@ function ByNameSelector({ entityType, scopedResourceSelector, handleChange }: By
     }
 
     function onDeleteValue(valueIndex: number) {
-        if (!scopedResourceSelector || !scopedResourceSelector.rule) {
-            return;
-        }
-
         const newSelector = cloneDeep(scopedResourceSelector);
 
         if (newSelector.rule.values.length > 1) {
