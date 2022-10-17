@@ -44,24 +44,24 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c2",
 									ColumnNameInOtherSchema: "t3_c3",
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
@@ -74,24 +74,24 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c2",
 									ColumnNameInOtherSchema: "t3_c3",
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
@@ -106,24 +106,24 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c1",
 									ColumnNameInOtherSchema: "t3_c1",
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
@@ -136,12 +136,12 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t3",
 						},
 						children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t3_c1",
@@ -156,36 +156,36 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: map[*joinTreeNode][]walker.ColumnNamePair{
-									&joinTreeNode{
+									{
 										currNode: &walker.Schema{
 											Table: "t4",
 										},
 										children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-									}: []walker.ColumnNamePair{
+									}: {
 										{
 											ColumnNameInThisSchema:  "t3_c1",
 											ColumnNameInOtherSchema: "t4_c1",
 										},
 									},
 								},
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c1",
 									ColumnNameInOtherSchema: "t3_c1",
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
@@ -198,12 +198,12 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t4",
 						},
 						children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t4_c1",
@@ -218,47 +218,47 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c1",
 									ColumnNameInOtherSchema: "t3_c1",
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
 						},
 					},
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2stay",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t4",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2stay_c2",
 									ColumnNameInOtherSchema: "t4_c1",
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2stay_c1",
@@ -271,35 +271,35 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t3",
 						},
 						children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t3_c1",
 						},
 					},
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2stay",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t4",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2stay_c2",
 									ColumnNameInOtherSchema: "t4_c1",
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2stay_c1",
@@ -314,17 +314,17 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c1",
 									ColumnNameInOtherSchema: "t3_c1",
@@ -335,7 +335,7 @@ func getTestData() map[string]testSet {
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
@@ -348,17 +348,17 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c1",
 									ColumnNameInOtherSchema: "t3_c1",
@@ -369,7 +369,7 @@ func getTestData() map[string]testSet {
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
@@ -384,24 +384,24 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c1",
 									ColumnNameInOtherSchema: "t3_c1",
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
@@ -418,24 +418,24 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c1",
 									ColumnNameInOtherSchema: "t3_c1",
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
@@ -454,17 +454,17 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c1",
 									ColumnNameInOtherSchema: "t3_c1",
@@ -475,7 +475,7 @@ func getTestData() map[string]testSet {
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
@@ -492,12 +492,12 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t3",
 						},
 						children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t3_c1",
@@ -526,24 +526,24 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c1",
 									ColumnNameInOtherSchema: "t3_c1",
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
@@ -556,24 +556,24 @@ func getTestData() map[string]testSet {
 					Table: "t1",
 				},
 				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					&joinTreeNode{
+					{
 						currNode: &walker.Schema{
 							Table: "t2",
 						},
 						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							&joinTreeNode{
+							{
 								currNode: &walker.Schema{
 									Table: "t3",
 								},
 								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: []walker.ColumnNamePair{
+							}: {
 								{
 									ColumnNameInThisSchema:  "t2_c1",
 									ColumnNameInOtherSchema: "t3_c1",
 								},
 							},
 						},
-					}: []walker.ColumnNamePair{
+					}: {
 						{
 							ColumnNameInThisSchema:  "t1_c1",
 							ColumnNameInOtherSchema: "t2_c1",
