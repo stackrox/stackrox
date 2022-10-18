@@ -9,9 +9,9 @@ import {
     ValidatedOptions,
 } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
+import { FormikErrors } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
 
-import { FormikErrors } from 'formik';
 import { SelectorEntityType, ScopedResourceSelector, ByLabelResourceSelector } from '../types';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
 
@@ -31,14 +31,11 @@ function ByLabelSelector({
     handleChange,
     validationErrors,
 }: ByLabelSelectorProps) {
-    function onChangeLabelKey(resourceSelector, ruleIndex) {
+    function onChangeLabelKey(resourceSelector: ByLabelResourceSelector, ruleIndex) {
         return (value: string) => {
             const newSelector = cloneDeep(resourceSelector);
-            const rule = newSelector.rules[ruleIndex];
-            if ('key' in rule) {
-                rule.key = value;
-                handleChange(entityType, newSelector);
-            }
+            newSelector.rules[ruleIndex].key = value;
+            handleChange(entityType, newSelector);
         };
     }
 
@@ -55,24 +52,20 @@ function ByLabelSelector({
 
         // Only add a new form row if there are no blank entries
         if (!selector.rules.every(({ key, values }) => key && values.every((value) => value))) {
-            return;
+            selector.rules.push({ operator: 'OR', key: '', values: [''] });
+            handleChange(entityType, selector);
         }
-
-        selector.rules.push({ operator: 'OR', key: '', values: [''] });
-        handleChange(entityType, selector);
     }
 
     function onAddLabelValue(ruleIndex: number) {
         const selector = cloneDeep(scopedResourceSelector);
-        const rule = selector?.rules[ruleIndex];
+        const rule = selector.rules[ruleIndex];
 
         // Only add a new form row if there are no blank entries
-        if (!rule || !rule.values.every((value) => value)) {
-            return;
+        if (!rule.values.every((value) => value)) {
+            rule.values.push('');
+            handleChange(entityType, selector);
         }
-
-        rule.values.push('');
-        handleChange(entityType, selector);
     }
 
     function onDeleteValue(ruleIndex: number, valueIndex: number) {
@@ -94,6 +87,7 @@ function ByLabelSelector({
             handleChange(entityType, {});
         }
     }
+
     return (
         <>
             {scopedResourceSelector.rules.map((rule, ruleIndex) => {
