@@ -146,7 +146,7 @@ func createGRPCConnectionToScanner(conf *storage.ClairifyConfig) (*grpc.ClientCo
 
 	endpoint := conf.GetGrpcEndpoint()
 	if endpoint == "" {
-		endpoint = fmt.Sprintf("scanner.%s:8443", env.Namespace.Setting())
+		endpoint = fmt.Sprintf("scanner.%s.svc:8443", env.Namespace.Setting())
 	}
 
 	// Note: it is possible we call `grpc.Dial` multiple times per endpoint,
