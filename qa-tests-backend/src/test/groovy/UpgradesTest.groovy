@@ -5,6 +5,9 @@ import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
+
+import groups.Upgrade
+
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.GraphQLService
