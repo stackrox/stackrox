@@ -14,8 +14,6 @@ updates:
     versioning-strategy: increase
     open-pull-requests-limit: 10
     labels:
-      - "ci-no-api-tests"
-      - "ci-no-qa-tests"
       - "dependencies"
     reviewers:
       - "stackrox/ui-dep-updaters"
@@ -28,8 +26,6 @@ updates:
     open-pull-requests-limit: 1
     labels:
       - "ci-all-qa-tests"
-      - "ci-no-api-tests"
-      - "ci-no-ui-tests"
       - "dependencies"
     reviewers:
       - "stackrox/backend-dep-updaters"
