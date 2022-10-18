@@ -43,6 +43,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -82,6 +83,8 @@ type imageDatastoreSACSuite struct {
 
 	testContexts map[string]context.Context
 	testImageIDs []string
+
+	extraImage *storage.Image
 }
 
 func (s *imageDatastoreSACSuite) SetupSuite() {
@@ -132,6 +135,8 @@ func (s *imageDatastoreSACSuite) SetupSuite() {
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.Image)
+
+	s.extraImage = fixtures.GetImage()
 }
 
 func (s *imageDatastoreSACSuite) TearDownSuite() {
@@ -187,6 +192,18 @@ func getImageCVEEdgeID(image, cve string) string {
 		return postgres.IDFromPks([]string{image, getImageCVEID(cve)})
 	}
 	return edges.EdgeID{ParentID: image, ChildID: getImageCVEID(cve)}.ToString()
+}
+
+func (s *imageDatastoreSACSuite) verifyListImagesEqual(image1, image2 *storage.ListImage) {
+	s.Equal(image1.GetId(), image2.GetId())
+	s.Equal(image1.GetComponents(), image2.GetComponents())
+	s.Equal(image1.GetCves(), image2.GetCves())
+}
+
+func (s *imageDatastoreSACSuite) verifyRawImagesEqual(image1, image2 *storage.Image) {
+	s.Equal(image1.GetId(), image2.GetId())
+	s.Equal(image1.GetComponents(), image2.GetComponents())
+	s.Equal(image1.GetCves(), image2.GetCves())
 }
 
 func (s *imageDatastoreSACSuite) TestUpsertImage() {
@@ -404,9 +421,7 @@ func (s *imageDatastoreSACSuite) TestListImage() {
 			s.Require().NoError(err)
 			if testCase.ExpectedFound {
 				s.True(found)
-				s.Equal(image.GetId(), readImage.GetId())
-				s.Equal(image.GetComponents(), readImage.GetComponents())
-				s.Equal(image.GetCves(), readImage.GetCves())
+				s.verifyListImagesEqual(types.ConvertImageToListImage(image), readImage)
 			} else {
 				s.False(found)
 				s.Nil(readImage)
@@ -431,9 +446,7 @@ func (s *imageDatastoreSACSuite) TestGetImage() {
 			s.Require().NoError(err)
 			if testCase.ExpectedFound {
 				s.True(found)
-				s.Equal(image.GetId(), readImage.GetId())
-				s.Equal(image.GetComponents(), readImage.GetComponents())
-				s.Equal(image.GetCves(), readImage.GetCves())
+				s.verifyRawImagesEqual(image, readImage)
 			} else {
 				s.False(found)
 				s.Nil(readImage)
@@ -540,6 +553,352 @@ func (s *imageDatastoreSACSuite) TestGetImagesBatch() {
 				}
 			} else {
 				s.Equal(0, len(readMeta))
+			}
+		})
+	}
+}
+
+func (s *imageDatastoreSACSuite) getSearchTestCases() map[string]map[string]bool {
+	// The map structure is the mapping ScopeKey -> ImageID -> Visible
+	cases := map[string]map[string]bool{
+		testutils.UnrestrictedReadCtx: {
+			s.extraImage.GetId():                       true,
+			fixtures.GetImageSherlockHolmes1().GetId(): true,
+			fixtures.GetImageDoctorJekyll2().GetId():   true,
+		},
+		testutils.UnrestrictedReadWriteCtx: {
+			s.extraImage.GetId():                       true,
+			fixtures.GetImageSherlockHolmes1().GetId(): true,
+			fixtures.GetImageDoctorJekyll2().GetId():   true,
+		},
+		testutils.Cluster1ReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): true,
+			fixtures.GetImageDoctorJekyll2().GetId():   false,
+		},
+		testutils.Cluster1NamespaceAReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): true,
+			fixtures.GetImageDoctorJekyll2().GetId():   false,
+		},
+		testutils.Cluster1NamespaceBReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): false,
+			fixtures.GetImageDoctorJekyll2().GetId():   false,
+		},
+		testutils.Cluster1NamespacesABReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): true,
+			fixtures.GetImageDoctorJekyll2().GetId():   false,
+		},
+		testutils.Cluster1NamespacesBCReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): false,
+			fixtures.GetImageDoctorJekyll2().GetId():   false,
+		},
+		testutils.Cluster2ReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): true,
+			fixtures.GetImageDoctorJekyll2().GetId():   true,
+		},
+		testutils.Cluster2NamespaceAReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): false,
+			fixtures.GetImageDoctorJekyll2().GetId():   false,
+		},
+		testutils.Cluster2NamespaceBReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): true,
+			fixtures.GetImageDoctorJekyll2().GetId():   true,
+		},
+		testutils.Cluster2NamespacesACReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): false,
+			fixtures.GetImageDoctorJekyll2().GetId():   false,
+		},
+		testutils.Cluster2NamespacesBCReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): true,
+			fixtures.GetImageDoctorJekyll2().GetId():   true,
+		},
+		testutils.Cluster3ReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): false,
+			fixtures.GetImageDoctorJekyll2().GetId():   false,
+		},
+		testutils.Cluster3NamespaceAReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): false,
+			fixtures.GetImageDoctorJekyll2().GetId():   false,
+		},
+		testutils.Cluster3NamespaceBReadWriteCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): false,
+			fixtures.GetImageDoctorJekyll2().GetId():   false,
+		},
+		testutils.MixedClusterAndNamespaceReadCtx: {
+			s.extraImage.GetId():                       false,
+			fixtures.GetImageSherlockHolmes1().GetId(): true,
+			fixtures.GetImageDoctorJekyll2().GetId():   true,
+		},
+	}
+	return cases
+}
+
+func (s *imageDatastoreSACSuite) setupSearchTest() (func(), error) {
+	var setupErr error
+
+	namespacesToDelete := make([]string, 0, 1)
+	deploymentsToDelete := make([]*storage.Deployment, 0, 1)
+	imagesToDelete := make([]string, 0, 1)
+
+	cleanup := func() {
+		for _, img := range imagesToDelete {
+			s.deleteImage(img)
+		}
+		for _, deployment := range deploymentsToDelete {
+			s.deleteDeployment(deployment.GetClusterId(), deployment.GetId())
+		}
+		for _, ns := range namespacesToDelete {
+			s.deleteNamespace(ns)
+		}
+	}
+
+	image1 := fixtures.GetImageSherlockHolmes1()
+	imagesToDelete = append(imagesToDelete, image1.GetId())
+	image2 := fixtures.GetImageDoctorJekyll2()
+	imagesToDelete = append(imagesToDelete, image2.GetId())
+	imagesToDelete = append(imagesToDelete, s.extraImage.GetId())
+
+	namespace1A := fixtures.GetNamespace(testconsts.Cluster1, testconsts.Cluster1, testconsts.NamespaceA)
+	namespacesToDelete = append(namespacesToDelete, namespace1A.GetId())
+	namespace2B := fixtures.GetNamespace(testconsts.Cluster2, testconsts.Cluster2, testconsts.NamespaceB)
+	namespacesToDelete = append(namespacesToDelete, namespace2B.GetId())
+
+	deployment1A1 := fixtures.GetDeploymentSherlockHolmes1(uuid.NewV4().String(), namespace1A)
+	deploymentsToDelete = append(deploymentsToDelete, deployment1A1)
+	deployment2B1 := fixtures.GetDeploymentSherlockHolmes1(uuid.NewV4().String(), namespace2B)
+	deploymentsToDelete = append(deploymentsToDelete, deployment2B1)
+	deployment2B2 := fixtures.GetDeploymentDoctorJekyll2(uuid.NewV4().String(), namespace2B)
+	deploymentsToDelete = append(deploymentsToDelete, deployment2B2)
+
+	setupCtx := sac.WithAllAccess(context.Background())
+
+	setupErr = s.namespaceDatastore.AddNamespace(setupCtx, namespace1A)
+	if setupErr != nil {
+		return cleanup, setupErr
+	}
+	setupErr = s.namespaceDatastore.AddNamespace(setupCtx, namespace2B)
+	if setupErr != nil {
+		return cleanup, setupErr
+	}
+
+	setupErr = s.datastore.UpsertImage(setupCtx, s.extraImage)
+	if setupErr != nil {
+		return cleanup, setupErr
+	}
+	setupErr = s.datastore.UpsertImage(setupCtx, image1)
+	if setupErr != nil {
+		return cleanup, setupErr
+	}
+	setupErr = s.datastore.UpsertImage(setupCtx, image2)
+	if setupErr != nil {
+		return cleanup, setupErr
+	}
+
+	setupErr = s.deploymentDatastore.UpsertDeployment(setupCtx, deployment1A1)
+	if setupErr != nil {
+		return cleanup, setupErr
+	}
+	setupErr = s.deploymentDatastore.UpsertDeployment(setupCtx, deployment2B1)
+	if setupErr != nil {
+		return cleanup, setupErr
+	}
+	setupErr = s.deploymentDatastore.UpsertDeployment(setupCtx, deployment2B2)
+	if setupErr != nil {
+		return cleanup, setupErr
+	}
+
+	s.waitForIndexing()
+	return cleanup, nil
+
+}
+
+func (s *imageDatastoreSACSuite) TestCountImages() {
+	cleanup, setupErr := s.setupSearchTest()
+	defer cleanup()
+	s.Require().NoError(setupErr)
+
+	cases := s.getSearchTestCases()
+	for key, testCase := range cases {
+		s.Run(key, func() {
+			ctx := s.testContexts[key]
+			expectedCount := 0
+			for _, visible := range testCase {
+				if visible {
+					expectedCount++
+				}
+			}
+			count, err := s.datastore.CountImages(ctx)
+			s.NoError(err)
+			s.Equal(expectedCount, count)
+		})
+	}
+}
+
+func (s *imageDatastoreSACSuite) TestCount() {
+	cleanup, setupErr := s.setupSearchTest()
+	defer cleanup()
+	s.Require().NoError(setupErr)
+
+	cases := s.getSearchTestCases()
+	for key, testCase := range cases {
+		s.Run(key, func() {
+			ctx := s.testContexts[key]
+			expectedCount := 0
+			for _, visible := range testCase {
+				if visible {
+					expectedCount++
+				}
+			}
+			count, err := s.datastore.Count(ctx, searchPkg.EmptyQuery())
+			s.NoError(err)
+			s.Equal(expectedCount, count)
+		})
+	}
+}
+
+func (s *imageDatastoreSACSuite) TestSearch() {
+	cleanup, setupErr := s.setupSearchTest()
+	defer cleanup()
+	s.Require().NoError(setupErr)
+
+	cases := s.getSearchTestCases()
+	for key, testCase := range cases {
+		s.Run(key, func() {
+			ctx := s.testContexts[key]
+			expectedIDs := make([]string, 0, len(testCase))
+			for imageID, visible := range testCase {
+				if visible {
+					expectedIDs = append(expectedIDs, imageID)
+				}
+			}
+			results, err := s.datastore.Search(ctx, searchPkg.EmptyQuery())
+			s.NoError(err)
+			resultIDHeap := make(map[string]struct{}, 0)
+			for _, r := range results {
+				resultIDHeap[r.ID] = struct{}{}
+			}
+			resultIDs := make([]string, 0, len(resultIDHeap))
+			for k, _ := range resultIDHeap {
+				resultIDs = append(resultIDs, k)
+			}
+			s.ElementsMatch(expectedIDs, resultIDs)
+		})
+	}
+}
+
+func (s *imageDatastoreSACSuite) TestSearchImages() {
+	cleanup, setupErr := s.setupSearchTest()
+	defer cleanup()
+	s.Require().NoError(setupErr)
+
+	cases := s.getSearchTestCases()
+	for key, testCase := range cases {
+		s.Run(key, func() {
+			ctx := s.testContexts[key]
+			expectedIDs := make([]string, 0, len(testCase))
+			for imageID, visible := range testCase {
+				if visible {
+					expectedIDs = append(expectedIDs, imageID)
+				}
+			}
+			results, err := s.datastore.SearchImages(ctx, searchPkg.EmptyQuery())
+			s.NoError(err)
+			resultIDHeap := make(map[string]struct{}, 0)
+			for _, r := range results {
+				resultIDHeap[r.GetId()] = struct{}{}
+			}
+			resultIDs := make([]string, 0, len(resultIDHeap))
+			for k, _ := range resultIDHeap {
+				resultIDs = append(resultIDs, k)
+			}
+			s.ElementsMatch(expectedIDs, resultIDs)
+		})
+	}
+}
+
+func (s *imageDatastoreSACSuite) TestSearchRawImages() {
+	cleanup, setupErr := s.setupSearchTest()
+	defer cleanup()
+	s.Require().NoError(setupErr)
+	refImages := map[string]*storage.Image{
+		s.extraImage.GetId():                       s.extraImage,
+		fixtures.GetImageSherlockHolmes1().GetId(): fixtures.GetImageSherlockHolmes1(),
+		fixtures.GetImageDoctorJekyll2().GetId():   fixtures.GetImageDoctorJekyll2(),
+	}
+
+	cases := s.getSearchTestCases()
+	for key, testCase := range cases {
+		s.Run(key, func() {
+			ctx := s.testContexts[key]
+			expectedIDs := make([]string, 0, len(testCase))
+			for imageID, visible := range testCase {
+				if visible {
+					expectedIDs = append(expectedIDs, imageID)
+				}
+			}
+			results, err := s.datastore.SearchRawImages(ctx, searchPkg.EmptyQuery())
+			s.NoError(err)
+			resultImages := make(map[string]*storage.Image, 0)
+			for _, r := range results {
+				resultImages[r.GetId()] = r
+			}
+			resultIDs := make([]string, 0, len(resultImages))
+			for k, _ := range resultImages {
+				resultIDs = append(resultIDs, k)
+			}
+			s.ElementsMatch(expectedIDs, resultIDs)
+			for _, imageID := range expectedIDs {
+				s.verifyRawImagesEqual(refImages[imageID], resultImages[imageID])
+			}
+		})
+	}
+}
+
+func (s *imageDatastoreSACSuite) TestSearchListImages() {
+	cleanup, setupErr := s.setupSearchTest()
+	defer cleanup()
+	s.Require().NoError(setupErr)
+	refImages := map[string]*storage.Image{
+		s.extraImage.GetId():                       s.extraImage,
+		fixtures.GetImageSherlockHolmes1().GetId(): fixtures.GetImageSherlockHolmes1(),
+		fixtures.GetImageDoctorJekyll2().GetId():   fixtures.GetImageDoctorJekyll2(),
+	}
+
+	cases := s.getSearchTestCases()
+	for key, testCase := range cases {
+		s.Run(key, func() {
+			ctx := s.testContexts[key]
+			expectedIDs := make([]string, 0, len(testCase))
+			for imageID, visible := range testCase {
+				if visible {
+					expectedIDs = append(expectedIDs, imageID)
+				}
+			}
+			results, err := s.datastore.SearchListImages(ctx, searchPkg.EmptyQuery())
+			s.NoError(err)
+			resultListImages := make(map[string]*storage.ListImage, 0)
+			for _, r := range results {
+				resultListImages[r.GetId()] = r
+			}
+			resultIDs := make([]string, 0, len(resultListImages))
+			for k, _ := range resultListImages {
+				resultIDs = append(resultIDs, k)
+			}
+			s.ElementsMatch(expectedIDs, resultIDs)
+			for _, imageID := range expectedIDs {
+				s.verifyListImagesEqual(types.ConvertImageToListImage(refImages[imageID]), resultListImages[imageID])
 			}
 		})
 	}
