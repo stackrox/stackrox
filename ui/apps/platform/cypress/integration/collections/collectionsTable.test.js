@@ -49,6 +49,6 @@ describe('Collections table', () => {
     it('should have button to create collection if role has READ_WRITE_ACCESS', () => {
         visitCollections(staticResponseMap);
 
-        cy.get('button:contains("Create collection")');
+        cy.get('a:contains("Create collection")');
     });
 });
