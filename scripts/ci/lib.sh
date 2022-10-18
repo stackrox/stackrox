@@ -1335,7 +1335,7 @@ __EOM__
 '
 
     local slack_attachments = junit2slack
-    if [[ "${slack_attachments}" != "" ]]; then
+    if [[ -n "${slack_attachments}" ]]; then
         body = jq '.attachments |= .+ $slack_attachments' body
     fi
 
