@@ -48,6 +48,7 @@ func getTimestamp(seconds int64) *types.Timestamp {
 func (s *NetworkflowStoreSuite) TestStore() {
 	ctx := context.Background()
 	clusterID := "22"
+	secondCluster := "43"
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -60,6 +61,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	gormDB := pgtest.OpenGormDB(s.T(), source)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	store := CreateTableAndNewStore(ctx, pool, gormDB, clusterID)
+	store2 := CreateTableAndNewStore(ctx, pool, gormDB, secondCluster)
 
 	networkFlow := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
@@ -118,6 +120,19 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	foundNetworkFlows, _, err = store.GetAllFlows(ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, flowCount)
+
+	// Make sure store for second cluster does not find any flows
+	foundNetworkFlows, _, err = store2.GetAllFlows(ctx, nil)
+	s.NoError(err)
+	s.Len(foundNetworkFlows, 0)
+
+	// Add a flow to the second cluster
+	networkFlow.ClusterId = secondCluster
+	s.NoError(store2.UpsertFlows(ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
+
+	foundNetworkFlows, _, err = store2.GetAllFlows(ctx, nil)
+	s.NoError(err)
+	s.Len(foundNetworkFlows, 1)
 
 	// Clean up
 	Destroy(ctx, pool)
