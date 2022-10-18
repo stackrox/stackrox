@@ -176,7 +176,8 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Specifies claims from IdP token that will be copied to Rox token attributes.\nFor example, we can specify nested array claim \"realm_access.roles\" to be mapped to \"groups\" attribute.\nCurrently we only support this feature only for OIDC auth provider."
         }
       },
       "title": "Next Tag: 13"

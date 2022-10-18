@@ -960,11 +960,18 @@ type mockOIDCUserInfo struct {
 	claims claims
 }
 
-func (m mockOIDCUserInfo) Claims(u interface{}) error {
-	userInfo := u.(*userInfoType)
-	userInfo.UID = m.claims.uid
-	userInfo.Name = m.claims.name
-	userInfo.EMail = m.claims.email
+func (m mockOIDCUserInfo) Claims(v interface{}) error {
+	if u, ok := v.(*userInfoType); ok {
+		u.UID = m.claims.uid
+		u.Name = m.claims.name
+		u.EMail = m.claims.email
+	} else if u, ok := v.(map[string]interface{}); ok {
+		u["name"] = m.claims.name
+		u["email"] = m.claims.email
+		u["uid"] = m.claims.uid
+	} else {
+		return errors.Errorf("unsupported type %T", v)
+	}
 	return nil
 }
 
@@ -1002,12 +1009,16 @@ func (m mockOIDCToken) GetNonce() string {
 	return m.nonce
 }
 
-func (m mockOIDCToken) Claims(v interface{}) error { // u *userInfoType
+func (m mockOIDCToken) Claims(v interface{}) error {
 	if u, ok := v.(*userInfoType); ok {
 		u.Name = m.name
 		u.EMail = m.email
 		u.UID = m.uid
 		return nil
+	} else if u, ok := v.(map[string]interface{}); ok {
+		u["name"] = m.name
+		u["email"] = m.email
+		u["uid"] = m.uid
 	}
 	return errors.Errorf("unsupported type %T", v)
 }
