@@ -64,10 +64,7 @@ function RuleSelector({
 
     let selection: RuleSelectorOption = 'All';
 
-    if (
-        isEmpty(scopedResourceSelector) ||
-        ('rules' in scopedResourceSelector && scopedResourceSelector.rules.length === 0)
-    ) {
+    if (isEmpty(scopedResourceSelector)) {
         selection = 'All';
     } else if (isByNameSelector(scopedResourceSelector)) {
         selection = 'ByName';

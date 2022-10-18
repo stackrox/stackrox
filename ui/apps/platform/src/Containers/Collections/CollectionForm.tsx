@@ -30,6 +30,7 @@ import {
 import { CaretDownIcon } from '@patternfly/react-icons';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
+import isEmpty from 'lodash/isEmpty';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
@@ -62,8 +63,8 @@ export type CollectionFormProps = {
 
 function yupSelectorRuleObject() {
     return yup.lazy((ruleObject) => {
-        if (!ruleObject) {
-            return yup.object().shape({}).nullable();
+        if (isEmpty(ruleObject)) {
+            return yup.object().shape({});
         }
 
         const { field } = ruleObject;
