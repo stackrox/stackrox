@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import React, { useEffect, useState } from 'react';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+// import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
 import RuleSelector from './RuleSelector';
-import { ByNameResourceSelector, ScopedResourceSelector } from '../types';
+import {
+    // ByNameResourceSelector,
+    ScopedResourceSelector,
+} from '../types';
 
 jest.setTimeout(10000);
 
