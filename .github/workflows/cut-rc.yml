@@ -34,10 +34,6 @@ on:
 
 env:
   main_branch: ${{github.event.repository.default_branch}}
-  docs_repository: openshift/openshift-docs
-  jira_projects: ROX, RS, RTOOLS
-  #eng-release (CMH5M8MHN) for real runs or #test-release-automation (C03KSV3N6N8) for testing:
-  slack_channel: ${{ fromJSON('["CMH5M8MHN", "C03KSV3N6N8"]')[ github.repository != 'stackrox/stackrox' || github.event.inputs.dry-run == 'true'] }}
   script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
   DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
@@ -50,6 +46,18 @@ run-name: Cut ${{ format('{0}{1}', github.event.milestone.title, github.event.in
 concurrency: Release automation
 
 jobs:
+  properties:
+    runs-on: ubuntu-latest
+    outputs:
+      slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.fetch.outputs.dry-slack-channel, steps.fetch.outputs.slack-channel))[github.event.inputs.dry-run != 'true'] }}
+      jira-projects: ${{ steps.fetch.outputs.jira-projects }}
+    steps:
+      - name: Read workflow properties file
+        id: fetch
+        env:
+          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.ref_name }}
+        run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
+
   run-parameters:
     name: Run parameters
     runs-on: ubuntu-latest
@@ -73,7 +81,7 @@ jobs:
 
   check-jira:
     name: Check Jira tickets for release
-    needs: variables
+    needs: [variables, properties]
     runs-on: ubuntu-latest
     steps:
       - name: Query JIRA
@@ -83,7 +91,7 @@ jobs:
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             check-jira-issues \
-            "${{env.jira_projects}}" \
+            "${{needs.properties.outputs.jira-projects}}" \
             "${{needs.variables.outputs.release}}" \
             "${{needs.variables.outputs.patch}}" \
             "${{needs.variables.outputs.release-patch}}"
@@ -148,7 +156,7 @@ jobs:
   cut-rc:
     name: Tag RC for milestone ${{needs.variables.outputs.milestone}}
     runs-on: ubuntu-latest
-    needs: [variables, postpone-prs, check-jira]
+    needs: [variables, properties, postpone-prs, check-jira]
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -178,7 +186,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: ${{env.slack_channel}}
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             { "blocks": [
 
@@ -221,8 +229,6 @@ jobs:
             tag-rc \
             "${{needs.variables.outputs.milestone}}"
 
-          echo "report-file-name=gosec-$(git rev-parse --short HEAD).output" >> "$GITHUB_OUTPUT"
-
       - name: Create next milestone
         if: env.DRY_RUN == 'false'
         env:
@@ -244,19 +250,6 @@ jobs:
             echo ":arrow_right: Close the newly created milestone [${{needs.variables.outputs.next-milestone}}](${{github.event.milestone.html_url}}) when ready." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Run Gosec security scanner
-        uses: securego/gosec@master
-        with:
-          args: "-no-fail -out ${{ steps.tag.outputs.report-file-name }} ./..."
-      - run: |
-          {
-            echo "# gosec Report"
-            echo ""
-            echo '```'
-            cat "$GITHUB_WORKSPACE/${{ steps.tag.outputs.report-file-name }}"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
       - name: Create GitHub Pre-release
         id: pre-release
         if: env.DRY_RUN == 'false'
@@ -276,15 +269,6 @@ jobs:
             --target "${{ needs.variables.outputs.branch }}")
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
-      - name: Attach gosec report
-        if: env.DRY_RUN == 'false'
-        env:
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
-        run: |
-          gh release upload "${{ needs.variables.outputs.milestone }}" \
-            --repo "${{ github.repository }}" \
-            "$GITHUB_WORKSPACE/${{ steps.tag.outputs.report-file-name }}"
-
       - run: |
           echo "Created GitHub pre-release [${{needs.variables.outputs.milestone}}](${{steps.pre-release.outputs.url}})" >> "$GITHUB_STEP_SUMMARY"
       - name: Post to Slack
@@ -292,7 +276,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: ${{env.slack_channel}}
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             { "blocks": [
 
@@ -347,7 +331,7 @@ jobs:
 
   notify-k8s-cluster:
     name: Notify about K8s cluster creation
-    needs: [variables, create-k8s-cluster]
+    needs: [variables, properties, create-k8s-cluster]
     runs-on: ubuntu-latest
     env:
       NAME: qa-k8s-${{ needs.variables.outputs.milestone }}
@@ -362,7 +346,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: ${{ env.slack_channel }}
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             {
               "blocks": [
@@ -472,7 +456,7 @@ jobs:
 
   notify-os4-cluster:
     name: Notify about Openshift cluster creation
-    needs: [variables, patch-os4-cluster]
+    needs: [variables, properties, patch-os4-cluster]
     runs-on: ubuntu-latest
     env:
       NAME: openshift-4-demo-${{ needs.variables.outputs.milestone }}
@@ -487,7 +471,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: ${{ env.slack_channel }}
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             {
               "blocks": [
@@ -532,7 +516,7 @@ jobs:
 
   patch-long-running-cluster:
     name: Patch long-running cluster
-    needs: [variables, create-long-running-cluster]
+    needs: [variables, properties, create-long-running-cluster]
     runs-on: ubuntu-latest
     env:
       NAME: gke-long-running-${{ needs.variables.outputs.milestone }}
@@ -604,7 +588,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: ${{env.slack_channel}}
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             {
               "blocks": [
@@ -644,6 +628,7 @@ jobs:
     needs:
       [
         variables,
+        properties,
         create-k8s-cluster,
         create-os4-cluster,
         create-long-running-cluster,
@@ -661,7 +646,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: ${{env.slack_channel}}
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             { "blocks": [
               { "type": "section", "text": { "type": "mrkdwn", "text":
