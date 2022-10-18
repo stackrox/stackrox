@@ -215,3 +215,64 @@ func (mr *MockNetworkPolicyStoreMockRecorder) Upsert(ns interface{}) *gomock.Cal
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockNetworkPolicyStore)(nil).Upsert), ns)
 }
+
+// MockServiceAccountStore is a mock of ServiceAccountStore interface.
+type MockServiceAccountStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockServiceAccountStoreMockRecorder
+}
+
+// MockServiceAccountStoreMockRecorder is the mock recorder for MockServiceAccountStore.
+type MockServiceAccountStoreMockRecorder struct {
+	mock *MockServiceAccountStore
+}
+
+// NewMockServiceAccountStore creates a new mock instance.
+func NewMockServiceAccountStore(ctrl *gomock.Controller) *MockServiceAccountStore {
+	mock := &MockServiceAccountStore{ctrl: ctrl}
+	mock.recorder = &MockServiceAccountStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockServiceAccountStore) EXPECT() *MockServiceAccountStoreMockRecorder {
+	return m.recorder
+}
+
+// Add mocks base method.
+func (m *MockServiceAccountStore) Add(sa *storage.ServiceAccount) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Add", sa)
+}
+
+// Add indicates an expected call of Add.
+func (mr *MockServiceAccountStoreMockRecorder) Add(sa interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockServiceAccountStore)(nil).Add), sa)
+}
+
+// GetImagePullSecrets mocks base method.
+func (m *MockServiceAccountStore) GetImagePullSecrets(namespace, name string) []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImagePullSecrets", namespace, name)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetImagePullSecrets indicates an expected call of GetImagePullSecrets.
+func (mr *MockServiceAccountStoreMockRecorder) GetImagePullSecrets(namespace, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagePullSecrets", reflect.TypeOf((*MockServiceAccountStore)(nil).GetImagePullSecrets), namespace, name)
+}
+
+// Remove mocks base method.
+func (m *MockServiceAccountStore) Remove(sa *storage.ServiceAccount) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Remove", sa)
+}
+
+// Remove indicates an expected call of Remove.
+func (mr *MockServiceAccountStoreMockRecorder) Remove(sa interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockServiceAccountStore)(nil).Remove), sa)
+}

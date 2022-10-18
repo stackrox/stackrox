@@ -34,9 +34,16 @@ message ScanImageRequest {
 }
 
 message ScanImageInternalRequest {
-    storage.ContainerImage image = 1;
-    reserved                       2;
-    bool cached_only             = 3;
+    message Source {
+        string          cluster_id         = 1;
+        string          namespace          = 2;
+        repeated string image_pull_secrets = 3;
+    }
+
+    storage.ContainerImage image              = 1;
+    reserved                                    2;
+    bool                   cached_only        = 3;
+    Source                 source             = 4;
 }
 
 message ScanImageInternalResponse {
