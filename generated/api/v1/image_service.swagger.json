@@ -1034,6 +1034,13 @@
         "name": {
           "$ref": "#/definitions/storageImageName"
         },
+        "names": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageName"
+          },
+          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations."
+        },
         "metadata": {
           "$ref": "#/definitions/storageImageMetadata"
         },
@@ -1255,6 +1262,13 @@
         "description": {
           "type": "string",
           "description": "description is set in the case of an error with the specific error's message. Otherwise, this will not be set."
+        },
+        "verifiedImageReferences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The full image name that the signature references. Since images can come from different locations, this will\nensure we can verify the matching location as well."
         }
       },
       "title": "Next Tag: 5"

@@ -13,6 +13,9 @@ package storage;
 message Image {
     string                          id                          = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"pk"'];
     ImageName                       name                        = 1;
+    // This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with
+    // different locations.
+    repeated ImageName              names                       = 18;
 
     ImageMetadata                   metadata                    = 2;
     ImageScan                       scan                        = 3 [(gogoproto.moretags) = 'policy:"Image Scan"'];
@@ -104,6 +107,9 @@ message ImageSignatureVerificationResult {
     Status status                               = 3;
     // description is set in the case of an error with the specific error's message. Otherwise, this will not be set.
     string description                          = 4 ;
+    // The full image name that the signature references. Since images can come from different locations, this will
+    // ensure we can verify the matching location as well.
+    repeated string verified_image_references = 5;
 }
 
 // Next Tag: 13
