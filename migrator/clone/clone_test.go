@@ -155,6 +155,14 @@ func doTestCloneMigrationToPostgres(t *testing.T, runBoth bool) {
 				mock.upgradeCentral(c.furtherToVersion, "")
 				if c.moreFurtherToVersion != nil {
 					mock.upgradeCentral(c.moreFurtherToVersion, "")
+
+					// Now try to go back to Rocks and make sure that fails
+					// Turn Postgres back off
+					require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
+					mock.runMigrator("", "", true)
+
+					// Turn Postgres back on
+					require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(true)))
 				}
 			}
 		})
@@ -165,7 +173,7 @@ func createAndRunCentral(t *testing.T, ver *versionPair, runBoth bool) *mockCent
 	mock := createCentral(t, runBoth)
 	mock.setVersion = setVersion
 	mock.setVersion(t, ver)
-	mock.runMigrator("", "")
+	mock.runMigrator("", "", false)
 	mock.runCentral()
 	return mock
 }
@@ -179,7 +187,7 @@ func createAndRunCentralStartRocks(t *testing.T, ver *versionPair, runBoth bool)
 	// First get a Rocks up and current.  This way when we do the next upgrade we should get a previous rocks.
 	require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
 
-	mock.runMigrator("", "")
+	mock.runMigrator("", "", false)
 	mock.runCentral()
 
 	// Turn Postgres back on
@@ -248,7 +256,7 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 			}
 			if c.furtherToVersion != nil {
 				// Run migrator multiple times
-				mock.runMigrator("", "")
+				mock.runMigrator("", "", false)
 				mock.upgradeCentral(c.furtherToVersion, "")
 			}
 		})
