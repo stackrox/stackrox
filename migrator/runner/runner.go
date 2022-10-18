@@ -22,6 +22,10 @@ func Run(databases *types.Databases) error {
 		return errors.Wrap(err, "getting current seq num")
 	}
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
+	if dbSeqNum == 0 {
+		log.WriteToStderr("Sequence number of 0 means starting fresh, no migrations to execute")
+		return nil
+	}
 	if dbSeqNum > currSeqNum {
 		return fmt.Errorf("DB sequence number %d is greater than the latest one we have (%d). This means "+
 			"the migration binary is likely out of date", dbSeqNum, currSeqNum)
