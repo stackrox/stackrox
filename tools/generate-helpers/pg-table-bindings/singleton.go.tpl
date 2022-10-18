@@ -14,7 +14,6 @@ import (
     "strings"
     "time"
 
-    "github.com/gogo/protobuf/proto"
     "github.com/jackc/pgx/v4"
     "github.com/jackc/pgx/v4/pgxpool"
     "github.com/pkg/errors"
@@ -173,7 +172,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) 
 	}
 
 	var msg {{.Type}}
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
         return nil, false, err
 	}
 	return &msg, true, nil

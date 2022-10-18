@@ -5,7 +5,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -292,7 +291,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NamespaceMetad
 	}
 
 	var msg storage.NamespaceMetadata
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -375,7 +374,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Names
 	resultsByID := make(map[string]*storage.NamespaceMetadata)
 	for _, data := range rows {
 		msg := &storage.NamespaceMetadata{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, nil, err
 		}
 		resultsByID[msg.GetId()] = msg
@@ -413,7 +412,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	var results []*storage.NamespaceMetadata
 	for _, data := range rows {
 		msg := &storage.NamespaceMetadata{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		results = append(results, msg)
@@ -449,7 +448,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NamespaceMeta
 		}
 		for _, data := range rows {
 			var msg storage.NamespaceMetadata
-			if err := proto.Unmarshal(data, &msg); err != nil {
+			if err := msg.Unmarshal(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {
