@@ -89,7 +89,7 @@ func (p *prunerFactoryImpl) StartPruning() Pruner {
 	return p
 }
 
-// NewFactory returns an new Factory that creates pruners never pruning below the given number of `minProcesses`.
+// NewFactory returns a new Factory that creates pruners never pruning below the given number of `minProcesses`.
 func NewFactory(minProcesses int, period time.Duration) Factory {
 	return &prunerFactoryImpl{
 		minProcesses: minProcesses,

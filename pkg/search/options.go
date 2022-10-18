@@ -177,6 +177,7 @@ var (
 	ProcessArguments = newFieldLabel("Process Arguments")
 	ProcessAncestor  = newFieldLabel("Process Ancestor")
 	ProcessUID       = newFieldLabel("Process UID")
+	ProcessTime      = newFieldLabel("Process Time")
 
 	// Secret search fields
 	SecretType       = newFieldLabel("Secret Type")

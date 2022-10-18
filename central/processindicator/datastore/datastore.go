@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -22,6 +23,7 @@ import (
 )
 
 // DataStore represents the interface to access data.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
@@ -32,6 +34,7 @@ type DataStore interface {
 	AddProcessIndicators(context.Context, ...*storage.ProcessIndicator) error
 	RemoveProcessIndicatorsByPod(ctx context.Context, id string) error
 	RemoveProcessIndicators(ctx context.Context, ids []string) error
+	RemoveOrphanedProcessIndicators(ctx context.Context, orphanedBefore *time.Time) error
 
 	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error
 

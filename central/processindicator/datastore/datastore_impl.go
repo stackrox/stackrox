@@ -21,6 +21,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -40,6 +41,8 @@ type datastoreImpl struct {
 	prunedArgsLengthCache map[processindicator.ProcessWithContainerInfo]int
 
 	stopSig, stoppedSig concurrency.Signal
+
+	mutex sync.Mutex
 }
 
 func checkReadAccess(ctx context.Context, indicator *storage.ProcessIndicator) (bool, error) {
@@ -137,6 +140,9 @@ func (ds *datastoreImpl) removeMatchingIndicators(ctx context.Context, results [
 }
 
 func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) error {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -167,6 +173,16 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 		return err
 	}
 	return ds.removeMatchingIndicators(ctx, results)
+}
+
+func (ds *datastoreImpl) RemoveOrphanedProcessIndicators(ctx context.Context, orphanedBefore *time.Time) error {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil
+	}
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	return nil
 }
 
 func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {
