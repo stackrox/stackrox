@@ -64,11 +64,6 @@ function DeploymentSideBar() {
                         tabContentId="Policies"
                         title={<TabTitleText>Policies</TabTitleText>}
                     />
-                    <Tab
-                        eventKey="Timeline"
-                        tabContentId="Timeline"
-                        title={<TabTitleText>Timeline</TabTitleText>}
-                    />
                 </Tabs>
                 <TabContent eventKey="Details" id="Details" hidden={activeKeyTab !== 'Details'}>
                     <DeploymentDetails />
@@ -81,9 +76,6 @@ function DeploymentSideBar() {
                 </TabContent>
                 <TabContent eventKey="Policies" id="Policies" hidden={activeKeyTab !== 'Policies'}>
                     <div className="pf-u-h-100 pf-u-p-md">TODO: Add Policies</div>
-                </TabContent>
-                <TabContent eventKey="Timeline" id="Timeline" hidden={activeKeyTab !== 'Timeline'}>
-                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Timeline</div>
                 </TabContent>
             </FlexItem>
         </Flex>
