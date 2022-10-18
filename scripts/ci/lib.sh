@@ -1299,6 +1299,8 @@ __EOM__
       slack_mention="_unable to resolve Slack user for GitHub login ${author_login}_"
     fi
 
+    local slack_attachments=$(junit2slack)
+
     # shellcheck disable=SC2016
     local body='
 {
@@ -1330,14 +1332,10 @@ __EOM__
         {
             "type": "divider"
         }
-    ]
+    ],
+    "attachments": \($attachments)
 }
 '
-
-    local slack_attachments = junit2slack
-    if [[ -n "${slack_attachments}" ]]; then
-        body = jq '.attachments |= .+ $slack_attachments' body
-    fi
 
     payload="$(jq --null-input \
       --arg job_name "$job_name" \
@@ -1347,6 +1345,7 @@ __EOM__
       --arg author_name "$author_name" \
       --arg slack_mention "$slack_mention" \
       --arg log_url "$log_url" \
+      --argjson attchment "$attachments" \
       "$body")"
     echo -e "About to post:\n$payload"
 
@@ -1447,8 +1446,7 @@ junit2slack() {
     fi
 
     local junit_file_names
-    junit_file_names=$(find "${ARTIFACT_DIR}" -type f -name 'junit-*.xml' | xargs)
-
+    junit_file_names=($(find "${ARTIFACT_DIR}" -type f -name '*.xml' | xargs))
     pushd "$SCRIPTS_ROOT/scripts/ci/junit2slack" || return
     go run main.go "$junit_file_names"
     popd
