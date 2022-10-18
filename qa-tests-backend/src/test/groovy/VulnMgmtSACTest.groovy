@@ -276,11 +276,17 @@ class VulnMgmtSACTest extends BaseSpecification {
         assert nodeComponentCallResult.hasNoErrors()
 
         then:
-        baseVulnCallResult.code == vulnCallResult.code
-        extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
+        baseImageVulnCallResult.code == imageVulnCallResult.code
+        extractCVEsAndSort(baseImageVulnCallResult.value) == extractCVEsAndSort(imageVulnCallResult.value)
 
-        baseComponentCallResult.code == componentCallResult.code
-        extractCVEsAndSort(baseComponentCallResult.value) == extractCVEsAndSort(componentCallResult.value)
+        baseImageComponentCallResult.code == imageComponentCallResult.code
+        extractCVEsAndSort(baseImageComponentCallResult.value) == extractCVEsAndSort(imageComponentCallResult.value)
+
+        baseNodeVulnCallResult.code == nodeVulnCallResult.code
+        extractCVEsAndSort(baseNodeVulnCallResult.value) == extractCVEsAndSort(nodeVulnCallResult.value)
+
+        baseNodeComponentCallResult.code == nodeComponentCallResult.code
+        extractCVEsAndSort(baseNodeComponentCallResult.value) == extractCVEsAndSort(nodeComponentCallResult.value)
 
         cleanup:
         "Cleanup"
@@ -289,7 +295,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         where:
         "Data inputs are: "
         roleName        | baseQuery     | imageQuery         | nodeQuery
-        NODE_IMAGE_ROLE | "Component:*" | "ImageComponent:*" | "NodeComponent:*""
+        NODE_IMAGE_ROLE | "Component:*" | "ImageComponent:*" | "NodeComponent:*"
     }
 
     @Retry(count = 0)
