@@ -318,6 +318,14 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		err := g.processes.RemoveOrphanedProcessIndicators(pruningCtx, time.Now().Add(-1*orphanWindow))
+		if err != nil {
+			log.Error(errors.Wrap(err, "unable to prune processes"))
+		}
+		return
+	}
+
 	var processesToPrune []string
 	now := types.TimestampNow()
 	err := g.processes.WalkAll(pruningCtx, func(pi *storage.ProcessIndicator) error {

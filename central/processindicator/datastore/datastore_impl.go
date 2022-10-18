@@ -175,7 +175,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 	return ds.removeMatchingIndicators(ctx, results)
 }
 
-func (ds *datastoreImpl) RemoveOrphanedProcessIndicators(ctx context.Context, orphanedBefore *time.Time) error {
+func (ds *datastoreImpl) RemoveOrphanedProcessIndicators(ctx context.Context, orphanedBefore time.Time) error {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil
 	}

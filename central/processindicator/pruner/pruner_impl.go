@@ -1,15 +1,28 @@
 package pruner
 
 import (
+	"context"
 	"strings"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/processindicator"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (
 	jaccardThreshold = 0.6
+
+	pruneOrphanedPodIndicatorsStmt = `DELETE FROM process_indicators child WHERE NOT EXISTS
+		(SELECT 1 FROM pods parent WHERE child.poduid = parent.Id) and child.signal_time < $1`
+
+	pruneOrphanedDeploymentIndicatorsStmt = `DELETE FROM process_indicators child WHERE NOT EXISTS
+		(SELECT 1 FROM deployments parent WHERE child.deploymentid = parent.Id) and child.signal_time < $1`
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type prunerFactoryImpl struct {
@@ -87,6 +100,20 @@ func (p *prunerFactoryImpl) Period() time.Duration {
 
 func (p *prunerFactoryImpl) StartPruning() Pruner {
 	return p
+}
+
+func (p *prunerFactoryImpl) PruneOrphanedPodIndicators(ctx context.Context) error {
+	if _, err := globaldb.GetPostgres().Exec(ctx, pruneOrphanedPodIndicatorsStmt); err != nil {
+		log.Errorf("failed to prune orhpaned pod indicators: %v", err)
+	}
+	return nil
+}
+
+func (p *prunerFactoryImpl) PruneOrphanedDeploymentIndicators(ctx context.Context) error {
+	if _, err := globaldb.GetPostgres().Exec(ctx, pruneOrphanedDeploymentIndicatorsStmt); err != nil {
+		log.Errorf("failed to prune orhpaned pod indicators: %v", err)
+	}
+	return nil
 }
 
 // NewFactory returns a new Factory that creates pruners never pruning below the given number of `minProcesses`.
