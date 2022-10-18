@@ -26,7 +26,7 @@ function ByNameSelector({
     function onAddValue() {
         const selector = cloneDeep(scopedResourceSelector);
         // Only add a new form row if there are no blank entries
-        if (!selector.rule.values.every((value) => value)) {
+        if (selector.rule.values.every((value) => value)) {
             selector.rule.values.push('');
             handleChange(entityType, selector);
         }

@@ -51,7 +51,7 @@ function ByLabelSelector({
         const selector = cloneDeep(scopedResourceSelector);
 
         // Only add a new form row if there are no blank entries
-        if (!selector.rules.every(({ key, values }) => key && values.every((value) => value))) {
+        if (selector.rules.every(({ key, values }) => key && values.every((value) => value))) {
             selector.rules.push({ operator: 'OR', key: '', values: [''] });
             handleChange(entityType, selector);
         }
@@ -62,7 +62,7 @@ function ByLabelSelector({
         const rule = selector.rules[ruleIndex];
 
         // Only add a new form row if there are no blank entries
-        if (!rule.values.every((value) => value)) {
+        if (rule.values.every((value) => value)) {
             rule.values.push('');
             handleChange(entityType, selector);
         }
