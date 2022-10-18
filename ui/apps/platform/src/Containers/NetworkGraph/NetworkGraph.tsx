@@ -18,6 +18,7 @@ import stylesComponentFactory from './components/stylesComponentFactory';
 import defaultLayoutFactory from './layouts/defaultLayoutFactory';
 import defaultComponentFactory from './components/defaultComponentFactory';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
+import NamespaceSideBar from './namespace/NamespaceSideBar';
 
 const model: Model = {
     graph: {
@@ -113,7 +114,7 @@ const TopologyComponent = () => {
         <TopologyView
             sideBar={
                 <TopologySideBar resizable onClose={() => setSelectedObj(null)}>
-                    {selectedObj?.type === 'group' && <div>Group</div>}
+                    {selectedObj?.type === 'group' && <NamespaceSideBar />}
                     {selectedObj?.type === 'node' && <DeploymentSideBar />}
                 </TopologySideBar>
             }

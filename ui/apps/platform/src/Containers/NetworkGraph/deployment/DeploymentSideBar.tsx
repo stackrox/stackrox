@@ -22,7 +22,7 @@ function DeploymentSideBar() {
 
     return (
         <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }} className="pf-u-h-100">
-            <Flex direction={{ default: 'row' }} className="pf-u-p-md">
+            <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
                 <FlexItem>
                     <Badge style={{ backgroundColor: 'rgb(0,102,205)' }}>D</Badge>
                 </FlexItem>
