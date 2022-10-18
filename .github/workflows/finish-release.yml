@@ -18,10 +18,12 @@ env:
   #eng-release (CMH5M8MHN) for real runs or #test-release-automation (C03KSV3N6N8) for testing:
   slack_channel: ${{ fromJSON('["CMH5M8MHN", "C03KSV3N6N8"]')[ github.repository != 'stackrox/stackrox' || github.event.inputs.dry-run == 'true'] }}
   script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
-  DRY_RUN: ${{ fromJSON('["true", "false"]')[inputs.dry-run != true] }}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != true] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
+
+run-name: Finish release ${{ github.event.inputs.version }}${{ fromJSON('[" (dry-run)", ""]')[github.event.inputs.dry-run != true] }}
 
 # Ensure that only a single release automation workflow can run at a time.
 concurrency: Release automation
@@ -34,14 +36,14 @@ jobs:
     steps:
       - run: |
           [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
-          echo "Event: ${{ github.event_name }}" >>"$GITHUB_STEP_SUMMARY"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            cat <<EOF >>"$GITHUB_STEP_SUMMARY"
-          \`\`\`
-          ${{ toJSON(inputs) }}
-          \`\`\`
-          EOF
-          fi
+          {
+            echo "Event: ${{ github.event_name }}"
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo '```'
+              echo "${{ toJSON(inputs) }}"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
   variables:
     if: github.event_name == 'workflow_dispatch'
@@ -75,6 +77,21 @@ jobs:
             tag-rc \
             "${{ needs.variables.outputs.release-patch }}"
 
+          echo "report-file-name=gosec-$(git rev-parse --short HEAD).output" >> "$GITHUB_OUTPUT"
+
+      - name: Run Gosec security scanner
+        uses: securego/gosec@master
+        with:
+          args: "-no-fail -out ${{ steps.tag.outputs.report-file-name }} ./..."
+      - run: |
+          {
+            echo "# gosec Report"
+            echo ""
+            echo '```'
+            cat "$GITHUB_WORKSPACE/${{ steps.tag.outputs.report-file-name }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Create GitHub Release
         id: release
         if: env.DRY_RUN == 'false'
@@ -91,15 +108,24 @@ jobs:
             --notes-file RELEASE_NOTES_GENERATED.md \
             --repo "${{ github.repository }}" \
             --target "${{ needs.variables.outputs.branch }}")
-          echo "::set-output name=url::$URL"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Attach gosec report
+        if: env.DRY_RUN == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ needs.variables.outputs.release-patch }}" \
+            --repo "${{ github.repository }}" \
+            "$GITHUB_WORKSPACE/${{ steps.tag.outputs.report-file-name }}"
 
       - run: |
-          echo "Created GitHub release [${{ needs.variables.outputs.release-patch }}](${{ steps.release.outputs.url }})" >> $GITHUB_STEP_SUMMARY
+          echo "Created GitHub release [${{ needs.variables.outputs.release-patch }}](${{ steps.release.outputs.url }})" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.19.0
+        uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: ${{env.slack_channel}}
           payload: >-

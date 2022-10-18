@@ -30,6 +30,8 @@ env:
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
 
+run-name: Start release ${{ github.event.inputs.version }} from ${{ github.event.inputs.ref }}${{ fromJSON('[" (dry-run)", ""]')[github.event.inputs.dry-run != true] }}
+
 # Ensure that only a single release automation workflow can run at a time.
 concurrency: Release automation
 
@@ -84,7 +86,7 @@ jobs:
         if: failure() && steps.check.conclusion == 'failure'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.19.0
+        uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: ${{env.slack_channel}}
           payload: >-
@@ -125,9 +127,9 @@ jobs:
         id: check-existing
         run: |
           if git ls-remote --quiet --exit-code origin "${{needs.variables.outputs.branch}}"; then
-            echo "::set-output name=branch-exists::true"
+            echo "branch-exists=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::set-output name=branch-exists::false"
+            echo "branch-exists=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Initialize mandatory git config
         run: |
@@ -154,7 +156,7 @@ jobs:
           git add .gitmodules docs/content
           if ! git diff-index --quiet HEAD; then
             git commit -am "Docs update for release ${{needs.variables.outputs.milestone}}"
-            echo "Documents submodule has been updated on the release branch." >> $GITHUB_STEP_SUMMARY
+            echo "Documents submodule has been updated on the release branch." >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Update the changelog
         if: steps.check-existing.outputs.branch-exists == 'false'
@@ -163,7 +165,7 @@ jobs:
           git add CHANGELOG.md
           if ! git diff-index --quiet HEAD; then
             git commit --message "Changelog for ${{inputs.version}}"
-            echo "\`CHANGELOG.md\` has been updated on the release branch." >> $GITHUB_STEP_SUMMARY
+            echo "\`CHANGELOG.md\` has been updated on the release branch." >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Push changes
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
@@ -187,10 +189,10 @@ jobs:
         id: check-existing
         run: |
           if git ls-remote --quiet --exit-code origin "$BRANCH"; then
-            echo "::set-output name=branch-exists::true"
+            echo "branch-exists=true" >> "$GITHUB_OUTPUT"
             echo "::notice::OpenShift CI configuration branch exists. Assuming CI is ready."
           else
-            echo "::set-output name=branch-exists::false"
+            echo "branch-exists=false" >> "$GITHUB_OUTPUT"
             git switch --create "$BRANCH"
           fi
       - name: Initialize mandatory git config
@@ -222,7 +224,7 @@ jobs:
           make update
 
           git add ci-operator
-          git commit -m "Release $RELEASE files" >> $GITHUB_STEP_SUMMARY
+          git commit -m "Release $RELEASE files" >> "$GITHUB_STEP_SUMMARY"
       - name: Push and create PR
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
         run: |
@@ -234,7 +236,7 @@ jobs:
             --body "CI configuration files to support Stackrox release \`$RELEASE\`." \
             --assignee "$GITHUB_ACTOR")
 
-          echo ":arrow_right: Review and merge the [PR]($PR_URL) that has been created for the \`openshift/release\` repository." >> $GITHUB_STEP_SUMMARY
+          echo ":arrow_right: Review and merge the [PR]($PR_URL) that has been created for the \`openshift/release\` repository." >> "$GITHUB_STEP_SUMMARY"
 
   patch-changelog:
     name: Patch CHANGELOG.md
@@ -271,19 +273,19 @@ jobs:
           set -u
           if ! http_code=$(gh api --silent -X POST \
             "repos/${{github.repository}}/milestones" \
-            -f "title"="${{needs.variables.outputs.milestone}}" \
+            -f title="${{needs.variables.outputs.milestone}}" \
             2>&1); then
 
             if grep "HTTP 422" <<< "$http_code"; then
               echo ":arrow_right: Milestone ${{needs.variables.outputs.milestone}} already exists." \
-                "**Close it once it's finished.**" >>"$GITHUB_STEP_SUMMARY"
+                "**Close it once it's finished.**" >> "$GITHUB_STEP_SUMMARY"
             else
               echo "::error::Couldn't create milestone ${{needs.variables.outputs.milestone}}: $http_code"
               exit 1
             fi
           else
             echo ":arrow_right: Milestone ${{needs.variables.outputs.milestone}} has been created." \
-              "**Close it once it's finished.**" >>"$GITHUB_STEP_SUMMARY"
+              "**Close it once it's finished.**" >> "$GITHUB_STEP_SUMMARY"
           fi
 
   notify:
@@ -294,7 +296,7 @@ jobs:
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.19.0
+        uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: ${{env.slack_channel}}
           payload: >-
