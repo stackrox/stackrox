@@ -3,7 +3,7 @@ ARG BASE_IMAGE=ubi8/ubi
 ARG BASE_TAG=8.6
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
-#WORKDIR /bundle
+
 ADD bundle.tar.gz /bundle
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
@@ -19,6 +19,7 @@ ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
 ENV PG_MAJOR=13
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
+ENV LANG en_US.utf8
 
 COPY signatures/RPM-GPG-KEY-PGDG-13 /
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
@@ -40,6 +41,9 @@ RUN groupadd -g 70 postgres && \
     chown postgres:postgres /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh && \
     mkdir /docker-entrypoint-initdb.d
+
+# Use SIGINT to bring down with Fast Shutdown mode
+STOPSIGNAL SIGINT
 
 USER postgres:postgres
 
