@@ -38,5 +38,8 @@ message AuthProvider {
 
     Traits traits = 12;
 
+    // Specifies claims from IdP token that will be copied to Rox token attributes.
+    // For example, we can specify nested array claim "realm_access.roles" to be mapped to "groups" attribute.
+    // Currently we only support this feature only for OIDC auth provider.
     map<string, string> claim_mappings = 13;
 }

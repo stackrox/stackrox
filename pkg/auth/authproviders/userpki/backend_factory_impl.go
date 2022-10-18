@@ -31,7 +31,7 @@ type ProviderCallbacks interface {
 	GetProviderForFingerprint(fingerprint string) authproviders.Provider
 }
 
-func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string, mappings map[string]string) (authproviders.Backend, error) {
+func (f *factory) CreateBackend(ctx context.Context, id string, _ []string, config map[string]string, _ map[string]string) (authproviders.Backend, error) {
 	pathPrefix := f.callbackURLPath + id + "/"
 	be, err := newBackend(ctx, pathPrefix, f.callbacks, config)
 	if err != nil {

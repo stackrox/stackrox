@@ -24,8 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2"
-
-	"github.com/jeremywohl/flatten/v2"
 )
 
 const (
@@ -191,7 +189,7 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonc
 
 	externalClaims := userInfoToExternalClaims(&userInfo)
 	if err := addCustomMappingsToClaims(externalClaims, p.mappings, idToken); err != nil {
-
+		return nil, err
 	}
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
@@ -208,31 +206,49 @@ func addCustomMappingsToClaims(externalUserClaim *tokens.ExternalUserClaim, mapp
 	if err := claimExtractor.Claims(&claims); err != nil {
 		return err
 	}
-	flattenedClaims, err := flatten.Flatten(claims, "", flatten.DotStyle, false)
-	if err != nil {
-		return err
-	}
 	for fromClaimName, toClaimName := range mappings {
-		if val, ok := flattenedClaims[fromClaimName]; ok {
-			switch val.(type) {
-			case []interface{}:
-				for _, arrayVal := range val.([]interface{}) {
-					if stringVal, ok := arrayVal.(string); ok {
-						externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], stringVal)
-					} else {
-						return errors.Errorf("Unsupported claim type: %s", val)
-					}
+		val, _ := extractClaimFromPath(fromClaimName, claims)
+		switch val.(type) {
+		case []interface{}:
+			for _, arrayVal := range val.([]interface{}) {
+				if stringVal, ok := arrayVal.(string); ok {
+					externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], stringVal)
+				} else {
+					return errors.Errorf("Unsupported claim type: %s", val)
 				}
-			case string:
-				externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], val.(string))
-			case bool:
-				externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], strconv.FormatBool(val.(bool)))
-			default:
-				return errors.Errorf("Unsupported claim type: %s", val)
 			}
+		case string:
+			externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], val.(string))
+		case bool:
+			externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], strconv.FormatBool(val.(bool)))
+		default:
+			return errors.Errorf("Unsupported claim type: %s", val)
 		}
+
 	}
 	return nil
+}
+
+// fromClaimName = `realm_access.roles`
+// claims are obtained via idToken.Claims(&claims) call
+func extractClaimFromPath(fromClaimName string, claims map[string]interface{}) (interface{}, error) {
+	claimPath := strings.Split(fromClaimName, ".")
+	currentNode := claims
+	for i, next := range claimPath {
+		nextVal, ok := currentNode[next]
+		if !ok {
+			return nil, errors.New("no value on the path")
+		}
+		if i != len(claimPath)-1 {
+			currentNode, ok = nextVal.(map[string]interface{})
+			if !ok {
+				return nil, errors.New("can't cast to the map")
+			}
+		} else {
+			return nextVal, nil
+		}
+	}
+	return nil, nil
 }
 
 func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) (*authproviders.AuthResponse, error) {

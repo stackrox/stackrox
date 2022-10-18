@@ -987,9 +987,8 @@ type mockVerifier struct {
 
 func (m mockVerifier) Verify(_ context.Context, token string) (oidcIDToken, error) {
 	// undo claims.serialize
-	//s := strings.Split(token, ":")
-	//return mockOIDCToken{name: s[0], email: s[1], uid: s[2], nonce: s[3]}, nil
-	return nil, nil
+	s := strings.Split(token, ":")
+	return mockOIDCToken{name: s[0], email: s[1], uid: s[2], nonce: s[3]}, nil
 }
 
 type mockOIDCToken struct {
@@ -1003,11 +1002,14 @@ func (m mockOIDCToken) GetNonce() string {
 	return m.nonce
 }
 
-func (m mockOIDCToken) Claims(u *userInfoType) error {
-	u.Name = m.name
-	u.EMail = m.email
-	u.UID = m.uid
-	return nil
+func (m mockOIDCToken) Claims(v interface{}) error { // u *userInfoType
+	if u, ok := v.(*userInfoType); ok {
+		u.Name = m.name
+		u.EMail = m.email
+		u.UID = m.uid
+		return nil
+	}
+	return errors.Errorf("unsupported type %T", v)
 }
 
 func (m mockOIDCToken) GetExpiry() time.Time {
