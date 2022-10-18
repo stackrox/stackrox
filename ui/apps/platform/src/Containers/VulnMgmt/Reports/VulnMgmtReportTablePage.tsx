@@ -50,7 +50,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
     const canWriteReports =
         hasVulnReportWriteAccess &&
         hasImageReadAccess &&
-        hasAccessScopeReadAccess &&
+        hasRoleScopeReadAccess &&
         hasNotifierIntegrationReadAccess;
 
     const searchOptions = useSearchOptions(searchCategories.REPORT_CONFIGURATIONS) || [];
