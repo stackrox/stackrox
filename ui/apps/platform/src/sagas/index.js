@@ -13,7 +13,6 @@ import network from './networkSagas';
 import metadata from './metadataSagas';
 import groups from './groupSagas';
 import attributes from './attributesSagas';
-// import systemConfig from './systemConfig';
 
 export default function* root() {
     yield all([
@@ -30,6 +29,5 @@ export default function* root() {
         fork(metadata),
         fork(groups),
         fork(attributes),
-        // fork(systemConfig),
     ]);
 }
