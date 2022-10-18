@@ -10,7 +10,7 @@ const basePath = '/main/collections';
 export const collectionsAlias = 'collections';
 export const collectionsCountAlias = 'collections/count';
 
-const routeConfigForCollections = {
+const requestConfigForCollections = {
     routeMatcherMap: {
         [collectionsAlias]: {
             method: 'GET',
@@ -24,7 +24,7 @@ const routeConfigForCollections = {
 };
 
 export function visitCollections(staticResponseMap) {
-    visit(basePath, routeConfigForCollections, staticResponseMap);
+    visit(basePath, requestConfigForCollections, staticResponseMap);
 
     cy.get('h1:contains("Collections")');
     cy.get(`${navSelectors.navExpandable}:contains("Platform Configuration")`);
@@ -38,7 +38,7 @@ export function visitCollectionsFromLeftNav(staticResponseMap) {
     visitFromLeftNavExpandable(
         'Platform Configuration',
         'Collections',
-        routeConfigForCollections,
+        requestConfigForCollections,
         staticResponseMap
     );
 
