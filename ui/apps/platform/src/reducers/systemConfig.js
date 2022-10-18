@@ -1,7 +1,8 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 
-import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
+import { createFetchingActionTypes } from 'utils/fetchingReduxRoutines';
+import { fetchPublicConfig as fetchPublicConfigService } from 'services/SystemConfigService';
 
 // Action types
 
@@ -11,8 +12,20 @@ export const types = {
 
 // Actions
 
-export const actions = {
-    fetchPublicConfig: createFetchingActions(types.FETCH_PUBLIC_CONFIG),
+export const fetchPublicConfig = () => {
+    return async (dispatch) => {
+        dispatch({ type: types.FETCH_PUBLIC_CONFIG.REQUEST });
+
+        try {
+            const result = await fetchPublicConfigService();
+            dispatch({
+                type: types.FETCH_PUBLIC_CONFIG.SUCCESS,
+                response: result.response,
+            });
+        } catch (e) {
+            dispatch({ type: types.FETCH_PUBLIC_CONFIG.FAILURE, payload: e });
+        }
+    };
 };
 
 // Reducers

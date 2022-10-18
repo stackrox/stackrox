@@ -1,14 +1,33 @@
 import { combineReducers } from 'redux';
 
-import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
+import { createFetchingActionTypes } from 'utils/fetchingReduxRoutines';
+import * as service from 'services/FeatureFlagsService';
+
+// Types
 
 export const types = {
     FETCH_FEATURE_FLAGS: createFetchingActionTypes('featureflags/FETCH_FEATURE_FLAGS'),
 };
 
-export const actions = {
-    fetchFeatureFlags: createFetchingActions(types.FETCH_FEATURE_FLAGS),
+// Actions
+
+export const fetchFeatureFlags = () => {
+    return async (dispatch) => {
+        dispatch({ type: types.FETCH_FEATURE_FLAGS.REQUEST });
+
+        try {
+            const result = await service.fetchFeatureFlags();
+            dispatch({
+                type: types.FETCH_FEATURE_FLAGS.SUCCESS,
+                response: result.response,
+            });
+        } catch (e) {
+            dispatch({ type: types.FETCH_FEATURE_FLAGS.FAILURE, payload: e });
+        }
+    };
 };
+
+// Reducers
 
 const featureFlags = (state = [], action) => {
     if (action.type === types.FETCH_FEATURE_FLAGS.SUCCESS) {

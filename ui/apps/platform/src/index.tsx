@@ -6,7 +6,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import { Store } from 'redux';
+import { AnyAction, Store } from 'redux';
 import { ConnectedRouter } from 'connected-react-router';
 import { createBrowserHistory as createHistory } from 'history';
 import { ApolloProvider } from '@apollo/client';
@@ -35,6 +35,9 @@ import AppPage from 'Containers/AppPage';
 import { ThemeProvider } from 'Containers/ThemeProvider';
 import configureStore from 'store/configureStore';
 import installRaven from 'installRaven';
+import { ThunkAction, ThunkDispatch } from 'redux-thunk';
+import { fetchFeatureFlags } from './reducers/featureFlags';
+import { fetchPublicConfig } from './reducers/systemConfig';
 import configureApollo from './configureApolloClient';
 
 installRaven();
@@ -43,6 +46,14 @@ const rootNode = document.getElementById('root');
 const history = createHistory();
 const store = configureStore(undefined, history) as Store;
 const apolloClient = configureApollo();
+
+const dispatch = (action) =>
+    (store.dispatch as ThunkDispatch<unknown, unknown, AnyAction>)(
+        action as ThunkAction<void, unknown, unknown, AnyAction>
+    );
+
+dispatch(fetchFeatureFlags());
+dispatch(fetchPublicConfig());
 
 ReactDOM.render(
     <Provider store={store}>
