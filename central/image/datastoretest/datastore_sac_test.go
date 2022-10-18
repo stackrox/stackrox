@@ -251,15 +251,15 @@ func (s *imageDatastoreSACSuite) TestUpdateVulnerabilityState() {
 			defer s.deleteImage(image.GetId())
 			s.Require().NoError(insertErr)
 			for _, cve := range foundCVEs {
-				edgeId := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-				edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeId)
+				edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
+				edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
 				s.NoError(err)
 				s.True(found)
 				s.Equal(storage.VulnerabilityState_OBSERVED, edge.GetState())
 			}
 			for _, cve := range missingCVEs {
-				edgeId := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-				edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeId)
+				edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
+				edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
 				s.NoError(err)
 				s.False(found)
 				s.Nil(edge)
@@ -278,8 +278,8 @@ func (s *imageDatastoreSACSuite) TestUpdateVulnerabilityState() {
 						// Currently, UpdateVulnerabilityState only updates the state column, but not the stored serialized object
 						expectedState = storage.VulnerabilityState_DEFERRED
 					}
-					edgeId := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-					edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeId)
+					edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
+					edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
 					s.NoError(err)
 					s.True(found)
 					s.Equal(expectedState, edge.GetState())
@@ -790,7 +790,7 @@ func (s *imageDatastoreSACSuite) TestSearch() {
 				resultIDHeap[r.ID] = struct{}{}
 			}
 			resultIDs := make([]string, 0, len(resultIDHeap))
-			for k, _ := range resultIDHeap {
+			for k := range resultIDHeap {
 				resultIDs = append(resultIDs, k)
 			}
 			s.ElementsMatch(expectedIDs, resultIDs)
@@ -820,7 +820,7 @@ func (s *imageDatastoreSACSuite) TestSearchImages() {
 				resultIDHeap[r.GetId()] = struct{}{}
 			}
 			resultIDs := make([]string, 0, len(resultIDHeap))
-			for k, _ := range resultIDHeap {
+			for k := range resultIDHeap {
 				resultIDs = append(resultIDs, k)
 			}
 			s.ElementsMatch(expectedIDs, resultIDs)
@@ -855,7 +855,7 @@ func (s *imageDatastoreSACSuite) TestSearchRawImages() {
 				resultImages[r.GetId()] = r
 			}
 			resultIDs := make([]string, 0, len(resultImages))
-			for k, _ := range resultImages {
+			for k := range resultImages {
 				resultIDs = append(resultIDs, k)
 			}
 			s.ElementsMatch(expectedIDs, resultIDs)
@@ -893,7 +893,7 @@ func (s *imageDatastoreSACSuite) TestSearchListImages() {
 				resultListImages[r.GetId()] = r
 			}
 			resultIDs := make([]string, 0, len(resultListImages))
-			for k, _ := range resultListImages {
+			for k := range resultListImages {
 				resultIDs = append(resultIDs, k)
 			}
 			s.ElementsMatch(expectedIDs, resultIDs)
