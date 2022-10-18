@@ -158,6 +158,22 @@ class VulnMgmtSACTest extends BaseSpecification {
         return token.token
     }
 
+    def getImageCVEQuery() {
+        return isPostgresRun() ? GET_IMAGE_CVES_QUERY : GET_CVES_QUERY
+    }
+
+    def getNodeCVEQuery() {
+        return isPostgresRun() ? GET_NODE_CVES_QUERY : GET_CVES_QUERY
+    }
+
+    def getImageComponentQuery() {
+        return isPostgresRun() ? GET_IMAGE_COMPONENTS_QUERY : GET_COMPONENTS_QUERY
+    }
+
+    def getNodeComponentQuery() {
+        return isPostgresRun() ? GET_NODE_COMPONENTS_QUERY : GET_COMPONENTS_QUERY
+    }
+
     @Retry(count = 0)
     @Unroll
     def "Verify role based scoping on vuln mgmt: node-role Node:*"() {
@@ -165,18 +181,8 @@ class VulnMgmtSACTest extends BaseSpecification {
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
         def baseQuery = "Node:*"
-        def cveQuery = ""
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            cveQuery = GET_NODE_CVES_QUERY
-        } else {
-            cveQuery = GET_CVES_QUERY
-        }
-        def componentQuery = ""
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            componentQuery = GET_NODE_COMPONENTS_QUERY
-        } else {
-            componentQuery = GET_COMPONENTS_QUERY
-        }
+        def cveQuery = getNodeCVEQuery()
+        def componentQuery = getNodeComponentQuery()
         def gqlService = new GraphQLService()
         def baseVulnCallResult = gqlService.Call(cveQuery, [query: baseQuery])
         assert baseVulnCallResult.hasNoErrors()
@@ -210,18 +216,8 @@ class VulnMgmtSACTest extends BaseSpecification {
         BaseService.useBasicAuth()
         def gqlService = new GraphQLService()
         def baseQuery = "Image:*"
-        def cveQuery = ""
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            cveQuery = GET_IMAGE_CVES_QUERY
-        } else {
-            cveQuery = GET_CVES_QUERY
-        }
-        def componentQuery = ""
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            componentQuery = GET_IMAGE_COMPONENTS_QUERY
-        } else {
-            componentQuery = GET_COMPONENTS_QUERY
-        }
+        def cveQuery = getImageCVEQuery()
+        def componentQuery = getImageComponentQuery()
         def baseVulnCallResult = gqlService.Call(cveQuery, [query: baseQuery])
         assert baseVulnCallResult.hasNoErrors()
         def baseComponentCallResult = gqlService.Call(componentQuery, [query: baseQuery])
@@ -248,23 +244,36 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify role based scoping on vuln mgmt: #roleName #baseQuery"() {
         when:
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
         def gqlService = new GraphQLService()
-        def baseVulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: baseQuery])
-        assert baseVulnCallResult.hasNoErrors()
-        def baseComponentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: baseQuery])
-        assert baseComponentCallResult.hasNoErrors()
+        def imageCveQuery = getImageCVEQuery()
+        def imageComponentQuery = getImageComponentQuery()
+        def nodeCveQuery = getNodeCVEQuery()
+        def nodeComponentQuery = getNodeComponentQuery()
+        def imageBaseQuery = isPostgresRun() ? imageBaseQuery : baseQuery
+        def nodeBaseQuery = isPostgresRun() ? nodeBaseQuery : baseQuery
+        def baseImageVulnCallResult = gqlService.Call(imageCveQuery, [query: imageBaseQuery])
+        assert baseImageVulnCallResult.hasNoErrors()
+        def baseImageComponentCallResult = gqlService.Call(imageComponentQuery, [query: imageBaseQuery])
+        assert baseImageComponentCallResult.hasNoErrors()
+        def baseNodeVulnCallResult = gqlService.Call(nodeCveQuery, [query: nodeBaseQuery])
+        assert baseNodeVulnCallResult.hasNoErrors()
+        def baseNodeComponentCallResult = gqlService.Call(nodeComponentQuery, [query: nodeBaseQuery])
+        assert baseNodeComponentCallResult.hasNoErrors()
 
         and:
         gqlService = new GraphQLService(getToken(roleName, roleName))
-        def vulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: ""])
-        assert vulnCallResult.hasNoErrors()
-        def componentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: ""])
-        assert componentCallResult.hasNoErrors()
+        def imageVulnCallResult = gqlService.Call(imageCveQuery, [query: ""])
+        assert imageVulnCallResult.hasNoErrors()
+        def imageComponentCallResult = gqlService.Call(imageComponentQuery, [query: ""])
+        assert imageComponentCallResult.hasNoErrors()
+        def nodeVulnCallResult = gqlService.Call(nodeCveQuery, [query: ""])
+        assert nodeVulnCallResult.hasNoErrors()
+        def nodeComponentCallResult = gqlService.Call(nodeComponentQuery, [query: ""])
+        assert nodeComponentCallResult.hasNoErrors()
 
         then:
         baseVulnCallResult.code == vulnCallResult.code
@@ -279,8 +288,8 @@ class VulnMgmtSACTest extends BaseSpecification {
 
         where:
         "Data inputs are: "
-        roleName        | baseQuery
-        NODE_IMAGE_ROLE | "Component:*"
+        roleName        | baseQuery     | imageQuery         | nodeQuery
+        NODE_IMAGE_ROLE | "Component:*" | "ImageComponent:*" | "NodeComponent:*""
     }
 
     @Retry(count = 0)
