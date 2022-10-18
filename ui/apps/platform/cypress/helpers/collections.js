@@ -14,11 +14,11 @@ const routeConfigForCollections = {
     routeMatcherMap: {
         [collectionsAlias]: {
             method: 'GET',
-            url: '/v1/collections',
+            url: '/v1/collections?query=*',
         },
         [collectionsCountAlias]: {
             method: 'GET',
-            url: '/v1/collections/count',
+            url: '/v1/collections/count?query=*',
         },
     },
 };
