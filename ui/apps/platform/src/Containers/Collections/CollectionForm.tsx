@@ -28,6 +28,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
+import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -36,7 +37,6 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
 import { deleteCollection } from 'services/CollectionsService';
-import { useFormik } from 'formik';
 import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';

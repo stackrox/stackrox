@@ -27,11 +27,9 @@ function ByNameSelector({
         const selector = cloneDeep(scopedResourceSelector);
         // Only add a new form row if there are no blank entries
         if (!selector.rule.values.every((value) => value)) {
-            return;
+            selector.rule.values.push('');
+            handleChange(entityType, selector);
         }
-
-        selector.rule.values.push('');
-        handleChange(entityType, selector);
     }
 
     function onChangeValue(resourceSelector, valueIndex) {
