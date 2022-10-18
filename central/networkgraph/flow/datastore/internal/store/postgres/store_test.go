@@ -134,6 +134,29 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 1)
 
+	pred := func(props *storage.NetworkFlowProperties) bool {
+		return true
+	}
+	flowPredicate := func(flow *storage.NetworkFlow) bool {
+		return true
+	}
+	foundNetworkFlows, _, err = store2.GetMatchingFlows(ctx, pred, nil)
+	s.NoError(err)
+	s.Len(foundNetworkFlows, 1)
+
+	err = store2.RemoveMatchingFlows(ctx, pred, flowPredicate)
+	s.NoError(err)
+
+	// Store 2 flows should be removed.
+	foundNetworkFlows, _, err = store2.GetAllFlows(ctx, nil)
+	s.NoError(err)
+	s.Len(foundNetworkFlows, 0)
+
+	// Store 1 flows should remain
+	foundNetworkFlows, _, err = store.GetAllFlows(ctx, nil)
+	s.NoError(err)
+	s.Len(foundNetworkFlows, flowCount)
+
 	// Clean up
 	Destroy(ctx, pool)
 }
