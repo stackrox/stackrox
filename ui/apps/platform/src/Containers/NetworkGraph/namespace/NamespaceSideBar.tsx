@@ -14,6 +14,7 @@ import {
 
 import useTabs from 'hooks/patternfly/useTabs';
 import NamespaceDeployments from './NamespaceDeployments';
+import NamespaceNetworkPolicies from './NamespaceNetworkPolicies';
 
 function NamespaceSideBar() {
     const { activeKeyTab, onSelectTab } = useTabs({
@@ -67,7 +68,7 @@ function NamespaceSideBar() {
                     id="Network policies"
                     hidden={activeKeyTab !== 'Network policies'}
                 >
-                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Network policies</div>
+                    <NamespaceNetworkPolicies />
                 </TabContent>
             </FlexItem>
         </Flex>
