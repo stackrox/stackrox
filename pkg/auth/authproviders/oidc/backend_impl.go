@@ -182,73 +182,15 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonc
 		return nil, errors.New("invalid token")
 	}
 
-	var userInfo userInfoType
-	if err := idToken.Claims(&userInfo); err != nil {
+	externalClaims, err := p.extractExternalClaims(idToken)
+	if err != nil {
 		return nil, err
 	}
 
-	externalClaims := userInfoToExternalClaims(&userInfo)
-	if err := addCustomMappingsToClaims(externalClaims, p.mappings, idToken); err != nil {
-		return nil, err
-	}
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: idToken.GetExpiry(),
 	}, nil
-}
-
-type ClaimExtractor interface {
-	Claims(v interface{}) error
-}
-
-func addCustomMappingsToClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[string]string, claimExtractor ClaimExtractor) error {
-	claims := make(map[string]interface{}, 0)
-	if err := claimExtractor.Claims(&claims); err != nil {
-		return err
-	}
-	for fromClaimName, toClaimName := range mappings {
-		val, _ := extractClaimFromPath(fromClaimName, claims)
-		switch val.(type) {
-		case []interface{}:
-			for _, arrayVal := range val.([]interface{}) {
-				if stringVal, ok := arrayVal.(string); ok {
-					externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], stringVal)
-				} else {
-					return errors.Errorf("Unsupported claim type: %s", val)
-				}
-			}
-		case string:
-			externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], val.(string))
-		case bool:
-			externalUserClaim.Attributes[toClaimName] = append(externalUserClaim.Attributes[toClaimName], strconv.FormatBool(val.(bool)))
-		default:
-			return errors.Errorf("Unsupported claim type: %s", val)
-		}
-
-	}
-	return nil
-}
-
-// fromClaimName = `realm_access.roles`
-// claims are obtained via idToken.Claims(&claims) call
-func extractClaimFromPath(fromClaimName string, claims map[string]interface{}) (interface{}, error) {
-	claimPath := strings.Split(fromClaimName, ".")
-	currentNode := claims
-	for i, next := range claimPath {
-		nextVal, ok := currentNode[next]
-		if !ok {
-			return nil, errors.New("no value on the path")
-		}
-		if i != len(claimPath)-1 {
-			currentNode, ok = nextVal.(map[string]interface{})
-			if !ok {
-				return nil, errors.New("can't cast to the map")
-			}
-		} else {
-			return nextVal, nil
-		}
-	}
-	return nil, nil
 }
 
 func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) (*authproviders.AuthResponse, error) {
@@ -264,7 +206,11 @@ func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) 
 		return nil, errors.Wrap(err, "parsing userinfo")
 	}
 
-	externalClaims := userInfoToExternalClaims(&userInfo)
+	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: time.Now().Add(userInfoExpiration),
@@ -635,6 +581,26 @@ func (p *backendImpl) Validate(context.Context, *tokens.Claims) error {
 // Helpers
 ///////////
 
+func (p *backendImpl) injectHTTPClient(ctx context.Context) context.Context {
+	if p.httpClient != nil {
+		return oidc.ClientContext(ctx, p.httpClient)
+	}
+	return ctx
+}
+
+func (p *backendImpl) extractExternalClaims(extractor claimExtractor) (*tokens.ExternalUserClaim, error) {
+	var userInfo userInfoType
+	if err := extractor.Claims(&userInfo); err != nil {
+		return nil, errors.Wrap(err, "failed to extract user info claims")
+	}
+
+	externalClaims := userInfoToExternalClaims(&userInfo)
+	if err := extractCustomClaims(externalClaims, p.mappings, extractor); err != nil {
+		return nil, errors.Wrap(err, "failed to add custom mapped claims")
+	}
+	return externalClaims, nil
+}
+
 // userInfoType is an internal helper struct to unmarshal OIDC token info into.
 type userInfoType struct {
 	Name   string   `json:"name"`
@@ -688,9 +654,69 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	return claim
 }
 
-func (p *backendImpl) injectHTTPClient(ctx context.Context) context.Context {
-	if p.httpClient != nil {
-		return oidc.ClientContext(ctx, p.httpClient)
+type claimExtractor interface {
+	Claims(v interface{}) error
+}
+
+func extractCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[string]string, claimExtractor claimExtractor) error {
+	claims := make(map[string]interface{}, 0)
+	if err := claimExtractor.Claims(&claims); err != nil {
+		return errors.Wrap(err, "failed to construct Go map")
 	}
-	return ctx
+	for fromClaimName, toClaimName := range mappings {
+		val, err := extractClaimFromPath(fromClaimName, claims)
+		if err != nil {
+			return err
+		}
+		if err := addClaimToUserClaims(externalUserClaim, toClaimName, val); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attributeName string, claimValue interface{}) error {
+	switch v := claimValue.(type) {
+	case []interface{}:
+		for i, arrayVal := range v {
+			_, isArray := arrayVal.([]interface{})
+			_, isNestedStruct := arrayVal.(map[string]interface{})
+			if !isNestedStruct && !isArray {
+				if err := addClaimToUserClaims(externalUserClaim, attributeName, arrayVal); err != nil {
+					return errors.Wrapf(err, "failed to add %d element of %+v", i, v)
+				}
+			} else {
+				return errors.Errorf("Unsupported claim type %T with value %+v", arrayVal, arrayVal)
+			}
+		}
+	case string:
+		externalUserClaim.Attributes[attributeName] = append(externalUserClaim.Attributes[attributeName], v)
+	case bool:
+		externalUserClaim.Attributes[attributeName] = append(externalUserClaim.Attributes[attributeName], strconv.FormatBool(v))
+	case float64:
+		externalUserClaim.Attributes[attributeName] = append(externalUserClaim.Attributes[attributeName], strconv.FormatFloat(v, 'f', -1, 64))
+	default:
+		return errors.Errorf("Unsupported claim type %T with value %+v", claimValue, claimValue)
+	}
+	return nil
+}
+
+func extractClaimFromPath(fromClaimName string, claims map[string]interface{}) (interface{}, error) {
+	claimPath := strings.Split(fromClaimName, ".")
+	currentNode := claims
+	for i, next := range claimPath {
+		nextVal, ok := currentNode[next]
+		if !ok {
+			return nil, errors.Errorf("no value %q on the path %q", next, fromClaimName)
+		}
+		if i != len(claimPath)-1 {
+			currentNode, ok = nextVal.(map[string]interface{})
+			if !ok {
+				return nil, errors.Errorf("expected next value to be of map type but got %T", nextVal)
+			}
+		} else {
+			return nextVal, nil
+		}
+	}
+	return nil, nil
 }
