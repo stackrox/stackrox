@@ -285,8 +285,8 @@ func (s *imageDatastoreSACSuite) TestUpdateVulnerabilityState() {
 					s.Equal(expectedState, edge.GetState())
 				}
 				for _, cve := range missingCVEs {
-					edgeId := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-					edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeId)
+					edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
+					edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
 					s.NoError(err)
 					s.False(found)
 					s.Nil(edge)
