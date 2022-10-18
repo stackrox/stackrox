@@ -34,8 +34,13 @@ export function visitCollections(staticResponseMap) {
     );
 }
 
-export function visitCollectionsFromLeftNav() {
-    visitFromLeftNavExpandable('Platform Configuration', 'Collections', routeConfigForCollections);
+export function visitCollectionsFromLeftNav(staticResponseMap) {
+    visitFromLeftNavExpandable(
+        'Platform Configuration',
+        'Collections',
+        routeConfigForCollections,
+        staticResponseMap
+    );
 
     cy.get('h1:contains("Collections")');
     cy.location('pathname').should('eq', basePath);
