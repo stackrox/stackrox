@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	mapset "github.com/deckarep/golang-set"
 	"github.com/pkg/errors"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -218,14 +218,15 @@ func (s *policyValidator) getCaps(policy *storage.Policy, capsTypes string) []*s
 }
 
 func (s *policyValidator) validateCapabilities(policy *storage.Policy) error {
-	set := mapset.NewSet()
+	values := set.NewSet[string]()
 	for _, s := range s.getCaps(policy, fieldnames.AddCaps) {
-		set.Add(s.Value)
+		values.Add(s.GetValue())
 	}
 	var duplicates []string
 	for _, s := range s.getCaps(policy, fieldnames.DropCaps) {
-		if set.Contains(s.Value) {
-			duplicates = append(duplicates, s.Value)
+		// We use `Remove` to ensure that each duplicate value is reported only once.
+		if val := s.GetValue(); values.Remove(val) {
+			duplicates = append(duplicates, val)
 		}
 	}
 	if len(duplicates) != 0 {
