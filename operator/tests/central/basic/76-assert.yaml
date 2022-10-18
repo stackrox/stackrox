@@ -26,6 +26,6 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: central-db-secret
+  name: central-db-password
 data:
   password: c2VjcmV0 # "secret" (no trailing newline)
