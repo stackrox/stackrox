@@ -8,7 +8,6 @@ import (
 	"github.com/slack-go/slack"
 	"log"
 	"os"
-	"regexp"
 )
 
 func main() {
@@ -86,9 +85,22 @@ func convertJunitToSlack(junitFiles []*junit.Suites) []slack.Attachment {
 				failedTestsBlocks = append(failedTestsBlocks, titleSectionBlock)
 
 				failureMessage := result.Failure.Message
-				// Double the whitespace if more than one space is present because Slack doesn't render it properly
-				var re = regexp.MustCompile(`(\s{2,})`)
-				failureMessage = re.ReplaceAllString(failureMessage, `$1$1`)
+
+				// If there's no failure message, we'll use a different message (this shouldn't be the usual case)
+				if len(failureMessage) <= 0 {
+					failureTitleTextBlock := slack.NewTextBlockObject("mrkdwn",
+						fmt.Sprintf("No Junit failure message for *%s*", title), false, false)
+					failureTitleSectionBlock := slack.NewSectionBlock(failureTitleTextBlock, nil, nil)
+
+					failureAttachment := slack.Attachment{
+						Color: "#bb2124",
+						Blocks: slack.Blocks{BlockSet: []slack.Block{
+							failureTitleSectionBlock,
+						}},
+					}
+					attachments = append(attachments, failureAttachment)
+					continue
+				}
 
 				// Slack has a 3000-character limit for (non-field) text objects
 				if len(failureMessage) > 3000 {
