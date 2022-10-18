@@ -5,7 +5,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -272,7 +271,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.AuthProvider, 
 	}
 
 	var msg storage.AuthProvider
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -364,7 +363,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.AuthP
 	resultsByID := make(map[string]*storage.AuthProvider)
 	for _, data := range rows {
 		msg := &storage.AuthProvider{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, nil, err
 		}
 		resultsByID[msg.GetId()] = msg
@@ -411,7 +410,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.AuthProvider)
 		}
 		for _, data := range rows {
 			var msg storage.AuthProvider
-			if err := proto.Unmarshal(data, &msg); err != nil {
+			if err := msg.Unmarshal(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

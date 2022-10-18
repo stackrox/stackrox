@@ -5,7 +5,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/metrics"
@@ -138,7 +137,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.SensorUpgradeCon
 	}
 
 	var msg storage.SensorUpgradeConfig
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
