@@ -354,16 +354,9 @@ func (d *dbCloneManagerImpl) DecommissionRocksDB() {
 					log.Info("we have already moved to the RocksDB current to be decomissioned")
 					continue
 				}
-				decommissionExists, err := fileutils.Exists(d.getPath(decommissionedCurrent))
-				if err != nil {
+				if err := os.MkdirAll(d.getPath(decommissionedCurrent), 0755); err != nil {
 					log.Error(err)
 					continue
-				}
-				if !decommissionExists {
-					if err := os.Mkdir(d.getPath(decommissionedCurrent), 0755); err != nil {
-						log.Error(err)
-						continue
-					}
 				}
 				// Set the new symbolic link
 				if err := fileutils.AtomicSymlink(decommissionedCurrent, d.getPath(CurrentClone)); err != nil {
