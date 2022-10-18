@@ -253,7 +253,7 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
-    @Category([NetworkFlowVisualization)
+    @Category([NetworkFlowVisualization])
     def "Verify one-time connections show at first and are closed after the afterglow period"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
