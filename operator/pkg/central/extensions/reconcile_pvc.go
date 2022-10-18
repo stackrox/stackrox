@@ -70,7 +70,12 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence) *platform.Pers
 func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platform.Persistence {
 	switch target {
 	case PVCTargetCentral:
-		return central.Spec.Central.GetPersistence()
+		persistence := central.Spec.Central.GetPersistence()
+		if persistence == nil {
+			// Make sure we return a non-nil object, otherwise the caller would think there is no claim to reconcile.
+			persistence = &platform.Persistence{}
+		}
+		return persistence
 	case PVCTargetCentralDB:
 		if central.Spec.Central.DB.IsExternal() {
 			return nil
