@@ -4,6 +4,7 @@ import {
     Flex,
     FlexItem,
     Pagination,
+    SearchInput,
     Stack,
     StackItem,
     Text,
@@ -23,7 +24,17 @@ const deployments = [
 ];
 
 function NamespaceDeployments() {
+    const [value, setValue] = React.useState('');
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+
+    const onChange = (newValue: string) => {
+        setValue(newValue);
+    };
+
+    // @TODO: This will be replaced by filtering on the backend through the API
+    const filteredDeployments = deployments.filter((deployment) => {
+        return deployment.name.includes(value);
+    });
 
     return (
         <div className="pf-u-h-100 pf-u-p-md">
@@ -53,6 +64,14 @@ function NamespaceDeployments() {
                     </Flex>
                 </StackItem>
                 <StackItem>
+                    <SearchInput
+                        placeholder="Find by deployment name"
+                        value={value}
+                        onChange={onChange}
+                        onClear={() => onChange('')}
+                    />
+                </StackItem>
+                <StackItem>
                     <TableComposable aria-label="Simple table" variant="compact">
                         <Thead>
                             <Tr>
@@ -61,7 +80,7 @@ function NamespaceDeployments() {
                             </Tr>
                         </Thead>
                         <Tbody>
-                            {deployments.map((deployment) => (
+                            {filteredDeployments.map((deployment) => (
                                 <Tr key={deployment.name}>
                                     <Td dataLabel={columnNames.DEPLOYMENT}>
                                         <Button variant="link" isInline>
