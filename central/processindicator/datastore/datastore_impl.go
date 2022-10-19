@@ -165,6 +165,10 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+	
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return ds.storage.DeleteByQuery(ctx, q)
