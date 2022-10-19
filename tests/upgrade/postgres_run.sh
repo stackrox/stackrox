@@ -176,16 +176,18 @@ test_upgrade_paths() {
     validate_upgrade "01-bounce-after-upgrade" "bounce after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
     collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce"
 
-# TODO ROX-12999 Add in case for restarting central-db
-#    info "Bouncing central-db"
-#    kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central-db -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
-#    wait_for_api
-#
-#    checkForRocksAccessScopes
-#    checkForPostgresAccessScopes
-#
-#    validate_upgrade "01-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-#    collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce-db"
+    info "Bouncing central-db"
+    # Extend the MUTEX timeout just for this case as a restart of the db will cause locks to be held longer as it should
+    kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
+    wait_for_api
+    kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central-db -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
+    wait_for_api
+
+    checkForRocksAccessScopes
+    checkForPostgresAccessScopes
+
+    validate_upgrade "01-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce-db"
 
     info "Fetching a sensor bundle for cluster 'remote'"
     rm -rf sensor-remote
