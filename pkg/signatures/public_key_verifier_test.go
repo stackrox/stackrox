@@ -84,9 +84,12 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
 	require.NoError(t, err, "creating image with signature")
 
-	status, err := pubKeyVerifier.VerifySignature(context.Background(), img)
+	status, verifiedImageReferences, err := pubKeyVerifier.VerifySignature(context.Background(), img)
 	assert.NoError(t, err, "verification should be successful")
 	assert.Equal(t, storage.ImageSignatureVerificationResult_VERIFIED, status, "status should be VERIFIED")
+	require.Len(t, verifiedImageReferences, 1)
+	assert.Equal(t, img.GetName().GetFullName(), verifiedImageReferences[0],
+		"image full name should match verified image reference")
 }
 
 func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
@@ -141,9 +144,10 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			status, err := c.verifier.VerifySignature(context.Background(), c.img)
+			status, verifiedImageReference, err := c.verifier.VerifySignature(context.Background(), c.img)
 			assert.Equal(t, c.status, status, "status should be FAILED verification")
 			assert.Error(t, err, "verification should be unsuccessful")
+			assert.Empty(t, verifiedImageReference, "verified image reference should be empty")
 			if c.err != nil {
 				assert.ErrorIs(t, err, c.err)
 			}

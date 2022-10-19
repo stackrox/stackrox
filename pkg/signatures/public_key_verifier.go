@@ -5,7 +5,9 @@ import (
 	"crypto"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/pem"
+	"fmt"
 
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/hashicorp/go-multierror"
@@ -14,9 +16,11 @@ import (
 	"github.com/sigstore/cosign/pkg/oci"
 	"github.com/sigstore/cosign/pkg/oci/static"
 	"github.com/sigstore/sigstore/pkg/signature"
+	"github.com/sigstore/sigstore/pkg/signature/payload"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -70,10 +74,10 @@ func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*c
 // The signature of the image will be verified using cosign. It will include the verification via public key
 // as well as the claim verification of the payload of the signature.
 func (c *cosignPublicKeyVerifier) VerifySignature(ctx context.Context,
-	image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error) {
+	image *storage.Image) (storage.ImageSignatureVerificationResult_Status, []string, error) {
 	// Short circuit if we do not have any public keys configured to verify against.
 	if len(c.parsedPublicKeys) == 0 {
-		return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, errNoKeysToVerifyAgainst
+		return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, errNoKeysToVerifyAgainst
 	}
 
 	var opts cosign.CheckOpts
@@ -84,7 +88,7 @@ func (c *cosignPublicKeyVerifier) VerifySignature(ctx context.Context,
 
 	sigs, hash, err := retrieveVerificationDataFromImage(image)
 	if err != nil {
-		return getVerificationResultStatusFromErr(err), err
+		return getVerificationResultStatusFromErr(err), nil, err
 	}
 
 	var allVerifyErrs error
@@ -96,24 +100,44 @@ func (c *cosignPublicKeyVerifier) VerifySignature(ctx context.Context,
 			continue
 		}
 		opts.SigVerifier = v
-		for _, sig := range sigs {
-			// The bundle references a rekor bundle within the transparency log. Since we do not support this, the
-			// bundle verified will _always_ be false.
-			// See: https://github.com/sigstore/cosign/blob/eaee4b7da0c1a42326bd82c6a4da7e16741db266/pkg/cosign/verify.go#L584-L586.
-			// If there is no error during the verification, the signature was successfully verified
-			// as well as the claims.
-			_, err = cosign.VerifyImageSignature(ctx, sig, hash, &opts)
-
-			// Short circuit on the first public key that successfully verified the signature, since they are bundled
-			// within a single signature integration.
-			if err == nil {
-				return storage.ImageSignatureVerificationResult_VERIFIED, nil
+		verifiedImageReferences, err := verifyImageSignatures(ctx, sigs, hash, image, opts)
+		if err == nil {
+			if len(verifiedImageReferences) == 0 {
+				// Fallback to the default name of the image if the reference is empty. In theory, this should never happen,
+				// but since we skip errors during unmarshalling of the payload with utils.Should, we should have this
+				// default case here.
+				verifiedImageReferences = []string{image.GetName().GetFullName()}
 			}
-			allVerifyErrs = multierror.Append(allVerifyErrs, err)
+			return storage.ImageSignatureVerificationResult_VERIFIED, verifiedImageReferences, nil
 		}
+		allVerifyErrs = multierror.Append(allVerifyErrs, err)
 	}
 
-	return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, allVerifyErrs
+	return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, allVerifyErrs
+}
+
+func verifyImageSignatures(ctx context.Context, signatures []oci.Signature, imageHash gcrv1.Hash, image *storage.Image,
+	cosignOpts cosign.CheckOpts) (verifiedImageReferences []string, verificationErrors error) {
+	for _, signature := range signatures {
+		// The bundle references a rekor bundle within the transparency log. Since we do not support this, the
+		// bundle verified will _always_ be false.
+		// See: https://github.com/sigstore/cosign/blob/eaee4b7da0c1a42326bd82c6a4da7e16741db266/pkg/cosign/verify.go#L584-L586.
+		// If there is no error during the verification, the signature was successfully verified
+		// as well as the claims.
+		_, err := cosign.VerifyImageSignature(ctx, signature, imageHash, &cosignOpts)
+
+		// Short circuit on the first public key that successfully verified the signature, since they are bundled
+		// within a single signature integration.
+		if err == nil {
+			verifiedImageReferences, err = getVerifiedImageReference(signature, image)
+			// This error should not occur, since the signature should always have a payload associated with it of the
+			// simple signing format type.
+			utils.Should(errors.Wrap(err, "retrieving verified image reference from signature payload"))
+			return verifiedImageReferences, nil
+		}
+		verificationErrors = multierror.Append(verificationErrors, err)
+	}
+	return verifiedImageReferences, verificationErrors
 }
 
 // getVerificationResultStatusFromErr will map an error to a specific storage.ImageSignatureVerificationResult_Status.
@@ -170,4 +194,37 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 	}
 
 	return signatures, hash, nil
+}
+
+// getVerifiedImageReferenceFromSignature retrieves the verified docker reference in the format of
+// <registry>/<repository> from the payload of the oci.Signature and filters out image names that are verified by
+// the docker reference using the image names associated with the storage.Image.
+func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([]string, error) {
+	payloadBytes, err := signature.Payload()
+	if err != nil {
+		return nil, err
+	}
+	// The payload of each signature will be the JSON representation of the simple signing format.
+	// This will include the docker manifest reference which was used for this specific signature, which will be our
+	// reference which is vaild for this specific signature.
+	var simpleContainer payload.SimpleContainerImage
+	if err := json.Unmarshal(payloadBytes, &simpleContainer); err != nil {
+		return nil, err
+	}
+
+	// Match all image names that share the same registry and repository for the docker reference of the signature.
+	// This will ensure we mark each image name as verified as long as it is within:
+	// - the same registry
+	// - the same repository
+	// - and has the same digest
+	// This way we also cover the case where we e.g. reference an image with digest format (<registry>/<repository>@sha256-<digest>)
+	// as well as images using floating tags (<registry>/<repository>:<tag>).
+	var verifiedImageReferences []string
+	for _, name := range image.GetNames() {
+		if simpleContainer.Critical.Identity.DockerReference == fmt.Sprintf("%s%s",
+			name.GetRegistry(), name.GetRemote()) {
+			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
+		}
+	}
+	return verifiedImageReferences, nil
 }

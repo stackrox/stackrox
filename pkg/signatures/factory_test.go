@@ -69,6 +69,9 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 				{
 					VerifierId: "successful",
 					Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+					VerifiedImageReferences: []string{
+						imgString,
+					},
 				},
 			},
 		},
@@ -95,6 +98,7 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 				assert.Equal(t, res.VerifierId, results[i].VerifierId)
 				assert.Equal(t, res.Status, results[i].Status)
 				assert.Contains(t, results[i].Description, res.Description)
+				assert.Equal(t, results[i].VerifiedImageReferences, res.VerifiedImageReferences)
 			}
 		})
 	}
