@@ -4,7 +4,6 @@
 package postgres
 
 import (
-	"reflect"
 	"sort"
 	"testing"
 
@@ -12,6 +11,49 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+/*** Helper structs and functions for creation of joinTreeNode tree structure ***/
+func columnPair(this, other string) walker.ColumnNamePair {
+	return walker.ColumnNamePair{
+		ColumnNameInThisSchema:  this,
+		ColumnNameInOtherSchema: other,
+	}
+}
+
+func onColumns(columns ...walker.ColumnNamePair) []walker.ColumnNamePair {
+	return columns
+}
+
+type joinTableColumns struct {
+	table   *joinTreeNode
+	columns []walker.ColumnNamePair
+}
+
+func toTable(columns []walker.ColumnNamePair, table *joinTreeNode) joinTableColumns {
+	return joinTableColumns{
+		table:   table,
+		columns: columns,
+	}
+}
+
+func join(joinTables ...joinTableColumns) map[*joinTreeNode][]walker.ColumnNamePair {
+	children := make(map[*joinTreeNode][]walker.ColumnNamePair)
+	for _, pair := range joinTables {
+		children[pair.table] = pair.columns
+	}
+
+	return children
+}
+
+func table(t string, children map[*joinTreeNode][]walker.ColumnNamePair) *joinTreeNode {
+	return &joinTreeNode{
+		currNode: &walker.Schema{
+			Table: t,
+		},
+		children: children,
+	}
+}
+
+/*** Helper structs and functions for creation of test sets ***/
 type testSet struct {
 	Root            *joinTreeNode
 	ReachableFields map[string]searchFieldMetadata
@@ -19,496 +61,104 @@ type testSet struct {
 }
 
 func getTestData() map[string]testSet {
+	emptyChildren := make(map[*joinTreeNode][]walker.ColumnNamePair)
+
 	data := map[string]testSet{
 		"nil join tree": {
 			Root:         nil,
 			ExpectedRoot: nil,
 		},
 		"single table": {
-			Root: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-			},
-			ExpectedRoot: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-			},
+			Root:         table("t1", emptyChildren),
+			ExpectedRoot: table("t1", emptyChildren),
 		},
 		"join on different columns": {
-			Root: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c2",
-									ColumnNameInOtherSchema: "t3_c3",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-					},
-				},
-			},
-			ExpectedRoot: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c2",
-									ColumnNameInOtherSchema: "t3_c3",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-					},
-				},
-			},
+			Root: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t2_c1")), table("t2",
+					join(toTable(onColumns(columnPair("t2_c2", "t3_c3")), table("t3", emptyChildren))),
+				))),
+			),
+			ExpectedRoot: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t2_c1")), table("t2",
+					join(toTable(onColumns(columnPair("t2_c2", "t3_c3")), table("t3", emptyChildren))),
+				))),
+			),
 		},
 		"join on same column one table to remove": {
-			Root: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c1",
-									ColumnNameInOtherSchema: "t3_c1",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-					},
-				},
-			},
-			ExpectedRoot: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t3",
-						},
-						children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t3_c1",
-						},
-					},
-				},
-			},
+			Root: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t2_c1")), table("t2",
+					join(toTable(onColumns(columnPair("t2_c1", "t3_c1")), table("t3", emptyChildren))),
+				))),
+			),
+			ExpectedRoot: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t3_c1")), table("t3", emptyChildren))),
+			),
 		},
 		"join on same column two tables to remove": {
-			Root: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: map[*joinTreeNode][]walker.ColumnNamePair{
-									{
-										currNode: &walker.Schema{
-											Table: "t4",
-										},
-										children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-									}: {
-										{
-											ColumnNameInThisSchema:  "t3_c1",
-											ColumnNameInOtherSchema: "t4_c1",
-										},
-									},
-								},
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c1",
-									ColumnNameInOtherSchema: "t3_c1",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-					},
-				},
-			},
-			ExpectedRoot: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t4",
-						},
-						children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t4_c1",
-						},
-					},
-				},
-			},
+			Root: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t2_c1")), table("t2",
+					join(toTable(onColumns(columnPair("t2_c1", "t3_c1")), table("t3",
+						join(toTable(onColumns(columnPair("t3_c1", "t4_c1")), table("t4", emptyChildren))),
+					))),
+				))),
+			),
+			ExpectedRoot: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t4_c1")), table("t4", emptyChildren))),
+			),
 		},
 		"one table with same column to remove one table to stay": {
-			Root: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c1",
-									ColumnNameInOtherSchema: "t3_c1",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-					},
-					{
-						currNode: &walker.Schema{
-							Table: "t2stay",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t4",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2stay_c2",
-									ColumnNameInOtherSchema: "t4_c1",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2stay_c1",
-						},
-					},
-				},
-			},
-			ExpectedRoot: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t3",
-						},
-						children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t3_c1",
-						},
-					},
-					{
-						currNode: &walker.Schema{
-							Table: "t2stay",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t4",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2stay_c2",
-									ColumnNameInOtherSchema: "t4_c1",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2stay_c1",
-						},
-					},
-				},
-			},
+			Root: table("t1",
+				join(
+					toTable(onColumns(columnPair("t1_c1", "t2_c1")), table("t2",
+						join(toTable(onColumns(columnPair("t2_c1", "t3_c1")), table("t3", emptyChildren))),
+					)),
+					toTable(onColumns(columnPair("t1_c1", "t2stay_c1")), table("t2stay",
+						join(toTable(onColumns(columnPair("t2stay_c2", "t4_c1")), table("t4", emptyChildren))),
+					)),
+				),
+			),
+			ExpectedRoot: table("t1",
+				join(
+					toTable(onColumns(columnPair("t1_c1", "t3_c1")), table("t3", emptyChildren)),
+					toTable(onColumns(columnPair("t1_c1", "t2stay_c1")), table("t2stay",
+						join(toTable(onColumns(columnPair("t2stay_c2", "t4_c1")), table("t4", emptyChildren))),
+					)),
+				),
+			),
 		},
 		"table will stay when not all columns in child are same": {
-			Root: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c1",
-									ColumnNameInOtherSchema: "t3_c1",
-								},
-								{
-									ColumnNameInThisSchema:  "t2_c2",
-									ColumnNameInOtherSchema: "t3_c2",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-					},
-				},
-			},
-			ExpectedRoot: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c1",
-									ColumnNameInOtherSchema: "t3_c1",
-								},
-								{
-									ColumnNameInThisSchema:  "t2_c2",
-									ColumnNameInOtherSchema: "t3_c2",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-					},
-				},
-			},
+			Root: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t2_c1")), table("t2",
+					join(toTable(onColumns(columnPair("t2_c1", "t3_c1"), columnPair("t2_c2", "t3_c2")), table("t3", emptyChildren))),
+				))),
+			),
+			ExpectedRoot: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t2_c1")), table("t2",
+					join(toTable(onColumns(columnPair("t2_c1", "t3_c1"), columnPair("t2_c2", "t3_c2")), table("t3", emptyChildren))),
+				))),
+			),
 		},
 		"table will stay when not all columns in base are same": {
-			Root: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c1",
-									ColumnNameInOtherSchema: "t3_c1",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-						{
-							ColumnNameInThisSchema:  "t1_c2",
-							ColumnNameInOtherSchema: "t2_c2",
-						},
-					},
-				},
-			},
-			ExpectedRoot: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c1",
-									ColumnNameInOtherSchema: "t3_c1",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-						{
-							ColumnNameInThisSchema:  "t1_c2",
-							ColumnNameInOtherSchema: "t2_c2",
-						},
-					},
-				},
-			},
+			Root: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t2_c1"), columnPair("t1_c2", "t2_c2")), table("t2",
+					join(toTable(onColumns(columnPair("t2_c1", "t3_c1")), table("t3", emptyChildren))),
+				))),
+			),
+			ExpectedRoot: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t2_c1"), columnPair("t1_c2", "t2_c2")), table("t2",
+					join(toTable(onColumns(columnPair("t2_c1", "t3_c1")), table("t3", emptyChildren))),
+				))),
+			),
 		},
 		"join on multiple same columns will remove table": {
-			Root: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c1",
-									ColumnNameInOtherSchema: "t3_c1",
-								},
-								{
-									ColumnNameInThisSchema:  "t2_c2",
-									ColumnNameInOtherSchema: "t3_c2",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-						{
-							ColumnNameInThisSchema:  "t1_c2",
-							ColumnNameInOtherSchema: "t2_c2",
-						},
-					},
-				},
-			},
-			ExpectedRoot: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t3",
-						},
-						children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t3_c1",
-						},
-						{
-							ColumnNameInThisSchema:  "t1_c2",
-							ColumnNameInOtherSchema: "t3_c2",
-						},
-					},
-				},
-			},
+			Root: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t2_c1"), columnPair("t1_c2", "t2_c2")), table("t2",
+					join(toTable(onColumns(columnPair("t2_c1", "t3_c1"), columnPair("t2_c2", "t3_c2")), table("t3", emptyChildren))),
+				))),
+			),
+			ExpectedRoot: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t3_c1"), columnPair("t1_c2", "t3_c2")), table("t3", emptyChildren))),
+			),
 		},
 		"required filed will not remove table": {
 			ReachableFields: map[string]searchFieldMetadata{
@@ -521,66 +171,16 @@ func getTestData() map[string]testSet {
 					derivedMetadata: nil,
 				},
 			},
-			Root: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c1",
-									ColumnNameInOtherSchema: "t3_c1",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-					},
-				},
-			},
-			ExpectedRoot: &joinTreeNode{
-				currNode: &walker.Schema{
-					Table: "t1",
-				},
-				children: map[*joinTreeNode][]walker.ColumnNamePair{
-					{
-						currNode: &walker.Schema{
-							Table: "t2",
-						},
-						children: map[*joinTreeNode][]walker.ColumnNamePair{
-							{
-								currNode: &walker.Schema{
-									Table: "t3",
-								},
-								children: make(map[*joinTreeNode][]walker.ColumnNamePair),
-							}: {
-								{
-									ColumnNameInThisSchema:  "t2_c1",
-									ColumnNameInOtherSchema: "t3_c1",
-								},
-							},
-						},
-					}: {
-						{
-							ColumnNameInThisSchema:  "t1_c1",
-							ColumnNameInOtherSchema: "t2_c1",
-						},
-					},
-				},
-			},
+			Root: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t2_c1")), table("t2",
+					join(toTable(onColumns(columnPair("t2_c1", "t3_c1")), table("t3", emptyChildren))),
+				))),
+			),
+			ExpectedRoot: table("t1",
+				join(toTable(onColumns(columnPair("t1_c1", "t2_c1")), table("t2",
+					join(toTable(onColumns(columnPair("t2_c1", "t3_c1")), table("t3", emptyChildren))),
+				))),
+			),
 		},
 	}
 
@@ -598,7 +198,8 @@ func TestRemoveUnnecessaryRelations(t *testing.T) {
 			expectedInnerJoins := innerTestRecord.ExpectedRoot.toInnerJoins()
 			innerJoins := innerTestRecord.Root.toInnerJoins()
 
-			// We have to sort before using DeepEqual. Otherwise, results could defer.
+			// We have to sort before using comparison. Children in joinTreeNode
+			// is map where pointers are keys and because of that order changes.
 			// It's sufficient to sort by joined tables.
 			sort.SliceStable(expectedInnerJoins, func(i, j int) bool {
 				return expectedInnerJoins[i].rightTable+expectedInnerJoins[i].leftTable < expectedInnerJoins[j].rightTable+expectedInnerJoins[j].leftTable
@@ -607,7 +208,7 @@ func TestRemoveUnnecessaryRelations(t *testing.T) {
 				return innerJoins[i].rightTable+innerJoins[i].leftTable < innerJoins[j].rightTable+innerJoins[j].leftTable
 			})
 
-			assert.True(t, reflect.DeepEqual(expectedInnerJoins, innerJoins))
+			assert.EqualValues(t, expectedInnerJoins, innerJoins)
 		})
 	}
 }

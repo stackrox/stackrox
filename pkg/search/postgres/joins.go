@@ -206,22 +206,22 @@ func (j *joinTreeNode) removeUnnecessaryRelations(requiredFields map[string]sear
 		return
 	}
 
-	requiredTables := make(map[string]struct{})
+	requiredTables := set.NewSet[string]()
 	for _, fieldMetadata := range requiredFields {
-		requiredTables[fieldMetadata.baseField.Schema.Table] = struct{}{}
+		requiredTables.Add(fieldMetadata.baseField.Schema.Table)
 	}
 
 	rootChildren := make(map[*joinTreeNode][]walker.ColumnNamePair)
 	for child, columnPairs := range j.children {
 		child.removeUnnecessaryRelations(requiredFields)
 
-		if _, isRequired := requiredTables[child.currNode.Table]; isRequired {
+		if requiredTables.Contains(child.currNode.Table) {
 			rootChildren[child] = columnPairs
 
 			continue
 		}
 
-		childColumns := make(map[string]string)
+		childColumns := make(map[string]string, len(columnPairs))
 		for _, pair := range columnPairs {
 			childColumns[pair.ColumnNameInOtherSchema] = pair.ColumnNameInThisSchema
 		}
@@ -234,7 +234,7 @@ func (j *joinTreeNode) removeUnnecessaryRelations(requiredFields map[string]sear
 				continue
 			}
 
-			rootColumnPairs := make([]walker.ColumnNamePair, 0)
+			rootColumnPairs := make([]walker.ColumnNamePair, 0, len(childColumnPairs))
 			for _, childColumnPair := range childColumnPairs {
 				if _, found := childColumns[childColumnPair.ColumnNameInThisSchema]; !found {
 					break
