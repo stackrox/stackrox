@@ -126,6 +126,20 @@ func (mr *MockFlowStoreMockRecorder) RemoveMatchingFlows(ctx, keyMatchFn, valueM
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMatchingFlows", reflect.TypeOf((*MockFlowStore)(nil).RemoveMatchingFlows), ctx, keyMatchFn, valueMatchFn)
 }
 
+// RemoveStaleFlows mocks base method.
+func (m *MockFlowStore) RemoveStaleFlows(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveStaleFlows", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveStaleFlows indicates an expected call of RemoveStaleFlows.
+func (mr *MockFlowStoreMockRecorder) RemoveStaleFlows(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveStaleFlows", reflect.TypeOf((*MockFlowStore)(nil).RemoveStaleFlows), ctx)
+}
+
 // UpsertFlows mocks base method.
 func (m *MockFlowStore) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	m.ctrl.T.Helper()

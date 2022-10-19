@@ -16,6 +16,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"gorm.io/gorm"
 )
@@ -53,7 +54,8 @@ const (
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId 
 	FROM network_flows nf ` + joinStmt +
 		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2`
-	deleteDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
+	deleteSrcDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
+	deleteDstDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
 
 	getByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId
@@ -63,6 +65,23 @@ const (
 	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId
 	FROM network_flows nf ` + joinStmt +
 		`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1 AND nf.ClusterId = $2`
+
+	pruneStaleNetworkFlowsStmt = `DELETE FROM network_flows a USING (
+      SELECT MAX(flow_id) as max_flow, props_srcentity_type, props_srcentity_id, props_dstentity_type, props_dstentity_id, props_dstport, props_l4protocol, clusterid
+        FROM network_flows
+		WHERE clusterid = $1
+        GROUP BY props_srcentity_type, props_srcentity_id, props_dstentity_type, props_dstentity_id, props_dstport, props_l4protocol, clusterid
+		HAVING COUNT(*) > 1
+      ) b
+      WHERE a.props_srcentity_type = b.props_srcentity_type
+ 	AND a.props_srcentity_id = b.props_srcentity_id
+ 	AND a.props_dstentity_type = b.props_dstentity_type
+ 	AND a.props_dstentity_id = b.props_dstentity_id
+	AND a.props_dstport = b.props_dstport
+	AND a.props_l4protocol = b.props_l4protocol
+	AND a.clusterid = b.clusterid
+      AND a.flow_id <> b.max_flow;
+	`
 )
 
 var (
@@ -99,10 +118,14 @@ type FlowStore interface {
 	// keyMatchFn checks to see if either the source or destination are orphaned.  Orphaned means it is type deployment and the id does not exist in deployments.
 	// Though that appears to be dackbox so that is gross.  May have to keep the keyMatchFn for now and replace with a join when deployments are moved to a table?
 	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
+
+	// RemoveStaleFlows - remove stale duplicate network flows
+	RemoveStaleFlows(ctx context.Context) error
 }
 
 type flowStoreImpl struct {
 	db        *pgxpool.Pool
+	mutex     sync.Mutex
 	clusterID string
 }
 
@@ -322,6 +345,10 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 }
 
 func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, id string) error {
+	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
 	if err != nil {
 		return err
@@ -333,7 +360,15 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 		return err
 	}
 
-	if _, err := tx.Exec(ctx, deleteDeploymentStmt, s.clusterID, id); err != nil {
+	// To avoid a full scan with an OR delete source and destination flows separately
+	if _, err := tx.Exec(ctx, deleteSrcDeploymentStmt, s.clusterID, id); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+
+	if _, err := tx.Exec(ctx, deleteDstDeploymentStmt, s.clusterID, id); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -439,6 +474,10 @@ func (s *flowStoreImpl) retryableGetFlowsForDeployment(ctx context.Context, depl
 }
 
 func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlowProperties) error {
+	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return err
@@ -489,6 +528,10 @@ func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func
 }
 
 func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return err
@@ -537,6 +580,45 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+// RemoveStaleFlows - remove stale duplicate network flows
+func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+
+	return pgutils.Retry(func() error {
+		return s.retryableRemoveStaleFlows(ctx)
+	})
+}
+
+func (s *flowStoreImpl) retryableRemoveStaleFlows(ctx context.Context) error {
+	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	if err != nil {
+		return err
+	}
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec(ctx, pruneStaleNetworkFlowsStmt, s.clusterID); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
 	}
 
 	return nil
