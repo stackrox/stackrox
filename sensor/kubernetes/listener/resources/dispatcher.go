@@ -152,6 +152,10 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	now := time.Now().Unix()
 	dispType := strings.Trim(fmt.Sprintf("%T", obj), "*")
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
+	if events == nil {
+		events = &output.OutputMessage{}
+	}
+
 	if m.writer == nil {
 		return events
 	}
@@ -199,6 +203,10 @@ func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.R
 	dispatcher := strings.Trim(fmt.Sprintf("%T", obj), "*")
 
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
+	if events == nil {
+		events = &output.OutputMessage{}
+	}
+
 	for _, e := range events.ForwardMessages {
 		e.Timing = &central.Timing{
 			Dispatcher: dispatcher,

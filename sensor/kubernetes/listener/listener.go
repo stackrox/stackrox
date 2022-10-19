@@ -32,6 +32,7 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 		credentialsManager: createCredentialsManager(client, nodeName),
 		resyncPeriod:       resyncPeriod,
 		traceWriter:        traceWriter,
+		outputQueue:        queue,
 	}
 	return k
 }

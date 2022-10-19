@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 	v1 "k8s.io/api/rbac/v1"
 )
 
@@ -21,14 +22,19 @@ func NewDispatcher(store Store) *Dispatcher {
 }
 
 // ProcessEvent handles RBAC-related events
-func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
 	evt := r.processEvent(obj, action)
 	if evt == nil {
 		utils.Should(errors.Errorf("rbac obj %+v was not correlated to a sensor event", obj))
 		return nil
 	}
-	return []*central.SensorEvent{
+	events := []*central.SensorEvent{
 		evt,
+	}
+	return &output.OutputMessage{
+		ForwardMessages:                  events,
+		CompatibilityDetectionDeployment: nil,
+		ReprocessDeployments:             nil,
 	}
 }
 

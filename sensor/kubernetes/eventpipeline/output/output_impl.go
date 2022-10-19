@@ -3,7 +3,12 @@ package output
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/detector"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type outputImpl struct {
@@ -30,7 +35,7 @@ func (q *outputImpl) startProcessing() {
 			if !more {
 				return
 			}
-
+			log.Infof("RECEIVING MESSAGE: %+v", msg)
 			for _, resourceUpdates := range msg.ForwardMessages {
 				q.forwardQueue <- &central.MsgFromSensor{
 					Msg: &central.MsgFromSensor_Event{
@@ -39,8 +44,9 @@ func (q *outputImpl) startProcessing() {
 				}
 			}
 
-			if msg.CompatibilityDetectionDeployment != nil {
-				q.detector.ProcessDeployment(msg.CompatibilityDetectionDeployment, msg.Action)
+			q.detector.ReprocessDeployments(msg.ReprocessDeployments...)
+			for _, detectorRequest := range msg.CompatibilityDetectionDeployment {
+				q.detector.ProcessDeployment(detectorRequest.Object, detectorRequest.Action)
 			}
 		}
 	}

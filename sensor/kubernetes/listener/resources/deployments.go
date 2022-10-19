@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -46,7 +47,7 @@ func newDeploymentDispatcher(deploymentType string, handler *deploymentHandler) 
 }
 
 // ProcessEvent processes a deployment resource events, and returns the sensor events to emit in response.
-func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.OutputMessage {
 	// Check owner references and build graph
 	// Every single object should implement this interface
 	metaObj, ok := obj.(metaV1.Object)
@@ -120,7 +121,7 @@ func newDeploymentHandler(
 	}
 }
 
-func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
+func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) *output.OutputMessage {
 	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore,
 		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces, d.registryStore)
 	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
@@ -130,7 +131,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	// because IF the object is a pod, we want to process the pod event.
 	objAsPod, _ := obj.(*v1.Pod)
 
-	var events []*central.SensorEvent
+	var events *output.OutputMessage
 	// If the object is a pod, process the pod event.
 	if objAsPod != nil {
 		var owningDeploymentID string
@@ -157,13 +158,14 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		// On removes, we may not get the owning deployment ID if the deployment was deleted before the pod.
 		// This is okay. We still want to send the remove event anyway.
 		if action == central.ResourceAction_REMOVE_RESOURCE || owningDeploymentID != "" {
-			events = append(events, d.processPodEvent(owningDeploymentID, objAsPod, action))
+			mergeOutputMessages(events, d.processPodEvent(owningDeploymentID, objAsPod, action))
 		}
 	}
 
 	if deploymentWrap == nil {
 		if objAsPod != nil {
-			events = append(events, d.maybeUpdateParentsOfPod(objAsPod, oldObj, action)...)
+			// It's only a pod event and the pod belongs to another resource (e.g. deployment)
+			mergeOutputMessages(events, d.maybeUpdateParentsOfPod(objAsPod, oldObj, action))
 		}
 		return events
 	}
@@ -184,9 +186,16 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	if err := deploymentWrap.updateHash(); err != nil {
 		log.Errorf("UNEXPECTED: could not calculate hash of deployment %s: %v", deploymentWrap.GetId(), err)
 	}
-	d.detector.ProcessDeployment(deploymentWrap.GetDeployment(), action)
+
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
-	events = append(events, deploymentWrap.toEvent(action))
+	outputMessage := wrapOutputMessage([]*central.SensorEvent{deploymentWrap.toEvent(action)}, []output.CompatibilityDetectionMessage{
+		{
+			Object: deploymentWrap.GetDeployment(),
+			Action: action,
+		},
+	}, nil)
+
+	mergeOutputMessages(events, outputMessage)
 	return events
 }
 
@@ -200,8 +209,8 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 func (d *deploymentHandler) appendIntegrationsOnCredentials(
 	action central.ResourceAction,
 	containers []*storage.Container,
-	events []*central.SensorEvent,
-) []*central.SensorEvent {
+	events *output.OutputMessage,
+) *output.OutputMessage {
 	if d.credentialsManager == nil || action == central.ResourceAction_REMOVE_RESOURCE {
 		return events
 	}
@@ -209,7 +218,7 @@ func (d *deploymentHandler) appendIntegrationsOnCredentials(
 	for _, c := range containers {
 		if r := c.GetImage().GetName().GetRegistry(); registries.Add(r) {
 			if e := d.getImageIntegrationEvent(r); e != nil {
-				events = append(events, e)
+				mergeOutputMessages(events, wrapOutputMessage([]*central.SensorEvent{e}, nil, nil))
 			}
 		}
 	}
@@ -254,7 +263,7 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 
 // maybeUpdateParentsOfPod may return SensorEvents indicating a change in a deployment's state based on updated pod state.
 // We do this to ensure that the image IDs in the deployment are updated based on the actual running images in the pod.
-func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction) *output.OutputMessage {
 	// We care if the pod is running OR if the pod is being removed as that can impact the top level object
 	if pod.Status.Phase != v1.PodRunning && action != central.ResourceAction_REMOVE_RESOURCE {
 		return nil
@@ -277,15 +286,16 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 	// We also only track top-level objects (ex we track Deployment resources in favor of the underlying ReplicaSet and Pods)
 	// as our version of a Deployment, so the only parents we'd want to potentially process are the top-level ones.
 	owners := d.deploymentStore.getDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
-	var events []*central.SensorEvent
+	var events *output.OutputMessage
 	for _, owner := range owners {
-		events = append(events, d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)...)
+		ev := d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)
+		mergeOutputMessages(events, ev)
 	}
 	return events
 }
 
 // processPodEvent returns a SensorEvent indicating a change in a pod's state.
-func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v1.Pod, action central.ResourceAction) *central.SensorEvent {
+func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v1.Pod, action central.ResourceAction) *output.OutputMessage {
 	// Our current search mechanism does not support namespaced IDs, so if this is a top-level pod,
 	// then having the PodID and DeploymentID fields equal will cause errors.
 	// It is best to prevent this case by transforming all PodIDs.
@@ -297,7 +307,7 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 			d.podStore.removePod(k8sPod.GetNamespace(), owningDeploymentID, uid)
 		}
 		// Only the ID field is necessary for remove events.
-		return &central.SensorEvent{
+		event := &central.SensorEvent{
 			Id:     uid,
 			Action: action,
 			Resource: &central.SensorEvent_Pod{
@@ -309,6 +319,7 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 				},
 			},
 		}
+		return wrapOutputMessage([]*central.SensorEvent{event}, nil, nil)
 	}
 
 	started, err := types.TimestampProto(k8sPod.GetCreationTimestamp().Time)
@@ -335,11 +346,13 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 	d.podStore.addOrUpdatePod(p)
 	d.processFilter.UpdateByGivenContainers(p.DeploymentId, d.podStore.getContainersForDeployment(p.Namespace, p.DeploymentId))
 
-	return &central.SensorEvent{
+	event := &central.SensorEvent{
 		Id:     p.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Pod{
 			Pod: p,
 		},
 	}
+	return wrapOutputMessage([]*central.SensorEvent{event}, nil, nil)
+
 }

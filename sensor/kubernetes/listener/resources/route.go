@@ -3,6 +3,7 @@ package resources
 import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 )
 
 type routeDispatcher struct {
@@ -17,7 +18,7 @@ func newRouteDispatcher(serviceStore *serviceStore, portExposureReconciler portE
 	}
 }
 
-func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
 	route, _ := obj.(*routeV1.Route)
 	if route == nil {
 		return nil
@@ -41,5 +42,6 @@ func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 	if existingService == nil {
 		return nil
 	}
-	return r.portExposureReconciler.UpdateExposuresForMatchingDeployments(existingService.Namespace, existingService.selector)
+	events := r.portExposureReconciler.UpdateExposuresForMatchingDeployments(existingService.Namespace, existingService.selector)
+	return wrapOutputMessage(events, nil, nil)
 }
