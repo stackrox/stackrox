@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 )
 
@@ -45,11 +44,14 @@ type service struct {
 	autoTriggerFlag concurrency.Flag
 }
 
-func (s *service) initialize() {
+func (s *service) initialize() error {
 	ctx := sac.WithAllAccess(context.Background())
 	defaultConfig, err := s.getOrDefaultUpgradeConfig(ctx)
-	utils.CrashOnError(err)
+	if err != nil {
+		return err
+	}
 	s.autoTriggerFlag.Set(defaultConfig.EnableAutoUpgrade)
+	return nil
 }
 
 func (s *service) RegisterServiceServer(server *grpc.Server) {

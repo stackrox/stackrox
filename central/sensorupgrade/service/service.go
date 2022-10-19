@@ -22,11 +22,13 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DB and index.
-func New(configDataStore datastore.DataStore, manager connection.Manager) Service {
+func New(configDataStore datastore.DataStore, manager connection.Manager) (Service, error) {
 	service := &service{
 		configDataStore: configDataStore,
 		manager:         manager,
 	}
-	service.initialize()
-	return service
+	if err := service.initialize(); err != nil {
+		return nil, err
+	}
+	return service, nil
 }

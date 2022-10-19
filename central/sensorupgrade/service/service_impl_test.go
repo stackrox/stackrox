@@ -42,7 +42,9 @@ func (s *SensorUpgradeServiceTestSuite) SetupTest() {
 	s.isolator = envisolator.NewEnvIsolator(s.T())
 
 	s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
-	s.serviceInstance = New(s.dataStore, s.manager)
+	var err error
+	s.serviceInstance, err = New(s.dataStore, s.manager)
+	s.NoError(err)
 }
 
 func (s *SensorUpgradeServiceTestSuite) TearDownTest() {
@@ -133,7 +135,8 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_DefaultValue
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(2).Return(nil, nil)
 			s.isolator.Setenv(env.ManagedCentral.EnvVar(), envValue)
 
-			instance := New(s.dataStore, s.manager)
+			instance, err := New(s.dataStore, s.manager)
+			s.NoError(err)
 			result, err := instance.GetSensorUpgradeConfig(context.Background(), nil)
 
 			s.Require().NoError(err)
@@ -143,6 +146,6 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_DefaultValue
 	}
 }
 
-func TestAuthzWorks(t *testing.T) {
-	testutils.AssertAuthzWorks(t, New(nil, nil))
+func (s *SensorUpgradeServiceTestSuite) TestAuthzWorks() {
+	testutils.AssertAuthzWorks(s.T(), s.serviceInstance)
 }
