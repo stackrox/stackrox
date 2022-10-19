@@ -3,8 +3,8 @@ package kubernetes
 import (
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/stringutils"
 	admission "k8s.io/api/admission/v1"
 	core "k8s.io/api/core/v1"
@@ -23,6 +23,12 @@ var (
 	}
 
 	universalDeserializer = serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
+
+	// ErrUnsupportedRequestKind is an error type indicating that we don't know how to handle an admission request.
+	ErrUnsupportedRequestKind = errox.InvalidArgs.New("unsupported request kind")
+	// ErrUnsupportedAPIVerb is an error type indicating that we don't know how to handle a certain operation in an
+	// admission request.
+	ErrUnsupportedAPIVerb = errox.InvalidArgs.New("unsupported API verb")
 )
 
 // EventAsString returns the kubernetes resources as string, such as, namespace/default/pod/nginx-86c57db685-nqq97/portforward.
@@ -48,14 +54,14 @@ func AdmissionRequestToKubeEventObj(req *admission.AdmissionRequest) (*storage.K
 	case podPortForwardOptionsKind:
 		return podPortForwardEvent(req)
 	default:
-		return nil, errors.Errorf("currently do not recognize kind %q in admission controller", req.Kind)
+		return nil, ErrUnsupportedRequestKind.CausedByf("%q", req.Kind)
 	}
 }
 
 func podExecEvent(req *admission.AdmissionRequest) (*storage.KubernetesEvent, error) {
 	apiVerb, supported := supportedAPIVerbs[req.Operation]
 	if !supported {
-		return nil, errors.Errorf("operation %s not supported", req.Operation)
+		return nil, ErrUnsupportedAPIVerb.CausedByf("%q", req.Operation)
 	}
 
 	var obj core.PodExecOptions
@@ -87,7 +93,7 @@ func podExecEvent(req *admission.AdmissionRequest) (*storage.KubernetesEvent, er
 func podPortForwardEvent(req *admission.AdmissionRequest) (*storage.KubernetesEvent, error) {
 	apiVerb, supported := supportedAPIVerbs[req.Operation]
 	if !supported {
-		return nil, errors.Errorf("operation %s not supported", req.Operation)
+		return nil, ErrUnsupportedAPIVerb.CausedByf("%q", req.Operation)
 	}
 
 	var obj core.PodPortForwardOptions
