@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -273,7 +272,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 			return nil, err
 		}
 		msg := &storage.ClusterCVE{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg
