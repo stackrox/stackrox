@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -666,7 +665,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	}
 
 	var node storage.Node
-	if err := proto.Unmarshal(data, &node); err != nil {
+	if err := node.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 
@@ -744,7 +743,7 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 			return nil, err
 		}
 		msg := &storage.NodeComponentEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetNodeComponentId()] = msg
@@ -767,7 +766,7 @@ func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (m
 			return nil, err
 		}
 		msg := &storage.NodeComponent{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -790,7 +789,7 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 			return nil, err
 		}
 		msg := &storage.NodeComponentCVEEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
@@ -918,7 +917,7 @@ func (s *storeImpl) retryableGetNodeMetadata(ctx context.Context, id string) (*s
 	}
 
 	var msg storage.Node
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -986,7 +985,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 			return nil, err
 		}
 		msg := &storage.NodeCVE{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg
