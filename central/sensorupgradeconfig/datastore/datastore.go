@@ -15,7 +15,7 @@ type DataStore interface {
 }
 
 // New returns a new, ready-to-use, datastore.
-func New(store store.Store) (DataStore, error) {
+func New(store store.Store) DataStore {
 	ds := &dataStore{store: store}
-	return ds, nil
+	return ds
 }

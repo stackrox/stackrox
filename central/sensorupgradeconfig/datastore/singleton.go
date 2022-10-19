@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -22,9 +21,7 @@ func initialize() {
 	} else {
 		storage = bolt.New(globaldb.GetGlobalDB())
 	}
-	var err error
-	singleton, err = New(storage)
-	utils.CrashOnError(err)
+	singleton = New(storage)
 }
 
 // Singleton returns the datastore instance.
