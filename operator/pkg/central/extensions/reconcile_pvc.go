@@ -77,10 +77,14 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platfo
 		}
 		return persistence
 	case PVCTargetCentralDB:
-		if central.Spec.Central.DB.IsExternal() {
+		if !central.Spec.Central.CentralDBEnabled() || central.Spec.Central.DB.IsExternal() {
 			return nil
 		}
-		return convertDBPersistenceToPersistence(central.Spec.Central.DB.GetPersistence())
+		dbPersistence := central.Spec.Central.DB.GetPersistence()
+		if dbPersistence == nil {
+			dbPersistence = &platform.DBPersistence{}
+		}
+		return convertDBPersistenceToPersistence(dbPersistence)
 	default:
 		panic(errors.Errorf("unknown pvc target %q", target))
 	}
