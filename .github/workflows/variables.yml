@@ -48,39 +48,39 @@ jobs:
       next-rc: ${{steps.parse.outputs.next-rc}}
       dash-name: ${{steps.parse.outputs.dash-name}}
     steps:
-      - id: parse
-        env:
-          SCRIPT: |
-            import re
-            import sys
-
-            EXPR = r'(?P<release>\d+\.\d+)\.(?P<patch>\d+)(-(?P<name>\w+(-\w+)*))?(-rc\.(?P<rc>\d+))?$'
-
-            m = re.match(EXPR, sys.argv[1])
-            if not m:
-                exit(1)
-
-            rc = int(m.group('rc') or 1)
-            name = m.group('name') or ''
-            dash_name = f'-{name}' if name else ''
-
-            print(f'''
-            ::set-output name=release::{m.group('release')}
-            ::set-output name=patch::{m.group('patch')}
-            ::set-output name=name::{name}
-            ::set-output name=dash-name::{dash_name}
-            ::set-output name=rc::{rc}
-            ::set-output name=next-rc::{rc+1}
-            ''')
+      - name: Parse version
+        id: parse
+        shell: python
+        # Allowed versions examples:
+        # 1.2.3
+        # 1.2.3-rc.4
+        # 1.2.3-alnum
+        # 1.2.3-alnum-alnum
+        # 1.2.3-alnum-rc.4
         run: |
-          set -u
-          # Allowed versions examples:
-          # 1.2.3
-          # 1.2.3-rc.4
-          # 1.2.3-alnum
-          # 1.2.3-alnum-alnum
-          # 1.2.3-alnum-rc.4
-          if ! python3 - "${{inputs.version}}" <<<"$SCRIPT"; then
-            echo "::error::Cannot parse ${{inputs.version}}: should be in a form of \`X.X.X[-name][-rc.X]\`, where \`X\` is a decimal number."
-            exit 1
-          fi
+          import os
+          import re
+          import sys
+
+          EXPR = r'(?P<release>\d+\.\d+)\.(?P<patch>\d+)(-(?P<name>\w+(-\w+)*))?(-rc\.(?P<rc>\d+))?$'
+
+          version = '${{ inputs.version }}'
+          m = re.match(EXPR, version)
+          if not m:
+              print(f'::error::Cannot parse "{version}": should be in a form of `X.X.X[-name][-rc.X]`, where `X` is a decimal number.')
+              exit(1)
+
+          rc = int(m.group('rc') or 1)
+          name = m.group('name') or ''
+
+          data = {
+              'release': m.group('release'),
+              'patch': m.group('patch'),
+              'name': name,
+              'dash-name': f'-{name}' if name else '',
+              'rc': rc,
+              'next-rc': rc+1
+          }
+
+          with open(os.environ.get('GITHUB_OUTPUT'), mode='a') as f:
+              print('\n'.join(f'{k}={v}' for k,v in data.items()), file=f)

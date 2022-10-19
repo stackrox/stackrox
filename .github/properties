@@ -1,0 +1,5 @@
+docs-repository=openshift/openshift-docs
+slack-channel=CMH5M8MHN
+dry-slack-channel=C03KSV3N6N8
+jira-project=ROX
+jira-projects=ROX, RS, RTOOLS
