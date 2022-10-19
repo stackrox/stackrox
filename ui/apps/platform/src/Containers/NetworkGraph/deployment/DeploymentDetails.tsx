@@ -17,7 +17,7 @@ import {
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
-import InfoCircleIcon from '@patternfly/react-icons/dist/esm/icons/info-circle-icon';
+import { InfoCircleIcon } from '@patternfly/react-icons';
 
 function DetailSection({ title, children }) {
     const [isExpanded, setIsExpanded] = useState(true);
