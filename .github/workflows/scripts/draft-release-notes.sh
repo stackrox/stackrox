@@ -23,7 +23,7 @@ get_current_release_changelog() {
 
 create_release_notes() {
     sed -n "/^## \[$ESCAPED_VERSION]$/,/^## \[/p" CHANGELOG.md | sed '1d;$d' > "$OUTPUT"
-    if [ $(wc -m "$OUTPUT" | awk '{ print $1 }') -gt 150000 ]; then
+    if [ "$(wc -m "$OUTPUT" | awk '{ print $1 }')" -gt 150000 ]; then
         PREVIOUS_VERSION=$(sed -n "/^## \[$ESCAPED_VERSION]$/,/^## \[/p" CHANGELOG.md | tail -n 1 | tr -d '#[] ')
         echo "**Full Changelog**: https://github.com/${REPO_NAME}/compare/${PREVIOUS_VERSION}...${VERSION}" > "$OUTPUT"
     fi
