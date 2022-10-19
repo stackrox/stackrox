@@ -15,18 +15,29 @@ on:
 
 env:
   main_branch: ${{ github.event.repository.default_branch }}
-  #eng-release (CMH5M8MHN) for real runs or #test-release-automation (C03KSV3N6N8) for testing:
-  slack_channel: ${{ fromJSON('["CMH5M8MHN", "C03KSV3N6N8"]')[ github.repository != 'stackrox/stackrox' || github.event.inputs.dry-run == 'true'] }}
   script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
-  DRY_RUN: ${{ fromJSON('["true", "false"]')[inputs.dry-run != true] }}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != true] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
+
+run-name: Finish release ${{ github.event.inputs.version }}${{ fromJSON('[" (dry-run)", ""]')[github.event.inputs.dry-run != true] }}
 
 # Ensure that only a single release automation workflow can run at a time.
 concurrency: Release automation
 
 jobs:
+  properties:
+    runs-on: ubuntu-latest
+    outputs:
+      slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.fetch.outputs.dry-slack-channel, steps.fetch.outputs.slack-channel))[github.event.inputs.dry-run != 'true'] }}
+    steps:
+      - name: Read workflow properties file
+        id: fetch
+        env:
+          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.ref_name }}
+        run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
+
   run-parameters:
     if: github.event_name == 'workflow_dispatch'
     name: Run parameters
@@ -34,14 +45,14 @@ jobs:
     steps:
       - run: |
           [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
-          echo "Event: ${{ github.event_name }}" >>"$GITHUB_STEP_SUMMARY"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            cat <<EOF >>"$GITHUB_STEP_SUMMARY"
-          \`\`\`
-          ${{ toJSON(inputs) }}
-          \`\`\`
-          EOF
-          fi
+          {
+            echo "Event: ${{ github.event_name }}"
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo '```'
+              echo "${{ toJSON(inputs) }}"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
   variables:
     if: github.event_name == 'workflow_dispatch'
@@ -53,7 +64,7 @@ jobs:
   publish-release:
     name: Tag Release ${{ needs.variables.outputs.release-patch }}
     runs-on: ubuntu-latest
-    needs: [variables]
+    needs: [variables, properties]
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -91,17 +102,17 @@ jobs:
             --notes-file RELEASE_NOTES_GENERATED.md \
             --repo "${{ github.repository }}" \
             --target "${{ needs.variables.outputs.branch }}")
-          echo "::set-output name=url::$URL"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
 
       - run: |
-          echo "Created GitHub release [${{ needs.variables.outputs.release-patch }}](${{ steps.release.outputs.url }})" >> $GITHUB_STEP_SUMMARY
+          echo "Created GitHub release [${{ needs.variables.outputs.release-patch }}](${{ steps.release.outputs.url }})" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.19.0
+        uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: ${{env.slack_channel}}
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             { "blocks": [
 

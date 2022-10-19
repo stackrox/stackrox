@@ -29,7 +29,7 @@ create_release_notes() {
     fi
 }
 
-REPO_NAME="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+REPO_NAME=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
 ESCAPED_VERSION="${VERSION//./\.}"
 get_current_release_changelog
 create_release_notes
