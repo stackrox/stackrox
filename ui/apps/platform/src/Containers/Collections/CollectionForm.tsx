@@ -127,7 +127,7 @@ function CollectionForm({
         onSubmit: () => {},
         validationSchema: yup.object({
             name: yup.string().trim().required(),
-            description: yup.string().required(),
+            description: yup.string(),
             embeddedCollectionIds: yup.array(yup.string()),
             selectorRules: yup.object().shape({
                 Deployment: yupSelectorRuleObject(),
