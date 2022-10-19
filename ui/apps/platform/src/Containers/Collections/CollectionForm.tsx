@@ -38,7 +38,6 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
 import { deleteCollection } from 'services/CollectionsService';
-import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
@@ -74,17 +73,8 @@ function yupSelectorRuleObject() {
                   rules: yup.array().of(
                       yup.object().shape({
                           operator: yup.string().required().matches(/OR/),
-                          key: yup.string().trim().required().test(getIsValidLabelKey),
-                          values: yup
-                              .array()
-                              .of(
-                                  yup
-                                      .string()
-                                      .trim()
-                                      .required()
-                                      .test((val) => getIsValidLabelValue(val))
-                              )
-                              .required(),
+                          key: yup.string().trim().required(),
+                          values: yup.array().of(yup.string().trim().required()).required(),
                       })
                   ),
               })
