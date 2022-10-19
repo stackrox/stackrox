@@ -11,6 +11,7 @@ import {
 import { TrashIcon } from '@patternfly/react-icons';
 import { FormikErrors } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
+import uniqueId from 'lodash/uniqueId';
 
 import { SelectorEntityType, ScopedResourceSelector, ByLabelResourceSelector } from '../types';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
@@ -42,7 +43,7 @@ function ByLabelSelector({
     function onChangeLabelValue(resourceSelector, ruleIndex, valueIndex) {
         return (value: string) => {
             const newSelector = cloneDeep(resourceSelector);
-            newSelector.rules[ruleIndex].values[valueIndex] = value;
+            newSelector.rules[ruleIndex].values[valueIndex].value = value;
             handleChange(entityType, newSelector);
         };
     }
@@ -51,8 +52,13 @@ function ByLabelSelector({
         const selector = cloneDeep(scopedResourceSelector);
 
         // Only add a new form row if there are no blank entries
-        if (selector.rules.every(({ key, values }) => key && values.every((value) => value))) {
-            selector.rules.push({ operator: 'OR', key: '', values: [''] });
+        if (selector.rules.every(({ key, values }) => key && values.every(({ value }) => value))) {
+            selector.rules.push({
+                clientId: uniqueId(),
+                operator: 'OR',
+                key: '',
+                values: [{ clientId: uniqueId(), value: '' }],
+            });
             handleChange(entityType, selector);
         }
     }
@@ -62,8 +68,8 @@ function ByLabelSelector({
         const rule = selector.rules[ruleIndex];
 
         // Only add a new form row if there are no blank entries
-        if (rule.values.every((value) => value)) {
-            rule.values.push('');
+        if (rule.values.every(({ value }) => value)) {
+            rule.values.push({ clientId: uniqueId(), value: '' });
             handleChange(entityType, selector);
         }
     }
@@ -97,7 +103,7 @@ function ByLabelSelector({
                         ? ValidatedOptions.error
                         : ValidatedOptions.default;
                 return (
-                    <div key={rule.key}>
+                    <div key={rule.clientId}>
                         {ruleIndex > 0 && (
                             <Flex
                                 className="pf-u-pt-md pf-u-pb-xl"
@@ -125,6 +131,7 @@ function ByLabelSelector({
                                     isRequired
                                 >
                                     <AutoCompleteSelect
+                                        typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} label key`}
                                         selectedOption={rule.key}
                                         onChange={onChangeLabelKey(
                                             scopedResourceSelector,
@@ -149,7 +156,7 @@ function ByLabelSelector({
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     direction={{ default: 'column' }}
                                 >
-                                    {rule.values.map((value, valueIndex) => {
+                                    {rule.values.map(({ clientId, value }, valueIndex) => {
                                         const valueValidationError =
                                             validationErrors?.rules?.[ruleIndex];
                                         const valueValidation =
@@ -158,8 +165,9 @@ function ByLabelSelector({
                                                 ? ValidatedOptions.error
                                                 : ValidatedOptions.default;
                                         return (
-                                            <Flex key={value}>
+                                            <Flex key={clientId}>
                                                 <AutoCompleteSelect
+                                                    typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} label value`}
                                                     className="pf-u-flex-grow-1 pf-u-w-auto"
                                                     selectedOption={value}
                                                     onChange={onChangeLabelValue(

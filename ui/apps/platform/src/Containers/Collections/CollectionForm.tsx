@@ -78,11 +78,13 @@ function yupSelectorRuleObject() {
                           values: yup
                               .array()
                               .of(
-                                  yup
-                                      .string()
-                                      .trim()
-                                      .required()
-                                      .test((val) => getIsValidLabelValue(val))
+                                  yup.object().shape({
+                                      value: yup
+                                          .string()
+                                          .trim()
+                                          .required()
+                                          .test((val) => getIsValidLabelValue(val)),
+                                  })
                               )
                               .required(),
                       })
@@ -92,7 +94,10 @@ function yupSelectorRuleObject() {
                   field: yup.string().required().matches(new RegExp(field)),
                   rule: yup.object().shape({
                       operator: yup.string().required().matches(/OR/),
-                      values: yup.array().of(yup.string().trim().required()).required(),
+                      values: yup
+                          .array()
+                          .of(yup.object().shape({ value: yup.string().trim().required() }))
+                          .required(),
                   }),
               });
     });

@@ -3,6 +3,7 @@ import { Select, SelectOption } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import { FormikErrors } from 'formik';
 import isEmpty from 'lodash/isEmpty';
+import uniqueId from 'lodash/uniqueId';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import {
@@ -50,11 +51,22 @@ function RuleSelector({
             All: {},
             ByName: {
                 field: entityType,
-                rule: { operator: 'OR', values: [''] },
+                rule: {
+                    clientId: uniqueId(),
+                    operator: 'OR',
+                    values: [{ clientId: uniqueId(), value: '' }],
+                },
             },
             ByLabel: {
                 field: `${entityType} Label`,
-                rules: [{ operator: 'OR', key: '', values: [''] }],
+                rules: [
+                    {
+                        clientId: uniqueId(),
+                        operator: 'OR',
+                        key: '',
+                        values: [{ clientId: uniqueId(), value: '' }],
+                    },
+                ],
             },
         };
 

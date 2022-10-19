@@ -1,4 +1,5 @@
 import isEmpty from 'lodash/isEmpty';
+import uniqueId from 'lodash/uniqueId';
 
 import { CollectionResponse } from 'services/CollectionsService';
 import {
@@ -89,7 +90,7 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
             } else if (isByNameField(field)) {
                 collection.selectorRules[entity] = {
                     field,
-                    rule: { operator: 'OR', values: [] },
+                    rule: { clientId: uniqueId(), operator: 'OR', values: [] },
                 };
             }
         }
@@ -102,13 +103,20 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
             if (firstValue && firstValue.includes(LABEL_SEPARATOR)) {
                 const key = firstValue.split(LABEL_SEPARATOR)[0] ?? '';
                 selector.rules.push({
+                    clientId: uniqueId(),
                     operator: 'OR',
                     key,
-                    values: rule.values.map(({ value }) => value.split('=')[1] ?? ''),
+                    values: rule.values.map(({ value }) => ({
+                        clientId: uniqueId(),
+                        value: value.split('=')[1] ?? '',
+                    })),
                 });
             }
         } else if (isByNameSelector(selector)) {
-            selector.rule.values = rule.values.map(({ value }) => value);
+            selector.rule.values = rule.values.map(({ value }) => ({
+                clientId: uniqueId(),
+                value,
+            }));
         }
     });
 

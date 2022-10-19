@@ -28,14 +28,16 @@ export function isByAnnotationField(field: SelectorField): field is ByAnnotation
  * the current UI implementation only supports 'OR'.
  */
 export type NameSelectorRule = {
+    clientId: string;
     operator: 'OR';
-    values: string[];
+    values: { clientId: string; value: string }[];
 };
 
 export type LabelSelectorRule = {
+    clientId: string;
     operator: 'OR';
     key: string;
-    values: string[];
+    values: { clientId: string; value: string }[];
 };
 
 /**

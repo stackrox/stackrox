@@ -4,6 +4,7 @@ import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
 import { FormikErrors } from 'formik';
+import uniqueId from 'lodash/uniqueId';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
 import { ByNameResourceSelector, ScopedResourceSelector, SelectorEntityType } from '../types';
 
@@ -26,8 +27,8 @@ function ByNameSelector({
     function onAddValue() {
         const selector = cloneDeep(scopedResourceSelector);
         // Only add a new form row if there are no blank entries
-        if (selector.rule.values.every((value) => value)) {
-            selector.rule.values.push('');
+        if (selector.rule.values.every(({ value }) => value)) {
+            selector.rule.values.push({ clientId: uniqueId(), value: '' });
             handleChange(entityType, selector);
         }
     }
@@ -35,7 +36,7 @@ function ByNameSelector({
     function onChangeValue(resourceSelector, valueIndex) {
         return (value: string) => {
             const newSelector = cloneDeep(resourceSelector);
-            newSelector.rule.values[valueIndex] = value;
+            newSelector.rule.values[valueIndex].value = value;
             handleChange(entityType, newSelector);
         };
     }
@@ -55,8 +56,8 @@ function ByNameSelector({
     return (
         <FormGroup label={`${entityType} name`} isRequired>
             <Flex spaceItems={{ default: 'spaceItemsSm' }} direction={{ default: 'column' }}>
-                {scopedResourceSelector.rule.values.map((value, index) => (
-                    <Flex key={value}>
+                {scopedResourceSelector.rule.values.map(({ clientId, value }, index) => (
+                    <Flex key={clientId}>
                         <AutoCompleteSelect
                             typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} name`}
                             className="pf-u-flex-grow-1 pf-u-w-auto"
