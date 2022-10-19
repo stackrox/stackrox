@@ -31,6 +31,9 @@ import (
 const (
 	// The number of consecutive errors for a scanner or registry that cause its health status to be UNHEALTHY
 	consecutiveErrorThreshold = 3
+
+	openshiftConfigNamespace  = "openshift-config"
+	openshiftConfigPullSecret = "pull-secret"
 )
 
 var (
@@ -47,7 +50,7 @@ type enricherImpl struct {
 	errorsPerScanner   map[scannerTypes.ImageScannerWithDataSource]int32
 	scannerErrorsLock  sync.RWMutex
 
-	integrationHealthReporter integrationhealth.Reporter ``
+	integrationHealthReporter integrationhealth.Reporter
 
 	metadataLimiter *rate.Limiter
 	metadataCache   expiringcache.Cache
@@ -655,6 +658,11 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 	return nil
 }
 
+func isOpenshiftGlobalPullSecret(source *storage.ImageIntegration_Source) bool {
+	return source.GetNamespace() == openshiftConfigNamespace &&
+		source.GetImagePullSecretName() == openshiftConfigPullSecret
+}
+
 func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registryTypes.ImageRegistry, error) {
 	registries := e.integrations.RegistrySet().GetAll()
 	if ctx.Internal {
@@ -685,6 +693,11 @@ func filterRegistriesBySource(requestSource *RequestSource, registries []registr
 		}
 		source := integration.GetSource()
 		if source.GetClusterId() != requestSource.ClusterID {
+			continue
+		}
+		// Check if the integration source is the global OpenShift registry
+		if isOpenshiftGlobalPullSecret(source) {
+			filteredRegistries = append(filteredRegistries, registry)
 			continue
 		}
 		if source.GetNamespace() != requestSource.Namespace {
