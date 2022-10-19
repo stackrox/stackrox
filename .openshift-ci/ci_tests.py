@@ -43,8 +43,16 @@ class UpgradeTest(BaseTest):
             # let post test know where logs are
             self.test_outputs = [UpgradeTest.TEST_OUTPUT_DIR]
 
+        # TODO(sbostick): overriding for multi-arch testing
+
+        ### self.run_with_graceful_kill(
+        ###     ["tests/upgrade/run.sh", UpgradeTest.TEST_OUTPUT_DIR],
+        ###     UpgradeTest.TEST_TIMEOUT,
+        ###     post_start_hook=set_dirs_after_start,
+        ### )
+
         self.run_with_graceful_kill(
-            ["tests/upgrade/run.sh", UpgradeTest.TEST_OUTPUT_DIR],
+            ["tests/multi-arch/run.sh", UpgradeTest.TEST_OUTPUT_DIR],
             UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
