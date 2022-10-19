@@ -1,5 +1,7 @@
 #!/usr/bin/env -S python3 -u
 
+# TODO(sbostick): just tracking relevant files
+
 """
 Run the upgrade test in a GKE cluster
 """
@@ -23,4 +25,3 @@ ClusterTestRunner(
         store_qa_spock_results=True,
     ),
 ).run()
-
