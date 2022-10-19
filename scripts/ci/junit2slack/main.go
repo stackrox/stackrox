@@ -122,10 +122,16 @@ func convertJunitToSlack(junitFiles []*junit.Suites) []slack.Attachment {
 					}},
 				}
 				attachments = append(attachments, failureAttachment)
+
+				// We've reached the message limit we want. We need to break out of all the loops
+				if len(attachments) <= 3 {
+					goto pushFinalSlackAttachments
+				}
 			}
 		}
 	}
 
+pushFinalSlackAttachments:
 	if failedTestsBlocks == nil || len(failedTestsBlocks) <= 0 {
 		return nil
 	}
