@@ -3,8 +3,6 @@ import navSelectors from '../selectors/navigation';
 import { visitFromLeftNavExpandable } from './nav';
 import { visit } from './visit';
 
-// visit
-
 const basePath = '/main/collections';
 
 export const collectionsAlias = 'collections';
@@ -22,6 +20,8 @@ const requestConfigForCollections = {
         },
     },
 };
+
+// visit
 
 export function visitCollections(staticResponseMap) {
     visit(basePath, requestConfigForCollections, staticResponseMap);
