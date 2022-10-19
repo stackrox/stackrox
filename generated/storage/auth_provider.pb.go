@@ -37,14 +37,17 @@ type AuthProvider struct {
 	// UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request
 	// is coming from any of these, the auth request will use these for the callback URL,
 	// not ui_endpoint.
-	ExtraUiEndpoints     []string                          `protobuf:"bytes,9,rep,name=extra_ui_endpoints,json=extraUiEndpoints,proto3" json:"extra_ui_endpoints,omitempty"`
-	Active               bool                              `protobuf:"varint,10,opt,name=active,proto3" json:"active,omitempty"`
-	RequiredAttributes   []*AuthProvider_RequiredAttribute `protobuf:"bytes,11,rep,name=required_attributes,json=requiredAttributes,proto3" json:"required_attributes,omitempty"`
-	Traits               *Traits                           `protobuf:"bytes,12,opt,name=traits,proto3" json:"traits,omitempty"`
-	ClaimMappings        map[string]string                 `protobuf:"bytes,13,rep,name=claim_mappings,json=claimMappings,proto3" json:"claim_mappings,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
-	XXX_unrecognized     []byte                            `json:"-"`
-	XXX_sizecache        int32                             `json:"-"`
+	ExtraUiEndpoints   []string                          `protobuf:"bytes,9,rep,name=extra_ui_endpoints,json=extraUiEndpoints,proto3" json:"extra_ui_endpoints,omitempty"`
+	Active             bool                              `protobuf:"varint,10,opt,name=active,proto3" json:"active,omitempty"`
+	RequiredAttributes []*AuthProvider_RequiredAttribute `protobuf:"bytes,11,rep,name=required_attributes,json=requiredAttributes,proto3" json:"required_attributes,omitempty"`
+	Traits             *Traits                           `protobuf:"bytes,12,opt,name=traits,proto3" json:"traits,omitempty"`
+	// Specifies claims from IdP token that will be copied to Rox token attributes.
+	// For example, we can specify nested array claim "realm_access.roles" to be mapped to "groups" attribute.
+	// Currently we only support this feature only for OIDC auth provider.
+	ClaimMappings        map[string]string `protobuf:"bytes,13,rep,name=claim_mappings,json=claimMappings,proto3" json:"claim_mappings,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
 func (m *AuthProvider) Reset()         { *m = AuthProvider{} }

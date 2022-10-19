@@ -961,15 +961,14 @@ type mockOIDCUserInfo struct {
 }
 
 func (m mockOIDCUserInfo) Claims(v interface{}) error {
-	if u, ok := v.(*userInfoType); ok {
+	switch u := v.(type) {
+	case *userInfoType:
 		u.UID = m.claims.uid
 		u.Name = m.claims.name
 		u.EMail = m.claims.email
-	} else if u, ok := v.(map[string]interface{}); ok {
-		u["name"] = m.claims.name
-		u["email"] = m.claims.email
-		u["uid"] = m.claims.uid
-	} else {
+	case map[string]interface{}, *map[string]interface{}:
+		return nil
+	default:
 		return errors.Errorf("unsupported type %T", v)
 	}
 	return nil
@@ -1010,17 +1009,17 @@ func (m mockOIDCToken) GetNonce() string {
 }
 
 func (m mockOIDCToken) Claims(v interface{}) error {
-	if u, ok := v.(*userInfoType); ok {
+	switch u := v.(type) {
+	case *userInfoType:
+		u.UID = m.uid
 		u.Name = m.name
 		u.EMail = m.email
-		u.UID = m.uid
+	case map[string]interface{}, *map[string]interface{}:
 		return nil
-	} else if u, ok := v.(map[string]interface{}); ok {
-		u["name"] = m.name
-		u["email"] = m.email
-		u["uid"] = m.uid
+	default:
+		return errors.Errorf("unsupported type %T", v)
 	}
-	return errors.Errorf("unsupported type %T", v)
+	return nil
 }
 
 func (m mockOIDCToken) GetExpiry() time.Time {
