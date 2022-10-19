@@ -102,12 +102,14 @@ func (p *prunerFactoryImpl) StartPruning() Pruner {
 	return p
 }
 
+// PruneOrphanedPodIndicators - prunes process indicators whose pod no longer exists
 func PruneOrphanedPodIndicators(ctx context.Context, pool *pgxpool.Pool, orphanedBefore time.Time) {
 	if _, err := pool.Exec(ctx, pruneOrphanedPodIndicatorsStmt, orphanedBefore); err != nil {
 		log.Errorf("failed to prune orhpaned pod indicators: %v", err)
 	}
 }
 
+// PruneOrphanedDeploymentIndicators - prunes process indicators whose deployment no longer exists
 func PruneOrphanedDeploymentIndicators(ctx context.Context, pool *pgxpool.Pool, orphanedBefore time.Time) {
 	if _, err := pool.Exec(ctx, pruneOrphanedDeploymentIndicatorsStmt, orphanedBefore); err != nil {
 		log.Errorf("failed to prune orhpaned pod indicators: %v", err)
