@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	utils "github.com/stackrox/rox/operator/pkg/utils"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -94,9 +95,6 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platfo
 func ReconcilePVCExtension(client ctrlClient.Client, target PVCTarget, defaultClaimName string) extensions.ReconcileExtension {
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
 		persistence := getPersistenceByTarget(central, target)
-		if persistence == nil {
-			return nil
-		}
 		return reconcilePVC(ctx, central, persistence, target, defaultClaimName, client, log)
 	}
 	return wrapExtension(fn, client)
@@ -129,7 +127,7 @@ type reconcilePVCExtensionRun struct {
 }
 
 func (r *reconcilePVCExtensionRun) Execute() error {
-	if r.centralObj.DeletionTimestamp != nil {
+	if r.centralObj.DeletionTimestamp != nil || r.persistence == nil {
 		return r.handleDelete()
 	}
 
@@ -155,7 +153,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 		pvc = nil
 	}
 
-	ownedPVC, err := r.getUniqueOwnedPVCsForCurrentTarget()
+	ownedPVC, err := r.getUniqueOwnedPVCForCurrentTarget()
 	if err != nil {
 		return err
 	}
@@ -292,7 +290,7 @@ func (r *reconcilePVCExtensionRun) getOwnedPVC() ([]*corev1.PersistentVolumeClai
 	return ownedPVCs, nil
 }
 
-func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentTarget() (*corev1.PersistentVolumeClaim, error) {
+func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCForCurrentTarget() (*corev1.PersistentVolumeClaim, error) {
 	pvcList, err := r.getOwnedPVC()
 	if err != nil {
 		return nil, err
@@ -313,10 +311,7 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentTarget() (*corev1
 		return nil, nil
 	}
 	if len(filtered) > 1 {
-		var names []string
-		for _, item := range filtered {
-			names = append(names, item.GetName())
-		}
+		names := sliceutils.Map(filtered, corev1.PersistentVolumeClaim.GetName)
 		sort.Strings(names)
 
 		return nil, errors.Wrapf(errMultipleOwnedPVCs,
