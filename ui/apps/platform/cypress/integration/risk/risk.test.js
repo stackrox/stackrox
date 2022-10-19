@@ -162,7 +162,7 @@ describe('Risk page', () => {
         });
 
         it('should have a single URL search param key/value pair in its search bar', function () {
-            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE_TODO')) {
                 this.skip();
             }
             visitRiskDeployments();
@@ -197,7 +197,7 @@ describe('Risk page', () => {
         });
 
         it('should have multiple URL search param key/value pairs in its search bar', function () {
-            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE_TODO')) {
                 this.skip();
             }
             visitRiskDeployments();
