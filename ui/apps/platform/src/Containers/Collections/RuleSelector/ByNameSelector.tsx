@@ -4,6 +4,7 @@ import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
 import { FormikErrors } from 'formik';
+import useIndexKey from 'hooks/useIndexKey';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
 import { ByNameResourceSelector, ScopedResourceSelector, SelectorEntityType } from '../types';
 
@@ -23,6 +24,8 @@ function ByNameSelector({
     handleChange,
     validationErrors,
 }: ByNameSelectorProps) {
+    const { keyFor, invalidateIndexKeys } = useIndexKey();
+
     function onAddValue() {
         const selector = cloneDeep(scopedResourceSelector);
         // Only add a new form row if there are no blank entries
@@ -45,6 +48,7 @@ function ByNameSelector({
 
         if (newSelector.rule.values.length > 1) {
             newSelector.rule.values.splice(valueIndex, 1);
+            invalidateIndexKeys();
             handleChange(entityType, newSelector);
         } else {
             // This was the last value in the rule, so drop the selector
@@ -56,7 +60,7 @@ function ByNameSelector({
         <FormGroup label={`${entityType} name`} isRequired>
             <Flex spaceItems={{ default: 'spaceItemsSm' }} direction={{ default: 'column' }}>
                 {scopedResourceSelector.rule.values.map((value, index) => (
-                    <Flex key={value}>
+                    <Flex key={keyFor(index)}>
                         <AutoCompleteSelect
                             typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} name`}
                             className="pf-u-flex-grow-1 pf-u-w-auto"
