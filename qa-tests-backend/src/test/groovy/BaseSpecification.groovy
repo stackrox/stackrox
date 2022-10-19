@@ -389,7 +389,7 @@ class BaseSpecification extends Specification {
     }
 
     static Boolean isPostgresRun() {
-        return true //Env.CI_JOBNAME.contains("postgres")
+        return Env.CI_JOBNAME.contains("postgres")
     }
 
     static Boolean isRaceBuild() {
