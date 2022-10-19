@@ -138,5 +138,7 @@ func (client *roxctlClientImpl) NewReq(method string, path string, body io.Reade
 		return nil, errors.Wrap(err, "could not inject authentication information")
 	}
 
+	req.Header.Set("User-Agent", GetUserAgent())
+
 	return req, nil
 }
