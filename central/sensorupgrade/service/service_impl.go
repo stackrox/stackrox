@@ -17,6 +17,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 )
 
@@ -44,7 +46,10 @@ type service struct {
 }
 
 func (s *service) initialize() {
-	s.autoTriggerFlag.Set(defaultUpgradeConfig().EnableAutoUpgrade)
+	ctx := sac.WithAllAccess(context.Background())
+	defaultConfig, err := s.getOrDefaultUpgradeConfig(ctx)
+	utils.CrashOnError(err)
+	s.autoTriggerFlag.Set(defaultConfig.EnableAutoUpgrade)
 }
 
 func (s *service) RegisterServiceServer(server *grpc.Server) {
@@ -68,26 +73,30 @@ func (s *service) wrapToggleResponse(config *storage.SensorUpgradeConfig) *v1.Ge
 	}
 }
 
-func defaultUpgradeConfig() *storage.SensorUpgradeConfig {
-	if getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_SUPPORTED {
-		return &storage.SensorUpgradeConfig{EnableAutoUpgrade: true}
-	}
-	return &storage.SensorUpgradeConfig{EnableAutoUpgrade: false}
-}
-
-func (s *service) GetSensorUpgradeConfig(ctx context.Context, _ *v1.Empty) (*v1.GetSensorUpgradeConfigResponse, error) {
+func (s *service) getOrDefaultUpgradeConfig(ctx context.Context) (*storage.SensorUpgradeConfig, error) {
 	config, err := s.configDataStore.GetSensorUpgradeConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if config == nil {
 		// If there's no config in the DB, return default config according to managed central flag
-		config = defaultUpgradeConfig()
+		if getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_SUPPORTED {
+			return &storage.SensorUpgradeConfig{EnableAutoUpgrade: true}, nil
+		}
+		return &storage.SensorUpgradeConfig{EnableAutoUpgrade: false}, nil
+	}
+	return config, nil
+}
+
+func (s *service) GetSensorUpgradeConfig(ctx context.Context, _ *v1.Empty) (*v1.GetSensorUpgradeConfigResponse, error) {
+	config, err := s.getOrDefaultUpgradeConfig(ctx)
+	if err != nil {
+		return nil, err
 	}
 	return s.wrapToggleResponse(config), nil
 }
 
-func (s *service) GetAutoUpgradeConfig() *concurrency.Flag {
+func (s *service) AutoUpgradeSetting() *concurrency.Flag {
 	return &s.autoTriggerFlag
 }
 

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -40,6 +41,7 @@ func (s *SensorUpgradeServiceTestSuite) SetupTest() {
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
 	s.isolator = envisolator.NewEnvIsolator(s.T())
 
+	s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
 	s.serviceInstance = New(s.dataStore, s.manager)
 }
 
@@ -104,7 +106,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 			}
 
 			if testCase.upsertTimesCalled > 0 {
-				s.Require().Equal(s.serviceInstance.GetAutoUpgradeConfig().Get(),
+				s.Require().Equal(s.serviceInstance.AutoUpgradeSetting().Get(),
 					testCase.req.GetConfig().GetEnableAutoUpgrade())
 			}
 		})
@@ -127,14 +129,17 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_DefaultValue
 	}
 
 	for envValue, expectations := range testCases {
-		s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
+		s.Run(fmt.Sprintf("ROX_MANAGED_CENTRAL=%v", envValue), func() {
+			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(2).Return(nil, nil)
+			s.isolator.Setenv(env.ManagedCentral.EnvVar(), envValue)
 
-		s.isolator.Setenv(env.ManagedCentral.EnvVar(), envValue)
-		result, err := s.serviceInstance.GetSensorUpgradeConfig(context.Background(), nil)
+			instance := New(s.dataStore, s.manager)
+			result, err := instance.GetSensorUpgradeConfig(context.Background(), nil)
 
-		s.Require().NoError(err)
-		s.Assert().Equal(expectations.expectedAutoUpdate, result.GetConfig().GetEnableAutoUpgrade())
-		s.Assert().Equal(expectations.expectedFeatureEnabled, result.GetConfig().GetAutoUpgradeFeature())
+			s.Require().NoError(err)
+			s.Assert().Equal(expectations.expectedAutoUpdate, result.GetConfig().GetEnableAutoUpgrade())
+			s.Assert().Equal(expectations.expectedFeatureEnabled, result.GetConfig().GetAutoUpgradeFeature())
+		})
 	}
 }
 

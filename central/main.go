@@ -387,7 +387,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
 	}
 
-	autoTriggerUpgrades := sensorUpgradeService.Singleton().GetAutoUpgradeConfig()
+	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
 		networkEntityDataStore.Singleton(),

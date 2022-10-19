@@ -16,7 +16,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	GetAutoUpgradeConfig() *concurrency.Flag
+	AutoUpgradeSetting() *concurrency.Flag
 
 	v1.SensorUpgradeServiceServer
 }
