@@ -1,27 +1,40 @@
 import navSelectors from '../selectors/navigation';
 import { visitMainDashboard } from './main';
-import { interceptRequests, waitForResponses } from './request';
+import { interactAndWaitForResponses } from './request';
 
 /*
  * For example, visitFromLeftNav('Violations');
  */
-export function visitFromLeftNav(itemText, requestConfig) {
+export function visitFromLeftNav(itemText, requestConfig, staticResponseMap) {
     visitMainDashboard();
 
-    interceptRequests(requestConfig);
-    cy.get(`${navSelectors.navLinks}:contains("${itemText}")`).click();
-    waitForResponses(requestConfig);
+    interactAndWaitForResponses(
+        () => {
+            cy.get(`${navSelectors.navLinks}:contains("${itemText}")`).click();
+        },
+        requestConfig,
+        staticResponseMap
+    );
 }
 
 /*
  * For example, visitFromLeftNavExpandable('Vulnerability Management', 'Reporting');
  * For example, visitFromLeftNavExpandable('Platform Configuration', 'Integrations');
  */
-export function visitFromLeftNavExpandable(expandableTitle, itemText, requestConfig) {
+export function visitFromLeftNavExpandable(
+    expandableTitle,
+    itemText,
+    requestConfig,
+    staticResponseMap
+) {
     visitMainDashboard();
 
-    interceptRequests(requestConfig);
-    cy.get(`${navSelectors.navExpandable}:contains("${expandableTitle}")`).click();
-    cy.get(`${navSelectors.nestedNavLinks}:contains("${itemText}")`).click();
-    waitForResponses(requestConfig);
+    interactAndWaitForResponses(
+        () => {
+            cy.get(`${navSelectors.navExpandable}:contains("${expandableTitle}")`).click();
+            cy.get(`${navSelectors.nestedNavLinks}:contains("${itemText}")`).click();
+        },
+        requestConfig,
+        staticResponseMap
+    );
 }
