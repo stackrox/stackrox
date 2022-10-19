@@ -1447,7 +1447,7 @@ junit2slack() {
     fi
 
     local junit_file_names="$ARTIFACT_DIR/**.*.xml"
-    pushd "$SCRIPTS_ROOT/scripts/ci/junit2slack" || return
+    pushd "$SCRIPTS_ROOT/tools/junit2slack" || return
     go run main.go "$junit_file_names"
     popd
 }

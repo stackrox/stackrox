@@ -14,7 +14,10 @@ func main() {
 	// We're only logging errors currently. If we log more, we should probably switch logging libraries
 	log.SetOutput(os.Stderr)
 
-	var slackAttachments []slack.Attachment
+	if len(os.Args) <= 1 {
+		log.Fatal("requires at least one junit xml file")
+	}
+
 	var junitFiles []*junit.Suites
 
 	// We should accept all file names at once since we're using `go run` to run this program. No need to recompile
@@ -23,40 +26,38 @@ func main() {
 		if _, err := os.Stat(fileName); err == nil {
 			data, err := os.ReadFile(fileName)
 			if err != nil {
-				log.Printf("error while reading %s: %s", fileName, err)
+				log.Printf("error while reading %s: %v", fileName, err)
 				continue
 			}
 
 			junitSuites, err := junit.Parse(data)
 			if err != nil {
-				log.Printf("error while parsing junit suites in %s: %s", fileName, err)
+				log.Printf("error while parsing junit suites in %s: %v", fileName, err)
 				continue
 			}
 			junitFiles = append(junitFiles, junitSuites)
 
 		} else if errors.Is(err, os.ErrNotExist) {
-			log.Printf("%s doesn't exist: %s", fileName, err)
+			log.Printf("%s doesn't exist: %v", fileName, err)
 		} else {
-			log.Printf("error while trying to find %s: %s", fileName, err)
+			log.Printf("error while trying to find %s: %v", fileName, err)
 		}
 	}
 
-	slackMsg := convertJunitToSlack(junitFiles)
+	slackMsg := convertJunitToSlack(junitFiles...)
 	if slackMsg == nil {
 		log.Printf("warning: no slack message set")
 		return
-	} else {
-		slackAttachments = append(slackAttachments)
 	}
 
 	b, err := json.Marshal(slackMsg)
 	if err != nil {
-		log.Printf("error while marshaling Slack message to json: %s", err)
+		log.Printf("error while marshaling Slack message to json: %v", err)
 	}
 	fmt.Println(string(b))
 }
 
-func convertJunitToSlack(junitFiles []*junit.Suites) []slack.Attachment {
+func convertJunitToSlack(junitFiles ...*junit.Suites) []slack.Attachment {
 	var failedTestsBlocks []slack.Block
 	var attachments []slack.Attachment
 
@@ -87,7 +88,7 @@ func convertJunitToSlack(junitFiles []*junit.Suites) []slack.Attachment {
 				failureMessage := result.Failure.Message
 
 				// If there's no failure message, we'll use a different message (this shouldn't be the usual case)
-				if len(failureMessage) <= 0 {
+				if failureMessage == "" {
 					failureTitleTextBlock := slack.NewTextBlockObject("mrkdwn",
 						fmt.Sprintf("No Junit failure message for *%s*", title), false, false)
 					failureTitleSectionBlock := slack.NewSectionBlock(failureTitleTextBlock, nil, nil)
@@ -132,7 +133,7 @@ func convertJunitToSlack(junitFiles []*junit.Suites) []slack.Attachment {
 	}
 
 pushFinalSlackAttachments:
-	if failedTestsBlocks == nil || len(failedTestsBlocks) <= 0 {
+	if len(failedTestsBlocks) <= 0 {
 		return nil
 	}
 
