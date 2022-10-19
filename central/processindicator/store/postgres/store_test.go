@@ -51,7 +51,7 @@ func (s *ProcessIndicatorsStoreSuite) SetupTest() {
 }
 
 func (s *ProcessIndicatorsStoreSuite) TearDownSuite() {
-	//s.testDB.Teardown(s.T())
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 

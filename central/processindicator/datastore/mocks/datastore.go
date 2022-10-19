@@ -7,6 +7,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -87,6 +88,18 @@ func (m *MockDataStore) GetProcessIndicators(ctx context.Context, ids []string) 
 func (mr *MockDataStoreMockRecorder) GetProcessIndicators(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).GetProcessIndicators), ctx, ids)
+}
+
+// RemoveOrphanedProcessIndicators mocks base method.
+func (m *MockDataStore) RemoveOrphanedProcessIndicators(ctx context.Context, orphanedBefore time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveOrphanedProcessIndicators", ctx, orphanedBefore)
+}
+
+// RemoveOrphanedProcessIndicators indicates an expected call of RemoveOrphanedProcessIndicators.
+func (mr *MockDataStoreMockRecorder) RemoveOrphanedProcessIndicators(ctx, orphanedBefore interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveOrphanedProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).RemoveOrphanedProcessIndicators), ctx, orphanedBefore)
 }
 
 // RemoveProcessIndicators mocks base method.
