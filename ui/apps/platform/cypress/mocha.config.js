@@ -6,5 +6,6 @@ module.exports = {
     reporterEnabled: 'spec, mocha-junit-reporter',
     mochaJunitReporterReporterOptions: {
         mochaFile: path.join(testResultsDir, 'reports/cypress-[hash]-results.xml'),
+        testCaseSwitchClassnameAndName: true,
     },
 };
