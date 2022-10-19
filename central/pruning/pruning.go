@@ -39,8 +39,8 @@ import (
 )
 
 const (
-	pruneInterval      = 1 * time.Hour
-	orphanWindow       = 30 * time.Minute
+	pruneInterval      = 30 * time.Minute // 1 * time.Hour
+	orphanWindow       = 10 * time.Minute // 30 * time.Minute
 	baselineBatchLimit = 10000
 	clusterGCFreq      = 24 * time.Hour
 )
@@ -319,10 +319,7 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		err := g.processes.RemoveOrphanedProcessIndicators(pruningCtx, time.Now().Add(-1*orphanWindow))
-		if err != nil {
-			log.Error(errors.Wrap(err, "unable to prune processes"))
-		}
+		g.processes.RemoveOrphanedProcessIndicators(pruningCtx, time.Now().Add(-1*orphanWindow))
 		return
 	}
 

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/stackrox/rox/central/globaldb"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -102,18 +102,16 @@ func (p *prunerFactoryImpl) StartPruning() Pruner {
 	return p
 }
 
-func (p *prunerFactoryImpl) PruneOrphanedPodIndicators(ctx context.Context) error {
-	if _, err := globaldb.GetPostgres().Exec(ctx, pruneOrphanedPodIndicatorsStmt); err != nil {
+func PruneOrphanedPodIndicators(ctx context.Context, pool *pgxpool.Pool, orphanedBefore time.Time) {
+	if _, err := pool.Exec(ctx, pruneOrphanedPodIndicatorsStmt, orphanedBefore); err != nil {
 		log.Errorf("failed to prune orhpaned pod indicators: %v", err)
 	}
-	return nil
 }
 
-func (p *prunerFactoryImpl) PruneOrphanedDeploymentIndicators(ctx context.Context) error {
-	if _, err := globaldb.GetPostgres().Exec(ctx, pruneOrphanedDeploymentIndicatorsStmt); err != nil {
+func PruneOrphanedDeploymentIndicators(ctx context.Context, pool *pgxpool.Pool, orphanedBefore time.Time) {
+	if _, err := pool.Exec(ctx, pruneOrphanedDeploymentIndicatorsStmt, orphanedBefore); err != nil {
 		log.Errorf("failed to prune orhpaned pod indicators: %v", err)
 	}
-	return nil
 }
 
 // NewFactory returns a new Factory that creates pruners never pruning below the given number of `minProcesses`.

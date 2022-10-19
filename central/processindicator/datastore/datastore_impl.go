@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
@@ -175,14 +176,24 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 	return ds.removeMatchingIndicators(ctx, results)
 }
 
-func (ds *datastoreImpl) RemoveOrphanedProcessIndicators(ctx context.Context, orphanedBefore time.Time) error {
+func (ds *datastoreImpl) RemoveOrphanedProcessIndicators(ctx context.Context, orphanedBefore time.Time) {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
+		return
 	}
+	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+		log.Errorf("Error while pruning processes: couldn't access process info: %s", err)
+		return
+	} else if !ok {
+		log.Error(sac.ErrResourceAccessDenied)
+		return
+	}
+
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
-	return nil
+	pool := globaldb.GetPostgres()
+	pruner.PruneOrphanedPodIndicators(ctx, pool, orphanedBefore)
+	pruner.PruneOrphanedDeploymentIndicators(ctx, pool, orphanedBefore)
 }
 
 func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {

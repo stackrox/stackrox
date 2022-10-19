@@ -34,7 +34,7 @@ type DataStore interface {
 	AddProcessIndicators(context.Context, ...*storage.ProcessIndicator) error
 	RemoveProcessIndicatorsByPod(ctx context.Context, id string) error
 	RemoveProcessIndicators(ctx context.Context, ids []string) error
-	RemoveOrphanedProcessIndicators(ctx context.Context, orphanedBefore time.Time) error
+	RemoveOrphanedProcessIndicators(ctx context.Context, orphanedBefore time.Time)
 
 	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error
 
