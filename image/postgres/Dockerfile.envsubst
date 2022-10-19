@@ -19,7 +19,7 @@ ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
 ENV PG_MAJOR=13
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
-ENV LANG en_US.utf8
+ENV LANG=en_US.utf8
 
 COPY signatures/RPM-GPG-KEY-PGDG-13 /
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
