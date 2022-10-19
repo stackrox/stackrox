@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -19,7 +20,7 @@ type resourceEventHandlerImpl struct {
 	eventLock  *sync.Mutex
 	dispatcher resources.Dispatcher
 
-	output           chan<- *central.MsgFromSensor
+	outputQueue      output.Queue
 	syncingResources *concurrency.Flag
 
 	syncLock                   sync.Mutex
@@ -110,11 +111,7 @@ func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, ac
 
 func (h *resourceEventHandlerImpl) sendEvents(evWraps ...*central.SensorEvent) {
 	for _, evWrap := range evWraps {
-		h.output <- &central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: evWrap,
-			},
-		}
+		h.outputQueue.Send(evWrap)
 	}
 }
 
