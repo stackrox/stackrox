@@ -4,7 +4,7 @@
 
 ### Using the `local-sensor.sh` script
 
-You can reproduce the test used to capture sensor's metrics easily by using the `local-sensor.sh` script.
+You can run reproducible tests to capture sensor's metrics easily by using the `local-sensor.sh` script. <!-- TODO: add link to metrics when we have them -->
 
 1. Define a fake workload ConfigMap called `workload.yaml`:
 ```yaml
