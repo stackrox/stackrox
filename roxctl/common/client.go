@@ -107,7 +107,7 @@ func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string,
 	if err != nil {
 		return nil, err
 	}
-	return client.DoReqAndVerifyStatusCode(path, method, 200, body)
+	return client.DoReqAndVerifyStatusCode(path, method, 200, body) //nolint:wrapcheck
 }
 
 // Do executes a http.Request
