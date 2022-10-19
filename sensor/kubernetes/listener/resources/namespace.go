@@ -55,5 +55,5 @@ func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.Re
 				Namespace: roxNamespace,
 			},
 		},
-		}, action, nil)
+		}, nil, nil)
 }

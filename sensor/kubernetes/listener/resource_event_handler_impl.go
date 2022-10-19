@@ -105,14 +105,8 @@ func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, ac
 		kubernetes.TrimAnnotations(metaObj)
 	}
 
-	evWraps := h.dispatcher.ProcessEvent(obj, oldObj, action)
-	h.sendEvents(evWraps...)
-}
-
-func (h *resourceEventHandlerImpl) sendEvents(evWraps ...*central.SensorEvent) {
-	for _, evWrap := range evWraps {
-		h.outputQueue.Send(evWrap)
-	}
+	message := h.dispatcher.ProcessEvent(obj, oldObj, action)
+	h.outputQueue.Send(message)
 }
 
 func getObjUID(newObj interface{}) types.UID {

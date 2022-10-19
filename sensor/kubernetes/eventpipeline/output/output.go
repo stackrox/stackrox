@@ -18,18 +18,27 @@ type DetectionObject struct {
 	networkPoliciesApplied *augmentedobjs.NetworkPoliciesApplied
 }
 
+type CompatibilityDetectionMessage struct {
+	Object *storage.Deployment
+	Action central.ResourceAction
+}
+
 type OutputMessage struct {
 	ForwardMessages []*central.SensorEvent
 
 	// DetectionObject should be used by the new path
-	DetectionObject *DetectionObject
+	// DetectionObject *DetectionObject
 
-	Action central.ResourceAction
+	// Action central.ResourceAction
 	// CompatibilityDetectionDeployment should be used by old handlers
 	// and its here for retrocompatibility reasons.
 	// This property should be removed in the future and only the
 	// DetectionObject should be sent
-	CompatibilityDetectionDeployment *storage.Deployment
+	CompatibilityDetectionDeployment []CompatibilityDetectionMessage
+
+	// ReprocessDeployments is also used for compatibility reasons with Network Policy handlers
+	// in the future this will not be needed as the dependencies are taken care by the resolvers
+	ReprocessDeployments []string
 }
 
 type Queue interface {

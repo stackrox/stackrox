@@ -55,7 +55,7 @@ func (p *eventPipeline) Stop(err error) {
 // TODO: Remove this and refactor listeners so they send message to the pipeline queue instead.
 func (p *eventPipeline) forwardMessages() {
 	log.Info("starting message forwarding")
-	defer func() { 
+	defer func() {
 		log.Info("stopping message forward")
 	}()
 

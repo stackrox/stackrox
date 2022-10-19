@@ -19,8 +19,7 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 	// dependencyResolver := ...New()
 	// objectEnhancer := ...New()
 	outputQueue := output.New(&stopSig, detector)
-	// TODO: create listener without detector and pass `output` subcomponent
-	resourceListener := listener.New(client, configHandler, detector, nodeName, resyncPeriod, traceWriter)
+	resourceListener := listener.New(client, configHandler, detector, nodeName, resyncPeriod, traceWriter, outputQueue)
 
 	pipelineResposnes := make(chan *central.MsgFromSensor)
 	return &eventPipeline{

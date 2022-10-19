@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 )
 
 const (
@@ -30,6 +31,7 @@ type listenerImpl struct {
 	detector           detector.Detector
 	resyncPeriod       time.Duration
 	traceWriter        io.Writer
+	outputQueue        output.Queue
 }
 
 func (k *listenerImpl) Start() error {
