@@ -311,7 +311,7 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCForCurrentTarget() (*corev1.
 		return nil, nil
 	}
 	if len(filtered) > 1 {
-		names := sliceutils.Map(filtered, corev1.PersistentVolumeClaim.GetName)
+		names := sliceutils.Map(filtered, (*corev1.PersistentVolumeClaim).GetName)
 		sort.Strings(names)
 
 		return nil, errors.Wrapf(errMultipleOwnedPVCs,
