@@ -31,10 +31,6 @@ type sensorUpgradeConfigDataStoreTestSuite struct {
 	mockCtrl *gomock.Controller
 }
 
-var (
-	defaultUpgradeConfig = upgradeConfig(true)
-)
-
 func (s *sensorUpgradeConfigDataStoreTestSuite) SetupTest() {
 	s.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
