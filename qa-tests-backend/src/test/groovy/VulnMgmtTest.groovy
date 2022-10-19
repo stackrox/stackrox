@@ -146,7 +146,6 @@ query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: Stri
   }
 }
 
-
 fragment cveFields on EmbeddedVulnerability {
   cve
   cvss
