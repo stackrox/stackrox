@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 
+	commonSearch "github.com/stackrox/rox/central/rbac/common/search"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
@@ -38,6 +39,7 @@ func (ds *searcherImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]
 
 // Search returns the raw search results from the query.
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	commonSearch.ProcessQuery(q)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return k8sRoleBindingsSACPostgresSearchHelper.Apply(ds.index.Search)(ctx, q)
 	}
@@ -46,6 +48,7 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 
 // Count returns the number of search results from the query.
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	commonSearch.ProcessQuery(q)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return k8sRoleBindingsSACPostgresSearchHelper.ApplyCount(ds.index.Count)(ctx, q)
 	}
