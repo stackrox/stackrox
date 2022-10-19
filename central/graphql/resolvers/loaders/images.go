@@ -68,6 +68,7 @@ func (idl *imageLoaderImpl) FromIDs(ctx context.Context, ids []string) ([]*stora
 
 // FromID loads an image from an ID, without scan components and vulns.
 func (idl *imageLoaderImpl) FromID(ctx context.Context, id string) (*storage.Image, error) {
+	//log.Infof("image FromID %s", id)
 	images, err := idl.load(ctx, []string{id}, false)
 	if err != nil {
 		return nil, err
@@ -75,6 +76,7 @@ func (idl *imageLoaderImpl) FromID(ctx context.Context, id string) (*storage.Ima
 	if len(images) == 0 {
 		return nil, errors.Errorf("could not find image for id %q:", id)
 	}
+	log.Info(images[0].GetScan())
 	return images[0], nil
 }
 

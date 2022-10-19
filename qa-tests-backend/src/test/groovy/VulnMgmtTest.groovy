@@ -78,10 +78,52 @@ fragment cveFields on EmbeddedVulnerability {
 }
 """
 
+    private static final IMAGE_FIXABLE_CVE_POSTGRES_QUERY = """
+query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
+  result: image(id: \$id) {
+    imageVulnerabilities: vulns(
+      query: \$vulnQuery
+      scopeQuery: \$scopeQuery
+    ) {
+      ...cveFields
+      __typename
+    }
+    __typename
+  }
+}
+
+fragment cveFields on EmbeddedVulnerability {
+  cve
+  cvss
+  severity
+}
+"""
+
     private static final COMPONENT_FIXABLE_CVE_QUERY = """
 query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
   result: component(id: \$id) {
     vulnerabilities: vulns(
+      query: \$vulnQuery
+      scopeQuery: \$scopeQuery
+    ) {
+      ...cveFields
+      __typename
+    }
+    __typename
+  }
+}
+
+fragment cveFields on EmbeddedVulnerability {
+  cve
+  cvss
+  severity
+}
+"""
+
+    private static final COMPONENT_FIXABLE_CVE_POSTGRES_QUERY = """
+query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
+  result: imageComponent(id: \$id) {
+    imageVulnerabilities: vulns(
       query: \$vulnQuery
       scopeQuery: \$scopeQuery
     ) {
@@ -115,6 +157,22 @@ fragment cveFields on EmbeddedVulnerability {
 }
 """
 
+    private static final COMPONENT_SUBCVE_POSTGRES_QUERY = """
+query getComponentSubEntityCVE(\$id: ID!, \$query: String, \$scopeQuery: String) {
+  result: imageComponent(id: \$id) {
+    imageVulns(query: \$query, scopeQuery: \$scopeQuery) {
+      ...cveFields
+    }
+    __typename
+  }
+}
+
+fragment cveFields on EmbeddedVulnerability {
+  cvss
+  severity
+}
+"""
+
     def setupSpec() {
         ImageIntegrationService.addStackroxScannerIntegration()
         ImageService.scanImage(RHEL_IMAGE)
@@ -125,34 +183,63 @@ fragment cveFields on EmbeddedVulnerability {
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
     }
 
+    def getImageFixableCVEQuery() {
+        return isPostgresRun() ? IMAGE_FIXABLE_CVE_POSTGRES_QUERY : IMAGE_FIXABLE_CVE_QUERY
+    }
+
+    def getComponentFixableCVEQuery() {
+        return isPostgresRun() ? COMPONENT_FIXABLE_CVE_POSTGRES_QUERY : COMPONENT_FIXABLE_CVE_QUERY
+    }
+
+    def getComponentSubCVEQuery() {
+        return isPostgresRun() ? COMPONENT_SUBCVE_POSTGRES_QUERY : COMPONENT_SUBCVE_QUERY
+    }
+
+    def getVulnQuery(String suffix) {
+        return isPostgresRun() ?
+            "CVE:CVE-2017-10684#" + suffix :
+            "CVE:CVE-2017-10684"
+    }
+
+    def getRHELComponentID() {
+        return isPostgresRun() ?
+            "ncurses-base#5.9-14.20130511.el7_4#centos:7" :
+            "bmN1cnNlcy1iYXNl:NS45LTE0LjIwMTMwNTExLmVsN180"
+    }
+
+    def getUbuntuComponentID() {
+        return isPostgresRun() ?
+            "ncurses#5.9+20140118-1ubuntu1#ubuntu:14.04" :
+            "bmN1cnNlcw:NS45KzIwMTQwMTE4LTF1YnVudHUx"
+    }
+
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify severities and CVSS #imageDigest #component #severity #cvss"() {
         when:
         def gqlService = new GraphQLService()
 
         def embeddedImageRes = gqlService.Call(EMBEDDED_IMAGE_QUERY,
-                [id: imageDigest, query: "CVE:CVE-2017-10684"])
+                [id: imageDigest, query: getVulnQuery(cveSuffix)])
         assert embeddedImageRes.hasNoErrors()
         def embeddedImageResVuln = embeddedImageRes.value.result.scan.components[0].vulns[0]
 
         def topLevelImageRes = gqlService.Call(TOPLEVEL_IMAGE_QUERY,
-                [id: imageDigest, query: "CVE:CVE-2017-10684"])
+                [id: imageDigest, query: getVulnQuery(cveSuffix)])
         assert topLevelImageRes.hasNoErrors()
         def topLevelImageResVuln = topLevelImageRes.value.result.vulns[0]
 
-        def fixableCVEImageRes = gqlService.Call(IMAGE_FIXABLE_CVE_QUERY,
-                [id: imageDigest, vulnQuery: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
+        def fixableCVEImageRes = gqlService.Call(getImageFixableCVEQuery(),
+                [id: imageDigest, vulnQuery: getVulnQuery(cveSuffix), scopeQuery: "Image SHA:${imageDigest}"])
         assert fixableCVEImageRes.hasNoErrors()
         def fixableCVEImageResVuln = fixableCVEImageRes.value.result.vulnerabilities[0]
 
-        def fixableCVEComponentRes = gqlService.Call(COMPONENT_FIXABLE_CVE_QUERY,
-                [id: componentB64, vulnQuery: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
+        def fixableCVEComponentRes = gqlService.Call(getComponentFixableCVEQuery(),
+                [id: componentID, vulnQuery: getVulnQuery(cveSuffix), scopeQuery: "Image SHA:${imageDigest}"])
         assert fixableCVEComponentRes.hasNoErrors()
         def fixableCVEComponentResVuln = fixableCVEComponentRes.value.result.vulnerabilities[0]
 
-        def subCVEComponentRes = gqlService.Call(COMPONENT_SUBCVE_QUERY,
-                [id: componentB64, query: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
+        def subCVEComponentRes = gqlService.Call(getComponentSubCVEQuery(),
+                [id: componentID, query: getVulnQuery(cveSuffix), scopeQuery: "Image SHA:${imageDigest}"])
         assert subCVEComponentRes.hasNoErrors()
         def subCVEComponentResVuln = subCVEComponentRes.value.result.vulns[0]
 
@@ -174,10 +261,10 @@ fragment cveFields on EmbeddedVulnerability {
 
         where:
         "Data inputs are: "
-        imageDigest | component | componentB64 | severity | cvss
-        RHEL_IMAGE_DIGEST   | "ncurses-base" | "bmN1cnNlcy1iYXNl:NS45LTE0LjIwMTMwNTExLmVsN180" |
+        imageDigest | component | componentID | cveSuffix | severity | cvss
+        RHEL_IMAGE_DIGEST   | "ncurses-base" | getRHELComponentID()   | "centos:7"     |
                 VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 5.3
-        UBUNTU_IMAGE_DIGEST | "ncurses"      | "bmN1cnNlcw:NS45KzIwMTQwMTE4LTF1YnVudHUx"       |
+        UBUNTU_IMAGE_DIGEST | "ncurses"      | getUbuntuComponentID() | "ubuntu:14.04" |
                 VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY      | 9.8
     }
 }
