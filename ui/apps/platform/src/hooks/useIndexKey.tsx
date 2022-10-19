@@ -27,7 +27,11 @@ type UseIndexKeyReturn = {
  * rendering.
  */
 export default function useIndexKey(): UseIndexKeyReturn {
-    const [prefix, setPrefix] = useState(globalPrefix);
+    const [prefix, setPrefix] = useState(() => {
+        // Increment on initial call to hook, to ensure no two components start from the same index
+        globalPrefix += 1;
+        return globalPrefix;
+    });
     const keyFor = useCallback((index: number) => `${prefix}-useIndexKey-${index}`, [prefix]);
     const invalidateIndexKeys = useCallback(() => {
         globalPrefix += 1;
