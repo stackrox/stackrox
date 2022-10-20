@@ -1,3 +1,5 @@
+import { Traits } from './traits.proto';
+
 export type Group = {
     // GroupProperties define the properties of a group, applying to users when their properties match.
     // They also uniquely identify the group with the props.id field.
@@ -20,4 +22,6 @@ export type GroupProperties = {
     authProviderId: string;
     key: string;
     value: string;
+
+    traits?: Traits | null;
 };

@@ -13,7 +13,7 @@ import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-tab
 
 import { getIsDefaultRoleName } from 'constants/accessControl';
 import { AccessScope } from 'services/AccessScopesService';
-import { Group } from 'services/AuthService';
+import { Group } from 'types/group.proto';
 import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';

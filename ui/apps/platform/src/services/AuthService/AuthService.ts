@@ -7,6 +7,9 @@ import queryString from 'qs';
 import { Role } from 'services/RolesService';
 
 import { Empty } from 'services/types';
+import { Group } from 'types/group.proto';
+import { Traits } from 'types/traits.proto';
+
 import AccessTokenManager from './AccessTokenManager';
 import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,
@@ -51,6 +54,7 @@ export type AuthProviderConfig = Record<
     string | number | undefined | boolean | Record<string, boolean>
 >;
 
+/*
 export type Group = {
     roleName: string;
     props: {
@@ -61,6 +65,7 @@ export type Group = {
         traits?: Traits;
     };
 };
+*/
 
 export type AuthProvider = {
     id: string;
@@ -77,12 +82,6 @@ export type AuthProvider = {
     requiredAttributes: AuthProviderRequiredAttributes[];
     traits?: Traits;
 };
-
-export type Traits = {
-    mutabilityMode: MutabilityMode;
-};
-
-export type MutabilityMode = 'ALLOW_MUTATE' | 'ALLOW_MUTATE_FORCED';
 
 export type AuthProviderInfo = {
     label: string;

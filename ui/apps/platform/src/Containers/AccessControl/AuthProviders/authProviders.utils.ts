@@ -2,8 +2,8 @@ import {
     AuthProvider,
     AuthProviderConfig,
     AuthProviderRequiredAttributes,
-    Group,
 } from 'services/AuthService';
+import { Group } from 'types/group.proto';
 
 export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;

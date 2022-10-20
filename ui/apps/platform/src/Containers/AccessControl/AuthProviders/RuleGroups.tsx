@@ -4,7 +4,7 @@ import { FieldArray } from 'formik';
 import { Button, Flex, FlexItem, FormGroup, SelectOption, TextInput } from '@patternfly/react-core';
 import { ArrowRightIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
-import { Group } from 'services/AuthService';
+import { Group } from 'types/group.proto';
 import { Role } from 'services/RolesService';
 import SelectSingle from 'Components/SelectSingle';
 

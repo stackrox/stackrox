@@ -6,7 +6,6 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 export const types = {
     FETCH_RULE_GROUPS: createFetchingActionTypes('groups/FETCH_RULE_GROUPS'),
     SAVE_RULE_GROUP: 'groups/SAVE_RULE_GROUP',
-    DELETE_RULE_GROUP: 'groups/DELETE_RULE_GROUP',
 };
 
 export const actions = {
@@ -16,10 +15,6 @@ export const actions = {
         group,
         defaultRole,
         id,
-    }),
-    deleteRuleGroup: (group) => ({
-        type: types.DELETE_RULE_GROUP,
-        group,
     }),
 };
 

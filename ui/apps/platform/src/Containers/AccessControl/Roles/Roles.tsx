@@ -19,7 +19,7 @@ import {
     fetchAccessScopes,
     defaultAccessScopeIds,
 } from 'services/AccessScopesService';
-import { Group, fetchAuthProviders } from 'services/AuthService';
+import { fetchAuthProviders } from 'services/AuthService';
 import { fetchGroups } from 'services/GroupsService';
 import {
     PermissionSet,
@@ -30,6 +30,7 @@ import {
     fetchRolesAsArray,
     updateRole,
 } from 'services/RolesService';
+import { Group } from 'types/group.proto';
 
 import AccessControlDescription from '../AccessControlDescription';
 import AccessControlPageTitle from '../AccessControlPageTitle';
