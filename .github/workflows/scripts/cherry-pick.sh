@@ -96,7 +96,7 @@ if [ -n "$PR_COMMITS" ]; then
 fi
 
 # Replace % with %25, escape \n and " to pass as step output to Slack message.
-FAILED="$(sed ':a; N; $!ba; s/%/%25/g; s/\n/\\n/g; s/"/\\"/g' "$SLACK_MESSAGE_FILE")"
+FAILED=$(sed ':a; N; $!ba; s/%/%25/g; s/\n/\\n/g; s/"/\\"/g' "$SLACK_MESSAGE_FILE")
 
 rm -f "$SLACK_MESSAGE_FILE"
 

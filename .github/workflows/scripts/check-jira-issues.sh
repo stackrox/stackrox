@@ -102,7 +102,7 @@ echo
 echo "Open issues:"
 echo "$OPEN_ISSUES"
 
-REPO_NAME="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+REPO_NAME=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
 
 if [ "$DRY_RUN" = "false" ] && [ "$REPO_NAME" = "stackrox/stackrox" ]; then
     while read -r KEY; do

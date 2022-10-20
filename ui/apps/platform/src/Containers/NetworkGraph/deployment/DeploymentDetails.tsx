@@ -17,7 +17,7 @@ import {
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import { InfoCircleIcon } from '@patternfly/react-icons';
 
 function DetailSection({ title, children }) {
     const [isExpanded, setIsExpanded] = useState(true);
@@ -48,67 +48,36 @@ function DeploymentDetails() {
         <div className="pf-u-h-100 pf-u-p-md">
             <ul>
                 <li>
-                    <DetailSection title="Security overview">
-                        <DescriptionList columnModifier={{ default: '2Col' }}>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Risk score</DescriptionListTerm>
-                                <DescriptionListDescription>Priority 1</DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Asset value</DescriptionListTerm>
-                                <DescriptionListDescription>High</DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Violations</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <Flex
-                                        direction={{ default: 'row' }}
-                                        alignItems={{ default: 'alignItemsCenter' }}
-                                    >
-                                        <FlexItem>
-                                            <ExclamationCircleIcon className="pf-u-danger-color-100" />
-                                        </FlexItem>
-                                        <FlexItem>
-                                            <Button variant="link" isInline>
-                                                1 deploy
-                                            </Button>
-                                            ,{' '}
-                                            <Button variant="link" isInline>
-                                                1 runtime
-                                            </Button>
-                                        </FlexItem>
-                                    </Flex>
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Processes</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <Flex
-                                        direction={{ default: 'row' }}
-                                        alignItems={{ default: 'alignItemsCenter' }}
-                                    >
-                                        <FlexItem>
-                                            <ExclamationCircleIcon className="pf-u-danger-color-100" />
-                                        </FlexItem>
-                                        <FlexItem>
-                                            <Button variant="link" isInline>
-                                                3 anomalous
-                                            </Button>
-                                            ,{' '}
-                                            <Button variant="link" isInline>
-                                                12 running
-                                            </Button>
-                                        </FlexItem>
-                                    </Flex>
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                        </DescriptionList>
-                    </DetailSection>
-                </li>
-                <Divider component="li" className="pf-u-mb-sm" />
-                <li>
                     <DetailSection title="Network security">
                         <DescriptionList columnModifier={{ default: '1Col' }}>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Anomalous traffic</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <Flex
+                                        direction={{ default: 'row' }}
+                                        alignItems={{ default: 'alignItemsCenter' }}
+                                    >
+                                        <FlexItem>
+                                            <Label
+                                                variant="outline"
+                                                color="red"
+                                                icon={<InfoCircleIcon />}
+                                            >
+                                                2 external flows
+                                            </Label>
+                                        </FlexItem>
+                                        <FlexItem>
+                                            <Label
+                                                variant="outline"
+                                                color="gold"
+                                                icon={<InfoCircleIcon />}
+                                            >
+                                                3 internal flows
+                                            </Label>
+                                        </FlexItem>
+                                    </Flex>
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Network policy rules</DescriptionListTerm>
                                 <DescriptionListDescription>
@@ -117,43 +86,31 @@ function DeploymentDetails() {
                                         alignItems={{ default: 'alignItemsCenter' }}
                                     >
                                         <FlexItem>
-                                            <ExclamationCircleIcon className="pf-u-warning-color-100" />
+                                            <Label
+                                                variant="outline"
+                                                color="gold"
+                                                icon={<InfoCircleIcon />}
+                                            >
+                                                0 egress, allowing 325 flows
+                                            </Label>
                                         </FlexItem>
                                         <FlexItem>
-                                            0 egress,{' '}
-                                            <Button variant="link" isInline>
-                                                1 ingress
-                                            </Button>
+                                            <Label variant="outline" color="blue">
+                                                1 egress
+                                            </Label>
                                         </FlexItem>
                                     </Flex>
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
-                                <DescriptionListTerm>Flows observed</DescriptionListTerm>
+                                <DescriptionListTerm>Listening ports</DescriptionListTerm>
                                 <DescriptionListDescription>
                                     <Flex
                                         direction={{ default: 'row' }}
                                         alignItems={{ default: 'alignItemsCenter' }}
                                     >
                                         <FlexItem>
-                                            <ExclamationCircleIcon className="pf-u-danger-color-100" />
-                                        </FlexItem>
-                                        <FlexItem>
-                                            <Button variant="link" isInline>
-                                                3 external
-                                            </Button>
-                                            ,{' '}
-                                            <Button variant="link" isInline>
-                                                2 anomalous
-                                            </Button>
-                                            ,{' '}
-                                            <Button variant="link" isInline>
-                                                4 active
-                                            </Button>
-                                            ,{' '}
-                                            <Button variant="link" isInline>
-                                                312 allowed
-                                            </Button>
+                                            <Label variant="outline">TCP: 2020, 2021</Label>
                                         </FlexItem>
                                     </Flex>
                                 </DescriptionListDescription>
@@ -176,17 +133,17 @@ function DeploymentDetails() {
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
+                                        <DescriptionListTerm>Created</DescriptionListTerm>
+                                        <DescriptionListDescription>
+                                            12/09/21 | 6:03:23 PM
+                                        </DescriptionListDescription>
+                                    </DescriptionListGroup>
+                                    <DescriptionListGroup>
                                         <DescriptionListTerm>Cluster</DescriptionListTerm>
                                         <DescriptionListDescription>
                                             <Button variant="link" isInline>
                                                 Production
                                             </Button>
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Created</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            12/09/21 | 6:03:23 PM
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>

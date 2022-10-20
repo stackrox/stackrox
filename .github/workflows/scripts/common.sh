@@ -28,11 +28,21 @@ gh_log() {
 export -f gh_log
 
 # Sets a step output value.
-# Multiple lines are not supported: join with URL escaping.
+# Examples:
+#     gh_output name value
+#     gh_output name <<EOF
+#     value
+#     EOF
 gh_output() {
     local NAME="$1"
-    shift
-    echo "::set-output name=$NAME::$*"
+    if [ "$#" -eq 1 ]; then
+        echo "$NAME<<END_OF_VALUE"
+        cat
+        echo "END_OF_VALUE"
+    else
+        shift
+        echo "$NAME=$*"
+    fi >>"$GITHUB_OUTPUT"
 }
 export -f gh_output
 

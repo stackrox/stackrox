@@ -22,7 +22,7 @@ function DeploymentSideBar() {
 
     return (
         <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }} className="pf-u-h-100">
-            <Flex direction={{ default: 'row' }} className="pf-u-p-md">
+            <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
                 <FlexItem>
                     <Badge style={{ backgroundColor: 'rgb(0,102,205)' }}>D</Badge>
                 </FlexItem>
@@ -64,11 +64,6 @@ function DeploymentSideBar() {
                         tabContentId="Policies"
                         title={<TabTitleText>Policies</TabTitleText>}
                     />
-                    <Tab
-                        eventKey="Timeline"
-                        tabContentId="Timeline"
-                        title={<TabTitleText>Timeline</TabTitleText>}
-                    />
                 </Tabs>
                 <TabContent eventKey="Details" id="Details" hidden={activeKeyTab !== 'Details'}>
                     <DeploymentDetails />
@@ -81,9 +76,6 @@ function DeploymentSideBar() {
                 </TabContent>
                 <TabContent eventKey="Policies" id="Policies" hidden={activeKeyTab !== 'Policies'}>
                     <div className="pf-u-h-100 pf-u-p-md">TODO: Add Policies</div>
-                </TabContent>
-                <TabContent eventKey="Timeline" id="Timeline" hidden={activeKeyTab !== 'Timeline'}>
-                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Timeline</div>
                 </TabContent>
             </FlexItem>
         </Flex>
