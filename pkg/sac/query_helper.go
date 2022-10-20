@@ -84,7 +84,13 @@ func buildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTr
 			continue
 		}
 		if clusterAccessScope.State == effectiveaccessscope.Included {
-			clusterQuery := search.ConjunctionQuery(getClusterMatchQuery(clusterID, verbose), getAnyNamespaceMatchQuery())
+			var clusterQuery *v1.Query
+			if verbose {
+				clusterQuery = search.ConjunctionQuery(getClusterMatchQuery(clusterID, verbose),
+					getAnyNamespaceMatchQuery())
+			} else {
+				clusterQuery = getClusterMatchQuery(clusterID, verbose)
+			}
 			clusterFilters = append(clusterFilters, clusterQuery)
 		} else if clusterAccessScope.State == effectiveaccessscope.Partial {
 			clusterQuery := getClusterMatchQuery(clusterID, verbose)
