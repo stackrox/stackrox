@@ -391,7 +391,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Compl
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.ComplianceOperatorScan](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -402,12 +402,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Compl
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.ComplianceOperatorScan)
-	for _, data := range rows {
-		msg := &storage.ComplianceOperatorScan{}
-		if err := msg.Unmarshal(data); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.ComplianceOperatorScan, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
