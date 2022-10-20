@@ -54,19 +54,6 @@ export type AuthProviderConfig = Record<
     string | number | undefined | boolean | Record<string, boolean>
 >;
 
-/*
-export type Group = {
-    roleName: string;
-    props: {
-        authProviderId: string;
-        key?: string;
-        value?: string;
-        id?: string;
-        traits?: Traits;
-    };
-};
-*/
-
 export type AuthProvider = {
     id: string;
     name: string;
