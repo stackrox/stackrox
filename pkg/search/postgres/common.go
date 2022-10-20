@@ -858,13 +858,13 @@ func scanRows[T any, PT unmarshaler[T]](rows pgx.Rows) ([]*T, error) {
 	return results, nil
 }
 
-func unmarshal[T any, PT unmarshaler[T]](row pgx.Row) (PT, error) {
+func unmarshal[T any, PT unmarshaler[T]](row pgx.Row) (*T, error) {
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, errors.Wrap(err, "scanning row")
 	}
-	msg := PT(new(T))
-	if err := msg.Unmarshal(data); err != nil {
+	msg := new(T)
+	if err := PT(msg).Unmarshal(data); err != nil {
 		return nil, errors.Wrapf(err, "unmarshaling %T", msg)
 	}
 	return msg, nil
