@@ -21,7 +21,7 @@ func mergeOutputMessages(dest, src *output.OutputMessage) *output.OutputMessage 
 	if src != nil {
 		dest.ReprocessDeployments = append(dest.ReprocessDeployments, src.ReprocessDeployments...)
 		dest.ForwardMessages = append(dest.ForwardMessages, src.ForwardMessages...)
-		dest.CompatibilityDetectionDeployment = append(dest.CompatibilityDetectionDeployment)
+		dest.CompatibilityDetectionDeployment = append(dest.CompatibilityDetectionDeployment, src.CompatibilityDetectionDeployment...)
 	}
 	return dest
 }
