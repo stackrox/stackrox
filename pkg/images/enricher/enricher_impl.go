@@ -605,27 +605,30 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 	}
 
 	var fetchedSignatures []*storage.Signature
-	for _, matchingReg := range matchingRegistries {
-		// FetchImageSignaturesWithRetries will try fetching of signatures with retries.
-		sigs, err := signatures.FetchImageSignaturesWithRetries(ctx, e.signatureFetcher, img, matchingReg)
-		fetchedSignatures = append(fetchedSignatures, sigs...)
-		// Skip other matching registries if we have a successful fetch of signatures, irrespective of whether
-		// signatures were found or not. Retrying this for other registries won't change the fact that signatures are
-		// available or not.
-		if err == nil {
-			break
-		}
+	for imageName, matchingRegs := range matchingRegistries {
+		for _, registry := range matchingRegs {
+			// FetchImageSignaturesWithRetries will try fetching of signatures with retries.
+			sigs, err := signatures.FetchImageSignaturesWithRetries(ctx, e.signatureFetcher, img, imageName, registry)
+			fetchedSignatures = append(fetchedSignatures, sigs...)
+			// Skip other matching registries if we have a successful fetch of signatures for the respective image name,
+			// irrespective of whether signatures were found or not.
+			// Retrying this for other registries won't change the fact that signatures are available or not for this
+			// particular image name. Note that we still will fetch image signatures for _all_ other image
+			if err == nil {
+				break
+			}
 
-		// We skip logging unauthorized errors. Each matching registry may either provide no credentials or different
-		// credentials, which makes it expected that we receive unauthorized errors on multiple occasions.
-		// The best way to handle this would be to keep a list of images which are matching but not authorized for each
-		// registry, but this can be tackled at a latter improvement.
-		if !errors.Is(err, errox.NotAuthorized) {
-			log.Errorf("Error fetching image signatures for image %q: %v", imgName, err)
-		} else {
-			// Log errox.NotAuthorized erros only in debug mode, since we expect them to occur often.
-			log.Debugf("Unauthorized error fetching image signatures for image %q: %v",
-				imgName, err)
+			// We skip logging unauthorized errors. Each matching registry may either provide no credentials or different
+			// credentials, which makes it expected that we receive unauthorized errors on multiple occasions.
+			// The best way to handle this would be to keep a list of images which are matching but not authorized for each
+			// registry, but this can be tackled at a latter improvement.
+			if !errors.Is(err, errox.NotAuthorized) {
+				log.Errorf("Error fetching image signatures for image %q: %v", imgName, err)
+			} else {
+				// Log errox.NotAuthorized erros only in debug mode, since we expect them to occur often.
+				log.Debugf("Unauthorized error fetching image signatures for image %q: %v",
+					imgName, err)
+			}
 		}
 	}
 
@@ -655,6 +658,7 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 		return errox.InvalidArgs.CausedByf("no registry is indicated for image %q",
 			image.GetName().GetFullName())
 	}
+	// TODO(dhaus): Verify the image names here as well? Probably we should fail open here instead of not at all? At least 1 image has to have a registry set I suppose.
 	return nil
 }
 
@@ -711,11 +715,13 @@ func filterRegistriesBySource(requestSource *RequestSource, registries []registr
 }
 
 func getMatchingRegistries(registries []registryTypes.ImageRegistry,
-	image *storage.Image) ([]registryTypes.ImageRegistry, error) {
-	var matchingRegistries []registryTypes.ImageRegistry
+	image *storage.Image) (map[string][]registryTypes.ImageRegistry, error) {
+	matchingRegistries := make(map[string][]registryTypes.ImageRegistry, len(image.GetNames()))
 	for _, registry := range registries {
-		if registry.Match(image.GetName()) {
-			matchingRegistries = append(matchingRegistries, registry)
+		for _, name := range image.GetNames() {
+			if registry.Match(image.GetName()) {
+				matchingRegistries[name.GetFullName()] = append(matchingRegistries[name.GetFullName()], registry)
+			}
 		}
 	}
 

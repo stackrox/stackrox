@@ -26,7 +26,7 @@ type SignatureVerifier interface {
 
 // SignatureFetcher is responsible for fetching raw signatures supporting multiple specific signature formats.
 type SignatureFetcher interface {
-	FetchSignatures(ctx context.Context, image *storage.Image, registry registryTypes.Registry) ([]*storage.Signature, error)
+	FetchSignatures(ctx context.Context, image *storage.Image, imageReference string, registry registryTypes.Registry) ([]*storage.Signature, error)
 }
 
 // NewSignatureVerifier creates a new signature verifier capable of verifying signatures against the provided config.
@@ -112,11 +112,11 @@ func createVerifiersFromIntegration(integration *storage.SignatureIntegration) [
 // FetchImageSignaturesWithRetries will try and fetch signatures for the given image from the given registry and return them.
 // It will retry on transient errors and return the fetched signatures.
 func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
-	registry registryTypes.Registry) ([]*storage.Signature, error) {
+	imageReference string, registry registryTypes.Registry) ([]*storage.Signature, error) {
 	var fetchedSignatures []*storage.Signature
 	var err error
 	err = retry.WithRetry(func() error {
-		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, registry, fetchedSignatures)
+		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, imageReference, registry, fetchedSignatures)
 		return err
 	},
 		retry.Tries(2),
@@ -129,11 +129,11 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 }
 
 func fetchAndAppendSignatures(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
-	registry registryTypes.Registry, fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
+	imageReference string, registry registryTypes.Registry, fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
 	sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	sigs, err := fetcher.FetchSignatures(sigFetchCtx, image, registry)
+	sigs, err := fetcher.FetchSignatures(sigFetchCtx, image, imageReference, registry)
 	if err != nil {
 		return nil, err
 	}

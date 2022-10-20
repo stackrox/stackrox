@@ -52,7 +52,7 @@ func init() {
 // It will return the storage.ImageSignature and an error that indicated whether the fetching should be retried or not.
 // NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
 func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
-	registry registryTypes.Registry) ([]*storage.Signature, error) {
+	imageReference string, registry registryTypes.Registry) ([]*storage.Signature, error) {
 	// Short-circuit for images that do not have V2 metadata associated with them. These would be older images manifest
 	// schemes that are not supported by cosign, like the docker v1 manifest.
 	if image.GetMetadata().GetV2() == nil {
@@ -61,8 +61,7 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 
 	// Since cosign makes heavy use of google/go-containerregistry, we need to parse the image's full name as a
 	// name.Reference.
-	imgFullName := image.GetName().GetFullName()
-	imgRef, err := name.ParseReference(imgFullName)
+	imgRef, err := name.ParseReference(imageReference)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +103,7 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 		// We skip the invalid base64 signature and log its occurrence.
 		if err != nil {
 			log.Errorf("Error during decoding of raw signature for image %q: %v",
-				imgFullName, err)
+				imageReference, err)
 			continue
 		}
 		// Since we are only focusing on public keys, we are ignoring the certificate / rekor bundles associated with
