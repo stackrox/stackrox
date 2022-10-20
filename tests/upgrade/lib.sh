@@ -84,6 +84,9 @@ function roxcurl() {
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
+    # Change the scanner patch to address scanner OOMs - copying from the main branch
+    cp "$TEST_ROOT/deploy/common/scanner-patch.yaml" deploy/common/scanner-patch.yaml
+
     mkdir -p "bin/$TEST_HOST_PLATFORM"
     if is_CI; then
         gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_PLATFORM/roxctl"
