@@ -158,14 +158,14 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		// On removes, we may not get the owning deployment ID if the deployment was deleted before the pod.
 		// This is okay. We still want to send the remove event anyway.
 		if action == central.ResourceAction_REMOVE_RESOURCE || owningDeploymentID != "" {
-			mergeOutputMessages(events, d.processPodEvent(owningDeploymentID, objAsPod, action))
+			events = mergeOutputMessages(events, d.processPodEvent(owningDeploymentID, objAsPod, action))
 		}
 	}
 
 	if deploymentWrap == nil {
 		if objAsPod != nil {
 			// It's only a pod event and the pod belongs to another resource (e.g. deployment)
-			mergeOutputMessages(events, d.maybeUpdateParentsOfPod(objAsPod, oldObj, action))
+			events = mergeOutputMessages(events, d.maybeUpdateParentsOfPod(objAsPod, oldObj, action))
 		}
 		return events
 	}
@@ -195,7 +195,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		},
 	}, nil)
 
-	mergeOutputMessages(events, outputMessage)
+	events = mergeOutputMessages(events, outputMessage)
 	return events
 }
 
@@ -218,7 +218,7 @@ func (d *deploymentHandler) appendIntegrationsOnCredentials(
 	for _, c := range containers {
 		if r := c.GetImage().GetName().GetRegistry(); registries.Add(r) {
 			if e := d.getImageIntegrationEvent(r); e != nil {
-				mergeOutputMessages(events, wrapOutputMessage([]*central.SensorEvent{e}, nil, nil))
+				events = mergeOutputMessages(events, wrapOutputMessage([]*central.SensorEvent{e}, nil, nil))
 			}
 		}
 	}
@@ -289,7 +289,7 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 	var events *output.OutputMessage
 	for _, owner := range owners {
 		ev := d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)
-		mergeOutputMessages(events, ev)
+		events = mergeOutputMessages(events, ev)
 	}
 	return events
 }
