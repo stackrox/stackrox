@@ -148,8 +148,8 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	ctx := sac.WithAllAccess(context.Background())
 
-	// dryrun 'a', verify not present
-	err := s.datastore.DryRunCollection(ctx, s.getTestCollection("a", nil))
+	// dryrun add 'a', verify not present
+	err := s.datastore.DryRunAddCollection(ctx, s.getTestCollection("a", nil))
 	assert.NoError(s.T(), err)
 	obj, ok, err := s.datastore.Get(ctx, "a")
 	assert.NoError(s.T(), err)
@@ -164,8 +164,8 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	assert.True(s.T(), ok)
 	assert.Equal(s.T(), "a", obj.GetId())
 
-	// dryrun duplicate 'a'
-	err = s.datastore.DryRunCollection(ctx, s.getTestCollection("a", nil))
+	// dryrun add duplicate 'a'
+	err = s.datastore.DryRunAddCollection(ctx, s.getTestCollection("a", nil))
 	assert.Error(s.T(), err)
 	_, ok = err.(dag.VertexDuplicateError)
 	assert.True(s.T(), ok)
@@ -176,8 +176,8 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	_, ok = err.(dag.VertexDuplicateError)
 	assert.True(s.T(), ok)
 
-	// dryrun 'b' which points to 'a'
-	err = s.datastore.DryRunCollection(ctx, s.getTestCollection("b", []string{"a"}))
+	// dryrun add 'b' which points to 'a'
+	err = s.datastore.DryRunAddCollection(ctx, s.getTestCollection("b", []string{"a"}))
 	assert.NoError(s.T(), err)
 	obj, ok, err = s.datastore.Get(ctx, "b")
 	assert.NoError(s.T(), err)
@@ -196,8 +196,8 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	err = s.datastore.DeleteCollection(ctx, "a")
 	assert.Error(s.T(), err)
 
-	// dryrun 'c' which has a self reference
-	err = s.datastore.DryRunCollection(ctx, s.getTestCollection("c", []string{"c"}))
+	// dryrun add 'c' which has a self reference
+	err = s.datastore.DryRunAddCollection(ctx, s.getTestCollection("c", []string{"c"}))
 	assert.Error(s.T(), err)
 	_, ok = err.(dag.SrcDstEqualError)
 	assert.True(s.T(), ok)
@@ -208,10 +208,10 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	_, ok = err.(dag.SrcDstEqualError)
 	assert.True(s.T(), ok)
 
-	// dryrun 'd' which has a duplicate name
+	// dryrun add 'd' which has a duplicate name
 	obj = s.getTestCollection("c", nil)
 	obj.Name = "a"
-	err = s.datastore.DryRunCollection(ctx, obj)
+	err = s.datastore.DryRunAddCollection(ctx, obj)
 	assert.Error(s.T(), err)
 	_, ok = err.(dag.VertexDuplicateError)
 	assert.True(s.T(), ok)

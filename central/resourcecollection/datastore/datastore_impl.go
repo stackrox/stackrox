@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/heimdalr/dag"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
@@ -20,6 +21,7 @@ import (
 var (
 	log           = logging.LoggerForModule()
 	initBatchSize = 20
+	workflowSAC   = sac.ForResource(resources.WorkflowAdministration)
 )
 
 type datastoreImpl struct {
@@ -49,15 +51,12 @@ func (ds *datastoreImpl) initGraph() error {
 	defer ds.graphLock.Unlock()
 
 	ds.graph = dag.NewDAG()
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
+	ctx := sac.WithAllAccess(context.Background())
 
 	// get ids first
 	ids, err := ds.storage.GetIDs(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "building collection graph")
 	}
 
 	// add vertices by batches
@@ -69,12 +68,12 @@ func (ds *datastoreImpl) initGraph() error {
 			objs, _, err = ds.storage.GetMany(ctx, ids[i:])
 		}
 		if err != nil {
-			return err
+			return errors.Wrap(err, "building collection graph")
 		}
 		for _, obj := range objs {
 			err = ds.graph.AddVertexByID(obj.GetId(), obj.GetName())
 			if err != nil {
-				return err
+				return errors.Wrap(err, "building collection graph")
 			}
 		}
 	}
@@ -88,13 +87,13 @@ func (ds *datastoreImpl) initGraph() error {
 			objs, _, err = ds.storage.GetMany(ctx, ids[i:])
 		}
 		if err != nil {
-			return err
+			return errors.Wrap(err, "building collection graph")
 		}
 		for _, obj := range objs {
-			for _, edge := range obj.GetEmbeddedCollections() {
-				err = ds.graph.AddEdge(obj.GetId(), edge.GetId())
+			for _, peer := range obj.GetEmbeddedCollections() {
+				err = ds.graph.AddEdge(obj.GetId(), peer.GetId())
 				if err != nil {
-					return err
+					return errors.Wrap(err, "building collection graph")
 				}
 			}
 		}
@@ -111,8 +110,8 @@ func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) e
 	if err != nil {
 		return err
 	}
-	for _, edge := range obj.GetEmbeddedCollections() {
-		err = ds.graph.AddEdge(obj.GetId(), edge.GetId())
+	for _, peer := range obj.GetEmbeddedCollections() {
+		err = ds.graph.AddEdge(obj.GetId(), peer.GetId())
 		if err != nil {
 			deleteErr := ds.graph.DeleteVertex(obj.GetId())
 			if deleteErr != nil {
@@ -132,7 +131,8 @@ func (ds *datastoreImpl) deleteCollectionFromGraph(id string) error {
 	return ds.graph.DeleteVertex(id)
 }
 
-func (ds *datastoreImpl) dryRunCollectionInGraph(obj *storage.ResourceCollection) error {
+func (ds *datastoreImpl) dryRunAddCollectionInGraph(obj *storage.ResourceCollection) error {
+	ds.initGraphOnce()
 	ds.graphLock.Lock()
 	defer ds.graphLock.Unlock()
 
@@ -143,8 +143,8 @@ func (ds *datastoreImpl) dryRunCollectionInGraph(obj *storage.ResourceCollection
 	if err != nil {
 		return err
 	}
-	for _, edge := range obj.GetEmbeddedCollections() {
-		err = ds.graph.AddEdge(obj.GetId(), edge.GetId())
+	for _, peer := range obj.GetEmbeddedCollections() {
+		err = ds.graph.AddEdge(obj.GetId(), peer.GetId())
 		if err != nil {
 			ret = err
 			break
@@ -222,8 +222,13 @@ func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.
 	return err
 }
 
-func (ds *datastoreImpl) DryRunCollection(_ context.Context, collection *storage.ResourceCollection) error {
-	return ds.dryRunCollectionInGraph(collection)
+func (ds *datastoreImpl) DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	// check for access since dryrun flow doesn't actually hit the postgres layer
+	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || ok != true {
+		return err
+	}
+
+	return ds.dryRunAddCollectionInGraph(collection)
 }
 
 func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error {
