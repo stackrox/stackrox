@@ -224,7 +224,7 @@ func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.
 
 func (ds *datastoreImpl) DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
 	// check for access since dryrun flow doesn't actually hit the postgres layer
-	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || ok != true {
+	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || !ok {
 		return err
 	}
 
