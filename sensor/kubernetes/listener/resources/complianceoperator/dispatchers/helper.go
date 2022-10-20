@@ -14,9 +14,3 @@ func wrapOutputMessage(sensorMessages []*central.SensorEvent, detectionDeploymen
 		ReprocessDeployments:             reprocessDeploymentsIds,
 	}
 }
-
-func mergeOutputMessages(dest, src *output.OutputMessage) {
-	dest.ReprocessDeployments = append(dest.ReprocessDeployments, src.ReprocessDeployments...)
-	dest.ForwardMessages = append(dest.ForwardMessages, src.ForwardMessages...)
-	dest.CompatibilityDetectionDeployment = append(dest.CompatibilityDetectionDeployment)
-}

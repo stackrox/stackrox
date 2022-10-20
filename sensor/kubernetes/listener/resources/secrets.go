@@ -299,7 +299,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	}}
 	// return append(sensorEvents, secretToSensorEvent(action, protoSecret))
 	events := wrapOutputMessage(sensorEvents, nil, nil)
-	mergeOutputMessages(events, secretToSensorEvent(action, protoSecret))
+	events = mergeOutputMessages(events, secretToSensorEvent(action, protoSecret))
 	return events
 }
 
