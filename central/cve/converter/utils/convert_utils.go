@@ -170,6 +170,9 @@ func NvdCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) 
 }
 
 func nvdCvssv2ToProtoCvssv2(baseMetricV2 *schema.NVDCVEFeedJSON10DefImpactBaseMetricV2) (*storage.CVSSV2, error) {
+	if baseMetricV2 == nil || baseMetricV2.CVSSV2 == nil {
+		return nil, nil
+	}
 	cvssV2, err := pkgCVSSV2.ParseCVSSV2(baseMetricV2.CVSSV2.VectorString)
 	if err != nil {
 		return nil, err
