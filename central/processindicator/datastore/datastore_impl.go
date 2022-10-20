@@ -133,6 +133,9 @@ func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []stri
 		return sac.ErrResourceAccessDenied
 	}
 
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
 	return ds.removeIndicators(ctx, ids)
 }
 
@@ -141,9 +144,6 @@ func (ds *datastoreImpl) removeMatchingIndicators(ctx context.Context, results [
 }
 
 func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) error {
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
 	if len(ids) == 0 {
 		return nil
 	}
@@ -262,11 +262,13 @@ func (ds *datastoreImpl) prune(ctx context.Context) {
 		incrementProcessPruningCacheMissesMetric()
 		idsToRemove := pruner.Prune(args)
 		if len(idsToRemove) > 0 {
+			ds.mutex.Lock()
 			if err := ds.removeIndicators(ctx, idsToRemove); err != nil {
 				log.Errorf("Error while pruning processes: %s", err)
 			} else {
 				incrementPrunedProcessesMetric(len(idsToRemove))
 			}
+			ds.mutex.Unlock()
 		}
 		ds.prunedArgsLengthCache[processInfo] = numArgsReceived - len(idsToRemove)
 	}
