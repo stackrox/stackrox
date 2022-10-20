@@ -853,7 +853,7 @@ func scanRows[T any, PT unmarshaler[T]](rows pgx.Rows) ([]*T, error) {
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, (*T)(msg))
+		results = append(results, msg)
 	}
 	return results, nil
 }
