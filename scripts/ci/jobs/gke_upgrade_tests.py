@@ -12,6 +12,9 @@ from pre_tests import PreSystemTests
 from ci_tests import UpgradeTest
 from post_tests import PostClusterTest, FinalPost
 
+os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
+os.environ["SENSOR_HELM_DEPLOY"] = "true"
+
 # don't use postgres
 os.environ["ROX_POSTGRES_DATASTORE"] = "false"
 
