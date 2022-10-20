@@ -1,15 +1,22 @@
 package common
 
 import (
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"golang.org/x/net/http2"
+)
+
+var (
+	http1NextProtos = []string{"http/1.1", "http/1.0"}
 )
 
 // RoxctlHTTPClient abstracts all HTTP-related functionalities required within roxctl
@@ -24,6 +31,18 @@ type roxctlClientImpl struct {
 	a           Auth
 	forceHTTP1  bool
 	useInsecure bool
+}
+
+func getURL(path string) (string, error) {
+	endpoint, usePlaintext, err := flags.EndpointAndPlaintextSetting()
+	if err != nil {
+		return "", errors.Wrap(err, "could not get endpoint")
+	}
+	scheme := "https"
+	if usePlaintext {
+		scheme = "http"
+	}
+	return fmt.Sprintf("%s://%s/%s", scheme, endpoint, strings.TrimLeft(path, "/")), nil
 }
 
 // GetRoxctlHTTPClient returns a new instance of RoxctlHTTPClient with the given configuration
@@ -78,6 +97,17 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 	}
 
 	return resp, nil
+}
+
+// DoHTTPRequestAndCheck200 does an http request to the provided path in Central,
+// and passes through the remaining params. It checks that the returned status code is 200, and returns an error if it is not.
+// The caller receives the http response object, which it is the caller's responsibility to close.
+func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string, body io.Reader, log logger.Logger) (*http.Response, error) {
+	client, err := GetRoxctlHTTPClient(timeout, flags.ForceHTTP1(), flags.UseInsecure(), log)
+	if err != nil {
+		return nil, err
+	}
+	return client.DoReqAndVerifyStatusCode(path, method, 200, body) //nolint:wrapcheck
 }
 
 // Do executes a http.Request
