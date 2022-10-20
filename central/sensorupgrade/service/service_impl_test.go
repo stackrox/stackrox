@@ -24,8 +24,6 @@ type SensorUpgradeServiceTestSuite struct {
 	isolator  *envisolator.EnvIsolator
 	dataStore *datastoreMocks.MockDataStore
 	manager   *managerMocks.MockManager
-
-	serviceInstance Service
 }
 
 func TestSensorUpgradeService(t *testing.T) {
@@ -40,15 +38,14 @@ func (s *SensorUpgradeServiceTestSuite) SetupTest() {
 	s.dataStore = datastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
 	s.isolator = envisolator.NewEnvIsolator(s.T())
-
-	s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
-	var err error
-	s.serviceInstance, err = New(s.dataStore, s.manager)
-	s.NoError(err)
 }
 
 func (s *SensorUpgradeServiceTestSuite) TearDownTest() {
 	s.isolator.RestoreAll()
+}
+
+func configWith(v bool) *storage.SensorUpgradeConfig {
+	return &storage.SensorUpgradeConfig{EnableAutoUpgrade: v}
 }
 
 func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
@@ -96,11 +93,15 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 
 	for caseName, testCase := range testCases {
 		s.Run(caseName, func() {
+			s.isolator.Setenv(env.ManagedCentral.EnvVar(), strconv.FormatBool(testCase.managedCentral))
+			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
+			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), gomock.Any()).Times(1)
+			serviceInstance, err := New(s.dataStore, s.manager)
+			s.NoError(err)
 
 			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), gomock.Eq(testCase.req.GetConfig())).
 				Times(testCase.upsertTimesCalled)
-			s.isolator.Setenv(env.ManagedCentral.EnvVar(), strconv.FormatBool(testCase.managedCentral))
-			_, err := s.serviceInstance.UpdateSensorUpgradeConfig(context.Background(), testCase.req)
+			_, err = serviceInstance.UpdateSensorUpgradeConfig(context.Background(), testCase.req)
 			if testCase.expectedErr != nil {
 				s.ErrorIs(err, testCase.expectedErr)
 			} else {
@@ -108,7 +109,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 			}
 
 			if testCase.upsertTimesCalled > 0 {
-				s.Require().Equal(s.serviceInstance.AutoUpgradeSetting().Get(),
+				s.Require().Equal(serviceInstance.AutoUpgradeSetting().Get(),
 					testCase.req.GetConfig().GetEnableAutoUpgrade())
 			}
 		})
@@ -132,11 +133,15 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_DefaultValue
 
 	for envValue, expectations := range testCases {
 		s.Run(fmt.Sprintf("ROX_MANAGED_CENTRAL=%v", envValue), func() {
-			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(2).Return(nil, nil)
+			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
+			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), &UpgradeConfigMatcher{expectations.expectedAutoUpdate})
 			s.isolator.Setenv(env.ManagedCentral.EnvVar(), envValue)
 
 			instance, err := New(s.dataStore, s.manager)
 			s.NoError(err)
+
+			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(configWith(expectations.expectedAutoUpdate), nil)
+
 			result, err := instance.GetSensorUpgradeConfig(context.Background(), nil)
 
 			s.Require().NoError(err)
@@ -146,6 +151,25 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_DefaultValue
 	}
 }
 
+type UpgradeConfigMatcher struct {
+	autoUpgrade bool
+}
+
+func (m *UpgradeConfigMatcher) Matches(x interface{}) bool {
+	cfg, ok := x.(*storage.SensorUpgradeConfig)
+	if !ok {
+		return false
+	}
+	return cfg.EnableAutoUpgrade == m.autoUpgrade
+}
+
+func (m *UpgradeConfigMatcher) String() string {
+	return fmt.Sprintf("auto-upgrade enabled: %v", m.autoUpgrade)
+}
+
 func (s *SensorUpgradeServiceTestSuite) TestAuthzWorks() {
-	testutils.AssertAuthzWorks(s.T(), s.serviceInstance)
+	s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(configWith(true), nil)
+	serviceInstance, err := New(s.dataStore, s.manager)
+	s.NoError(err)
+	testutils.AssertAuthzWorks(s.T(), serviceInstance)
 }

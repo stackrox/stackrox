@@ -46,7 +46,7 @@ type service struct {
 
 func (s *service) initialize() error {
 	ctx := sac.WithAllAccess(context.Background())
-	defaultConfig, err := s.getOrDefaultUpgradeConfig(ctx)
+	defaultConfig, err := s.getOrCreateSensorUpgradeConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -75,25 +75,37 @@ func (s *service) wrapToggleResponse(config *storage.SensorUpgradeConfig) *v1.Ge
 	}
 }
 
-func (s *service) getOrDefaultUpgradeConfig(ctx context.Context) (*storage.SensorUpgradeConfig, error) {
+// getOrCreateSensorUpgradeConfig returns the upgrade config stored in the DB. If there's no entry
+// in the DB, create one based on the default value.
+func (s *service) getOrCreateSensorUpgradeConfig(ctx context.Context) (*storage.SensorUpgradeConfig, error) {
 	config, err := s.configDataStore.GetSensorUpgradeConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if config == nil {
 		// If there's no config in the DB, return default config according to managed central flag
+		// and insert the value
+		var defaultConfig *storage.SensorUpgradeConfig
 		if getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_SUPPORTED {
-			return &storage.SensorUpgradeConfig{EnableAutoUpgrade: true}, nil
+			defaultConfig = &storage.SensorUpgradeConfig{EnableAutoUpgrade: true}
+		} else {
+			defaultConfig = &storage.SensorUpgradeConfig{EnableAutoUpgrade: false}
 		}
-		return &storage.SensorUpgradeConfig{EnableAutoUpgrade: false}, nil
+		if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, defaultConfig); err != nil {
+			return nil, err
+		}
+		return defaultConfig, nil
 	}
 	return config, nil
 }
 
 func (s *service) GetSensorUpgradeConfig(ctx context.Context, _ *v1.Empty) (*v1.GetSensorUpgradeConfigResponse, error) {
-	config, err := s.getOrDefaultUpgradeConfig(ctx)
+	config, err := s.configDataStore.GetSensorUpgradeConfig(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if config == nil {
+		return nil, errors.Wrap(errox.NotFound, "couldn't find sensor upgrade config")
 	}
 	return s.wrapToggleResponse(config), nil
 }
