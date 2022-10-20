@@ -24,16 +24,15 @@ const deployments = [
 ];
 
 function NamespaceDeployments() {
-    const [value, setValue] = React.useState('');
+    const [searchValue, setSearchValue] = React.useState('');
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
 
     const onChange = (newValue: string) => {
-        setValue(newValue);
+        setSearchValue(newValue);
     };
 
-    // @TODO: This will be replaced by filtering on the backend through the API
     const filteredDeployments = deployments.filter((deployment) => {
-        return deployment.name.includes(value);
+        return deployment.name.includes(searchValue);
     });
 
     return (
@@ -66,7 +65,7 @@ function NamespaceDeployments() {
                 <StackItem>
                     <SearchInput
                         placeholder="Find by deployment name"
-                        value={value}
+                        value={searchValue}
                         onChange={onChange}
                         onClear={() => onChange('')}
                     />
