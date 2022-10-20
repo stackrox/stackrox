@@ -43,7 +43,7 @@ var (
 )
 
 func init() {
-	insecureDefaultTransport = gcrRemote.DefaultTransport.Clone()
+	insecureDefaultTransport = gcrRemote.DefaultTransport.(*http.Transport).Clone()
 	insecureDefaultTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 }
 
