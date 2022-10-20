@@ -453,7 +453,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Netwo
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.NetworkPolicy](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -464,12 +464,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Netwo
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.NetworkPolicy)
-	for _, data := range rows {
-		msg := &storage.NetworkPolicy{}
-		if err := msg.Unmarshal(data); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.NetworkPolicy, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -509,22 +505,14 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 		query,
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.NetworkPolicy](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	var results []*storage.NetworkPolicy
-	for _, data := range rows {
-		msg := &storage.NetworkPolicy{}
-		if err := msg.Unmarshal(data); err != nil {
-			return nil, err
-		}
-		results = append(results, msg)
-	}
-	return results, nil
+	return rows, nil
 }
 
 // Delete removes the specified IDs from the store
