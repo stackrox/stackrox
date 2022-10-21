@@ -58,6 +58,10 @@ const (
         batchSize = 10000
 
         cursorBatchSize = 50
+
+    {{- if not .JoinTable }}
+        deleteBatchSize = 25000
+    {{- end }}
 )
 
 var (
@@ -893,12 +897,32 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
     {{- end }}
     {{- end }}{{/* if not $inMigration */}}
 
-    q := search.ConjunctionQuery(
-    sacQueryFilter,
-        search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
-    )
+    // Batch the deletes
+    batchSize := deleteBatchSize
+    for {
+        if len(ids) == 0 {
+            break
+        }
 
-    return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+        if len(ids) < batchSize {
+            batchSize = len(ids)
+        }
+
+        idBatch := ids[0:batchSize]
+        q := search.ConjunctionQuery(
+        sacQueryFilter,
+            search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
+        )
+
+        if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+            return err
+        }
+
+        // Move the slice forward to start the next batch
+        ids = ids[batchSize:]
+    }
+
+    return nil
 }
 {{- end }}
 {{- end }}

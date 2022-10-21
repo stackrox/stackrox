@@ -32,6 +32,7 @@ const (
 	batchSize = 10000
 
 	cursorBatchSize = 50
+	deleteBatchSize = 25000
 )
 
 var (
@@ -439,12 +440,32 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 
 	var sacQueryFilter *v1.Query
 
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
-	)
+	// Batch the deletes
+	batchSize := deleteBatchSize
+	for {
+		if len(ids) == 0 {
+			break
+		}
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+		if len(ids) < batchSize {
+			batchSize = len(ids)
+		}
+
+		idBatch := ids[0:batchSize]
+		q := search.ConjunctionQuery(
+			sacQueryFilter,
+			search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
+		)
+
+		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+			return err
+		}
+
+		// Move the slice forward to start the next batch
+		ids = ids[batchSize:]
+	}
+
+	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
