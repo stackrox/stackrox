@@ -17,7 +17,7 @@ import (
 func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer) common.SensorComponent {
 	stopSig := concurrency.NewSignal()
 	outputQueue := output.New(&stopSig, detector)
-	resourceListener := listener.New(client, configHandler, detector, nodeName, resyncPeriod, traceWriter, outputQueue)
+	resourceListener := listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue)
 
 	pipelineResposnes := make(chan *central.MsgFromSensor)
 	return &eventPipeline{

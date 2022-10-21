@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
@@ -80,8 +79,6 @@ type deploymentHandler struct {
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
 	registryStore          *registry.Store
 
-	detector detector.Detector
-
 	clusterID string
 }
 
@@ -97,7 +94,6 @@ func newDeploymentHandler(
 	podLister v1listers.PodLister,
 	processFilter filter.Filter,
 	config config.Handler,
-	detector detector.Detector,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces,
 	registryStore *registry.Store,
 	credentialsManager awscredentials.RegistryCredentialsManager,
@@ -113,7 +109,6 @@ func newDeploymentHandler(
 		config:                 config,
 		hierarchy:              references.NewParentHierarchy(),
 		rbac:                   rbac,
-		detector:               detector,
 		orchestratorNamespaces: namespaces,
 		registryStore:          registryStore,
 		clusterID:              clusterID,

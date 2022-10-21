@@ -74,7 +74,6 @@ func (k *listenerImpl) handleAllEvents() {
 		clusterentities.StoreInstance(),
 		processfilter.Singleton(),
 		k.configHandler,
-		k.detector,
 		orchestratornamespaces.Singleton(),
 		k.credentialsManager,
 		k.traceWriter,

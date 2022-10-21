@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
-	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 	"github.com/stackrox/rox/sensor/kubernetes/selector"
@@ -16,14 +15,12 @@ import (
 type networkPolicyDispatcher struct {
 	netpolStore     store.NetworkPolicyStore
 	deploymentStore *DeploymentStore
-	detector        detector.Detector
 }
 
-func newNetworkPolicyDispatcher(networkPolicyStore store.NetworkPolicyStore, deploymentStore *DeploymentStore, detector detector.Detector) *networkPolicyDispatcher {
+func newNetworkPolicyDispatcher(networkPolicyStore store.NetworkPolicyStore, deploymentStore *DeploymentStore) *networkPolicyDispatcher {
 	return &networkPolicyDispatcher{
 		netpolStore:     networkPolicyStore,
 		deploymentStore: deploymentStore,
-		detector:        detector,
 	}
 }
 
