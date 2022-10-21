@@ -440,6 +440,9 @@ db_backup_and_restore_test() {
         die "missing args. usage: db_backup_and_restore_test <output dir>"
     fi
 
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_PASSWORD"
+
     local output_dir="$1"
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
