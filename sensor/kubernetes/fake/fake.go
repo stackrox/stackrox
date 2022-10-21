@@ -168,8 +168,9 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		objects = append(objects, node)
 	}
 
+	labelsPool.matchLabels = w.workload.MatchLabels
+
 	objects = append(objects, getRBAC(w.workload.RBACWorkload)...)
-	objects = append(objects, getService(w.workload.ServiceWorkload)...)
 	var resources []*deploymentResourcesToBeManaged
 	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
 		for i := 0; i < deploymentWorkload.NumDeployments; i++ {
@@ -183,6 +184,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
+	objects = append(objects, getService(w.workload.ServiceWorkload)...)
 	var npResources []*networkPolicyToBeManaged
 	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
 		for i := 0; i < npWorkload.NumNetworkPolicies; i++ {
