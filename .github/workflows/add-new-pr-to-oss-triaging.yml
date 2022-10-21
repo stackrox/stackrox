@@ -23,13 +23,13 @@ jobs:
       - id: check-external-pr
         run: |
           set -uo pipefail
-          if [[ $BASE_REPO != $HEAD_REPO ]]; then
-            echo "::set-output name=is_external_pr::true"
+          if [[ "$BASE_REPO" != "$HEAD_REPO" ]]; then
+            echo "is_external_pr=true" >> "$GITHUB_OUTPUT"
             gh pr edit \
-              ${{ github.event.pull_request.number }} \
-              --add-label ${EXTERNAL_PR_LABEL}
+              "${{ github.event.pull_request.number }}" \
+              --add-label "${EXTERNAL_PR_LABEL}"
           else
-            echo "::set-output name=is_external_pr::false"
+            echo "is_external_pr=false" >> "$GITHUB_OUTPUT"
           fi
 
   add-to-project:
