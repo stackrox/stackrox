@@ -67,20 +67,20 @@ const (
 		`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1 AND nf.ClusterId = $2`
 
 	pruneStaleNetworkFlowsStmt = `DELETE FROM network_flows a USING (
-      SELECT MAX(flow_id) as max_flow, props_srcentity_type, props_srcentity_id, props_dstentity_type, props_dstentity_id, props_dstport, props_l4protocol, clusterid
+      SELECT MAX(flow_id) as Max_Flow, Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
         FROM network_flows
-		WHERE clusterid = $1
-        GROUP BY props_srcentity_type, props_srcentity_id, props_dstentity_type, props_dstentity_id, props_dstport, props_l4protocol, clusterid
+		WHERE ClusterId = $1
+        GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
 		HAVING COUNT(*) > 1
       ) b
-      WHERE a.props_srcentity_type = b.props_srcentity_type
- 	AND a.props_srcentity_id = b.props_srcentity_id
- 	AND a.props_dstentity_type = b.props_dstentity_type
- 	AND a.props_dstentity_id = b.props_dstentity_id
-	AND a.props_dstport = b.props_dstport
-	AND a.props_l4protocol = b.props_l4protocol
-	AND a.clusterid = b.clusterid
-      AND a.flow_id <> b.max_flow;
+      WHERE a.Props_SrcEntity_Type = b.Props_SrcEntity_Type
+ 	AND a.Props_SrcEntity_Id = b.Props_SrcEntity_Id
+ 	AND a.Props_DstEntity_Type = b.Props_DstEntity_Type
+ 	AND a.Props_DstEntity_Id = b.Props_DstEntity_Id
+	AND a.Props_DstPort = b.Props_DstPort
+	AND a.Props_L4Protocol = b.Props_L4Protocol
+	AND a.ClusterId = b.ClusterId
+      AND a.Flow_Id <> b.Max_Flow;
 	`
 )
 
