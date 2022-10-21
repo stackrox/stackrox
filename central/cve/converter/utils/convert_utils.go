@@ -76,7 +76,7 @@ func NvdCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) 
 		return nil, errors.Errorf("unknown CVE type: %d", ct)
 	}
 
-	if nvdCVE.Impact != nil {
+	if nvdCVE.Impact != nil && nvdCVE.Impact.BaseMetricV2 != nil {
 		cvssv2, err := nvdCvssv2ToProtoCvssv2(nvdCVE.Impact.BaseMetricV2)
 		if err != nil {
 			return nil, err
@@ -84,7 +84,9 @@ func NvdCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) 
 		cve.CvssV2 = cvssv2
 		cve.Cvss = cvssv2.Score
 		cve.ScoreVersion = storage.EmbeddedVulnerability_V2
+	}
 
+	if nvdCVE.Impact != nil && nvdCVE.Impact.BaseMetricV3 != nil {
 		cvssv3, err := nvdCvssv3ToProtoCvssv3(nvdCVE.Impact.BaseMetricV3)
 		if err != nil {
 			return nil, err
