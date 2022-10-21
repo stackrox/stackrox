@@ -56,7 +56,7 @@ test_upgrade() {
 
     # TODO(sbostick): try installing to secondary "secured cluster"
     info "Deploying sensor"
-    "$TEST_ROOT/$DEPLOY_DIR/sensor.sh"
+    "$TEST_ROOT/$DEPLOY_DIR/sensor.sh"  # <---- override as "deploy/openshift"?
     ### validate_sensor_bundle_via_upgrader "$TEST_ROOT/$DEPLOY_DIR"
     sensor_wait
 
