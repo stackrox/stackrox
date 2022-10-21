@@ -3,14 +3,14 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: central-db-connection
+  name: central-external-db
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "configmap" "central-db-connection") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "configmap" "central-db-connection") | nindent 4 }}
 data:
-  central-db-connection.yaml: |
+  central-external-db.yaml: |
     centralDB:
       {{- if ._rox.central.db.external }}
       source: {{ ._rox.central.db.source.connectionString }} statement_timeout={{ ._rox.central.db.source.statementTimeoutMs }} pool_min_conns={{ ._rox.central.db.source.minConns }} pool_max_conns={{ ._rox.central.db.source.maxConns }}

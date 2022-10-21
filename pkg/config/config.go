@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	path = "/etc/stackrox/central-config.yaml"
+	configPath   = "/etc/stackrox/central-config.yaml"
+	dbConfigPath = "/etc/ext-db/central-external-db.yaml"
 )
 
 var (
@@ -81,6 +82,7 @@ type CentralDB struct {
 }
 
 func (c *CentralDB) applyDefaults() {
+	log.Infof("Updating database name")
 	c.Source = strings.TrimSpace(c.Source)
 	if c.Source == "" {
 		c.Source = defaultDBSource
@@ -92,10 +94,42 @@ func (c *CentralDB) applyDefaults() {
 	}
 }
 
-// Config defines the configuration for Central
+// Config defines all the configuration for Central
 type Config struct {
+	Maintenance Maintenance
+	CentralDB   CentralDB
+}
+
+type configWithDefault interface {
+	centralConfig | externalDBConfig
+}
+
+// Central Config
+type centralConfig struct {
 	Maintenance Maintenance `yaml:"maintenance"`
-	CentralDB   CentralDB   `yaml:"centralDB"`
+}
+
+func (cc centralConfig) applyDefaults() {
+	log.Infof("Updating central default")
+	cc.Maintenance.applyDefaults()
+}
+
+func (cc centralConfig) validate() error {
+	return cc.Maintenance.validate()
+}
+
+// External DB Config
+type externalDBConfig struct {
+	CentralDB CentralDB `yaml:"centralDB"`
+}
+
+func (ec externalDBConfig) applyDefaults() {
+	log.Infof("Updating central db default")
+	ec.CentralDB.applyDefaults()
+}
+
+func (ec externalDBConfig) validate() error {
+	return nil
 }
 
 func (c *Config) applyDefaults() {
@@ -111,26 +145,39 @@ func (c *Config) validate() error {
 	return errorList.ToError()
 }
 
-// readConfig reads the configuration file
-func readConfig() (*Config, error) {
+// readConfig reads a configuration file
+func readConfig[T configWithDefault](path string) (*T, error) {
+	var conf T
 	bytes, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			conf := new(Config)
-			conf.applyDefaults()
-			return conf, nil
+			return &conf, nil
 		}
 		return nil, err
 	}
-	var conf Config
 	if err := yaml.Unmarshal(bytes, &conf); err != nil {
 		return nil, err
 	}
+
+	return &conf, nil
+}
+
+func readAllConfigs() (*Config, error) {
+	centralConf, err := readConfig[centralConfig](configPath)
+	if err != nil {
+		return nil, err
+	}
+	dbConf, err := readConfig[externalDBConfig](dbConfigPath)
+	if err != nil {
+		return nil, err
+	}
+
+	conf := Config{Maintenance: centralConf.Maintenance, CentralDB: dbConf.CentralDB}
 	conf.applyDefaults()
 	if err := conf.validate(); err != nil {
 		return nil, err
 	}
-
+	log.Infof("here %s", dbConf.CentralDB.DatabaseName)
 	return &conf, nil
 }
 
@@ -138,7 +185,7 @@ func readConfig() (*Config, error) {
 func GetConfig() *Config {
 	once.Do(func() {
 		var err error
-		config, err = readConfig()
+		config, err = readAllConfigs()
 		if err != nil {
 			config = nil
 			log.Errorf("Error reading config file: %v", err)

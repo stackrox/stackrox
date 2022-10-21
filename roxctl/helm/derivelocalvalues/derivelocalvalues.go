@@ -269,6 +269,7 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 			"disableTelemetry": k8s.evaluateToString(ctx, "deployment", "central",
 				`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_INIT_TELEMETRY_ENABLED")].value}`, "true") == "false",
 			"config":          k8s.evaluateToStringP(ctx, "configmap", "central-config", `{.data['central-config\.yaml']}`),
+			"dbConfig":        k8s.evaluateToStringP(ctx, "configmap", "central-db-connection", `{.data['central-db-connection\.yaml']}`),
 			"endpointsConfig": k8s.evaluateToStringP(ctx, "configmap", "central-endpoints", `{.data['endpoints\.yaml']}`),
 			"nodeSelector":    k8s.evaluateToObject(ctx, "deployment", "central", `{.spec.template.spec.nodeSelector}`, nil),
 			"image": map[string]interface{}{
