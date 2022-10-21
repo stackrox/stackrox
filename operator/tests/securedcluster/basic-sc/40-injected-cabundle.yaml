@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: "injected-cabundle-stackrox-secured-cluster-services"
-  labels:
-    "config.openshift.io/inject-trusted-cabundle": "true"
-  annotations:
-    "helm.sh/hook": "pre-install,pre-upgrade"
