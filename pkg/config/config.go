@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -82,7 +83,6 @@ type CentralDB struct {
 }
 
 func (c *CentralDB) applyDefaults() {
-	log.Infof("Updating database name")
 	c.Source = strings.TrimSpace(c.Source)
 	if c.Source == "" {
 		c.Source = defaultDBSource
@@ -92,6 +92,16 @@ func (c *CentralDB) applyDefaults() {
 	if c.DatabaseName == "" {
 		c.DatabaseName = defaultDatabase
 	}
+}
+
+func (c *CentralDB) validate() error {
+	if c.DatabaseName == "" {
+		return errors.New("unexpected empty database name")
+	}
+	if c.Source == "" {
+		return errors.New("unexpected empty database source")
+	}
+	return nil
 }
 
 // Config defines all the configuration for Central
@@ -122,6 +132,9 @@ func (c *Config) applyDefaults() {
 func (c *Config) validate() error {
 	errorList := errorhelpers.NewErrorList("validating config")
 	if err := c.Maintenance.validate(); err != nil {
+		errorList.AddError(err)
+	}
+	if err := c.CentralDB.validate(); err != nil {
 		errorList.AddError(err)
 	}
 	return errorList.ToError()
@@ -159,7 +172,6 @@ func readConfigs() (*Config, error) {
 	if err := conf.validate(); err != nil {
 		return nil, err
 	}
-	log.Infof("here %s", dbConf.CentralDB.DatabaseName)
 	return &conf, nil
 }
 
