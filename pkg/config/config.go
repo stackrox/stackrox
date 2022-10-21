@@ -100,7 +100,7 @@ type Config struct {
 	CentralDB   CentralDB
 }
 
-type configWithDefault interface {
+type yamlConfig interface {
 	centralConfig | externalDBConfig
 }
 
@@ -128,7 +128,7 @@ func (c *Config) validate() error {
 }
 
 // readConfig reads a configuration file
-func readConfig[T configWithDefault](path string) (*T, error) {
+func readConfig[T yamlConfig](path string) (*T, error) {
 	var conf T
 	bytes, err := os.ReadFile(path)
 	if err != nil {
