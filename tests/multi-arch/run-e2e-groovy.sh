@@ -34,12 +34,18 @@ test_e2e() {
     deploy_stackrox
     prepare_for_endpoints_test
 
-    # TODO(sbostick): implement
+    ############################################################
     info "E2E API Groovy tests"
+
+    cd "$ROOT"
+    make proto-generated-srcs
+
     cd "$ROOT/qa-tests-backend"
     gradle build -x test
     gradle test --tests='GlobalSearch'
     gradle test --tests='NetworkFlowTest'
+    ### gradle test
+    ############################################################
 }
 
 test_preamble() {
