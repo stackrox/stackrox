@@ -191,12 +191,12 @@ func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient)
 	t := time.NewTicker(env.NodeScanInterval.DurationSetting())
 	scanner := nodescanv2.FakeNodeScanner{} // FIXME: Replace with real scanner (ROX-12971)
 
+	log.Infof("Node Scan interval: %v", env.NodeScanInterval.DurationSetting())
+	
 	// send scan result once at startup, then every NodeScanInterval
 	if err := scanNode(client, &scanner); err != nil {
 		log.Errorf("error running scanNode: %v", err)
 	}
-
-	log.Infof("Node Scan interval: %v", env.NodeScanInterval.DurationSetting())
 
 	for {
 		select {
