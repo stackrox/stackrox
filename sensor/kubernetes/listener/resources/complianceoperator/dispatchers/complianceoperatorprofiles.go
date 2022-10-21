@@ -23,7 +23,7 @@ func NewProfileDispatcher() *ProfileDispatcher {
 }
 
 // ProcessEvent processes a compliance operator profile
-func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
+func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
 	var complianceProfile v1alpha1.Profile
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

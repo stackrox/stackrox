@@ -137,7 +137,7 @@ func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *Deploymen
 }
 
 // ProcessEvent processes a service resource event, and returns the sensor events to emit in response.
-func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
+func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
 	svc := obj.(*v1.Service)
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
@@ -166,13 +166,13 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector2.Selector) *output.OutputMessage {
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector2.Selector) *output.Message {
 	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)
 	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
 	return wrapOutputMessage(events, nil, nil)
 }
 
-func (sh *serviceDispatcher) processCreate(svc *v1.Service) *output.OutputMessage {
+func (sh *serviceDispatcher) processCreate(svc *v1.Service) *output.Message {
 	svcWrap := wrapService(svc)
 	sh.serviceStore.addOrUpdateService(svcWrap)
 	events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(serviceWithRoutes{

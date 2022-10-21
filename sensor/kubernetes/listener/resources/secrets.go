@@ -226,7 +226,7 @@ func imageIntegationIDSetFromSecret(secret *v1.Secret) (set.StringSet, error) {
 	return imageIntegrationIDSet, nil
 }
 
-func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret, action central.ResourceAction) *output.OutputMessage {
+func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret, action central.ResourceAction) *output.Message {
 	dockerConfig := getDockerConfigFromSecret(secret)
 	if len(dockerConfig) == 0 {
 		return nil
@@ -314,7 +314,7 @@ func getProtoSecret(secret *v1.Secret) *storage.Secret {
 	}
 }
 
-func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) *output.OutputMessage {
+func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) *output.Message {
 	event := &central.SensorEvent{
 		Id:     secret.GetId(),
 		Action: action,
@@ -326,7 +326,7 @@ func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) 
 }
 
 // ProcessEvent processes a secret resource event, and returns the sensor events to emit in response.
-func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.OutputMessage {
+func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.Message {
 	secret := obj.(*v1.Secret)
 
 	oldSecret, ok := oldObj.(*v1.Secret)

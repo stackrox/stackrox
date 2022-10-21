@@ -12,13 +12,13 @@ var (
 )
 
 type outputImpl struct {
-	innerQueue   chan *OutputMessage
+	innerQueue   chan *Message
 	stopSig      *concurrency.Signal
 	forwardQueue chan *central.MsgFromSensor
 	detector     detector.Detector
 }
 
-func (q *outputImpl) Send(msg *OutputMessage) {
+func (q *outputImpl) Send(msg *Message) {
 	q.innerQueue <- msg
 }
 
@@ -35,7 +35,6 @@ func (q *outputImpl) startProcessing() {
 			if !more {
 				return
 			}
-			log.Infof("RECEIVING MESSAGE: %+v", msg)
 			for _, resourceUpdates := range msg.ForwardMessages {
 				q.forwardQueue <- &central.MsgFromSensor{
 					Msg: &central.MsgFromSensor_Event{

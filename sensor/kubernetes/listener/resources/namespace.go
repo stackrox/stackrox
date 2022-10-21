@@ -28,7 +28,7 @@ func newNamespaceDispatcher(nsStore *namespaceStore, deletionListeners ...Namesp
 }
 
 // ProcessEvent processes namespace resource events, and returns the sensor events to emit in response.
-func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
+func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
 	ns := obj.(*v1.Namespace)
 
 	if action == central.ResourceAction_REMOVE_RESOURCE {

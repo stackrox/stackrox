@@ -38,7 +38,6 @@ func (p *eventPipeline) ResponsesC() <-chan *central.MsgFromSensor {
 
 // Start implements common.SensorComponent
 func (p *eventPipeline) Start() error {
-	log.Info("STARTING EVENT PIPELINE")
 	if err := p.listener.Start(); err != nil {
 		return err
 	}
@@ -54,11 +53,6 @@ func (p *eventPipeline) Stop(err error) {
 // forwardMessages from listener component to responses channel
 // TODO: Remove this and refactor listeners so they send message to the pipeline queue instead.
 func (p *eventPipeline) forwardMessages() {
-	log.Info("starting message forwarding")
-	defer func() {
-		log.Info("stopping message forward")
-	}()
-
 	for {
 		select {
 		case <-p.stopSig.Done():
@@ -70,7 +64,6 @@ func (p *eventPipeline) forwardMessages() {
 			}
 			p.eventsC <- msg
 		case msg, more := <-p.listener.ResponsesC():
-			log.Info("forwarding message from listener")
 			if !more {
 				// TODO: Add warning / error / log
 				return

@@ -41,13 +41,13 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/localscanner"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
 	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline"
 )
 
 var (
@@ -103,7 +103,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), resources.ServiceAccountStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager, resources.NetworkPolicySingleton())
 	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter)
-	// resourceListener := listener.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter)
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
 	imageService := image.NewService(imageCache, registry.Singleton())

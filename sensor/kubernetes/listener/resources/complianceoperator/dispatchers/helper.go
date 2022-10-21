@@ -7,8 +7,8 @@ import (
 
 // TODO: Merge this with resources.helper
 
-func wrapOutputMessage(sensorMessages []*central.SensorEvent, detectionDeployment []output.CompatibilityDetectionMessage, reprocessDeploymentsIds []string) *output.OutputMessage {
-	return &output.OutputMessage{
+func wrapOutputMessage(sensorMessages []*central.SensorEvent, detectionDeployment []output.CompatibilityDetectionMessage, reprocessDeploymentsIds []string) *output.Message {
+	return &output.Message{
 		ForwardMessages:                  sensorMessages,
 		CompatibilityDetectionDeployment: detectionDeployment,
 		ReprocessDeployments:             reprocessDeploymentsIds,

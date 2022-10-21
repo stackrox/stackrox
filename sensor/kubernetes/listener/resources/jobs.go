@@ -24,7 +24,7 @@ func newJobDispatcherImpl(handler *deploymentHandler) Dispatcher {
 }
 
 // ProcessEvent processes a deployment resource events, and returns the sensor events to emit in response.
-func (d *jobDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.OutputMessage {
+func (d *jobDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.Message {
 	job, ok := obj.(*v1.Job)
 	if !ok {
 		log.Errorf("could not process object because it is not of type job: %T", obj)

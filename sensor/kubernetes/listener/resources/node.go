@@ -38,7 +38,7 @@ func convertTaints(taints []v1.Taint) []*storage.Taint {
 	return roxTaints
 }
 
-func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
+func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
 	node := obj.(*v1.Node)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		h.nodeStore.removeNode(node)
