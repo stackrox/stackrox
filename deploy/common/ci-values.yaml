@@ -1,14 +1,6 @@
-# Reduced resource overrides for the stackrox-central-services Helm chart in CI.
+# Change resource overrides for the stackrox-central-services Helm chart in CI.
 
 scanner:
   replicas: 1
   autoscaling:
     disable: true
-
-  resources:
-    requests:
-      memory: "1000Mi"
-      cpu: "500m"
-    limits:
-      memory: "2500Mi"
-      cpu: "2000m"
