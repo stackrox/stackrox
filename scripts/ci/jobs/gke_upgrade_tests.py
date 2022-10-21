@@ -19,6 +19,7 @@ from post_tests import PostClusterTest, FinalPost
 #   * make -C qa-tests-backend smoke-test
 #   * make -C qa-tests-backend upgrade-test
 
+os.environ["CLUSTER"] = "K8S"
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["SENSOR_HELM_DEPLOY"] = "true"
 
