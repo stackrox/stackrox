@@ -183,18 +183,17 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 	return client, config, nil
 }
 
-func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient) {
+func manageNodeScanLoop(ctx context.Context, cli sensor.ComplianceServiceClient, scanner nodescanv2.NodeScanner) {
 	client, _, err := initializeStream(ctx, cli)
 	if err != nil {
 		log.Fatalf("error initializing stream to sensor: %v", err)
 	}
 	t := time.NewTicker(env.NodeScanInterval.DurationSetting())
-	scanner := nodescanv2.FakeNodeScanner{} // FIXME: Replace with real scanner (ROX-12971)
 
 	log.Infof("Node Scan interval: %v", env.NodeScanInterval.DurationSetting())
-	
+
 	// send scan result once at startup, then every NodeScanInterval
-	if err := scanNode(client, &scanner); err != nil {
+	if err := scanNode(client, scanner); err != nil {
 		log.Errorf("error running scanNode: %v", err)
 	}
 
@@ -203,7 +202,7 @@ func manageNodescanLoop(ctx context.Context, cli sensor.ComplianceServiceClient)
 		case <-ctx.Done():
 			return
 		case <-t.C:
-			if err := scanNode(client, &scanner); err != nil {
+			if err := scanNode(client, scanner); err != nil {
 				log.Errorf("error running scanNode: %v", err)
 			}
 		}
@@ -249,7 +248,8 @@ func main() {
 
 	if features.RHCOSNodeScanning.Enabled() {
 		cliNode := sensor.NewComplianceServiceClient(conn)
-		go manageNodescanLoop(ctx, cliNode)
+		scanner := nodescanv2.FakeNodeScanner{} // FIXME: Replace with real scanner (ROX-12971)
+		go manageNodeScanLoop(ctx, cliNode, &scanner)
 	}
 
 	signalsC := make(chan os.Signal, 1)
