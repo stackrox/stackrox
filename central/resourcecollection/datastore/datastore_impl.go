@@ -106,6 +106,10 @@ func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) e
 	ds.graphLock.Lock()
 	defer ds.graphLock.Unlock()
 
+	if obj == nil {
+		return errors.New("passed collection must not be nil")
+	}
+
 	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetName())
 	if err != nil {
 		return err
@@ -123,6 +127,115 @@ func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) e
 	return nil
 }
 
+// graphEdgeUpdates stores added and removed edges from the DAG graph
+type graphEdgeUpdates struct {
+	srcId   string
+	added   []string
+	removed []string
+}
+
+func (ds *datastoreImpl) updateCollectionInGraph(obj *storage.ResourceCollection) (*graphEdgeUpdates, error) {
+	ds.initGraphOnce()
+	ds.graphLock.Lock()
+	defer ds.graphLock.Unlock()
+
+	if obj == nil {
+		return nil, errors.New("passed collection must not be nil")
+	}
+
+	// return object struct
+	ret := &graphEdgeUpdates{
+		obj.GetId(),
+		make([]string, 0),
+		make([]string, 0),
+	}
+
+	// get edges for the current object
+	curEdges, err := ds.graph.GetDescendants(obj.GetId())
+	if err != nil {
+		return nil, errors.Wrap(err, "update attempt on unknown collection")
+	}
+
+	for _, edge := range obj.GetEmbeddedCollections() {
+		_, present := curEdges[edge.GetId()]
+		if !present {
+			ret.added = append(ret.added, edge.GetId())
+		} else {
+			// if we visit an edge, set the value to nil
+			curEdges[edge.GetId()] = nil
+		}
+	}
+
+	// if a value is nil we visited it, if it's not nil we want to remove that edge
+	for key, value := range curEdges {
+		if value != nil {
+			ret.removed = append(ret.removed, key)
+		}
+	}
+
+	// since adding can cause cycles but removing never can, we remove first
+	// we iterate back to front so that if we fail a deletion we can remove the index from our returned list of deletions
+	for idx := len(ret.removed) - 1; idx >= 0; idx-- {
+		deleteErr := ds.graph.DeleteEdge(obj.GetId(), ret.removed[idx])
+		if deleteErr != nil {
+			ret.removed = append(ret.removed[:idx], ret.removed[idx+1:]...)
+			log.Errorf("Failed to remove collection edge from internal state object (%v)", deleteErr)
+		}
+	}
+
+	// add new edges
+	for idx, addId := range ret.added {
+		err = ds.graph.AddEdge(obj.GetId(), addId)
+		if err != nil {
+
+			// make note of where we stopped adding edges
+			ret.added = ret.added[:idx]
+
+			ds.undoEdgeUpdatesInGraph(ret)
+			return nil, err
+		}
+	}
+	return ret, nil
+}
+
+func (ds *datastoreImpl) undoEdgeUpdatesInGraphWithLock(updates *graphEdgeUpdates) {
+	ds.graphLock.Lock()
+	defer ds.graphLock.Unlock()
+
+	ds.undoEdgeUpdatesInGraph(updates)
+}
+
+func (ds *datastoreImpl) undoEdgeUpdatesInGraph(updates *graphEdgeUpdates) {
+
+	// ensure lock is acquired before calling this function
+	if ds.graphLock.TryLock() {
+		log.Errorf("function called without lock")
+		ds.graphLock.Unlock()
+		return
+	}
+
+	if updates == nil {
+		log.Infof("passed updates object was nil")
+		return
+	}
+
+	// remove added edges first since removing can never cause cycles
+	for _, added := range updates.added {
+		deleteErr := ds.graph.DeleteEdge(updates.srcId, added)
+		if deleteErr != nil {
+			log.Infof("tried to delete an edge that didn't exist (%v)", deleteErr)
+		}
+	}
+
+	// then restore edges that were removed
+	for _, removed := range updates.removed {
+		restoreErr := ds.graph.AddEdge(updates.srcId, removed)
+		if restoreErr != nil {
+			log.Errorf("Failed to restore collection edge in internal state object (%v)", restoreErr)
+		}
+	}
+}
+
 func (ds *datastoreImpl) deleteCollectionFromGraph(id string) error {
 	ds.initGraphOnce()
 	ds.graphLock.Lock()
@@ -135,6 +248,10 @@ func (ds *datastoreImpl) dryRunAddCollectionInGraph(obj *storage.ResourceCollect
 	ds.initGraphOnce()
 	ds.graphLock.Lock()
 	defer ds.graphLock.Unlock()
+
+	if obj == nil {
+		return errors.New("passed collection must not be nil")
+	}
 
 	var ret error
 
@@ -203,6 +320,9 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 }
 
 func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	if collection == nil {
+		return errors.New("passed collection must not be nil")
+	}
 
 	// add to graph first to detect any cycles
 	err := ds.addCollectionToGraph(collection)
@@ -228,7 +348,30 @@ func (ds *datastoreImpl) DryRunAddCollection(ctx context.Context, collection *st
 		return err
 	}
 
+	if collection == nil {
+		return errors.New("passed collection must not be nil")
+	}
+
 	return ds.dryRunAddCollectionInGraph(collection)
+}
+
+func (ds *datastoreImpl) UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	if collection == nil {
+		return errors.New("passed collection must not be nil")
+	}
+
+	// update graph first to detect cycles
+	edgeUpdates, err := ds.updateCollectionInGraph(collection)
+	if err != nil {
+		return err
+	}
+
+	err = ds.storage.Upsert(ctx, collection)
+	if err != nil {
+		// if we fail to upsert, try to restore the graph
+		ds.undoEdgeUpdatesInGraphWithLock(edgeUpdates)
+	}
+	return err
 }
 
 func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error {
