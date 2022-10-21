@@ -19,7 +19,7 @@ type NodeScanner interface {
 type NodeScan struct {
 }
 
-// Scan scans the current node and returns the results as a predefined message
+// Scan scans the current node and returns the results as storage.NodeScanV2 object
 func (n *NodeScan) Scan(nodeName string) (*storage.NodeScanV2, error) {
 	return nil, errors.New("Not implemented")
 }
