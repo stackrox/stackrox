@@ -9,7 +9,6 @@ import './NetworkGraphPage.css';
 
 function NetworkGraphPage() {
     const { detailType, detailId } = useParams();
-    console.log({ detailType, detailId });
 
     return (
         <>
@@ -22,7 +21,7 @@ function NetworkGraphPage() {
                 </Flex>
             </PageSection>
             <PageSection className="network-graph no-padding">
-                <NetworkGraph />
+                <NetworkGraph detailType={detailType} detailId={detailId} />
             </PageSection>
         </>
     );
