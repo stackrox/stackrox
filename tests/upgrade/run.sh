@@ -54,17 +54,21 @@ test_upgrade() {
     wait_for_api
     setup_client_TLS_certs
 
+    # TODO(sbostick): try installing to secondary "secured cluster"
     info "Deploying sensor"
     "$TEST_ROOT/$DEPLOY_DIR/sensor.sh"
-    validate_sensor_bundle_via_upgrader "$TEST_ROOT/$DEPLOY_DIR"
+    ### validate_sensor_bundle_via_upgrader "$TEST_ROOT/$DEPLOY_DIR"
     sensor_wait
 
     touch "${STATE_DEPLOYED}"
 
-    test_sensor_bundle
-    test_upgrader
-    remove_existing_stackrox_resources
-    test_upgrade_paths "$log_output_dir"
+    ### test_sensor_bundle
+    ### test_upgrader
+    ### remove_existing_stackrox_resources
+    ### test_upgrade_paths "$log_output_dir"
+
+    # TODO(sbostick): run the groovy e2e tests
+    make -C qa-tests-backend smoke-test
 }
 
 preamble() {

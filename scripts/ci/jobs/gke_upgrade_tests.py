@@ -1,7 +1,5 @@
 #!/usr/bin/env -S python3 -u
 
-# TODO(sbostick): just tracking relevant files
-
 """
 Run the upgrade test in a GKE cluster
 """
@@ -11,6 +9,15 @@ from clusters import GKECluster
 from pre_tests import PreSystemTests
 from ci_tests import UpgradeTest
 from post_tests import PostClusterTest, FinalPost
+
+# TODO(sbostick): just dev notes — ok to remove
+#
+# This entrypoint runs groovy tests via
+#   * tests/upgrade/run.sh
+#   * tests/upgrade/lib.sh
+# Where it uses:
+#   * make -C qa-tests-backend smoke-test
+#   * make -C qa-tests-backend upgrade-test
 
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["SENSOR_HELM_DEPLOY"] = "true"
