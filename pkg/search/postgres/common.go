@@ -721,7 +721,7 @@ type unmarshaler[T any] interface {
 }
 
 // RunGetQueryForSchema executes a request for just the search against the database
-func RunGetQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) ([]byte, error) {
+func RunGetQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (*T, error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, err
@@ -731,13 +731,9 @@ func RunGetQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Quer
 	}
 	queryStr := query.AsSQL()
 
-	return pgutils.Retry2(func() ([]byte, error) {
-		var data []byte
+	return pgutils.Retry2(func() (*T, error) {
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
-		if err := row.Scan(&data); err != nil {
-			return nil, err
-		}
-		return data, nil
+		return unmarshal[T, PT](row)
 	})
 }
 
@@ -861,11 +857,11 @@ func scanRows[T any, PT unmarshaler[T]](rows pgx.Rows) ([]*T, error) {
 func unmarshal[T any, PT unmarshaler[T]](row pgx.Row) (*T, error) {
 	var data []byte
 	if err := row.Scan(&data); err != nil {
-		return nil, errors.Wrap(err, "scanning row")
+		return nil, err
 	}
 	msg := new(T)
 	if err := PT(msg).Unmarshal(data); err != nil {
-		return nil, errors.Wrapf(err, "unmarshaling %T", msg)
+		return nil, err
 	}
 	return msg, nil
 }

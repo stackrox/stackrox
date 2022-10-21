@@ -546,16 +546,12 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
     {{- end}}
     )
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg {{.Type}}
-	if err := msg.Unmarshal(data); err != nil {
-        return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 
 {{- if .GetAll }}

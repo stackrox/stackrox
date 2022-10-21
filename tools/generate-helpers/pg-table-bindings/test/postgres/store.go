@@ -362,16 +362,12 @@ func (s *storeImpl) Get(ctx context.Context, key string) (*storage.TestSingleKey
 		search.NewQueryBuilder().AddDocIDs(key).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.TestSingleKeyStruct](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.TestSingleKeyStruct
-	if err := msg.Unmarshal(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.TestSingleKeyStruct, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "TestSingleKeyStruct")

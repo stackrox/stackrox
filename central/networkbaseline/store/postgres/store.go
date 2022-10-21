@@ -332,16 +332,12 @@ func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.Netw
 		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.NetworkBaseline](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.NetworkBaseline
-	if err := msg.Unmarshal(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {

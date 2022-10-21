@@ -294,16 +294,12 @@ func (s *storeImpl) Get(ctx context.Context, propsId string) (*storage.Group, bo
 		search.NewQueryBuilder().AddDocIDs(propsId).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.Group](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.Group
-	if err := msg.Unmarshal(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "Group")
