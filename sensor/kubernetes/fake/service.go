@@ -26,14 +26,9 @@ func getIPFamily() string {
 	return ipFamilies[rand.Intn(len(ipFamilies))]
 }
 
-func getClusterIP(numLabels int) *v1.Service {
-	ns := namespacePool.mustGetRandomElem()
-	var labels map[string]string
-	if numLabels == 0 {
-		labels = createRandMap(16, 3)
-	} else {
-		labels = createMap(numLabels)
-	}
+func getClusterIP() *v1.Service {
+	ns := namespacesWithDeploymentsPool.mustGetRandomElem()
+	labels := labelsPool.randomElem(ns)
 	clusterIP := generateIP()
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -61,14 +56,9 @@ func getClusterIP(numLabels int) *v1.Service {
 	}
 }
 
-func getNodePort(numLabels int) *v1.Service {
-	ns := namespacePool.mustGetRandomElem()
-	var labels map[string]string
-	if numLabels == 0 {
-		labels = createRandMap(16, 3)
-	} else {
-		labels = createMap(numLabels)
-	}
+func getNodePort() *v1.Service {
+	ns := namespacesWithDeploymentsPool.mustGetRandomElem()
+	labels := labelsPool.randomElem(ns)
 	clusterIP := generateIP()
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -97,14 +87,9 @@ func getNodePort(numLabels int) *v1.Service {
 	}
 }
 
-func getLoadBalancer(numLabels int) *v1.Service {
-	ns := namespacePool.mustGetRandomElem()
-	var labels map[string]string
-	if numLabels == 0 {
-		labels = createRandMap(16, 3)
-	} else {
-		labels = createMap(numLabels)
-	}
+func getLoadBalancer() *v1.Service {
+	ns := namespacesWithDeploymentsPool.mustGetRandomElem()
+	labels := labelsPool.randomElem(ns)
 	clusterIP := generateIP()
 	internalTrafficPolicy := v1.ServiceInternalTrafficPolicyCluster
 	allocateLoadBalancerNodePorts := true
@@ -153,15 +138,15 @@ func getLoadBalancer(numLabels int) *v1.Service {
 func getService(workload ServiceWorkload) []runtime.Object {
 	objects := make([]runtime.Object, 0, workload.NumClusterIPs+workload.NumNodePorts+workload.NumLoadBalancers)
 	for i := 0; i < workload.NumClusterIPs; i++ {
-		clusterIP := getClusterIP(workload.NumLabels)
+		clusterIP := getClusterIP()
 		objects = append(objects, clusterIP)
 	}
 	for i := 0; i < workload.NumNodePorts; i++ {
-		nodePort := getNodePort(workload.NumLabels)
+		nodePort := getNodePort()
 		objects = append(objects, nodePort)
 	}
 	for i := 0; i < workload.NumLoadBalancers; i++ {
-		loadBalancer := getLoadBalancer(workload.NumLabels)
+		loadBalancer := getLoadBalancer()
 		objects = append(objects, loadBalancer)
 	}
 	return objects

@@ -2,7 +2,6 @@ package fake
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -16,20 +15,9 @@ type networkPolicyToBeManaged struct {
 	networkPolicy *networkingV1.NetworkPolicy
 }
 
-func createMap(entries int) map[string]string {
-	m := make(map[string]string, entries)
-	for i := 0; i < entries; i++ {
-		m[fmt.Sprintf("key-%d", i)] = fmt.Sprintf("value-%d", i)
-	}
-	return m
-}
-
 func (w *WorkloadManager) getNetworkPolicy(workload NetworkPolicyWorkload) *networkPolicyToBeManaged {
-	labels := createMap(workload.NumLabels)
-	namespace, valid := namespacePool.randomElem()
-	if !valid {
-		namespace = "default"
-	}
+	namespace := namespacesWithDeploymentsPool.mustGetRandomElem()
+	labels := labelsPool.randomElem(namespace)
 	np := &networkingV1.NetworkPolicy{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "NetworkPolicy",
