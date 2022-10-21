@@ -238,7 +238,7 @@ func (k *listenerImpl) handleAllEvents() {
 	// Set the flag that all objects present at start up have been consumed.
 	syncingResources.Set(false)
 
-	k.outputQueue.Send(&output.OutputMessage{
+	k.outputQueue.Send(&output.Message{
 		ForwardMessages: []*central.SensorEvent{
 			{
 				Resource: &central.SensorEvent_Synced{

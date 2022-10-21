@@ -47,7 +47,7 @@ func newDeploymentDispatcher(deploymentType string, handler *deploymentHandler) 
 }
 
 // ProcessEvent processes a deployment resource events, and returns the sensor events to emit in response.
-func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.OutputMessage {
+func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.Message {
 	// Check owner references and build graph
 	// Every single object should implement this interface
 	metaObj, ok := obj.(metaV1.Object)
@@ -121,7 +121,7 @@ func newDeploymentHandler(
 	}
 }
 
-func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) *output.OutputMessage {
+func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) *output.Message {
 	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore,
 		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces, d.registryStore)
 	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
@@ -131,7 +131,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	// because IF the object is a pod, we want to process the pod event.
 	objAsPod, _ := obj.(*v1.Pod)
 
-	var events *output.OutputMessage
+	var events *output.Message
 	// If the object is a pod, process the pod event.
 	if objAsPod != nil {
 		var owningDeploymentID string
@@ -209,8 +209,8 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 func (d *deploymentHandler) appendIntegrationsOnCredentials(
 	action central.ResourceAction,
 	containers []*storage.Container,
-	events *output.OutputMessage,
-) *output.OutputMessage {
+	events *output.Message,
+) *output.Message {
 	if d.credentialsManager == nil || action == central.ResourceAction_REMOVE_RESOURCE {
 		return events
 	}
@@ -263,7 +263,7 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 
 // maybeUpdateParentsOfPod may return SensorEvents indicating a change in a deployment's state based on updated pod state.
 // We do this to ensure that the image IDs in the deployment are updated based on the actual running images in the pod.
-func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction) *output.OutputMessage {
+func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction) *output.Message {
 	// We care if the pod is running OR if the pod is being removed as that can impact the top level object
 	if pod.Status.Phase != v1.PodRunning && action != central.ResourceAction_REMOVE_RESOURCE {
 		return nil
@@ -286,7 +286,7 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 	// We also only track top-level objects (ex we track Deployment resources in favor of the underlying ReplicaSet and Pods)
 	// as our version of a Deployment, so the only parents we'd want to potentially process are the top-level ones.
 	owners := d.deploymentStore.getDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
-	var events *output.OutputMessage
+	var events *output.Message
 	for _, owner := range owners {
 		ev := d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)
 		events = mergeOutputMessages(events, ev)
@@ -295,7 +295,7 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 }
 
 // processPodEvent returns a SensorEvent indicating a change in a pod's state.
-func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v1.Pod, action central.ResourceAction) *output.OutputMessage {
+func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v1.Pod, action central.ResourceAction) *output.Message {
 	// Our current search mechanism does not support namespaced IDs, so if this is a top-level pod,
 	// then having the PodID and DeploymentID fields equal will cause errors.
 	// It is best to prevent this case by transforming all PodIDs.

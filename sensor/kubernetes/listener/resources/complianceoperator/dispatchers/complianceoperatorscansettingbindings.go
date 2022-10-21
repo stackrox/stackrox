@@ -19,7 +19,7 @@ func NewScanSettingBindingsDispatcher() *ScanSettingBindings {
 }
 
 // ProcessEvent processes a scan setting binding event
-func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
+func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
 	var scanSettingBindings v1alpha1.ScanSettingBinding
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

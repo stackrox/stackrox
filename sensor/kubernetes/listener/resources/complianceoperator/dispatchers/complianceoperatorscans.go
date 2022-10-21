@@ -18,7 +18,7 @@ func NewScanDispatcher() *ScanDispatcher {
 }
 
 // ProcessEvent processes a compliance operator scan
-func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
+func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
 	var complianceScan v1alpha1.ComplianceScan
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

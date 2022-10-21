@@ -22,7 +22,7 @@ func NewDispatcher(store Store) *Dispatcher {
 }
 
 // ProcessEvent handles RBAC-related events
-func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
+func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
 	evt := r.processEvent(obj, action)
 	if evt == nil {
 		utils.Should(errors.Errorf("rbac obj %+v was not correlated to a sensor event", obj))
@@ -31,7 +31,7 @@ func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAct
 	events := []*central.SensorEvent{
 		evt,
 	}
-	return &output.OutputMessage{
+	return &output.Message{
 		ForwardMessages:                  events,
 		CompatibilityDetectionDeployment: nil,
 		ReprocessDeployments:             nil,

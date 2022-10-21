@@ -21,7 +21,7 @@ func newServiceAccountDispatcher(serviceAccountStore *ServiceAccountStore) *serv
 }
 
 // ProcessEvent processes a service account resource event, and returns the sensor events to emit in response.
-func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
+func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
 	serviceAccount := obj.(*v1.ServiceAccount)
 
 	var serviceAccountSecrets []string

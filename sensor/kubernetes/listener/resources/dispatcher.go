@@ -29,7 +29,7 @@ import (
 // in response.
 //go:generate mockgen-wrapper
 type Dispatcher interface {
-	ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.OutputMessage
+	ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.Message
 }
 
 // DispatcherRegistry provides dispatchers to use.
@@ -148,12 +148,12 @@ type InformerK8sMsg struct {
 	EventsOutput []string
 }
 
-func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.OutputMessage {
+func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.Message {
 	now := time.Now().Unix()
 	dispType := strings.Trim(fmt.Sprintf("%T", obj), "*")
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
 	if events == nil {
-		events = &output.OutputMessage{}
+		events = &output.Message{}
 	}
 
 	if m.writer == nil {
@@ -198,13 +198,13 @@ type metricDispatcher struct {
 	Dispatcher
 }
 
-func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.OutputMessage {
+func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.Message {
 	start := time.Now().UnixNano()
 	dispatcher := strings.Trim(fmt.Sprintf("%T", obj), "*")
 
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
 	if events == nil {
-		events = &output.OutputMessage{}
+		events = &output.Message{}
 	}
 
 	for _, e := range events.ForwardMessages {

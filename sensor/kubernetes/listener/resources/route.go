@@ -18,7 +18,7 @@ func newRouteDispatcher(serviceStore *serviceStore, portExposureReconciler portE
 	}
 }
 
-func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
+func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
 	route, _ := obj.(*routeV1.Route)
 	if route == nil {
 		return nil

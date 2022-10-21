@@ -20,7 +20,7 @@ func newClusterOperatorDispatcher(namespaces *orchestratornamespaces.Orchestrato
 }
 
 // ProcessEvent processes a cluster operator resource event, and returns the sensor events to emit in response.
-func (c *clusterOperatorDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
+func (c *clusterOperatorDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
 	clusterOperator, ok := obj.(*v1.ClusterOperator)
 
 	if !ok {

@@ -40,7 +40,7 @@ func statusToProtoStatus(status v1alpha1.ComplianceCheckStatus) storage.Complian
 }
 
 // ProcessEvent processes a compliance operator check result
-func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.OutputMessage {
+func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
 	var complianceCheckResult v1alpha1.ComplianceCheckResult
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

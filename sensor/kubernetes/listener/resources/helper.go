@@ -5,17 +5,17 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 )
 
-func wrapOutputMessage(sensorMessages []*central.SensorEvent, detectionDeployment []output.CompatibilityDetectionMessage, reprocessDeploymentsIds []string) *output.OutputMessage {
-	return &output.OutputMessage{
+func wrapOutputMessage(sensorMessages []*central.SensorEvent, detectionDeployment []output.CompatibilityDetectionMessage, reprocessDeploymentsIds []string) *output.Message {
+	return &output.Message{
 		ForwardMessages:                  sensorMessages,
 		CompatibilityDetectionDeployment: detectionDeployment,
 		ReprocessDeployments:             reprocessDeploymentsIds,
 	}
 }
 
-func mergeOutputMessages(dest, src *output.OutputMessage) *output.OutputMessage {
+func mergeOutputMessages(dest, src *output.Message) *output.Message {
 	if dest == nil {
-		dest = &output.OutputMessage{}
+		dest = &output.Message{}
 	}
 
 	if src != nil {
