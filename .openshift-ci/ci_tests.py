@@ -51,11 +51,20 @@ class UpgradeTest(BaseTest):
         ###     post_start_hook=set_dirs_after_start,
         ### )
 
+        # TODO(sbostick): try running groovy tests
         self.run_with_graceful_kill(
-            ["tests/multi-arch/run.sh", UpgradeTest.TEST_OUTPUT_DIR],
+            ["tests/multi-arch/run-e2e-groovy.sh", UpgradeTest.TEST_OUTPUT_DIR],
             UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
+
+        # TODO(sbostick): skip for now
+        ### self.run_with_graceful_kill(
+        ###     ["tests/multi-arch/run-e2e-nongroovy.sh", UpgradeTest.TEST_OUTPUT_DIR],
+        ###     UpgradeTest.TEST_TIMEOUT,
+        ###     post_start_hook=set_dirs_after_start,
+        ### )
+
 
 class PostgresUpgradeTest(BaseTest):
     TEST_TIMEOUT = 60 * 60

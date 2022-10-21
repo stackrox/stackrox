@@ -93,7 +93,7 @@ test_preamble() {
 
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
     export ROXDEPLOY_CONFIG_FILE_MAP="$ROOT/scripts/ci/endpoints/endpoints.yaml"
-    
+
     QUAY_REPO="rhacs-eng"
     if is_CI; then
         REGISTRY="quay.io/$QUAY_REPO"
