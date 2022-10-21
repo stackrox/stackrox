@@ -67,6 +67,7 @@ class PostgresUpgradeTest(BaseTest):
             post_start_hook=set_dirs_after_start,
         )
 
+
 class OperatorE2eTest(BaseTest):
     # TODO(ROX-12348): adjust these timeouts once we know average run times
     DEPLOY_TIMEOUT_SEC = 40 * 60
