@@ -371,24 +371,6 @@
     }
   },
   "definitions": {
-    "AlternativeImageNamesName": {
-      "type": "object",
-      "properties": {
-        "registry": {
-          "type": "string",
-          "description": "TODO(dhaus): For now without search tags, since duplicated tags are not allowed and setting `policy:\",prefer-parent\"` does not fix it."
-        },
-        "remote": {
-          "type": "string"
-        },
-        "tag": {
-          "type": "string"
-        },
-        "fullName": {
-          "type": "string"
-        }
-      }
-    },
     "CVSSV2AccessComplexity": {
       "type": "string",
       "enum": [
@@ -693,17 +675,6 @@
         "DOTNETCORERUNTIME"
       ],
       "default": "UNSET_SOURCE_TYPE"
-    },
-    "storageAlternativeImageNames": {
-      "type": "object",
-      "properties": {
-        "names": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AlternativeImageNamesName"
-          }
-        }
-      }
     },
     "storageCVSSV2": {
       "type": "object",
@@ -1064,8 +1035,11 @@
           "$ref": "#/definitions/storageImageName"
         },
         "names": {
-          "$ref": "#/definitions/storageAlternativeImageNames",
-          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, the ImageName message has been duplicated without search tags."
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageName"
+          },
+          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise."
         },
         "metadata": {
           "$ref": "#/definitions/storageImageMetadata"
