@@ -107,21 +107,13 @@ func startAuditLogCollection(ctx context.Context, client sensor.ComplianceServic
 	return auditReader
 }
 
-func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal) {
+func manageStream(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig, sig *concurrency.Signal) {
 	for {
 		select {
 		case <-ctx.Done():
 			sig.Signal()
 			return
 		default:
-			client, config, err := initializeStream(ctx, cli)
-			if err != nil {
-				if ctx.Err() != nil {
-					// continue and the <-ctx.Done() path should be taken next iteration
-					continue
-				}
-				log.Fatalf("error initializing stream to sensor: %v", err)
-			}
 			if err := runRecv(ctx, client, config); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
@@ -183,11 +175,7 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 	return client, config, nil
 }
 
-func manageNodeScanLoop(ctx context.Context, cli sensor.ComplianceServiceClient, scanner nodescanv2.NodeScanner) {
-	client, _, err := initializeStream(ctx, cli)
-	if err != nil {
-		log.Fatalf("error initializing stream to sensor: %v", err)
-	}
+func manageNodeScanLoop(ctx context.Context, client sensor.ComplianceService_CommunicateClient, scanner nodescanv2.NodeScanner) {
 	t := time.NewTicker(env.NodeScanInterval.DurationSetting())
 
 	log.Infof("Node Scan interval: %v", env.NodeScanInterval.DurationSetting())
@@ -244,12 +232,16 @@ func main() {
 
 	stoppedSig := concurrency.NewSignal()
 
-	go manageStream(ctx, cli, &stoppedSig)
+	client, config, err := initializeStream(ctx, cli)
+	if err != nil {
+		log.Fatalf("error initializing stream to sensor: %v", err)
+	}
+
+	go manageStream(ctx, client, config, &stoppedSig)
 
 	if features.RHCOSNodeScanning.Enabled() {
-		cliNode := sensor.NewComplianceServiceClient(conn)
 		scanner := nodescanv2.FakeNodeScanner{} // FIXME: Replace with real scanner (ROX-12971)
-		go manageNodeScanLoop(ctx, cliNode, &scanner)
+		go manageNodeScanLoop(ctx, client, &scanner)
 	}
 
 	signalsC := make(chan os.Signal, 1)
