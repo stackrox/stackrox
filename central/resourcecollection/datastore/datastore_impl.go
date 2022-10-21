@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/heimdalr/dag"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
@@ -20,6 +21,7 @@ import (
 var (
 	log           = logging.LoggerForModule()
 	initBatchSize = 20
+	workflowSAC   = sac.ForResource(resources.WorkflowAdministration)
 )
 
 type datastoreImpl struct {
@@ -49,20 +51,30 @@ func (ds *datastoreImpl) initGraph() error {
 	defer ds.graphLock.Unlock()
 
 	ds.graph = dag.NewDAG()
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
+	ctx := sac.WithAllAccess(context.Background())
 
-	// add ids first
+	// get ids first
 	ids, err := ds.storage.GetIDs(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "building collection graph")
 	}
-	for _, id := range ids {
-		err = ds.graph.AddVertexByID(id, id)
+
+	// add vertices by batches
+	for i := 0; i < len(ids); i += initBatchSize {
+		var objs []*storage.ResourceCollection
+		if i+initBatchSize < len(ids) {
+			objs, _, err = ds.storage.GetMany(ctx, ids[i:i+initBatchSize])
+		} else {
+			objs, _, err = ds.storage.GetMany(ctx, ids[i:])
+		}
 		if err != nil {
-			return err
+			return errors.Wrap(err, "building collection graph")
+		}
+		for _, obj := range objs {
+			err = ds.graph.AddVertexByID(obj.GetId(), obj.GetName())
+			if err != nil {
+				return errors.Wrap(err, "building collection graph")
+			}
 		}
 	}
 
@@ -75,13 +87,13 @@ func (ds *datastoreImpl) initGraph() error {
 			objs, _, err = ds.storage.GetMany(ctx, ids[i:])
 		}
 		if err != nil {
-			return err
+			return errors.Wrap(err, "building collection graph")
 		}
 		for _, obj := range objs {
-			for _, edge := range obj.GetEmbeddedCollections() {
-				err = ds.graph.AddEdge(obj.GetId(), edge.GetId())
+			for _, peer := range obj.GetEmbeddedCollections() {
+				err = ds.graph.AddEdge(obj.GetId(), peer.GetId())
 				if err != nil {
-					return err
+					return errors.Wrap(err, "building collection graph")
 				}
 			}
 		}
@@ -94,12 +106,12 @@ func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) e
 	ds.graphLock.Lock()
 	defer ds.graphLock.Unlock()
 
-	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetId())
+	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetName())
 	if err != nil {
 		return err
 	}
-	for _, edge := range obj.GetEmbeddedCollections() {
-		err = ds.graph.AddEdge(obj.GetId(), edge.GetId())
+	for _, peer := range obj.GetEmbeddedCollections() {
+		err = ds.graph.AddEdge(obj.GetId(), peer.GetId())
 		if err != nil {
 			deleteErr := ds.graph.DeleteVertex(obj.GetId())
 			if deleteErr != nil {
@@ -117,6 +129,34 @@ func (ds *datastoreImpl) deleteCollectionFromGraph(id string) error {
 	defer ds.graphLock.Unlock()
 
 	return ds.graph.DeleteVertex(id)
+}
+
+func (ds *datastoreImpl) dryRunAddCollectionInGraph(obj *storage.ResourceCollection) error {
+	ds.initGraphOnce()
+	ds.graphLock.Lock()
+	defer ds.graphLock.Unlock()
+
+	var ret error
+
+	// we essentially just add the obj to the graph and delete it before returning
+	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetName())
+	if err != nil {
+		return err
+	}
+	for _, peer := range obj.GetEmbeddedCollections() {
+		err = ds.graph.AddEdge(obj.GetId(), peer.GetId())
+		if err != nil {
+			ret = err
+			break
+		}
+	}
+
+	err = ds.graph.DeleteVertex(obj.GetId())
+	if err != nil && ret == nil {
+		ret = err
+	}
+
+	return ret
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -180,6 +220,15 @@ func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.
 		return err
 	}
 	return err
+}
+
+func (ds *datastoreImpl) DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	// check for access since dryrun flow doesn't actually hit the postgres layer
+	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || !ok {
+		return err
+	}
+
+	return ds.dryRunAddCollectionInGraph(collection)
 }
 
 func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error {
