@@ -16,8 +16,8 @@ ARTIFACTS_DIR="$(mktemp -d)/artifacts"
 export KUBECONFIG="${ARTIFACTS_DIR}/kubeconfig"
 
 function download_cluster_artifacts() {
-    mkdir -p ${ARTIFACTS_DIR}
-    infractl artifacts ${CLUSTER_NAME} -d ${ARTIFACTS_DIR} 2>&1 > /dev/null
+    mkdir -p "${ARTIFACTS_DIR}"
+    infractl artifacts "${CLUSTER_NAME}" -d "${ARTIFACTS_DIR}" > /dev/null
 }
 
 function fetch_cluster_credentials() {
