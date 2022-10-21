@@ -162,7 +162,7 @@ class QaE2eDBBackupRestoreTest(BaseTest):
 
 
 class UIE2eTest(BaseTest):
-    TEST_TIMEOUT = 90 * 60
+    TEST_TIMEOUT = 2 * 60 * 60
 
     def run(self):
         print("Executing UI e2e test")
