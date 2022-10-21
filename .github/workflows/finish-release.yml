@@ -21,7 +21,13 @@ env:
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
 
-run-name: Finish release ${{ github.event.inputs.version }}${{ fromJSON('[" (dry-run)", ""]')[github.event.inputs.dry-run != true] }}
+run-name: >-
+  ${{
+    format('Finish release {0}{1}',
+      inputs.version,
+      fromJSON('[" (dry-run)", ""]')[inputs.dry-run != true]
+    )
+  }}
 
 # Ensure that only a single release automation workflow can run at a time.
 concurrency: Release automation
@@ -117,7 +123,8 @@ jobs:
             { "blocks": [
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":white_check_mark: *<${{ steps.release.outputs.url }} | ${{ inputs.version }}> has been published on GitHub.*" }},
+            ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
+            *<${{ steps.release.outputs.url }} | ${{ inputs.version }}> has been published on GitHub.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":arrow_right: Look for a CI generated PR created in `stackrox/release-artifacts` repository
