@@ -151,7 +151,6 @@
         "http-proxy-middleware": "^2.0.1",
         "jest-junit": "^12.0.0",
         "levenary": "^1.1.1",
-        "mocha": "^9.1.1",
         "mocha-junit-reporter": "^2.0.0",
         "mocha-multi-reporters": "^1.5.1",
         "node-fetch": "^2.6.1",
