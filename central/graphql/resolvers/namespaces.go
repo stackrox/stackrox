@@ -135,25 +135,19 @@ func (resolver *Resolver) Namespaces(ctx context.Context, args PaginatedQuery) (
 		return nil, err
 	}
 
-	var namespaces []*v1.Namespace
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		nsLoader, err := loaders.GetNamespaceLoader(ctx)
-		if err != nil {
-			return nil, err
-		}
-		metadataSlice, err := nsLoader.FromQuery(ctx, query)
-		if err != nil {
-			return nil, err
-		}
-		namespaces = make([]*v1.Namespace, 0, len(metadataSlice))
-		for _, metadata := range metadataSlice {
-			namespaces = append(namespaces, &v1.Namespace{Metadata: metadata})
-		}
-		return resolver.wrapNamespacesWithContext(ctx, namespaces, nil)
+	nsLoader, err := loaders.GetNamespaceLoader(ctx)
+	if err != nil {
+		return nil, err
 	}
-
-	namespaces, err = namespace.ResolveMetadataOnlyByQuery(ctx, query, resolver.NamespaceDataStore)
-	return resolver.wrapNamespacesWithContext(ctx, namespaces, err)
+	metadataSlice, err := nsLoader.FromQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	namespaces := make([]*v1.Namespace, 0, len(metadataSlice))
+	for _, metadata := range metadataSlice {
+		namespaces = append(namespaces, &v1.Namespace{Metadata: metadata})
+	}
+	return resolver.wrapNamespacesWithContext(ctx, namespaces, nil)
 }
 
 type clusterIDAndNameQuery struct {

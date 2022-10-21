@@ -24,33 +24,6 @@ func ResolveAll(ctx context.Context, dataStore datastore.DataStore, deploymentDa
 	return populateFromMetadataSlice(ctx, metadataSlice, deploymentDataStore, secretDataStore, npStore)
 }
 
-// ResolveMetadataOnlyByQuery resolves all namespaces based on a query. This will _not_ populate volatile runtime data and that must be requested separately.
-func ResolveMetadataOnlyByQuery(ctx context.Context, q *v1.Query, dataStore datastore.DataStore) ([]*v1.Namespace, error) {
-
-	metadataSlice, err := dataStore.SearchNamespaces(ctx, q)
-	if err != nil {
-		return nil, errors.Wrap(err, "retrieving namespaces")
-	}
-
-	return populateNamespaceMetadataOnly(metadataSlice)
-}
-
-// Populates only the `Metadata` field of v1.Namespace. No volatile runtime data is filled. This should be used in queries where that information is unnecessary
-// as fetching and calculating that can be very expensive.
-func populateNamespaceMetadataOnly(metadataSlice []*storage.NamespaceMetadata) ([]*v1.Namespace, error) {
-	if len(metadataSlice) == 0 {
-		return nil, nil
-	}
-	namespaces := make([]*v1.Namespace, 0, len(metadataSlice))
-	for _, metadata := range metadataSlice {
-		// Don't populate the rest of the object (deploy, secrets and net pol count) as that's not performant when most of the time we just want namespace names
-		namespaces = append(namespaces, &v1.Namespace{
-			Metadata: metadata,
-		})
-	}
-	return namespaces, nil
-}
-
 func populateFromMetadataSlice(ctx context.Context, metadataSlice []*storage.NamespaceMetadata, deploymentDataStore deploymentDataStore.DataStore,
 	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) ([]*v1.Namespace, error) {
 	if len(metadataSlice) == 0 {

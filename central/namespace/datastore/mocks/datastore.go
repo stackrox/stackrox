@@ -66,19 +66,34 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// GetBatch mocks base method.
-func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error) {
+// GetAllNamespaces mocks base method.
+func (m *MockDataStore) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBatch", ctx, id)
+	ret := m.ctrl.Call(m, "GetAllNamespaces", ctx)
 	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetBatch indicates an expected call of GetBatch.
-func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id interface{}) *gomock.Call {
+// GetAllNamespaces indicates an expected call of GetAllNamespaces.
+func (mr *MockDataStoreMockRecorder) GetAllNamespaces(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllNamespaces", reflect.TypeOf((*MockDataStore)(nil).GetAllNamespaces), ctx)
+}
+
+// GetManyNamespaces mocks base method.
+func (m *MockDataStore) GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetManyNamespaces", ctx, id)
+	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetManyNamespaces indicates an expected call of GetManyNamespaces.
+func (mr *MockDataStoreMockRecorder) GetManyNamespaces(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyNamespaces", reflect.TypeOf((*MockDataStore)(nil).GetManyNamespaces), ctx, id)
 }
 
 // GetNamespace mocks base method.
@@ -95,21 +110,6 @@ func (m *MockDataStore) GetNamespace(ctx context.Context, id string) (*storage.N
 func (mr *MockDataStoreMockRecorder) GetNamespace(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockDataStore)(nil).GetNamespace), ctx, id)
-}
-
-// GetNamespaces mocks base method.
-func (m *MockDataStore) GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNamespaces", ctx)
-	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNamespaces indicates an expected call of GetNamespaces.
-func (mr *MockDataStoreMockRecorder) GetNamespaces(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaces", reflect.TypeOf((*MockDataStore)(nil).GetNamespaces), ctx)
 }
 
 // RemoveNamespace mocks base method.

@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/namespace/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -17,11 +16,9 @@ import (
 var namespaceLoaderType = reflect.TypeOf(storage.NamespaceMetadata{})
 
 func init() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		RegisterTypeFactory(reflect.TypeOf(storage.NamespaceMetadata{}), func() interface{} {
-			return NewNamespaceLoader(datastore.Singleton())
-		})
-	}
+	RegisterTypeFactory(reflect.TypeOf(storage.NamespaceMetadata{}), func() interface{} {
+		return NewNamespaceLoader(datastore.Singleton())
+	})
 }
 
 // NewNamespaceLoader creates a new loader for NamespaceMetaData.
@@ -105,7 +102,7 @@ func (nsldr *namespaceLoaderImpl) load(ctx context.Context, ids []string) ([]*st
 	namespaces, missing := nsldr.readAll(ids)
 	if len(missing) > 0 {
 		var err error
-		namespaces, err = nsldr.ds.GetBatch(ctx, collectMissing(ids, missing))
+		namespaces, err = nsldr.ds.GetManyNamespaces(ctx, collectMissing(ids, missing))
 		if err != nil {
 			return nil, err
 		}

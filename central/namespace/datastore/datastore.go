@@ -44,8 +44,8 @@ import (
 // DataStore provides storage and indexing functionality for namespaces.
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
-	GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
-	GetBatch(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
+	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
 
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
 	UpdateNamespace(context.Context, *storage.NamespaceMetadata) error
@@ -172,8 +172,8 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 	return namespace, true, err
 }
 
-// GetNamespaces retrieves namespaces matching the request from bolt
-func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+// GetAllNamespaces retrieves namespaces matching the request from bolt
+func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	var allowedNamespaces []*storage.NamespaceMetadata
 	err := b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
 		scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
@@ -191,8 +191,16 @@ func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.Namespace
 	return allowedNamespaces, nil
 }
 
-func (b *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
-	namespaces, _, err := b.store.GetMany(ctx, ids)
+func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
+	var namespaces []*storage.NamespaceMetadata
+	var err error
+	if ok, err := namespaceSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		query := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
+		return b.SearchNamespaces(ctx, query)
+	}
+	namespaces, _, err = b.store.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

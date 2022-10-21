@@ -58,7 +58,7 @@ func (suite *NamespaceLoaderTestSuite) TestFromID() {
 
 	// Get a non-preloaded namespace from id.
 	thirdNamespace := &storage.NamespaceMetadata{Id: namespace3}
-	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{namespace3}).
+	suite.mockDataStore.EXPECT().GetManyNamespaces(suite.ctx, []string{namespace3}).
 		Return([]*storage.NamespaceMetadata{thirdNamespace}, nil)
 
 	namespace, err = loader.FromID(suite.ctx, namespace3)
@@ -90,7 +90,7 @@ func (suite *NamespaceLoaderTestSuite) TestFromIDs() {
 
 	// Get a non-preloaded namespace from id.
 	thirdNamespace := &storage.NamespaceMetadata{Id: namespace3}
-	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{namespace3}).
+	suite.mockDataStore.EXPECT().GetManyNamespaces(suite.ctx, []string{namespace3}).
 		Return([]*storage.NamespaceMetadata{thirdNamespace}, nil)
 
 	namespaces, err = loader.FromIDs(suite.ctx, []string{namespace1, namespace2, namespace3})
@@ -153,7 +153,7 @@ func (suite *NamespaceLoaderTestSuite) TestFromQuery() {
 	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
 	thirdNamespace := &storage.NamespaceMetadata{Id: namespace3}
-	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{namespace3}).
+	suite.mockDataStore.EXPECT().GetManyNamespaces(suite.ctx, []string{namespace3}).
 		Return([]*storage.NamespaceMetadata{thirdNamespace}, nil)
 
 	namespaces, err = loader.FromQuery(suite.ctx, query)
