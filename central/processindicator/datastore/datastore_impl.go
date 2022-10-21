@@ -129,6 +129,7 @@ func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []stri
 		return sac.ErrResourceAccessDenied
 	}
 
+	log.Infof("SHREWS -- RemoveProcessIndicators -- len = %d", len(ids))
 	return ds.removeIndicators(ctx, ids)
 }
 
