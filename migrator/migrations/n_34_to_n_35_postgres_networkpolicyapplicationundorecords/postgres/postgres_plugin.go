@@ -259,16 +259,12 @@ func (s *storeImpl) Get(ctx context.Context, clusterId string) (*storage.Network
 		search.NewQueryBuilder().AddDocIDs(clusterId).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.NetworkPolicyApplicationUndoRecord](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.NetworkPolicyApplicationUndoRecord
-	if err := msg.Unmarshal(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
