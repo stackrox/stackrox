@@ -134,6 +134,15 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"port: Int!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Violation_Type(0)))
+	utils.Must(builder.AddType("AlternativeImageNames", []string{
+		"names: [AlternativeImageNames_Name]!",
+	}))
+	utils.Must(builder.AddType("AlternativeImageNames_Name", []string{
+		"fullName: String!",
+		"registry: String!",
+		"remote: String!",
+		"tag: String!",
+	}))
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
 		"subscriptionId: String!",
 	}))
@@ -645,6 +654,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"lastUpdated: Time",
 		"metadata: ImageMetadata",
 		"name: ImageName",
+		"names: AlternativeImageNames",
 		"notPullable: Boolean!",
 		"notes: [Image_Note!]!",
 		"priority: Int!",
@@ -719,6 +729,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"status: ImageSignatureVerificationResult_Status!",
 		"verificationTime: Time",
+		"verifiedImageReferences: [String!]!",
 		"verifierId: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageSignatureVerificationResult_Status(0)))
@@ -2659,6 +2670,115 @@ func toAlert_Violation_Types(values *[]string) []storage.Alert_Violation_Type {
 		output[i] = toAlert_Violation_Type(&v)
 	}
 	return output
+}
+
+type alternativeImageNamesResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AlternativeImageNames
+}
+
+func (resolver *Resolver) wrapAlternativeImageNames(value *storage.AlternativeImageNames, ok bool, err error) (*alternativeImageNamesResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alternativeImageNamesResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlternativeImageNameses(values []*storage.AlternativeImageNames, err error) ([]*alternativeImageNamesResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alternativeImageNamesResolver, len(values))
+	for i, v := range values {
+		output[i] = &alternativeImageNamesResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlternativeImageNamesWithContext(ctx context.Context, value *storage.AlternativeImageNames, ok bool, err error) (*alternativeImageNamesResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alternativeImageNamesResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlternativeImageNamesesWithContext(ctx context.Context, values []*storage.AlternativeImageNames, err error) ([]*alternativeImageNamesResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alternativeImageNamesResolver, len(values))
+	for i, v := range values {
+		output[i] = &alternativeImageNamesResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alternativeImageNamesResolver) Names(ctx context.Context) ([]*alternativeImageNames_NameResolver, error) {
+	value := resolver.data.GetNames()
+	return resolver.root.wrapAlternativeImageNames_Names(value, nil)
+}
+
+type alternativeImageNames_NameResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AlternativeImageNames_Name
+}
+
+func (resolver *Resolver) wrapAlternativeImageNames_Name(value *storage.AlternativeImageNames_Name, ok bool, err error) (*alternativeImageNames_NameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alternativeImageNames_NameResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlternativeImageNames_Names(values []*storage.AlternativeImageNames_Name, err error) ([]*alternativeImageNames_NameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alternativeImageNames_NameResolver, len(values))
+	for i, v := range values {
+		output[i] = &alternativeImageNames_NameResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlternativeImageNames_NameWithContext(ctx context.Context, value *storage.AlternativeImageNames_Name, ok bool, err error) (*alternativeImageNames_NameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alternativeImageNames_NameResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlternativeImageNames_NamesWithContext(ctx context.Context, values []*storage.AlternativeImageNames_Name, err error) ([]*alternativeImageNames_NameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alternativeImageNames_NameResolver, len(values))
+	for i, v := range values {
+		output[i] = &alternativeImageNames_NameResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alternativeImageNames_NameResolver) FullName(ctx context.Context) string {
+	value := resolver.data.GetFullName()
+	return value
+}
+
+func (resolver *alternativeImageNames_NameResolver) Registry(ctx context.Context) string {
+	value := resolver.data.GetRegistry()
+	return value
+}
+
+func (resolver *alternativeImageNames_NameResolver) Remote(ctx context.Context) string {
+	value := resolver.data.GetRemote()
+	return value
+}
+
+func (resolver *alternativeImageNames_NameResolver) Tag(ctx context.Context) string {
+	value := resolver.data.GetTag()
+	return value
 }
 
 type azureProviderMetadataResolver struct {
@@ -7801,6 +7921,12 @@ func (resolver *imageResolver) Name(ctx context.Context) (*imageNameResolver, er
 	return resolver.root.wrapImageName(value, true, nil)
 }
 
+func (resolver *imageResolver) Names(ctx context.Context) (*alternativeImageNamesResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNames()
+	return resolver.root.wrapAlternativeImageNames(value, true, nil)
+}
+
 func (resolver *imageResolver) NotPullable(ctx context.Context) bool {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetNotPullable()
@@ -8542,6 +8668,11 @@ func (resolver *imageSignatureVerificationResultResolver) Status(ctx context.Con
 func (resolver *imageSignatureVerificationResultResolver) VerificationTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetVerificationTime()
 	return timestamp(value)
+}
+
+func (resolver *imageSignatureVerificationResultResolver) VerifiedImageReferences(ctx context.Context) []string {
+	value := resolver.data.GetVerifiedImageReferences()
+	return value
 }
 
 func (resolver *imageSignatureVerificationResultResolver) VerifierId(ctx context.Context) string {

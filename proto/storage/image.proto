@@ -9,13 +9,14 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next Tag: 18
+// Next Tag: 19
 message Image {
     string                          id                          = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"pk"'];
     ImageName                       name                        = 1;
     // This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with
     // different locations.
-    repeated ImageName              names                       = 18;
+    // TODO(dhaus): For now, the ImageName message has been duplicated without search tags.
+    AlternativeImageNames           names                       = 18;
 
     ImageMetadata                   metadata                    = 2;
     ImageScan                       scan                        = 3 [(gogoproto.moretags) = 'policy:"Image Scan"'];
@@ -219,6 +220,17 @@ message ImageName {
     string remote                           = 2 [(gogoproto.moretags) = 'search:"Image Remote,store"'];
     string tag                              = 3 [(gogoproto.moretags) = 'search:"Image Tag,store"'];
     string full_name                        = 4 [(gogoproto.moretags) = 'search:"Image,store,analyzer=standard"'];
+}
+
+message AlternativeImageNames {
+    message Name {
+        // TODO(dhaus): For now without search tags, since duplicated tags are not allowed and setting `policy:",prefer-parent"` does not fix it.
+        string registry                         = 1;
+        string remote                           = 2;
+        string tag                              = 3;
+        string full_name                        = 4;
+    }
+    repeated Name names = 1;
 }
 
 message ListImage {
