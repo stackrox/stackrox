@@ -54,6 +54,7 @@ func init() {
 		&storage.ProcessBaselineResults{}:                       resources.ProcessWhitelist,
 		&storage.ProcessBaseline{}:                              resources.ProcessWhitelist,
 		&storage.ProcessIndicator{}:                             resources.Indicator,
+		&storage.ProcessListeningOnPortStorage{}:                resources.ProcessWhitelist,
 		&storage.ResourceCollection{}:                           resources.WorkflowAdministration,
 		&storage.ReportConfiguration{}:                          resources.VulnerabilityReports,
 		&storage.SimpleAccessScope{}:                            resources.Role,

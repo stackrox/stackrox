@@ -4,6 +4,8 @@ option go_package = "storage";
 option cc_enable_arenas = true;
 
 import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
 import "storage/network_flow.proto";
 import "storage/process_indicator.proto";
 
@@ -14,4 +16,18 @@ message ProcessListeningOnPort {
     L4Protocol protocol = 2;
     ProcessIndicatorUniqueKey process = 3;
     google.protobuf.Timestamp close_timestamp = 4;
+}
+
+message ProcessListeningOnPortStorage {
+    // Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
+    // bigint with a sequence. Unfortunately at the moment some bits of store
+    // generator assume an id has to be a string.
+    string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+
+    uint32 port = 2;
+    L4Protocol protocol = 3;
+    google.protobuf.Timestamp close_timestamp = 4;
+
+    string process_indicator_id = 5
+        [(gogoproto.moretags) = 'sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree"'];
 }
