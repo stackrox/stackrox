@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 )
@@ -28,7 +27,6 @@ type listenerImpl struct {
 	stopSig            concurrency.Signal
 	credentialsManager awscredentials.RegistryCredentialsManager
 	configHandler      config.Handler
-	detector           detector.Detector
 	resyncPeriod       time.Duration
 	traceWriter        io.Writer
 	outputQueue        output.Queue
