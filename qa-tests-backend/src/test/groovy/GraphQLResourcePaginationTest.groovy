@@ -58,7 +58,7 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
 
         "node"       | "" | null | ""
 
-        "image"      | "Image:main" | null | "deployments"
+        "image"      | "Image Remote:main" | null | "deployments"
 
         "secret"     | "Secret:scanner-db-password" | null | "deployments"
 
