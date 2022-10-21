@@ -109,27 +109,9 @@ type centralConfig struct {
 	Maintenance Maintenance `yaml:"maintenance"`
 }
 
-func (cc centralConfig) applyDefaults() {
-	log.Infof("Updating central default")
-	cc.Maintenance.applyDefaults()
-}
-
-func (cc centralConfig) validate() error {
-	return cc.Maintenance.validate()
-}
-
 // External DB Config
 type externalDBConfig struct {
 	CentralDB CentralDB `yaml:"centralDB"`
-}
-
-func (ec externalDBConfig) applyDefaults() {
-	log.Infof("Updating central db default")
-	ec.CentralDB.applyDefaults()
-}
-
-func (ec externalDBConfig) validate() error {
-	return nil
 }
 
 func (c *Config) applyDefaults() {
@@ -162,7 +144,7 @@ func readConfig[T configWithDefault](path string) (*T, error) {
 	return &conf, nil
 }
 
-func readAllConfigs() (*Config, error) {
+func readConfigs() (*Config, error) {
 	centralConf, err := readConfig[centralConfig](configPath)
 	if err != nil {
 		return nil, err
@@ -185,7 +167,7 @@ func readAllConfigs() (*Config, error) {
 func GetConfig() *Config {
 	once.Do(func() {
 		var err error
-		config, err = readAllConfigs()
+		config, err = readConfigs()
 		if err != nil {
 			config = nil
 			log.Errorf("Error reading config file: %v", err)
