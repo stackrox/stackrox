@@ -161,6 +161,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_DefaultValue
 
 			s.Require().NoError(err)
 			s.Assert().Equal(expectations.expectedAutoUpdate, result.GetConfig().GetEnableAutoUpgrade())
+			s.Assert().Equal(expectations.expectedAutoUpdate, instance.AutoUpgradeSetting().Get())
 			s.Assert().Equal(expectations.expectedFeatureEnabled, result.GetConfig().GetAutoUpgradeFeature())
 		})
 	}
