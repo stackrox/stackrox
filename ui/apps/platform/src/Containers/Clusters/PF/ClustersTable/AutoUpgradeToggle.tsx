@@ -33,7 +33,7 @@ function AutoUpgradeToggle(): ReactElement {
     }
 
     if (autoUpgradeConfig.autoUpgradeFeature === 'NOT_SUPPORTED') {
-        return <>Auto upgrade not allowed in managed central</>;
+        return <>Automatic upgrades are disabled for Cloud Service</>;
     }
 
     const handleChange = (value: boolean) => {

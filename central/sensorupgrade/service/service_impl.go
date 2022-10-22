@@ -85,16 +85,15 @@ func (s *service) getOrCreateSensorUpgradeConfig(ctx context.Context) (*storage.
 	if config == nil {
 		// If there's no config in the DB, return default config according to managed central flag
 		// and insert the value
-		var defaultConfig *storage.SensorUpgradeConfig
+		// var defaultConfig *storage.SensorUpgradeConfig
 		if getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_SUPPORTED {
-			defaultConfig = &storage.SensorUpgradeConfig{EnableAutoUpgrade: true}
+			config = &storage.SensorUpgradeConfig{EnableAutoUpgrade: true}
 		} else {
-			defaultConfig = &storage.SensorUpgradeConfig{EnableAutoUpgrade: false}
+			config = &storage.SensorUpgradeConfig{EnableAutoUpgrade: false}
 		}
-		if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, defaultConfig); err != nil {
+		if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, config); err != nil {
 			return nil, err
 		}
-		return defaultConfig, nil
 	}
 	return config, nil
 }
