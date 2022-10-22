@@ -6,9 +6,9 @@ metadata:
   name: central-external-db
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "configmap" "central-db-connection") | nindent 4 }}
+    {{- include "srox.labels" (list . "configmap" "central-external-db") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "configmap" "central-db-connection") | nindent 4 }}
+    {{- include "srox.annotations" (list . "configmap" "central-external-db") | nindent 4 }}
 data:
   central-external-db.yaml: |
     centralDB:

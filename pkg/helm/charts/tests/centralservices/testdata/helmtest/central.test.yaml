@@ -15,6 +15,7 @@ tests:
     .serviceaccounts["central"] | assertThat(. != null)
     .secrets["central-htpasswd"].stringData.htpasswd | assertThat(length > 0)
     .configmaps["central-config"].data.["central-config.yaml"] | assertThat(length > 0)
+    .configmaps["central-external-db"].data.["central-external-db.yaml"] | assertThat(length > 0)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
     .networkpolicys["allow-ext-to-central"] | assertThat(. != null)
@@ -29,6 +30,7 @@ tests:
         enabled: true
   expect:
     .networkpolicys["central-db"] | assertThat(. != null)
+    .configmaps["central-external-db"].data.["central-external-db.yaml"] | assertThat(length > 0)
 
 - name: "central with deprecated PodSecurityPolicies enabled"
   values:
