@@ -48,6 +48,7 @@ func configWith(v bool) *storage.SensorUpgradeConfig {
 	return &storage.SensorUpgradeConfig{EnableAutoUpgrade: v}
 }
 
+
 func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 	testCases := map[string]struct {
 		req               *v1.UpdateSensorUpgradeConfigRequest
@@ -114,6 +115,20 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 			}
 		})
 	}
+}
+
+func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig() {
+	s.isolator.Setenv(env.ManagedCentral.EnvVar(), "false")
+	s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).
+		Times(2).
+		Return(configWith(false), nil)
+	serviceInstance, err := New(s.dataStore, s.manager)
+	s.NoError(err)
+
+	response, err := serviceInstance.GetSensorUpgradeConfig(context.Background(), &v1.Empty{})
+	s.NoError(err)
+
+	s.Assert().Equal(false, response.GetConfig().GetEnableAutoUpgrade())
 }
 
 func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_DefaultValues() {
