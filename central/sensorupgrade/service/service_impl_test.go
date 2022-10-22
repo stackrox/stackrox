@@ -63,7 +63,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 		"Error: can't set toggle = true on managed centrals": {
 			managedCentral: true,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
-				Config: &storage.SensorUpgradeConfig{EnableAutoUpgrade: true},
+				Config: configWith(true),
 			},
 			expectedErr:       errox.InvalidArgs,
 			upsertTimesCalled: 0,
