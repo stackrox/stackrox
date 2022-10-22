@@ -78,7 +78,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 		"Success: can set toggle = true on non-managed centrals": {
 			managedCentral: false,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
-				Config: &storage.SensorUpgradeConfig{EnableAutoUpgrade: true},
+				Config: configWith(true),
 			},
 			upsertTimesCalled: 1,
 		},
