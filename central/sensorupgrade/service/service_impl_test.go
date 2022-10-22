@@ -109,7 +109,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 			}
 
 			if testCase.upsertTimesCalled > 0 {
-				s.Require().Equal(serviceInstance.AutoUpgradeSetting().Get(),
+				s.Assert().Equal(serviceInstance.AutoUpgradeSetting().Get(),
 					testCase.req.GetConfig().GetEnableAutoUpgrade())
 			}
 		})
