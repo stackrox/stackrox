@@ -661,7 +661,7 @@ type claimExtractor interface {
 func extractCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[string]string, claimExtractor claimExtractor) error {
 	claims := make(map[string]interface{}, 0)
 	if err := claimExtractor.Claims(&claims); err != nil {
-		return errors.Wrap(err, "failed to construct Go map")
+		return errors.Wrap(err, "failed to extract claims")
 	}
 	for fromClaimName, toClaimName := range mappings {
 		val, err := extractClaimFromPath(fromClaimName, claims)
