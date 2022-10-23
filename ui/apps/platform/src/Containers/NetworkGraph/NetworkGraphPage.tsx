@@ -1,4 +1,5 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import { PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
@@ -7,6 +8,8 @@ import NetworkGraph from './NetworkGraph';
 import './NetworkGraphPage.css';
 
 function NetworkGraphPage() {
+    const { detailType, detailId } = useParams();
+
     return (
         <>
             <PageTitle title="Network Graph" />
@@ -18,7 +21,7 @@ function NetworkGraphPage() {
                 </Flex>
             </PageSection>
             <PageSection className="network-graph no-padding">
-                <NetworkGraph />
+                <NetworkGraph detailType={detailType} detailId={detailId} />
             </PageSection>
         </>
     );
