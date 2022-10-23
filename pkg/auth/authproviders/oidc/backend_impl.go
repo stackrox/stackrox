@@ -201,14 +201,9 @@ func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) 
 		return nil, errors.Wrap(err, "fetching updated userinfo")
 	}
 
-	var userInfo userInfoType
-	if err := userInfoFromEndpoint.Claims(&userInfo); err != nil {
-		return nil, errors.Wrap(err, "parsing userinfo")
-	}
-
 	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "extracting external claims from userinfo endpoint response")
 	}
 
 	return &authproviders.AuthResponse{
@@ -666,7 +661,8 @@ func extractCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings m
 	for fromClaimName, toClaimName := range mappings {
 		val, err := extractClaimFromPath(fromClaimName, claims)
 		if err != nil {
-			return err
+			log.Debugf("Failed to extract claim from path: %w", err)
+			continue
 		}
 		if err := addClaimToUserClaims(externalUserClaim, toClaimName, val); err != nil {
 			return err
@@ -709,13 +705,12 @@ func extractClaimFromPath(fromClaimName string, claims map[string]interface{}) (
 		if !ok {
 			return nil, errors.Errorf("no value %q on the path %q", next, fromClaimName)
 		}
-		if i != len(claimPath)-1 {
-			currentNode, ok = nextVal.(map[string]interface{})
-			if !ok {
-				return nil, errors.Errorf("expected next value to be of map type but got %T", nextVal)
-			}
-		} else {
+		if i == len(claimPath)-1 {
 			return nextVal, nil
+		}
+		currentNode, ok = nextVal.(map[string]interface{})
+		if !ok {
+			return nil, errors.Errorf("expected next value to be of map type but got %T", nextVal)
 		}
 	}
 	return nil, nil
