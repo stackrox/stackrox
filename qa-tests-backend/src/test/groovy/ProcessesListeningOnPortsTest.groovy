@@ -248,7 +248,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         assert processesListeningOnPorts
 
-        def list = processesListeningOnPorts.processListeningOnPortWithDeploymentResponseList
+        def list = processesListeningOnPorts.processesListeningOnPortsWithDeploymentList
 
         assert list.size() == 1
         assert list.find { it.deploymentId == "nginx" } != null
@@ -275,8 +275,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
 
         assert processesListeningOnPorts
-
-        //log.info "${processesListeningOnPorts.getProperties().toString()}"
 
         def list = processesListeningOnPorts.processesListeningOnPortsList
 

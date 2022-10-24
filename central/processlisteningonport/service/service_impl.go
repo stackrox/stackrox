@@ -49,7 +49,7 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(context.Context, *
 	}
 
 	result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
-		ProcessListeningOnPortWithDeploymentResponse: []*v1.ProcessListeningOnPortWithDeploymentId{processListeningOnPortWithDeploymentID},
+		ProcessesListeningOnPortsWithDeployment: []*v1.ProcessListeningOnPortWithDeploymentId{processListeningOnPortWithDeploymentID},
 	}
 	return result, nil
 }
