@@ -100,15 +100,23 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, testGrandparent.GetId()))
 
 	var testGrandparents []*storage.TestGrandparent
-	for i := 0; i < 200; i++ {
+	var testGrandparentIds []string
+	for i := 0; i < 12000; i++ {
 		testGrandparent := &storage.TestGrandparent{}
 		s.NoError(testutils.FullInit(testGrandparent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testGrandparents = append(testGrandparents, testGrandparent)
+		testGrandparentIds = append(testGrandparentIds, testGrandparent.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, testGrandparents))
 
 	testGrandparentCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, testGrandparentCount)
+	s.Equal(12000, testGrandparentCount)
+
+	s.NoError(store.DeleteMany(ctx, testGrandparentIds))
+
+	testGrandparentCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, testGrandparentCount)
 }

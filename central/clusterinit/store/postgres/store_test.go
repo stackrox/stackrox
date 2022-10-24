@@ -100,15 +100,23 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, initBundleMeta.GetId()), sac.ErrResourceAccessDenied)
 
 	var initBundleMetas []*storage.InitBundleMeta
-	for i := 0; i < 200; i++ {
+	var initBundleMetaIds []string
+	for i := 0; i < 12000; i++ {
 		initBundleMeta := &storage.InitBundleMeta{}
 		s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		initBundleMetas = append(initBundleMetas, initBundleMeta)
+		initBundleMetaIds = append(initBundleMetaIds, initBundleMeta.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, initBundleMetas))
 
 	initBundleMetaCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, initBundleMetaCount)
+	s.Equal(12000, initBundleMetaCount)
+
+	s.NoError(store.DeleteMany(ctx, initBundleMetaIds))
+
+	initBundleMetaCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, initBundleMetaCount)
 }

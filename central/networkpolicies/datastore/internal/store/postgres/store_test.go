@@ -102,17 +102,25 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, networkPolicy.GetId()))
 
 	var networkPolicys []*storage.NetworkPolicy
-	for i := 0; i < 200; i++ {
+	var networkPolicyIds []string
+	for i := 0; i < 12000; i++ {
 		networkPolicy := &storage.NetworkPolicy{}
 		s.NoError(testutils.FullInit(networkPolicy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkPolicys = append(networkPolicys, networkPolicy)
+		networkPolicyIds = append(networkPolicyIds, networkPolicy.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkPolicys))
 
 	networkPolicyCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, networkPolicyCount)
+	s.Equal(12000, networkPolicyCount)
+
+	s.NoError(store.DeleteMany(ctx, networkPolicyIds))
+
+	networkPolicyCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, networkPolicyCount)
 }
 
 func (s *NetworkpoliciesStoreSuite) TestSACUpsert() {

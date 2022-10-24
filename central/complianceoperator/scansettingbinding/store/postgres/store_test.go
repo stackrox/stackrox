@@ -100,15 +100,23 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorScanSettingBinding.GetId()), sac.ErrResourceAccessDenied)
 
 	var complianceOperatorScanSettingBindings []*storage.ComplianceOperatorScanSettingBinding
-	for i := 0; i < 200; i++ {
+	var complianceOperatorScanSettingBindingIds []string
+	for i := 0; i < 12000; i++ {
 		complianceOperatorScanSettingBinding := &storage.ComplianceOperatorScanSettingBinding{}
 		s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorScanSettingBindings = append(complianceOperatorScanSettingBindings, complianceOperatorScanSettingBinding)
+		complianceOperatorScanSettingBindingIds = append(complianceOperatorScanSettingBindingIds, complianceOperatorScanSettingBinding.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorScanSettingBindings))
 
 	complianceOperatorScanSettingBindingCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, complianceOperatorScanSettingBindingCount)
+	s.Equal(12000, complianceOperatorScanSettingBindingCount)
+
+	s.NoError(store.DeleteMany(ctx, complianceOperatorScanSettingBindingIds))
+
+	complianceOperatorScanSettingBindingCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, complianceOperatorScanSettingBindingCount)
 }

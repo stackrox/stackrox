@@ -100,10 +100,12 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, imageIntegration.GetId()), sac.ErrResourceAccessDenied)
 
 	var imageIntegrations []*storage.ImageIntegration
-	for i := 0; i < 200; i++ {
+	var imageIntegrationIds []string
+	for i := 0; i < 12000; i++ {
 		imageIntegration := &storage.ImageIntegration{}
 		s.NoError(testutils.FullInit(imageIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		imageIntegrations = append(imageIntegrations, imageIntegration)
+		imageIntegrationIds = append(imageIntegrationIds, imageIntegration.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, imageIntegrations))
@@ -113,5 +115,11 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 
 	imageIntegrationCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, imageIntegrationCount)
+	s.Equal(12000, imageIntegrationCount)
+
+	s.NoError(store.DeleteMany(ctx, imageIntegrationIds))
+
+	imageIntegrationCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, imageIntegrationCount)
 }

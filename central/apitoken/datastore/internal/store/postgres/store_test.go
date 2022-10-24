@@ -100,15 +100,23 @@ func (s *ApiTokensStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, tokenMetadata.GetId()), sac.ErrResourceAccessDenied)
 
 	var tokenMetadatas []*storage.TokenMetadata
-	for i := 0; i < 200; i++ {
+	var tokenMetadataIds []string
+	for i := 0; i < 12000; i++ {
 		tokenMetadata := &storage.TokenMetadata{}
 		s.NoError(testutils.FullInit(tokenMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		tokenMetadatas = append(tokenMetadatas, tokenMetadata)
+		tokenMetadataIds = append(tokenMetadataIds, tokenMetadata.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, tokenMetadatas))
 
 	tokenMetadataCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, tokenMetadataCount)
+	s.Equal(12000, tokenMetadataCount)
+
+	s.NoError(store.DeleteMany(ctx, tokenMetadataIds))
+
+	tokenMetadataCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, tokenMetadataCount)
 }

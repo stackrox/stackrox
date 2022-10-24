@@ -125,13 +125,15 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	{{- end }}
 
 	var {{$name}}s []*{{.Type}}
-    for i := 0; i < 200; i++ {
+	var {{$name}}Ids []string
+    for i := 0; i < 12000; i++ {
         {{$name}} := &{{.Type}}{}
         s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
         {{- if .Cycle}}
         {{$name}}.{{.EmbeddedFK}} = nil
         {{- end}}
         {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
+		{{$name}}Ids = append({{$name}}Ids, {{template "paramList" $}})
     }
 
 	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
@@ -144,7 +146,13 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
     s.NoError(err)
-    s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
+    s.Equal(12000, {{.TrimmedType|lowerCamelCase}}Count)
+
+	s.NoError(store.DeleteMany(ctx, {{$name}}Ids))
+
+	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, {{.TrimmedType|lowerCamelCase}}Count)
     {{- end }}
 }
 

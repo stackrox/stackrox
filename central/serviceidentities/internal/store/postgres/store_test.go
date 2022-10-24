@@ -100,10 +100,12 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, serviceIdentity.GetSerialStr()), sac.ErrResourceAccessDenied)
 
 	var serviceIdentitys []*storage.ServiceIdentity
-	for i := 0; i < 200; i++ {
+	var serviceIdentityIds []string
+	for i := 0; i < 12000; i++ {
 		serviceIdentity := &storage.ServiceIdentity{}
 		s.NoError(testutils.FullInit(serviceIdentity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		serviceIdentitys = append(serviceIdentitys, serviceIdentity)
+		serviceIdentityIds = append(serviceIdentityIds, serviceIdentity.GetSerialStr())
 	}
 
 	s.NoError(store.UpsertMany(ctx, serviceIdentitys))
@@ -113,5 +115,11 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 
 	serviceIdentityCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, serviceIdentityCount)
+	s.Equal(12000, serviceIdentityCount)
+
+	s.NoError(store.DeleteMany(ctx, serviceIdentityIds))
+
+	serviceIdentityCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, serviceIdentityCount)
 }

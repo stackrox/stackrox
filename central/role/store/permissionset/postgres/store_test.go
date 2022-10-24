@@ -100,15 +100,23 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, permissionSet.GetId()), sac.ErrResourceAccessDenied)
 
 	var permissionSets []*storage.PermissionSet
-	for i := 0; i < 200; i++ {
+	var permissionSetIds []string
+	for i := 0; i < 12000; i++ {
 		permissionSet := &storage.PermissionSet{}
 		s.NoError(testutils.FullInit(permissionSet, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		permissionSets = append(permissionSets, permissionSet)
+		permissionSetIds = append(permissionSetIds, permissionSet.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, permissionSets))
 
 	permissionSetCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, permissionSetCount)
+	s.Equal(12000, permissionSetCount)
+
+	s.NoError(store.DeleteMany(ctx, permissionSetIds))
+
+	permissionSetCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, permissionSetCount)
 }

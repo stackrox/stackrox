@@ -100,15 +100,23 @@ func (s *NetworkpolicyapplicationundorecordsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, networkPolicyApplicationUndoRecord.GetClusterId()))
 
 	var networkPolicyApplicationUndoRecords []*storage.NetworkPolicyApplicationUndoRecord
-	for i := 0; i < 200; i++ {
+	var networkPolicyApplicationUndoRecordIds []string
+	for i := 0; i < 12000; i++ {
 		networkPolicyApplicationUndoRecord := &storage.NetworkPolicyApplicationUndoRecord{}
 		s.NoError(testutils.FullInit(networkPolicyApplicationUndoRecord, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkPolicyApplicationUndoRecords = append(networkPolicyApplicationUndoRecords, networkPolicyApplicationUndoRecord)
+		networkPolicyApplicationUndoRecordIds = append(networkPolicyApplicationUndoRecordIds, networkPolicyApplicationUndoRecord.GetClusterId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkPolicyApplicationUndoRecords))
 
 	networkPolicyApplicationUndoRecordCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, networkPolicyApplicationUndoRecordCount)
+	s.Equal(12000, networkPolicyApplicationUndoRecordCount)
+
+	s.NoError(store.DeleteMany(ctx, networkPolicyApplicationUndoRecordIds))
+
+	networkPolicyApplicationUndoRecordCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, networkPolicyApplicationUndoRecordCount)
 }

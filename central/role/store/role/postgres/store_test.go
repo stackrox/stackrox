@@ -100,15 +100,23 @@ func (s *RolesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, role.GetName()), sac.ErrResourceAccessDenied)
 
 	var roles []*storage.Role
-	for i := 0; i < 200; i++ {
+	var roleIds []string
+	for i := 0; i < 12000; i++ {
 		role := &storage.Role{}
 		s.NoError(testutils.FullInit(role, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		roles = append(roles, role)
+		roleIds = append(roleIds, role.GetName())
 	}
 
 	s.NoError(store.UpsertMany(ctx, roles))
 
 	roleCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, roleCount)
+	s.Equal(12000, roleCount)
+
+	s.NoError(store.DeleteMany(ctx, roleIds))
+
+	roleCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, roleCount)
 }

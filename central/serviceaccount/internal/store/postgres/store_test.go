@@ -102,17 +102,25 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, serviceAccount.GetId()))
 
 	var serviceAccounts []*storage.ServiceAccount
-	for i := 0; i < 200; i++ {
+	var serviceAccountIds []string
+	for i := 0; i < 12000; i++ {
 		serviceAccount := &storage.ServiceAccount{}
 		s.NoError(testutils.FullInit(serviceAccount, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		serviceAccounts = append(serviceAccounts, serviceAccount)
+		serviceAccountIds = append(serviceAccountIds, serviceAccount.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, serviceAccounts))
 
 	serviceAccountCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, serviceAccountCount)
+	s.Equal(12000, serviceAccountCount)
+
+	s.NoError(store.DeleteMany(ctx, serviceAccountIds))
+
+	serviceAccountCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, serviceAccountCount)
 }
 
 func (s *ServiceAccountsStoreSuite) TestSACUpsert() {

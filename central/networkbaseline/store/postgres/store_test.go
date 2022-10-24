@@ -102,17 +102,25 @@ func (s *NetworkBaselinesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, networkBaseline.GetDeploymentId()))
 
 	var networkBaselines []*storage.NetworkBaseline
-	for i := 0; i < 200; i++ {
+	var networkBaselineIds []string
+	for i := 0; i < 12000; i++ {
 		networkBaseline := &storage.NetworkBaseline{}
 		s.NoError(testutils.FullInit(networkBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkBaselines = append(networkBaselines, networkBaseline)
+		networkBaselineIds = append(networkBaselineIds, networkBaseline.GetDeploymentId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkBaselines))
 
 	networkBaselineCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, networkBaselineCount)
+	s.Equal(12000, networkBaselineCount)
+
+	s.NoError(store.DeleteMany(ctx, networkBaselineIds))
+
+	networkBaselineCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, networkBaselineCount)
 }
 
 func (s *NetworkBaselinesStoreSuite) TestSACUpsert() {

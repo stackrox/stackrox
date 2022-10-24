@@ -100,10 +100,12 @@ func (s *GroupsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, group.GetProps().GetId()), sac.ErrResourceAccessDenied)
 
 	var groups []*storage.Group
-	for i := 0; i < 200; i++ {
+	var groupIds []string
+	for i := 0; i < 12000; i++ {
 		group := &storage.Group{}
 		s.NoError(testutils.FullInit(group, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		groups = append(groups, group)
+		groupIds = append(groupIds, group.GetProps().GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, groups))
@@ -113,5 +115,11 @@ func (s *GroupsStoreSuite) TestStore() {
 
 	groupCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, groupCount)
+	s.Equal(12000, groupCount)
+
+	s.NoError(store.DeleteMany(ctx, groupIds))
+
+	groupCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, groupCount)
 }

@@ -100,10 +100,12 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, externalBackup.GetId()), sac.ErrResourceAccessDenied)
 
 	var externalBackups []*storage.ExternalBackup
-	for i := 0; i < 200; i++ {
+	var externalBackupIds []string
+	for i := 0; i < 12000; i++ {
 		externalBackup := &storage.ExternalBackup{}
 		s.NoError(testutils.FullInit(externalBackup, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		externalBackups = append(externalBackups, externalBackup)
+		externalBackupIds = append(externalBackupIds, externalBackup.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, externalBackups))
@@ -113,5 +115,11 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 
 	externalBackupCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, externalBackupCount)
+	s.Equal(12000, externalBackupCount)
+
+	s.NoError(store.DeleteMany(ctx, externalBackupIds))
+
+	externalBackupCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, externalBackupCount)
 }

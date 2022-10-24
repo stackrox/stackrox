@@ -102,17 +102,25 @@ func (s *PodsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, pod.GetId()))
 
 	var pods []*storage.Pod
-	for i := 0; i < 200; i++ {
+	var podIds []string
+	for i := 0; i < 12000; i++ {
 		pod := &storage.Pod{}
 		s.NoError(testutils.FullInit(pod, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		pods = append(pods, pod)
+		podIds = append(podIds, pod.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, pods))
 
 	podCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, podCount)
+	s.Equal(12000, podCount)
+
+	s.NoError(store.DeleteMany(ctx, podIds))
+
+	podCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, podCount)
 }
 
 func (s *PodsStoreSuite) TestSACUpsert() {

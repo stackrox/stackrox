@@ -101,16 +101,24 @@ func (s *CollectionsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, resourceCollection.GetId()), sac.ErrResourceAccessDenied)
 
 	var resourceCollections []*storage.ResourceCollection
-	for i := 0; i < 200; i++ {
+	var resourceCollectionIds []string
+	for i := 0; i < 12000; i++ {
 		resourceCollection := &storage.ResourceCollection{}
 		s.NoError(testutils.FullInit(resourceCollection, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		resourceCollection.EmbeddedCollections = nil
 		resourceCollections = append(resourceCollections, resourceCollection)
+		resourceCollectionIds = append(resourceCollectionIds, resourceCollection.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, resourceCollections))
 
 	resourceCollectionCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, resourceCollectionCount)
+	s.Equal(12000, resourceCollectionCount)
+
+	s.NoError(store.DeleteMany(ctx, resourceCollectionIds))
+
+	resourceCollectionCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, resourceCollectionCount)
 }

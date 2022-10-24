@@ -100,15 +100,23 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, integrationHealth.GetId()), sac.ErrResourceAccessDenied)
 
 	var integrationHealths []*storage.IntegrationHealth
-	for i := 0; i < 200; i++ {
+	var integrationHealthIds []string
+	for i := 0; i < 12000; i++ {
 		integrationHealth := &storage.IntegrationHealth{}
 		s.NoError(testutils.FullInit(integrationHealth, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		integrationHealths = append(integrationHealths, integrationHealth)
+		integrationHealthIds = append(integrationHealthIds, integrationHealth.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, integrationHealths))
 
 	integrationHealthCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, integrationHealthCount)
+	s.Equal(12000, integrationHealthCount)
+
+	s.NoError(store.DeleteMany(ctx, integrationHealthIds))
+
+	integrationHealthCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, integrationHealthCount)
 }

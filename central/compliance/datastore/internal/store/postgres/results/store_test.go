@@ -102,17 +102,25 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, complianceRunResults.GetRunMetadata().GetRunId()))
 
 	var complianceRunResultss []*storage.ComplianceRunResults
-	for i := 0; i < 200; i++ {
+	var complianceRunResultsIds []string
+	for i := 0; i < 12000; i++ {
 		complianceRunResults := &storage.ComplianceRunResults{}
 		s.NoError(testutils.FullInit(complianceRunResults, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceRunResultss = append(complianceRunResultss, complianceRunResults)
+		complianceRunResultsIds = append(complianceRunResultsIds, complianceRunResults.GetRunMetadata().GetRunId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceRunResultss))
 
 	complianceRunResultsCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, complianceRunResultsCount)
+	s.Equal(12000, complianceRunResultsCount)
+
+	s.NoError(store.DeleteMany(ctx, complianceRunResultsIds))
+
+	complianceRunResultsCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, complianceRunResultsCount)
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACUpsert() {

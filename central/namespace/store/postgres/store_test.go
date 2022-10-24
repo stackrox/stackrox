@@ -102,17 +102,25 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, namespaceMetadata.GetId()))
 
 	var namespaceMetadatas []*storage.NamespaceMetadata
-	for i := 0; i < 200; i++ {
+	var namespaceMetadataIds []string
+	for i := 0; i < 12000; i++ {
 		namespaceMetadata := &storage.NamespaceMetadata{}
 		s.NoError(testutils.FullInit(namespaceMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		namespaceMetadatas = append(namespaceMetadatas, namespaceMetadata)
+		namespaceMetadataIds = append(namespaceMetadataIds, namespaceMetadata.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, namespaceMetadatas))
 
 	namespaceMetadataCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, namespaceMetadataCount)
+	s.Equal(12000, namespaceMetadataCount)
+
+	s.NoError(store.DeleteMany(ctx, namespaceMetadataIds))
+
+	namespaceMetadataCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, namespaceMetadataCount)
 }
 
 func (s *NamespacesStoreSuite) TestSACUpsert() {

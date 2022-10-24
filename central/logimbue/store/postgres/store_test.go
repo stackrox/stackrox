@@ -100,10 +100,12 @@ func (s *LogImbuesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, logImbue.GetId()), sac.ErrResourceAccessDenied)
 
 	var logImbues []*storage.LogImbue
-	for i := 0; i < 200; i++ {
+	var logImbueIds []string
+	for i := 0; i < 12000; i++ {
 		logImbue := &storage.LogImbue{}
 		s.NoError(testutils.FullInit(logImbue, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		logImbues = append(logImbues, logImbue)
+		logImbueIds = append(logImbueIds, logImbue.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, logImbues))
@@ -113,5 +115,11 @@ func (s *LogImbuesStoreSuite) TestStore() {
 
 	logImbueCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, logImbueCount)
+	s.Equal(12000, logImbueCount)
+
+	s.NoError(store.DeleteMany(ctx, logImbueIds))
+
+	logImbueCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, logImbueCount)
 }

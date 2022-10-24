@@ -100,15 +100,23 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId()))
 
 	var networkPolicyApplicationUndoDeploymentRecords []*storage.NetworkPolicyApplicationUndoDeploymentRecord
-	for i := 0; i < 200; i++ {
+	var networkPolicyApplicationUndoDeploymentRecordIds []string
+	for i := 0; i < 12000; i++ {
 		networkPolicyApplicationUndoDeploymentRecord := &storage.NetworkPolicyApplicationUndoDeploymentRecord{}
 		s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkPolicyApplicationUndoDeploymentRecords = append(networkPolicyApplicationUndoDeploymentRecords, networkPolicyApplicationUndoDeploymentRecord)
+		networkPolicyApplicationUndoDeploymentRecordIds = append(networkPolicyApplicationUndoDeploymentRecordIds, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkPolicyApplicationUndoDeploymentRecords))
 
 	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, networkPolicyApplicationUndoDeploymentRecordCount)
+	s.Equal(12000, networkPolicyApplicationUndoDeploymentRecordCount)
+
+	s.NoError(store.DeleteMany(ctx, networkPolicyApplicationUndoDeploymentRecordIds))
+
+	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, networkPolicyApplicationUndoDeploymentRecordCount)
 }

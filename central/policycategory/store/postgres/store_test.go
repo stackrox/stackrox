@@ -100,15 +100,23 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, policyCategory.GetId()), sac.ErrResourceAccessDenied)
 
 	var policyCategorys []*storage.PolicyCategory
-	for i := 0; i < 200; i++ {
+	var policyCategoryIds []string
+	for i := 0; i < 12000; i++ {
 		policyCategory := &storage.PolicyCategory{}
 		s.NoError(testutils.FullInit(policyCategory, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		policyCategorys = append(policyCategorys, policyCategory)
+		policyCategoryIds = append(policyCategoryIds, policyCategory.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, policyCategorys))
 
 	policyCategoryCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, policyCategoryCount)
+	s.Equal(12000, policyCategoryCount)
+
+	s.NoError(store.DeleteMany(ctx, policyCategoryIds))
+
+	policyCategoryCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, policyCategoryCount)
 }

@@ -102,17 +102,25 @@ func (s *ProcessBaselineResultsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, processBaselineResults.GetDeploymentId()))
 
 	var processBaselineResultss []*storage.ProcessBaselineResults
-	for i := 0; i < 200; i++ {
+	var processBaselineResultsIds []string
+	for i := 0; i < 12000; i++ {
 		processBaselineResults := &storage.ProcessBaselineResults{}
 		s.NoError(testutils.FullInit(processBaselineResults, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processBaselineResultss = append(processBaselineResultss, processBaselineResults)
+		processBaselineResultsIds = append(processBaselineResultsIds, processBaselineResults.GetDeploymentId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, processBaselineResultss))
 
 	processBaselineResultsCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, processBaselineResultsCount)
+	s.Equal(12000, processBaselineResultsCount)
+
+	s.NoError(store.DeleteMany(ctx, processBaselineResultsIds))
+
+	processBaselineResultsCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, processBaselineResultsCount)
 }
 
 func (s *ProcessBaselineResultsStoreSuite) TestSACUpsert() {

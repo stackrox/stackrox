@@ -102,17 +102,25 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, alert.GetId()))
 
 	var alerts []*storage.Alert
-	for i := 0; i < 200; i++ {
+	var alertIds []string
+	for i := 0; i < 12000; i++ {
 		alert := &storage.Alert{}
 		s.NoError(testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		alerts = append(alerts, alert)
+		alertIds = append(alertIds, alert.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, alerts))
 
 	alertCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, alertCount)
+	s.Equal(12000, alertCount)
+
+	s.NoError(store.DeleteMany(ctx, alertIds))
+
+	alertCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, alertCount)
 }
 
 func (s *AlertsStoreSuite) TestSACUpsert() {

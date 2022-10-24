@@ -100,15 +100,23 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, nodeComponent.GetId()))
 
 	var nodeComponents []*storage.NodeComponent
-	for i := 0; i < 200; i++ {
+	var nodeComponentIds []string
+	for i := 0; i < 12000; i++ {
 		nodeComponent := &storage.NodeComponent{}
 		s.NoError(testutils.FullInit(nodeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		nodeComponents = append(nodeComponents, nodeComponent)
+		nodeComponentIds = append(nodeComponentIds, nodeComponent.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, nodeComponents))
 
 	nodeComponentCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, nodeComponentCount)
+	s.Equal(12000, nodeComponentCount)
+
+	s.NoError(store.DeleteMany(ctx, nodeComponentIds))
+
+	nodeComponentCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, nodeComponentCount)
 }

@@ -100,15 +100,23 @@ func (s *ComplianceStringsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, complianceStrings.GetId()))
 
 	var complianceStringss []*storage.ComplianceStrings
-	for i := 0; i < 200; i++ {
+	var complianceStringsIds []string
+	for i := 0; i < 12000; i++ {
 		complianceStrings := &storage.ComplianceStrings{}
 		s.NoError(testutils.FullInit(complianceStrings, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceStringss = append(complianceStringss, complianceStrings)
+		complianceStringsIds = append(complianceStringsIds, complianceStrings.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceStringss))
 
 	complianceStringsCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, complianceStringsCount)
+	s.Equal(12000, complianceStringsCount)
+
+	s.NoError(store.DeleteMany(ctx, complianceStringsIds))
+
+	complianceStringsCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, complianceStringsCount)
 }

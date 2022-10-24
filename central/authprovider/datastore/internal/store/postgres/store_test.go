@@ -100,10 +100,12 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, authProvider.GetId()), sac.ErrResourceAccessDenied)
 
 	var authProviders []*storage.AuthProvider
-	for i := 0; i < 200; i++ {
+	var authProviderIds []string
+	for i := 0; i < 12000; i++ {
 		authProvider := &storage.AuthProvider{}
 		s.NoError(testutils.FullInit(authProvider, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		authProviders = append(authProviders, authProvider)
+		authProviderIds = append(authProviderIds, authProvider.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, authProviders))
@@ -113,5 +115,11 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 
 	authProviderCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, authProviderCount)
+	s.Equal(12000, authProviderCount)
+
+	s.NoError(store.DeleteMany(ctx, authProviderIds))
+
+	authProviderCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, authProviderCount)
 }
