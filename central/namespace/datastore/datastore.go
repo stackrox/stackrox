@@ -201,6 +201,7 @@ func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]
 		return b.SearchNamespaces(ctx, query)
 	}
 	namespaces, _, err = b.store.GetMany(ctx, ids)
+	b.updateNamespacePriority(namespaces...)
 	if err != nil {
 		return nil, err
 	}
