@@ -328,7 +328,7 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
 
-	namespaces, err := s.namespaceDataStore.GetNamespaces(readScopesCtx)
+	namespaces, err := s.namespaceDataStore.GetAllNamespaces(readScopesCtx)
 	if err != nil {
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}

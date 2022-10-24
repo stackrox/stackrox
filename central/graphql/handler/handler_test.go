@@ -15,6 +15,7 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	npsMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	processMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
@@ -188,7 +189,7 @@ func executeTestQueryWithVariables(t *testing.T, mocks mocks, query string, vari
 		t.Fatal(err)
 	}
 	req := httptest.NewRequest("POST", "/api/graphql", bytes.NewReader(b)).WithContext(
-		resolvers.SetAuthorizerOverride(context.Background(), allow.Anonymous()))
+		loaders.WithLoaderContext(resolvers.SetAuthorizerOverride(context.Background(), allow.Anonymous())))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	assertNoErrors(t, rec.Body)

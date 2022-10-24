@@ -34,7 +34,7 @@ func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRol
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all clusters")
 	}
-	namespaces, err := namespaceStore.Singleton().GetNamespaces(adminCtx)
+	namespaces, err := namespaceStore.Singleton().GetAllNamespaces(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all namespaces")
 	}
