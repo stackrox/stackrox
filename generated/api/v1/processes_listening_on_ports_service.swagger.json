@@ -182,7 +182,7 @@
     "v1GetProcessesListeningOnPortsWithDeploymentResponse": {
       "type": "object",
       "properties": {
-        "processListeningOnPortWithDeploymentResponse": {
+        "processesListeningOnPortsWithDeployment": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1ProcessListeningOnPortWithDeploymentId"

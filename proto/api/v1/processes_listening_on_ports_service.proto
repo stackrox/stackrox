@@ -27,7 +27,7 @@ message GetProcessesListeningOnPortsResponse {
 }
 
 message GetProcessesListeningOnPortsWithDeploymentResponse {
-    repeated ProcessListeningOnPortWithDeploymentId process_listening_on_port_with_deployment_response = 1;
+    repeated ProcessListeningOnPortWithDeploymentId processes_listening_on_ports_with_deployment = 1;
 }
 
 service ProcessListeningOnPortsService {
