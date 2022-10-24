@@ -103,7 +103,7 @@ require (
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.1.0
 	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af
-	golang.org/x/tools v0.1.12
+	golang.org/x/tools v0.2.0
 	golang.stackrox.io/grpc-http1 v0.2.5
 	google.golang.org/api v0.100.0
 	google.golang.org/genproto v0.0.0-20221014213838-99cd37c6964a
