@@ -2,6 +2,7 @@ import React, { ReactElement, useState, useEffect } from 'react';
 import { Switch } from '@patternfly/react-core';
 
 import {
+    isAutoUpgradeSupported,
     getAutoUpgradeConfig,
     saveAutoUpgradeConfig,
     AutoUpgradeConfig,
@@ -32,7 +33,7 @@ function AutoUpgradeToggle(): ReactElement {
         return <></>;
     }
 
-    if (autoUpgradeConfig.autoUpgradeFeature === 'NOT_SUPPORTED') {
+    if (isAutoUpgradeSupported(autoUpgradeConfig)) {
         return <>Automatic upgrades are disabled for Cloud Service</>;
     }
 

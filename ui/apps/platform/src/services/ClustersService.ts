@@ -103,6 +103,13 @@ export type AutoUpgradeConfig = {
 };
 
 /**
+ * Checks is auto upgrade is supported
+ */
+export function isAutoUpgradeSupported(autoUpgradeConfig: AutoUpgradeConfig) {
+    return autoUpgradeConfig.autoUpgradeFeature !== 'SUPPORTED';
+}
+
+/**
  * Gets the cluster autoupgrade config.
  */
 export function getAutoUpgradeConfig(): Promise<AutoUpgradeConfig> {
