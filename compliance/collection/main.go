@@ -240,7 +240,8 @@ func main() {
 	go manageStream(ctx, client, config, &stoppedSig)
 
 	if features.RHCOSNodeScanning.Enabled() {
-		scanner := nodescanv2.FakeNodeScanner{} // FIXME: Replace with real scanner (ROX-12971)
+		// TODO(ROX-12971): Replace with real scanner
+		scanner := nodescanv2.FakeNodeScanner{}
 		go manageNodeScanLoop(ctx, client, &scanner)
 	}
 
