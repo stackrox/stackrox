@@ -197,6 +197,20 @@ class VulnMgmtSACTest extends BaseSpecification {
 
         then:
         baseVulnCallResult.code == vulnCallResult.code
+        baseSortedVulns = extractCVEsAndSort(baseVulnCallResult.value)
+        sortedVulns = extractCVEsAndSort(vulnCallResult.value)
+        if baseSortedVulns != sortedVulns {
+            for ( v in baseSortedVulns ) {
+                if ( ! sortedVulns.contains(v) ) {
+                    print("Item found in baseVulnCallResult but not in vulnCallResults: " + v.toString())
+                }
+            }
+            for ( v in sortedVulns ) {
+                if ( ! baseSortedVulns.contains(v) ) {
+                    print("Item found in vulnCallResults but not in baseVulnCallResult: " + v.toString())
+                }
+            }
+        }
         extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
 
         baseComponentCallResult.code == componentCallResult.code
@@ -231,6 +245,20 @@ class VulnMgmtSACTest extends BaseSpecification {
 
         then:
         baseVulnCallResult.code == vulnCallResult.code
+        baseSortedVulns = extractCVEsAndSort(baseVulnCallResult.value)
+        sortedVulns = extractCVEsAndSort(vulnCallResult.value)
+        if baseSortedVulns != sortedVulns {
+            for ( v in baseSortedVulns ) {
+                if ( ! sortedVulns.contains(v) ) {
+                    print("Item found in baseVulnCallResult but not in vulnCallResults: " + v.toString())
+                }
+            }
+            for ( v in sortedVulns ) {
+                if ( ! baseSortedVulns.contains(v) ) {
+                    print("Item found in vulnCallResults but not in baseVulnCallResult: " + v.toString())
+                }
+            }
+        }
         extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
 
         baseComponentCallResult.code == componentCallResult.code
