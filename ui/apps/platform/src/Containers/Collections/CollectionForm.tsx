@@ -303,8 +303,8 @@ function CollectionForm({
                                         Add new collection rules
                                     </Title>
                                     <p>
-                                        Target deployments via selector rules. Regular expressions
-                                        (RE2) are supported across all fields.
+                                        Select deployments via rules. You can use regular
+                                        expressions (RE2 syntax).
                                     </p>
                                     <Divider className="pf-u-mb-lg" component="div" />
                                     <RuleSelector
