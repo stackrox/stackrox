@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var (
@@ -64,6 +65,7 @@ func (gc *gormConfig) Connect(dbName string) (*gorm.DB, error) {
 		NamingStrategy:    pgutils.NamingStrategy,
 		CreateBatchSize:   1000,
 		AllowGlobalUpdate: true,
+		Logger:            logger.Discard,
 	})
 	if err != nil {
 		log.WriteToStderrf("fail to connect to central db %v", err)
