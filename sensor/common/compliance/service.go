@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 )
@@ -25,9 +26,10 @@ type Service interface {
 
 // NewService returns the ComplianceServiceServer API for Sensor to use, outputs any received ComplianceReturns
 // to the input channel.
-func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *sensor.AuditEvents, auditLogCollectionManager AuditLogCollectionManager) Service {
+func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *sensor.AuditEvents, auditLogCollectionManager AuditLogCollectionManager, nodeScans chan<- *storage.NodeScanV2) Service {
 	return &serviceImpl{
 		output:                    make(chan *compliance.ComplianceReturn),
+		nodeScans:                 nodeScans,
 		connectionManager:         newConnectionManager(),
 		orchestrator:              orchestrator,
 		auditEvents:               auditEventsInput,

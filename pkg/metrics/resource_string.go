@@ -16,25 +16,26 @@ func _() {
 	_ = x[Namespace-5]
 	_ = x[NetworkPolicy-6]
 	_ = x[Node-7]
-	_ = x[ProviderMetadata-8]
-	_ = x[ComplianceReturn-9]
-	_ = x[ImageIntegration-10]
-	_ = x[ServiceAccount-11]
-	_ = x[PermissionSet-12]
-	_ = x[Role-13]
-	_ = x[RoleBinding-14]
-	_ = x[DeploymentReprocess-15]
-	_ = x[Pod-16]
-	_ = x[ComplianceOperatorCheckResult-17]
-	_ = x[ComplianceOperatorProfile-18]
-	_ = x[ComplianceOperatorScanSettingBinding-19]
-	_ = x[ComplianceOperatorRule-20]
-	_ = x[ComplianceOperatorScan-21]
+	_ = x[NodeScanV2-8]
+	_ = x[ProviderMetadata-9]
+	_ = x[ComplianceReturn-10]
+	_ = x[ImageIntegration-11]
+	_ = x[ServiceAccount-12]
+	_ = x[PermissionSet-13]
+	_ = x[Role-14]
+	_ = x[RoleBinding-15]
+	_ = x[DeploymentReprocess-16]
+	_ = x[Pod-17]
+	_ = x[ComplianceOperatorCheckResult-18]
+	_ = x[ComplianceOperatorProfile-19]
+	_ = x[ComplianceOperatorScanSettingBinding-20]
+	_ = x[ComplianceOperatorRule-21]
+	_ = x[ComplianceOperatorScan-22]
 }
 
-const _Resource_name = "AlertDeploymentProcessIndicatorImageSecretNamespaceNetworkPolicyNodeProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScan"
+const _Resource_name = "AlertDeploymentProcessIndicatorImageSecretNamespaceNetworkPolicyNodeNodeScanV2ProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScan"
 
-var _Resource_index = [...]uint16{0, 5, 15, 31, 36, 42, 51, 64, 68, 84, 100, 116, 130, 143, 147, 158, 177, 180, 209, 234, 270, 292, 314}
+var _Resource_index = [...]uint16{0, 5, 15, 31, 36, 42, 51, 64, 68, 78, 94, 110, 126, 140, 153, 157, 168, 187, 190, 219, 244, 280, 302, 324}
 
 func (i Resource) String() string {
 	if i < 0 || i >= Resource(len(_Resource_index)-1) {

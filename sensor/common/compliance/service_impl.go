@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
@@ -22,6 +23,7 @@ type serviceImpl struct {
 
 	output      chan *compliance.ComplianceReturn
 	auditEvents chan *sensor.AuditEvents
+	nodeScans   chan<- *storage.NodeScanV2
 
 	auditLogCollectionManager AuditLogCollectionManager
 
@@ -143,7 +145,9 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			s.auditEvents <- t.AuditEvents
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
 		case *sensor.MsgFromCompliance_NodeScanV2:
-			log.Infof("NodeScanV2 message received: %v", msg)
+			if features.RHCOSNodeScanning.Enabled() {
+				s.nodeScans <- t.NodeScanV2
+			}
 		}
 	}
 }
