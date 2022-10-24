@@ -347,18 +347,23 @@ class VulnMgmtSACTest extends BaseSpecification {
             for ( v in baseSortedVulns ) {
                 if ( ! sortedVulns.contains(v) ) {
                     log.info("Item found in baseVulnCallResult but not in vulnCallResults: " + v)
+                    def imageQuery = RawQuery.newBuilder().setQuery("CVE:${v}").build()
+                    def tstImages = ImageService.getImages(imageQuery)
+                    for ( img in tstImages ) {
+                        log.debug "Image ${img} has vulnerability ${v}"
+                    }
                 }
             }
             for ( v in sortedVulns ) {
                 if ( ! baseSortedVulns.contains(v) ) {
                     log.info("Item found in vulnCallResults but not in baseVulnCallResult: " + v)
+                    def imageQuery = RawQuery.newBuilder().setQuery("CVE:${v}").build()
+                    def tstImages = ImageService.getImages(imageQuery)
+                    for ( img in tstImages ) {
+                        log.debug "Image ${img} has vulnerability ${v}"
+                    }
                 }
             }
-        }
-        def imageQuery = RawQuery.newBuilder().setQuery("CVE:DSA-4071*").build()
-        def tstImages = ImageService.getImages(imageQuery)
-        for ( img in tstImages ) {
-            log.debug "Image "+img+"has vulnerability DSA-4071"
         }
 
         then:
