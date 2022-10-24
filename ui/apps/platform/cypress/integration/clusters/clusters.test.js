@@ -1,6 +1,6 @@
 import cloneDeep from 'lodash/cloneDeep';
 
-import { selectors } from '../../constants/ClustersPage';
+import { clustersUrl, selectors } from '../../constants/ClustersPage';
 import { clusters as clustersApi } from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import {
@@ -9,6 +9,7 @@ import {
     visitClustersWithFixtureMetadataDatetime,
     visitClusterByNameWithFixture,
     visitClusterByNameWithFixtureMetadataDatetime,
+    visitDashboardWithNoClusters,
 } from '../../helpers/clusters';
 import { hasFeatureFlag } from '../../helpers/features';
 
@@ -46,6 +47,22 @@ describe('Clusters page', () => {
                     `${selectors.clusters.tableHeadingCell}:nth(${index}):contains("${heading}")`
                 );
             });
+        });
+    });
+
+    describe('when no secured clusters are added yet (only applies to Cloud Service)', () => {
+        it('should should redirect to the Clusters page', () => {
+            visitDashboardWithNoClusters();
+
+            cy.url().should('contain', `${clustersUrl}/new`);
+
+            cy.get(
+                'p:contains("You have successfully deployed a Red Hat Advanced Cluster Security platform.")'
+            );
+
+            cy.get('h1:contains("Configure the clusters you want to secure.")');
+
+            cy.get('a:contains("View instructions")');
         });
     });
 });
