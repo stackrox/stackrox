@@ -19,7 +19,13 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
+)
+
+const (
+	defaultPageSize = 1000
 )
 
 var (
@@ -27,7 +33,7 @@ var (
 		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v1.CollectionService/GetCollection",
 			// "/v1.CollectionService/GetCollectionCount", TODO ROX-12625
-			// "/v1.CollectionService/ListCollections", TODO ROX-12623
+			"/v1.CollectionService/ListCollections",
 			// "/v1.CollectionService/ListCollectionSelectors", TODO ROX-12612
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
@@ -154,4 +160,28 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 	}
 
 	return collection, nil
+}
+
+func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListCollectionsRequest) (*v1.ListCollectionsResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, nil
+	}
+
+	// parse query
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	// pagination
+	paginated.FillPagination(parsedQuery, request.GetQuery().GetPagination(), defaultPageSize)
+
+	collections, err := s.datastore.SearchCollections(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.ListCollectionsResponse{
+		Collections: collections,
+	}, nil
 }

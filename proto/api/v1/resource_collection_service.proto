@@ -7,6 +7,7 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "storage/resource_collection.proto";
 import "storage/deployment.proto";
+import "api/v1/search_service.proto";
 
 package v1;
 
@@ -34,6 +35,14 @@ message CreateCollectionResponse {
     storage.ResourceCollection collection = 1;
 }
 
+message ListCollectionsRequest {
+    RawQuery query = 1;
+}
+
+message ListCollectionsResponse {
+    repeated storage.ResourceCollection collections = 1;
+}
+
 service CollectionService {
 
     rpc GetCollection (GetCollectionRequest) returns (GetCollectionResponse) {
@@ -46,6 +55,12 @@ service CollectionService {
         option (google.api.http) = {
             post: "/v1/collections"
             body: "*"
+        };
+    }
+
+    rpc ListCollections (ListCollectionsRequest) returns (ListCollectionsResponse) {
+        option (google.api.http) = {
+            get: "/v1/collections"
         };
     }
 }
