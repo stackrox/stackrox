@@ -33,7 +33,7 @@ var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
 var _ = metadata.Join
 
-func request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(ctx context.Context, marshaler runtime.Marshaler, client ProcessListeningOnPortsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(ctx context.Context, marshaler runtime.Marshaler, client ProcessesListeningOnPortsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetProcessesListeningOnPortsByNamespaceRequest
 	var metadata runtime.ServerMetadata
 
@@ -60,7 +60,7 @@ func request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamesp
 
 }
 
-func local_request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(ctx context.Context, marshaler runtime.Marshaler, server ProcessListeningOnPortsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(ctx context.Context, marshaler runtime.Marshaler, server ProcessesListeningOnPortsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetProcessesListeningOnPortsByNamespaceRequest
 	var metadata runtime.ServerMetadata
 
@@ -87,7 +87,7 @@ func local_request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsBy
 
 }
 
-func request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(ctx context.Context, marshaler runtime.Marshaler, client ProcessListeningOnPortsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(ctx context.Context, marshaler runtime.Marshaler, client ProcessesListeningOnPortsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest
 	var metadata runtime.ServerMetadata
 
@@ -125,7 +125,7 @@ func request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamesp
 
 }
 
-func local_request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(ctx context.Context, marshaler runtime.Marshaler, server ProcessListeningOnPortsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(ctx context.Context, marshaler runtime.Marshaler, server ProcessesListeningOnPortsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest
 	var metadata runtime.ServerMetadata
 
@@ -163,13 +163,13 @@ func local_request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsBy
 
 }
 
-// RegisterProcessListeningOnPortsServiceHandlerServer registers the http handlers for service ProcessListeningOnPortsService to "mux".
-// UnaryRPC     :call ProcessListeningOnPortsServiceServer directly.
+// RegisterProcessesListeningOnPortsServiceHandlerServer registers the http handlers for service ProcessesListeningOnPortsService to "mux".
+// UnaryRPC     :call ProcessesListeningOnPortsServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
-// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterProcessListeningOnPortsServiceHandlerFromEndpoint instead.
-func RegisterProcessListeningOnPortsServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ProcessListeningOnPortsServiceServer) error {
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterProcessesListeningOnPortsServiceHandlerFromEndpoint instead.
+func RegisterProcessesListeningOnPortsServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ProcessesListeningOnPortsServiceServer) error {
 
-	mux.Handle("GET", pattern_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -180,7 +180,7 @@ func RegisterProcessListeningOnPortsServiceHandlerServer(ctx context.Context, mu
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -188,11 +188,11 @@ func RegisterProcessListeningOnPortsServiceHandlerServer(ctx context.Context, mu
 			return
 		}
 
-		forward_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -203,7 +203,7 @@ func RegisterProcessListeningOnPortsServiceHandlerServer(ctx context.Context, mu
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -211,16 +211,16 @@ func RegisterProcessListeningOnPortsServiceHandlerServer(ctx context.Context, mu
 			return
 		}
 
-		forward_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	return nil
 }
 
-// RegisterProcessListeningOnPortsServiceHandlerFromEndpoint is same as RegisterProcessListeningOnPortsServiceHandler but
+// RegisterProcessesListeningOnPortsServiceHandlerFromEndpoint is same as RegisterProcessesListeningOnPortsServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterProcessListeningOnPortsServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterProcessesListeningOnPortsServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.Dial(endpoint, opts...)
 	if err != nil {
 		return err
@@ -240,23 +240,23 @@ func RegisterProcessListeningOnPortsServiceHandlerFromEndpoint(ctx context.Conte
 		}()
 	}()
 
-	return RegisterProcessListeningOnPortsServiceHandler(ctx, mux, conn)
+	return RegisterProcessesListeningOnPortsServiceHandler(ctx, mux, conn)
 }
 
-// RegisterProcessListeningOnPortsServiceHandler registers the http handlers for service ProcessListeningOnPortsService to "mux".
+// RegisterProcessesListeningOnPortsServiceHandler registers the http handlers for service ProcessesListeningOnPortsService to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterProcessListeningOnPortsServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterProcessListeningOnPortsServiceHandlerClient(ctx, mux, NewProcessListeningOnPortsServiceClient(conn))
+func RegisterProcessesListeningOnPortsServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterProcessesListeningOnPortsServiceHandlerClient(ctx, mux, NewProcessesListeningOnPortsServiceClient(conn))
 }
 
-// RegisterProcessListeningOnPortsServiceHandlerClient registers the http handlers for service ProcessListeningOnPortsService
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ProcessListeningOnPortsServiceClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ProcessListeningOnPortsServiceClient"
+// RegisterProcessesListeningOnPortsServiceHandlerClient registers the http handlers for service ProcessesListeningOnPortsService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ProcessesListeningOnPortsServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ProcessesListeningOnPortsServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "ProcessListeningOnPortsServiceClient" to call the correct interceptors.
-func RegisterProcessListeningOnPortsServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ProcessListeningOnPortsServiceClient) error {
+// "ProcessesListeningOnPortsServiceClient" to call the correct interceptors.
+func RegisterProcessesListeningOnPortsServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ProcessesListeningOnPortsServiceClient) error {
 
-	mux.Handle("GET", pattern_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -265,18 +265,18 @@ func RegisterProcessListeningOnPortsServiceHandlerClient(ctx context.Context, mu
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -285,14 +285,14 @@ func RegisterProcessListeningOnPortsServiceHandlerClient(ctx context.Context, mu
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -300,13 +300,13 @@ func RegisterProcessListeningOnPortsServiceHandlerClient(ctx context.Context, mu
 }
 
 var (
-	pattern_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 2}, []string{"v1", "processes_listening_on_ports", "namespace"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 2}, []string{"v1", "processes_listening_on_ports", "namespace"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "processes_listening_on_ports", "namespace", "deployment", "deployment_id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "processes_listening_on_ports", "namespace", "deployment", "deployment_id"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
-	forward_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0 = runtime.ForwardResponseMessage
+	forward_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespace_0 = runtime.ForwardResponseMessage
 
-	forward_ProcessListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0 = runtime.ForwardResponseMessage
+	forward_ProcessesListeningOnPortsService_GetProcessesListeningOnPortsByNamespaceAndDeployment_0 = runtime.ForwardResponseMessage
 )

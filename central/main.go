@@ -97,6 +97,7 @@ import (
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
+	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
@@ -354,6 +355,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		probeUploadService.Singleton(),
 		processIndicatorService.Singleton(),
 		processBaselineService.Singleton(),
+		processListeningOnPorts.Singleton(),
 		rbacService.Singleton(),
 		reportConfigurationService.Singleton(),
 		reportService.Singleton(),
