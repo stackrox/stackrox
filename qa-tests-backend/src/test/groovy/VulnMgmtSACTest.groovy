@@ -194,8 +194,8 @@ class VulnMgmtSACTest extends BaseSpecification {
         assert vulnCallResult.hasNoErrors()
         def componentCallResult = gqlService.Call(componentQuery, [query: ""])
         assert componentCallResult.hasNoErrors()
-        baseSortedVulns = extractCVEsAndSort(baseVulnCallResult.value)
-        sortedVulns = extractCVEsAndSort(vulnCallResult.value)
+        def baseSortedVulns = extractCVEsAndSort(baseVulnCallResult.value)
+        def sortedVulns = extractCVEsAndSort(vulnCallResult.value)
         if ( baseSortedVulns != sortedVulns ) {
             for ( v in baseSortedVulns ) {
                 if ( ! sortedVulns.contains(v) ) {
@@ -242,8 +242,8 @@ class VulnMgmtSACTest extends BaseSpecification {
         assert vulnCallResult.hasNoErrors()
         def componentCallResult = gqlService.Call(componentQuery, [query: ""])
         assert componentCallResult.hasNoErrors()
-        baseSortedVulns = extractCVEsAndSort(baseVulnCallResult.value)
-        sortedVulns = extractCVEsAndSort(vulnCallResult.value)
+        def baseSortedVulns = extractCVEsAndSort(baseVulnCallResult.value)
+        def sortedVulns = extractCVEsAndSort(vulnCallResult.value)
         if ( baseSortedVulns != sortedVulns ) {
             for ( v in baseSortedVulns ) {
                 if ( ! sortedVulns.contains(v) ) {
