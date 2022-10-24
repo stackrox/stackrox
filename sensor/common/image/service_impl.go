@@ -35,6 +35,8 @@ func NewService(imageCache expiringcache.Cache, registryStore *registry.Store) S
 }
 
 type serviceImpl struct {
+	sensor.UnimplementedImageServiceServer
+
 	centralClient v1.ImageServiceClient
 	imageCache    expiringcache.Cache
 	registryStore *registry.Store

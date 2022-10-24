@@ -42,6 +42,8 @@ var (
 )
 
 type service struct {
+	sensor.UnimplementedCertDistributionServiceServer
+
 	namespace string
 
 	k8sAuthnClient authenticationV1.AuthenticationV1Interface

@@ -63,6 +63,8 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	v1.UnimplementedNetworkGraphServiceServer
+
 	clusterFlows   networkFlowDS.ClusterDataStore
 	entities       networkEntityDS.EntityDataStore
 	networkTreeMgr networktree.Manager

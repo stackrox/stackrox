@@ -31,7 +31,9 @@ var (
 	capacityMarginFraction = migrations.CapacityMarginFraction + 0.05
 )
 
-type serviceImpl struct{}
+type serviceImpl struct {
+	v1.UnimplementedCentralHealthServiceServer
+}
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {

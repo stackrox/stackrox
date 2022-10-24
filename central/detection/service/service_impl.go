@@ -74,6 +74,8 @@ func init() {
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	apiV1.UnimplementedDetectionServiceServer
+
 	policySet          detection.PolicySet
 	imageEnricher      enricher.ImageEnricher
 	imageDatastore     imageDatastore.DataStore

@@ -37,6 +37,8 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedProcessServiceServer
+
 	processIndicators processIndicatorStore.DataStore
 	deployments       deploymentStore.DataStore
 	baselines         baselineStore.DataStore

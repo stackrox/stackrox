@@ -8,7 +8,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-type service struct{}
+type service struct {
+	v1.UnimplementedLicenseServiceServer
+}
 
 func newService() *service {
 	return &service{}

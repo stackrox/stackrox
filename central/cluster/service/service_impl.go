@@ -46,6 +46,8 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
+	v1.UnimplementedClustersServiceServer
+
 	datastore          datastore.DataStore
 	riskManager        manager.Manager
 	probeSources       probesources.ProbeSources

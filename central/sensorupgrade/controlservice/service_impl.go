@@ -25,6 +25,8 @@ var (
 )
 
 type service struct {
+	central.UnimplementedSensorUpgradeControlServiceServer
+
 	connectionManager connection.Manager
 }
 

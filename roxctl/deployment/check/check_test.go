@@ -210,7 +210,8 @@ var (
 
 // mock for testing implementing v1.DetectionServiceServer
 type mockDetectionServiceServer struct {
-	v1.DetectionServiceServer
+	v1.UnimplementedDetectionServiceServer
+
 	alerts         []*storage.Alert
 	ignoredObjRefs []string
 }

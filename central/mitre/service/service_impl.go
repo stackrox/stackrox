@@ -24,6 +24,8 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedMitreAttackServiceServer
+
 	store datastore.MitreAttackReadOnlyDataStore
 }
 

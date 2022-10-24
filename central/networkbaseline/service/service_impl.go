@@ -34,6 +34,8 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedNetworkBaselineServiceServer
+
 	datastore datastore.ReadOnlyDataStore
 	manager   manager.Manager
 }

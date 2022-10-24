@@ -33,6 +33,8 @@ var (
 )
 
 type service struct {
+	v1.UnimplementedSensorUpgradeServiceServer
+
 	configDataStore datastore.DataStore
 	manager         connection.Manager
 }

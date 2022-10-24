@@ -27,6 +27,8 @@ var (
 )
 
 type serviceImpl struct {
+	central.UnimplementedDevelopmentServiceServer
+
 	sensorConnectionManager connection.Manager
 	client                  http.Client
 }

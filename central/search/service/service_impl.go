@@ -125,6 +125,8 @@ var (
 
 // SearchService provides APIs for search.
 type serviceImpl struct {
+	v1.UnimplementedSearchServiceServer
+
 	alerts            alertDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
 	images            imageDataStore.DataStore

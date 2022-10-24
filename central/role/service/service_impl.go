@@ -62,6 +62,8 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedRoleServiceServer
+
 	roleDataStore      datastore.DataStore
 	clusterDataStore   clusterDS.DataStore
 	namespaceDataStore namespaceDS.DataStore
