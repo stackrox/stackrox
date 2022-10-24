@@ -60,7 +60,7 @@ const (
         cursorBatchSize = 50
 
     {{- if not .JoinTable }}
-        deleteBatchSize = 25000
+        deleteBatchSize = 10000
     {{- end }}
 )
 

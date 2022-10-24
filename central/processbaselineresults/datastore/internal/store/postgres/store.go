@@ -38,7 +38,7 @@ const (
 	batchSize = 10000
 
 	cursorBatchSize = 50
-	deleteBatchSize = 25000
+	deleteBatchSize = 10000
 )
 
 var (
