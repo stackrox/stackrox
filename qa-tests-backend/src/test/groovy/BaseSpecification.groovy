@@ -2,6 +2,7 @@ import com.jayway.restassured.RestAssured
 import common.Constants
 
 import io.stackrox.proto.api.v1.ApiTokenService
+import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 import java.security.SecureRandom
@@ -23,6 +24,7 @@ import org.slf4j.LoggerFactory
 import services.BaseService
 import services.ClusterService
 import services.ImageIntegrationService
+import services.ImageService
 import services.MetadataService
 import services.RoleService
 
@@ -309,6 +311,11 @@ class BaseSpecification extends Specification {
 
     def cleanup() {
         log.info("Ending testcase")
+        def imageQuery = RawQuery.newBuilder().setQuery("CVE:DSA-4071*").build()
+        def tstImages = ImageService.getImages(imageQuery)
+        for ( img in tstImages ) {
+            log.debug "Image "+img+"has vulnerability DSA-4071"
+        }
 
         Helpers.resetRetryAttempts()
     }

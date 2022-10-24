@@ -1,6 +1,7 @@
 import static org.junit.Assume.assumeFalse
 import groups.BAT
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
+import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.RoleOuterClass
 import org.junit.experimental.categories.Category
 import services.ApiTokenService
@@ -112,7 +113,7 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
     """
 
-    private static final imagesToRescan = [
+    private static final IMAGES_TO_RESCAN = [
         "busybox",
         "busybox:latest",
         "docker.io/istio/proxyv2@sha256:134e99aa9597fdc17305592d13add95e2032609d23b4c508bd5ebd32ed2df47d",
@@ -131,7 +132,8 @@ class VulnMgmtSACTest extends BaseSpecification {
         "docker.io/library/ubuntu:14.04",
         "docker.io/nginx@sha256:63aa22a3a677b20b74f4c977a418576934026d8562c04f6a635f0e71e0686b6d",
         "gcr.io/distroless/base@sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766",
-        "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init@sha256:79f768d28ff9af9fcbf186f9fc1b8e9f88835dfb07be91610a1f17cf862db89e",
+        "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init"+
+            "@sha256:79f768d28ff9af9fcbf186f9fc1b8e9f88835dfb07be91610a1f17cf862db89e",
         "gke.gcr.io/heapster:v1.7.2",
         "k8s.gcr.io/ip-masq-agent-amd64:v2.4.1",
         "library/nginx:1.10",
@@ -202,7 +204,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         "us.gcr.io/stackrox-ci/qa/trigger-policy-violations/more:0.3",
         "us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19",
         "us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19",
-        "us-west1-docker.pkg.dev/stackrox-ci/artifact-registry-test1/nginx:1.17"
+        "us-west1-docker.pkg.dev/stackrox-ci/artifact-registry-test1/nginx:1.17",
     ]
 
     def createReadRole(String name, List<String> resources) {
@@ -222,7 +224,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         // where an image is orphaned
         ImageIntegrationService.addStackroxScannerIntegration()
         ImageService.scanImage(CENTOS_IMAGE)
-        for ( imageToScan in imagesToRescan ) {
+        for ( imageToScan in IMAGES_TO_RESCAN ) {
             ImageService.scanImage(imageToScan)
             log.debug "Scanned Image ${imageToScan}"
         }
@@ -353,8 +355,11 @@ class VulnMgmtSACTest extends BaseSpecification {
                 }
             }
         }
-        def tstimages = ImageService.getImages("CVE:DSA-4071")
-        log.debug "Image "+tstImages
+        def imageQuery = RawQuery.newBuilder().setQuery("CVE:DSA-4071*").build()
+        def tstImages = ImageService.getImages(imageQuery)
+        for ( img in tstImages ) {
+            log.debug "Image "+img+"has vulnerability DSA-4071"
+        }
 
         then:
         baseVulnCallResult.code == vulnCallResult.code
