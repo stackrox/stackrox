@@ -439,6 +439,45 @@ setup_automation_flavor_e2e_cluster() {
     fi
 }
 
+# When working as expected it takes less than one minute for the API server to
+# reach ready. Often times out on OSD. If this call fails in CI we need to
+# identify the source of pull/scheduling latency, request throttling, etc.
+# I tried increasing the timeout from 5m to 20m for OSD but it did not help.
+wait_for_central_db() {
+    info "Waiting for Central DB to start"
+
+    start_time="$(date '+%s')"
+    max_seconds=300
+
+    while true; do
+        central_db_json="$(kubectl -n stackrox get deploy/central-db -o json)"
+        replicas="$(jq '.status.replicas' <<<"$central_db_json")"
+        ready_replicas="$(jq '.status.readyReplicas' <<<"$central_db_json")"
+        curr_time="$(date '+%s')"
+        elapsed_seconds=$(( curr_time - start_time ))
+
+        # Ready case
+        if [[ "$replicas" == 1 && "$ready_replicas" == 1 ]]; then
+            sleep 30
+            break
+        fi
+
+        # Timeout case
+        if (( elapsed_seconds > max_seconds )); then
+            kubectl -n stackrox get pod -o wide
+            kubectl -n stackrox get deploy -o wide
+            echo >&2 "wait_for_api() timeout after $max_seconds seconds."
+            exit 1
+        fi
+
+        # Otherwise report and retry
+        echo "waiting ($elapsed_seconds/$max_seconds)"
+        sleep 5
+    done
+
+    info "Central DB deployment is ready."
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         usage

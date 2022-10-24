@@ -182,12 +182,16 @@ test_upgrade_paths() {
     wait_for_api
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central-db -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
+    wait_for_central_db
 
     checkForRocksAccessScopes
     checkForPostgresAccessScopes
 
-    validate_upgrade "01-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-    collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce-db"
+    validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    # Since we bounced the DB we may see some errors.  Those need to be allowed in this case
+    echo "# postgres was bounced, may see some connection errors" >> "$TEST_ROOT/scripts/ci/logcheck/allowlist-patterns"
+    echo "FATAL: terminating connection due to administrator command (SQLSTATE 57P01)" >> "$TEST_ROOT/scripts/ci/logcheck/allowlist-patterns"
+    collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce-db"
 
     info "Fetching a sensor bundle for cluster 'remote'"
     rm -rf sensor-remote
