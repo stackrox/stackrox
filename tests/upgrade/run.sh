@@ -379,6 +379,9 @@ test_upgrade_paths() {
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
 
+    # required to handle scanner protos
+    go mod tidy
+
     deploy_earlier_central
     wait_for_api
     restore_backup_test
