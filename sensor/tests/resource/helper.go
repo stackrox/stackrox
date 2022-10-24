@@ -54,6 +54,18 @@ type YamlTestFile struct {
 	File string
 }
 
+// awaitedResources slice of resources that need to be awaited
+var awaitedResources = []string{"Service"}
+
+func isAwaitedResource(kind string) bool {
+	for _, k := range awaitedResources {
+		if k == kind {
+			return true
+		}
+	}
+	return false
+}
+
 // objByKind returns the supported dynamic k8s resources that can be created
 // add new ones here to support adding new resource files
 func objByKind(kind string) k8s.Object {
@@ -402,8 +414,14 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 		return nil, err
 	}
 
-	if err := c.r.Create(ctx, obj); err != nil {
-		return nil, err
+	if isAwaitedResource(file.Kind) {
+		if err := execWithRetry(5*time.Hour, createResourceFunc(ctx, c.r, obj)); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := c.r.Create(ctx, obj); err != nil {
+			return nil, err
+		}
 	}
 
 	if file.Kind == "Deployment" || file.Kind == "Pod" {
@@ -413,8 +431,47 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 	}
 
 	return func() error {
+		if isAwaitedResource(file.Kind) {
+			err := c.r.Delete(ctx, obj)
+			if err != nil {
+				return err
+			}
+
+			// wait for deletion to be finished
+			if err := wait.For(conditions.New(c.r).ResourceDeleted(obj)); err != nil {
+				fmt.Println("failed to wait for resource deletion")
+			}
+			return nil
+		}
 		return c.r.Delete(ctx, obj)
 	}, nil
+}
+
+type waitFunc func(time.Duration) error
+
+func createResourceFunc(ctx context.Context, r *resources.Resources, obj k8s.Object) func(time.Duration) error {
+	return func(sleepTime time.Duration) error {
+		if err := r.Create(ctx, obj); err != nil {
+			time.Sleep(sleepTime)
+			return err
+		}
+		return nil
+	}
+}
+
+func execWithRetry(timeout time.Duration, fn waitFunc) error {
+	afterTimeout := time.After(timeout)
+	var err error
+	for {
+		select {
+		case <-afterTimeout:
+			return errors.Wrap(err, "timeout reached waiting for resource")
+		default:
+			if err = fn(2 * time.Second); err == nil {
+				return nil
+			}
+		}
+	}
 }
 
 type condition func(event *central.SensorEvent) bool
