@@ -85,7 +85,7 @@ function CollectionsTable({
     const onSearchInputChange = useMemo(
         () =>
             debounce(
-                (value: string) => setSearchFilter({ Collection: value }),
+                (value: string) => setSearchFilter({ 'Collection Name': value }),
                 SEARCH_INPUT_REQUEST_DELAY
             ),
         [setSearchFilter]

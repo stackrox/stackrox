@@ -10,6 +10,7 @@ import {
     isByLabelSelector,
     isByNameField,
     isByLabelField,
+    CollectionSlim,
 } from './types';
 
 const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
@@ -31,12 +32,14 @@ const LABEL_SEPARATOR = '=';
  * of a `Collection` that can be supported by the current UI controls. If any incompatibilities are detected
  * it will return a list of validation errors to the caller.
  */
-export function parseCollection(data: CollectionResponse): Collection | AggregateError {
+export function parseCollection(
+    data: CollectionResponse & { embedded: CollectionSlim[] }
+): Collection | AggregateError {
     const collection: Collection = {
         name: data.name,
         description: data.description,
         inUse: data.inUse,
-        embeddedCollectionIds: data.embeddedCollections.map(({ id }) => id),
+        embeddedCollections: data.embedded,
         resourceSelectors: {
             Deployment: {},
             Namespace: {},

@@ -185,10 +185,13 @@ export function flattenFilterValue<UndefinedFallback>(
 export function getListQueryParams(
     searchFilter: SearchFilter,
     sortOption: ApiSortOption,
-    page: number,
-    pageSize: number
+    page?: number,
+    pageSize?: number
 ): string {
-    const offset = page > 0 ? page * pageSize : 0;
+    let offset: number | undefined;
+    if (typeof page === 'number' && typeof pageSize === 'number') {
+        offset = page > 0 ? page * pageSize : 0;
+    }
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     return qs.stringify(
         {

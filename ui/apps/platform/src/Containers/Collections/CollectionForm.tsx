@@ -44,7 +44,7 @@ import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
-import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
+import { Collection, CollectionSlim, ScopedResourceSelector, SelectorEntityType } from './types';
 
 export type CollectionFormProps = {
     hasWriteAccessForCollections: boolean;
@@ -114,13 +114,19 @@ function CollectionForm({
     const [isDeleting, setIsDeleting] = useState(false);
     const { toasts, addToast, removeToast } = useToasts();
 
-    const { values, isValid, errors, handleChange, handleBlur, setFieldValue } = useFormik({
+    const { values, errors, handleChange, handleBlur, setFieldValue } = useFormik({
         initialValues: initialData,
         onSubmit: () => {},
         validationSchema: yup.object({
             name: yup.string().trim().required(),
             description: yup.string(),
-            embeddedCollectionIds: yup.array(yup.string()),
+            embeddedCollections: yup.array(
+                yup.object().shape({
+                    id: yup.string().trim().required(),
+                    name: yup.string().trim().required(),
+                    description: yup.string(),
+                })
+            ),
             resourceSelectors: yup.object().shape({
                 Deployment: yupResourceSelectorObject(),
                 Namespace: yupResourceSelectorObject(),
@@ -128,9 +134,6 @@ function CollectionForm({
             }),
         }),
     });
-
-    // eslint-disable-next-line no-console
-    console.log('formik change', isValid, values, errors);
 
     useEffect(() => {
         toggleDrawer(useInlineDrawer);
@@ -180,6 +183,9 @@ function CollectionForm({
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector
     ) => setFieldValue(`resourceSelectors.${entityType}`, scopedResourceSelector);
+
+    const onEmbeddedCollectionsChange = (newCollections: CollectionSlim[]) =>
+        setFieldValue('embeddedCollections', newCollections);
 
     return (
         <>
@@ -375,10 +381,20 @@ function CollectionForm({
                                     />
                                 </Flex>
 
-                                <div className="pf-u-background-color-100 pf-u-p-lg">
-                                    <Title headingLevel="h2">Attach existing collections</Title>
-                                    <CollectionAttacher />
-                                </div>
+                                <Flex
+                                    className="pf-u-background-color-100 pf-u-p-lg"
+                                    direction={{ default: 'column' }}
+                                    spaceItems={{ default: 'spaceItemsMd' }}
+                                >
+                                    <Title className="pf-u-mb-xs" headingLevel="h2">
+                                        Attach existing collections
+                                    </Title>
+                                    <p>Extend this collection by attaching other sets.</p>
+                                    <CollectionAttacher
+                                        initialEmbeddedCollections={initialData.embeddedCollections}
+                                        onSelectionChange={onEmbeddedCollectionsChange}
+                                    />
+                                </Flex>
                             </Flex>
                             {action.type !== 'view' && (
                                 <div className="pf-u-background-color-100 pf-u-p-lg pf-u-py-md">
