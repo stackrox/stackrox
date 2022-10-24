@@ -3,7 +3,12 @@ package nodescanv2
 import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // FakeNodeScanner can be used to send fake messages that would be emitted by NodeScanV2
