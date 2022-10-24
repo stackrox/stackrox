@@ -48,7 +48,6 @@ func configWith(v bool) *storage.SensorUpgradeConfig {
 	return &storage.SensorUpgradeConfig{EnableAutoUpgrade: v}
 }
 
-
 func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 	testCases := map[string]struct {
 		req               *v1.UpdateSensorUpgradeConfigRequest
