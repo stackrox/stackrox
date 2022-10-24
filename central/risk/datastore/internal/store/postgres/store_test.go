@@ -103,7 +103,7 @@ func (s *RisksStoreSuite) TestStore() {
 
 	var risks []*storage.Risk
 	var riskIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		risk := &storage.Risk{}
 		s.NoError(testutils.FullInit(risk, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		risks = append(risks, risk)
@@ -114,7 +114,7 @@ func (s *RisksStoreSuite) TestStore() {
 
 	riskCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, riskCount)
+	s.Equal(200, riskCount)
 
 	s.NoError(store.DeleteMany(ctx, riskIds))
 

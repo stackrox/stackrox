@@ -101,7 +101,7 @@ func (s *ComplianceOperatorScansStoreSuite) TestStore() {
 
 	var complianceOperatorScans []*storage.ComplianceOperatorScan
 	var complianceOperatorScanIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		complianceOperatorScan := &storage.ComplianceOperatorScan{}
 		s.NoError(testutils.FullInit(complianceOperatorScan, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorScans = append(complianceOperatorScans, complianceOperatorScan)
@@ -112,7 +112,7 @@ func (s *ComplianceOperatorScansStoreSuite) TestStore() {
 
 	complianceOperatorScanCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, complianceOperatorScanCount)
+	s.Equal(200, complianceOperatorScanCount)
 
 	s.NoError(store.DeleteMany(ctx, complianceOperatorScanIds))
 

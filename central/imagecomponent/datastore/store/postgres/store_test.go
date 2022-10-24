@@ -101,7 +101,7 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 
 	var imageComponents []*storage.ImageComponent
 	var imageComponentIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		imageComponent := &storage.ImageComponent{}
 		s.NoError(testutils.FullInit(imageComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		imageComponents = append(imageComponents, imageComponent)
@@ -112,7 +112,7 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 
 	imageComponentCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, imageComponentCount)
+	s.Equal(200, imageComponentCount)
 
 	s.NoError(store.DeleteMany(ctx, imageComponentIds))
 

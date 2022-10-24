@@ -101,7 +101,7 @@ func (s *ApiTokensStoreSuite) TestStore() {
 
 	var tokenMetadatas []*storage.TokenMetadata
 	var tokenMetadataIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		tokenMetadata := &storage.TokenMetadata{}
 		s.NoError(testutils.FullInit(tokenMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		tokenMetadatas = append(tokenMetadatas, tokenMetadata)
@@ -112,7 +112,7 @@ func (s *ApiTokensStoreSuite) TestStore() {
 
 	tokenMetadataCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, tokenMetadataCount)
+	s.Equal(200, tokenMetadataCount)
 
 	s.NoError(store.DeleteMany(ctx, tokenMetadataIds))
 

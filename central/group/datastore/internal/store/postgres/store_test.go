@@ -101,7 +101,7 @@ func (s *GroupsStoreSuite) TestStore() {
 
 	var groups []*storage.Group
 	var groupIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		group := &storage.Group{}
 		s.NoError(testutils.FullInit(group, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		groups = append(groups, group)
@@ -115,7 +115,7 @@ func (s *GroupsStoreSuite) TestStore() {
 
 	groupCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, groupCount)
+	s.Equal(200, groupCount)
 
 	s.NoError(store.DeleteMany(ctx, groupIds))
 

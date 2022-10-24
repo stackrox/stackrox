@@ -101,7 +101,7 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 
 	var clusterHealthStatuss []*storage.ClusterHealthStatus
 	var clusterHealthStatusIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		clusterHealthStatus := &storage.ClusterHealthStatus{}
 		s.NoError(testutils.FullInit(clusterHealthStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		clusterHealthStatuss = append(clusterHealthStatuss, clusterHealthStatus)
@@ -112,7 +112,7 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 
 	clusterHealthStatusCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, clusterHealthStatusCount)
+	s.Equal(200, clusterHealthStatusCount)
 
 	s.NoError(store.DeleteMany(ctx, clusterHealthStatusIds))
 

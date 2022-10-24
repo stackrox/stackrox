@@ -103,7 +103,7 @@ func (s *ClustersStoreSuite) TestStore() {
 
 	var clusters []*storage.Cluster
 	var clusterIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		cluster := &storage.Cluster{}
 		s.NoError(testutils.FullInit(cluster, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		clusters = append(clusters, cluster)
@@ -114,7 +114,7 @@ func (s *ClustersStoreSuite) TestStore() {
 
 	clusterCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, clusterCount)
+	s.Equal(200, clusterCount)
 
 	s.NoError(store.DeleteMany(ctx, clusterIds))
 

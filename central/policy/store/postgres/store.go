@@ -33,10 +33,10 @@ const (
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
+	batchSize = 5000
 
 	cursorBatchSize = 50
-	deleteBatchSize = 10000
+	deleteBatchSize = 5000
 )
 
 var (
@@ -598,7 +598,7 @@ func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.
 	return New(db)
 }
 
-//// Stubs for satisfying legacy interfaces
+// // Stubs for satisfying legacy interfaces
 func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
 	return errors.New("unimplemented")
 }

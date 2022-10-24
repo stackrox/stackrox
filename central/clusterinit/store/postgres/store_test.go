@@ -101,7 +101,7 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 
 	var initBundleMetas []*storage.InitBundleMeta
 	var initBundleMetaIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		initBundleMeta := &storage.InitBundleMeta{}
 		s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		initBundleMetas = append(initBundleMetas, initBundleMeta)
@@ -112,7 +112,7 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 
 	initBundleMetaCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, initBundleMetaCount)
+	s.Equal(200, initBundleMetaCount)
 
 	s.NoError(store.DeleteMany(ctx, initBundleMetaIds))
 

@@ -101,7 +101,7 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 
 	var integrationHealths []*storage.IntegrationHealth
 	var integrationHealthIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		integrationHealth := &storage.IntegrationHealth{}
 		s.NoError(testutils.FullInit(integrationHealth, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		integrationHealths = append(integrationHealths, integrationHealth)
@@ -112,7 +112,7 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 
 	integrationHealthCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, integrationHealthCount)
+	s.Equal(200, integrationHealthCount)
 
 	s.NoError(store.DeleteMany(ctx, integrationHealthIds))
 

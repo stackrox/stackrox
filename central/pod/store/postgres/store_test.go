@@ -103,7 +103,7 @@ func (s *PodsStoreSuite) TestStore() {
 
 	var pods []*storage.Pod
 	var podIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		pod := &storage.Pod{}
 		s.NoError(testutils.FullInit(pod, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		pods = append(pods, pod)
@@ -114,7 +114,7 @@ func (s *PodsStoreSuite) TestStore() {
 
 	podCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, podCount)
+	s.Equal(200, podCount)
 
 	s.NoError(store.DeleteMany(ctx, podIds))
 

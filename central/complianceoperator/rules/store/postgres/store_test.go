@@ -101,7 +101,7 @@ func (s *ComplianceOperatorRulesStoreSuite) TestStore() {
 
 	var complianceOperatorRules []*storage.ComplianceOperatorRule
 	var complianceOperatorRuleIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		complianceOperatorRule := &storage.ComplianceOperatorRule{}
 		s.NoError(testutils.FullInit(complianceOperatorRule, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorRules = append(complianceOperatorRules, complianceOperatorRule)
@@ -112,7 +112,7 @@ func (s *ComplianceOperatorRulesStoreSuite) TestStore() {
 
 	complianceOperatorRuleCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, complianceOperatorRuleCount)
+	s.Equal(200, complianceOperatorRuleCount)
 
 	s.NoError(store.DeleteMany(ctx, complianceOperatorRuleIds))
 

@@ -101,7 +101,7 @@ func (s *LogImbuesStoreSuite) TestStore() {
 
 	var logImbues []*storage.LogImbue
 	var logImbueIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		logImbue := &storage.LogImbue{}
 		s.NoError(testutils.FullInit(logImbue, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		logImbues = append(logImbues, logImbue)
@@ -115,7 +115,7 @@ func (s *LogImbuesStoreSuite) TestStore() {
 
 	logImbueCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, logImbueCount)
+	s.Equal(200, logImbueCount)
 
 	s.NoError(store.DeleteMany(ctx, logImbueIds))
 

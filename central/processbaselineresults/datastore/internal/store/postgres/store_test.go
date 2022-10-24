@@ -103,7 +103,7 @@ func (s *ProcessBaselineResultsStoreSuite) TestStore() {
 
 	var processBaselineResultss []*storage.ProcessBaselineResults
 	var processBaselineResultsIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		processBaselineResults := &storage.ProcessBaselineResults{}
 		s.NoError(testutils.FullInit(processBaselineResults, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processBaselineResultss = append(processBaselineResultss, processBaselineResults)
@@ -114,7 +114,7 @@ func (s *ProcessBaselineResultsStoreSuite) TestStore() {
 
 	processBaselineResultsCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, processBaselineResultsCount)
+	s.Equal(200, processBaselineResultsCount)
 
 	s.NoError(store.DeleteMany(ctx, processBaselineResultsIds))
 

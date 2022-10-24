@@ -103,7 +103,7 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 
 	var k8SRoleBindings []*storage.K8SRoleBinding
 	var k8SRoleBindingIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		k8SRoleBinding := &storage.K8SRoleBinding{}
 		s.NoError(testutils.FullInit(k8SRoleBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		k8SRoleBindings = append(k8SRoleBindings, k8SRoleBinding)
@@ -114,7 +114,7 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 
 	k8SRoleBindingCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, k8SRoleBindingCount)
+	s.Equal(200, k8SRoleBindingCount)
 
 	s.NoError(store.DeleteMany(ctx, k8SRoleBindingIds))
 

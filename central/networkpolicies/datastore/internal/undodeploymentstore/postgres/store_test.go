@@ -101,7 +101,7 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 
 	var networkPolicyApplicationUndoDeploymentRecords []*storage.NetworkPolicyApplicationUndoDeploymentRecord
 	var networkPolicyApplicationUndoDeploymentRecordIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		networkPolicyApplicationUndoDeploymentRecord := &storage.NetworkPolicyApplicationUndoDeploymentRecord{}
 		s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkPolicyApplicationUndoDeploymentRecords = append(networkPolicyApplicationUndoDeploymentRecords, networkPolicyApplicationUndoDeploymentRecord)
@@ -112,7 +112,7 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 
 	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, networkPolicyApplicationUndoDeploymentRecordCount)
+	s.Equal(200, networkPolicyApplicationUndoDeploymentRecordCount)
 
 	s.NoError(store.DeleteMany(ctx, networkPolicyApplicationUndoDeploymentRecordIds))
 

@@ -101,7 +101,7 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 
 	var signatureIntegrations []*storage.SignatureIntegration
 	var signatureIntegrationIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		signatureIntegration := &storage.SignatureIntegration{}
 		s.NoError(testutils.FullInit(signatureIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		signatureIntegrations = append(signatureIntegrations, signatureIntegration)
@@ -112,7 +112,7 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 
 	signatureIntegrationCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, signatureIntegrationCount)
+	s.Equal(200, signatureIntegrationCount)
 
 	s.NoError(store.DeleteMany(ctx, signatureIntegrationIds))
 

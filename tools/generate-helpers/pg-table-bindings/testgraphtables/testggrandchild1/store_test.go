@@ -101,7 +101,7 @@ func (s *TestGGrandChild1StoreSuite) TestStore() {
 
 	var testGGrandChild1s []*storage.TestGGrandChild1
 	var testGGrandChild1Ids []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		testGGrandChild1 := &storage.TestGGrandChild1{}
 		s.NoError(testutils.FullInit(testGGrandChild1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testGGrandChild1s = append(testGGrandChild1s, testGGrandChild1)
@@ -112,7 +112,7 @@ func (s *TestGGrandChild1StoreSuite) TestStore() {
 
 	testGGrandChild1Count, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, testGGrandChild1Count)
+	s.Equal(200, testGGrandChild1Count)
 
 	s.NoError(store.DeleteMany(ctx, testGGrandChild1Ids))
 

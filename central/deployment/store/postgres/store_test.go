@@ -103,7 +103,7 @@ func (s *DeploymentsStoreSuite) TestStore() {
 
 	var deployments []*storage.Deployment
 	var deploymentIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		deployment := &storage.Deployment{}
 		s.NoError(testutils.FullInit(deployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		deployments = append(deployments, deployment)
@@ -114,7 +114,7 @@ func (s *DeploymentsStoreSuite) TestStore() {
 
 	deploymentCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, deploymentCount)
+	s.Equal(200, deploymentCount)
 
 	s.NoError(store.DeleteMany(ctx, deploymentIds))
 

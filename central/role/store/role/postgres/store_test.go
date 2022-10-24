@@ -101,7 +101,7 @@ func (s *RolesStoreSuite) TestStore() {
 
 	var roles []*storage.Role
 	var roleIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		role := &storage.Role{}
 		s.NoError(testutils.FullInit(role, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		roles = append(roles, role)
@@ -112,7 +112,7 @@ func (s *RolesStoreSuite) TestStore() {
 
 	roleCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, roleCount)
+	s.Equal(200, roleCount)
 
 	s.NoError(store.DeleteMany(ctx, roleIds))
 

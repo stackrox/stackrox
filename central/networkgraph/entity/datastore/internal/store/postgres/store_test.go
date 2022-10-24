@@ -101,7 +101,7 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 
 	var networkEntitys []*storage.NetworkEntity
 	var networkEntityIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		networkEntity := &storage.NetworkEntity{}
 		s.NoError(testutils.FullInit(networkEntity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkEntitys = append(networkEntitys, networkEntity)
@@ -112,7 +112,7 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 
 	networkEntityCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, networkEntityCount)
+	s.Equal(200, networkEntityCount)
 
 	s.NoError(store.DeleteMany(ctx, networkEntityIds))
 

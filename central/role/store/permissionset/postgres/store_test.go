@@ -101,7 +101,7 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 
 	var permissionSets []*storage.PermissionSet
 	var permissionSetIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		permissionSet := &storage.PermissionSet{}
 		s.NoError(testutils.FullInit(permissionSet, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		permissionSets = append(permissionSets, permissionSet)
@@ -112,7 +112,7 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 
 	permissionSetCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, permissionSetCount)
+	s.Equal(200, permissionSetCount)
 
 	s.NoError(store.DeleteMany(ctx, permissionSetIds))
 

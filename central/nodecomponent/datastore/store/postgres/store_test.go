@@ -101,7 +101,7 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 
 	var nodeComponents []*storage.NodeComponent
 	var nodeComponentIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		nodeComponent := &storage.NodeComponent{}
 		s.NoError(testutils.FullInit(nodeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		nodeComponents = append(nodeComponents, nodeComponent)
@@ -112,7 +112,7 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 
 	nodeComponentCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, nodeComponentCount)
+	s.Equal(200, nodeComponentCount)
 
 	s.NoError(store.DeleteMany(ctx, nodeComponentIds))
 

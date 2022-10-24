@@ -101,7 +101,7 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 
 	var networkGraphConfigs []*storage.NetworkGraphConfig
 	var networkGraphConfigIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		networkGraphConfig := &storage.NetworkGraphConfig{}
 		s.NoError(testutils.FullInit(networkGraphConfig, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkGraphConfigs = append(networkGraphConfigs, networkGraphConfig)
@@ -112,7 +112,7 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 
 	networkGraphConfigCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, networkGraphConfigCount)
+	s.Equal(200, networkGraphConfigCount)
 
 	s.NoError(store.DeleteMany(ctx, networkGraphConfigIds))
 

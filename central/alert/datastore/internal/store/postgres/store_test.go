@@ -103,7 +103,7 @@ func (s *AlertsStoreSuite) TestStore() {
 
 	var alerts []*storage.Alert
 	var alertIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		alert := &storage.Alert{}
 		s.NoError(testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		alerts = append(alerts, alert)
@@ -114,7 +114,7 @@ func (s *AlertsStoreSuite) TestStore() {
 
 	alertCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, alertCount)
+	s.Equal(200, alertCount)
 
 	s.NoError(store.DeleteMany(ctx, alertIds))
 

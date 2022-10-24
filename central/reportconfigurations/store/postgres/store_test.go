@@ -101,7 +101,7 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 
 	var reportConfigurations []*storage.ReportConfiguration
 	var reportConfigurationIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		reportConfiguration := &storage.ReportConfiguration{}
 		s.NoError(testutils.FullInit(reportConfiguration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		reportConfigurations = append(reportConfigurations, reportConfiguration)
@@ -112,7 +112,7 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 
 	reportConfigurationCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, reportConfigurationCount)
+	s.Equal(200, reportConfigurationCount)
 
 	s.NoError(store.DeleteMany(ctx, reportConfigurationIds))
 

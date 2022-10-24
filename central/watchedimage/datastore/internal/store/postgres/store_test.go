@@ -101,7 +101,7 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 
 	var watchedImages []*storage.WatchedImage
 	var watchedImageIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		watchedImage := &storage.WatchedImage{}
 		s.NoError(testutils.FullInit(watchedImage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		watchedImages = append(watchedImages, watchedImage)
@@ -112,7 +112,7 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 
 	watchedImageCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, watchedImageCount)
+	s.Equal(200, watchedImageCount)
 
 	s.NoError(store.DeleteMany(ctx, watchedImageIds))
 

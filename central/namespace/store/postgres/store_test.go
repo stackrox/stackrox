@@ -103,7 +103,7 @@ func (s *NamespacesStoreSuite) TestStore() {
 
 	var namespaceMetadatas []*storage.NamespaceMetadata
 	var namespaceMetadataIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		namespaceMetadata := &storage.NamespaceMetadata{}
 		s.NoError(testutils.FullInit(namespaceMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		namespaceMetadatas = append(namespaceMetadatas, namespaceMetadata)
@@ -114,7 +114,7 @@ func (s *NamespacesStoreSuite) TestStore() {
 
 	namespaceMetadataCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, namespaceMetadataCount)
+	s.Equal(200, namespaceMetadataCount)
 
 	s.NoError(store.DeleteMany(ctx, namespaceMetadataIds))
 

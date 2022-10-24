@@ -101,7 +101,7 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 
 	var policyCategorys []*storage.PolicyCategory
 	var policyCategoryIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		policyCategory := &storage.PolicyCategory{}
 		s.NoError(testutils.FullInit(policyCategory, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		policyCategorys = append(policyCategorys, policyCategory)
@@ -112,7 +112,7 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 
 	policyCategoryCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, policyCategoryCount)
+	s.Equal(200, policyCategoryCount)
 
 	s.NoError(store.DeleteMany(ctx, policyCategoryIds))
 

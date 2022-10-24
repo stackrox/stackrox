@@ -103,7 +103,7 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 
 	var networkPolicys []*storage.NetworkPolicy
 	var networkPolicyIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		networkPolicy := &storage.NetworkPolicy{}
 		s.NoError(testutils.FullInit(networkPolicy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkPolicys = append(networkPolicys, networkPolicy)
@@ -114,7 +114,7 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 
 	networkPolicyCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, networkPolicyCount)
+	s.Equal(200, networkPolicyCount)
 
 	s.NoError(store.DeleteMany(ctx, networkPolicyIds))
 

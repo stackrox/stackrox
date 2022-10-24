@@ -101,7 +101,7 @@ func (s *ImageCvesStoreSuite) TestStore() {
 
 	var imageCVEs []*storage.ImageCVE
 	var imageCVEIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		imageCVE := &storage.ImageCVE{}
 		s.NoError(testutils.FullInit(imageCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		imageCVEs = append(imageCVEs, imageCVE)
@@ -112,7 +112,7 @@ func (s *ImageCvesStoreSuite) TestStore() {
 
 	imageCVECount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, imageCVECount)
+	s.Equal(200, imageCVECount)
 
 	s.NoError(store.DeleteMany(ctx, imageCVEIds))
 

@@ -126,7 +126,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
 	var {{$name}}s []*{{.Type}}
 	var {{$name}}Ids []string
-    for i := 0; i < 12000; i++ {
+    for i := 0; i < 200; i++ {
         {{$name}} := &{{.Type}}{}
         s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
         {{- if .Cycle}}
@@ -146,7 +146,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
     s.NoError(err)
-    s.Equal(12000, {{.TrimmedType|lowerCamelCase}}Count)
+    s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
 
 	s.NoError(store.DeleteMany(ctx, {{$name}}Ids))
 

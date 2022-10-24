@@ -103,7 +103,7 @@ func (s *SecretsStoreSuite) TestStore() {
 
 	var secrets []*storage.Secret
 	var secretIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		secret := &storage.Secret{}
 		s.NoError(testutils.FullInit(secret, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		secrets = append(secrets, secret)
@@ -114,7 +114,7 @@ func (s *SecretsStoreSuite) TestStore() {
 
 	secretCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, secretCount)
+	s.Equal(200, secretCount)
 
 	s.NoError(store.DeleteMany(ctx, secretIds))
 

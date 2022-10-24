@@ -101,7 +101,7 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 
 	var imageIntegrations []*storage.ImageIntegration
 	var imageIntegrationIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		imageIntegration := &storage.ImageIntegration{}
 		s.NoError(testutils.FullInit(imageIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		imageIntegrations = append(imageIntegrations, imageIntegration)
@@ -115,7 +115,7 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 
 	imageIntegrationCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, imageIntegrationCount)
+	s.Equal(200, imageIntegrationCount)
 
 	s.NoError(store.DeleteMany(ctx, imageIntegrationIds))
 

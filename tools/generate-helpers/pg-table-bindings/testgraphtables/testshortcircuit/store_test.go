@@ -101,7 +101,7 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 
 	var testShortCircuits []*storage.TestShortCircuit
 	var testShortCircuitIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		testShortCircuit := &storage.TestShortCircuit{}
 		s.NoError(testutils.FullInit(testShortCircuit, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testShortCircuits = append(testShortCircuits, testShortCircuit)
@@ -112,7 +112,7 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 
 	testShortCircuitCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, testShortCircuitCount)
+	s.Equal(200, testShortCircuitCount)
 
 	s.NoError(store.DeleteMany(ctx, testShortCircuitIds))
 

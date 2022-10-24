@@ -101,7 +101,7 @@ func (s *PoliciesStoreSuite) TestStore() {
 
 	var policys []*storage.Policy
 	var policyIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		policy := &storage.Policy{}
 		s.NoError(testutils.FullInit(policy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		policys = append(policys, policy)
@@ -115,7 +115,7 @@ func (s *PoliciesStoreSuite) TestStore() {
 
 	policyCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, policyCount)
+	s.Equal(200, policyCount)
 
 	s.NoError(store.DeleteMany(ctx, policyIds))
 

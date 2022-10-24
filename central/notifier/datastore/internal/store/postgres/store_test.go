@@ -101,7 +101,7 @@ func (s *NotifiersStoreSuite) TestStore() {
 
 	var notifiers []*storage.Notifier
 	var notifierIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		notifier := &storage.Notifier{}
 		s.NoError(testutils.FullInit(notifier, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		notifiers = append(notifiers, notifier)
@@ -115,7 +115,7 @@ func (s *NotifiersStoreSuite) TestStore() {
 
 	notifierCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, notifierCount)
+	s.Equal(200, notifierCount)
 
 	s.NoError(store.DeleteMany(ctx, notifierIds))
 

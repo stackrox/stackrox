@@ -101,7 +101,7 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 
 	var simpleAccessScopes []*storage.SimpleAccessScope
 	var simpleAccessScopeIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		simpleAccessScope := &storage.SimpleAccessScope{}
 		s.NoError(testutils.FullInit(simpleAccessScope, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		simpleAccessScopes = append(simpleAccessScopes, simpleAccessScope)
@@ -112,7 +112,7 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 
 	simpleAccessScopeCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, simpleAccessScopeCount)
+	s.Equal(200, simpleAccessScopeCount)
 
 	s.NoError(store.DeleteMany(ctx, simpleAccessScopeIds))
 

@@ -101,7 +101,7 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 
 	var activeComponents []*storage.ActiveComponent
 	var activeComponentIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		activeComponent := &storage.ActiveComponent{}
 		s.NoError(testutils.FullInit(activeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		activeComponents = append(activeComponents, activeComponent)
@@ -112,7 +112,7 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 
 	activeComponentCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, activeComponentCount)
+	s.Equal(200, activeComponentCount)
 
 	s.NoError(store.DeleteMany(ctx, activeComponentIds))
 

@@ -102,7 +102,7 @@ func (s *CollectionsStoreSuite) TestStore() {
 
 	var resourceCollections []*storage.ResourceCollection
 	var resourceCollectionIds []string
-	for i := 0; i < 12000; i++ {
+	for i := 0; i < 200; i++ {
 		resourceCollection := &storage.ResourceCollection{}
 		s.NoError(testutils.FullInit(resourceCollection, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		resourceCollection.EmbeddedCollections = nil
@@ -114,7 +114,7 @@ func (s *CollectionsStoreSuite) TestStore() {
 
 	resourceCollectionCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(12000, resourceCollectionCount)
+	s.Equal(200, resourceCollectionCount)
 
 	s.NoError(store.DeleteMany(ctx, resourceCollectionIds))
 
