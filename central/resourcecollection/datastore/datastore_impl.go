@@ -129,7 +129,7 @@ func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) e
 
 // graphEdgeUpdates stores added and removed edges from the DAG graph
 type graphEdgeUpdates struct {
-	srcId   string
+	srcID   string
 	added   []string
 	removed []string
 }
@@ -184,8 +184,8 @@ func (ds *datastoreImpl) updateCollectionInGraph(obj *storage.ResourceCollection
 	}
 
 	// add new edges
-	for idx, addId := range ret.added {
-		err = ds.graph.AddEdge(obj.GetId(), addId)
+	for idx, addID := range ret.added {
+		err = ds.graph.AddEdge(obj.GetId(), addID)
 		if err != nil {
 
 			// make note of where we stopped adding edges
@@ -221,7 +221,7 @@ func (ds *datastoreImpl) undoEdgeUpdatesInGraph(updates *graphEdgeUpdates) {
 
 	// remove added edges first since removing can never cause cycles
 	for _, added := range updates.added {
-		deleteErr := ds.graph.DeleteEdge(updates.srcId, added)
+		deleteErr := ds.graph.DeleteEdge(updates.srcID, added)
 		if deleteErr != nil {
 			log.Infof("tried to delete an edge that didn't exist (%v)", deleteErr)
 		}
@@ -229,7 +229,7 @@ func (ds *datastoreImpl) undoEdgeUpdatesInGraph(updates *graphEdgeUpdates) {
 
 	// then restore edges that were removed
 	for _, removed := range updates.removed {
-		restoreErr := ds.graph.AddEdge(updates.srcId, removed)
+		restoreErr := ds.graph.AddEdge(updates.srcID, removed)
 		if restoreErr != nil {
 			log.Errorf("Failed to restore collection edge in internal state object (%v)", restoreErr)
 		}

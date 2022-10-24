@@ -184,3 +184,17 @@ func (mr *MockDataStoreMockRecorder) SearchResults(ctx, q interface{}) *gomock.C
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockDataStore)(nil).SearchResults), ctx, q)
 }
+
+// UpdateCollection mocks base method.
+func (m *MockDataStore) UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCollection", ctx, collection)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateCollection indicates an expected call of UpdateCollection.
+func (mr *MockDataStoreMockRecorder) UpdateCollection(ctx, collection interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCollection", reflect.TypeOf((*MockDataStore)(nil).UpdateCollection), ctx, collection)
+}
