@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
 	"github.com/stackrox/rox/compliance/collection/nodescanv2"
+	complianceUtils "github.com/stackrox/rox/compliance/collection/utils"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -176,9 +177,9 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 }
 
 func manageNodeScanLoop(ctx context.Context, client sensor.ComplianceService_CommunicateClient, scanner nodescanv2.NodeScanner) {
-	t := time.NewTicker(env.NodeScanInterval.DurationSetting())
-
-	log.Infof("Node Scan interval: %v", env.NodeScanInterval.DurationSetting())
+	rescan_interval := complianceUtils.VerifyAndUpdateDuration(env.NodeScanInterval.DurationSetting())
+	t := time.NewTicker(rescan_interval)
+	log.Infof("Node Rescan interval: %v", rescan_interval)
 
 	// send scan result once at startup, then every NodeScanInterval
 	if err := scanNode(client, scanner); err != nil {
