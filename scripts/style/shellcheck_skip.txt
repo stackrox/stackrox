@@ -25,7 +25,6 @@ image/templates/common/port-forward.sh
 image/templates/common/setup-central.sh
 image/templates/common/setup-scanner.sh
 image/templates/common/setup.sh
-image/templates/helm/stackrox-central/scripts/prepare-resource-metadata-for-helm-migration.sh
 image/templates/sensor/kubernetes/delete-sensor.sh
 image/templates/sensor/kubernetes/sensor.sh
 image/templates/sensor/openshift/delete-sensor.sh
