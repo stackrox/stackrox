@@ -513,7 +513,7 @@ var (
 
 type namespaceGetter struct{}
 
-func (n *namespaceGetter) GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+func (n *namespaceGetter) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	return namespaces, nil
 }
 

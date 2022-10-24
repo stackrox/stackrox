@@ -2,16 +2,27 @@ package handler
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetNamespaces(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.namespace.EXPECT().SearchNamespaces(gomock.Any(), emptyPaginatedQuery()).Return([]*storage.NamespaceMetadata{
+	loaders.RegisterTypeFactory(reflect.TypeOf(storage.NamespaceMetadata{}), func() interface{} {
+		return loaders.NewNamespaceLoader(mocks.namespace)
+	})
+	mocks.namespace.EXPECT().Search(gomock.Any(), emptyPaginatedQuery()).Return([]search.Result{
+		{
+			ID: fakeNamespaceID,
+		},
+	}, nil)
+	mocks.namespace.EXPECT().GetManyNamespaces(gomock.Any(), []string{fakeNamespaceID}).Return([]*storage.NamespaceMetadata{
 		{
 			Id:          fakeNamespaceID,
 			Name:        fakeNamespaceName,
