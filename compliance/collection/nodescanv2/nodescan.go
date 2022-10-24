@@ -3,11 +3,6 @@ package nodescanv2
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // NodeScanner defines an interface for V2 NodeScanning
