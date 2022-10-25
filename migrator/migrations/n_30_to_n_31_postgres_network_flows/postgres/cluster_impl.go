@@ -39,7 +39,7 @@ func (s *clusterStoreImpl) CreateFlowStore(_ context.Context, clusterID string) 
 }
 
 // Walk is a stub for satisfying interfaces
-func (s *clusterStoreImpl) Walk(_ context.Context, _ func(clusterID string, _ types.Timestamp, _ []*storage.NetworkFlow) error) error {
+func (s *clusterStoreImpl) Walk(_ context.Context, _ func(clusterID string, _ *types.Timestamp, _ []*storage.NetworkFlow) error) error {
 	utils.CrashOnError(errors.New("Unexpected call to stub interface"))
 	return nil
 }

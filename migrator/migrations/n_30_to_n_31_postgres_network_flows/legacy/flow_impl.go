@@ -30,9 +30,9 @@ var (
 )
 
 // GetAllFlows returns all the flows in the store.
-func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
+func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) (flows []*storage.NetworkFlow, ts *types.Timestamp, err error) {
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
-		return nil, types.Timestamp{}, err
+		return nil, nil, err
 	}
 	defer s.db.DecRocksDBInProgressOps()
 
@@ -47,7 +47,7 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 	}
 	defer s.db.DecRocksDBInProgressOps()
 
-	tsData, err := lastUpdatedTS.GogoProtobuf().Marshal()
+	tsData, err := proto.Marshal(lastUpdatedTS.GogoProtobuf())
 	if err != nil {
 		return err
 	}
@@ -79,13 +79,13 @@ func (s *flowStoreImpl) getID(props *storage.NetworkFlowProperties) []byte {
 	return s.getFullKey(common.GetID(props))
 }
 
-func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
+func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, lastUpdateTS *types.Timestamp, err error) {
 	// The entry for this should be present, but make sure we have a sane default if it is not
-	lastUpdateTS = *types.TimestampNow()
+	lastUpdateTS = types.TimestampNow()
 
 	err = generic.DefaultForEachItemWithPrefix(s.db, s.keyPrefix, true, func(k, v []byte) error {
 		if bytes.Equal(k, updatedTSKey) {
-			return proto.Unmarshal(v, &lastUpdateTS)
+			return proto.Unmarshal(v, lastUpdateTS)
 		}
 		if pred != nil {
 			props, err := common.ParseID(k)

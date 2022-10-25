@@ -365,17 +365,17 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 }
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
-func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, types.Timestamp, error) {
+func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *types.Timestamp, error) {
 		return s.retryableGetAllFlows(ctx, since)
 	})
 }
 
-func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := *types.TimestampNow()
+	lastUpdateTS := types.TimestampNow()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
@@ -384,31 +384,31 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since), s.clusterID)
 	}
 	if err != nil {
-		return nil, types.Timestamp{}, pgutils.ErrNilIfNoRows(err)
+		return nil, nil, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 
 	flows, err := s.readRows(rows, nil)
 	if err != nil {
-		return nil, types.Timestamp{}, pgutils.ErrNilIfNoRows(err)
+		return nil, nil, pgutils.ErrNilIfNoRows(err)
 	}
 
 	return flows, lastUpdateTS, nil
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
-func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, types.Timestamp, error) {
+func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *types.Timestamp, error) {
 		return s.retryableGetMatchingFlows(ctx, pred, since)
 	})
 }
 
-func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
 	var rows pgx.Rows
 	var err error
 
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := *types.TimestampNow()
+	lastUpdateTS := types.TimestampNow()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
@@ -418,7 +418,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	}
 
 	if err != nil {
-		return nil, types.Timestamp{}, pgutils.ErrNilIfNoRows(err)
+		return nil, nil, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 

@@ -43,9 +43,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore store.ClusterSt
 
 	clusterStore := pgStore.NewClusterStore(postgresDB)
 
-	return legacyStore.Walk(ctx, func(clusterID string, ts protoTypes.Timestamp, allFlows []*storage.NetworkFlow) error {
+	return legacyStore.Walk(ctx, func(clusterID string, ts *protoTypes.Timestamp, allFlows []*storage.NetworkFlow) error {
 		store := clusterStore.GetFlowStore(clusterID)
-		return store.UpsertFlows(ctx, allFlows, timestamp.FromProtobuf(&ts))
+		return store.UpsertFlows(ctx, allFlows, timestamp.FromProtobuf(ts))
 	})
 }
 
