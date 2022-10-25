@@ -16,7 +16,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 102,
-		VersionAfter:   storage.Version{SeqNum: 103},
+		VersionAfter:   &storage.Version{SeqNum: 103},
 		Run: func(databases *types.Databases) error {
 			if err := migrateSerials(databases.BoltDB); err != nil {
 				return errors.Wrap(err, "error migrating service identity serials")

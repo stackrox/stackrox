@@ -15,7 +15,7 @@ const unrestrictedScopeID = "io.stackrox.authz.accessscope.unrestricted"
 var (
 	migration = types.Migration{
 		StartingSeqNum: 93,
-		VersionAfter:   storage.Version{SeqNum: 94},
+		VersionAfter:   &storage.Version{SeqNum: 94},
 		Run: func(databases *types.Databases) error {
 			if err := updateRoles(databases.RocksDB); err != nil {
 				return errors.Wrap(err,

@@ -24,7 +24,7 @@ type policyUpdate struct {
 var (
 	migration = types.Migration{
 		StartingSeqNum: 56,
-		VersionAfter:   storage.Version{SeqNum: 57},
+		VersionAfter:   &storage.Version{SeqNum: 57},
 		Run: func(databases *types.Databases) error {
 			return migrateNewPolicyCategories(databases.BoltDB)
 		},

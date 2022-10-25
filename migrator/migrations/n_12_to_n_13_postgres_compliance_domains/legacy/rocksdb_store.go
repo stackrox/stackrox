@@ -66,7 +66,7 @@ func unmarshalDomain(iterator *gorocksdb.Iterator) (*storage.ComplianceDomain, e
 		return nil, errors.New("compliance domain data is empty")
 	}
 	var domain storage.ComplianceDomain
-	if err := domain.Unmarshal(bytes); err != nil {
+	if err := domain.UnmarshalVT(bytes); err != nil {
 		return nil, errors.Wrap(err, "unmarshalling compliance domain")
 	}
 	return &domain, nil
@@ -79,7 +79,7 @@ func getDomainKey(clusterID, domainID string) []byte {
 }
 
 func (r *rocksdbStore) StoreComplianceDomain(_ context.Context, domain *storage.ComplianceDomain) error {
-	serializedDomain, err := domain.Marshal()
+	serializedDomain, err := domain.MarshalVT()
 	if err != nil {
 		return errors.Wrap(err, "serializing domain")
 	}

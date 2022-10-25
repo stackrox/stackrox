@@ -22,7 +22,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 90,
-		VersionAfter:   storage.Version{SeqNum: 91},
+		VersionAfter:   &storage.Version{SeqNum: 91},
 		Run:            updateVulnSnoozePermissions,
 	}
 

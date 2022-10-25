@@ -85,7 +85,7 @@ func unmarshalResults(iterator *gorocksdb.Iterator) (*storage.ComplianceRunResul
 		return nil, errors.New("results data empty")
 	}
 	var results storage.ComplianceRunResults
-	if err := results.Unmarshal(bytes); err != nil {
+	if err := results.UnmarshalVT(bytes); err != nil {
 		return nil, errors.Wrap(err, "unmarshalling results")
 	}
 	return &results, nil
@@ -116,7 +116,7 @@ func (r *rocksdbStore) UpsertMany(ctx context.Context, objs []*storage.Complianc
 		clusterID := metadata.GetClusterId()
 		standardID := metadata.GetStandardId()
 
-		serializedResults, err := obj.Marshal()
+		serializedResults, err := obj.MarshalVT()
 		if err != nil {
 			return errors.Wrap(err, "serializing results")
 		}

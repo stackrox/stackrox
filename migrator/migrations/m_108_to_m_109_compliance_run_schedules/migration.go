@@ -12,7 +12,7 @@ import (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 108,
-		VersionAfter:   storage.Version{SeqNum: 109},
+		VersionAfter:   &storage.Version{SeqNum: 109},
 		Run: func(databases *types.Databases) error {
 			return removeComplianceRunScheduleFromPermissionSets(databases.RocksDB)
 		},

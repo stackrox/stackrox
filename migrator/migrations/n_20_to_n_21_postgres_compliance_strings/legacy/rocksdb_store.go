@@ -53,7 +53,7 @@ func unmarshalMessageStrings(iterator *gorocksdb.Iterator) (*storage.ComplianceS
 		return nil, errors.New("results data empty")
 	}
 	var stringsProto storage.ComplianceStrings
-	if err := stringsProto.Unmarshal(bytes); err != nil {
+	if err := stringsProto.UnmarshalVT(bytes); err != nil {
 		return nil, err
 	}
 	return &stringsProto, nil
@@ -95,7 +95,7 @@ func (r *rocksdbStore) UpsertMany(ctx context.Context, objs []*storage.Complianc
 
 	for _, obj := range objs {
 		key := r.createKay()
-		serialized, err := obj.Marshal()
+		serialized, err := obj.MarshalVT()
 		if err != nil {
 			return errors.Wrap(err, "serializing results")
 		}

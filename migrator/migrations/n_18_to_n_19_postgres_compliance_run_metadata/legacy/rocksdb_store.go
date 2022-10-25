@@ -55,7 +55,7 @@ func unmarshalMetadata(iterator *gorocksdb.Iterator) (*storage.ComplianceRunMeta
 		return nil, errors.New("compliance domain data is empty")
 	}
 	var domain storage.ComplianceRunMetadata
-	if err := domain.Unmarshal(bytes); err != nil {
+	if err := domain.UnmarshalVT(bytes); err != nil {
 		return nil, errors.Wrap(err, "unmarshalling compliance domain")
 	}
 	return &domain, nil
@@ -120,7 +120,7 @@ func (r *rocksdbStore) UpsertMany(ctx context.Context, objs []*storage.Complianc
 		clusterID := metadata.GetClusterId()
 		standardID := metadata.GetStandardId()
 
-		serializedMD, err := metadata.Marshal()
+		serializedMD, err := metadata.MarshalVT()
 		if err != nil {
 			return errors.Wrap(err, "serializing metadata")
 		}
