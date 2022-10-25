@@ -31,20 +31,16 @@ function ByLabelSelector({
     handleChange,
     validationErrors,
 }: ByLabelSelectorProps) {
-    function onChangeLabelKey(resourceSelector: ByLabelResourceSelector, ruleIndex) {
-        return (value: string) => {
-            const newSelector = cloneDeep(resourceSelector);
-            newSelector.rules[ruleIndex].key = value;
-            handleChange(entityType, newSelector);
-        };
+    function onChangeLabelKey(resourceSelector: ByLabelResourceSelector, ruleIndex, value) {
+        const newSelector = cloneDeep(resourceSelector);
+        newSelector.rules[ruleIndex].key = value;
+        handleChange(entityType, newSelector);
     }
 
-    function onChangeLabelValue(resourceSelector, ruleIndex, valueIndex) {
-        return (value: string) => {
-            const newSelector = cloneDeep(resourceSelector);
-            newSelector.rules[ruleIndex].values[valueIndex] = value;
-            handleChange(entityType, newSelector);
-        };
+    function onChangeLabelValue(resourceSelector, ruleIndex, valueIndex, value) {
+        const newSelector = cloneDeep(resourceSelector);
+        newSelector.rules[ruleIndex].values[valueIndex] = value;
+        handleChange(entityType, newSelector);
     }
 
     function onAddLabelRule() {
@@ -126,10 +122,13 @@ function ByLabelSelector({
                                 >
                                     <AutoCompleteSelect
                                         selectedOption={rule.key}
-                                        onChange={onChangeLabelKey(
-                                            scopedResourceSelector,
-                                            ruleIndex
-                                        )}
+                                        onChange={(fieldValue: string) =>
+                                            onChangeLabelKey(
+                                                scopedResourceSelector,
+                                                ruleIndex,
+                                                fieldValue
+                                            )
+                                        }
                                         validated={keyValidation}
                                     />
                                 </FormGroup>
@@ -162,11 +161,14 @@ function ByLabelSelector({
                                                 <AutoCompleteSelect
                                                     className="pf-u-flex-grow-1 pf-u-w-auto"
                                                     selectedOption={value}
-                                                    onChange={onChangeLabelValue(
-                                                        scopedResourceSelector,
-                                                        ruleIndex,
-                                                        valueIndex
-                                                    )}
+                                                    onChange={(fieldValue: string) =>
+                                                        onChangeLabelValue(
+                                                            scopedResourceSelector,
+                                                            ruleIndex,
+                                                            valueIndex,
+                                                            fieldValue
+                                                        )
+                                                    }
                                                     validated={valueValidation}
                                                 />
                                                 <Button

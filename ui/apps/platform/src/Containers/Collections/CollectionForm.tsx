@@ -284,9 +284,9 @@ function CollectionForm({
                             </FlexItem>
                         </Flex>
                         <Divider component="div" />
-                        <Form>
+                        <Form className="pf-u-background-color-200">
                             <Flex
-                                className="pf-u-background-color-200 pf-u-p-lg"
+                                className="pf-u-p-lg"
                                 spaceItems={{ default: 'spaceItemsMd' }}
                                 direction={{ default: 'column' }}
                             >
@@ -347,7 +347,7 @@ function CollectionForm({
                                 </div>
                             </Flex>
                             {action.type !== 'view' && (
-                                <div className="pf-u-p-lg pf-u-py-md">
+                                <div className="pf-u-background-color-100 pf-u-p-lg pf-u-py-md">
                                     <Button className="pf-u-mr-md">Save</Button>
                                     <Button variant="secondary">Cancel</Button>
                                 </div>
