@@ -1439,7 +1439,8 @@ EOT
 }
 
 get_junit_parse_cli() {
-    go install github.com/stackrox/junit-parse@blugo/ROX-11931-to-slack
+    # TODO !! Need to remove this commit hash before merging
+    go install github.com/stackrox/junit-parse@blugo/4e2c784
 }
 
 junit2slack() {
