@@ -81,6 +81,6 @@ export type Collection = {
     name: string;
     description: string;
     inUse: boolean;
-    selectorRules: Record<SelectorEntityType, ScopedResourceSelector>;
+    resourceSelectors: Record<SelectorEntityType, ScopedResourceSelector>;
     embeddedCollectionIds: string[];
 };

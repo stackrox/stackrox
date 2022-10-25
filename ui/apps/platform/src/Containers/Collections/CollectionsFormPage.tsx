@@ -23,7 +23,7 @@ const defaultCollectionData = {
     description: '',
     inUse: false,
     embeddedCollectionIds: [],
-    selectorRules: {
+    resourceSelectors: {
         Deployment: {},
         Namespace: {},
         Cluster: {},

@@ -37,7 +37,7 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
         description: data.description,
         inUse: data.inUse,
         embeddedCollectionIds: data.embeddedCollections.map(({ id }) => id),
-        selectorRules: {
+        resourceSelectors: {
             Deployment: {},
             Namespace: {},
             Cluster: {},
@@ -55,7 +55,7 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
     data.resourceSelectors[0]?.rules.forEach((rule) => {
         const entity = fieldToEntityMap[rule.fieldName];
         const field = rule.fieldName;
-        const existingEntityField = collection.selectorRules[entity]?.field;
+        const existingEntityField = collection.resourceSelectors[entity]?.field;
         const hasMultipleFieldsForEntity = existingEntityField && existingEntityField !== field;
         const isUnsupportedField = !isSupportedSelectorField(field);
         const isUnsupportedRuleOperator = rule.operator !== 'OR';
@@ -80,21 +80,21 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
             return;
         }
 
-        if (isEmpty(collection.selectorRules[entity])) {
+        if (isEmpty(collection.resourceSelectors[entity])) {
             if (isByLabelField(field)) {
-                collection.selectorRules[entity] = {
+                collection.resourceSelectors[entity] = {
                     field,
                     rules: [],
                 };
             } else if (isByNameField(field)) {
-                collection.selectorRules[entity] = {
+                collection.resourceSelectors[entity] = {
                     field,
                     rule: { operator: 'OR', values: [] },
                 };
             }
         }
 
-        const selector = collection.selectorRules[entity];
+        const selector = collection.resourceSelectors[entity];
 
         if (isByLabelSelector(selector)) {
             const firstValue = rule.values[0]?.value;
@@ -104,6 +104,8 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
                 selector.rules.push({
                     operator: 'OR',
                     key,
+                    // TODO Verify with BE whether or not this is a valid method to get the label values. Is
+                    //      it possible that multiple `=` symbols will appear in the data here?
                     values: rule.values.map(({ value }) => value.split('=')[1] ?? ''),
                 });
             }
