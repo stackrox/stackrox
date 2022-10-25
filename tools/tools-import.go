@@ -11,6 +11,8 @@ import (
 	// Tool dependencies, not used anywhere in the code.
 	_ "github.com/ckaznocha/protoc-gen-lint"
 	_ "github.com/golang/mock/mockgen"
+	_ "github.com/grpc-ecosystem/grpc-gateway/v2/cmd/protoc-gen-grpc-gateway"
+	_ "github.com/grpc-ecosystem/grpc-gateway/v2/cmd/protoc-gen-openapiv2"
 	_ "github.com/mailru/easyjson/easyjson"
 	_ "golang.org/x/tools/cmd/stringer"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"sort"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/authprovider/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"

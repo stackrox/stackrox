@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"

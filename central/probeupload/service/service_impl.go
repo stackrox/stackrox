@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/probesources"
 	"github.com/stackrox/rox/central/probeupload/manager"
