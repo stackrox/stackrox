@@ -185,7 +185,7 @@ func (m *manager) getFileInfo(file string) (*v1.ProbeUploadManifest_File, error)
 
 	return &v1.ProbeUploadManifest_File{
 		Name:  file,
-		Size_: dataSt.Size(),
+		Size:  dataSt.Size(),
 		Crc32: crc32,
 	}, nil
 }

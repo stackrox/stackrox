@@ -62,7 +62,7 @@ func (s *managerTestSuite) TestGetExistingProbeFilesOnNonEmptyDir() {
 	s.Require().Len(fileInfos, 1)
 
 	s.Equal(validFilePath, fileInfos[0].GetName())
-	s.EqualValues(len("foobarbaz"), fileInfos[0].GetSize_())
+	s.EqualValues(len("foobarbaz"), fileInfos[0].GetSize())
 	s.EqualValues(1337, fileInfos[0].GetCrc32())
 }
 

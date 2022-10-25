@@ -131,8 +131,8 @@ func (s *service) doHandleProbeUpload(req *http.Request) error {
 	}
 
 	for _, file := range manifest.GetFiles() {
-		nextChunk := io.LimitReader(req.Body, file.GetSize_())
-		if err := s.mgr.StoreFile(req.Context(), file.GetName(), nextChunk, file.GetSize_(), file.GetCrc32()); err != nil {
+		nextChunk := io.LimitReader(req.Body, file.GetSize())
+		if err := s.mgr.StoreFile(req.Context(), file.GetName(), nextChunk, file.GetSize(), file.GetCrc32()); err != nil {
 			return errors.Wrapf(err, "failed to write file %s", file.GetName())
 		}
 	}

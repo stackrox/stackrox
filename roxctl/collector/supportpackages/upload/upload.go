@@ -94,7 +94,7 @@ func buildUploadManifest(probeFilesInPackage map[string]*zip.File, existingFiles
 		if pkgEntry == nil {
 			continue
 		}
-		if existingFile.GetSize_() == int64(pkgEntry.UncompressedSize64) && existingFile.GetCrc32() == pkgEntry.CRC32 {
+		if existingFile.GetSize() == int64(pkgEntry.UncompressedSize64) && existingFile.GetCrc32() == pkgEntry.CRC32 {
 			delete(probeFilesInPackage, existingFile.GetName())
 		} else if !overwrite {
 			nonOverwrittenFiles = append(nonOverwrittenFiles, pkgEntry)
@@ -107,7 +107,7 @@ func buildUploadManifest(probeFilesInPackage map[string]*zip.File, existingFiles
 	for fileName, pkgEntry := range probeFilesInPackage {
 		mf.Files = append(mf.Files, &v1.ProbeUploadManifest_File{
 			Name:  fileName,
-			Size_: int64(pkgEntry.UncompressedSize64),
+			Size:  int64(pkgEntry.UncompressedSize64),
 			Crc32: pkgEntry.CRC32,
 		})
 		readerFuncs = append(readerFuncs, readerFuncForZipEntry(pkgEntry))

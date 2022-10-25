@@ -92,7 +92,7 @@ func (s *serviceImpl) EnvVars(ctx context.Context, _ *central.Empty) (*central.E
 
 func (s *serviceImpl) RandomData(ctx context.Context, req *central.RandomDataRequest) (*central.RandomDataResponse, error) {
 	resp := &central.RandomDataResponse{
-		Data: make([]byte, req.GetSize_()),
+		Data: make([]byte, req.GetSize()),
 	}
 
 	_, _ = rand.Read(resp.Data)
