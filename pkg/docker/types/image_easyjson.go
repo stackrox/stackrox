@@ -106,7 +106,7 @@ func easyjson220accf5DecodeGithubComStackroxRoxPkgDockerTypes(in *jlexer.Lexer, 
 		in.Consumed()
 	}
 }
-func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Writer, in ImageInspect) {
+func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Writer, in *ImageInspect) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -146,20 +146,20 @@ func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 	if in.Config != nil {
 		const prefix string = ",\"Config\":"
 		out.RawString(prefix)
-		easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes1(out, *in.Config)
+		easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes1(out, &*in.Config)
 	}
 	out.RawByte('}')
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v ImageInspect) MarshalJSON() ([]byte, error) {
+func (v *ImageInspect) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v ImageInspect) MarshalEasyJSON(w *jwriter.Writer) {
+func (v *ImageInspect) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes(w, v)
 }
 
@@ -215,7 +215,7 @@ func easyjson220accf5DecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writer, in Config) {
+func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writer, in *Config) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -223,7 +223,7 @@ func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writ
 		const prefix string = ",\"Healthcheck\":"
 		first = false
 		out.RawString(prefix[1:])
-		easyjson220accf5EncodeGithubComDockerDockerApiTypesContainer(out, *in.Healthcheck)
+		easyjson220accf5EncodeGithubComDockerDockerApiTypesContainer(out, &*in.Healthcheck)
 	}
 	if in.User != "" {
 		const prefix string = ",\"User\":"
@@ -297,7 +297,7 @@ func easyjson220accf5DecodeGithubComDockerDockerApiTypesContainer(in *jlexer.Lex
 		in.Consumed()
 	}
 }
-func easyjson220accf5EncodeGithubComDockerDockerApiTypesContainer(out *jwriter.Writer, in container.HealthConfig) {
+func easyjson220accf5EncodeGithubComDockerDockerApiTypesContainer(out *jwriter.Writer, in *container.HealthConfig) {
 	out.RawByte('{')
 	first := true
 	_ = first
