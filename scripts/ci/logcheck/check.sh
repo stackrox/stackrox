@@ -24,6 +24,11 @@ IFS=$'\n' read -d '' -r -a allowlist_subpatterns < <(egrep -v '^(#.*|\s*)$' "${A
 
 allowlist_pattern="$(join_by '|' "${allowlist_subpatterns[@]}")"
 
+echo "${allowlist_pattern}"
+echo "SHREWS -- did I find it"
+grep "${allowlist_pattern}" "$@"
+echo "SHREWS"
+
 grep -vP "$allowlist_pattern" "$@" | grep >&2 -Pni "$blocklist_pattern" && exit 1
 
 exit 0
