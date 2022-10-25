@@ -43,7 +43,7 @@ func NewSettingsManager(deployments store.DeploymentStore, pods store.PodStore) 
 func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	settings := &sensor.AdmissionControlSettings{}
 	if p.currSettings != nil {
-		*settings = *p.currSettings
+		settings = p.currSettings.CloneVT()
 	}
 	settings.ClusterId = clusterid.Get()
 	settings.CentralEndpoint = p.centralEndpoint

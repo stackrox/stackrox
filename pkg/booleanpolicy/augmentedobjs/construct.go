@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/shallowclone"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -187,7 +188,7 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 		return pathutil.NewAugmentedObj(image), nil
 	}
 
-	img := *image
+	img := shallowclone.UnsafeShallowClone(image)
 
 	// When evaluating policies, the evaluator will stop when any of the objects within the path
 	// are nil and immediately return, not matching. Within the image signature criteria, we have
