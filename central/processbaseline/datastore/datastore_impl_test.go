@@ -245,7 +245,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 	suite.Equal(1, len(baseline.GetElements()))
 	suite.Equal(firstProcess, baseline.GetElements()[0].GetElement().GetProcessName())
 	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(baseline.GetLastUpdate().AsTime().Equal(baseline.GetCreated().AsTime()))
 
 	secondProcess := "Joseph is the Best"
 	newItem = []*storage.BaselineItem{{Item: &storage.BaselineItem_ProcessName{ProcessName: secondProcess}}}
@@ -374,7 +374,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	suite.NoError(err)
 
 	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(baseline.GetLastUpdate().AsTime().Equal(baseline.GetCreated().AsTime()))
 	suite.True(baseline.UserLockedTimestamp == nil)
 	suite.True(baseline.Elements != nil)
 
@@ -427,7 +427,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	suite.NoError(err)
 
 	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(baseline.GetLastUpdate().AsTime().Equal(baseline.GetCreated().AsTime()))
 	suite.True(baseline.UserLockedTimestamp == nil)
 	suite.True(baseline.Elements != nil)
 	suite.True(len(baseline.Elements) == len(indicators)-2)
@@ -443,7 +443,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	suite.NoError(err)
 
 	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(baseline.GetLastUpdate().AsTime().Equal(baseline.GetCreated().AsTime()))
 	suite.True(baseline.UserLockedTimestamp == nil)
 	suite.True(baseline.Elements == nil || len(baseline.Elements) == 0)
 

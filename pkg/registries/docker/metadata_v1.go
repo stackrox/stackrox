@@ -56,7 +56,7 @@ func convertImageToDockerFileLine(img *image.V1Image) *storage.ImageLayer {
 
 func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, ref string) (*storage.ImageMetadata, error) {
 	// Get the latest layer and author
-	var latest storage.ImageLayer
+	var latest *storage.ImageLayer
 	var layers []*storage.ImageLayer
 	labels := make(map[string]string)
 	for i := len(manifest.History) - 1; i > -1; i-- {
@@ -66,8 +66,8 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 			return nil, errors.Wrap(err, "Failed unmarshalling v1 capability")
 		}
 		layer := convertImageToDockerFileLine(&v1Image)
-		if layer.Created.Compare(latest.Created) == 1 {
-			latest = *layer
+		if layer.Created.AsTime().After(latest.Created.AsTime()) {
+			latest = layer
 		}
 		layers = append(layers, layer)
 		if v1Image.Config != nil {

@@ -49,7 +49,7 @@ func timestampComparator(cmp string) (func(instance, value *types.Timestamp) boo
 		}, nil
 	case "":
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) == 0
+			return value.AsTime().Equal(instance.AsTime())
 		}, nil
 	default:
 		return nil, fmt.Errorf("unrecognized comparator: %s", cmp)
