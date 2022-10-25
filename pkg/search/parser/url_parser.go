@@ -4,8 +4,8 @@ import (
 	"math"
 	"net/url"
 
-	"github.com/grpc-ecosystem/grpc-gateway/utilities"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/utilities"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
