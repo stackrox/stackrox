@@ -54,7 +54,6 @@ func isTransientError(err error) bool {
 		log.Infof("SHREWS -- %q", pgErr.Code)
 		log.Infof("SHREWS -- %q", pgErr.Detail)
 		log.Infof("SHREWS -- %q", pgErr.Message)
-		log.Infof("SHREWS -- %q", pgErr.Severity)
 		return transientPGCodes.Contains(pgErr.Code)
 	}
 	if pgconn.SafeToRetry(err) {
