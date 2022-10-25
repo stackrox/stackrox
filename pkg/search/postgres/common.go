@@ -764,7 +764,7 @@ func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sch
 }
 
 // RunCursorQueryForSchema creates a cursor against the database
-func RunCursorQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (fetcher func(n int) ([][]byte, error), closer func(), err error) {
+func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (fetcher func(n int) ([]*T, error), closer func(), err error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error creating query")
@@ -796,22 +796,14 @@ func RunCursorQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Q
 		return nil, nil, errors.Wrap(err, "creating cursor")
 	}
 
-	return func(n int) ([][]byte, error) {
+	return func(n int) ([]*T, error) {
 		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", n, cursor))
 		if err != nil {
 			return nil, errors.Wrap(err, "advancing in cursor")
 		}
 		defer rows.Close()
 
-		var results [][]byte
-		for rows.Next() {
-			var data []byte
-			if err := rows.Scan(&data); err != nil {
-				return nil, errors.Wrap(err, "scanning row")
-			}
-			results = append(results, data)
-		}
-		return results, nil
+		return scanRows[T, PT](rows)
 	}, closer, nil
 }
 

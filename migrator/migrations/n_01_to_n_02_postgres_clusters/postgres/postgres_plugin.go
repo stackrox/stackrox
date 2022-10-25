@@ -299,7 +299,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Cluster) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.Cluster](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -310,11 +310,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Cluster) erro
 			return pgutils.ErrNilIfNoRows(err)
 		}
 		for _, data := range rows {
-			var msg storage.Cluster
-			if err := msg.Unmarshal(data); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+			if err := fn(data); err != nil {
 				return err
 			}
 		}
