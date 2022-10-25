@@ -230,7 +230,7 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 
 	for idx, obj := range objs {
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -297,7 +297,7 @@ func copyFromImageComponentEdges(ctx context.Context, tx pgx.Tx, imageID string,
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -366,7 +366,7 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 			obj.CveBaseInfo.CreatedAt = iTime
 		}
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -427,7 +427,7 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*sto
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -501,7 +501,7 @@ func copyFromImageCVEEdges(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Tim
 		}
 
 		obj.FirstImageOccurrence = iTime
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -697,7 +697,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx pgx.Tx, imageID string)
 	}
 
 	var image storage.Image
-	if err := image.Unmarshal(data); err != nil {
+	if err := image.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 
@@ -788,7 +788,7 @@ func getImageComponentEdges(ctx context.Context, tx pgx.Tx, imageID string) (map
 			return nil, err
 		}
 		msg := &storage.ImageComponentEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = msg
@@ -825,7 +825,7 @@ func getImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string) (map[strin
 			return nil, err
 		}
 		msg := &storage.ImageCVEEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		cveIDToEdgeMap[msg.GetImageCveId()] = msg
@@ -848,7 +848,7 @@ func getImageComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (
 			return nil, err
 		}
 		msg := &storage.ImageComponent{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -871,7 +871,7 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 			return nil, err
 		}
 		msg := &storage.ComponentCVEEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = append(componentIDToEdgeMap[msg.GetImageComponentId()], msg)
@@ -894,7 +894,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 			return nil, err
 		}
 		msg := &storage.ImageCVE{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg
@@ -1087,7 +1087,7 @@ func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*
 	}
 
 	var msg storage.Image
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil

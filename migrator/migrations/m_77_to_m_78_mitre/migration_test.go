@@ -24,7 +24,7 @@ func TestMigration(t *testing.T) {
 				Id:   slimPolicy.ID,
 				Name: slimPolicy.Name,
 			}
-			data, err := policy.Marshal()
+			data, err := policy.MarshalVT()
 			if err != nil {
 				return err
 			}

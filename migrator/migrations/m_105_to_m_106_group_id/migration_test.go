@@ -99,7 +99,7 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 				key, value = serialize(c.oldGroup)
 			} else {
 				key = []byte(c.oldGroup.GetProps().GetId())
-				value, err = c.oldGroup.Marshal()
+				value, err = c.oldGroup.MarshalVT()
 				suite.NoError(err)
 			}
 

@@ -28,7 +28,7 @@ func TestMigrationWithNoExistingPolicy(t *testing.T) {
 		data := tx.Bucket(policyBucket).Get([]byte("a919ccaf-6b43-4160-ac5d-a405e1440a41"))
 
 		var policy storage.Policy
-		if err := policy.Unmarshal(data); err != nil {
+		if err := policy.UnmarshalVT(data); err != nil {
 			return err
 		}
 		assert.True(t, policy.GetDisabled())
@@ -44,7 +44,7 @@ func TestMigrationWithExistingPolicy(t *testing.T) {
 		Disabled: false,
 	}
 	err := db.Update(func(tx *bolt.Tx) error {
-		data, err := policy.Marshal()
+		data, err := policy.MarshalVT()
 		if err != nil {
 			return err
 		}
@@ -58,7 +58,7 @@ func TestMigrationWithExistingPolicy(t *testing.T) {
 		data := tx.Bucket(policyBucket).Get([]byte("a919ccaf-6b43-4160-ac5d-a405e1440a41"))
 
 		var policy storage.Policy
-		if err := policy.Unmarshal(data); err != nil {
+		if err := policy.UnmarshalVT(data); err != nil {
 			return err
 		}
 		assert.False(t, policy.GetDisabled())

@@ -71,7 +71,7 @@ func New(db *pgxpool.Pool) Store {
 
 func insertIntoActiveComponents(ctx context.Context, batch *pgx.Batch, obj *storage.ActiveComponent) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -141,7 +141,7 @@ func (s *storeImpl) copyFromActiveComponents(ctx context.Context, tx pgx.Tx, obj
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}

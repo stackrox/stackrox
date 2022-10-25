@@ -58,7 +58,7 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUp
 		cloned = obj.CloneVT()
 		cloned.Scan.Components = nil
 	}
-	serialized, marshalErr := cloned.Marshal()
+	serialized, marshalErr := cloned.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -191,7 +191,7 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 
 	for idx, obj := range objs {
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -259,7 +259,7 @@ func copyFromImageComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storag
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -326,7 +326,7 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 			obj.CveBaseInfo.CreatedAt = iTime
 		}
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -389,7 +389,7 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx pgx.Tx, os string, o
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -470,7 +470,7 @@ func copyFromImageCVEEdges(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Tim
 		}
 
 		obj.FirstImageOccurrence = iTime
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}

@@ -139,7 +139,7 @@ func runTest(t *testing.T, policy *storage.Policy, mustBeDefault bool) {
 
 	// Add a default policy to DB.
 	err := db.Update(func(tx *bolt.Tx) error {
-		data, err := policy.Marshal()
+		data, err := policy.MarshalVT()
 		if err != nil {
 			return err
 		}

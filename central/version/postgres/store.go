@@ -44,7 +44,7 @@ func New(db *pgxpool.Pool) Store {
 }
 
 func insertIntoVersions(ctx context.Context, tx pgx.Tx, obj *storage.Version) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -127,7 +127,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Version, bool, e
 	}
 
 	var msg storage.Version
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil

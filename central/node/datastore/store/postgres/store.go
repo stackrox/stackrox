@@ -96,7 +96,7 @@ func (s *storeImpl) insertIntoNodes(
 		cloned = parts.node.CloneVT()
 		cloned.Scan.Components = nil
 	}
-	serialized, marshalErr := cloned.Marshal()
+	serialized, marshalErr := cloned.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -221,7 +221,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -280,7 +280,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string, o
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -347,7 +347,7 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 			obj.CveBaseInfo.CreatedAt = iTime
 		}
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -405,7 +405,7 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -665,7 +665,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	}
 
 	var node storage.Node
-	if err := node.Unmarshal(data); err != nil {
+	if err := node.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 
@@ -743,7 +743,7 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 			return nil, err
 		}
 		msg := &storage.NodeComponentEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetNodeComponentId()] = msg
@@ -766,7 +766,7 @@ func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (m
 			return nil, err
 		}
 		msg := &storage.NodeComponent{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -789,7 +789,7 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 			return nil, err
 		}
 		msg := &storage.NodeComponentCVEEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
@@ -917,7 +917,7 @@ func (s *storeImpl) retryableGetNodeMetadata(ctx context.Context, id string) (*s
 	}
 
 	var msg storage.Node
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -985,7 +985,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 			return nil, err
 		}
 		msg := &storage.NodeCVE{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg

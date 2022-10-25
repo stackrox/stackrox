@@ -40,7 +40,7 @@ func TestMigrationWithoutEditedPolicy(t *testing.T) {
 			require.NoError(t, err)
 
 			err = db.Update(func(tx *bolt.Tx) error {
-				data, err := policyToRm.Marshal()
+				data, err := policyToRm.MarshalVT()
 				if err != nil {
 					return err
 				}
@@ -77,7 +77,7 @@ func TestMigrationWithEditedPolicy(t *testing.T) {
 			Id:   nginxPolicyID,
 			Name: "DockerHub NGINX 1.10",
 		}
-		data, err := policy.Marshal()
+		data, err := policy.MarshalVT()
 		if err != nil {
 			return err
 		}

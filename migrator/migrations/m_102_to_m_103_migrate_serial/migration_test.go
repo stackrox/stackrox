@@ -72,7 +72,7 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 		bucket, err := tx.CreateBucketIfNotExists(bucketName)
 		suite.NoError(err)
 		for _, c := range cases {
-			si, err := c.oldSerial.Marshal()
+			si, err := c.oldSerial.MarshalVT()
 			suite.NoError(err)
 
 			if c.oldSerial.GetSerialStr() != "" {

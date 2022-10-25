@@ -41,7 +41,7 @@ func migrateSerials(db *bolt.DB) error {
 			if serial, ok := si.Srl.(*storage.ServiceIdentity_Serial); ok && si.GetSerialStr() == "" {
 				si.SerialStr = strconv.FormatInt(serial.Serial, 10)
 			}
-			data, err := si.Marshal()
+			data, err := si.MarshalVT()
 			if err != nil {
 				return errors.Wrapf(err, "marshalling service identity: %+v", si)
 			}

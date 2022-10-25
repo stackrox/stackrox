@@ -148,7 +148,7 @@ func copyFromCVEs(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, o
 			obj.CveBaseInfo.CreatedAt = iTime
 		}
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -216,7 +216,7 @@ func copyFromClusterCVEEdges(ctx context.Context, tx pgx.Tx, cveType storage.CVE
 	for idx, obj := range objs {
 		oldEdges.Remove(obj.GetId())
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -272,7 +272,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 			return nil, err
 		}
 		msg := &storage.ClusterCVE{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg

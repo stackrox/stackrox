@@ -230,7 +230,7 @@ func unmarshalMessageStrings(getArgs *getLatestResultsArgs, stringsKey []byte, r
 	defer stringsSlice.Free()
 	stringsBytes := stringsSlice.Data()
 	if stringsBytes != nil {
-		if err := stringsProto.Unmarshal(stringsBytes); err != nil {
+		if err := stringsProto.UnmarshalVT(stringsBytes); err != nil {
 			return err
 		}
 	}
@@ -265,7 +265,7 @@ func unmarshalResults(getArgs *getLatestResultsArgs) (*storage.ComplianceRunMeta
 	}
 
 	var results storage.ComplianceRunResults
-	if err := results.Unmarshal(resultsBytes); err != nil {
+	if err := results.UnmarshalVT(resultsBytes); err != nil {
 		return nil, nil, errors.Wrap(err, "unmarshalling results")
 	}
 
@@ -311,7 +311,7 @@ func getDomain(getArgs *getLatestResultsArgs, key []byte) (*storage.ComplianceDo
 		return nil, nil
 	}
 	var domain storage.ComplianceDomain
-	if err = domain.Unmarshal(domainBytes); err != nil {
+	if err = domain.UnmarshalVT(domainBytes); err != nil {
 		return nil, err
 	}
 	domainCache.Add(string(key), &domain)
@@ -325,7 +325,7 @@ func unmarshalMetadata(iterator *gorocksdb.Iterator) (*storage.ComplianceRunMeta
 		return nil, errors.New("prefix metadata is empty")
 	}
 	var metadata storage.ComplianceRunMetadata
-	if err := metadata.Unmarshal(metadataBytes); err != nil {
+	if err := metadata.UnmarshalVT(metadataBytes); err != nil {
 		return nil, errors.Wrap(err, "unmarshalling metadata")
 	}
 	return &metadata, nil
@@ -436,13 +436,13 @@ func (r *rocksdbStore) StoreRunResults(_ context.Context, runResults *storage.Co
 	pair := compliance.ClusterStandardPair{ClusterID: clusterID, StandardID: standardID}
 	r.cacheResults.Remove(pair)
 
-	serializedMD, err := metadata.Marshal()
+	serializedMD, err := metadata.MarshalVT()
 	if err != nil {
 		return errors.Wrap(err, "serializing metadata")
 	}
 
 	stringsProto := store.ExternalizeStrings(runResults)
-	serializedStrings, err := stringsProto.Marshal()
+	serializedStrings, err := stringsProto.MarshalVT()
 	if err != nil {
 		return errors.Wrap(err, "serializing message strings")
 	}
@@ -450,7 +450,7 @@ func (r *rocksdbStore) StoreRunResults(_ context.Context, runResults *storage.Co
 	// The domain will be stored externally.  This will be repopulated when the results are queried.
 	runResults.Domain = nil
 
-	serializedResults, err := runResults.Marshal()
+	serializedResults, err := runResults.MarshalVT()
 	if err != nil {
 		return errors.Wrap(err, "serializing results")
 	}
@@ -491,7 +491,7 @@ func (r *rocksdbStore) StoreFailure(_ context.Context, metadata *storage.Complia
 	pair := compliance.ClusterStandardPair{ClusterID: metadata.ClusterId, StandardID: metadata.StandardId}
 	r.cacheResults.Remove(pair)
 
-	serializedMD, err := metadata.Marshal()
+	serializedMD, err := metadata.MarshalVT()
 	if err != nil {
 		return errors.Wrap(err, "serializing metadata")
 	}
@@ -506,7 +506,7 @@ func (r *rocksdbStore) StoreFailure(_ context.Context, metadata *storage.Complia
 }
 
 func (r *rocksdbStore) StoreComplianceDomain(_ context.Context, domain *storage.ComplianceDomain) error {
-	serializedDomain, err := domain.Marshal()
+	serializedDomain, err := domain.MarshalVT()
 	if err != nil {
 		return errors.Wrap(err, "serializing domain")
 	}
@@ -582,7 +582,7 @@ func (r *rocksdbStore) StoreAggregationResult(_ context.Context, queryString str
 	}
 	preComputedResult.DomainPointers = domainPointers
 
-	resBytes, err := preComputedResult.Marshal()
+	resBytes, err := preComputedResult.MarshalVT()
 	if err != nil {
 		return errors.Wrap(err, "serializing pre-computed aggregation result")
 	}
