@@ -47,8 +47,8 @@ var transientPGCodes = set.NewFrozenStringSet(
 	"58030", // io_error
 )
 
-// isTransientError specifies if the passed error is transient and should be retried
-func isTransientError(err error) bool {
+// IsTransientError specifies if the passed error is transient and should be retried
+func IsTransientError(err error) bool {
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
 		return transientPGCodes.Contains(pgErr.Code)
 	}
