@@ -188,9 +188,9 @@ test_upgrade_paths() {
     checkForPostgresAccessScopes
 
     validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-    # Since we bounced the DB we may see some errors.  Those need to be allowed in this case
+    # Since we bounced the DB we may see some errors.  Those need to be allowed in the case of this test ONLY.
     echo "# postgres was bounced, may see some connection errors" >> scripts/ci/logcheck/allowlist-patterns
-    echo "FATAL: terminating connection due to administrator command (SQLSTATE 57P01)" >> scripts/ci/logcheck/allowlist-patterns
+    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> scripts/ci/logcheck/allowlist-patterns
     echo >> scripts/ci/logcheck/allowlist-patterns
     cat scripts/ci/logcheck/allowlist-patterns
     echo "$TEST_ROOT"
