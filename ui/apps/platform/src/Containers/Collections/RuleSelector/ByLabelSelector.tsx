@@ -114,7 +114,7 @@ function ByLabelSelector({
                         )}
 
                         <Flex>
-                            <Flex className="pf-u-flex-grow-1">
+                            <Flex className="pf-u-flex-grow-1 pf-u-mb-md">
                                 <FormGroup
                                     className="pf-u-flex-grow-1"
                                     label={ruleIndex === 0 ? 'Label key' : ''}

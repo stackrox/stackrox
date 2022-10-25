@@ -214,16 +214,19 @@ function CollectionForm({
                                 <Divider component="div" />
                             </>
                         )}
-                        <Flex className="pf-u-p-lg" alignItems={{ default: 'alignItemsCenter' }}>
+                        <Flex
+                            className="pf-u-p-lg"
+                            direction={{ default: 'column', md: 'row' }}
+                            alignItems={{ default: 'alignItemsFlexStart', md: 'alignItemsCenter' }}
+                        >
                             <Title className="pf-u-flex-grow-1" headingLevel="h1">
                                 {pageTitle}
                             </Title>
-                            <FlexItem align={{ default: 'alignRight' }}>
+                            <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
                                 {action.type === 'view' && hasWriteAccessForCollections && (
                                     <>
                                         <Dropdown
                                             onSelect={closeMenu}
-                                            position="right"
                                             toggle={
                                                 <DropdownToggle
                                                     isPrimary
