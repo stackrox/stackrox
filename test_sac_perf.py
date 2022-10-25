@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import json
 import requests
@@ -6,16 +7,6 @@ import time
 import urllib3
 
 ##### CONSTANTS #####
-
-HOST = 'https://localhost:8000'
-#HOST = 'https://localhost:9000'
-#HOST = 'https://34.134.207.6'
-
-#PASSWORD_FILE_PATH = 'deploy/k8s/central-deploy/password'
-#PASSWORD_FILE_PATH = 'yann-postgres-sac-performance-05.pwd'
-#PASSWORD_FILE_PATH = 'yann-postgres-sac-performance-06.pwd'
-PASSWORD_FILE_PATH = 'yann-postgres-sac-performance-12.pwd'
-#PASSWORD_FILE_PATH = 'sac_perf_test_pwd'
 
 GRAPHQL_ENDPOINT             = '/api/graphql'
 NAMESPACE_ENDPOINT           = '/v1/namespaces'
@@ -52,9 +43,6 @@ K_ROLES               = 'roles'
 K_RULES               = 'rules'
 K_TOKEN               = 'token'
 
-#TEST_RUN_COUNTS = 1
-TEST_RUN_COUNTS = 10
-##TEST_RUN_COUNTS = 100
 QUERY_TIMEOUT = 1200
 
 GRAPHQL_WIDGET_QUERIES = {
@@ -121,82 +109,93 @@ TEST_ROLES = {
 
 ##### UTILITY FUNCTIONS #####
 
-def getPassword():
+def getPassword(reqOptions):
   passwd = ''
-  with open(PASSWORD_FILE_PATH) as f:
+  with open(reqOptions.passwordfile) as f:
     for line in f:
       passwd = line.replace('\n','').replace('\r','')
       break
   return passwd
 
-def getRequest(endpoint, query, token, timeout = None):
+def getHost(reqOptions):
+  return 'https://'+reqOptions.host+':'+str(reqOptions.port)
+
+def getRequest(endpoint, query, token, reqOptions, timeout = None):
   rspjson = {}
+  host = getHost(reqOptions)
   if token == '':
+    passwd = getPassword(reqOptions)
     if query != None:
-      rsp = requests.get(HOST+endpoint, verify=False, auth=('admin', getPassword()), data=query, timeout=timeout)
+      rsp = requests.get(host+endpoint, verify=False, auth=('admin', passwd), data=query, timeout=timeout)
       rspjson = rsp.json()
     else:
-      rsp = requests.get(HOST+endpoint, verify=False, auth=('admin', getPassword()), timeout=timeout)
+      rsp = requests.get(host+endpoint, verify=False, auth=('admin', passwd), timeout=timeout)
       rspjson = rsp.json()
   else:
     headers = {'authorization': 'Bearer '+token}
     if query != None:
-      rsp = requests.get(HOST+endpoint, verify=False, headers=headers, data=query, timeout=timeout)
+      rsp = requests.get(host+endpoint, verify=False, headers=headers, data=query, timeout=timeout)
       rspjson = rsp.json()
     else:
-      rsp = requests.get(HOST+endpoint, verify=False, headers=headers, timeout=timeout)
+      rsp = requests.get(host+endpoint, verify=False, headers=headers, timeout=timeout)
       rspjson = rsp.json()
   return rspjson
 
-def getRequestAsAdmin(endpoint, query, timeout = None):
-  return getRequest(endpoint, query, '', timeout)
+def getRequestAsAdmin(endpoint, query, reqOptions, timeout = None):
+  return getRequest(endpoint, query, '', reqOptions, timeout = timeout)
 
-def postRequest(endpoint, query, token, debug=False):
+def postRequest(endpoint, query, token, reqOptions, debug=False):
   rspjson = {}
+  host = getHost(reqOptions)
   if query != None: query=json.dumps(query)
   if token == '':
+    passwd = getPassword(reqOptions)
     if query != None:
-      rsp = requests.post(HOST+endpoint, verify=False, auth=('admin', getPassword()), data=query)
+      rsp = requests.post(host+endpoint, verify=False, auth=('admin', passwd), data=query)
       rspjson = rsp.json()
     else:
-      rsp = requests.post(HOST+endpoint, verify=False, auth=('admin', getPassword()))
+      rsp = requests.post(host+endpoint, verify=False, auth=('admin', passwd))
       rspjson = rsp.json()
   else:
     headers = {'authorization': 'Bearer '+token}
     if query != None:
-      rsp = requests.post(HOST+endpoint, verify=False, headers=headers, data=query)
+      rsp = requests.post(host+endpoint, verify=False, headers=headers, data=query)
       rspjson = rsp.json()
     else:
-      rsp = requests.post(HOST+endpoint, verify=False, headers=headers)
+      rsp = requests.post(host+endpoint, verify=False, headers=headers)
       rspjson = rsp.json()
   return rspjson
 
-def putRequest(endpoint, query, token, debug=False):
+def putRequest(endpoint, query, token, reqOptions, debug=False):
   rspjson = {}
+  host = getHost(reqOptions)
   if query != None: query=json.dumps(query)
   if token == '':
+    passwd = getPassword(reqOptions)
     if query != None:
-      rsp = requests.put(HOST+endpoint, verify=False, auth=('admin', getPassword()), data=query)
+      rsp = requests.put(host+endpoint, verify=False, auth=('admin', passwd), data=query)
       rspjson = rsp.json()
     else:
-      rsp = requests.put(HOST+endpoint, verify=False, auth=('admin', getPassword()))
+      rsp = requests.put(host+endpoint, verify=False, auth=('admin', passwd))
       rspjson = rsp.json()
   else:
     headers = {'authorization': 'Bearer '+token}
     if query != None:
-      rsp = requests.put(HOST+endpoint, verify=False, headers=headers, data=query)
+      rsp = requests.put(host+endpoint, verify=False, headers=headers, data=query)
       rspjson = rsp.json()
     else:
-      rsp = requests.put(HOST+endpoint, verify=False, headers=headers)
+      rsp = requests.put(host+endpoint, verify=False, headers=headers)
       rspjson = rsp.json()
   return rspjson
 
-def deleteRequest(endpoint, token):
+def deleteRequest(endpoint, token, reqOptions):
+  host = getHost(reqOptions)
+  passwd = getPassword(reqOptions)
   if token == '':
-    requests.delete(HOST+endpoint, verify=False, auth=('admin', getPassword()))
+    requests.delete(host+endpoint, verify=False, auth=('admin', passwd))
   else:
     headers = {'authorization': 'Bearer '+token}
-    requests.delete(HOST+endpoint, verify=False, headers=headers)
+    requests.delete(host+endpoint, verify=False, headers=headers)
 
 def getElapsed(ts1, ts2):
   delta = ts2 - ts1
@@ -213,7 +212,7 @@ def getElapsed(ts1, ts2):
     ms += 1
   return ms*grain
 
-def createNamespaceScope(namespaces, scopeName, scopeDescription):
+def createNamespaceScope(namespaces, scopeName, scopeDescription, reqOptions):
   id = ''
   query = {
     K_NAME: scopeName,
@@ -224,11 +223,11 @@ def createNamespaceScope(namespaces, scopeName, scopeDescription):
   }
   for ns in namespaces:
     query[K_RULES][K_INCLUDED_NAMESPACES].append({K_CLUSTERNAME: ns[K_METADATA][K_CLUSTERNAME], K_NAMESPACENAME: ns[K_METADATA][K_NAME]})
-  rspjson = postRequest(SIMPLE_ACCESS_SCOPE_ENDPOINT, query, '')
+  rspjson = postRequest(SIMPLE_ACCESS_SCOPE_ENDPOINT, query, '', reqOptions)
   id = rspjson[K_ID]
   return id
 
-def updateNamespaceScope(namespaces, scopeId, scopeName, scopeDescription):
+def updateNamespaceScope(namespaces, scopeId, scopeName, scopeDescription, reqOptions):
   query = {
     K_ID: scopeId,
     K_NAME: scopeName,
@@ -239,10 +238,10 @@ def updateNamespaceScope(namespaces, scopeId, scopeName, scopeDescription):
   }
   for ns in namespaces:
     query[K_RULES][K_INCLUDED_NAMESPACES].append({K_CLUSTERNAME: ns[K_METADATA][K_CLUSTERNAME], K_NAMESPACENAME: ns[K_METADATA][K_NAME]})
-  rspjson = putRequest(SIMPLE_ACCESS_SCOPE_ENDPOINT+'/'+scopeId, query, '')
+  rspjson = putRequest(SIMPLE_ACCESS_SCOPE_ENDPOINT+'/'+scopeId, query, '', reqOptions)
   return scopeId
 
-def createRole(rolename, permissionsetid, accessscopeid, description):
+def createRole(rolename, permissionsetid, accessscopeid, description, reqOptions):
   if not PERMISSION_SET_PREFIX in permissionsetid:
     permissionsetid = PERMISSION_SET_PREFIX+permissionsetid
   if not ACCESS_SCOPE_PREFIX in accessscopeid:
@@ -254,10 +253,10 @@ def createRole(rolename, permissionsetid, accessscopeid, description):
     K_PERMISSIONSETID: permissionsetid,
     K_ACCESSSCOPEID: accessscopeid
   }
-  rspjson = postRequest(ROLE_ENDPOINT+'/'+rolename, query, '')
+  rspjson = postRequest(ROLE_ENDPOINT+'/'+rolename, query, '', reqOptions)
   return rspjson
 
-def updateRole(rolename, permissionsetid, accessscopeid, description):
+def updateRole(rolename, permissionsetid, accessscopeid, description, reqOptions):
   if not PERMISSION_SET_PREFIX in permissionsetid:
     permissionsetid = PERMISSION_SET_PREFIX+permissionsetid
   if not ACCESS_SCOPE_PREFIX in accessscopeid:
@@ -269,25 +268,25 @@ def updateRole(rolename, permissionsetid, accessscopeid, description):
     K_PERMISSIONSETID: permissionsetid,
     K_ACCESSSCOPEID: accessscopeid
   }
-  rspjson = putRequest(ROLE_ENDPOINT+'/'+rolename, query, '')
+  rspjson = putRequest(ROLE_ENDPOINT+'/'+rolename, query, '', reqOptions)
   return rspjson
 
-def getToken(role):
+def getToken(role, reqOptions):
   token = ''
   query = {
     K_NAME: role+'_token',
     K_ROLES: [role]
   }
-  rspjson = postRequest(TOKEN_GENERATOR_ENDPOINT, query, '')
+  rspjson = postRequest(TOKEN_GENERATOR_ENDPOINT, query, '', reqOptions)
   # print(json.dumps(rspjson))
   if K_TOKEN in rspjson:
     token = rspjson[K_TOKEN]
   return token
 
-def getNamespaces():
+def getNamespaces(reqOptions):
   print('Fetching namespaces')
   start = datetime.datetime.now()
-  rspjson = getRequestAsAdmin(NAMESPACE_ENDPOINT, EMPTY_QUERY)
+  rspjson = getRequestAsAdmin(NAMESPACE_ENDPOINT, EMPTY_QUERY, reqOptions)
   end = datetime.datetime.now()
   elapsed = getElapsed(start, end)
   print('Namespace lookup took ' + str(end - start) + ' seconds (?)')
@@ -311,8 +310,8 @@ def getNamespaces():
     namespacesByClusterAndName[clusterName][namespaceName] = ns
   return namespacesByClusterAndName
 
-def getRoles():
-  rspjson = getRequestAsAdmin(ROLE_ENDPOINT, EMPTY_QUERY)
+def getRoles(reqOptions):
+  rspjson = getRequestAsAdmin(ROLE_ENDPOINT, EMPTY_QUERY, reqOptions)
   rolesByName = {}
   if K_ROLES not in rspjson:
     return rolesByName
@@ -320,10 +319,10 @@ def getRoles():
     roleName = role[K_NAME]
     rolesByName[roleName] = role
   return rolesByName
-  
 
-def getAccessScopes():
-  rspjson = getRequestAsAdmin(SIMPLE_ACCESS_SCOPE_ENDPOINT, EMPTY_QUERY)
+
+def getAccessScopes(reqOptions):
+  rspjson = getRequestAsAdmin(SIMPLE_ACCESS_SCOPE_ENDPOINT, EMPTY_QUERY, reqOptions)
   accessScopesByName = {}
   if not K_ACCESSSCOPES in rspjson:
     return accessScopesByName
@@ -332,8 +331,8 @@ def getAccessScopes():
     accessScopesByName[scopeName] = scope
   return accessScopesByName
 
-def getPermissionSets():
-  rspjson = getRequestAsAdmin(PERMISSION_SET_ENDPOINT, EMPTY_QUERY)
+def getPermissionSets(reqOptions):
+  rspjson = getRequestAsAdmin(PERMISSION_SET_ENDPOINT, EMPTY_QUERY, reqOptions)
   permissionSetsById= {}
   if not K_PERMISSIONSETS in rspjson:
     return permissionSetsById
@@ -342,7 +341,7 @@ def getPermissionSets():
     permissionSetsById[permissionSetId] = permissionSet
   return permissionSetsById
 
-def ensureScopeDistribution(scope, allAccessScopes):
+def checkScopeDistribution(scope, allAccessScopes):
   if not scope in allAccessScopes:
     print('Scope missing : ' + scope)
     return False
@@ -423,8 +422,8 @@ def listNamespacesToReserve(clusterCount, namespaceCount, reservedNamespacesByCl
   print('Shortlisted ' + str(len(newlyReserved)) + ' namespaces')
   return newlyReserved
 
-def ensureAccessScopes():
-  allAccessScopes = getAccessScopes()
+def ensureAccessScopes(reqOptions):
+  allAccessScopes = getAccessScopes(reqOptions)
   scopesToCreate = []
   scopesToUpdate = []
   reservedNamespacesByCluster = {}
@@ -432,7 +431,7 @@ def ensureAccessScopes():
     if not scope in allAccessScopes:
       scopesToCreate.append(scope)
     else:
-      hasProperDistribution = ensureScopeDistribution(scope, allAccessScopes)
+      hasProperDistribution = checkScopeDistribution(scope, allAccessScopes)
       if hasProperDistribution:
         actualScope = allAccessScopes[scope]
         for namespaceRule in actualScope[K_RULES][K_INCLUDEDNAMESPACES]:
@@ -447,13 +446,13 @@ def ensureAccessScopes():
     return
   print(str(len(scopesToCreate)) + ' scopes to create and ' + str(len(scopesToUpdate)) + ' scopes to update.')
   startNamespaceLookup = datetime.datetime.now()
-  allNamespaces = getNamespaces()
+  allNamespaces = getNamespaces(reqOptions)
   endNamespaceLookup = datetime.datetime.now()
   elapsedNamespaceLookup = getElapsed(startNamespaceLookup, endNamespaceLookup)
   for scope in scopesToCreate:
     distribution = SCOPE_DISTRIBUTION[scope]
     scopeNamespaces = listNamespacesToReserve(distribution['ClusterCount'], distribution['NamespaceCount'], reservedNamespacesByCluster, allNamespaces)
-    createNamespaceScope(scopeNamespaces, scope, '')
+    createNamespaceScope(scopeNamespaces, scope, '', reqOptions)
     for ns in scopeNamespaces:
       clusterName = ns[K_METADATA][K_CLUSTERNAME]
       namespaceName = ns[K_METADATA][K_NAME]
@@ -465,7 +464,7 @@ def ensureAccessScopes():
     actualScope = allAccessScopes[scope]
     scopeId = actualScope[K_ID]
     scopeNamespaces = listNamespacesToReserve(distribution['ClusterCount'], distribution['NamespaceCount'], reservedNamespacesByCluster, allNamespaces)
-    updateNamespaceScope(scopeNamespaces, scopeId, scope, '')
+    updateNamespaceScope(scopeNamespaces, scopeId, scope, '', reqOptions)
     for ns in scopeNamespaces:
       clusterName = ns[K_METADATA][K_CLUSTERNAME]
       namespaceName = ns[K_METADATA][K_NAME]
@@ -473,11 +472,11 @@ def ensureAccessScopes():
         reservedNamespacesByCluster[clusterName] = {}
       reservedNamespacesByCluster[clusterName][namespaceName] = True
 
-def ensureTestRoles():
-  ensureAccessScopes()
-  allAccessScopes = getAccessScopes()
-  allPermissionSets = getPermissionSets()
-  allRoles = getRoles()
+def ensureTestRoles(reqOptions):
+  ensureAccessScopes(reqOptions)
+  allAccessScopes = getAccessScopes(reqOptions)
+  allPermissionSets = getPermissionSets(reqOptions)
+  allRoles = getRoles(reqOptions)
   rolesToCreate = []
   rolesToUpdate = []
   for role in TEST_ROLES:
@@ -501,14 +500,14 @@ def ensureTestRoles():
     rolePermissionSetId = TEST_ROLES[role][K_PERMISSIONSETID]
     roleAccessScopeName = TEST_ROLES[role][K_ACCESSSCOPENAME]
     roleAccessScopeId = allAccessScopes[roleAccessScopeName][K_ID]
-    createRole(role, rolePermissionSetId, roleAccessScopeId, '')
+    createRole(role, rolePermissionSetId, roleAccessScopeId, '', reqOptions)
   for role in rolesToUpdate:
     rolePermissionSetId = TEST_ROLES[role][K_PERMISSIONSETID]
     roleAccessScopeName = TEST_ROLES[role][K_ACCESSSCOPENAME]
     roleAccessScopeId = allAccessScopes[roleAccessScopeName][K_ID]
-    updateRole(role, rolePermissionSetId, roleAccessScopeId, '')
+    updateRole(role, rolePermissionSetId, roleAccessScopeId, '', reqOptions)
 
-def runTimedGraphQLQuery(opname, token):
+def runTimedGraphQLQuery(opname, token, reqOptions):
   start = datetime.datetime.now()
   query = ''
   result = {}
@@ -519,7 +518,7 @@ def runTimedGraphQLQuery(opname, token):
     if K_OPERATIONNAME in parsedQuery:
       realOpName = parsedQuery[K_OPERATIONNAME]
     try:
-      result = getRequest(GRAPHQL_ENDPOINT + '?opname=' + realOpName, query, token, QUERY_TIMEOUT)
+      result = getRequest(GRAPHQL_ENDPOINT + '?opname=' + realOpName, query, token, reqOptions, timeout = QUERY_TIMEOUT)
       # print(str(result))
     except:
       print('runTimedGraphQLQuery failure for target ' + opname + ' (' + realOpName + ')')
@@ -529,13 +528,20 @@ def runTimedGraphQLQuery(opname, token):
   # print('GraphQL query ' + opname + ' took ' + str(elapsed) + ' ms')
   return elapsed, result
 
-def collectPerformanceData(runCount):
+def collectPerformanceData(runCount, reqOptions):
   dataByWidgetAndRole = {}
+  role_api_tokens = {}
   for role in TEST_ROLES:
-    token = getToken(role)
+    role_api_tokens[role] = getToken(role, reqOptions)
+  for role in TEST_ROLES:
+    token = role_api_tokens[role]
+    sys.stdout.write('-')
+    sys.stdout.flush()
     # Get Alert count
     widgetName = 'alert_count'
-    elapsed, graphQLResult = runTimedGraphQLQuery('summary_counts', token)
+    elapsed, graphQLResult = runTimedGraphQLQuery('summary_counts', token, reqOptions)
+    sys.stdout.write('.')
+    sys.stdout.flush()
     if widgetName not in dataByWidgetAndRole:
       dataByWidgetAndRole[widgetName] = {}
     valueToAdd = 0
@@ -547,7 +553,9 @@ def collectPerformanceData(runCount):
     dataByWidgetAndRole[widgetName][role] = valueToAdd
     # Get CVE count
     widgetName = 'vulnerability_count'
-    elapsed, graphQLResult = runTimedGraphQLQuery('cvesCount', token)
+    elapsed, graphQLResult = runTimedGraphQLQuery('cvesCount', token, reqOptions)
+    sys.stdout.write('.')
+    sys.stdout.flush()
     if widgetName not in dataByWidgetAndRole:
       dataByWidgetAndRole[widgetName] = {}
     valueToAdd = 0
@@ -564,7 +572,9 @@ def collectPerformanceData(runCount):
     dataByWidgetAndRole[widgetName][role] = valueToAdd
     # Get Image count
     widgetName = 'image_count'
-    elapsed, graphQLResult = runTimedGraphQLQuery('getImages', token)
+    elapsed, graphQLResult = runTimedGraphQLQuery('getImages', token, reqOptions)
+    sys.stdout.write('.')
+    sys.stdout.flush()
     if widgetName not in dataByWidgetAndRole:
       dataByWidgetAndRole[widgetName] = {}
     valueToAdd = 0
@@ -574,6 +584,10 @@ def collectPerformanceData(runCount):
       print('No value for widget [' + widgetName + '] and role ' + role)
       print(graphQLResult)
     dataByWidgetAndRole[widgetName][role] = valueToAdd
+    sys.stdout.write('+')
+    sys.stdout.flush()
+  sys.stdout.write('\n')
+  sys.stdout.flush()
   for it in range(runCount):
     runstart = datetime.datetime.now()
     for role in TEST_ROLES:
@@ -585,8 +599,8 @@ def collectPerformanceData(runCount):
           dataByWidgetAndRole[widget] = {}
         if role not in dataByWidgetAndRole[widget]:
           dataByWidgetAndRole[widget][role] = []
-        token = getToken(role)
-        elapsed, graphQLResult = runTimedGraphQLQuery(widget, token)
+        token = role_api_tokens[role]
+        elapsed, graphQLResult = runTimedGraphQLQuery(widget, token, reqOptions)
         dataByWidgetAndRole[widget][role].append(elapsed)
       sys.stdout.write('+')
       sys.stdout.flush()
@@ -626,7 +640,7 @@ def displayPerformanceData(dataByWidgetAndRole):
       # TODO: consider taking the average augmented or diminished by the standard deviation
       perf_array.append(avgelapsed)
     widget_perf_arrays[widget] = perf_array
-  
+
   for widget in ['alert_count', 'vulnerability_count', 'image_count']:
     perf_array = widget_perf_arrays[widget]
     print(widget + ',' + ','.join([str(x) for x in perf_array]))
@@ -634,13 +648,23 @@ def displayPerformanceData(dataByWidgetAndRole):
     perf_array = widget_perf_arrays[widget]
     print(widget + ',' + ','.join([str(x) for x in perf_array]))
 
+def parseOptions():
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-H", "--host", help="host to send the queries to.", type=str, default="localhost")
+  parser.add_argument("-P", "--port", help="port to send the queries to on the target host.", type=int, default=8000)
+  parser.add_argument("-C", "--count", help="number of runs for statistical value extraction", type=int, default=10)
+  parser.add_argument("-F", "--passwordfile", help="path to the password file", type=str, default="deploy/k8s/central-deploy/password")
+  opts = parser.parse_args()
+  return opts
 
 ##### MAIN SCRIPT CONTENT #####
 
+options = parseOptions()
+
 urllib3.disable_warnings()
 
-ensureTestRoles()
+ensureTestRoles(options)
 
-dataByWidgetAndRole = collectPerformanceData(TEST_RUN_COUNTS)
+dataByWidgetAndRole = collectPerformanceData(options.count, options)
 
 displayPerformanceData(dataByWidgetAndRole)
