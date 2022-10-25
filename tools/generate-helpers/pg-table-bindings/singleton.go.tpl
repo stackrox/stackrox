@@ -75,7 +75,7 @@ func New(db *pgxpool.Pool) Store {
 {{- define "insertObject"}}
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
-    serialized, marshalErr := obj.Marshal()
+    serialized, marshalErr := obj.MarshalVT()
     if marshalErr != nil {
         return marshalErr
     }
@@ -172,7 +172,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) 
 	}
 
 	var msg {{.Type}}
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVT(data); err != nil {
         return nil, false, err
 	}
 	return &msg, true, nil

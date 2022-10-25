@@ -285,7 +285,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ImageComponen
 		}
 		for _, data := range rows {
 			var msg storage.ImageComponentEdge
-			if err := msg.Unmarshal(data); err != nil {
+			if err := msg.UnmarshalVT(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

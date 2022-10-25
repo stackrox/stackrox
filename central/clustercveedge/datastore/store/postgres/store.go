@@ -285,7 +285,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ClusterCVEEdg
 		}
 		for _, data := range rows {
 			var msg storage.ClusterCVEEdge
-			if err := msg.Unmarshal(data); err != nil {
+			if err := msg.UnmarshalVT(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

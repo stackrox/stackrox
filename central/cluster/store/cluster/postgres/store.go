@@ -79,7 +79,7 @@ func New(db *pgxpool.Pool) Store {
 
 func insertIntoClusters(ctx context.Context, batch *pgx.Batch, obj *storage.Cluster) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -456,7 +456,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Cluster) erro
 		}
 		for _, data := range rows {
 			var msg storage.Cluster
-			if err := msg.Unmarshal(data); err != nil {
+			if err := msg.UnmarshalVT(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

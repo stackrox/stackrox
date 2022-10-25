@@ -50,7 +50,7 @@ func New(db *pgxpool.Pool) Store {
 }
 
 func insertIntoSensorUpgradeConfigs(ctx context.Context, tx pgx.Tx, obj *storage.SensorUpgradeConfig) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -137,7 +137,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.SensorUpgradeCon
 	}
 
 	var msg storage.SensorUpgradeConfig
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil

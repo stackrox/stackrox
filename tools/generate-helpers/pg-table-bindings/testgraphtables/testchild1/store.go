@@ -78,7 +78,7 @@ func New(db *pgxpool.Pool) Store {
 
 func insertIntoTestChild1(ctx context.Context, batch *pgx.Batch, obj *storage.TestChild1) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -119,7 +119,7 @@ func (s *storeImpl) copyFromTestChild1(ctx context.Context, tx pgx.Tx, objs ...*
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -534,7 +534,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestChild1) e
 		}
 		for _, data := range rows {
 			var msg storage.TestChild1
-			if err := msg.Unmarshal(data); err != nil {
+			if err := msg.UnmarshalVT(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

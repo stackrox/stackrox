@@ -45,7 +45,7 @@ func New(db *pgxpool.Pool) Store {
 }
 
 func insertIntoInstallationInfos(ctx context.Context, tx pgx.Tx, obj *storage.InstallationInfo) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -118,7 +118,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.InstallationInfo
 	}
 
 	var msg storage.InstallationInfo
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil

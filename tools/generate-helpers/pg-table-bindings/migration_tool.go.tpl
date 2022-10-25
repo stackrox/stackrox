@@ -18,7 +18,7 @@
     // Convert{{$schema.TypeName}}FromProto converts a `{{$schema.Type}}` to Gorm model
     func Convert{{$schema.TypeName}}FromProto(obj {{$schema.Type}}{{if $schema.Parent}}, idx int{{end}}{{ range $idx, $field := $schema.FieldsReferringToParent }}, {{$field.Name}} {{$field.Type}}{{end}}) (*schema.{{$schema.Table|upperCamelCase}}, error) {
         {{- if not $schema.Parent }}
-        serialized, err := obj.Marshal()
+        serialized, err := obj.MarshalVT()
         if err != nil {
             return nil, err
         }
@@ -39,7 +39,7 @@
     // Convert{{$schema.TypeName}}ToProto converts Gorm model `{{$schema.Table|upperCamelCase}}` to its protobuf type object
     func Convert{{$schema.TypeName}}ToProto(m *schema.{{$schema.Table|upperCamelCase}}) ({{$schema.Type}}, error) {
         var msg storage.{{$schema.TypeName}}
-        if err := msg.Unmarshal(m.Serialized); err != nil {
+        if err := msg.UnmarshalVT(m.Serialized); err != nil {
             return nil, err
         }
         return &msg, nil

@@ -27,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/ternary"
-	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 var (
@@ -716,7 +715,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 }
 
 type unmarshaler[T any] interface {
-	proto.Unmarshaler
+	UnmarshalVT([]byte) error
 	*T
 }
 
@@ -860,7 +859,7 @@ func unmarshal[T any, PT unmarshaler[T]](row pgx.Row) (*T, error) {
 		return nil, err
 	}
 	msg := new(T)
-	if err := PT(msg).Unmarshal(data); err != nil {
+	if err := PT(msg).UnmarshalVT(data); err != nil {
 		return nil, err
 	}
 	return msg, nil

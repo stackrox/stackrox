@@ -124,7 +124,7 @@ func New(db *pgxpool.Pool) Store {
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     {{if not $schema.Parent }}
-    serialized, marshalErr := obj.Marshal()
+    serialized, marshalErr := obj.MarshalVT()
     if marshalErr != nil {
         return marshalErr
     }
@@ -196,7 +196,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
         {{/* If embedded, the top-level has the full serialized object */}}
         {{if not $schema.Parent }}
-        serialized, marshalErr := obj.Marshal()
+        serialized, marshalErr := obj.MarshalVT()
         if marshalErr != nil {
             return marshalErr
         }
@@ -947,7 +947,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 		}
 		for _, data := range rows {
 			var msg {{.Type}}
-			if err := msg.Unmarshal(data); err != nil {
+			if err := msg.UnmarshalVT(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

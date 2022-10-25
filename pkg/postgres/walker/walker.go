@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/oneofwrappers"
 	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
@@ -313,6 +314,10 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		if strings.HasPrefix(structField.Name, "XXX") {
 			continue
 		}
+		// Check if the field is actually a protobuf field.
+		if structField.Tag.Get("protobuf") == "" && structField.Tag.Get("protobuf_oneof") == "" {
+			continue
+		}
 		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.Parent == nil, ctx.ignorePK, ctx.ignoreUnique, ctx.ignoreFKs)
 
 		if opts.Ignored {
@@ -407,25 +412,10 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 
 			}
 			ptrToOriginal := reflect.PtrTo(original)
+			actualOneOfFields := oneofwrappers.OneofWrappers(reflect.Zero(ptrToOriginal).Interface())
 
-			methodName := fmt.Sprintf("Get%s", field.Name)
-			oneofGetter, ok := ptrToOriginal.MethodByName(methodName)
-			if !ok {
-				panic("didn't find oneof function, did the naming change?")
-			}
-			oneofInterfaces := oneofGetter.Func.Call([]reflect.Value{reflect.New(original)})
-			if len(oneofInterfaces) != 1 {
-				panic(fmt.Sprintf("found %d interfaces returned from oneof getter", len(oneofInterfaces)))
-			}
+			oneofInterface := structField.Type
 
-			oneofInterface := oneofInterfaces[0].Type()
-
-			method, ok := ptrToOriginal.MethodByName("XXX_OneofWrappers")
-			if !ok {
-				panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", original.Name()))
-			}
-			out := method.Func.Call([]reflect.Value{reflect.New(original)})
-			actualOneOfFields := out[0].Interface().([]interface{})
 			for _, f := range actualOneOfFields {
 				typ := reflect.TypeOf(f)
 				if typ.Implements(oneofInterface) {
