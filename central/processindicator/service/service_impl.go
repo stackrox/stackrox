@@ -86,7 +86,7 @@ func (s *serviceImpl) GetProcessesByDeployment(ctx context.Context, req *v1.GetP
 
 func sortIndicators(indicators []*storage.ProcessIndicator) {
 	sort.SliceStable(indicators, func(i, j int) bool {
-		return indicators[i].GetSignal().GetTime().Compare(indicators[j].GetSignal().GetTime()) == -1
+		return indicators[i].GetSignal().GetTime().AsTime().Before(indicators[j].GetSignal().GetTime().AsTime())
 	})
 }
 

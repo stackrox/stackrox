@@ -362,7 +362,7 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 	s.store.EXPECT().Get(s.ctx, policy.Id).Return(nil, false, nil)
 	s.store.EXPECT().Upsert(s.ctx, policy).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
-	d
+
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.CloneVT()}, false)
 	s.NoError(err)
 	s.True(allSucceeded)

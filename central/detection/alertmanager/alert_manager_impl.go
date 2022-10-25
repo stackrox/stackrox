@@ -143,7 +143,7 @@ func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert
 	for _, resolvedAlert := range resolvedAlerts {
 		resolvedAt := resolvedAlert.GetResolvedAt()
 		// This alert was resolved very recently, so debounce the notification.
-		if resolvedAt != nil && resolvedAt.AsTime().After(maxAllowedResolvedAtTime.AsTime())) > 0 {
+		if resolvedAt != nil && resolvedAt.AsTime().After(maxAllowedResolvedAtTime.AsTime()) {
 			return true
 		}
 	}

@@ -113,7 +113,7 @@ func matchesECRAuth(new, old *storage.ImageIntegration) bool {
 	return newAuth == nil && oldAuth == nil ||
 		newAuth.GetUsername() == oldAuth.GetUsername() &&
 			newAuth.GetPassword() == oldAuth.GetPassword() &&
-			newAuth.GetExpiresAt().Equal(oldAuth.GetExpiresAt())
+			newAuth.GetExpiresAt().AsTime().Equal(oldAuth.GetExpiresAt().AsTime())
 }
 
 // matchingFunc returns true if the new integration matches the old integration.
