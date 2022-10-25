@@ -33,7 +33,7 @@ type mockClustersServiceServer struct {
 	postClusterInjectedFn      postClusterFn
 
 	// spy properties
-	clusterSent                     []storage.Cluster
+	clusterSent                     []*storage.Cluster
 	getClusterCalled                bool
 	getKernelSupportAvailableCalled bool
 }
@@ -52,7 +52,7 @@ func (m *mockClustersServiceServer) GetKernelSupportAvailable(ctx context.Contex
 }
 
 func (m *mockClustersServiceServer) PostCluster(ctx context.Context, cluster *storage.Cluster) (*v1.ClusterResponse, error) {
-	m.clusterSent = append(m.clusterSent, *cluster)
+	m.clusterSent = append(m.clusterSent, cluster)
 	return m.postClusterInjectedFn(cluster)
 }
 
@@ -123,6 +123,7 @@ func (s *sensorGenerateTestSuite) createMockedCommand(getDefaultsF getDefaultsFn
 	var out, errOut *bytes.Buffer
 	conn, closeF, mock := s.createGRPCMockClustersService(getDefaultsF, postClusterF)
 	cmd := s.cmd
+	cmd.cluster = defaultCluster()
 	cmd.env, out, errOut = s.newTestMockEnvironmentWithConn(conn)
 	return out, errOut, closeF, cmd, mock
 }

@@ -58,6 +58,9 @@ func NewProvider(options ...ProviderOption) (Provider, error) {
 	if err := validateProvider(provider); err != nil {
 		return nil, err
 	}
+	if provider.storedInfo == nil {
+		return nil, errors.New("provider must specify settings in storage format")
+	}
 	return provider, nil
 }
 
@@ -73,10 +76,10 @@ func applyOptions(provider *providerImpl, options ...ProviderOption) error {
 
 // Input provider must be locked when run.
 func validateProvider(provider *providerImpl) error {
-	if provider.storedInfo.Id == "" {
+	if provider.storedInfo.GetId() == "" {
 		return errors.New("auth providers must have an id")
 	}
-	if provider.storedInfo.Name == "" {
+	if provider.storedInfo.GetName() == "" {
 		return errors.New("auth providers must have a name")
 	}
 	return nil

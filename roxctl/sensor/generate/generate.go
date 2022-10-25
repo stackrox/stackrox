@@ -53,13 +53,13 @@ type sensorGenerateCommand struct {
 	enablePodSecurityPolicies bool
 
 	// injected or constructed values
-	cluster     storage.Cluster
+	cluster     *storage.Cluster
 	env         environment.Environment
 	getBundleFn util.GetBundleFn
 }
 
-func defaultCluster() storage.Cluster {
-	return storage.Cluster{
+func defaultCluster() *storage.Cluster {
+	return &storage.Cluster{
 		TolerationsConfig: &storage.TolerationsConfig{
 			Disabled: false,
 		},
@@ -188,7 +188,7 @@ func (s *sensorGenerateCommand) createCluster(ctx context.Context, svc v1.Cluste
 		s.cluster.DynamicConfig.AdmissionControllerConfig = nil
 	}
 
-	response, err := svc.PostCluster(ctx, &s.cluster)
+	response, err := svc.PostCluster(ctx, s.cluster)
 	if err != nil {
 		return "", err
 	}

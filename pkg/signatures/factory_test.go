@@ -58,14 +58,14 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 
 	cases := map[string]struct {
 		integration *storage.SignatureIntegration
-		results     []storage.ImageSignatureVerificationResult
+		results     []*storage.ImageSignatureVerificationResult
 	}{
 		"successful verification": {
 			integration: &storage.SignatureIntegration{
 				Id:     "successful",
 				Cosign: successfulCosignConfig,
 			},
-			results: []storage.ImageSignatureVerificationResult{
+			results: []*storage.ImageSignatureVerificationResult{
 				{
 					VerifierId: "successful",
 					Status:     storage.ImageSignatureVerificationResult_VERIFIED,
@@ -77,7 +77,7 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 				Id:     "failure",
 				Cosign: failingCosignConfig,
 			},
-			results: []storage.ImageSignatureVerificationResult{
+			results: []*storage.ImageSignatureVerificationResult{
 				{
 					VerifierId:  "failure",
 					Status:      storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,

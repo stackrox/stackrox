@@ -27,7 +27,7 @@ func WithBackendFromFactory(ctx context.Context, factory BackendFactory) Provide
 	return func(pr *providerImpl) error {
 		pr.backendFactory = factory
 
-		backend, err := factory.CreateBackend(ctx, pr.storedInfo.Id, AllUIEndpoints(&pr.storedInfo), pr.storedInfo.Config)
+		backend, err := factory.CreateBackend(ctx, pr.storedInfo.GetId(), AllUIEndpoints(pr.storedInfo), pr.storedInfo.GetConfig())
 		if err != nil {
 			return errors.Wrapf(err, "failed to create auth provider of type %s", pr.storedInfo.Type)
 		}
@@ -57,7 +57,7 @@ func WithRoleMapper(roleMapper permissions.RoleMapper) ProviderOption {
 // WithStorageView sets the values in the store auth provider from the input value.
 func WithStorageView(stored *storage.AuthProvider) ProviderOption {
 	return func(pr *providerImpl) error {
-		pr.storedInfo = *stored
+		pr.storedInfo = stored.CloneVT()
 		return nil
 	}
 }

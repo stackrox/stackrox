@@ -19,7 +19,7 @@ func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
 		if pr.doNotStore {
 			return nil
 		}
-		return store.AddAuthProvider(ctx, &pr.storedInfo)
+		return store.AddAuthProvider(ctx, pr.storedInfo)
 	}
 }
 
@@ -29,7 +29,7 @@ func UpdateStore(ctx context.Context, store Store) ProviderOption {
 		if pr.doNotStore {
 			return nil
 		}
-		return store.UpdateAuthProvider(ctx, &pr.storedInfo)
+		return store.UpdateAuthProvider(ctx, pr.storedInfo)
 	}
 }
 
@@ -47,8 +47,8 @@ func DeleteFromStore(ctx context.Context, store Store, providerID string, force 
 		}
 		// a deleted provider should no longer be accessible, but it's still cached as a token source so mark it as
 		// no longer valid
-		pr.storedInfo = storage.AuthProvider{
-			Id:      pr.storedInfo.Id,
+		pr.storedInfo = &storage.AuthProvider{
+			Id:      pr.storedInfo.GetId(),
 			Enabled: false,
 		}
 		return nil
