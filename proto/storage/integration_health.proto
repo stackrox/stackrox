@@ -4,7 +4,6 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
 
 package storage;
 
@@ -21,7 +20,7 @@ message IntegrationHealth {
         BACKUP = 3;
     }
 
-    string id                                     = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string id                                     = 1;  // @gotags: sql:"pk"
     string name                                   = 2;
     Type type                                     = 3;
     Status status                                 = 4;

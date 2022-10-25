@@ -3,14 +3,12 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
-import "gogoproto/gogo.proto";
-
 package storage;
 
 message Risk {
-    string id                       = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string id                       = 1;  // @gotags: sql:"pk"
     RiskSubject subject             = 2;
-    float score                     = 3 [(gogoproto.moretags) = 'search:"Risk Score,hidden"'];
+    float score                     = 3;  // @gotags: search:"Risk Score,hidden"
 
     message Result {
         message Factor {
@@ -26,9 +24,9 @@ message Risk {
 
 message RiskSubject {
     string id                   = 1;
-    string namespace            = 2 [(gogoproto.moretags) = 'search:"Namespace,store"'];
-    string cluster_id           = 3 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden"'];
-    RiskSubjectType type        = 4 [(gogoproto.moretags) = 'search:"Risk Subject Type,hidden"'];
+    string namespace            = 2;  // @gotags: search:"Namespace,store"
+    string cluster_id           = 3;  // @gotags: search:"Cluster ID,store,hidden"
+    RiskSubjectType type        = 4;  // @gotags: search:"Risk Subject Type,hidden"
 }
 
 // Next tag: 9

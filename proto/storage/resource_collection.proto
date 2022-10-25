@@ -4,7 +4,6 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
 import "storage/user.proto";
 import "storage/policy.proto";
 
@@ -13,11 +12,11 @@ package storage;
 message ResourceCollection {
   message EmbeddedResourceCollection {
     // 'id' is searchable to force a separate table
-    string id = 1 [(gogoproto.moretags) = 'search:"Embedded Collection ID,hidden" sql:"fk(ResourceCollection:id),restrict-delete"'];
+    string id = 1;  // @gotags: search:"Embedded Collection ID,hidden" sql:"fk(ResourceCollection:id),restrict-delete"
   }
 
-  string id                                                = 1 [(gogoproto.moretags) = 'sql:"pk"']; // primary key
-  string name                                              = 2 [(gogoproto.moretags) = 'search:"Collection Name" sql:"unique"'];
+  string id                                                = 1;  // @gotags: sql:"pk" // primary key
+  string name                                              = 2;  // @gotags: search:"Collection Name" sql:"unique"
   string description                                       = 3;
   google.protobuf.Timestamp created_at                     = 4;
   google.protobuf.Timestamp last_updated                   = 5;

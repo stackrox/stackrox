@@ -4,12 +4,11 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
 
 package storage;
 
 message TokenMetadata {
-    string id                            = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string id                            = 1;  // @gotags: sql:"pk"
     string name                          = 2;
     repeated string roles                = 7;
     google.protobuf.Timestamp issued_at  = 4;

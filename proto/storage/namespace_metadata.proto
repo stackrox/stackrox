@@ -4,18 +4,17 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
 
 
 package storage;
 
 message NamespaceMetadata {
-    string                    id            = 1 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"pk"'];
-    string                    name          = 2 [(gogoproto.moretags) = 'search:"Namespace,store"'];
-    string                    cluster_id    = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint"'];
-    string                    cluster_name  = 4 [(gogoproto.moretags) = 'search:"Cluster"'];
-    map<string, string>       labels        = 5 [(gogoproto.moretags) = 'search:"Namespace Label"'];
+    string                    id            = 1;  // @gotags: search:"Namespace ID" sql:"pk"
+    string                    name          = 2;  // @gotags: search:"Namespace,store"
+    string                    cluster_id    = 3;  // @gotags: search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint"
+    string                    cluster_name  = 4;  // @gotags: search:"Cluster"
+    map<string, string>       labels        = 5;  // @gotags: search:"Namespace Label"
     google.protobuf.Timestamp creation_time = 6;
     int64                     priority      = 7;
-    map<string, string>       annotations   = 8 [(gogoproto.moretags) = 'search:"Namespace Annotation"'];
+    map<string, string>       annotations   = 8;  // @gotags: search:"Namespace Annotation"
 }

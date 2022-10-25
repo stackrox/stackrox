@@ -5,7 +5,6 @@ option cc_enable_arenas = true;
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
 
 package storage;
 
@@ -15,18 +14,18 @@ package storage;
 message ProcessBaselineKey {
     // The idea is for the keys to be flexible.
     // Only certain combinations of these will be supported.
-    string deployment_id     = 1[(gogoproto.moretags) = 'search:"Deployment ID,hidden"'];
+    string deployment_id     = 1;  // @gotags: search:"Deployment ID,hidden"
     string container_name    = 2;
-    string cluster_id        = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store"'];
-    string namespace         = 4 [(gogoproto.moretags) = 'search:"Namespace,hidden,store"'];
+    string cluster_id        = 3;  // @gotags: search:"Cluster ID,hidden,store"
+    string namespace         = 4;  // @gotags: search:"Namespace,hidden,store"
 }
 
 message ProcessBaseline {
-    string                   id                = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string                   id                = 1;  // @gotags: sql:"pk"
     ProcessBaselineKey       key               = 2;
 
     repeated BaselineElement elements          = 3;
-    repeated BaselineElement element_graveyard = 8 [(gogoproto.moretags) = 'search:"-"'];
+    repeated BaselineElement element_graveyard = 8;  // @gotags: search:"-"
 
     google.protobuf.Timestamp created                    = 4;
     google.protobuf.Timestamp user_locked_timestamp      = 5;
@@ -62,9 +61,9 @@ message ContainerNameAndBaselineStatus {
 
 // `ProcessBaselineResults` represent cached results of process baseline evaluation.
 message ProcessBaselineResults {
-    string                                  deployment_id     = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string                                  cluster_id        = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store"'];
-    string                                  namespace         = 4 [(gogoproto.moretags) = 'search:"Namespace,hidden,store"'];
+    string                                  deployment_id     = 1;  // @gotags: sql:"pk"
+    string                                  cluster_id        = 3;  // @gotags: search:"Cluster ID,hidden,store"
+    string                                  namespace         = 4;  // @gotags: search:"Namespace,hidden,store"
     repeated ContainerNameAndBaselineStatus baseline_statuses = 2;
 }
 

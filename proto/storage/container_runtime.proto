@@ -3,8 +3,6 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
-import "gogoproto/gogo.proto";
-
 package storage;
 
 enum ContainerRuntime {
@@ -15,5 +13,5 @@ enum ContainerRuntime {
 
 message ContainerRuntimeInfo {
     ContainerRuntime type = 1;
-    string version        = 2 [(gogoproto.moretags) = 'search:"Container Runtime,store"'];
+    string version        = 2;  // @gotags: search:"Container Runtime,store"
 }

@@ -5,7 +5,6 @@ option java_package = "io.stackrox.proto.storage";
 
 import "storage/cve.proto";
 import "storage/schedule.proto";
-import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
 package storage;
@@ -14,10 +13,10 @@ message ReportConfiguration {
     enum ReportType {
         VULNERABILITY = 0;
     }
-    string                    id                           = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string                    name                         = 2 [(gogoproto.moretags) = 'search:"Report Name"'];
+    string                    id                           = 1;  // @gotags: sql:"pk"
+    string                    name                         = 2;  // @gotags: search:"Report Name"
     string                    description                  = 3;
-    ReportType                type                         = 4 [(gogoproto.moretags) = 'search:"Report Type"'];
+    ReportType                type                         = 4;  // @gotags: search:"Report Type"
     oneof                    filter {
         VulnerabilityReportFilters  vuln_report_filters    = 5;
     }

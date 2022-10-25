@@ -4,7 +4,6 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "gogoproto/gogo.proto";
 import "storage/compliance.proto";
 import "api/v1/search_service.proto";
 import "api/v1/common.proto";
@@ -29,8 +28,8 @@ message ComplianceStandardMetadata {
         NODE       = 4;
     }
 
-    string id                     = 1 [(gogoproto.moretags) = "search:\"Standard ID,hidden\""];
-    string name                   = 2 [(gogoproto.moretags) = "search:\"Standard,store,hidden\""];
+    string id                     = 1;  // @gotags: search:"Standard ID,hidden"
+    string name                   = 2;  // @gotags: search:"Standard,store,hidden"
     string description            = 3;
     int32  num_implemented_checks = 4;
     repeated Scope scopes         = 5;
@@ -38,18 +37,18 @@ message ComplianceStandardMetadata {
 }
 
 message ComplianceControlGroup {
-    string id                     = 1 [(gogoproto.moretags) = "search:\"Control Group ID\""];
-    string standard_id            = 2 [(gogoproto.moretags) = "search:\"Standard ID,store\""];
-    string name                   = 3 [(gogoproto.moretags) = "search:\"Control Group,store\""];
+    string id                     = 1;  // @gotags: search:"Control Group ID"
+    string standard_id            = 2;  // @gotags: search:"Standard ID,store"
+    string name                   = 3;  // @gotags: search:"Control Group,store"
     string description            = 4;
     int32  num_implemented_checks = 5;
 }
 
 message ComplianceControl {
-    string id          = 1 [(gogoproto.moretags) = "search:\"Control ID,hidden\""];
-    string standard_id = 2 [(gogoproto.moretags) = "search:\"Standard ID,hidden\""];
-    string group_id    = 3 [(gogoproto.moretags) = "search:\"Control Group ID,hidden\""];
-    string name        = 4 [(gogoproto.moretags) = "search:\"Control,store\""];
+    string id          = 1;  // @gotags: search:"Control ID,hidden"
+    string standard_id = 2;  // @gotags: search:"Standard ID,hidden"
+    string group_id    = 3;  // @gotags: search:"Control Group ID,hidden"
+    string name        = 4;  // @gotags: search:"Control,store"
     string description = 5;
 
     bool implemented           = 6;
@@ -58,8 +57,8 @@ message ComplianceControl {
 
 message ComplianceStandard {
     ComplianceStandardMetadata metadata    = 1;
-    repeated ComplianceControlGroup groups = 2 [(gogoproto.moretags) = "search:\"-\""];
-    repeated ComplianceControl controls    = 3 [(gogoproto.moretags) = "search:\"-\""];
+    repeated ComplianceControlGroup groups = 2;  // @gotags: search:"-"
+    repeated ComplianceControl controls    = 3;  // @gotags: search:"-"
 }
 
 message GetComplianceStandardResponse {

@@ -4,7 +4,6 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "gogoproto/gogo.proto";
 import "api/v1/auth_service.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
@@ -52,7 +51,7 @@ message UpdateAuthProviderRequest {
 
 message ExchangeTokenRequest {
     // The external authentication token. The server will mask the value of this credential in responses and logs.
-    string external_token = 1 [(gogoproto.moretags) = "scrub:\"always\""];
+    string external_token = 1;  // @gotags: scrub:"always"
     string type           = 2;
     string state          = 3;
 }

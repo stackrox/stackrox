@@ -5,7 +5,6 @@ option cc_enable_arenas = true;
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
 
 package storage;
 
@@ -16,30 +15,30 @@ message TestSingleKeyStruct {
       ENUM2 = 2;
     }
 
-    string key                 = 1 [(gogoproto.moretags) = 'sql:"pk,index=hash" search:"Test Key"'];
-    string name                = 2 [(gogoproto.moretags) = 'sql:"unique" search:"Test Name"'];
-    repeated string string_slice = 3 [(gogoproto.moretags) = 'search:"Test String Slice"'];
+    string key                 = 1;  // @gotags: sql:"pk,index=hash" search:"Test Key"
+    string name                = 2;  // @gotags: sql:"unique" search:"Test Name"
+    repeated string string_slice = 3;  // @gotags: search:"Test String Slice"
 
-    bool bool                    = 4 [(gogoproto.moretags) = 'search:"Test Bool"'];
+    bool bool                    = 4;  // @gotags: search:"Test Bool"
     // repeated bool bool_slice: currently unsupported
 
     // When using this ensure your precision needs are met and accounted for.  This will use a
     // BigInt which may require you to convert from uint64 to int64 OR update
     // the handling to use numerics.
-    uint64 uint64                = 5 [(gogoproto.moretags) = 'search:"Test Uint64"'];
+    uint64 uint64                = 5;  // @gotags: search:"Test Uint64"
     // repeated uint64 uint64_slice: currently unsupported
 
-    int64 int64                  = 6 [(gogoproto.moretags) = 'search:"Test Int64"'];
+    int64 int64                  = 6;  // @gotags: search:"Test Int64"
     // repeated int64 int64_slice: currently unsupported
 
-    float float                   = 7 [(gogoproto.moretags) = 'search:"Test Float"'];
+    float float                   = 7;  // @gotags: search:"Test Float"
     // repeated float float_slice: currently unsupported
 
-    map<string, string> labels          = 8  [(gogoproto.moretags) = 'search:"Test Labels"'];
-    google.protobuf.Timestamp timestamp = 9  [(gogoproto.moretags) = 'search:"Test Timestamp"'];
+    map<string, string> labels          = 8;  // @gotags: search:"Test Labels"
+    google.protobuf.Timestamp timestamp = 9;  // @gotags: search:"Test Timestamp"
 
-    Enum enum                           = 10 [(gogoproto.moretags) = 'search:"Test Enum"'];
-    repeated Enum enums                 = 11 [(gogoproto.moretags) = 'search:"Test Enum Slice"'];
+    Enum enum                           = 10;  // @gotags: search:"Test Enum"
+    repeated Enum enums                 = 11;  // @gotags: search:"Test Enum Slice"
 
     message Embedded {
       string embedded = 1;
@@ -79,35 +78,35 @@ message TestMultiKeyStruct {
     ENUM1 = 1;
     ENUM2 = 2;
   }
-  string key1                  = 1 [(gogoproto.moretags) = 'sql:"pk,id" search:"Test Key"'];
-  string key2                  = 2 [(gogoproto.moretags) = 'sql:"pk" search:"Test Key 2,store,hidden"'];
+  string key1                  = 1;  // @gotags: sql:"pk,id" search:"Test Key"
+  string key2                  = 2;  // @gotags: sql:"pk" search:"Test Key 2,store,hidden"
 
-  repeated string string_slice = 3 [(gogoproto.moretags) = 'search:"Test String Slice"'];
+  repeated string string_slice = 3;  // @gotags: search:"Test String Slice"
 
-  bool bool                    = 4 [(gogoproto.moretags) = 'search:"Test Bool"'];
+  bool bool                    = 4;  // @gotags: search:"Test Bool"
   // repeated bool bool_slice: currently unsupported
 
-  uint64 uint64                = 5 [(gogoproto.moretags) = 'search:"Test Uint64"'];
+  uint64 uint64                = 5;  // @gotags: search:"Test Uint64"
   // repeated uint64 uint64_slice: currently unsupported
 
-  int64 int64                  = 6 [(gogoproto.moretags) = 'search:"Test Int64"'];
+  int64 int64                  = 6;  // @gotags: search:"Test Int64"
   // repeated int64 int64_slice: currently unsupported
 
-  float float                   = 7 [(gogoproto.moretags) = 'search:"Test Float"'];
+  float float                   = 7;  // @gotags: search:"Test Float"
   // repeated float float_slice: currently unsupported
 
-  map<string, string> labels          = 8  [(gogoproto.moretags) = 'search:"Test Labels"'];
-  google.protobuf.Timestamp timestamp = 9  [(gogoproto.moretags) = 'search:"Test Timestamp"'];
+  map<string, string> labels          = 8;  // @gotags: search:"Test Labels"
+  google.protobuf.Timestamp timestamp = 9;  // @gotags: search:"Test Timestamp"
 
-  Enum enum                           = 10 [(gogoproto.moretags) = 'search:"Test Enum"'];
-  repeated Enum enums                 = 11 [(gogoproto.moretags) = 'search:"Test Enum Slice"'];
+  Enum enum                           = 10;  // @gotags: search:"Test Enum"
+  repeated Enum enums                 = 11;  // @gotags: search:"Test Enum Slice"
 
-  string string = 16 [(gogoproto.moretags) = 'search:"Test String"'];
+  string string = 16;  // @gotags: search:"Test String"
 
   // repeated int64: currently unsupported
-  repeated int64 int_slice_deprecated = 17 [deprecated = true, (gogoproto.moretags) = 'sql:"-"'];
+  repeated int64 int_slice_deprecated = 17 [deprecated = true];  // @gotags: sql:"-"
 
-  repeated int32 int32_slice = 18 [(gogoproto.moretags) = 'search:"Test Int32 Slice"'];
+  repeated int32 int32_slice = 18;  // @gotags: search:"Test Int32 Slice"
 
   message Embedded {
     string embedded = 1;
@@ -118,20 +117,20 @@ message TestMultiKeyStruct {
   Embedded embedded = 12;
 
   message Nested {
-    string nested = 1 [(gogoproto.moretags) = 'search:"Test Nested String"'];
-    bool is_nested = 3 [(gogoproto.moretags) = 'search:"Test Nested Bool"'];
-    int64 int64 = 4 [(gogoproto.moretags) = 'search:"Test Nested Int64"'];
+    string nested = 1;  // @gotags: search:"Test Nested String"
+    bool is_nested = 3;  // @gotags: search:"Test Nested Bool"
+    int64 int64 = 4;  // @gotags: search:"Test Nested Int64"
     message Nested2 {
-      string nested2 = 2 [(gogoproto.moretags) = 'search:"Test Nested String 2"'];
-      bool is_nested = 3 [(gogoproto.moretags) = 'search:"Test Nested Bool 2"'];
-      int64 int64 = 4 [(gogoproto.moretags) = 'search:"Test Nested Int64 2"'];
+      string nested2 = 2;  // @gotags: search:"Test Nested String 2"
+      bool is_nested = 3;  // @gotags: search:"Test Nested Bool 2"
+      int64 int64 = 4;  // @gotags: search:"Test Nested Int64 2"
     }
     Nested2 nested2 = 2;
   }
   repeated Nested nested = 13;
 
   message OneOfNested {
-    string nested = 1 [(gogoproto.moretags) = 'search:"Test Oneof Nested String"'];
+    string nested = 1;  // @gotags: search:"Test Oneof Nested String"
     message Nested2 {
       string nested2 = 2;
     }
@@ -159,114 +158,114 @@ message TestMultiKeyStruct {
 //        (n-1)   |
 //        TestG3GrandChild1
 message TestGrandparent {
-  string id  = 1 [(gogoproto.moretags) = 'search:"Test Grandparent ID" sql:"pk"'];
-  string val = 2 [(gogoproto.moretags) = 'search:"Test Grandparent Val"'];
+  string id  = 1;  // @gotags: search:"Test Grandparent ID" sql:"pk"
+  string val = 2;  // @gotags: search:"Test Grandparent Val"
 
   message Embedded {
     message Embedded2 {
-      string val = 1 [(gogoproto.moretags) = 'search:"Test Grandparent Embedded2"'];
+      string val = 1;  // @gotags: search:"Test Grandparent Embedded2"
     }
 
-    string   val                 = 1 [(gogoproto.moretags) = 'search:"Test Grandparent Embedded"'];
+    string   val                 = 1;  // @gotags: search:"Test Grandparent Embedded"
     repeated Embedded2 embedded2 = 2;
   }
 
   repeated Embedded embedded = 3;
 
-  int64 priority = 4 [(gogoproto.moretags) = 'search:"Test Grandparent Priority"'];
-  float risk_score = 5 [(gogoproto.moretags) = 'search:"Test Grandparent Risk Score"'];
+  int64 priority = 4;  // @gotags: search:"Test Grandparent Priority"
+  float risk_score = 5;  // @gotags: search:"Test Grandparent Risk Score"
 }
 
 message TestParent1 {
-   string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent1 ID" sql:"pk"'];
-   string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
+   string id        = 1;  // @gotags: search:"Test Parent1 ID" sql:"pk"
+   string parent_id = 2;  // @gotags: sql:"fk(TestGrandparent:id)"
 
 
    message Child1Ref {
-     string child_id = 1 [(gogoproto.moretags) = 'sql:"fk(TestChild1:id),no-fk-constraint"'];
+     string child_id = 1;  // @gotags: sql:"fk(TestChild1:id),no-fk-constraint"
    }
 
    repeated Child1Ref children = 3;
 
-   string val = 4 [(gogoproto.moretags) = 'search:"Test Parent1 Val"'];
+   string val = 4;  // @gotags: search:"Test Parent1 Val"
 }
 
 message TestChild1 {
-  string id = 1 [(gogoproto.moretags) = 'search:"Test Child1 ID" sql:"pk"'];
+  string id = 1;  // @gotags: search:"Test Child1 ID" sql:"pk"
 
-  string val = 2 [(gogoproto.moretags) = 'search:"Test Child1 Val"'];
+  string val = 2;  // @gotags: search:"Test Child1 Val"
 
 }
 
 message TestGrandChild1 {
-  string id        = 1 [(gogoproto.moretags) = 'search:"Test Grandchild1 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestChild1:id)"'];
-  string child_id  = 3 [(gogoproto.moretags) = 'sql:"fk(TestGGrandChild1:id),no-fk-constraint"'];
+  string id        = 1;  // @gotags: search:"Test Grandchild1 ID" sql:"pk"
+  string parent_id = 2;  // @gotags: sql:"fk(TestChild1:id)"
+  string child_id  = 3;  // @gotags: sql:"fk(TestGGrandChild1:id),no-fk-constraint"
 
-  string val = 4 [(gogoproto.moretags) = 'search:"Test Grandchild1 Val"'];
+  string val = 4;  // @gotags: search:"Test Grandchild1 Val"
 }
 
 message TestGGrandChild1 {
-  string id = 1 [(gogoproto.moretags) = 'search:"Test GGrandchild1 ID" sql:"pk"'];
+  string id = 1;  // @gotags: search:"Test GGrandchild1 ID" sql:"pk"
 
-  string val = 2 [(gogoproto.moretags) = 'search:"Test GGrandchild1 Val"'];
+  string val = 2;  // @gotags: search:"Test GGrandchild1 Val"
 }
 
 message TestG2GrandChild1 {
-  string id        = 1 [(gogoproto.moretags) = 'search:"Test G2Grandchild1 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGGrandChild1:id)"'];
-  string child_id  = 3 [(gogoproto.moretags) = 'sql:"fk(TestG3GrandChild1:id),no-fk-constraint"'];
+  string id        = 1;  // @gotags: search:"Test G2Grandchild1 ID" sql:"pk"
+  string parent_id = 2;  // @gotags: sql:"fk(TestGGrandChild1:id)"
+  string child_id  = 3;  // @gotags: sql:"fk(TestG3GrandChild1:id),no-fk-constraint"
 
-  string val = 4 [(gogoproto.moretags) = 'search:"Test G2Grandchild1 Val"'];
+  string val = 4;  // @gotags: search:"Test G2Grandchild1 Val"
 }
 
 message TestG3GrandChild1 {
-  string id = 1 [(gogoproto.moretags) = 'search:"Test G3Grandchild1 ID" sql:"pk"'];
+  string id = 1;  // @gotags: search:"Test G3Grandchild1 ID" sql:"pk"
 
-  string val = 2 [(gogoproto.moretags) = 'search:"Test G3Grandchild1 Val"'];
+  string val = 2;  // @gotags: search:"Test G3Grandchild1 Val"
 }
 
 
 message TestParent2 {
-  string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent2 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
+  string id        = 1;  // @gotags: search:"Test Parent2 ID" sql:"pk"
+  string parent_id = 2;  // @gotags: sql:"fk(TestGrandparent:id)"
 
-  string val = 3 [(gogoproto.moretags) = 'search:"Test Parent2 Val"'];
+  string val = 3;  // @gotags: search:"Test Parent2 Val"
 }
 
 message TestChild2 {
-  string id        = 1 [(gogoproto.moretags) = 'search:"Test Child2 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestParent2:id)"'];
+  string id        = 1;  // @gotags: search:"Test Child2 ID" sql:"pk"
+  string parent_id = 2;  // @gotags: sql:"fk(TestParent2:id)"
 
   // For a potential optimization, insert a direct link from child to grandparent.
-  string grandparent_id = 3 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id),no-fk-constraint"'];
+  string grandparent_id = 3;  // @gotags: sql:"fk(TestGrandparent:id),no-fk-constraint"
 
-  string val = 4 [(gogoproto.moretags) = 'search:"Test Child2 Val"'];
+  string val = 4;  // @gotags: search:"Test Child2 Val"
 }
 
 message TestParent3 {
-  string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent3 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
+  string id        = 1;  // @gotags: search:"Test Parent3 ID" sql:"pk"
+  string parent_id = 2;  // @gotags: sql:"fk(TestGrandparent:id)"
 
-  string val = 3 [(gogoproto.moretags) = 'search:"Test Parent3 Val"'];
+  string val = 3;  // @gotags: search:"Test Parent3 Val"
 }
 
 message TestParent4 {
-  string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent4 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
+  string id        = 1;  // @gotags: search:"Test Parent4 ID" sql:"pk"
+  string parent_id = 2;  // @gotags: sql:"fk(TestGrandparent:id)"
 
-  string val = 3 [(gogoproto.moretags) = 'search:"Test Parent4 Val"'];
+  string val = 3;  // @gotags: search:"Test Parent4 Val"
 }
 
 message TestChild1P4 {
-  string id        = 1 [(gogoproto.moretags) = 'search:"Test Child1P4 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestParent4:id)"'];
+  string id        = 1;  // @gotags: search:"Test Child1P4 ID" sql:"pk"
+  string parent_id = 2;  // @gotags: sql:"fk(TestParent4:id)"
 
-  string val = 3 [(gogoproto.moretags) = 'search:"Test Child1P4 Val"'];
+  string val = 3;  // @gotags: search:"Test Child1P4 Val"
 }
 
 message TestShortCircuit {
-  string id               = 1 [(gogoproto.moretags) = 'search:"Test ShortCircuit ID" sql:"pk"'];
-  string child_id         = 2 [(gogoproto.moretags) = 'search:"Test Child1 ID" sql:"fk(TestChild1:id),no-fk-constraint,directional"'];
-  string g2_grandchild_id = 3 [(gogoproto.moretags) = 'search:"Test G2Grandchild1 ID" sql:"fk(TestG2GrandChild1:id),no-fk-constraint,directional"'];
+  string id               = 1;  // @gotags: search:"Test ShortCircuit ID" sql:"pk"
+  string child_id         = 2;  // @gotags: search:"Test Child1 ID" sql:"fk(TestChild1:id),no-fk-constraint,directional"
+  string g2_grandchild_id = 3;  // @gotags: search:"Test G2Grandchild1 ID" sql:"fk(TestG2GrandChild1:id),no-fk-constraint,directional"
 }

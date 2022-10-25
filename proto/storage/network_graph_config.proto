@@ -3,11 +3,9 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
-import "gogoproto/gogo.proto";
-
 package storage;
 
 message NetworkGraphConfig {
-    string id                         = 2  [(gogoproto.moretags) = 'sql:"pk"'];
+    string id                         = 2;  // @gotags: sql:"pk"
     bool   hide_default_external_srcs = 1;
 }

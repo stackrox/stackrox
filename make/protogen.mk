@@ -137,14 +137,11 @@ GATEWAY_M_ARGS_STR := $(subst $(space),$(comma),$(strip $(GATEWAY_M_ARGS)))
 
 $(PROTOC_INCLUDES): $(PROTOC)
 
-GOGO_DIR = $(shell go list -f '{{.Dir}}' -m github.com/gogo/protobuf)
-
 .PHONY: proto-fmt
 proto-fmt: $(PROTOC_GEN_LINT)
 	@echo "Checking for proto style errors"
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
-		-I$(GOGO_DIR)/protobuf \
 		-I$(PROTO_GOOGLE_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--lint_out=. \
@@ -212,7 +209,6 @@ $(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTO
 	@echo "+ $@"
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
-		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(PROTO_GOOGLE_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -228,7 +224,6 @@ $(GENERATED_BASE_PATH)/%_vtproto.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS)
 	@echo "+ $@"
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
-		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(PROTO_GOOGLE_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -246,7 +241,6 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
-		-I$(GOGO_DIR) \
 		-I$(PROTO_GOOGLE_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
@@ -260,7 +254,6 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 $(GENERATED_BASE_PATH)/%.swagger.json: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS)
 	@echo "+ $@"
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
-		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(PROTO_GOOGLE_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
