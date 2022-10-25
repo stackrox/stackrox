@@ -40,7 +40,7 @@ func TestNvdCVEToEmbeddedCVE(t *testing.T) {
 	for _, testRecord := range testData {
 		_, _ = NvdCVEToEmbeddedCVE(testRecord, Istio)
 
-		i += 1
+		i++
 	}
 
 	// Ensure that all records are processed.
