@@ -134,7 +134,7 @@ func (s *secretDatastoreSACTestSuite) TestGetSecret() {
 			s.NoError(getErr)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(*testSecret, *readSecret)
+				s.Equal(testSecret, readSecret)
 			} else {
 				s.False(found)
 				s.Nil(readSecret)

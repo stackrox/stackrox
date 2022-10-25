@@ -237,7 +237,7 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 
 func TestAggregateExtConnsByName(t *testing.T) {
 	ts1 := types.TimestampNow()
-	ts2 := ts1.CloneVT()
+	ts2 := proto.Clone(ts1).(*types.Timestamp)
 	ts2.Seconds = ts2.Seconds + 1000
 
 	d1 := testutils.GetDeploymentNetworkEntity("d1", "d1")

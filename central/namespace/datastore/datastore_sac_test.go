@@ -148,7 +148,7 @@ func (s *namespaceDatastoreSACSuite) TestGetNamespace() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.Require().True(found)
-				s.Equal(*namespace, *res)
+				s.Equal(namespace, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

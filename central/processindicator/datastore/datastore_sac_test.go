@@ -140,7 +140,7 @@ func (s *processIndicatorDatastoreSACSuite) TestGetProcessIndicator() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(*processIndicator, *res)
+				s.Equal(processIndicator, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
