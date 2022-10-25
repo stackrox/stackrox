@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -41,6 +42,10 @@ func (d *DurationSetting) DurationSetting() time.Duration {
 }
 
 func registerDurationSetting(envVar string, defaultDuration time.Duration) *DurationSetting {
+	if defaultDuration <= 0 {
+		panic(fmt.Sprintf("invalid default duration: %v <= 0", defaultDuration))
+	}
+
 	s := &DurationSetting{
 		envVar:          envVar,
 		defaultDuration: defaultDuration,
