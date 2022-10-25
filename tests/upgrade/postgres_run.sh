@@ -153,8 +153,9 @@ test_upgrade_paths() {
     verifyNoPostgresAccessScopes
 
     # Now go back up to Postgres
+    CURRENT_TAG="$(make --quiet tag)"
     kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=true
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$CURRENT_TAG"
     wait_for_api
     wait_for_scanner_to_be_ready
 
@@ -203,10 +204,10 @@ test_upgrade_paths() {
 
     info "Installing sensor"
     ./sensor-remote/sensor.sh
-    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$(make --quiet tag)"
-    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$(make --quiet tag)"
-    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
-        "compliance=$REGISTRY/main:$(make --quiet tag)"
+    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
+    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
+    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$CURRENT_TAG" \
+        "compliance=$REGISTRY/main:$CURRENT_TAG"
 
     sensor_wait
 
