@@ -149,6 +149,30 @@ func manageReceiveStream(ctx context.Context, cli sensor.ComplianceServiceClient
 	}
 }
 
+func manageNodeScanLoop(ctx context.Context, cli sensor.ComplianceServiceClient, scanner nodescanv2.NodeScanner, rescanInterval time.Duration) {
+	t := time.NewTicker(5 * time.Second)
+	log.Infof("Node Rescan interval: %v", rescanInterval)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			client, _, err := initializeStream(ctx, cli)
+			if err != nil {
+				t.Reset(5 * time.Second)
+				log.Errorf("error initializing node scan stream to sensor: %v", err)
+				continue
+			}
+			if err := scanNode(client, scanner); err != nil {
+				log.Errorf("error running scanNode: %v", err)
+				continue
+			}
+			t.Reset(rescanInterval)
+		}
+	}
+}
+
 func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
 	client, err := cli.Communicate(ctx)
 	if err != nil {
