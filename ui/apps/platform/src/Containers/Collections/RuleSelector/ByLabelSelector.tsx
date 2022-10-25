@@ -120,11 +120,13 @@ function ByLabelSelector({
                         <Flex>
                             <Flex className="pf-u-flex-grow-1 pf-u-mb-md">
                                 <FormGroup
+                                    fieldId={`${entityType}-label-key-${ruleIndex}`}
                                     className="pf-u-flex-grow-1"
                                     label={ruleIndex === 0 ? 'Label key' : ''}
                                     isRequired
                                 >
                                     <AutoCompleteSelect
+                                        id={`${entityType}-label-key-${ruleIndex}`}
                                         typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} label key`}
                                         selectedOption={rule.key}
                                         onChange={(fieldValue: string) =>
@@ -145,6 +147,7 @@ function ByLabelSelector({
                                 </FlexItem>
                             </Flex>
                             <FormGroup
+                                fieldId={`${entityType}-label-value-${ruleIndex}`}
                                 className="pf-u-flex-grow-1"
                                 label={ruleIndex === 0 ? 'Label value(s)' : ''}
                                 isRequired
@@ -164,6 +167,7 @@ function ByLabelSelector({
                                         return (
                                             <Flex key={keyFor(valueIndex)}>
                                                 <AutoCompleteSelect
+                                                    id={`${entityType}-label-value-${ruleIndex}-${valueIndex}`}
                                                     typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} label value`}
                                                     className="pf-u-flex-grow-1 pf-u-w-auto"
                                                     selectedOption={value}
