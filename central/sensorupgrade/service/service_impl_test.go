@@ -116,21 +116,27 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 	}
 }
 
-func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig() {
+func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_WithValueAlreadyPersisted() {
 	s.isolator.Setenv(env.ManagedCentral.EnvVar(), "false")
-	s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).
-		Times(2).
-		Return(configWith(false), nil)
-	serviceInstance, err := New(s.dataStore, s.manager)
-	s.NoError(err)
+	for _, flag := range []bool{true, false} {
+		s.Run(fmt.Sprintf("GetSensorUpgradeConfig with value preset = %s", strconv.FormatBool(flag)), func() {
+			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).
+				Times(2).
+				Return(configWith(flag), nil)
+			instance, err := New(s.dataStore, s.manager)
+			s.NoError(err)
+			s.Assert().Equal(flag, instance.AutoUpgradeSetting().Get())
 
-	response, err := serviceInstance.GetSensorUpgradeConfig(context.Background(), &v1.Empty{})
-	s.NoError(err)
+			response, err := instance.GetSensorUpgradeConfig(context.Background(), &v1.Empty{})
+			s.NoError(err)
 
-	s.Assert().Equal(false, response.GetConfig().GetEnableAutoUpgrade())
+			s.Assert().Equal(flag, response.GetConfig().GetEnableAutoUpgrade())
+		})
+	}
+
 }
 
-func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_DefaultValues() {
+func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_WithValueNotPersisted() {
 	testCases := map[string]struct {
 		expectedAutoUpdate     bool
 		expectedFeatureEnabled v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus
@@ -153,6 +159,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_DefaultValue
 
 			instance, err := New(s.dataStore, s.manager)
 			s.NoError(err)
+			s.Assert().Equal(expectations.expectedAutoUpdate, instance.AutoUpgradeSetting().Get())
 
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(configWith(expectations.expectedAutoUpdate), nil)
 
@@ -160,7 +167,6 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_DefaultValue
 
 			s.Require().NoError(err)
 			s.Assert().Equal(expectations.expectedAutoUpdate, result.GetConfig().GetEnableAutoUpgrade())
-			s.Assert().Equal(expectations.expectedAutoUpdate, instance.AutoUpgradeSetting().Get())
 			s.Assert().Equal(expectations.expectedFeatureEnabled, result.GetConfig().GetAutoUpgradeFeature())
 		})
 	}
