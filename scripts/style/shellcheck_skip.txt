@@ -30,7 +30,6 @@ image/templates/sensor/kubernetes/sensor.sh
 image/templates/sensor/openshift/delete-sensor.sh
 image/templates/sensor/openshift/sensor.sh
 licenses/generate-license-wrapper.sh
-local/expand-db.sh
 operator/hack/common.sh
 operator/hack/olm-operator-install.sh
 operator/hack/olm-operator-upgrade.sh
