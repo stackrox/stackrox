@@ -108,13 +108,40 @@ func startAuditLogCollection(ctx context.Context, client sensor.ComplianceServic
 	return auditReader
 }
 
-func manageStream(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig, sig *concurrency.Signal) {
+// manageSendingToSensor sends everything from sensorC channel to sensor
+func manageSendingToSensor(ctx context.Context, cli sensor.ComplianceServiceClient, sensorC <-chan *sensor.MsgFromCompliance) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case sc := <-sensorC:
+			client, err := ensureSendingStream(ctx, cli)
+			if err != nil && ctx.Err() == nil {
+				// error even after retries
+				log.Fatalf("unable to establish send stream to sensor: %v", err)
+			}
+			if err := client.Send(sc); err != nil {
+				log.Errorf("failed sending nodeScanV2 to sensor: %v", err)
+			}
+		}
+	}
+}
+
+func manageReceiveStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal) {
 	for {
 		select {
 		case <-ctx.Done():
 			sig.Signal()
 			return
 		default:
+			client, config, err := initializeStream(ctx, cli)
+			if err != nil {
+				if ctx.Err() != nil {
+					// continue and the <-ctx.Done() path should be taken next iteration
+					continue
+				}
+				log.Fatalf("error initializing stream to sensor: %v", err)
+			}
 			if err := runRecv(ctx, client, config); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
@@ -149,6 +176,34 @@ func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceCli
 	return client, config, nil
 }
 
+// ensureSendingStream returns a client for sending the data to sensor. It ensures that the stream is open and in case not,
+// then the connection is being reopened with exp. back off
+func ensureSendingStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, error) {
+	eb := backoff.NewExponentialBackOff()
+	eb.MaxInterval = 30 * time.Second
+	eb.MaxElapsedTime = 3 * time.Minute
+
+	var client sensor.ComplianceService_CommunicateClient
+
+	operation := func() error {
+		var err error
+		client, err = cli.Communicate(ctx)
+		if err != nil && ctx.Err() != nil {
+			return backoff.Permanent(err)
+		}
+		return err
+	}
+	err := backoff.RetryNotify(operation, eb, func(err error, t time.Duration) {
+		log.Infof("Sleeping for %0.2f seconds between attempts to connect to Sensor for sending", t.Seconds())
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to initialize sensor connection for sending")
+	}
+	log.Infof("Successfully connected to Sensor for sending at %s", env.AdvertisedEndpoint.Setting())
+
+	return client, nil
+}
+
 func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 30 * time.Second
@@ -176,40 +231,47 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 	return client, config, nil
 }
 
-func manageNodeScanLoop(ctx context.Context, client sensor.ComplianceService_CommunicateClient, scanner nodescanv2.NodeScanner) {
-	rescanInterval := complianceUtils.VerifyAndUpdateDuration(env.NodeRescanInterval.DurationSetting())
-	t := time.NewTicker(rescanInterval)
-	log.Infof("Node Rescan interval: %v", rescanInterval)
+func manageNodeScanLoop(ctx context.Context, rescanInterval time.Duration, scanner nodescanv2.NodeScanner) <-chan *sensor.MsgFromCompliance {
+	sensorC := make(chan *sensor.MsgFromCompliance)
+	nodeName := getNode()
+	go func() {
+		defer close(sensorC)
+		t := time.NewTicker(rescanInterval)
 
-	// send scan result once at startup, then every NodeRescanInterval
-	if err := scanNode(client, scanner); err != nil {
-		log.Errorf("error running scanNode: %v", err)
-	}
+		// first scan should happen on start
+		msg, err := scanNode(nodeName, scanner)
+		if err != nil {
+			log.Errorf("error running scanNode: %v", err)
+		} else {
+			sensorC <- msg
+		}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-			if err := scanNode(client, scanner); err != nil {
-				log.Errorf("error running scanNode: %v", err)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				msg, err := scanNode(nodeName, scanner)
+				if err != nil {
+					log.Errorf("error running scanNode: %v", err)
+				} else {
+					sensorC <- msg
+				}
 			}
 		}
-	}
+	}()
+	return sensorC
 }
 
-func scanNode(client sensor.ComplianceService_CommunicateClient, scanner nodescanv2.NodeScanner) error {
-	nodeName := getNode()
-
+func scanNode(nodeName string, scanner nodescanv2.NodeScanner) (*sensor.MsgFromCompliance, error) {
 	result, err := scanner.Scan(nodeName)
 	if err != nil {
-		return errors.Wrap(err, "error scanning node")
+		return nil, err
 	}
-	msg := sensor.MsgFromCompliance{
+	return &sensor.MsgFromCompliance{
 		Node: nodeName,
 		Msg:  &sensor.MsgFromCompliance_NodeScanV2{NodeScanV2: result},
-	}
-	return client.Send(&msg)
+	}, nil
 }
 
 func main() {
@@ -233,17 +295,27 @@ func main() {
 
 	stoppedSig := concurrency.NewSignal()
 
-	client, config, err := initializeStream(ctx, cli)
-	if err != nil {
-		log.Fatalf("error initializing stream to sensor: %v", err)
-	}
-
-	go manageStream(ctx, client, config, &stoppedSig)
+	go manageReceiveStream(ctx, cli, &stoppedSig)
 
 	if features.RHCOSNodeScanning.Enabled() {
+		sensorC := make(chan *sensor.MsgFromCompliance)
+		defer close(sensorC)
+		go manageSendingToSensor(ctx, cli, sensorC)
+
 		// TODO(ROX-12971): Replace with real scanner
 		scanner := nodescanv2.FakeNodeScanner{}
-		go manageNodeScanLoop(ctx, client, &scanner)
+		rescanInterval := complianceUtils.VerifyAndUpdateDuration(env.NodeRescanInterval.DurationSetting(), time.Hour*4)
+		log.Infof("Node Rescan interval: %v", rescanInterval)
+		nodeScansC := manageNodeScanLoop(ctx, rescanInterval, &scanner)
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case sensorC <- <-nodeScansC:
+				}
+			}
+		}()
 	}
 
 	signalsC := make(chan os.Signal, 1)

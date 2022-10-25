@@ -54,12 +54,12 @@ message MsgToCompliance {
 
     oneof msg {
         ScrapeConfig              config                       = 1;
-        TriggerRun                trigger                      = 2;
+        TriggerRun                trigger                      = 2;-
         AuditLogCollectionRequest audit_log_collection_request = 3;
     }
 }
 
-// A Sensor service that allows Compliance to report node scrapes results and audit events.
+// A Sensor service that allows Compliance to report node scrapes results, audit events, and node scans v2.
 service ComplianceService {
     rpc Communicate (stream MsgFromCompliance) returns (stream MsgToCompliance);
 }

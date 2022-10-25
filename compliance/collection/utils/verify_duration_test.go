@@ -36,7 +36,7 @@ func (v *verifyDurationTestSuite) TestVerifyAndUpdateDuration() {
 
 	for caseName, testCase := range testCases {
 		v.Run(caseName, func() {
-			result := VerifyAndUpdateDuration(testCase.setDuration)
+			result := VerifyAndUpdateDuration(testCase.setDuration, time.Hour*4)
 			v.Equal(testCase.expectedDuration, result)
 		})
 	}
