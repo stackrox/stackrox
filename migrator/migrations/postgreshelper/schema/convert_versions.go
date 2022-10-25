@@ -8,7 +8,7 @@ import (
 
 // ConvertVersionFromProto converts a `*storage.Version` to Gorm model
 func ConvertVersionFromProto(obj *storage.Version) (*schema.Versions, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
@@ -21,7 +21,7 @@ func ConvertVersionFromProto(obj *storage.Version) (*schema.Versions, error) {
 // ConvertVersionToProto converts Gorm model `Versions` to its protobuf type object
 func ConvertVersionToProto(m *schema.Versions) (*storage.Version, error) {
 	var msg storage.Version
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := msg.UnmarshalVT(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

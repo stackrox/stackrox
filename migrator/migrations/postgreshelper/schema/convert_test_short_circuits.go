@@ -8,7 +8,7 @@ import (
 
 // ConvertTestShortCircuitFromProto converts a `*storage.TestShortCircuit` to Gorm model
 func ConvertTestShortCircuitFromProto(obj *storage.TestShortCircuit) (*schema.TestShortCircuits, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func ConvertTestShortCircuitFromProto(obj *storage.TestShortCircuit) (*schema.Te
 // ConvertTestShortCircuitToProto converts Gorm model `TestShortCircuits` to its protobuf type object
 func ConvertTestShortCircuitToProto(m *schema.TestShortCircuits) (*storage.TestShortCircuit, error) {
 	var msg storage.TestShortCircuit
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := msg.UnmarshalVT(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

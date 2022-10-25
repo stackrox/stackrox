@@ -10,7 +10,7 @@ import (
 
 // ConvertTestMultiKeyStructFromProto converts a `*storage.TestMultiKeyStruct` to Gorm model
 func ConvertTestMultiKeyStructFromProto(obj *storage.TestMultiKeyStruct) (*schema.TestMultiKeyStructs, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func ConvertTestMultiKeyStruct_NestedFromProto(obj *storage.TestMultiKeyStruct_N
 // ConvertTestMultiKeyStructToProto converts Gorm model `TestMultiKeyStructs` to its protobuf type object
 func ConvertTestMultiKeyStructToProto(m *schema.TestMultiKeyStructs) (*storage.TestMultiKeyStruct, error) {
 	var msg storage.TestMultiKeyStruct
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := msg.UnmarshalVT(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil
