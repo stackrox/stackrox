@@ -935,7 +935,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
     }
 {{- end }}
 {{- end }}{{/* if not $inMigration */}}
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[{{.Type}}](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -946,11 +946,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 			return pgutils.ErrNilIfNoRows(err)
 		}
 		for _, data := range rows {
-			var msg {{.Type}}
-			if err := msg.Unmarshal(data); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+			if err := fn(data); err != nil {
 				return err
 			}
 		}
