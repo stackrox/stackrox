@@ -155,7 +155,7 @@ function get_cluster_zip {
       exit 1
     fi
 
-    ID="$(command < "${TMP}" | jq -r .cluster.id)"
+    ID="$(jq -r .cluster.id "${TMP}")"
 
     echo "Getting zip file for cluster ${ID}"
     STATUS=$(curl_central -X POST \
