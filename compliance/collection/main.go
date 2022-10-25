@@ -177,11 +177,11 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 }
 
 func manageNodeScanLoop(ctx context.Context, client sensor.ComplianceService_CommunicateClient, scanner nodescanv2.NodeScanner) {
-	rescan_interval := complianceUtils.VerifyAndUpdateDuration(env.NodeScanInterval.DurationSetting())
-	t := time.NewTicker(rescan_interval)
-	log.Infof("Node Rescan interval: %v", rescan_interval)
+	rescanInterval := complianceUtils.VerifyAndUpdateDuration(env.NodeRescanInterval.DurationSetting())
+	t := time.NewTicker(rescanInterval)
+	log.Infof("Node Rescan interval: %v", rescanInterval)
 
-	// send scan result once at startup, then every NodeScanInterval
+	// send scan result once at startup, then every NodeRescanInterval
 	if err := scanNode(client, scanner); err != nil {
 		log.Errorf("error running scanNode: %v", err)
 	}
