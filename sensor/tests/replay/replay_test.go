@@ -315,7 +315,7 @@ func readSensorOutputFile(fname string) ([]*central.MsgFromSensor, error) {
 	var msgs []*central.MsgFromSensor
 	for _, it := range content {
 		m := &central.MsgFromSensor{}
-		if err = m.Unmarshal(it); err != nil {
+		if err = m.UnmarshalVT(it); err != nil {
 			return nil, err
 		}
 		msgs = append(msgs, m)
