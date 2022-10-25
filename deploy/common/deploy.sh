@@ -190,8 +190,8 @@ function get_identity {
         "https://$LOCAL_API_ENDPOINT/v1/serviceIdentities")
     echo "Status: $STATUS"
     echo "Response: $(cat "${TMP}")"
-    command < "$TMP" | jq -r .certificate > "$OUTPUT_DIR/sensor-cert.pem"
-    command < "$TMP" | jq -r .privateKey > "$OUTPUT_DIR/sensor-key.pem"
+    jq -r .certificate "$TMP" > "$OUTPUT_DIR/sensor-cert.pem"
+    jq -r .privateKey "$TMP" > "$OUTPUT_DIR/sensor-key.pem"
     rm "$TMP"
     echo
 }
@@ -213,7 +213,7 @@ function get_authority {
         "https://$LOCAL_API_ENDPOINT/v1/authorities")
     echo "Status: $STATUS"
     echo "Response: $(cat "${TMP}")"
-    command < "$TMP" | jq -r .authorities[0].certificate > "$OUTPUT_DIR/ca.pem"
+    jq -r .authorities[0].certificate "$TMP" > "$OUTPUT_DIR/ca.pem"
     rm "$TMP"
     echo
 }
