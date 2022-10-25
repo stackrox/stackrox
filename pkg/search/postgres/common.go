@@ -602,7 +602,11 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
-		debug.PrintStack()
+		if !pgutils.IsTransientError(err) {
+			debug.PrintStack()
+		} else {
+			log.Debugf("%s", debug.Stack())
+		}
 		log.Errorf("Query issue: %s %+v: %v", queryStr, redactedQueryData(query), err)
 		return nil, err
 	}
@@ -707,7 +711,11 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		var count int
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		if err := row.Scan(&count); err != nil {
-			debug.PrintStack()
+			if !pgutils.IsTransientError(err) {
+				debug.PrintStack()
+			} else {
+				log.Debugf("%s", debug.Stack())
+			}
 			log.Errorf("Query issue: %s %+v: %v", queryStr, redactedQueryData(query), err)
 			return 0, err
 		}
