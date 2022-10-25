@@ -164,7 +164,6 @@ class VulnMgmtSACTest extends BaseSpecification {
         "quay.io/rhacs-eng/qa:enforcement",
         "quay.io/rhacs-eng/qa:fedora-6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187",
         "quay.io/rhacs-eng/qa:mongo-dec7f10108a87ff660a0d56cb71b0c5ae1f33cba796a33c88b50280fc0707116",
-        "quay.io/rhacs-eng/qa:mongo-dec7f10108a87ff660a0d56cb71b0c5ae1f33cba796a33c88b50280fc0707116",
         "quay.io/rhacs-eng/qa:nginx",
         "quay.io/rhacs-eng/qa:nginx-1-7-9",
         "quay.io/rhacs-eng/qa:nginx-1-9",
@@ -174,10 +173,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         "quay.io/rhacs-eng/qa:nginx-1.15.4-alpine",
         "quay.io/rhacs-eng/qa:nginx-1.19-alpine",
         "quay.io/rhacs-eng/qa:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad",
-        "quay.io/rhacs-eng/qa:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad",
-        "quay.io/rhacs-eng/qa:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad",
         "quay.io/rhacs-eng/qa:oci-manifest",
-        "quay.io/rhacs-eng/qa:redis-96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e",
         "quay.io/rhacs-eng/qa:redis-96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e",
         "quay.io/rhacs-eng/qa:registry-image-0-3",
         "quay.io/rhacs-eng/qa:ROX4751",
@@ -200,9 +196,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         "us.gcr.io/stackrox-ci/qa/registry-image:0.2",
         "us.gcr.io/stackrox-ci/qa/registry-image:0.3",
         "us.gcr.io/stackrox-ci/qa/trigger-policy-violations/alpine:0.6",
-        "us.gcr.io/stackrox-ci/qa/trigger-policy-violations/alpine:0.6",
         "us.gcr.io/stackrox-ci/qa/trigger-policy-violations/more:0.3",
-        "us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19",
         "us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19",
         "us-west1-docker.pkg.dev/stackrox-ci/artifact-registry-test1/nginx:1.17",
     ]
@@ -224,6 +218,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         // where an image is orphaned
         ImageIntegrationService.addStackroxScannerIntegration()
         ImageService.scanImage(CENTOS_IMAGE)
+        // Re-scan the images used in previous test cases to ensure pruning did not leave orphan CVEs.
         for ( imageToScan in IMAGES_TO_RESCAN ) {
             ImageService.scanImage(imageToScan)
             log.debug "Scanned Image ${imageToScan}"
