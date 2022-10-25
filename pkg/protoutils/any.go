@@ -1,6 +1,7 @@
 package protoutils
 
 import (
+	proto2 "github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	golangProto "github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
@@ -15,6 +16,6 @@ func MarshalAny(msg proto.Message) (*types.Any, error) {
 	if err != nil {
 		return nil, err
 	}
-	any.TypeUrl = golangProto.MessageName(msg)
+	any.TypeUrl = golangProto.MessageName(proto2.MessageV1(msg))
 	return any, nil
 }
