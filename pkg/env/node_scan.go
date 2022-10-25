@@ -3,6 +3,6 @@ package env
 import "time"
 
 var (
-	// NodeScanInterval will set the duration for when to scan nodes for vulnerabilities (NodeScanV2)
-	NodeScanInterval = registerDurationSetting("ROX_NODE_SCAN_INTERVAL", 4*time.Hour)
+	// NodeRescanInterval will set the duration for when to scan nodes for vulnerabilities (NodeScanV2)
+	NodeRescanInterval = registerDurationSetting("ROX_NODE_RESCAN_INTERVAL", 4*time.Hour)
 )
