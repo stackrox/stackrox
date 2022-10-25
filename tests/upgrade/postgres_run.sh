@@ -191,7 +191,9 @@ test_upgrade_paths() {
     # Since we bounced the DB we may see some errors.  Those need to be allowed in this case
     echo "# postgres was bounced, may see some connection errors" >> scripts/ci/logcheck/allowlist-patterns
     echo "FATAL: terminating connection due to administrator command (SQLSTATE 57P01)" >> scripts/ci/logcheck/allowlist-patterns
+    echo >> scripts/ci/logcheck/allowlist-patterns
     cat scripts/ci/logcheck/allowlist-patterns
+    echo "$TEST_ROOT"
     collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce-db"
 
     info "Fetching a sensor bundle for cluster 'remote'"

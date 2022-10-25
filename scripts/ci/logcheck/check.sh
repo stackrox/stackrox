@@ -10,6 +10,10 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 BLOCKLIST_FILE="${DIR}/blocklist-patterns"
 ALLOWLIST_FILE="${DIR}/allowlist-patterns"
 
+echo "SHREWS in check"
+echo "${DIR}"
+cat "${DIR}/allowlist-patterns"
+
 join_by() { local IFS="$1"; shift; echo "$*"; }
 
 IFS=$'\n' read -d '' -r -a blocklist_subpatterns < <(egrep -v '^(#.*|\s*)$' "${BLOCKLIST_FILE}")
