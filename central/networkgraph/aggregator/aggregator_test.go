@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -84,7 +85,7 @@ func TestSubnetToSupernetAggregator(t *testing.T) {
 	*/
 
 	ts1 := types.TimestampNow()
-	ts2 := ts1.CloneVT()
+	ts2 := proto.Clone(ts1).(*types.Timestamp)
 	ts2.Seconds = ts2.Seconds + 1000
 
 	f1 := testutils.GetNetworkFlow(d1, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts1)
@@ -206,7 +207,7 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 	*/
 
 	ts1 := types.TimestampNow()
-	ts2 := ts1.CloneVT()
+	ts2 := proto.Clone(ts1).(*types.Timestamp)
 	ts2.Seconds = ts2.Seconds + 1000
 
 	f1 := testutils.GetNetworkFlow(d1, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts1)

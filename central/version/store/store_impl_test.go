@@ -88,11 +88,11 @@ func (suite *VersionStoreTestSuite) TestVersionMismatch() {
 		suite.T().SkipNow()
 	}
 	boltVersion := &storage.Version{SeqNum: 2, Version: "Version 2"}
-	boltVersionBytes, err := boltVersion.Marshal()
+	boltVersionBytes, err := boltVersion.MarshalVT()
 	suite.Require().NoError(err)
 
 	rocksVersion := &storage.Version{SeqNum: 3, Version: "Version 3"}
-	rocksVersionBytes, err := rocksVersion.Marshal()
+	rocksVersionBytes, err := rocksVersion.MarshalVT()
 	suite.Require().NoError(err)
 
 	suite.NoError(suite.rocksDB.Put(gorocksdb.NewDefaultWriteOptions(), versionBucket, rocksVersionBytes))
