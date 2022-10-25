@@ -88,7 +88,7 @@ func (s *storeImpl) insertIntoImages(
 		cloned = parts.image.CloneVT()
 		cloned.Scan.Components = nil
 	}
-	serialized, marshalErr := cloned.Marshal()
+	serialized, marshalErr := cloned.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}

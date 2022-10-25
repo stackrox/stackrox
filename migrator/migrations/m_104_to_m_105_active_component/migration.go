@@ -74,7 +74,7 @@ func updateActiveComponents(db *gorocksdb.DB) error {
 		activeComponent.ActiveContextsSlice = convertActiveContextsMapToSlice(activeComponent.GetDEPRECATEDActiveContexts())
 		activeComponent.DEPRECATEDActiveContexts = nil
 
-		data, err := proto.Marshal(&activeComponent)
+		data, err := activeComponent.MarshalVT()
 		if err != nil {
 			return errors.Wrap(err, "unable to marshal active component")
 		}

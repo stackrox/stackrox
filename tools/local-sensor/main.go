@@ -109,7 +109,7 @@ func writeOutputInBinaryFormat(messages []*central.MsgFromSensor, _, _ time.Time
 	}()
 	utils.CrashOnError(err)
 	for _, m := range messages {
-		d, err := m.Marshal()
+		d, err := m.MarshalVT()
 		utils.CrashOnError(err)
 		buf := make([]byte, 4)
 		binary.LittleEndian.PutUint32(buf, uint32(len(d)))
