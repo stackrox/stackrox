@@ -36,6 +36,8 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedAPITokenServiceServer
+
 	backend backend.Backend
 	roles   roleDS.DataStore
 }

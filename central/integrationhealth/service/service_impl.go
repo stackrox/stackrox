@@ -35,6 +35,8 @@ var (
 
 // ImageIntegrationService is the struct that manages the ImageIntegration API
 type serviceImpl struct {
+	v1.UnimplementedIntegrationHealthServiceServer
+
 	datastore            datastore.DataStore
 	vulnDefsInfoProvider scanners.VulnDefsInfoProvider
 }

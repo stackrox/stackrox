@@ -14,7 +14,9 @@ import (
 )
 
 // ClusterService is the struct that manages the cluster API
-type serviceImpl struct{}
+type serviceImpl struct {
+	v1.UnimplementedAuthServiceServer
+}
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {

@@ -24,6 +24,8 @@ var (
 var _ v1.ClusterInitServiceServer = (*serviceImpl)(nil)
 
 type serviceImpl struct {
+	v1.UnimplementedClusterInitServiceServer
+
 	backend      backend.Backend
 	clusterStore clusterStore.DataStore
 }

@@ -36,6 +36,8 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	v1.UnimplementedSecretServiceServer
+
 	secrets     datastore.DataStore
 	deployments deploymentDatastore.DataStore
 }

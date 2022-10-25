@@ -38,6 +38,8 @@ var (
 
 // SearchService provides APIs for search.
 type serviceImpl struct {
+	v1.UnimplementedSummaryServiceServer
+
 	alerts      alertDataStore.DataStore
 	clusters    clusterDataStore.DataStore
 	deployments deploymentDataStore.DataStore

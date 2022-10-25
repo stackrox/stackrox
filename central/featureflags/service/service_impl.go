@@ -22,7 +22,9 @@ var (
 	})
 )
 
-type serviceImpl struct{}
+type serviceImpl struct {
+	v1.UnimplementedFeatureFlagServiceServer
+}
 
 func (s *serviceImpl) GetFeatureFlags(context.Context, *v1.Empty) (*v1.GetFeatureFlagsResponse, error) {
 	resp := &v1.GetFeatureFlagsResponse{}

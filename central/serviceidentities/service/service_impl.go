@@ -32,6 +32,8 @@ var (
 
 // IdentityService is the struct that manages the Service Identity API
 type serviceImpl struct {
+	v1.UnimplementedServiceIdentityServiceServer
+
 	dataStore datastore.DataStore
 }
 

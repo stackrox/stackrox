@@ -30,6 +30,8 @@ func NewService(deployments store.DeploymentStore, pods store.PodStore) Service 
 }
 
 type serviceImpl struct {
+	sensor.UnimplementedDeploymentServiceServer
+
 	deployments store.DeploymentStore
 	pods        store.PodStore
 }

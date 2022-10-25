@@ -38,6 +38,8 @@ var (
 
 // serviceImpl provides APIs for k8s rbac objects.
 type serviceImpl struct {
+	v1.UnimplementedRbacServiceServer
+
 	roles    rolesDataStore.DataStore
 	bindings roleBindingsDataStore.DataStore
 }

@@ -47,6 +47,8 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
+	v1.UnimplementedAuthProviderServiceServer
+
 	registry   authproviders.Registry
 	groupStore groupDataStore.DataStore
 }

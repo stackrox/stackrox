@@ -48,6 +48,8 @@ var (
 
 // ImageIntegrationService is the struct that manages the ImageIntegration API
 type serviceImpl struct {
+	v1.UnimplementedImageIntegrationServiceServer
+
 	registryFactory    registries.Factory
 	scannerFactory     scanners.Factory
 	nodeEnricher       enricher.NodeEnricher

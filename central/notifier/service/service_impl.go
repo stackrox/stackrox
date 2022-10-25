@@ -48,6 +48,8 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
+	v1.UnimplementedNotifierServiceServer
+
 	storage   datastore.DataStore
 	processor processor.Processor
 	reporter  integrationhealth.Reporter

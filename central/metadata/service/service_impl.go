@@ -23,6 +23,7 @@ import (
 
 // Service is the struct that manages the Metadata API
 type serviceImpl struct {
+	v1.UnimplementedMetadataServiceServer
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

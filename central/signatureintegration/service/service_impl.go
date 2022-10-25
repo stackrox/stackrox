@@ -34,6 +34,8 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedSignatureIntegrationServiceServer
+
 	datastore        datastore.DataStore
 	reprocessingLoop reprocessor.Loop
 }

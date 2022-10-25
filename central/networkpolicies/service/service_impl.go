@@ -84,6 +84,8 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	v1.UnimplementedNetworkPolicyServiceServer
+
 	sensorConnMgr    connection.Manager
 	clusterStore     clusterDataStore.DataStore
 	deployments      deploymentDataStore.DataStore

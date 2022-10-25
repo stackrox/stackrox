@@ -33,6 +33,8 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedNamespaceServiceServer
+
 	datastore       datastore.DataStore
 	deployments     deploymentDataStore.DataStore
 	secrets         secretDataStore.DataStore

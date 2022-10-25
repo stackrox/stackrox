@@ -15,6 +15,8 @@ import (
 
 // FakeService represents a fake central gRPC that reads and sends messages to sensor's connected gRPC stream.
 type FakeService struct {
+	central.UnimplementedSensorServiceServer
+
 	ConnectionStarted concurrency.Signal
 	KillSwitch        concurrency.Signal
 
