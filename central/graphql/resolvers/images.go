@@ -75,6 +75,7 @@ func init() {
 				"@deprecated(reason: \"use 'plottedImageVulnerabilities'\")",
 		}),
 		schema.AddQuery("image(id: ID!): Image"),
+		schema.AddQuery("fullImage(id: ID!): Image"),
 		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
 		schema.AddQuery("imageCount(query: String): Int!"),
 		schema.AddEnumType("ImageWatchStatus", imageWatchStatuses),
@@ -129,6 +130,21 @@ func (resolver *Resolver) Image(ctx context.Context, args struct{ ID graphql.ID 
 		return nil, err
 	}
 	image, err := imageLoader.FromID(ctx, string(args.ID))
+	return resolver.wrapImageWithContext(ctx, image, image != nil, err)
+}
+
+// FullImage returns a graphql resolver for the identified image, if it exists
+func (resolver *Resolver) FullImage(ctx context.Context, args struct{ ID graphql.ID }) (*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "FullImage")
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	image, err := imageLoader.FullImageWithID(ctx, string(args.ID))
 	return resolver.wrapImageWithContext(ctx, image, image != nil, err)
 }
 
