@@ -1438,6 +1438,10 @@ EOT
     hub-comment -type build -template-file "$tmpfile"
 }
 
+get_junit_parse_cli() {
+    go install github.com/stackrox/junit-parse@blugo/ROX-11931-to-slack
+}
+
 junit2slack() {
     info "Converting junit failures to slack attachments"
 
@@ -1448,7 +1452,8 @@ junit2slack() {
 
     local junit_file_names="$ARTIFACT_DIR/**.*.xml"
     pushd "$SCRIPTS_ROOT/tools/junit2slack" || return
-    go run main.go "$junit_file_names"
+    get_junit_parse_cli
+    junit-parse "$junit_file_names"
     popd
 }
 
