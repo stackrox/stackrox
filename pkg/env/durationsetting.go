@@ -33,7 +33,8 @@ func (d *DurationSetting) DurationSetting() time.Duration {
 	val := os.Getenv(d.envVar)
 	if val != "" {
 		dur, err := time.ParseDuration(val)
-		if err == nil && dur >= 0 {
+		// Only durations > 0 are meaningful and should be used.
+		if err == nil && dur > 0 {
 			return dur
 		}
 		log.Warnf("%s is not a valid environment variable for %s, using default value: %s", val, d.envVar, d.defaultDuration.String())
