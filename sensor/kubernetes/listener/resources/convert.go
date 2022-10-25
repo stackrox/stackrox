@@ -409,7 +409,7 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 		Id:     w.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Deployment{
-			Deployment: w.Deployment.Clone(),
+			Deployment: w.Deployment.CloneVT(),
 		},
 	}
 }
@@ -534,7 +534,7 @@ func (w *deploymentWrap) Clone() *deploymentWrap {
 	ret := &deploymentWrap{
 		original:         w.original, // original is only always read
 		registryOverride: w.registryOverride,
-		Deployment:       w.GetDeployment().Clone(),
+		Deployment:       w.GetDeployment().CloneVT(),
 	}
 	if w.pods != nil {
 		ret.pods = make([]*v1.Pod, len(w.pods))
@@ -545,7 +545,7 @@ func (w *deploymentWrap) Clone() *deploymentWrap {
 	if w.portConfigs != nil {
 		ret.portConfigs = make(map[portRef]*storage.PortConfig)
 		for k, v := range w.portConfigs {
-			ret.portConfigs[k] = v.Clone()
+			ret.portConfigs[k] = v.CloneVT()
 		}
 	}
 

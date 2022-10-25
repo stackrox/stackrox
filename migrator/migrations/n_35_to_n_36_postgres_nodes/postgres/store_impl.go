@@ -65,7 +65,7 @@ func New(db *pgxpool.Pool, noUpdateTimestamps bool) Store {
 func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpdated bool, iTime *protoTypes.Timestamp) error {
 	cloned := obj
 	if cloned.GetScan().GetComponents() != nil {
-		cloned = obj.Clone()
+		cloned = obj.CloneVT()
 		cloned.Scan.Components = nil
 	}
 	serialized, marshalErr := cloned.Marshal()

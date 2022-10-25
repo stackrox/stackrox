@@ -58,7 +58,7 @@ func policyViolationsAndImageToAlert(policy *storage.Policy, violations []*stora
 	alert := &storage.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_BUILD,
-		Policy:         policy.Clone(),
+		Policy:         policy.CloneVT(),
 		Entity:         &storage.Alert_Image{Image: types.ToContainerImage(image)},
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),

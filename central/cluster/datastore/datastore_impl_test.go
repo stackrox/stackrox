@@ -1342,7 +1342,7 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			cluster := c.cluster.Clone()
+			cluster := c.cluster.CloneVT()
 			cluster.DynamicConfig = &storage.DynamicClusterConfig{
 				DisableAuditLogs: true,
 			}

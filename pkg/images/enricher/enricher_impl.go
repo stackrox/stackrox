@@ -238,7 +238,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
 		if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
 			e.metrics.IncrementMetadataCacheHit()
-			image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
+			image.Metadata = metadataValue.(*storage.ImageMetadata).CloneVT()
 			return true, nil
 		}
 		e.metrics.IncrementMetadataCacheMiss()
@@ -347,7 +347,7 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *stora
 	metadata.Version = metadataVersion
 	image.Metadata = metadata
 
-	cachedMetadata := metadata.Clone()
+	cachedMetadata := metadata.CloneVT()
 	e.metadataCache.Add(getRef(image), cachedMetadata)
 	if image.GetId() == "" {
 		if digest := image.Metadata.GetV2().GetDigest(); digest != "" {

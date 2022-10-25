@@ -12,7 +12,7 @@ func toRoleEvent(role *storage.K8SRole, action central.ResourceAction) *central.
 		Id:     role.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Role{
-			Role: role.Clone(),
+			Role: role.CloneVT(),
 		},
 	}
 }
@@ -22,7 +22,7 @@ func toBindingEvent(binding *storage.K8SRoleBinding, action central.ResourceActi
 		Id:     binding.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Binding{
-			Binding: binding.Clone(),
+			Binding: binding.CloneVT(),
 		},
 	}
 }
@@ -38,7 +38,7 @@ func toRoxRole(role *v1.Role) *storage.K8SRole {
 		CreatedAt:   protoconv.ConvertTimeToTimestamp(role.GetCreationTimestamp().Time),
 		Rules:       getPolicyRules(role.Rules),
 	}
-	return roxRole.Clone() // Clone the labels, annotations, and policy rules.
+	return roxRole.CloneVT() // Clone the labels, annotations, and policy rules.
 }
 
 func toRoxClusterRole(role *v1.ClusterRole) *storage.K8SRole {
@@ -52,7 +52,7 @@ func toRoxClusterRole(role *v1.ClusterRole) *storage.K8SRole {
 		CreatedAt:   protoconv.ConvertTimeToTimestamp(role.GetCreationTimestamp().Time),
 		Rules:       getPolicyRules(role.Rules),
 	}
-	return roxRole.Clone() // Clone the labels, annotations, and policy rules.
+	return roxRole.CloneVT() // Clone the labels, annotations, and policy rules.
 }
 
 func toRoxRoleBinding(roleBinding *v1.RoleBinding, roleID string) *storage.K8SRoleBinding {
@@ -67,7 +67,7 @@ func toRoxRoleBinding(roleBinding *v1.RoleBinding, roleID string) *storage.K8SRo
 		CreatedAt:   protoconv.ConvertTimeToTimestamp(roleBinding.GetCreationTimestamp().Time),
 		Subjects:    getSubjects(roleBinding.Subjects),
 	}
-	return roxBinding.Clone() // Clone the labels and annotations.
+	return roxBinding.CloneVT() // Clone the labels and annotations.
 }
 
 func toRoxClusterRoleBinding(clusterRoleBinding *v1.ClusterRoleBinding, roleID string) *storage.K8SRoleBinding {
@@ -82,7 +82,7 @@ func toRoxClusterRoleBinding(clusterRoleBinding *v1.ClusterRoleBinding, roleID s
 		CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoleBinding.GetCreationTimestamp().Time),
 		Subjects:    getSubjects(clusterRoleBinding.Subjects),
 	}
-	return roxBinding.Clone() // Clone the labels and annotations.
+	return roxBinding.CloneVT() // Clone the labels and annotations.
 }
 
 // The returned PolicyRules are *shallow copies* of the k8sRules, e.g. k8sRules.Verbs,

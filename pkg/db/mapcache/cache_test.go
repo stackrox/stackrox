@@ -66,7 +66,7 @@ func (s *CacheTestSuite) TestSingleOperations() {
 	s.Equal(alert1, msg)
 
 	// Upsert again with a new value and make sure cache reflects the new value
-	cloned1 := alert1.Clone()
+	cloned1 := alert1.CloneVT()
 	cloned1.Policy.EnforcementActions = []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT}
 
 	s.underlyingDB.EXPECT().Upsert(cloned1)
@@ -131,7 +131,7 @@ func (s *CacheTestSuite) TestBulkOperations() {
 	s.Nil(missingIndices)
 	s.Equal([]proto.Message{alert1, alert2}, msgs)
 
-	cloned1 := alert1.Clone()
+	cloned1 := alert1.CloneVT()
 	cloned1.Policy.EnforcementActions = []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT}
 
 	s.underlyingDB.EXPECT().UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{cloned1, alert2})

@@ -309,7 +309,7 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 
 	// Initial population
 	// scanner version is empty to test backward compatibility
-	image := mockImage.Clone()
+	image := mockImage.CloneVT()
 	s.Assert().Equal(image.GetScan().GetScannerVersion(), "")
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
 	s.verifyExecutableCache(updater, mockImage)
@@ -324,11 +324,11 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 	s.verifyExecutableCache(updater, mockImage)
 
 	// New update without the first component
-	image = mockImage.Clone()
+	image = mockImage.CloneVT()
 	// update the scanner version to make sure cache gets re-populated
 	image.GetScan().ScannerVersion = "2.22.0"
 	image.GetScan().Components = image.GetScan().GetComponents()[1:]
-	imageForVerify := image.Clone()
+	imageForVerify := image.CloneVT()
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
 	s.verifyExecutableCache(updater, imageForVerify)
 }
@@ -416,7 +416,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 		func(ctx context.Context, query *v1.Query) ([]search.Result, error) {
 			return []search.Result{{ID: image.GetId()}}, nil
 		})
-	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image.Clone()))
+	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image.CloneVT()))
 	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs(gomock.Any()).AnyTimes().Return([]string{deployment.GetId()}, nil)
 
 	// Test active components with designated image and deployment

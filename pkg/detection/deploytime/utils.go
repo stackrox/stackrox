@@ -24,7 +24,7 @@ func PolicyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *st
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_DEPLOY,
 		Entity:         convert.ToAlertDeployment(deployment),
-		Policy:         policy.Clone(),
+		Policy:         policy.CloneVT(),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),
 	}

@@ -39,7 +39,7 @@ func getPortMatchFunc(port intstr.IntOrString) func(servicePort *v1.ServicePort)
 }
 
 func exposureInfoFromPort(template *storage.PortConfig_ExposureInfo, port v1.ServicePort) *storage.PortConfig_ExposureInfo {
-	out := template.Clone()
+	out := template.CloneVT()
 	out.ServicePort = port.Port
 	out.NodePort = port.NodePort
 	return out

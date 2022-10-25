@@ -108,7 +108,7 @@ func SectionContainsFieldOfType(section *storage.PolicySection, fieldType Runtim
 
 // FilterPolicySections returns a new policy containing only the policy sections that satisfy the predicate.
 func FilterPolicySections(policy *storage.Policy, pred func(section *storage.PolicySection) bool) *storage.Policy {
-	cloned := policy.Clone()
+	cloned := policy.CloneVT()
 	sections := policy.GetPolicySections()
 	cloned.PolicySections = nil
 	for _, section := range sections {

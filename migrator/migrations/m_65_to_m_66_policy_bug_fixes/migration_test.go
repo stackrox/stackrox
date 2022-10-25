@@ -182,7 +182,7 @@ func (suite *policyUpdatesTestSuite) TestModifiedPoliciesAreNotUpdated() {
 	// Test that a policy that matches id, but has multiple policy sections is not updated
 	var modifiedPolicies []*storage.Policy
 	for policyID, policy := range suite.policiesToTest {
-		modifiedPolicy := policy.Clone()
+		modifiedPolicy := policy.CloneVT()
 		modifiedPolicy.PolicySections = []*storage.PolicySection{
 			{
 				SectionName:  "",
@@ -203,7 +203,7 @@ func (suite *policyUpdatesTestSuite) TestModifiedPoliciesAreNotUpdated() {
 	// Test that a policy that matches id, but has additional policy groups is not updated
 	modifiedPolicies = nil
 	for policyID, policy := range suite.policiesToTest {
-		modifiedPolicy := policy.Clone()
+		modifiedPolicy := policy.CloneVT()
 		modifiedPolicy.PolicySections[0].PolicyGroups = append(modifiedPolicy.PolicySections[0].PolicyGroups, &storage.PolicyGroup{FieldName: "someField", BooleanOperator: storage.BooleanOperator_OR, Negate: false, Values: []*storage.PolicyValue{{Value: "someValue"}}})
 		suite.NoError(insertPolicy(bucket, policyID, modifiedPolicy))
 		modifiedPolicies = append(modifiedPolicies, modifiedPolicy)
@@ -215,7 +215,7 @@ func (suite *policyUpdatesTestSuite) TestModifiedPoliciesAreNotUpdated() {
 	// Test that a policy that matches id, field name _but not_ criteria is not updated
 	modifiedPolicies = nil
 	for policyID, policy := range suite.policiesToTest {
-		modifiedPolicy := policy.Clone()
+		modifiedPolicy := policy.CloneVT()
 		modifiedPolicy.PolicySections = []*storage.PolicySection{
 			{
 				SectionName: "",

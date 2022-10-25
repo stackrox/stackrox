@@ -42,7 +42,7 @@ func (*sumologic) Close(context.Context) error {
 
 // AlertNotify takes in an alert and generates the Slack message
 func (s *sumologic) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	clonedAlert := alert.Clone()
+	clonedAlert := alert.CloneVT()
 	notifiers.PruneAlert(clonedAlert, 10000)
 
 	return retry.WithRetry(

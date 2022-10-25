@@ -10,7 +10,7 @@ import (
 
 // Merge merges the images parts into an image.
 func Merge(parts ImageParts) *storage.Image {
-	ret := parts.Image.Clone()
+	ret := parts.Image.CloneVT()
 	mergeComponents(parts, ret)
 	return ret
 }
@@ -55,7 +55,7 @@ func generateEmbeddedComponent(os string, cp ComponentParts, imageCVEEdges map[s
 	ret := &storage.EmbeddedImageScanComponent{
 		Name:      cp.Component.GetName(),
 		Version:   cp.Component.GetVersion(),
-		License:   cp.Component.GetLicense().Clone(),
+		License:   cp.Component.GetLicense().CloneVT(),
 		Source:    cp.Component.GetSource(),
 		Location:  cp.Edge.GetLocation(),
 		FixedBy:   cp.Component.GetFixedBy(),

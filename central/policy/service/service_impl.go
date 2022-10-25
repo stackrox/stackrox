@@ -799,7 +799,7 @@ func (s *serviceImpl) ImportPolicies(ctx context.Context, request *v1.ImportPoli
 			}
 		}
 		// Clone here because this may be the same object stored by the DB
-		importResponse.Policy = importResponse.GetPolicy().Clone()
+		importResponse.Policy = importResponse.GetPolicy().CloneVT()
 		removeInternal(importResponse.Policy)
 	}
 

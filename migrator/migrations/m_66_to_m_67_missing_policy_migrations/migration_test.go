@@ -152,7 +152,7 @@ func (suite *policyUpdatesTestSuite) TestModifiedPoliciesAreNotUpdated() {
 		suite.True(ok)
 
 		// Modify the policy to have multiple policy sections
-		modifiedPolicy := policy.Clone()
+		modifiedPolicy := policy.CloneVT()
 		modifiedPolicy.PolicySections = []*storage.PolicySection{
 			{
 				SectionName:  "",
@@ -178,7 +178,7 @@ func (suite *policyUpdatesTestSuite) TestModifiedPoliciesAreNotUpdated() {
 		policy, ok := comparisonPolicies[policyID]
 		suite.True(ok)
 
-		modifiedPolicy := policy.Clone()
+		modifiedPolicy := policy.CloneVT()
 		modifiedPolicy.PolicySections[0].PolicyGroups = append(policy.PolicySections[0].PolicyGroups, &storage.PolicyGroup{FieldName: "someField", BooleanOperator: storage.BooleanOperator_OR, Negate: false, Values: []*storage.PolicyValue{{Value: "someValue"}}})
 
 		suite.NoError(insertPolicy(bucket, modifiedPolicy.GetId(), modifiedPolicy))
@@ -195,7 +195,7 @@ func (suite *policyUpdatesTestSuite) TestModifiedPoliciesAreNotUpdated() {
 		policy, ok := comparisonPolicies[policyID]
 		suite.True(ok)
 
-		modifiedPolicy := policy.Clone()
+		modifiedPolicy := policy.CloneVT()
 		modifiedPolicy.PolicySections = []*storage.PolicySection{
 			{
 				SectionName: "",

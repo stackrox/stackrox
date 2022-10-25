@@ -84,7 +84,7 @@ func TestSubnetToSupernetAggregator(t *testing.T) {
 	*/
 
 	ts1 := types.TimestampNow()
-	ts2 := ts1.Clone()
+	ts2 := ts1.CloneVT()
 	ts2.Seconds = ts2.Seconds + 1000
 
 	f1 := testutils.GetNetworkFlow(d1, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts1)
@@ -206,7 +206,7 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 	*/
 
 	ts1 := types.TimestampNow()
-	ts2 := ts1.Clone()
+	ts2 := ts1.CloneVT()
 	ts2.Seconds = ts2.Seconds + 1000
 
 	f1 := testutils.GetNetworkFlow(d1, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts1)
@@ -236,7 +236,7 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 
 func TestAggregateExtConnsByName(t *testing.T) {
 	ts1 := types.TimestampNow()
-	ts2 := ts1.Clone()
+	ts2 := ts1.CloneVT()
 	ts2.Seconds = ts2.Seconds + 1000
 
 	d1 := testutils.GetDeploymentNetworkEntity("d1", "d1")

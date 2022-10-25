@@ -39,7 +39,7 @@ func (s *FakeService) GetAllMessages() []*central.MsgFromSensor {
 	s.receivedLock.RLock()
 	defer s.receivedLock.RUnlock()
 	for _, m := range s.receivedMessages {
-		output = append(output, m.Clone())
+		output = append(output, m.CloneVT())
 	}
 	return output
 }
@@ -85,7 +85,7 @@ func (s *FakeService) startInputIngestion(stream central.SensorService_Communica
 		if s.KillSwitch.IsDone() {
 			return
 		}
-		go s.ingestMessageWithLock(msg.Clone())
+		go s.ingestMessageWithLock(msg.CloneVT())
 	}
 
 }

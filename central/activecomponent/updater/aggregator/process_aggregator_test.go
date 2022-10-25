@@ -214,7 +214,7 @@ func TestAggregator(t *testing.T) {
 	assert.NotContains(t, aggregator.cache[indicators2[0].GetDeploymentId()], containerToRemove)
 
 	// Test case 8: Indicators coming in with wrong image, no update
-	indicatorNewImage := indicators2[2].Clone()
+	indicatorNewImage := indicators2[2].CloneVT()
 	indicatorNewImage.ImageId = allImages[0]
 	aggregator.Add([]*storage.ProcessIndicator{indicatorNewImage})
 	deployToupdates = aggregator.GetAndPrune(scannedImageFunc, existingDeployments)

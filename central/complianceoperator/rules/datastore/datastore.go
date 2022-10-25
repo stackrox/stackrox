@@ -119,7 +119,7 @@ func (d *datastoreImpl) GetRulesByName(ctx context.Context, name string) ([]*sto
 	defer d.ruleLock.RUnlock()
 	rules := make([]*storage.ComplianceOperatorRule, 0, len(d.rulesByName[name]))
 	for _, rule := range d.rulesByName[name] {
-		rules = append(rules, rule.Clone())
+		rules = append(rules, rule.CloneVT())
 	}
 	return rules, nil
 }

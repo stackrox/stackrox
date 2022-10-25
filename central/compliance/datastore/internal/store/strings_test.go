@@ -51,7 +51,7 @@ func TestStringsRoundTrip(t *testing.T) {
 		},
 	}
 
-	resultsWithoutStrings := results.Clone()
+	resultsWithoutStrings := results.CloneVT()
 	stringsProto := ExternalizeStrings(resultsWithoutStrings)
 	assert.ElementsMatch(t, stringsProto.Strings, []string{"foo", "bar", "baz"})
 

@@ -350,7 +350,7 @@ func (resolver *Resolver) unwrappedVulnerabilitiesV2Query(ctx context.Context, q
 
 	query = tryUnsuppressedQuery(query)
 
-	originalQuery := query.Clone()
+	originalQuery := query.CloneVT()
 	var queryModified, postSortingNeeded bool
 
 	if distroctx.IsImageScoped(ctx) {

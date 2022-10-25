@@ -91,7 +91,7 @@ func (c *cacheImpl) Get(_ context.Context, id string) (*storage.Pod, bool, error
 	if !ok {
 		return nil, false, nil
 	}
-	return pod.Clone(), true, nil
+	return pod.CloneVT(), true, nil
 }
 
 func (c *cacheImpl) GetMany(_ context.Context, ids []string) ([]*storage.Pod, []int, error) {
@@ -106,7 +106,7 @@ func (c *cacheImpl) GetMany(_ context.Context, ids []string) ([]*storage.Pod, []
 			missingIndices = append(missingIndices, i)
 			continue
 		}
-		pods = append(pods, pod.Clone())
+		pods = append(pods, pod.CloneVT())
 	}
 	return pods, missingIndices, nil
 }
@@ -116,7 +116,7 @@ func (c *cacheImpl) Walk(_ context.Context, fn func(pod *storage.Pod) error) err
 	defer c.lock.RUnlock()
 
 	for _, pod := range c.cache {
-		if err := fn(pod.Clone()); err != nil {
+		if err := fn(pod.CloneVT()); err != nil {
 			return err
 		}
 	}
@@ -127,7 +127,7 @@ func (c *cacheImpl) Upsert(ctx context.Context, pod *storage.Pod) error {
 	if err := c.store.Upsert(ctx, pod); err != nil {
 		return err
 	}
-	clonedPod := pod.Clone()
+	clonedPod := pod.CloneVT()
 	c.lock.Lock()
 	defer c.lock.Unlock()
 

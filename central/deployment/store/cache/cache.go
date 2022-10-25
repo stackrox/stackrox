@@ -108,7 +108,7 @@ func (c *cacheImpl) Get(_ context.Context, id string) (*storage.Deployment, bool
 	if !ok {
 		return nil, false, nil
 	}
-	return deployment.Clone(), true, nil
+	return deployment.CloneVT(), true, nil
 }
 
 func (c *cacheImpl) GetMany(_ context.Context, ids []string) ([]*storage.Deployment, []int, error) {
@@ -123,7 +123,7 @@ func (c *cacheImpl) GetMany(_ context.Context, ids []string) ([]*storage.Deploym
 			missingIndices = append(missingIndices, i)
 			continue
 		}
-		deployments = append(deployments, deployment.Clone())
+		deployments = append(deployments, deployment.CloneVT())
 	}
 	return deployments, missingIndices, nil
 }
@@ -133,7 +133,7 @@ func (c *cacheImpl) Walk(_ context.Context, fn func(deployment *storage.Deployme
 	defer c.lock.RUnlock()
 
 	for _, deployment := range c.cache {
-		if err := fn(deployment.Clone()); err != nil {
+		if err := fn(deployment.CloneVT()); err != nil {
 			return err
 		}
 	}
@@ -144,7 +144,7 @@ func (c *cacheImpl) Upsert(ctx context.Context, deployment *storage.Deployment) 
 	if err := c.store.Upsert(ctx, deployment); err != nil {
 		return err
 	}
-	clonedDeployment := deployment.Clone()
+	clonedDeployment := deployment.CloneVT()
 	c.lock.Lock()
 	defer c.lock.Unlock()
 

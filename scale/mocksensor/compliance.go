@@ -34,7 +34,7 @@ func loadComplianceReturn(path string) *compliance.ComplianceReturn {
 }
 
 func getCheckResults(scrapeID, nodeName string) *compliance.ComplianceReturn {
-	cr := defaultCheckResults.Clone()
+	cr := defaultCheckResults.CloneVT()
 	cr.ScrapeId = scrapeID
 	cr.NodeName = nodeName
 	cr.Time = types.TimestampNow()

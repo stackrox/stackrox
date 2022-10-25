@@ -66,7 +66,7 @@ func (s *ImagesStoreSuite) TestStore() {
 	foundImage, exists, err = store.Get(ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
-	cloned := image.Clone()
+	cloned := image.CloneVT()
 	for _, component := range cloned.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			vuln.FirstSystemOccurrence = foundImage.GetLastUpdated()

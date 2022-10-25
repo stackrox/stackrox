@@ -321,7 +321,7 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 
 			var downgradeErr error
 			for _, p := range policies {
-				cloned := p.Clone()
+				cloned := p.CloneVT()
 				downgradedPolicies = append(downgradedPolicies, cloned)
 				err := policyversion.DowngradePolicyTo(cloned, sensorPolicyVersion)
 				if downgradeErr == nil && err != nil {

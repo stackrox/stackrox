@@ -186,7 +186,7 @@ func (b *storeImpl) toUpsert(node *storage.Node) (*storage.Node, bool, bool, err
 
 	oldNode := msg.(*storage.Node)
 
-	nodeToUpsert := node.Clone()
+	nodeToUpsert := node.CloneVT()
 
 	scanUpdated := true
 	// We skip rewriting components and CVEs if scan is not newer, hence we do not need to merge.
@@ -220,7 +220,7 @@ func (b *storeImpl) toUpsert(node *storage.Node) (*storage.Node, bool, bool, err
 		setFixable := nodeToUpsert.GetSetFixable()
 		setTopCVSS := nodeToUpsert.GetSetTopCvss()
 
-		nodeToUpsert = oldNode.Clone()
+		nodeToUpsert = oldNode.CloneVT()
 		nodeToUpsert.LastUpdated = lastUpdated
 		nodeToUpsert.Scan = scan
 		nodeToUpsert.RiskScore = riskScore

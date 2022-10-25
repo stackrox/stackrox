@@ -262,7 +262,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 			ViolationInfo:   violationInfo,
 			AlertInfo:       extractAlertInfo(alert, violationInfo),
 			PolicyInfo:      policyInfo,
-			NetworkFlowInfo: v.GetNetworkFlowInfo().Clone(),
+			NetworkFlowInfo: v.GetNetworkFlowInfo().CloneVT(),
 		}
 
 		addEntityInfoToSplunkViolation(alert, &violation, deploymentInfo)
@@ -388,7 +388,7 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 func extractViolationMessageAttrs(fromViolation *storage.Alert_Violation) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
 	var msgAttrs []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr
 	if kvs := fromViolation.GetKeyValueAttrs(); kvs != nil {
-		msgAttrs = kvs.Clone().GetAttrs()
+		msgAttrs = kvs.CloneVT().GetAttrs()
 	}
 
 	// Filter out some message attributes, but only for K8S Events
@@ -441,7 +441,7 @@ func extractProcessInfo(alertID string, from *storage.ProcessIndicator) *integra
 
 		lineage = make([]*storage.ProcessSignal_LineageInfo, 0, len(signal.GetLineageInfo()))
 		for _, x := range signal.GetLineageInfo() {
-			lineage = append(lineage, x.Clone())
+			lineage = append(lineage, x.CloneVT())
 		}
 	} else {
 		log.Warnw("Detected ProcessIndicator without inner ProcessSignal. Resulting process details will be incomplete.", zap.String("ProcessIndicator.Id", from.GetId()), zap.String("Alert.Id", alertID))
@@ -512,7 +512,7 @@ func extractDeploymentInfo(from *storage.Alert) *integrations.SplunkViolation_De
 	case *storage.Alert_Deployment_:
 		containers := make([]*storage.Alert_Deployment_Container, 0, len(e.Deployment.GetContainers()))
 		for _, x := range e.Deployment.GetContainers() {
-			containers = append(containers, x.Clone())
+			containers = append(containers, x.CloneVT())
 		}
 
 		// NOTE: For backwards compatibility with older TA deployments and existing Splunk queries, we still send DeploymentInfo.
@@ -537,7 +537,7 @@ func extractDeploymentInfo(from *storage.Alert) *integrations.SplunkViolation_De
 		// e.Deployment.Inactive not mapped because it might change
 	case *storage.Alert_Image:
 		res = integrations.SplunkViolation_DeploymentInfo{
-			DeploymentImage: e.Image.Clone(),
+			DeploymentImage: e.Image.CloneVT(),
 		}
 	case *storage.Alert_Resource_:
 		// ignore for now. Resource cannot be converted to deployment. It will correctly get populated into its own entity later
@@ -588,7 +588,7 @@ func refineDeploymentInfo(alertID string, deploymentInfo *integrations.SplunkVio
 		return deploymentInfo
 	}
 
-	res := deploymentInfo.Clone()
+	res := deploymentInfo.CloneVT()
 
 	resetIfDiffer := func(field, v1, v2 string) {
 		if v1 != "" && v2 != "" && v1 != v2 {

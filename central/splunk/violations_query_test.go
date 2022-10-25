@@ -62,11 +62,11 @@ func (s *violationsTestSuite) withAlerts(alerts []*storage.Alert, action func(al
 }
 
 func (s *violationsTestSuite) TestQueryReturnsAlertsWithAllStates() {
-	a1 := s.processAlert.Clone()
+	a1 := s.processAlert.CloneVT()
 	a1.State = storage.ViolationState_SNOOZED
-	a2 := s.k8sAlert.Clone()
+	a2 := s.k8sAlert.CloneVT()
 	a2.State = storage.ViolationState_RESOLVED
-	a3 := s.deployAlert.Clone()
+	a3 := s.deployAlert.CloneVT()
 	a3.State = storage.ViolationState_ATTEMPTED
 
 	var alertIDs []string

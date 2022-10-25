@@ -93,7 +93,7 @@ func (s *storeImpl) insertIntoNodes(
 ) error {
 	cloned := parts.node
 	if cloned.GetScan().GetComponents() != nil {
-		cloned = parts.node.Clone()
+		cloned = parts.node.CloneVT()
 		cloned.Scan.Components = nil
 	}
 	serialized, marshalErr := cloned.Marshal()

@@ -120,7 +120,7 @@ func populate(ctx context.Context, storageNamespace *storage.NamespaceMetadata, 
 		AddExactMatches(search.ClusterID, storageNamespace.GetClusterId()).
 		AddExactMatches(search.Namespace, storageNamespace.GetName()).
 		ProtoQuery()
-	deploymentResults, err := deploymentDataStore.Search(ctx, q.Clone())
+	deploymentResults, err := deploymentDataStore.Search(ctx, q.CloneVT())
 	if err != nil {
 		return nil, errors.Wrap(err, "searching deployments")
 	}

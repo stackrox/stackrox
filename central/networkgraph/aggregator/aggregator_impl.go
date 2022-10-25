@@ -46,7 +46,7 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 			continue
 		}
 
-		conn = conn.Clone()
+		conn = conn.CloneVT()
 		srcEntity, dstEntity = conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
 
 		// If both endpoints are not external (including INTERNET), skip processing.
@@ -113,7 +113,7 @@ func (a *aggregateDefaultToCustomExtSrcsImpl) Aggregate(conns []*storage.Network
 			continue
 		}
 
-		conn = conn.Clone()
+		conn = conn.CloneVT()
 		srcEntity, dstEntity = conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
 
 		// If both endpoints are not external (including INTERNET), skip processing.
@@ -172,7 +172,7 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			continue
 		}
 
-		flow = flow.Clone()
+		flow = flow.CloneVT()
 		srcEntity, dstEntity = flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
 
 		// If both endpoints are not known external sources, skip processing.

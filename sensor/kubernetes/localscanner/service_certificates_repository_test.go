@@ -242,7 +242,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsCancelFailure
 
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
-	s.Error(repo.ensureServiceCertificates(ctx, certificates.Clone()))
+	s.Error(repo.ensureServiceCertificates(ctx, certificates.CloneVT()))
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificateMissingSecretSuccess() {
@@ -277,7 +277,7 @@ type certSecretsRepoFixture struct {
 // - A repository that uses that secrets client, sensorDeployment as owner, and with a single serviceCertSecretSpec
 //   for the aforementioned secret in its secrets.
 func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(config certSecretsRepoFixtureConfig) *certSecretsRepoFixture {
-	certificates := certificates.Clone()
+	certificates := certificates.CloneVT()
 	ownerRef := sensorOwnerReference()
 	if config.secretOwnerRefUID != "" {
 		ownerRef[0].UID = types.UID(config.secretOwnerRefUID)

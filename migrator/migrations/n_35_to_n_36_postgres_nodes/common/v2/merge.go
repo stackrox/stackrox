@@ -10,7 +10,7 @@ import (
 
 // Merge merges the node parts into a node.
 func Merge(parts *NodeParts) *storage.Node {
-	ret := parts.Node.Clone()
+	ret := parts.Node.CloneVT()
 	mergeComponents(parts, ret)
 	return ret
 }

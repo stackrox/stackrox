@@ -138,7 +138,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	suite.False(exists)
 
 	// Upsert old scan should not change data (save for node.LastUpdated).
-	olderNode := node.Clone()
+	olderNode := node.CloneVT()
 	olderNode.GetScan().GetScanTime().Seconds = olderNode.GetScan().GetScanTime().GetSeconds() - 500
 	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, olderNode))
 	storedNode, exists, err = suite.datastore.GetNode(allowAllCtx, olderNode.Id)
@@ -149,7 +149,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	// Scan data is unchanged.
 	suite.Equal(expectedNode, storedNode)
 
-	newNode := node.Clone()
+	newNode := node.CloneVT()
 	newNode.Id = "id2"
 
 	// Upsert new node.
@@ -506,7 +506,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.NoError(err)
 	suite.ElementsMatch(cveIDsSet.AsSlice(), pkgSearch.ResultsToIDs(results))
 
-	testNode2 := testNode.Clone()
+	testNode2 := testNode.CloneVT()
 	testNode2.Id = "2"
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())

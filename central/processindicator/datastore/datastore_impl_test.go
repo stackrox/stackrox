@@ -310,7 +310,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 	suite.verifyIndicatorsAre(indicators...)
 
 	// Now add an extra indicator; this should cause a cache miss and we should hit the pruning.
-	extraIndicator := indicators[0].Clone()
+	extraIndicator := indicators[0].CloneVT()
 	extraIndicator.Id = uuid.NewV4().String()
 	extraIndicator.Signal.Args = uuid.NewV4().String()
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, extraIndicator))

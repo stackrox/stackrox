@@ -140,7 +140,7 @@ func (s *CRUDTestSuite) TestReadMany() {
 func (s *CRUDTestSuite) TestUpsert() {
 	s.NoError(s.crud.Upsert(alert1))
 
-	localAlert := alert1.Clone()
+	localAlert := alert1.CloneVT()
 	localAlert.State = storage.ViolationState_RESOLVED
 
 	s.NoError(s.crud.Upsert(localAlert))
@@ -155,10 +155,10 @@ func (s *CRUDTestSuite) TestUpsertMany() {
 	s.NoError(s.crud.UpsertMany([]proto.Message{alert1}))
 	s.NoError(s.crud.UpsertMany([]proto.Message{alert1, alert2}))
 
-	localAlert1 := alert1.Clone()
+	localAlert1 := alert1.CloneVT()
 	localAlert1.State = storage.ViolationState_RESOLVED
 
-	localAlert2 := alert2.Clone()
+	localAlert2 := alert2.CloneVT()
 	localAlert2.State = storage.ViolationState_RESOLVED
 
 	s.NoError(s.crud.UpsertMany([]proto.Message{localAlert1, localAlert2}))
@@ -167,7 +167,7 @@ func (s *CRUDTestSuite) TestUpsertMany() {
 func (s *CRUDTestSuite) TestUpsertWithID() {
 	s.NoError(s.crud.UpsertWithID(alert1ID, alert1))
 
-	localAlert := alert1.Clone()
+	localAlert := alert1.CloneVT()
 	localAlert.State = storage.ViolationState_RESOLVED
 
 	s.NoError(s.crud.UpsertWithID(alert1ID, localAlert))
@@ -182,10 +182,10 @@ func (s *CRUDTestSuite) TestUpsertManyWithIDs() {
 	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID}, []proto.Message{alert1}))
 	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{alert1, alert2}))
 
-	localAlert1 := alert1.Clone()
+	localAlert1 := alert1.CloneVT()
 	localAlert1.State = storage.ViolationState_RESOLVED
 
-	localAlert2 := alert2.Clone()
+	localAlert2 := alert2.CloneVT()
 	localAlert2.State = storage.ViolationState_RESOLVED
 
 	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{localAlert1, localAlert2}))

@@ -210,7 +210,7 @@ func GetImageID(img *storage.Image) string {
 
 // StripCVEDescriptions takes in an image and returns a stripped down version without the descriptions of CVEs
 func StripCVEDescriptions(img *storage.Image) *storage.Image {
-	newImage := img.Clone()
+	newImage := img.CloneVT()
 	StripCVEDescriptionsNoClone(newImage)
 	return newImage
 }

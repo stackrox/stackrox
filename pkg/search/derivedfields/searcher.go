@@ -25,7 +25,7 @@ func CountSortedSearcher(searcher search.Searcher, counters map[string]counter.D
 			}
 
 			// Local copy to avoid changing input.
-			local := q.Clone()
+			local := q.CloneVT()
 
 			// If derived field sort option is present, clear it
 			sortOption := q.GetPagination().GetSortOptions()[0]

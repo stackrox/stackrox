@@ -203,7 +203,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	suite.Equal(len(images), count)
 
 	// Test no update
-	cloned := images[0].Clone()
+	cloned := images[0].CloneVT()
 	cloned.Metadata.V1.Created.Seconds = cloned.Metadata.V1.Created.Seconds - 500
 	cloned.Scan.ScanTime.Seconds = cloned.Scan.ScanTime.Seconds - 500
 	cloned.Name.FullName = "newname"
@@ -214,7 +214,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	suite.Equal(images[0].GetName().GetFullName(), got.GetName().GetFullName())
 
 	// Test no components and cve update, only image bucket update
-	cloned = images[0].Clone()
+	cloned = images[0].CloneVT()
 	cloned.Scan.ScanTime.Seconds = cloned.Scan.ScanTime.Seconds - 500
 	cloned.Name.FullName = "newname"
 	cloned.Scan.Components = nil

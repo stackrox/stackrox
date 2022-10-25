@@ -100,7 +100,7 @@ func (s *ImageScanResolverTestSuite) TestGetImagesWithScan() {
 		Return([]search.Result{{
 			ID: img.GetId(),
 		}}, nil)
-	cloned := img.Clone()
+	cloned := img.CloneVT()
 	cloned.Scan.Components = nil
 	s.imageDataStore.EXPECT().GetManyImageMetadata(gomock.Any(), gomock.Any()).
 		Return([]*storage.Image{cloned}, nil)
@@ -118,7 +118,7 @@ func (s *ImageScanResolverTestSuite) TestGetImagesWithoutScan() {
 			ID: img.GetId(),
 		}}, nil)
 
-	cloned := img.Clone()
+	cloned := img.CloneVT()
 	cloned.Scan.Components = nil
 	s.imageDataStore.EXPECT().GetManyImageMetadata(gomock.Any(), gomock.Any()).
 		Return([]*storage.Image{cloned}, nil)

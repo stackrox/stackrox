@@ -230,7 +230,7 @@ func TestDeleteProfile(t *testing.T) {
 	control2 = mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name))
 	assert.NotNil(t, control2)
 
-	updatedProfile := initialProfile.Clone()
+	updatedProfile := initialProfile.CloneVT()
 	updatedProfile.Id = uuid.NewV4().String()
 	// Add the updated profile and delete the original profile. The controls should still exist
 	assert.NoError(t, mgr.AddProfile(updatedProfile))

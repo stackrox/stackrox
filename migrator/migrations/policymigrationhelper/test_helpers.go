@@ -38,7 +38,7 @@ func getAndNormalizePolicies(t *testing.T, bucket bolthelpers.BucketRef, policy 
 		return proto.Unmarshal(v, normalizedFromDB)
 	}))
 
-	normalizedExpected = policy.Clone()
+	normalizedExpected = policy.CloneVT()
 	sort.Slice(normalizedExpected.GetExclusions(), func(i, j int) bool {
 		return normalizedExpected.Exclusions[i].Name < normalizedExpected.Exclusions[j].Name
 	})
@@ -157,7 +157,7 @@ func (suite *DiffTestSuite) testModifiedPolicies(migrationFunc func(db *bolt.DB)
 	modifiedPolicies := make(map[string]*storage.Policy)
 
 	for _, policy := range suite.beforePolicies {
-		modifiedPolicy := policy.Clone()
+		modifiedPolicy := policy.CloneVT()
 		pollutePolicyContents(modifiedPolicy)
 		modifiedPolicies[modifiedPolicy.GetId()] = modifiedPolicy
 		insertPolicy(suite.T(), bucket, modifiedPolicy)
@@ -271,7 +271,7 @@ func (suite *TestSuite) testModifiedPolicies(migrationFunc func(db *bolt.DB) err
 		var policy storage.Policy
 		err = protojson.Unmarshal(policyBytes, &policy)
 		suite.Require().NoError(err)
-		modifiedPolicy := policy.Clone()
+		modifiedPolicy := policy.CloneVT()
 		modifiedPolicy.PolicySections[0].PolicyGroups[0].Values[0].Value = "assfasdf"
 		modifiedPolicies[modifiedPolicy.GetId()] = modifiedPolicy
 		insertPolicy(suite.T(), bucket, modifiedPolicy)

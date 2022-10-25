@@ -103,7 +103,7 @@ func determineCollectorImages(clusterMainImage, clusterCollectorImage *storage.I
 	} else if clusterCollectorImage == nil {
 		collectorImageFull = deriveImageWithNewName(clusterMainImage, imageFlavor.CollectorImageName)
 	} else {
-		collectorImageFull = clusterCollectorImage.Clone()
+		collectorImageFull = clusterCollectorImage.CloneVT()
 	}
 	collectorImageFull.Tag = imageFlavor.CollectorImageTag
 	collectorImageSlim := deriveImageWithNewName(collectorImageFull, imageFlavor.CollectorSlimImageName)

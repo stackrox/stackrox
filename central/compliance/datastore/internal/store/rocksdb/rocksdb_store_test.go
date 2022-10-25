@@ -168,8 +168,8 @@ func (s *RocksDBStoreTestSuite) TestGetLatest() {
 	olderResult, _ := store.GetMockResult()
 	olderResult.RunMetadata.FinishTimestamp.Seconds = olderResult.RunMetadata.FinishTimestamp.Seconds - 600
 	olderResult.RunMetadata.RunId = "Test run ID 2"
-	expectedNewerResult := newerResult.Clone()
-	expectedOlderResult := olderResult.Clone()
+	expectedNewerResult := newerResult.CloneVT()
+	expectedOlderResult := olderResult.CloneVT()
 
 	err := s.store.StoreComplianceDomain(s.ctx, domain)
 	s.Require().NoError(err)
@@ -185,12 +185,12 @@ func (s *RocksDBStoreTestSuite) TestGetLatest() {
 
 func (s *RocksDBStoreTestSuite) TestStoreFailure() {
 	oldResult, domain := store.GetMockResult()
-	failedResult := oldResult.RunMetadata.Clone()
+	failedResult := oldResult.RunMetadata.CloneVT()
 	failedResult.Success = false
 	failedResult.FinishTimestamp.Seconds = failedResult.FinishTimestamp.Seconds + 600
 	failedResult.ErrorMessage = "Test error message"
 
-	err := s.store.StoreRunResults(s.ctx, oldResult.Clone())
+	err := s.store.StoreRunResults(s.ctx, oldResult.CloneVT())
 	s.Require().NoError(err)
 	err = s.store.StoreComplianceDomain(s.ctx, domain)
 	s.Require().NoError(err)
@@ -203,10 +203,10 @@ func (s *RocksDBStoreTestSuite) TestStoreFailure() {
 
 func (s *RocksDBStoreTestSuite) TestGetSpecificRun() {
 	justRight, domain := store.GetMockResult()
-	tooEarly := justRight.Clone()
+	tooEarly := justRight.CloneVT()
 	tooEarly.RunMetadata.RunId = "Too early"
 	tooEarly.RunMetadata.FinishTimestamp.Seconds = tooEarly.RunMetadata.FinishTimestamp.Seconds - 600
-	tooLate := justRight.Clone()
+	tooLate := justRight.CloneVT()
 	tooLate.RunMetadata.RunId = "Too late"
 	tooLate.RunMetadata.FinishTimestamp.Seconds = tooLate.RunMetadata.FinishTimestamp.Seconds + 600
 
@@ -216,7 +216,7 @@ func (s *RocksDBStoreTestSuite) TestGetSpecificRun() {
 	err = s.store.StoreRunResults(s.ctx, tooEarly)
 	s.Require().NoError(err)
 
-	err = s.store.StoreRunResults(s.ctx, justRight.Clone())
+	err = s.store.StoreRunResults(s.ctx, justRight.CloneVT())
 	s.Require().NoError(err)
 
 	err = s.store.StoreRunResults(s.ctx, tooLate)
@@ -295,7 +295,7 @@ func (s *RocksDBStoreTestSuite) TestStoreAndRetrieveExternalizedStrings() {
 		},
 	}
 
-	expectedResultsWithoutExternalizedStrings := results.Clone()
+	expectedResultsWithoutExternalizedStrings := results.CloneVT()
 	expectedResultsWithoutExternalizedStrings.ClusterResults = &storage.ComplianceRunResults_EntityResults{
 		ControlResults: map[string]*storage.ComplianceResultValue{
 			resultKey: {
@@ -308,7 +308,7 @@ func (s *RocksDBStoreTestSuite) TestStoreAndRetrieveExternalizedStrings() {
 		},
 	}
 
-	expectedResultsWithExternalizedStrings := results.Clone()
+	expectedResultsWithExternalizedStrings := results.CloneVT()
 	expectedResultsWithExternalizedStrings.ClusterResults = &storage.ComplianceRunResults_EntityResults{
 		ControlResults: map[string]*storage.ComplianceResultValue{
 			resultKey: {
@@ -332,8 +332,8 @@ func (s *RocksDBStoreTestSuite) TestSameDomain() {
 	testRunTwo, _ := store.GetMockResult()
 	testRunTwo.RunMetadata.RunId = "some other run ID"
 	testRunTwo.RunMetadata.StandardId = "Joseph Rules"
-	s.Require().NoError(s.store.StoreRunResults(s.ctx, testRunOne.Clone()))
-	s.Require().NoError(s.store.StoreRunResults(s.ctx, testRunTwo.Clone()))
+	s.Require().NoError(s.store.StoreRunResults(s.ctx, testRunOne.CloneVT()))
+	s.Require().NoError(s.store.StoreRunResults(s.ctx, testRunTwo.CloneVT()))
 	s.Require().NoError(s.store.StoreComplianceDomain(s.ctx, domainOne))
 
 	latest, err := s.store.GetLatestRunResultsBatch(s.ctx,

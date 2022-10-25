@@ -103,7 +103,7 @@ func TestPartialValidation(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			cluster := validCluster.Clone()
+			cluster := validCluster.CloneVT()
 			c.configureClusterFn(cluster)
 
 			gotErrors := ValidatePartial(cluster)
@@ -134,7 +134,7 @@ func TestFullValidation(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			cluster := validCluster.Clone()
+			cluster := validCluster.CloneVT()
 			c.configureClusterFn(cluster)
 
 			gotErrors := Validate(cluster)

@@ -419,25 +419,25 @@ func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() 
 		{
 			"No error when setting up a non-default group when no default exists",
 			[]*storage.Group{},
-			initialGroup.Clone(),
+			initialGroup.CloneVT(),
 			false,
 		},
 		{
 			"No error when setting up a default group when no default exists",
 			[]*storage.Group{},
-			defaultGroup.Clone(),
+			defaultGroup.CloneVT(),
 			false,
 		},
 		{
 			"No error when setting up a non-default group when a default already exists",
 			[]*storage.Group{defaultGroup},
-			initialGroup.Clone(),
+			initialGroup.CloneVT(),
 			false,
 		},
 		{
 			"Error when setting up a default group when a default already exists",
 			[]*storage.Group{defaultGroup},
-			defaultGroup.Clone(),
+			defaultGroup.CloneVT(),
 			true,
 		},
 	}
@@ -458,23 +458,23 @@ func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() 
 			if c.shouldError {
 				// Validate Add returns an error if duplicate default group
 				s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(0)
-				err := s.dataStore.Add(s.hasWriteAccessCtx, c.groupToAdd.Clone())
+				err := s.dataStore.Add(s.hasWriteAccessCtx, c.groupToAdd.CloneVT())
 				s.Error(err)
 				s.ErrorIs(err, errox.AlreadyExists)
 
 				// Validate Mutate with additions returns an error if duplicate default group
 				s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(0)
-				err = s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.Clone()}, false)
+				err = s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.CloneVT()}, false)
 				s.Error(err)
 				s.ErrorIs(err, errox.AlreadyExists)
 			} else {
 				// Validate Add doesn't error if it's a new default
 				s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-				s.NoError(s.dataStore.Add(s.hasWriteAccessCtx, c.groupToAdd.Clone()))
+				s.NoError(s.dataStore.Add(s.hasWriteAccessCtx, c.groupToAdd.CloneVT()))
 
 				// Validate  Mutate with additions doesn't error if it's a new default
 				s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-				s.NoError(s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.Clone()}, false))
+				s.NoError(s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.CloneVT()}, false))
 			}
 		})
 	}
@@ -503,17 +503,17 @@ func (s *groupDataStoreTestSuite) TestUpdateToDefaultGroupIfOneAlreadyExists() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Times(0) // No updates should happen
 
 	// Unset Key / Value fields, making it a default group.
-	updatedGroup := initialGroup.Clone()
+	updatedGroup := initialGroup.CloneVT()
 	updatedGroup.GetProps().Key = ""
 	updatedGroup.GetProps().Value = ""
 
 	// Ensure a "AlreadyExists" error is yielded when trying to update the group.
-	err := s.dataStore.Update(s.hasWriteAccessCtx, updatedGroup.Clone(), false)
+	err := s.dataStore.Update(s.hasWriteAccessCtx, updatedGroup.CloneVT(), false)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 
 	// Ensure a "AlreadyExists" error is yielded when trying to update the group using Mutate.
-	err = s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{}, []*storage.Group{updatedGroup.Clone()}, []*storage.Group{}, false)
+	err = s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{}, []*storage.Group{updatedGroup.CloneVT()}, []*storage.Group{}, false)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 }
@@ -578,7 +578,7 @@ func (s *groupDataStoreTestSuite) TestCanUpdateExistingDefaultGroup() {
 		}
 	})
 
-	s.NoError(s.dataStore.Add(s.hasWriteAccessCtx, newDefaultGroup.Clone()))
+	s.NoError(s.dataStore.Add(s.hasWriteAccessCtx, newDefaultGroup.CloneVT()))
 	s.NoError(s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{newDefaultGroup}, false))
 }
 
@@ -679,7 +679,7 @@ func (s *groupDataStoreTestSuite) TestUpdateMutableToImmutable() {
 func (s *groupDataStoreTestSuite) TestUpdateImmutableNoForce() {
 	expectedGroup := fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE_FORCED)
 
-	updatedGroup := expectedGroup.Clone()
+	updatedGroup := expectedGroup.CloneVT()
 	updatedGroup.GetProps().Key = ""
 	updatedGroup.GetProps().Value = ""
 
@@ -693,7 +693,7 @@ func (s *groupDataStoreTestSuite) TestUpdateImmutableForce() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	updatedGroup := expectedGroup.Clone()
+	updatedGroup := expectedGroup.CloneVT()
 	updatedGroup.GetProps().Key = "something"
 	updatedGroup.GetProps().Value = "else"
 

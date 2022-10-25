@@ -139,7 +139,7 @@ func (s *ReprocessorPostgresTestSuite) TestUnsuppressWithPostgres() {
 }
 
 func cloneAndUpdateRiskPriority(image *storage.Image) *storage.Image {
-	cloned := image.Clone()
+	cloned := image.CloneVT()
 	cloned.Priority = 1
 	for _, component := range cloned.GetScan().GetComponents() {
 		component.Priority = 1

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -127,7 +128,7 @@ func (suite *policyUpdatesTestSuite) TestModifiedPoliciesAreNotUpdated() {
 		suite.True(ok)
 
 		// Modify the policy slightly
-		modifiedPolicy := policy.Clone()
+		modifiedPolicy := policy.CloneVT()
 		modifiedPolicy.PolicySections[0].PolicyGroups[0].Values[0].Value = "assfasdf"
 
 		suite.NoError(insertPolicy(bucket, modifiedPolicy.GetId(), modifiedPolicy))

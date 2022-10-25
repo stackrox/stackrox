@@ -58,7 +58,7 @@ func (cs *compoundSearcherImpl) Count(ctx context.Context, q *v1.Query) (int, er
 func (cs *compoundSearcherImpl) searchInternal(ctx context.Context, q *v1.Query, skipSort bool) ([]search.Result, error) {
 	var local *v1.Query
 	if q != nil {
-		local = q.Clone()
+		local = q.CloneVT()
 	}
 
 	// Construct a tree that matches subqueries with specifications.

@@ -34,7 +34,7 @@ func TestDetector(t *testing.T) {
 
 	// Load the latest tag policy since that has image fields, and add the BUILD lifecycle so it gets compiled for the
 	// buildtime policy set.
-	policyToTest := getPolicy(defaultPolicies, "Latest tag", t).Clone()
+	policyToTest := getPolicy(defaultPolicies, "Latest tag", t).CloneVT()
 	policyToTest.LifecycleStages = append(policyToTest.LifecycleStages, storage.LifecycleStage_BUILD)
 
 	require.NoError(t, policySet.UpsertPolicy(policyToTest))

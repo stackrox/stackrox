@@ -257,7 +257,7 @@ func tryUnsuppressedQuery(q *v1.Query) *v1.Query {
 		return q
 	}
 
-	local := q.Clone()
+	local := q.CloneVT()
 	pagination := local.GetPagination()
 	local.Pagination = nil
 	local = search.ConjunctionQuery(local, search.NewQueryBuilder().AddBools(search.CVESuppressed, false).ProtoQuery())

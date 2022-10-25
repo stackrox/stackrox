@@ -158,7 +158,7 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	suite.Equal(len(nodes), count)
 
 	// Test no components and cve update, only node bucket update
-	cloned := nodes[0].Clone()
+	cloned := nodes[0].CloneVT()
 	cloned.Scan.ScanTime.Seconds = cloned.Scan.ScanTime.Seconds - 500
 	cloned.Name = "newname"
 	cloned.Scan.Components = nil
@@ -297,14 +297,14 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 	suite.True(exists)
 
 	// Update node (non-scan update).
-	node = storedNode.Clone()
-	newNode := storedNode.Clone()
+	node = storedNode.CloneVT()
+	newNode := storedNode.CloneVT()
 	newNode.Annotations = map[string]string{
 		"hi": "bye",
 	}
 	newNode.K8SUpdated = types.TimestampNow()
 
-	expectedNode := newNode.Clone()
+	expectedNode := newNode.CloneVT()
 
 	suite.NoError(suite.store.Upsert(ctx, newNode))
 	storedNode, exists, err = suite.store.Get(ctx, newNode.GetId())

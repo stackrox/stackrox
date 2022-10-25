@@ -248,7 +248,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 	s.NoError(err)
 	s.True(found)
 
-	cloned := image.Clone()
+	cloned := image.CloneVT()
 	cloned.Id = "cloned"
 	s.NoError(s.datastore.UpsertImage(ctx, cloned))
 	_, found, err = s.datastore.GetImage(ctx, cloned.GetId())
@@ -383,7 +383,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	s.NoError(err)
 	s.ElementsMatch(cveIDsSet.AsSlice(), pkgSearch.ResultsToIDs(results))
 
-	testImage2 := testImage.Clone()
+	testImage2 := testImage.CloneVT()
 	testImage2.Id = "2"
 	s.NoError(s.datastore.UpsertImage(ctx, testImage2))
 	storedImage, found, err = s.datastore.GetImage(ctx, testImage2.GetId())
@@ -514,11 +514,11 @@ func (s *ImagePostgresDataStoreTestSuite) TestGetManyImageMetadata() {
 	testImage1 := fixtures.GetImageWithUniqueComponents(5)
 	s.NoError(s.datastore.UpsertImage(ctx, testImage1))
 
-	testImage2 := testImage1.Clone()
+	testImage2 := testImage1.CloneVT()
 	testImage2.Id = "2"
 	s.NoError(s.datastore.UpsertImage(ctx, testImage2))
 
-	testImage3 := testImage1.Clone()
+	testImage3 := testImage1.CloneVT()
 	testImage3.Id = "3"
 	s.NoError(s.datastore.UpsertImage(ctx, testImage3))
 

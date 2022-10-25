@@ -127,7 +127,7 @@ func convertCVEToClusterCVEs(cve *storage.CVE) []*storage.ClusterCVE {
 
 	ret := make([]*storage.ClusterCVE, 0, len(cve.GetTypes()))
 	for _, typ := range cve.GetTypes() {
-		cloned := clusterCVE.Clone()
+		cloned := clusterCVE.CloneVT()
 		cloned.Id = cveUtil.ID(cve.GetId(), typ.String())
 		cloned.Type = typ
 		ret = append(ret, cloned)

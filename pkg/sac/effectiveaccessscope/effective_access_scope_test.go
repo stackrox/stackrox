@@ -766,12 +766,12 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			var clonedClusters []*storage.Cluster
 			for _, c := range clusters {
-				clonedClusters = append(clonedClusters, c.Clone())
+				clonedClusters = append(clonedClusters, c.CloneVT())
 			}
 
 			var clonedNamespaces []*storage.NamespaceMetadata
 			for _, ns := range namespaces {
-				clonedNamespaces = append(clonedNamespaces, ns.Clone())
+				clonedNamespaces = append(clonedNamespaces, ns.CloneVT())
 			}
 
 			result, err := ComputeEffectiveAccessScope(tc.scope.GetRules(), clusters, namespaces, tc.detail)

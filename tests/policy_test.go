@@ -399,10 +399,10 @@ func verifyImportMultipleSucceeds(t *testing.T) {
 
 	validPolicy := exportPolicy(t, service, knownPolicyID)
 
-	policy1 := validPolicy.Clone()
+	policy1 := validPolicy.CloneVT()
 	policy1.Id = "new policy ID"
 	policy1.Name = "This is a valid policy"
-	policy2 := validPolicy.Clone()
+	policy2 := validPolicy.CloneVT()
 	policy2.Id = "another new policy ID"
 	policy2.Name = "This is another valid policy"
 
@@ -424,11 +424,11 @@ func verifyImportMixedSuccess(t *testing.T) {
 	validPolicy := exportPolicy(t, service, knownPolicyID)
 
 	// Policy 1 should be valid
-	policy1 := validPolicy.Clone()
+	policy1 := validPolicy.CloneVT()
 	policy1.Id = "Probably I should make these UUIDs"
 	policy1.Name = "This is a valid and totally unique policy"
 	// Policy 2 should have a duplicate name error
-	policy2 := validPolicy.Clone()
+	policy2 := validPolicy.CloneVT()
 	policy2.Id = "another new entirely different policy ID"
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -449,7 +449,7 @@ func verifyNotifiersRemoved(t *testing.T) {
 	validPolicy := exportPolicy(t, service, knownPolicyID)
 
 	// Policy 1 should be valid
-	policy := validPolicy.Clone()
+	policy := validPolicy.CloneVT()
 	policy.Id = "verifyNotifiersRemoved policy ID"
 	policy.Name = "verifyNotifiersRemoved is a valid policy"
 	policy.Notifiers = []string{"This is not a notifier"}
@@ -475,7 +475,7 @@ func verifyExclusionsRemoved(t *testing.T) {
 	validPolicy := exportPolicy(t, service, knownPolicyID)
 
 	// Policy 1 should be valid
-	policy := validPolicy.Clone()
+	policy := validPolicy.CloneVT()
 	policy.Id = "verifyExcludedScopesRemoved policy ID"
 	policy.Name = "verifyExcludedScopesRemoved is a valid policy"
 	policy.Exclusions = []*storage.Exclusion{
@@ -509,7 +509,7 @@ func verifyScopesRemoved(t *testing.T) {
 	validPolicy := exportPolicy(t, service, knownPolicyID)
 
 	// Policy 1 should be valid
-	policy := validPolicy.Clone()
+	policy := validPolicy.CloneVT()
 	policy.Id = "verifyScopesRemoved policy ID"
 	policy.Name = "verifyScopesRemoved is a valid policy"
 	policy.Scope = []*storage.Scope{
@@ -539,7 +539,7 @@ func verifyOverwriteNameSucceeds(t *testing.T) {
 	// Create an existing policy so we don't change default policies
 	existingPolicy := createUniquePolicy(t, service)
 
-	newPolicy := existingPolicy.Clone()
+	newPolicy := existingPolicy.CloneVT()
 	newPolicy.Id = uuid.NewV4().String()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
@@ -570,7 +570,7 @@ func verifyOverwriteIDSucceeds(t *testing.T) {
 	// Create an existing policy so we don't change default policies
 	existingPolicy := createUniquePolicy(t, service)
 
-	newPolicy := existingPolicy.Clone()
+	newPolicy := existingPolicy.CloneVT()
 	newPolicy.Name = uuid.NewV4().String()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
@@ -597,7 +597,7 @@ func verifyOverwriteNameAndIDSucceeds(t *testing.T) {
 	existingPolicyDuplicateName := createUniquePolicy(t, service)
 	existingPolicyDuplicateID := createUniquePolicy(t, service)
 
-	newPolicy := existingPolicyDuplicateID.Clone()
+	newPolicy := existingPolicyDuplicateID.CloneVT()
 	newPolicy.Name = existingPolicyDuplicateName.GetName()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{

@@ -345,7 +345,7 @@ func (resolver *policyResolver) UnusedVarSink(ctx context.Context, args RawQuery
 
 func inverseFilterFailingDeploymentsQuery(q *v1.Query) (*v1.Query, bool) {
 	failingDeploymentsQuery := false
-	local := q.Clone()
+	local := q.CloneVT()
 	filtered, _ := search.FilterQuery(local, func(bq *v1.BaseQuery) bool {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if ok {

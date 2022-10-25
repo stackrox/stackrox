@@ -143,7 +143,7 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 	suite.False(exists)
 
 	// Upsert old scan should not change data (save for node.LastUpdated).
-	olderNode := node.Clone()
+	olderNode := node.CloneVT()
 	olderNode.GetScan().GetScanTime().Seconds = olderNode.GetScan().GetScanTime().GetSeconds() - 500
 	olderNode.Scan = &storage.NodeScan{}
 	suite.NoError(suite.datastore.UpsertNode(ctx, olderNode))
@@ -156,7 +156,7 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 	// Scan data is unchanged.
 	suite.Equal(expectedNode, storedNode)
 
-	newNode := node.Clone()
+	newNode := node.CloneVT()
 	newNode.Id = "id2"
 
 	// Upsert new node.
@@ -591,7 +591,7 @@ func (suite *NodeDataStoreTestSuite) deleteTestNodes(ctx context.Context) {
 }
 
 func cloneAndUpdateRiskPriority(node *storage.Node) *storage.Node {
-	cloned := node.Clone()
+	cloned := node.CloneVT()
 	cloned.Priority = 1
 	for _, component := range cloned.GetScan().GetComponents() {
 		component.Priority = 1

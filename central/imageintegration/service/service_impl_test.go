@@ -183,7 +183,7 @@ func TestValidateIntegration(t *testing.T) {
 		Username: "username",
 		Password: "password",
 	}
-	dockerConfigScrubbed := dockerConfig.Clone()
+	dockerConfigScrubbed := dockerConfig.CloneVT()
 	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigScrubbed, secrets.ScrubReplacementStr)
 	dockerImageIntegrationConfig := &storage.ImageIntegration{
 		Id:                  "id2",
@@ -192,13 +192,13 @@ func TestValidateIntegration(t *testing.T) {
 		SkipTestIntegration: true,
 	}
 
-	dockerImageIntegrationConfigStored := dockerImageIntegrationConfig.Clone()
-	dockerImageIntegrationConfigStored.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfig.Clone()}
+	dockerImageIntegrationConfigStored := dockerImageIntegrationConfig.CloneVT()
+	dockerImageIntegrationConfigStored.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfig.CloneVT()}
 
 	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(),
 		dockerImageIntegrationConfig.GetId()).Return(dockerImageIntegrationConfigStored, true, nil).AnyTimes()
 
-	dockerImageIntegrationConfigScrubbed := dockerImageIntegrationConfig.Clone()
+	dockerImageIntegrationConfigScrubbed := dockerImageIntegrationConfig.CloneVT()
 	dockerImageIntegrationConfigScrubbed.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigScrubbed}
 	requestWithADockerConfig := &v1.UpdateImageIntegrationRequest{
 		Config:         dockerImageIntegrationConfigScrubbed,
@@ -217,10 +217,10 @@ func TestValidateIntegration(t *testing.T) {
 	assert.Equal(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())
 
 	// Test case: config request with a different endpoint
-	dockerConfigDiffEndpoint := dockerConfig.Clone()
+	dockerConfigDiffEndpoint := dockerConfig.CloneVT()
 	dockerConfigDiffEndpoint.Endpoint = "endpointDiff"
 	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigDiffEndpoint, secrets.ScrubReplacementStr)
-	dockerImageIntegrationConfigDiffEndpoint := dockerImageIntegrationConfig.Clone()
+	dockerImageIntegrationConfigDiffEndpoint := dockerImageIntegrationConfig.CloneVT()
 	dockerImageIntegrationConfigDiffEndpoint.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigDiffEndpoint}
 	requestWithDifferentEndpoint := &v1.UpdateImageIntegrationRequest{
 		Config:         dockerImageIntegrationConfigDiffEndpoint,
@@ -235,10 +235,10 @@ func TestValidateIntegration(t *testing.T) {
 	assert.EqualError(t, err, "credentials required to update field 'ImageIntegration.ImageIntegration_Docker.DockerConfig.Endpoint'")
 
 	// Test case: config request with a different username
-	dockerConfigDiffUsername := dockerConfig.Clone()
+	dockerConfigDiffUsername := dockerConfig.CloneVT()
 	dockerConfigDiffUsername.Username = "usernameDiff"
 	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigDiffUsername, secrets.ScrubReplacementStr)
-	dockerImageIntegrationConfigDiffUsername := dockerImageIntegrationConfig.Clone()
+	dockerImageIntegrationConfigDiffUsername := dockerImageIntegrationConfig.CloneVT()
 	dockerImageIntegrationConfigDiffUsername.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigDiffUsername}
 	requestWithDifferentUsername := &v1.UpdateImageIntegrationRequest{
 		Config:         dockerImageIntegrationConfigDiffUsername,
@@ -301,8 +301,8 @@ func TestValidateNodeIntegration(t *testing.T) {
 		IntegrationConfig: &storage.NodeIntegration_Clairify{Clairify: clairifyConfig},
 	}
 
-	clairifyIntegrationConfigStored := clairifyIntegrationConfig.Clone()
-	clairifyIntegrationConfigStored.IntegrationConfig = &storage.ImageIntegration_Clairify{Clairify: clairifyConfig.Clone()}
+	clairifyIntegrationConfigStored := clairifyIntegrationConfig.CloneVT()
+	clairifyIntegrationConfigStored.IntegrationConfig = &storage.ImageIntegration_Clairify{Clairify: clairifyConfig.CloneVT()}
 
 	// Test integration.
 	integrationDatastore.EXPECT().GetImageIntegrations(

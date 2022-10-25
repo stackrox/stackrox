@@ -78,14 +78,14 @@ func (suite *migrateSplunkSourceTypeTestSuite) TestMigration() {
 
 	suite.NoError(migrateSplunkSourceType(suite.db))
 
-	expectedNoDerivedField := noDerivedField.Clone()
+	expectedNoDerivedField := noDerivedField.CloneVT()
 	expectedNoDerivedField.GetSplunk().SourceTypes = map[string]string{
 		"alert": jsonSourceType,
 		"audit": jsonSourceType,
 	}
 	expectedNoDerivedField.GetSplunk().DerivedSourceTypeDeprecated = nil
 
-	expectedDerivedField := derivedField.Clone()
+	expectedDerivedField := derivedField.CloneVT()
 	expectedDerivedField.GetSplunk().SourceTypes = map[string]string{
 		"alert": "stackrox-alert",
 		"audit": "stackrox-audit-message",

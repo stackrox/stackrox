@@ -113,7 +113,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		if err != nil {
 			log.Warnf("Failed to load cached cluster ID: %s", err)
 		} else if cachedClusterID != "" {
-			helmManagedCfg = helmManagedCfg.Clone()
+			helmManagedCfg = helmManagedCfg.CloneVT()
 			helmManagedCfg.ClusterId = cachedClusterID
 			log.Infof("Re-using cluster ID %s of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
 		}

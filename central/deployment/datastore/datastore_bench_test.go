@@ -55,7 +55,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 
 	deploymentsDatastore := newDatastoreImpl(storage, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
-	deploymentPrototype := fixtures.GetDeployment().Clone()
+	deploymentPrototype := fixtures.GetDeployment().CloneVT()
 
 	const numDeployments = 1000
 	for i := 0; i < numDeployments; i++ {

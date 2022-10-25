@@ -27,7 +27,7 @@ func convertActiveVuln(imageOsMap map[string]string, ac *storage.ActiveComponent
 	}
 	ret := make([]*storage.ActiveComponent, 0, len(osToContext))
 	for os, contexts := range osToContext {
-		cloned := ac.Clone()
+		cloned := ac.CloneVT()
 		cloned.ComponentId = postgres.IDFromPks([]string{componentName, componentVersion, os})
 		cloned.Id = ComposeID(cloned.GetDeploymentId(), cloned.GetComponentId())
 		cloned.ActiveContextsSlice = contexts

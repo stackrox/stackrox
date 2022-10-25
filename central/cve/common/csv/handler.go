@@ -146,7 +146,7 @@ func (h *HandlerImpl) GetScopeContext(ctx context.Context, query *v1.Query) (con
 		return ctx, nil
 	}
 
-	cloned := query.Clone()
+	cloned := query.CloneVT()
 	// Remove pagination since we are only determining the resource category which should scope the query.
 	cloned.Pagination = nil
 	for _, searchWrapper := range h.searchWrappers {

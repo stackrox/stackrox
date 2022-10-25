@@ -55,11 +55,11 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 	var deploytimePolicies, runtimePolicies []*storage.Policy
 	for _, policy := range policies {
 		if isEnforcedDeployTimePolicy(policy) {
-			deploytimePolicies = append(deploytimePolicies, policy.Clone())
+			deploytimePolicies = append(deploytimePolicies, policy.CloneVT())
 		}
 		if pkgPolicies.AppliesAtRunTime(policy) &&
 			booleanpolicy.ContainsOneOf(policy, booleanpolicy.KubeEvent) {
-			runtimePolicies = append(runtimePolicies, policy.Clone())
+			runtimePolicies = append(runtimePolicies, policy.CloneVT())
 		}
 	}
 
@@ -80,7 +80,7 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 }
 
 func (p *settingsManager) UpdateConfig(config *storage.DynamicClusterConfig) {
-	clonedConfig := config.Clone()
+	clonedConfig := config.CloneVT()
 
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
