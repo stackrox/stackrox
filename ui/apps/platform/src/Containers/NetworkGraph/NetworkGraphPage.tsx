@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
 
+import { fetchNetworkFlowGraph } from 'services/NetworkService';
 import PageTitle from 'Components/PageTitle';
 import NetworkGraph from './NetworkGraph';
 
@@ -9,6 +10,10 @@ import './NetworkGraphPage.css';
 
 function NetworkGraphPage() {
     const { detailType, detailId } = useParams();
+
+    // useEffect(() => {
+    //     fetchNetworkFlowGraph()
+    // },[]);
 
     return (
         <>
