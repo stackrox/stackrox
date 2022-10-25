@@ -200,7 +200,7 @@ func mapNodesToComponentResolvers(root *Resolver, nodes []*storage.Node, query *
 				}
 			}
 			latestTime := idToComponent[thisComponentID].lastScanned
-			if latestTime == nil || node.GetScan().GetScanTime().Compare(latestTime) > 0 {
+			if latestTime == nil || node.GetScan().GetScanTime().AsTime().After(latestTime.AsTime()) {
 				idToComponent[thisComponentID].lastScanned = node.GetScan().GetScanTime()
 			}
 		}

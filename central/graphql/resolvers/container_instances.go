@@ -129,7 +129,7 @@ func (resolver *Resolver) GroupedContainerInstances(ctx context.Context, args Ra
 			}
 
 			sort.SliceStable(instances, func(i, j int) bool {
-				return instances[i].GetStarted().Compare(instances[j].GetStarted()) < 0
+				return instances[i].GetStarted().AsTime().Before(instances[j].GetStarted().AsTime())
 			})
 
 			startTime, ok := convertTimestamp(instances[0].GetContainerName(), "container instance", instances[0].GetStarted())

@@ -310,7 +310,7 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 	storedNode, exists, err = suite.store.Get(ctx, newNode.GetId())
 	suite.NoError(err)
 	suite.True(exists)
-	suite.True(expectedNode.GetLastUpdated().Compare(storedNode.GetLastUpdated()) < 0)
+	suite.True(expectedNode.GetLastUpdated().AsTime().Before(storedNode.GetLastUpdated().AsTime()))
 	expectedNode.LastUpdated = storedNode.GetLastUpdated()
 	suite.Equal(expectedNode, storedNode)
 
@@ -322,7 +322,7 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 	storedNode, exists, err = suite.store.Get(ctx, node.GetId())
 	suite.NoError(err)
 	suite.True(exists)
-	suite.True(expectedNode.GetLastUpdated().Compare(storedNode.GetLastUpdated()) < 0)
+	suite.True(expectedNode.GetLastUpdated().AsTime().Before(storedNode.GetLastUpdated().AsTime()))
 	expectedNode.LastUpdated = storedNode.GetLastUpdated()
 	suite.Equal(expectedNode, storedNode)
 

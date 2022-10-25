@@ -150,7 +150,7 @@ func (ds *datastoreImpl) UpsertUndoRecord(ctx context.Context, undoRecord *stora
 		return err
 	}
 	if exists {
-		if undoRecord.GetApplyTimestamp().Compare(previousUndo.GetApplyTimestamp()) < 0 {
+		if undoRecord.GetApplyTimestamp().AsTime().Before(previousUndo.GetApplyTimestamp().AsTime()) {
 			return fmt.Errorf("apply timestamp of record to store (%v) is older than that of existing record (%v)",
 				protoconv.ConvertTimestampToTimeOrDefault(undoRecord.GetApplyTimestamp(), time.Time{}),
 				protoconv.ConvertTimestampToTimeOrDefault(previousUndo.GetApplyTimestamp(), time.Time{}))

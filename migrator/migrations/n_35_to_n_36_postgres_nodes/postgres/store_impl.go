@@ -420,7 +420,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bo
 
 	scanUpdated := false
 	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
-	if oldNode.GetScan().GetScanTime().Compare(node.GetScan().GetScanTime()) > 0 {
+	if oldNode.GetScan().GetScanTime().AsTime().After(node.GetScan().GetScanTime().AsTime()) {
 		node.Scan = oldNode.Scan
 	} else {
 		scanUpdated = true

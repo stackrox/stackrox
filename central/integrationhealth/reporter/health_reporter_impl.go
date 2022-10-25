@@ -106,7 +106,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 				if err := d.integrationDS.UpdateIntegrationHealth(allAccessCtx, health); err != nil {
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
-			} else if health.LastTimestamp.Compare(d.latestDBTimestampMap[health.Id]) > 0 {
+			} else if health.LastTimestamp.AsTime().After(d.latestDBTimestampMap[health.Id].AsTime()) {
 				d.latestDBTimestampMap[health.Id] = health.LastTimestamp
 				_, exists, err := d.integrationDS.GetIntegrationHealth(allAccessCtx, health.Id)
 				if err != nil {

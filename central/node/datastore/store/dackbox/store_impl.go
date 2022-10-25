@@ -190,7 +190,7 @@ func (b *storeImpl) toUpsert(node *storage.Node) (*storage.Node, bool, bool, err
 
 	scanUpdated := true
 	// We skip rewriting components and CVEs if scan is not newer, hence we do not need to merge.
-	if oldNode.GetScan().GetScanTime().Compare(nodeToUpsert.GetScan().GetScanTime()) > 0 {
+	if oldNode.GetScan().GetScanTime().AsTime().After(nodeToUpsert.GetScan().GetScanTime().AsTime()) {
 		scanUpdated = false
 
 		fullOldNode, err := b.readNode(txn, nodeToUpsert.GetId())
@@ -209,7 +209,7 @@ func (b *storeImpl) toUpsert(node *storage.Node) (*storage.Node, bool, bool, err
 
 	nodeUpdated := true
 	// We skip rewriting the node (excluding the components and CVEs) if the node is not newer.
-	if oldNode.GetK8SUpdated().Compare(nodeToUpsert.GetK8SUpdated()) > 0 {
+	if oldNode.GetK8SUpdated().AsTime().After(nodeToUpsert.GetK8SUpdated().AsTime()) {
 		nodeUpdated = false
 
 		lastUpdated := nodeToUpsert.GetLastUpdated()

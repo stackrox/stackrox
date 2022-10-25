@@ -31,7 +31,7 @@ var (
 
 // locked checks whether a timestamp represents a locked process baseline true = locked, false = unlocked
 func locked(lockTime *types.Timestamp) bool {
-	return lockTime != nil && types.TimestampNow().Compare(lockTime) >= 0
+	return lockTime != nil && time.Since(lockTime.AsTime()) >= 0
 }
 
 // IsRoxLocked checks whether a process baseline is StackRox locked.

@@ -517,14 +517,14 @@ func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, 
 
 	metadataUpdated := false
 	scanUpdated := false
-	if oldImage.GetMetadata().GetV1().GetCreated().Compare(image.GetMetadata().GetV1().GetCreated()) > 0 {
+	if oldImage.GetMetadata().GetV1().GetCreated().AsTime().After(image.GetMetadata().GetV1().GetCreated().AsTime()) {
 		image.Metadata = oldImage.GetMetadata()
 	} else {
 		metadataUpdated = true
 	}
 
 	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
-	if oldImage.GetScan().GetScanTime().Compare(image.GetScan().GetScanTime()) > 0 {
+	if oldImage.GetScan().GetScanTime().AsTime().After(image.GetScan().GetScanTime().AsTime()) {
 		image.Scan = oldImage.Scan
 	} else {
 		scanUpdated = true

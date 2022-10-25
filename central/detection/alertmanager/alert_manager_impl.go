@@ -143,7 +143,7 @@ func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert
 	for _, resolvedAlert := range resolvedAlerts {
 		resolvedAt := resolvedAlert.GetResolvedAt()
 		// This alert was resolved very recently, so debounce the notification.
-		if resolvedAt != nil && resolvedAt.Compare(maxAllowedResolvedAtTime) > 0 {
+		if resolvedAt != nil && resolvedAt.AsTime().After(maxAllowedResolvedAtTime.AsTime())) > 0 {
 			return true
 		}
 	}
@@ -186,7 +186,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 	// De-dupe processes using timestamps.
 	timestamp := lastTimestamp(oldProcessViolation.GetProcesses())
 	for _, process := range newAlert.GetProcessViolation().GetProcesses() {
-		if process.GetSignal().GetTime().Compare(timestamp) > 0 {
+		if process.GetSignal().GetTime().AsTime().After(timestamp.AsTime()) {
 			newAlertHasNewProcesses = true
 			newProcessesSlice = append(newProcessesSlice, process)
 		}

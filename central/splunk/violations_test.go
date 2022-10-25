@@ -1189,8 +1189,8 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 				toTs := makeTimestamp(sample.violationsNotAfter)
 				for _, v := range vs {
 					ts := makeTimestamp(s.extr(v, ".violationInfo.violationTime").(string))
-					s.True(ts.Compare(fromTs) >= 0, "Violation timestamp is earlier than expected", v)
-					s.True(ts.Compare(toTs) <= 0, "Violation timestamp is later than expected", v)
+					s.True(!ts.AsTime().Before(fromTs.AsTime()), "Violation timestamp is earlier than expected", v)
+					s.True(!ts.AsTime().After(toTs.AsTime()), "Violation timestamp is later than expected", v)
 				}
 			}
 

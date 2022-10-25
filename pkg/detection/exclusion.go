@@ -72,5 +72,5 @@ func exclusionIsExpired(exclusion *storage.Exclusion) bool {
 	if exclusion.GetExpiration() == nil {
 		return false
 	}
-	return exclusion.GetExpiration().Compare(types.TimestampNow()) < 0
+	return exclusion.GetExpiration().AsTime().Before(types.TimestampNow().AsTime())
 }

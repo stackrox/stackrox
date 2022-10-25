@@ -60,7 +60,7 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
-			if storedFlow.GetLastSeenTimestamp().Compare(conn.GetLastSeenTimestamp()) < 0 {
+			if storedFlow.GetLastSeenTimestamp().AsTime().Before(conn.GetLastSeenTimestamp().AsTime()) {
 				storedFlow.LastSeenTimestamp = conn.GetLastSeenTimestamp()
 			}
 		} else {
@@ -131,7 +131,7 @@ func (a *aggregateDefaultToCustomExtSrcsImpl) Aggregate(conns []*storage.Network
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
-			if storedFlow.GetLastSeenTimestamp().Compare(conn.GetLastSeenTimestamp()) < 0 {
+			if storedFlow.GetLastSeenTimestamp().AsTime().Before(conn.GetLastSeenTimestamp().AsTime()) {
 				storedFlow.LastSeenTimestamp = conn.GetLastSeenTimestamp()
 			}
 		} else {
@@ -188,7 +188,7 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 		// If multiple connections collapse into one, use the latest connection's timestamp to correctly indicate the
 		// liveliness of the connection.
 		if storedFlow := conns[connIndicator]; storedFlow != nil {
-			if storedFlow.GetLastSeenTimestamp().Compare(flow.GetLastSeenTimestamp()) < 0 {
+			if storedFlow.GetLastSeenTimestamp().AsTime().Before(flow.GetLastSeenTimestamp().AsTime()) {
 				storedFlow.LastSeenTimestamp = flow.GetLastSeenTimestamp()
 			}
 		} else {

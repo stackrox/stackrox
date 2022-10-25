@@ -111,7 +111,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) createAndStoreBaseline(key *stor
 	suite.NotNil(id)
 	suite.NotNil(baseline.Created)
 	suite.Equal(baseline.Created, baseline.LastUpdate)
-	suite.True(baseline.StackRoxLockedTimestamp.Compare(baseline.Created) >= 0)
+	suite.True(!baseline.StackRoxLockedTimestamp.AsTime().Before(baseline.Created.AsTime()))
 
 	suite.Equal(suite.mustSerializeKey(key), id)
 	suite.Equal(id, baseline.Id)
@@ -155,7 +155,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessB
 	updated, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, key, fixtures.MakeBaselineItems(addProcesses...), fixtures.MakeBaselineItems(removeProcesses...), auto)
 	suite.NoError(err)
 	suite.NotNil(updated)
-	suite.True(updated.GetLastUpdate().Compare(updated.GetCreated()) > 0)
+	suite.True(updated.GetLastUpdate().AsTime().After(updated.GetCreated().AsTime()))
 	suite.NotNil(updated.Elements)
 	suite.Equal(expectedResults.Cardinality(), len(updated.Elements))
 	actualResults := set.NewStringSet()
@@ -197,13 +197,13 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestLockAndUnlockBaseline() {
 	suite.NoError(err)
 	suite.NotNil(updatedBaseline.GetUserLockedTimestamp())
 	suite.doGet(key, true, updatedBaseline)
-	suite.True(updatedBaseline.GetLastUpdate().Compare(updatedBaseline.GetCreated()) > 0)
+	suite.True(updatedBaseline.GetLastUpdate().AsTime().After(updatedBaseline.GetCreated().AsTime()))
 
 	updatedBaseline, err = suite.datastore.UserLockProcessBaseline(suite.requestContext, key, false)
 	suite.NoError(err)
 	suite.Nil(updatedBaseline.GetUserLockedTimestamp())
 	suite.doGet(key, true, updatedBaseline)
-	suite.True(updatedBaseline.GetLastUpdate().Compare(updatedBaseline.GetCreated()) > 0)
+	suite.True(updatedBaseline.GetLastUpdate().AsTime().After(updatedBaseline.GetCreated().AsTime()))
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestUpdateProcessBaseline() {
@@ -258,7 +258,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 	}
 	suite.ElementsMatch([]string{firstProcess, secondProcess}, processNames)
 	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) > 0)
+	suite.True(baseline.GetLastUpdate().AsTime().After(baseline.GetCreated().AsTime()))
 }
 
 func makeItemList(elementList []*storage.BaselineElement) []*storage.BaselineItem {

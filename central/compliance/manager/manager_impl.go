@@ -165,7 +165,7 @@ func (m *manager) interrupt() {
 }
 
 func runMatches(request *v1.GetRecentComplianceRunsRequest, runProto *v1.ComplianceRun) bool {
-	if request.GetSince() != nil && runProto.GetStartTime().Compare(request.GetSince()) < 0 {
+	if request.GetSince() != nil && runProto.GetStartTime().AsTime().Before(request.GetSince().AsTime()) {
 		return false
 	}
 	if request.GetClusterIdOpt() != nil && runProto.GetClusterId() != request.GetClusterId() {

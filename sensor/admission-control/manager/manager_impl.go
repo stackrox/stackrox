@@ -235,7 +235,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		return
 	}
 
-	if m.lastSettingsUpdate != nil && newSettings.GetTimestamp().Compare(m.lastSettingsUpdate) <= 0 {
+	if m.lastSettingsUpdate != nil && !newSettings.GetTimestamp().AsTime().After(m.lastSettingsUpdate.AsTime()) {
 		return // no update
 	}
 

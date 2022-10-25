@@ -33,19 +33,19 @@ func timestampComparator(cmp string) (func(instance, value *types.Timestamp) boo
 	switch cmp {
 	case LessThanOrEqualTo:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) >= 0
+			return !value.AsTime().Before(instance.AsTime())
 		}, nil
 	case GreaterThanOrEqualTo:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) <= 0
+			return !value.AsTime().After(instance.AsTime())
 		}, nil
 	case LessThan:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) > 0
+			return value.AsTime().After(instance.AsTime())
 		}, nil
 	case GreaterThan:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) < 0
+			return value.AsTime().Before(instance.AsTime())
 		}, nil
 	case "":
 		return func(instance, value *types.Timestamp) bool {

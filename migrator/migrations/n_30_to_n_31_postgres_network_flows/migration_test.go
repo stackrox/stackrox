@@ -83,10 +83,10 @@ func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*stor
 	s.NoError(err)
 	s.Len(fetched, len(flows))
 	sort.SliceStable(fetched, func(i, j int) bool {
-		return fetched[i].LastSeenTimestamp.Compare(fetched[j].LastSeenTimestamp) < 0
+		return fetched[i].LastSeenTimestamp.AsTime().Before(fetched[j].LastSeenTimestamp.AsTime())
 	})
 	sort.SliceStable(flows, func(i, j int) bool {
-		return flows[i].LastSeenTimestamp.Compare(flows[j].LastSeenTimestamp) < 0
+		return flows[i].LastSeenTimestamp.AsTime().Before(flows[j].LastSeenTimestamp.AsTime())
 	})
 	for i, flow := range flows {
 		s.Equal(flow, fetched[i])

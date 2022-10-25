@@ -406,7 +406,7 @@ func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, quer
 				}
 			}
 			latestTime := idToComponent[thisComponentID].lastScanned
-			if latestTime == nil || image.GetScan().GetScanTime().Compare(latestTime) > 0 {
+			if latestTime == nil || image.GetScan().GetScanTime().AsTime().After(latestTime.AsTime()) {
 				idToComponent[thisComponentID].lastScanned = image.GetScan().GetScanTime()
 			}
 		}
