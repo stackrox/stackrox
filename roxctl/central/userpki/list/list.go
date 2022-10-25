@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type centralUserPkiListCommand struct {
@@ -66,8 +67,12 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 		return err
 	}
 	if cmd.json {
-		m := jsonpb.Marshaler{Indent: "  "}
-		err = m.Marshal(os.Stdout, providers)
+		m := protojson.MarshalOptions{Indent: "  "}
+		providersJSON, err := m.Marshal(providers)
+		if err != nil {
+			return errors.Wrap(err, "marshaling providers to JSON")
+		}
+		_, err = os.Stdout.Write(providersJSON)
 		if err == nil {
 			cmd.env.Logger().PrintfLn("")
 		}

@@ -1,13 +1,11 @@
 package m69tom70
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -40,7 +38,7 @@ func (suite *policyUpdatesTestSuite) SetupSuite() {
 		suite.NoError(err)
 
 		policy := &storage.Policy{}
-		err = jsonpb.Unmarshal(bytes.NewReader(contents), policy)
+		err = protojson.Unmarshal(contents, policy)
 		suite.NoError(err)
 
 		suite.expectedPolicies[policy.Id] = policy

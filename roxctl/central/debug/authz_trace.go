@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -94,8 +94,12 @@ func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Dura
 			return recvErr
 		}
 
-		if err := (&jsonpb.Marshaler{}).Marshal(traceOutput, trace); err != nil {
+		traceJSON, err := protojson.Marshal(trace)
+		if err != nil {
 			return errors.Wrap(err, "marshaling a trace to JSON")
+		}
+		if _, err := traceOutput.Write(traceJSON); err != nil {
+			return err
 		}
 		if _, err := traceOutput.Write([]byte{'\n'}); err != nil {
 			return err

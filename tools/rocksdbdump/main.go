@@ -11,7 +11,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/tecbot/gorocksdb"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func main() {
@@ -131,7 +131,7 @@ func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 
 	log.Printf("Opened: %s\n", db.Name())
 
-	marshaller := &jsonpb.Marshaler{
+	marshaller := &protojson.MarshalOptions{
 		Indent: "  ",
 	}
 
@@ -188,7 +188,7 @@ func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 			continue
 		}
 
-		jsonResult, err := marshaller.MarshalToString(pb)
+		jsonResult := marshaller.Format(pb)
 		if err != nil {
 			log.Printf("An object cannot be serialized to JSON. Bucket: %s, possible ID: %s", bucketName, possibleObjectID)
 			log.Println(err)

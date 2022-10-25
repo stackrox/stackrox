@@ -1,12 +1,11 @@
 package data
 
 import (
-	"bytes"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // GRPCInvocationStats contains telemetry data about GRPC API calls
@@ -75,18 +74,14 @@ type StorageInfo struct {
 // LicenseJSON type encapsulates the License type and adds Marshal/Unmarshal methods
 type LicenseJSON licenseproto.License
 
-// MarshalJSON marshals license data to bytes, following jsonpb rules.
+// MarshalJSON marshals license data to bytes, following protojson rules.
 func (l *LicenseJSON) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	if err := (&jsonpb.Marshaler{}).Marshal(&buf, (*licenseproto.License)(l)); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	return protojson.Marshal((*licenseproto.License)(l))
 }
 
-// UnmarshalJSON unmarshals license JSON bytes into a License object, following jsonpb rules.
+// UnmarshalJSON unmarshals license JSON bytes into a License object, following protojson rules.
 func (l *LicenseJSON) UnmarshalJSON(data []byte) error {
-	return jsonpb.Unmarshal(bytes.NewReader(data), (*licenseproto.License)(l))
+	return protojson.Unmarshal(data, (*licenseproto.License)(l))
 }
 
 // CentralInfo contains telemetry data specific to StackRox' Central deployment

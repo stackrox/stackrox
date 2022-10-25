@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -152,24 +152,27 @@ func (s *splunk) sendEvent(ctx context.Context, msg proto.Message, sourceTypeKey
 		return err
 	}
 
-	var data bytes.Buffer
-	err = new(jsonpb.Marshaler).Marshal(&data, splunkEvent)
+	data, err := protojson.Marshal(splunkEvent)
 	if err != nil {
 		return err
 	}
 
-	if data.Len() > int(s.conf.GetTruncate()) {
-		return fmt.Errorf("Splunk HEC truncate data limit (%d bytes) exceeded: %d", s.conf.GetTruncate(), data.Len())
+	if len(data) > int(s.conf.GetTruncate()) {
+		return fmt.Errorf("Splunk HEC truncate data limit (%d bytes) exceeded: %d", s.conf.GetTruncate(), len(data))
 	}
 
-	return s.sendHTTPPayload(ctx, http.MethodPost, s.eventEndpoint, &data)
+	return s.sendHTTPPayload(ctx, http.MethodPost, s.eventEndpoint, data)
 }
 
-func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data io.Reader) error {
+func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data []byte) error {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, method, path, data)
+	var reqBody io.Reader
+	if len(data) > 0 {
+		reqBody = bytes.NewReader(data)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, path, reqBody)
 	if err != nil {
 		return err
 	}

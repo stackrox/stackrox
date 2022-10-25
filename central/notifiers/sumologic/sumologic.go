@@ -5,11 +5,9 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"io"
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -19,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -60,15 +59,15 @@ func (s *sumologic) AlertNotify(ctx context.Context, alert *storage.Alert) error
 }
 
 func (s *sumologic) sendProtoPayload(ctx context.Context, msg proto.Message) error {
-	var buf bytes.Buffer
-	if err := new(jsonpb.Marshaler).Marshal(&buf, msg); err != nil {
+	msgJSON, err := protojson.Marshal(msg)
+	if err != nil {
 		return err
 	}
-	return s.sendPayload(ctx, &buf)
+	return s.sendPayload(ctx, msgJSON)
 }
 
-func (s *sumologic) sendPayload(ctx context.Context, buf io.Reader) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.fullyQualifiedEndpoint, buf)
+func (s *sumologic) sendPayload(ctx context.Context, buf []byte) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.fullyQualifiedEndpoint, bytes.NewReader(buf))
 	if err != nil {
 		return err
 	}
@@ -134,7 +133,7 @@ func (s *sumologic) Test(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return s.sendPayload(ctx, bytes.NewBuffer(marshaledPayload))
+	return s.sendPayload(ctx, marshaledPayload)
 }
 
 func init() {

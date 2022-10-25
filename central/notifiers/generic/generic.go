@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -159,7 +159,7 @@ func (g *generic) Test(ctx context.Context) error {
 }
 
 func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader, error) {
-	msgStr, err := new(jsonpb.Marshaler).MarshalToString(message)
+	msg, err := protojson.Marshal(message)
 	if err != nil {
 		return nil, err
 	}
@@ -167,9 +167,9 @@ func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader
 	var strJSON string
 	// No extra fields append so that the payload is something like {"alert": {...}}
 	if len(g.Notifier.GetGeneric().GetExtraFields()) == 0 {
-		strJSON = fmt.Sprintf(`{"%s": %s}`, msgKey, msgStr)
+		strJSON = fmt.Sprintf(`{"%s": %s}`, msgKey, msg)
 	} else {
-		strJSON = fmt.Sprintf(`%s,"%s": %s}`, g.extraFieldsJSONPrefix, msgKey, msgStr)
+		strJSON = fmt.Sprintf(`%s,"%s": %s}`, g.extraFieldsJSONPrefix, msgKey, msg)
 	}
 	return bytes.NewBufferString(strJSON), nil
 }

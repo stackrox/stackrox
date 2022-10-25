@@ -4,8 +4,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -23,7 +23,7 @@ const (
 
 // JSONToProto converts a string containing JSON into a proto message.
 func JSONToProto(json string, m proto.Message) error {
-	return jsonpb.UnmarshalString(json, m)
+	return protojson.Unmarshal([]byte(json), m)
 }
 
 // ProtoToJSON converts a proto message into a string containing JSON.
@@ -38,17 +38,18 @@ func ProtoToJSON(m proto.Message, options ...ConversionOption) (string, error) {
 		indent = ""
 	}
 
-	marshaller := &jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: false,
-		Indent:       indent,
+	marshaller := &protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: false,
+		Indent:          indent,
 	}
 
-	s, err := marshaller.MarshalToString(m)
+	b, err := marshaller.Marshal(m)
 	if err != nil {
 		return "", err
 	}
 
+	s := string(b)
 	if contains(options, OptUnEscape) {
 		s = unEscape(s)
 	}

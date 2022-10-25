@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"os"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/jsonpb"
 	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stackrox/rox/pkg/utils"
 )

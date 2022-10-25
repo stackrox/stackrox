@@ -1,20 +1,19 @@
 package m66tom67
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -40,7 +39,7 @@ func (suite *policyUpdatesTestSuite) SetupSuite() {
 		suite.NoError(err)
 
 		r := new(storage.Policy)
-		err = jsonpb.Unmarshal(bytes.NewReader(contents), r)
+		err = protojson.Unmarshal(contents, r)
 		suite.NoError(err)
 
 		suite.defaultPolicies[r.Id] = r

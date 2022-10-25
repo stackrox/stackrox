@@ -1,14 +1,12 @@
 package policymigrationhelper
 
 import (
-	"bytes"
 	"embed"
 	"fmt"
 	"path/filepath"
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	bolt "go.etcd.io/bbolt"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // PolicyDiff is an alternative to PolicyChanges that automatically constructs migrations based on diffs of policies.
@@ -188,7 +187,7 @@ func ReadPolicyFromFile(fs embed.FS, filePath string) (*storage.Policy, error) {
 		return nil, errors.Wrapf(err, "unable to read file %s", filePath)
 	}
 	var policy storage.Policy
-	err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)
+	err = protojson.Unmarshal(contents, &policy)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to unmarshal policy json at path %s", filePath)
 	}

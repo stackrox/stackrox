@@ -1,10 +1,8 @@
 package m82tom83
 
 import (
-	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/common/test"
@@ -12,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -99,7 +98,7 @@ var (
 
 func TestDefaultPolicyIsMigrated(t *testing.T) {
 	var policy storage.Policy
-	err := jsonpb.Unmarshal(strings.NewReader(latestTagPolicyJSON), &policy)
+	err := protojson.Unmarshal([]byte(latestTagPolicyJSON), &policy)
 	require.NoError(t, err)
 
 	runTest(t, &policy, true)
@@ -107,7 +106,7 @@ func TestDefaultPolicyIsMigrated(t *testing.T) {
 
 func TestCustomPolicyIsNotMigrated(t *testing.T) {
 	var policy storage.Policy
-	err := jsonpb.Unmarshal(strings.NewReader(customPolicyJSON), &policy)
+	err := protojson.Unmarshal([]byte(customPolicyJSON), &policy)
 	require.NoError(t, err)
 
 	runTest(t, &policy, false)
@@ -115,7 +114,7 @@ func TestCustomPolicyIsNotMigrated(t *testing.T) {
 
 func TestEditedDefaultPolicyIsNotMigrated(t *testing.T) {
 	var policy storage.Policy
-	err := jsonpb.Unmarshal(strings.NewReader(latestTagPolicyJSON), &policy)
+	err := protojson.Unmarshal([]byte(latestTagPolicyJSON), &policy)
 	require.NoError(t, err)
 
 	// Edit policy section.
@@ -126,7 +125,7 @@ func TestEditedDefaultPolicyIsNotMigrated(t *testing.T) {
 
 func TestDefaultPolicyWithoutLockedCriteriaIsNotMigrated(t *testing.T) {
 	var policy storage.Policy
-	err := jsonpb.Unmarshal(strings.NewReader(latestTagPolicyJSON), &policy)
+	err := protojson.Unmarshal([]byte(latestTagPolicyJSON), &policy)
 	require.NoError(t, err)
 
 	// Edit policy section.

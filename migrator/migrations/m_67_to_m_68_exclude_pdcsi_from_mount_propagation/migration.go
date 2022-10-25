@@ -1,18 +1,17 @@
 package m67tom68
 
 import (
-	"bytes"
 	"embed"
 	"fmt"
 	"path/filepath"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
 	"github.com/stackrox/rox/migrator/types"
 	bolt "go.etcd.io/bbolt"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -66,7 +65,7 @@ func getComparisonPoliciesFromFiles() (map[string]*storage.Policy, error) {
 		}
 
 		policy := new(storage.Policy)
-		err = jsonpb.Unmarshal(bytes.NewReader(contents), policy)
+		err = protojson.Unmarshal(contents, policy)
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to unmarshal policy (%s) json", policyID)
 		}

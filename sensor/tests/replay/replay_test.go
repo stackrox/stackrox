@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
@@ -27,6 +26,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func TestReplayEvents(t *testing.T) {
@@ -136,7 +136,7 @@ func (tw *TraceWriterWithChannel) Write(b []byte) (nb int, retErr error) {
 	}
 	for _, e := range msg.EventsOutput {
 		event := &central.SensorEvent{}
-		if err := jsonpb.UnmarshalString(e, event); err != nil {
+		if err := protojson.Unmarshal([]byte(e), event); err != nil {
 			return 0, err
 		}
 		tw.destinationChannel <- event

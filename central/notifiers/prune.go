@@ -1,12 +1,11 @@
 package notifiers
 
 import (
-	"bytes"
 	"sort"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -63,18 +62,18 @@ func filterProcesses(processes []*storage.ProcessIndicator, maxSize int, currSiz
 		return processes
 	}
 
-	marshaler := new(jsonpb.Marshaler)
+	marshaler := new(protojson.MarshalOptions)
 	// Clean Process first then prune
 	for _, p := range processes {
 		cleanProcessIndicator(p)
 	}
 
 	for i := len(processes) - 1; i >= 0; i-- {
-		var data bytes.Buffer
-		if err := marshaler.Marshal(&data, processes[i]); err != nil {
+		data, err := marshaler.Marshal(processes[i])
+		if err != nil {
 			log.Error(err)
 		}
-		*currSize -= data.Len()
+		*currSize -= len(data)
 		if *currSize < maxSize {
 			return processes[:i]
 		}
@@ -86,14 +85,14 @@ func filterViolations(violations []*storage.Alert_Violation, maxSize int, currSi
 	if *currSize < maxSize {
 		return violations
 	}
-	marshaler := new(jsonpb.Marshaler)
+	marshaler := new(protojson.MarshalOptions)
 
 	for i := len(violations) - 1; i >= 0; i-- {
-		var data bytes.Buffer
-		if err := marshaler.Marshal(&data, violations[i]); err != nil {
+		data, err := marshaler.Marshal(violations[i])
+		if err != nil {
 			log.Error(err)
 		}
-		*currSize -= data.Len()
+		*currSize -= len(data)
 		if *currSize < maxSize {
 			return violations[:i]
 		}
@@ -106,13 +105,12 @@ func PruneAlert(alert *storage.Alert, maxSize int) {
 	maxSize -= sizeBuffer
 
 	// Get current size and then determine how to trim more in terms of violations
-	var data bytes.Buffer
-	marshaler := new(jsonpb.Marshaler)
-	if err := marshaler.Marshal(&data, alert); err != nil {
+	data, err := protojson.Marshal(alert)
+	if err != nil {
 		log.Error(err)
 	}
 
-	currSize := data.Len()
+	currSize := len(data)
 	filterDeploymentMaps(alert.GetDeployment(), maxSize, &currSize)
 
 	if alert.ProcessViolation != nil {

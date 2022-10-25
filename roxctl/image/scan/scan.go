@@ -5,7 +5,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/util"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -259,15 +259,15 @@ func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer,
 	case "csv":
 		return PrintCSV(imageResult, out)
 	default:
-		marshaller := &jsonpb.Marshaler{
+		marshaller := &protojson.MarshalOptions{
 			Indent: "  ",
 		}
-		jsonResult, err := marshaller.MarshalToString(imageResult)
+		jsonResult, err := marshaller.Marshal(imageResult)
 		if err != nil {
 			return errors.Wrap(err, "could not marshal image result")
 		}
 
-		logger.PrintfLn(jsonResult)
+		logger.PrintfLn(string(jsonResult))
 	}
 	return nil
 }

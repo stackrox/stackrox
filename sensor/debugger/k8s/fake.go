@@ -9,13 +9,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -582,7 +582,7 @@ func toSensorEventSlice(events []string) ([]*central.SensorEvent, error) {
 	var unmarshalledEvents []*central.SensorEvent
 	for _, e := range events {
 		sensorEvent := &central.SensorEvent{}
-		if err := jsonpb.UnmarshalString(e, sensorEvent); err != nil {
+		if err := protojson.Unmarshal([]byte(e), sensorEvent); err != nil {
 			return nil, fmt.Errorf("error unmarshaling '%s'", e)
 		}
 		if sensorEvent.GetResource() == nil {

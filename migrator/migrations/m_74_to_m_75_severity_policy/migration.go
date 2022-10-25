@@ -1,15 +1,13 @@
 package m74tom75
 
 import (
-	"strings"
-
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	bolt "go.etcd.io/bbolt"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -34,7 +32,7 @@ func init() {
 
 func migrateSeverityPolicy(db *bolt.DB) error {
 	var policy storage.Policy
-	if err := jsonpb.Unmarshal(strings.NewReader(policyJSON), &policy); err != nil {
+	if err := protojson.Unmarshal([]byte(policyJSON), &policy); err != nil {
 		return errors.Wrap(err, "unmarshalling severity policy JSON")
 	}
 

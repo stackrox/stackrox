@@ -1,17 +1,16 @@
 package policies
 
 import (
-	"bytes"
 	"embed"
 	"path/filepath"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -71,7 +70,7 @@ func ReadPolicyFile(path string) (*storage.Policy, error) {
 	utils.CrashOnError(err)
 
 	var policy storage.Policy
-	err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)
+	err = protojson.Unmarshal(contents, &policy)
 	if err != nil {
 		log.Errorf("Unable to unmarshal policy (%s) json: %s", path, err)
 		return nil, err

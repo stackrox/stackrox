@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/api/integrations"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -89,7 +89,12 @@ func newViolationsHandler(alertDS datastore.DataStore, pagination paginationSett
 			httputil.WriteError(w, err)
 			return
 		}
-		err = (&jsonpb.Marshaler{}).Marshal(w, res)
+		jsonBytes, err := protojson.Marshal(res)
+		if err != nil {
+			log.Warn("Error writing violations response: ", err)
+			panic(http.ErrAbortHandler)
+		}
+		_, err = w.Write(jsonBytes)
 		if err != nil {
 			log.Warn("Error writing violations response: ", err)
 			panic(http.ErrAbortHandler)
