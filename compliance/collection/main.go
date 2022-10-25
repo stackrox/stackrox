@@ -108,16 +108,48 @@ func startAuditLogCollection(ctx context.Context, client sensor.ComplianceServic
 	return auditReader
 }
 
-func manageStream(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig, sig *concurrency.Signal) {
+func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal) {
 	for {
 		select {
 		case <-ctx.Done():
 			sig.Signal()
 			return
 		default:
+			client, config, err := initializeStream(ctx, cli)
+			if err != nil {
+				if ctx.Err() != nil {
+					// continue and the <-ctx.Done() path should be taken next iteration
+					continue
+				}
+				log.Fatalf("error initializing stream to sensor: %v", err)
+			}
 			if err := runRecv(ctx, client, config); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
+		}
+	}
+}
+
+func manageNodeScanLoop(ctx context.Context, cli sensor.ComplianceServiceClient, scanner nodescanv2.NodeScanner, rescanInterval time.Duration) {
+	t := time.NewTicker(5 * time.Second)
+	log.Infof("Node Rescan interval: %v", rescanInterval)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			client, _, err := initializeStream(ctx, cli)
+			if err != nil {
+				t.Reset(5 * time.Second)
+				log.Errorf("error initializing node scan stream to sensor: %v", err)
+				continue
+			}
+			if err := scanNode(client, scanner); err != nil {
+				log.Errorf("error running scanNode: %v", err)
+				continue
+			}
+			t.Reset(rescanInterval)
 		}
 	}
 }
@@ -176,28 +208,6 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 	return client, config, nil
 }
 
-func manageNodeScanLoop(ctx context.Context, client sensor.ComplianceService_CommunicateClient, scanner nodescanv2.NodeScanner) {
-	rescanInterval := complianceUtils.VerifyAndUpdateDuration(env.NodeRescanInterval.DurationSetting())
-	t := time.NewTicker(rescanInterval)
-	log.Infof("Node Rescan interval: %v", rescanInterval)
-
-	// send scan result once at startup, then every NodeRescanInterval
-	if err := scanNode(client, scanner); err != nil {
-		log.Errorf("error running scanNode: %v", err)
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-			if err := scanNode(client, scanner); err != nil {
-				log.Errorf("error running scanNode: %v", err)
-			}
-		}
-	}
-}
-
 func scanNode(client sensor.ComplianceService_CommunicateClient, scanner nodescanv2.NodeScanner) error {
 	nodeName := getNode()
 
@@ -233,17 +243,12 @@ func main() {
 
 	stoppedSig := concurrency.NewSignal()
 
-	client, config, err := initializeStream(ctx, cli)
-	if err != nil {
-		log.Fatalf("error initializing stream to sensor: %v", err)
-	}
-
-	go manageStream(ctx, client, config, &stoppedSig)
+	go manageStream(ctx, cli, &stoppedSig)
 
 	if features.RHCOSNodeScanning.Enabled() {
-		// TODO(ROX-12971): Replace with real scanner
-		scanner := nodescanv2.FakeNodeScanner{}
-		go manageNodeScanLoop(ctx, client, &scanner)
+		rescanInterval := complianceUtils.VerifyAndUpdateDuration(env.NodeRescanInterval.DurationSetting())
+		scanner := nodescanv2.FakeNodeScanner{} // TODO(ROX-12971): Replace with real scanner
+		go manageNodeScanLoop(ctx, cli, &scanner, rescanInterval)
 	}
 
 	signalsC := make(chan os.Signal, 1)
