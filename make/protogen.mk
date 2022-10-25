@@ -84,6 +84,7 @@ PROTO_GOOGLE_INCLUDES := $(CURDIR)/proto-ext
 
 PROTOC_GEN_GO_BIN := $(PROTO_GOBIN)/protoc-gen-go
 PROTOC_GEN_GO_VTPROTO_BIN := $(PROTO_GOBIN)/protoc-gen-go-vtproto
+PROTOC_GO_INJECT_TAG_BIN := $(PROTO_GOBIN)/protoc-go-inject-tag
 
 MODFILE_DIR := $(PROTO_PRIVATE_DIR)/modules
 
@@ -100,6 +101,10 @@ $(PROTOC_GEN_GO_BIN): $(MODFILE_DIR)/google.golang.org/protobuf/UPDATE_CHECK $(P
 $(PROTOC_GEN_GO_VTPROTO_BIN): $(MODFILE_DIR)/github.com/planetscale/vtprotobuf/UPDATE_CHECK $(PROTO_GOBIN)
 	@echo "+ $@"
 	$(SILENT)GOBIN=$(PROTO_GOBIN) go install github.com/planetscale/vtprotobuf/cmd/$(notdir $@)
+
+$(PROTOC_GO_INJECT_TAG_BIN): $(MODFILE_DIR)/github.com/favadi/protoc-go-inject-tag/UPDATE_CHECK $(PROTO_GOBIN)
+	@echo "+ $@"
+	$(SILENT)GOBIN=$(PROTO_GOBIN) go install github.com/favadi/$(notdir $@)
 
 PROTOC_GEN_LINT := $(PROTO_GOBIN)/protoc-gen-lint
 $(PROTOC_GEN_LINT): $(MODFILE_DIR)/github.com/ckaznocha/protoc-gen-lint/UPDATE_CHECK $(PROTO_GOBIN)
@@ -203,7 +208,7 @@ $(GENERATED_DOC_PATH):
 # Generate all of the proto messages and gRPC services with one invocation of
 # protoc when any of the .pb.go sources don't exist or when any of the .proto
 # files change.
-$(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(ALL_PROTOS)
+$(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(PROTOC_GO_INJECT_TAG_BIN) $(ALL_PROTOS)
 	@echo "+ $@"
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
@@ -215,6 +220,7 @@ $(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTO
 		--go_out=$(GENERATED_BASE_PATH) \
 		--go_opt=$(M_ARGS_STR:%=%,)paths=source_relative \
 		$(dir $<)/*.proto
+	$(SILENT)$(PROTOC_GO_INJECT_TAG_BIN) -input='$(dir $@)/*.pb.go'
 
 # Generate optimized marshalling/unmarshalling/size/... functions through an invocation of the vtprotobuf compiler.
 # Note: this also generates gRPC code where applicable.

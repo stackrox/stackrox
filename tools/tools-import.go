@@ -10,6 +10,7 @@ package tools
 import (
 	// Tool dependencies, not used anywhere in the code.
 	_ "github.com/ckaznocha/protoc-gen-lint"
+	_ "github.com/favadi/protoc-go-inject-tag"
 	_ "github.com/golang/mock/mockgen"
 	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway"
 	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2"
