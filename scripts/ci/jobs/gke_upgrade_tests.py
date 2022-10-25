@@ -22,7 +22,6 @@ from post_tests import PostClusterTest, FinalPost
 # (hard-coded in tests/upgrade/run.sh to "deploy/k8s")
 # might need to override for Openshift secured cluster
 
-os.environ["CLUSTER"] = "K8S"
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["SENSOR_HELM_DEPLOY"] = "true"
 

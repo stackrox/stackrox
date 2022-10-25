@@ -68,7 +68,13 @@ test_upgrade() {
     ### test_upgrade_paths "$log_output_dir"
 
     # TODO(sbostick): run the groovy e2e tests
-    make -C qa-tests-backend smoke-test
+    CLUSTER="K8S" make -C qa-tests-backend smoke-test
+
+    touch /tmp/hold
+    while [[ -e /tmp/hold ]]; do
+        info "Holding this job for debug"
+        sleep 60
+    done
 }
 
 preamble() {
