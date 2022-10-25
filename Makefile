@@ -287,7 +287,7 @@ dev: install-dev-tools
 ## Generated Code and Dependencies ##
 #####################################
 
-PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
+PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_PB_VT_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
