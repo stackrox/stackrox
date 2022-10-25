@@ -32,6 +32,8 @@ var (
 )
 
 type service struct {
+	v1.UnimplementedComplianceManagementServiceServer
+
 	manager manager.ComplianceManager
 }
 

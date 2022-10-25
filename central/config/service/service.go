@@ -55,6 +55,8 @@ func New(datastore datastore.DataStore) Service {
 }
 
 type serviceImpl struct {
+	v1.UnimplementedConfigServiceServer
+
 	datastore datastore.DataStore
 }
 

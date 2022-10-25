@@ -38,6 +38,8 @@ var (
 
 // serviceImpl is the struct that manages the collection API
 type serviceImpl struct {
+	v1.UnimplementedCollectionServiceServer
+
 	datastore datastore.DataStore
 }
 

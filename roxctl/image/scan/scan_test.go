@@ -182,7 +182,8 @@ var (
 
 // mock implementation for v1.ImageServiceServer
 type mockImageServiceServer struct {
-	v1.ImageServiceServer
+	v1.UnimplementedImageServiceServer
+
 	components []*storage.EmbeddedImageScanComponent
 }
 

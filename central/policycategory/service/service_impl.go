@@ -48,6 +48,8 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	v1.UnimplementedPolicyCategoryServiceServer
+
 	policyCategoriesDatastore datastore.DataStore
 }
 

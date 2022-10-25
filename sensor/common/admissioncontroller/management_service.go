@@ -23,6 +23,8 @@ var (
 )
 
 type managementService struct {
+	sensor.UnimplementedAdmissionControlManagementServiceServer
+
 	settingsStream     concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
 	sensorEventsStream concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest]
 

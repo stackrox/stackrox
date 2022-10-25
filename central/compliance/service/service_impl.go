@@ -46,6 +46,8 @@ func New(aggregator aggregation.Aggregator, complianceDataStore complianceDS.Dat
 }
 
 type serviceImpl struct {
+	v1.UnimplementedComplianceServiceServer
+
 	aggregator          aggregation.Aggregator
 	complianceDataStore complianceDS.DataStore
 	standardsRepo       standards.Repository

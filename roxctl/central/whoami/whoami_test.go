@@ -30,8 +30,8 @@ type centralWhoAmITestSuite struct {
 }
 
 type mockAuthServiceServer struct {
-	v1.AuthServiceServer
-	v1.RoleServiceServer
+	v1.UnimplementedAuthServiceServer
+	v1.UnimplementedRoleServiceServer
 
 	userInfo         *storage.UserInfo
 	resourceToAccess map[string]storage.Access

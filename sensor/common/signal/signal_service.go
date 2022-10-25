@@ -33,6 +33,8 @@ type Service interface {
 }
 
 type serviceImpl struct {
+	sensorAPI.UnimplementedSignalServiceServer
+
 	queue      chan *v1.Signal
 	indicators chan *central.MsgFromSensor
 

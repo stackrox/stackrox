@@ -31,6 +31,9 @@ var (
 )
 
 type signalServer struct {
+	sensorAPI.UnimplementedSignalServiceServer
+	sensorAPI.UnimplementedNetworkConnectionInfoServiceServer
+
 	db *bolt.DB
 }
 

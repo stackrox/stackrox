@@ -37,6 +37,8 @@ var (
 )
 
 type service struct {
+	v1.UnimplementedProbeUploadServiceServer
+
 	mgr manager.Manager
 
 	probeServerHandler http.Handler

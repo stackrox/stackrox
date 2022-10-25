@@ -25,7 +25,9 @@ var (
 	})
 )
 
-type serviceImpl struct{}
+type serviceImpl struct {
+	v1.UnimplementedTelemetryServiceServer
+}
 
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, authorizer.Authorized(ctx, fullMethodName)

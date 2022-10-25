@@ -34,6 +34,8 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
+	v1.UnimplementedCredentialExpiryServiceServer
+
 	imageIntegrations imageIntegrationStore.DataStore
 	scannerConfig     *tls.Config
 }

@@ -99,6 +99,8 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	v1.UnimplementedPolicyServiceServer
+
 	policies          datastore.DataStore
 	clusters          clusterDataStore.DataStore
 	deployments       deploymentDataStore.DataStore

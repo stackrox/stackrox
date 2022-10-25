@@ -75,6 +75,8 @@ var (
 
 // serviceImpl is a thin facade over a domain layer that handles CRUD use cases on Alert objects from API clients.
 type serviceImpl struct {
+	v1.UnimplementedAlertServiceServer
+
 	dataStore         datastore.DataStore
 	notifier          notifierProcessor.Processor
 	baselines         baselineDatastore.DataStore

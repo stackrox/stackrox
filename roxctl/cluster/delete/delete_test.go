@@ -31,7 +31,8 @@ type clusterDeleteTestSuite struct {
 }
 
 type mockClustersServiceServer struct {
-	v1.ClustersServiceServer
+	v1.UnimplementedClustersServiceServer
+
 	clusters []*storage.Cluster
 }
 

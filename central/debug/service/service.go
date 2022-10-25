@@ -114,6 +114,8 @@ func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemet
 }
 
 type serviceImpl struct {
+	v1.UnimplementedDebugServiceServer
+
 	sensorConnMgr        connection.Manager
 	clusters             datastore.DataStore
 	telemetryGatherer    *gatherers.RoxGatherer

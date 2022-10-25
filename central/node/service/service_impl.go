@@ -28,6 +28,8 @@ var (
 )
 
 type nodeServiceImpl struct {
+	v1.UnimplementedNodeServiceServer
+
 	nodeStore globaldatastore.GlobalDataStore
 }
 
