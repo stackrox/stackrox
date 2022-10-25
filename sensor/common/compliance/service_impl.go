@@ -23,7 +23,7 @@ type serviceImpl struct {
 
 	output      chan *compliance.ComplianceReturn
 	auditEvents chan *sensor.AuditEvents
-	nodeScans   chan<- *storage.NodeScanV2
+	nodeScans   chan *storage.NodeScanV2
 
 	auditLogCollectionManager AuditLogCollectionManager
 
@@ -173,4 +173,8 @@ func (s *serviceImpl) Output() chan *compliance.ComplianceReturn {
 
 func (s *serviceImpl) AuditEvents() chan *sensor.AuditEvents {
 	return s.auditEvents
+}
+
+func (s *serviceImpl) NodeScansV2() <-chan *storage.NodeScanV2 {
+	return s.nodeScans
 }

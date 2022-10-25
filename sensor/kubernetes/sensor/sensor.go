@@ -92,10 +92,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager()
 
 	indicators := make(chan *central.MsgFromSensor)
-	// nodeScanInput connects ComplianceService to NodeScanHandler
-	nodeScanInput := make(chan *storage.NodeScanV2)
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
-	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, nodeScanInput)
+	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager)
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
 	enforcer, err := enforcer.New(cfg.k8sClient)
@@ -120,7 +118,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		admCtrlMsgForwarder,
 		enforcer,
 		networkFlowManager,
-		compliance.NewNodeScanHandler(nodeScanInput),
+		compliance.NewNodeScanHandler(complianceService.NodeScansV2()),
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
