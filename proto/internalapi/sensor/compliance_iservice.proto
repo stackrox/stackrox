@@ -54,7 +54,7 @@ message MsgToCompliance {
 
     oneof msg {
         ScrapeConfig              config                       = 1;
-        TriggerRun                trigger                      = 2;-
+        TriggerRun                trigger                      = 2;
         AuditLogCollectionRequest audit_log_collection_request = 3;
     }
 }
