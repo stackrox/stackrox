@@ -371,8 +371,8 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    EARLIER_SHA="83963e020fe08e61c9d368a42e4d23bfc22ba8f2"
-    EARLIER_TAG="3.70.x-1-g83963e020f"
+    EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
+    EARLIER_TAG="3.69.x-1-g870568de08"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
     export FORCE_ROLLBACK_VERSION
 
@@ -393,14 +393,14 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
     wait_for_api
 
-    validate_upgrade "00-3-70-x-to-current" "central upgrade to 3.70.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "00-3-69-x-to-current" "central upgrade to 3.69.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     force_rollback
     wait_for_api
 
     cd "$REPO_FOR_TIME_TRAVEL"
 
-    validate_upgrade "01-current-back-to-3-70-x" "forced rollback to 3.70.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "01-current-back-to-3-69-x" "forced rollback to 3.69.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     cd "$TEST_ROOT"
 
