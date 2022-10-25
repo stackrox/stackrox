@@ -532,7 +532,7 @@ func (s *deploymentDatastoreSACSuite) TestRemoveDeployment() {
 			s.NoError(err)
 			s.Require().True(preFound)
 			listPreFetch := deploymentTypes.ConvertDeploymentToDeploymentList(preFetch)
-			s.Require().Equal(*listDeployment, *listPreFetch)
+			s.Require().Equal(listDeployment, listPreFetch)
 			if c.ExpectError {
 				s.Error(removeErr)
 				s.ErrorIs(removeErr, c.ExpectedError)
