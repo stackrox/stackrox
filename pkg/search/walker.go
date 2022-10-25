@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/oneofwrappers"
 )
 
 type searchWalker struct {
@@ -98,24 +99,11 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 		if field.Tag.Get("protobuf_oneof") != "" {
 			ptrToOriginal := reflect.PtrTo(original)
 
-			methodName := fmt.Sprintf("Get%s", field.Name)
-			oneofGetter, ok := ptrToOriginal.MethodByName(methodName)
-			if !ok {
-				panic("didn't find oneof function, did the naming change?")
+			oneofInterface := field.Type
+			actualOneOfFields := oneofwrappers.OneofWrappers(reflect.Zero(ptrToOriginal).Interface())
+			if len(actualOneOfFields) == 0 {
+				panic("could not extract oneof information")
 			}
-			oneofInterfaces := oneofGetter.Func.Call([]reflect.Value{reflect.New(original)})
-			if len(oneofInterfaces) != 1 {
-				panic(fmt.Sprintf("found %d interfaces returned from oneof getter", len(oneofInterfaces)))
-			}
-
-			oneofInterface := oneofInterfaces[0].Type()
-
-			method, ok := ptrToOriginal.MethodByName("XXX_OneofWrappers")
-			if !ok {
-				panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", original.Name()))
-			}
-			out := method.Func.Call([]reflect.Value{reflect.New(original)})
-			actualOneOfFields := out[0].Interface().([]interface{})
 			for _, f := range actualOneOfFields {
 				typ := reflect.TypeOf(f)
 				if typ.Implements(oneofInterface) {

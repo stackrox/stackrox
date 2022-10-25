@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/oneofwrappers"
 )
 
 // An AugmentedObjMeta represents metadata (ie, type information) about an augmented object.
@@ -142,12 +143,10 @@ func (o *AugmentedObjMeta) addPathsForSearchTags(parentType, currentType reflect
 
 func (o *AugmentedObjMeta) addPathsForSearchTagsFromInterface(parentType, currentType reflect.Type, pathUntilThisObj, pathWithinThisObj MetaPath, outputMap *FieldToMetaPathMap, seenAugmentKeys set.StringSet) {
 	ptrToParent := reflect.PtrTo(parentType)
-	method, ok := ptrToParent.MethodByName("XXX_OneofWrappers")
-	if !ok {
-		panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", parentType.Name()))
+	actualOneOfFields := oneofwrappers.OneofWrappers(reflect.Zero(ptrToParent).Interface())
+	if len(actualOneOfFields) == 0 {
+		panic(fmt.Sprintf("no oneof information found for %s", parentType.Name()))
 	}
-	out := method.Func.Call([]reflect.Value{reflect.New(parentType)})
-	actualOneOfFields := out[0].Interface().([]interface{})
 	for _, f := range actualOneOfFields {
 		typ := reflect.TypeOf(f)
 		if typ.Implements(currentType) {

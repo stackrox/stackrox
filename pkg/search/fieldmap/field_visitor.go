@@ -3,6 +3,8 @@ package fieldmap
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/stackrox/rox/pkg/transitional/protocompat/oneofwrappers"
 )
 
 // FieldPath represents the fields we need to access to get to the field we care about.
@@ -63,12 +65,10 @@ func visitElemField(currentType reflect.Type, path FieldPath, visitField func(fi
 // concrete type.
 func visitInterfaceFields(parentType, currentType reflect.Type, path FieldPath, visitField func(fieldPath FieldPath) bool) {
 	ptrToParent := reflect.PtrTo(parentType)
-	method, ok := ptrToParent.MethodByName("XXX_OneofWrappers")
-	if !ok {
-		panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", parentType.Name()))
+	actualOneOfFields := oneofwrappers.OneofWrappers(reflect.Zero(ptrToParent).Interface())
+	if len(actualOneOfFields) == 0 {
+		panic(fmt.Sprintf("oneof information not found for %s", parentType.Name()))
 	}
-	out := method.Func.Call([]reflect.Value{reflect.New(parentType)})
-	actualOneOfFields := out[0].Interface().([]interface{})
 	for _, f := range actualOneOfFields {
 		typ := reflect.TypeOf(f)
 		if typ.Implements(currentType) {

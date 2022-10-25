@@ -52,9 +52,9 @@ func (resolver *Resolver) ComplianceRunStatuses(ctx context.Context, args struct
 func (resolver *Resolver) ComplianceRecentRuns(
 	ctx context.Context,
 	args struct {
-	ClusterID, StandardID *graphql.ID
-	Since                 *graphql.Time
-}) ([]*complianceRunResolver, error) {
+		ClusterID, StandardID *graphql.ID
+		Since                 *graphql.Time
+	}) ([]*complianceRunResolver, error) {
 	if err := readComplianceRuns(ctx); err != nil {
 		return nil, err
 	}

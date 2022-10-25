@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// Marshal allows marshaling to a writer in protojson format.
 func Marshal(w io.Writer, m proto.Message) error {
 	bytes, err := protojson.Marshal(m)
 	if err != nil {

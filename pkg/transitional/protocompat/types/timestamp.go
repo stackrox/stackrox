@@ -27,6 +27,7 @@ func TimestampNow() *Timestamp {
 	return timestamppb.Now()
 }
 
+// TimestampString returns a string representation of the given timestamp protobuf.
 func TimestampString(ts *Timestamp) string {
 	return ts.AsTime().Format(time.RFC3339Nano)
 }
