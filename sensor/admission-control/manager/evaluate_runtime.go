@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apex/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
