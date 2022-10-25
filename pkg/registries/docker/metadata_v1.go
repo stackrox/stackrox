@@ -7,12 +7,12 @@ import (
 
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/docker/image"
-	"github.com/gogo/protobuf/types"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	instructionTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 var scrubPrefixes = []string{

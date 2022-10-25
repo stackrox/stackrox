@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/gogo/protobuf/types"
 	clusterIndex "github.com/stackrox/rox/central/cluster/index"
 	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
 	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
@@ -29,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 // DataStore is an intermediary to CVE storage.

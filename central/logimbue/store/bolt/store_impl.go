@@ -5,11 +5,11 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	bolt "go.etcd.io/bbolt"
 )
 

@@ -3,8 +3,8 @@ package embeddedobjs
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 // vulnContextKey is the key for the *storage.EmbeddedVulnerability value in the context.

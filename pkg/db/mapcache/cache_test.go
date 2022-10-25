@@ -3,11 +3,11 @@ package mapcache
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db/mocks"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/stretchr/testify/suite"
 )
 

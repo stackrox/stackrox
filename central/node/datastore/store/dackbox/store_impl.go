@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
 	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
+	protoTypes "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 const (

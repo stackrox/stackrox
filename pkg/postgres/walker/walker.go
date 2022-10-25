@@ -5,12 +5,12 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 var (

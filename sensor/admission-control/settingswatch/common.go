@@ -3,10 +3,10 @@ package settingswatch
 import (
 	"os"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/gziputil"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 func getPoliciesFromFile(file string) (*storage.PolicyList, error) {

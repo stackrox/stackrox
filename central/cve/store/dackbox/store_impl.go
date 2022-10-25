@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	vulnDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	"github.com/stackrox/rox/central/cve/store"
 	"github.com/stackrox/rox/central/metrics"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 const batchSize = 100

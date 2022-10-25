@@ -3,8 +3,8 @@ package fixtures
 import (
 	"time"
 
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	ptypes "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 

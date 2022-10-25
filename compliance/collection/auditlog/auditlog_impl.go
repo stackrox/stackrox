@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/nxadm/tail"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 var (

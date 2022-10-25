@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/timeutil"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 const (

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -36,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/timeutil"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 const (

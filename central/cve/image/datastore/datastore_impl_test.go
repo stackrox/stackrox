@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/cve/common"
 	indexMocks "github.com/stackrox/rox/central/cve/image/datastore/index/mocks"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/suite"
 )
 

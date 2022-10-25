@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
 	dsTypes "github.com/stackrox/rox/central/compliance/datastore/types"
@@ -13,6 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/suite"
 )
 

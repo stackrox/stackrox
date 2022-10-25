@@ -1,8 +1,8 @@
 package fixtures
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 // GetPod returns a mock Pod

@@ -1,8 +1,8 @@
 package crud
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 // ProtoAllocFunction allocates a proto object that we can deserialize data into.

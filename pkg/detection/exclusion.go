@@ -3,9 +3,9 @@ package detection
 import (
 	"strings"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scopecomp"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 func auditEventMatchesExclusions(auditEvent *storage.KubernetesEvent, exclusions []*compiledExclusion) bool {

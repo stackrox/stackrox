@@ -8,7 +8,6 @@ import (
 	"unicode"
 
 	containeranalysis "cloud.google.com/go/containeranalysis/apiv1beta1"
-	gogoTypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	gogoTypes "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"

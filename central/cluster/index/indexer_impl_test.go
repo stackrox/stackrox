@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/suite"
 )
 

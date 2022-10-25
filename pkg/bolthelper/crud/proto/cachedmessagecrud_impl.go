@@ -3,8 +3,8 @@ package proto
 import (
 	"sync/atomic"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/storecache"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 type cachedMessageCrudImpl struct {

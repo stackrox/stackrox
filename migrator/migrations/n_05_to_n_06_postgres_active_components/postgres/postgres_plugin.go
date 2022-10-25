@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	edgeDackBox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
 	"github.com/stackrox/rox/central/nodecomponentedge/store"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 const (

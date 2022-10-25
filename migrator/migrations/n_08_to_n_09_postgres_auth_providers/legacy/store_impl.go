@@ -3,12 +3,12 @@ package store
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dberrors"
 	"github.com/stackrox/rox/pkg/secondarykey"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	bolt "go.etcd.io/bbolt"
 )
 

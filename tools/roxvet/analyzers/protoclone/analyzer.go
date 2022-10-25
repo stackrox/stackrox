@@ -12,7 +12,7 @@ import (
 const (
 	doc = `check for usages of proto.Clone followed by type assertions`
 
-	gogoProtoPkg = "github.com/gogo/protobuf/proto"
+	gogoProtoPkg = "github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 // Analyzer is the analyzer.

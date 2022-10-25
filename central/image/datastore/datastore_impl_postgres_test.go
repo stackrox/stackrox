@@ -8,7 +8,6 @@ import (
 	"sort"
 	"testing"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
@@ -34,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	protoTypes "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )

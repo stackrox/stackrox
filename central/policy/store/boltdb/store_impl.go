@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,6 +14,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	bolt "go.etcd.io/bbolt"
 )
 

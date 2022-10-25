@@ -1,8 +1,8 @@
 package protoutils
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 // NewWrapper takes in a proto.Message and overrides the String method with jsonpb.Marshal

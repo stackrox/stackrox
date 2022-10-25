@@ -1,7 +1,7 @@
 package protoutils
 
 import (
-	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 // SlicesEqual returns whether the given two slices of proto objects have equal values.

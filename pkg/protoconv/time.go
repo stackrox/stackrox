@@ -3,9 +3,9 @@ package protoconv
 import (
 	"time"
 
-	gogoTimestamp "github.com/gogo/protobuf/types"
 	golangTimestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stackrox/rox/pkg/logging"
+	gogoTimestamp "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 var (

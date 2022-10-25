@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/compliance/collection/command"
 	"github.com/stackrox/rox/compliance/collection/containerruntimes/crio"
 	"github.com/stackrox/rox/compliance/collection/containerruntimes/docker"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 	"github.com/stackrox/rox/pkg/compliance/data"
 	"github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 func runChecks(client sensor.ComplianceService_CommunicateClient, scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, run *sensor.MsgToCompliance_TriggerRun) error {

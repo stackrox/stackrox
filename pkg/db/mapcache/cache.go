@@ -1,10 +1,10 @@
 package mapcache
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 // NewMapCache takes a db crud and key func and generates a fully in memory cache that wraps the crud interface

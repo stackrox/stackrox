@@ -3,8 +3,8 @@ package queue
 import (
 	"container/list"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 // DeploymentObservation struct used as element in the queue

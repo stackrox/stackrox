@@ -3,10 +3,10 @@ package common
 import (
 	"testing"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/scancomponent"
+	timestamp "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/assert"
 )
 

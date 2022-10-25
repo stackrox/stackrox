@@ -6,7 +6,6 @@ package legacy
 import (
 	"context"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	cveUtil "github.com/stackrox/rox/migrator/migrations/cvehelper"
 	clusterDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/cluster"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/set"
+	protoTypes "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 type storeImpl struct {

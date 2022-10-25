@@ -1,6 +1,6 @@
 package common
 
-import "github.com/gogo/protobuf/types"
+import "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 
 // CVESuppressionCache holds suppressed vulnerabilities' information.
 type CVESuppressionCache map[string]SuppressionCacheEntry

@@ -1,7 +1,6 @@
 package clairify
 
 import (
-	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
@@ -9,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stackrox/rox/pkg/stringutils"
+	gogoProto "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	v1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 

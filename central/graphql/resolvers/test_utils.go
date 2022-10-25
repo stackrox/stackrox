@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
@@ -32,6 +31,7 @@ import (
 	types2 "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
+	ptypes "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"

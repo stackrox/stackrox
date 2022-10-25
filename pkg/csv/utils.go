@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 // Utility functions to be used for CSV exporting.

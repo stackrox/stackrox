@@ -3,9 +3,9 @@ package processor
 import (
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 const (

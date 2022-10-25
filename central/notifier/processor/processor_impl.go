@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
+	timestamp "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 var (

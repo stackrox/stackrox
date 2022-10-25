@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	ptypes "github.com/gogo/protobuf/types"
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
 	namespaceDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	ptypes "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/suite"
 )
 

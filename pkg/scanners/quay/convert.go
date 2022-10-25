@@ -1,10 +1,10 @@
 package quay
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 func convertScanToImageScan(image *storage.Image, s *scanResult) *storage.ImageScan {

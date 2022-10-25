@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/node/mappings"
@@ -11,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
+	protoTypes "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	utils "github.com/stackrox/rox/pkg/utils"
 )
 

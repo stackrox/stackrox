@@ -1,10 +1,10 @@
 package fixtures
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/nodes/converter"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 ///////////////////////////////

@@ -1,8 +1,8 @@
 package crud
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 // Upserter provides the ability to upsert as part of a dackbox transaction.

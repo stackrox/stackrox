@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scans"
+	timestamp "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	clairConvert "github.com/stackrox/scanner/api/v1/convert"
 	clientMetadata "github.com/stackrox/scanner/pkg/clairify/client/metadata"

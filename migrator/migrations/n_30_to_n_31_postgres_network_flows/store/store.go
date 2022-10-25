@@ -3,9 +3,9 @@ package store
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 // ClusterStore stores the network edges per cluster.

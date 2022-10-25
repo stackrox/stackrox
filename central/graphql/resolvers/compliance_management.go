@@ -3,9 +3,9 @@ package resolvers
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -52,9 +52,9 @@ func (resolver *Resolver) ComplianceRunStatuses(ctx context.Context, args struct
 func (resolver *Resolver) ComplianceRecentRuns(
 	ctx context.Context,
 	args struct {
-		ClusterID, StandardID *graphql.ID
-		Since                 *graphql.Time
-	}) ([]*complianceRunResolver, error) {
+	ClusterID, StandardID *graphql.ID
+	Since                 *graphql.Time
+}) ([]*complianceRunResolver, error) {
 	if err := readComplianceRuns(ctx); err != nil {
 		return nil, err
 	}

@@ -6,12 +6,12 @@ package legacy
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	vulnDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/cve"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 const batchSize = 100

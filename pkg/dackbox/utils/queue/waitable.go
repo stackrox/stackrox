@@ -1,9 +1,9 @@
 package queue
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 // AcceptsKeyValue is an interface that accepts a key and it's proto value for processing.

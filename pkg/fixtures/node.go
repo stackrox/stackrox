@@ -3,8 +3,8 @@ package fixtures
 import (
 	"fmt"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 // GetNode returns a mock *storage.Node

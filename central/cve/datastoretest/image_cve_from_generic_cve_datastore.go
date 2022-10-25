@@ -3,12 +3,12 @@ package datastoretest
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	genericCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 type imageCVEDataStoreFromGenericStore struct {

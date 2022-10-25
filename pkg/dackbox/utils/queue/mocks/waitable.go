@@ -7,7 +7,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	proto "github.com/gogo/protobuf/proto"
+	proto "github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	gomock "github.com/golang/mock/gomock"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
 )

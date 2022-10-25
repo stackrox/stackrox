@@ -5,7 +5,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
 	edgeDackBox "github.com/stackrox/rox/central/clustercveedge/dackbox"
 	"github.com/stackrox/rox/central/clustercveedge/store"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 const (

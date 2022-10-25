@@ -8,7 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	types "github.com/gogo/protobuf/types"
+	types "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	gomock "github.com/golang/mock/gomock"
 	converter "github.com/stackrox/rox/central/cve/converter/v2"
 	v1 "github.com/stackrox/rox/generated/api/v1"

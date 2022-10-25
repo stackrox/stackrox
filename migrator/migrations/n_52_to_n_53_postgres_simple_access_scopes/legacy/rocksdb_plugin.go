@@ -4,7 +4,7 @@ package legacy
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/rocksdb"

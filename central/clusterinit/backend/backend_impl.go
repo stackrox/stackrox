@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 var _ authn.ValidateCertChain = (*backendImpl)(nil)

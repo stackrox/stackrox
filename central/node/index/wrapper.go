@@ -1,10 +1,10 @@
 package index
 
 import (
-	"github.com/gogo/protobuf/proto"
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 // Wrapper implements the wrapper interface for use in dackbox.

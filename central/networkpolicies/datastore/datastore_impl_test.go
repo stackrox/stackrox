@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/mocks"
 	undoDeploymentStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	timestamp "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	edgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	edgeIndexMocks "github.com/stackrox/rox/central/clustercveedge/index/mocks"
@@ -27,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	pd "github.com/PagerDuty/go-pagerduty"
-	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	imagesTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 

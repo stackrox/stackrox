@@ -3,7 +3,7 @@ package timeutil
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/assert"
 )
 

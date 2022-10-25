@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 var (

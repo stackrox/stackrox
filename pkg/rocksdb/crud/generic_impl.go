@@ -1,10 +1,10 @@
 package generic
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/tecbot/gorocksdb"
 )
 

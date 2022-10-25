@@ -1,8 +1,8 @@
 package proto
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/bolthelper/crud/generic"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 type messageCrudImpl struct {

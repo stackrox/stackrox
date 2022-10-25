@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/suite"
 	"go.etcd.io/bbolt"
 )

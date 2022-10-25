@@ -5,8 +5,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 const (

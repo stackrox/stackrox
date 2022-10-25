@@ -1,9 +1,9 @@
 package protoutils
 
 import (
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
-	golangProto "github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
+	golangProto "github.com/stackrox/rox/pkg/transitional/protocompat/proto"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 // MarshalAny correctly marshals a proto message into an Any

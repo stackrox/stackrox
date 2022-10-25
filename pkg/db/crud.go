@@ -1,6 +1,6 @@
 package db
 
-import "github.com/gogo/protobuf/proto"
+import "github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 
 // Crud provides a simple crud layer on top of a DB supporting proto messages
 //go:generate mockgen-wrapper

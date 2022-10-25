@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/installation/store/bolt"
 	"github.com/stackrox/rox/central/installation/store/postgres"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 

@@ -16,7 +16,6 @@ import (
 	_ "embed"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	_ "github.com/stackrox/rox/generated/storage"
@@ -25,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/tools/imports"
 )

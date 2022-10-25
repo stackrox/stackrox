@@ -6,9 +6,9 @@ package legacy
 import (
 	"context"
 
-	proto "github.com/gogo/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
 	singletonstore "github.com/stackrox/rox/pkg/bolthelper/singletonstore"
+	proto "github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	bbolt "go.etcd.io/bbolt"
 )
 

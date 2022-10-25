@@ -4,8 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifier/processor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -17,6 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"google.golang.org/grpc"
 )
 

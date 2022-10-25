@@ -3,8 +3,8 @@ package embeddedobjs
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 // componentContextKey is the key for the *storage.EmbeddedImageScanComponent value in the context.

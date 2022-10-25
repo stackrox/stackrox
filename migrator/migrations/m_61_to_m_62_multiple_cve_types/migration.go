@@ -1,13 +1,13 @@
 package m61tom62
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
 	rocksdb "github.com/stackrox/rox/pkg/rocksdb/crud"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	"github.com/tecbot/gorocksdb"
 )
 

@@ -3,7 +3,6 @@ package legacy
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	acDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/activecomponent"
 	clusterDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/cluster"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 // StoreImpl provides an implementation of the Store interface using dackbox.

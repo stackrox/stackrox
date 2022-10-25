@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/central/globaldb"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	timestamp "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"gopkg.in/robfig/cron.v2"
 )
 

@@ -3,12 +3,12 @@ package generic
 import (
 	"bytes"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 type uniqueKeyCRUD struct {

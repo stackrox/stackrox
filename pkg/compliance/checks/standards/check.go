@@ -1,10 +1,10 @@
 package standards
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	internalTypes "github.com/stackrox/rox/pkg/docker/types"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"k8s.io/kubelet/config/v1beta1"
 )
 

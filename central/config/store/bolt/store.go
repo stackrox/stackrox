@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	proto "github.com/gogo/protobuf/proto"
 	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
 	singletonstore "github.com/stackrox/rox/pkg/bolthelper/singletonstore"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	proto "github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 	bbolt "go.etcd.io/bbolt"
 )
 

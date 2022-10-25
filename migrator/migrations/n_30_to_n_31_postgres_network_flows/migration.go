@@ -5,7 +5,6 @@ package n30ton31
 import (
 	"context"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,6 +17,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
+	protoTypes "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"gorm.io/gorm"
 )
 

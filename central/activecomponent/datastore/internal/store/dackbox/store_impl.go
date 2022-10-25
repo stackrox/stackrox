@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	acDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 const (

@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	acConverter "github.com/stackrox/rox/central/activecomponent/converter"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
+	protoTypes "github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 // Resolvers on Embedded Scan Object.

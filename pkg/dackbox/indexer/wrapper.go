@@ -1,8 +1,8 @@
 package indexer
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/proto"
 )
 
 // Wrapper is an object that wraps keys and values into their indexed id:value pair.

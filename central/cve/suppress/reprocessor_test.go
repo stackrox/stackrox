@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/gogo/protobuf/types"
 	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	clusterCVEEdgeIndexer "github.com/stackrox/rox/central/clustercveedge/index"
@@ -35,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

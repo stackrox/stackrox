@@ -5,13 +5,13 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/central/graphql/generator/codegen"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/transitional/protocompat/types"
 )
 
 var (
