@@ -28,6 +28,8 @@ echo "${allowlist_pattern}"
 echo "SHREWS -- did I find it"
 grep "${allowlist_pattern}" "$@"
 echo "SHREWS"
+grep -P "${allowlist_pattern}" "$@"
+echo "SHREWS 2"
 
 grep -vP "$allowlist_pattern" "$@" | grep >&2 -Pni "$blocklist_pattern" && exit 1
 

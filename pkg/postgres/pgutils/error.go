@@ -49,7 +49,12 @@ var transientPGCodes = set.NewFrozenStringSet(
 
 // isTransientError specifies if the passed error is transient and should be retried
 func isTransientError(err error) bool {
+	log.Info("SHREWS -- messing around in -- isTransientError")
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
+		log.Infof("SHREWS -- %q", pgErr.Code)
+		log.Infof("SHREWS -- %q", pgErr.Detail)
+		log.Infof("SHREWS -- %q", pgErr.Message)
+		log.Infof("SHREWS -- %q", pgErr.Severity)
 		return transientPGCodes.Contains(pgErr.Code)
 	}
 	if pgconn.SafeToRetry(err) {
