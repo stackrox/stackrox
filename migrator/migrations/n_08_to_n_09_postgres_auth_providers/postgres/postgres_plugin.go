@@ -382,6 +382,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 
 	// Batch the deletes
 	batchSize := deleteBatchSize
+	numRecordsToDelete := len(ids)
 	for {
 		if len(ids) == 0 {
 			break
@@ -391,14 +392,15 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 			batchSize = len(ids)
 		}
 
-		idBatch := ids[0:batchSize]
+		idBatch := ids[:batchSize]
 		q := search.ConjunctionQuery(
 			sacQueryFilter,
 			search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
 		)
 
 		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-			return err
+			log.Errorf("unable to delete all the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
+			return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
 		}
 
 		// Move the slice forward to start the next batch
