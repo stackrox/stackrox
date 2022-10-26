@@ -164,13 +164,6 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
-	// Disable database password generation. Do not use this for first-time installations in which the operator
-	// is managing Central DB as Central will have no way to connect to the database.
-	// Deprecated: do not set this explicitly; instead, set or don't set the passwordSecret property to govern whether
-	// a secret is generated, or whether a user-supplied one is used.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	PasswordGenerationDisabled *bool `json:"passwordGenerationDisabled,omitempty"`
-
 	// Specify a connection string that corresponds to an existing database. If set, the operator will not manage Central DB.
 	// When using this option, you must explicitly set a password secret; automatically generating a password will not
 	// be supported.
@@ -310,6 +303,8 @@ type DBPersistentVolumeClaim struct {
 	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
 	// created. Defaults to "central-db" if not set.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
+	//+kubebuilder:validation:Default=central-db
+	//+kubebuilder:default=central-db
 	ClaimName *string `json:"claimName,omitempty"`
 
 	// The size of the persistent volume when created through the claim. If a claim was automatically created,

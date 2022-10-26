@@ -68,6 +68,10 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence) *platform.Pers
 	}
 }
 
+// getPersistenceByTarget retrieves the persistence configuration for the given PVC target (either PVCTargetCentral, the
+// embedded persistent volume on which RocksDB is stored, or PVCTargetCentralDB, the persistent volume that serves as
+// the backing store for the central-db PostgreSQL database).
+// A nil return value indicates that no persistent volume should be provisioned for the respective target.
 func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platform.Persistence {
 	switch target {
 	case PVCTargetCentral:

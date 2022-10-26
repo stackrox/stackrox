@@ -364,15 +364,6 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: 'Disable database password generation. Do not use this for first-time
-          installations in which the operator is managing Central DB as Central will
-          have no way to connect to the database. Deprecated: do not set this explicitly;
-          instead, set or don''t set the passwordSecret property to govern whether
-          a secret is generated, or whether a user-supplied one is used.'
-        displayName: Password Generation Disabled
-        path: central.db.passwordGenerationDisabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the referenced secret.
         displayName: Name
         path: central.db.passwordSecret.name

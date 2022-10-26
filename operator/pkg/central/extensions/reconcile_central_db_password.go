@@ -43,9 +43,9 @@ type reconcileCentralDBPasswordExtensionRun struct {
 	password   string
 }
 
-func (r *reconcileCentralDBPasswordExtensionRun) readPasswordFromReferencedSecret(ctx context.Context) error {
+func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReferencedSecret(ctx context.Context) error {
 	if r.centralObj.Spec.Central.DB.GetPasswordSecret() == nil {
-		return errors.New("no password secret was specified")
+		return errors.New("no password secret was specified in spec.central.db.passwordSecret")
 	}
 
 	passwordSecretName := r.centralObj.Spec.Central.DB.PasswordSecret.Name
@@ -73,20 +73,11 @@ func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) er
 	dbSpec := r.centralObj.Spec.Central.DB // non-nil thanks to CentralDBEnabled() check above
 	dbPasswordSecret := dbSpec.PasswordSecret
 	if dbSpec.IsExternal() && dbPasswordSecret == nil {
-		return errors.New("specifying a DB password secret is mandatory when using an external DB")
-	}
-
-	if dbSpec.PasswordGenerationDisabled != nil {
-		if *dbSpec.PasswordGenerationDisabled && dbPasswordSecret == nil {
-			return errors.New("when explicitly disabling password generation, a password secret must be specified")
-		}
-		if !*dbSpec.PasswordGenerationDisabled && dbPasswordSecret != nil {
-			return errors.New("when explicitly enabling password generation, a password secret must not be specified")
-		}
+		return errors.New("setting spec.central.db.passwordSecret is mandatory when using an external DB")
 	}
 
 	if dbPasswordSecret != nil {
-		if err := r.readPasswordFromReferencedSecret(ctx); err != nil {
+		if err := r.readAndSetPasswordFromReferencedSecret(ctx); err != nil {
 			return err
 		}
 		// If the user wants to use the central-db-password secret directly, that's fine, and we don't have anything more to do.
@@ -94,7 +85,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) er
 			return nil
 		}
 	}
-	// At this point, r.password was set via readPasswordFromReferencedSecret above (user-specified mode), or is unset,
+	// At this point, r.password was set via readAndSetPasswordFromReferencedSecret above (user-specified mode), or is unset,
 	// in which case the auto-generation logic will take effect.
 	if err := r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, true, r.validateSecretData, r.generateDBPassword, true); err != nil {
 		return errors.Wrapf(err, "reconciling %s secret", canonicalCentralDBPasswordSecretName)
