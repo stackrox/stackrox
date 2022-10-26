@@ -661,7 +661,7 @@ func extractCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings m
 	for fromClaimName, toClaimName := range mappings {
 		val, err := extractClaimFromPath(fromClaimName, claims)
 		if err != nil {
-			log.Debug(fmt.Sprintf("Failed to extract claim from path: %w", err))
+			log.Debugf("Failed to extract claim from path: %v", err)
 			continue
 		}
 		if err := addClaimToUserClaims(externalUserClaim, toClaimName, val); err != nil {
@@ -689,8 +689,6 @@ func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attribute
 		externalUserClaim.Attributes[attributeName] = append(externalUserClaim.Attributes[attributeName], v)
 	case bool:
 		externalUserClaim.Attributes[attributeName] = append(externalUserClaim.Attributes[attributeName], strconv.FormatBool(v))
-	case float64:
-		externalUserClaim.Attributes[attributeName] = append(externalUserClaim.Attributes[attributeName], strconv.FormatFloat(v, 'f', -1, 64))
 	default:
 		return errors.Errorf("Unsupported claim type %T with value %+v", claimValue, claimValue)
 	}
