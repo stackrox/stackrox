@@ -5,7 +5,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -386,16 +385,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.K8SRoleBinding
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.K8SRoleBinding](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.K8SRoleBinding
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
@@ -461,7 +456,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.K8SRo
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.K8SRoleBinding](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -472,12 +467,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.K8SRo
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.K8SRoleBinding)
-	for _, data := range rows {
-		msg := &storage.K8SRoleBinding{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.K8SRoleBinding, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -503,22 +494,14 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 		query,
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.K8SRoleBinding](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	var results []*storage.K8SRoleBinding
-	for _, data := range rows {
-		msg := &storage.K8SRoleBinding{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, err
-		}
-		results = append(results, msg)
-	}
-	return results, nil
+	return rows, nil
 }
 
 // Delete removes the specified IDs from the store
@@ -549,7 +532,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.K8SRoleBindin
 		}
 		for _, data := range rows {
 			var msg storage.K8SRoleBinding
-			if err := proto.Unmarshal(data, &msg); err != nil {
+			if err := msg.Unmarshal(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

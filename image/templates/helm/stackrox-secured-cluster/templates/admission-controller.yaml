@@ -247,7 +247,6 @@ webhooks:
         - CONNECT
         resources:
           - pods
-          - pods/attach
           - pods/exec
           - pods/portforward
     failurePolicy: Ignore

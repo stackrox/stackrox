@@ -58,6 +58,13 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 
 	event, err := kubernetes.AdmissionRequestToKubeEventObj(req)
 	if err != nil {
+		if errors.Is(err, kubernetes.ErrUnsupportedRequestKind) || errors.Is(err, kubernetes.ErrUnsupportedAPIVerb) {
+			log.Errorf("Unsupported admission request: %v. This likely means your admission controller (ValidatingWebhookConfiguration) is misconfigured", err)
+			// If we don't know how to handle a request, we shouldn't be receiving it in the first place, so the only
+			// right course of action is to admit it.
+			return pass(req.UID), nil
+		}
+
 		return nil, errors.Wrap(err, "translating admission request object from request")
 	}
 	event.Timestamp = types.TimestampNow()

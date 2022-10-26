@@ -1,14 +1,26 @@
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
-import { setClock, visitSystemHealth } from '../../helpers/systemHealth';
+import {
+    integrationHealthVulnDefinitionsAlias,
+    setClock,
+    visitSystemHealth,
+} from '../../helpers/systemHealth';
 
 const nbsp = '\u00A0';
 
-describe('System Health Vulnerability Definitions without fixture', () => {
+describe('System Health Vulnerability Definitions', () => {
     withAuth();
 
     it('should have widget and up to date text', () => {
-        visitSystemHealth();
+        const currentDatetime = new Date('2020-12-10T02:04:59.377369440Z'); // exactly 23 hours after last updated
+        const lastUpdatedTimestamp = '2020-12-09T03:04:59.377369440Z';
+
+        const staticResponseMap = {
+            [integrationHealthVulnDefinitionsAlias]: { body: { lastUpdatedTimestamp } },
+        };
+
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth(staticResponseMap);
 
         const { vulnDefinitions } = selectors;
         cy.get(vulnDefinitions.header).should('have.text', 'Vulnerability Definitions');
@@ -17,19 +29,17 @@ describe('System Health Vulnerability Definitions without fixture', () => {
             `Vulnerability definitions are up${nbsp}to${nbsp}date`
         );
     });
-});
-
-describe('System Health Vulnerability Definitions with fixture', () => {
-    withAuth();
 
     it('should have widget and out of date text and time', () => {
         const currentDatetime = new Date('2020-12-10T03:04:59.377369440Z'); // exactly 24 hours after last updated
         const lastUpdatedTimestamp = '2020-12-09T03:04:59.377369440Z';
 
+        const staticResponseMap = {
+            [integrationHealthVulnDefinitionsAlias]: { body: { lastUpdatedTimestamp } },
+        };
+
         setClock(currentDatetime); // call before visit
-        visitSystemHealth({
-            'integrationhealth/vulndefinitions': { body: { lastUpdatedTimestamp } },
-        });
+        visitSystemHealth(staticResponseMap);
 
         const { vulnDefinitions } = selectors;
         cy.get(vulnDefinitions.header).should('have.text', 'Vulnerability Definitions');

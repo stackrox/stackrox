@@ -19,6 +19,8 @@ rules:
   - "configmaps"
   - "services"
   - "pods"
+  - "events"
+  - "namespaces"
   verbs:
   - get
   - list

@@ -809,7 +809,7 @@ func TestClusterPruning(t *testing.T) {
 			require.Len(t, finalClusters, len(c.expectedNames), "Did not find expected number of clusters after gc")
 
 			for _, cluster := range finalClusters {
-				require.NotEqual(t, -1, sliceutils.StringFind(c.expectedNames, cluster.GetName()), "cluster %s should have been deleted", cluster.GetName())
+				require.NotEqual(t, -1, sliceutils.Find(c.expectedNames, cluster.GetName()), "cluster %s should have been deleted", cluster.GetName())
 			}
 		})
 	}

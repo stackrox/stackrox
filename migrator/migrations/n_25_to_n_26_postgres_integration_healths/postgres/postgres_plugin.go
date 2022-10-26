@@ -5,7 +5,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -260,16 +259,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.IntegrationHea
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.IntegrationHealth](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.IntegrationHealth
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
@@ -335,7 +330,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Integ
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.IntegrationHealth](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -346,12 +341,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Integ
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.IntegrationHealth)
-	for _, data := range rows {
-		msg := &storage.IntegrationHealth{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.IntegrationHealth, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -396,7 +387,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.IntegrationHe
 		}
 		for _, data := range rows {
 			var msg storage.IntegrationHealth
-			if err := proto.Unmarshal(data, &msg); err != nil {
+			if err := msg.Unmarshal(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

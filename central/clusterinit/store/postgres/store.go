@@ -6,7 +6,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -290,16 +289,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.InitBundleMeta
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.InitBundleMeta](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.InitBundleMeta
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
@@ -388,7 +383,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.InitB
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.InitBundleMeta](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -399,12 +394,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.InitB
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.InitBundleMeta)
-	for _, data := range rows {
-		msg := &storage.InitBundleMeta{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.InitBundleMeta, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -458,7 +449,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.InitBundleMet
 		}
 		for _, data := range rows {
 			var msg storage.InitBundleMeta
-			if err := proto.Unmarshal(data, &msg); err != nil {
+			if err := msg.Unmarshal(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

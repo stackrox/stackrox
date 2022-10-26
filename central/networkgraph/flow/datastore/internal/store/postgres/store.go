@@ -16,6 +16,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"gorm.io/gorm"
 )
@@ -46,14 +47,15 @@ const (
 
 	deleteStmt         = "DELETE FROM network_flows WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
 	deleteStmtWithTime = "DELETE FROM network_flows WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp = $8"
-	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM network_flows nf " + joinStmt
+	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM network_flows nf " + joinStmt + " WHERE nf.ClusterId = $1"
 
 	// These mimic how the RocksDB version of the flow store work
 	getSinceStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId 
 	FROM network_flows nf ` + joinStmt +
 		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2`
-	deleteDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
+	deleteSrcDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
+	deleteDstDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
 
 	getByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId
@@ -63,6 +65,23 @@ const (
 	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId
 	FROM network_flows nf ` + joinStmt +
 		`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1 AND nf.ClusterId = $2`
+
+	pruneStaleNetworkFlowsStmt = `DELETE FROM network_flows a USING (
+      SELECT MAX(flow_id) as Max_Flow, Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
+        FROM network_flows
+		WHERE ClusterId = $1
+        GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
+		HAVING COUNT(*) > 1
+      ) b
+      WHERE a.Props_SrcEntity_Type = b.Props_SrcEntity_Type
+ 	AND a.Props_SrcEntity_Id = b.Props_SrcEntity_Id
+ 	AND a.Props_DstEntity_Type = b.Props_DstEntity_Type
+ 	AND a.Props_DstEntity_Id = b.Props_DstEntity_Id
+	AND a.Props_DstPort = b.Props_DstPort
+	AND a.Props_L4Protocol = b.Props_L4Protocol
+	AND a.ClusterId = b.ClusterId
+      AND a.Flow_Id <> b.Max_Flow;
+	`
 )
 
 var (
@@ -99,10 +118,14 @@ type FlowStore interface {
 	// keyMatchFn checks to see if either the source or destination are orphaned.  Orphaned means it is type deployment and the id does not exist in deployments.
 	// Though that appears to be dackbox so that is gross.  May have to keep the keyMatchFn for now and replace with a join when deployments are moved to a table?
 	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
+
+	// RemoveStaleFlows - remove stale duplicate network flows
+	RemoveStaleFlows(ctx context.Context) error
 }
 
 type flowStoreImpl struct {
 	db        *pgxpool.Pool
+	mutex     sync.Mutex
 	clusterID string
 }
 
@@ -322,6 +345,10 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 }
 
 func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, id string) error {
+	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
 	if err != nil {
 		return err
@@ -333,7 +360,15 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 		return err
 	}
 
-	if _, err := tx.Exec(ctx, deleteDeploymentStmt, s.clusterID, id); err != nil {
+	// To avoid a full scan with an OR delete source and destination flows separately
+	if _, err := tx.Exec(ctx, deleteSrcDeploymentStmt, s.clusterID, id); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+
+	if _, err := tx.Exec(ctx, deleteDstDeploymentStmt, s.clusterID, id); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -364,7 +399,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
-		rows, err = s.db.Query(ctx, walkStmt)
+		rows, err = s.db.Query(ctx, walkStmt, s.clusterID)
 	} else {
 		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since), s.clusterID)
 	}
@@ -399,7 +434,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
-		rows, err = s.db.Query(ctx, walkStmt)
+		rows, err = s.db.Query(ctx, walkStmt, s.clusterID)
 	} else {
 		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since), s.clusterID)
 	}
@@ -439,6 +474,10 @@ func (s *flowStoreImpl) retryableGetFlowsForDeployment(ctx context.Context, depl
 }
 
 func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlowProperties) error {
+	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return err
@@ -489,6 +528,10 @@ func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func
 }
 
 func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return err
@@ -501,7 +544,7 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 	// in Postgres we cannot fully do this work in SQL.  Additionally, there may be issues with the synchronization
 	// of when flow is created vs a deployment deleted that may also make that problematic.
 	if keyMatchFn != nil {
-		rows, err := conn.Query(ctx, walkStmt)
+		rows, err := conn.Query(ctx, walkStmt, s.clusterID)
 		if err != nil {
 			return err
 		}
@@ -537,6 +580,45 @@ func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMat
 				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+// RemoveStaleFlows - remove stale duplicate network flows
+func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+
+	return pgutils.Retry(func() error {
+		return s.retryableRemoveStaleFlows(ctx)
+	})
+}
+
+func (s *flowStoreImpl) retryableRemoveStaleFlows(ctx context.Context) error {
+	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	if err != nil {
+		return err
+	}
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec(ctx, pruneStaleNetworkFlowsStmt, s.clusterID); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
 	}
 
 	return nil

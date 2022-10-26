@@ -6,7 +6,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -300,16 +299,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.AuthProvider, 
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.AuthProvider](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.AuthProvider
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.AuthProvider, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "AuthProvider")
@@ -408,7 +403,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.AuthP
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.AuthProvider](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -419,12 +414,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.AuthP
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.AuthProvider)
-	for _, data := range rows {
-		msg := &storage.AuthProvider{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.AuthProvider, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -479,7 +470,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.AuthProvider)
 		}
 		for _, data := range rows {
 			var msg storage.AuthProvider
-			if err := proto.Unmarshal(data, &msg); err != nil {
+			if err := msg.Unmarshal(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

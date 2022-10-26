@@ -13,17 +13,6 @@ import {
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
 
-// After the problem has been fixed, remove the function argument below.
-function getCountAndNounFromClustersLinkResults(resultsFromRegExp) {
-    const relatedEntitiesCount = resultsFromRegExp[1];
-    const relatedEntitiesNoun = relatedEntitiesCount === 1 ? 'CLUSTER' : 'CLUSTERS';
-    return {
-        panelHeaderText: '0 clusters', // workaround for bug
-        relatedEntitiesCount,
-        relatedEntitiesNoun,
-    };
-}
-
 const entitiesKey = 'cluster-cves';
 
 describe('Vulnerability Management Cluster (Platform) CVEs', () => {
@@ -101,16 +90,7 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display links for clusters', function () {
-        if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-        verifySecondaryEntities(
-            entitiesKey,
-            'clusters',
-            8,
-            /^\d+ clusters?$/,
-            getCountAndNounFromClustersLinkResults
-        );
+    it('should display links for clusters', () => {
+        verifySecondaryEntities(entitiesKey, 'clusters', 8, /^\d+ clusters?$/);
     });
 });

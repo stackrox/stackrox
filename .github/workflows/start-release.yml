@@ -10,7 +10,7 @@ on:
       ref:
         description: Release base ref (for non-patch releases)
         required: false
-        default: HEAD
+        default: ""
         type: string
       dry-run:
         description: Dry-run
@@ -19,21 +19,41 @@ on:
         type: boolean
 
 env:
-  docs_repository: openshift/openshift-docs
-  #eng-release (CMH5M8MHN) for real runs or #test-release-automation (C03KSV3N6N8) for testing:
-  slack_channel: ${{ fromJSON('["CMH5M8MHN", "C03KSV3N6N8"]')[ github.repository != 'stackrox/stackrox' || github.event.inputs.dry-run == 'true'] }}
+  REF: ${{ fromJSON(format('["{0}","{1}"]', inputs.ref, github.event.repository.default_branch))[inputs.ref == ''] }}
   main_branch: ${{github.event.repository.default_branch}}
-  jira_project: ROX
   script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
   DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
 
+run-name: >-
+  ${{
+    format('Start release {0} from {1}{2}',
+      inputs.version,
+      fromJSON(format('["{0}","{1}"]', inputs.ref, github.event.repository.default_branch))[inputs.ref == ''],
+      fromJSON('[" (dry-run)", ""]')[inputs.dry-run != true]
+    )
+  }}
+
 # Ensure that only a single release automation workflow can run at a time.
 concurrency: Release automation
 
 jobs:
+  properties:
+    name: Read repository properties
+    runs-on: ubuntu-latest
+    outputs:
+      docs-repository: ${{ steps.properties.outputs.docs-repository }}
+      slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.properties.outputs.dry-slack-channel, steps.properties.outputs.slack-channel))[github.event.inputs.dry-run != 'true'] }}
+      jira-project: ${{ steps.properties.outputs.jira-project }}
+    steps:
+      - name: Read workflow properties file
+        id: properties
+        env:
+          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.ref_name }}
+        run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
+
   run-parameters:
     name: Run parameters
     runs-on: ubuntu-latest
@@ -55,7 +75,7 @@ jobs:
 
   check-jira:
     name: Check Jira release
-    needs: variables
+    needs: [variables, properties]
     runs-on: ubuntu-latest
     outputs:
       release-date: ${{steps.check-jira-release.outputs.date}}
@@ -69,40 +89,44 @@ jobs:
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             check-jira-release \
             "${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}" \
-            "${{env.jira_project}}"
+            "${{needs.properties.outputs.jira-project}}"
 
   check-docs-branch:
     name: Check documentation branch
-    needs: [variables]
+    needs: [variables, properties]
     runs-on: ubuntu-latest
     steps:
       - name: Test if branch ${{needs.variables.outputs.docs-branch}} exists
         id: check
+        env:
+          # required to access internal test-gh-docs repository
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
         run: |
-          gh api "repos/${{env.docs_repository}}/git/refs/heads/${{needs.variables.outputs.docs-branch}}"
+          gh api "repos/${{needs.properties.outputs.docs-repository}}/git/refs/heads/${{needs.variables.outputs.docs-branch}}"
       - name: Post to Slack
         if: failure() && steps.check.conclusion == 'failure'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.19.0
+        uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: ${{env.slack_channel}}
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             { "blocks": [
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":red_circle: *Cannot proceed with upstream release ${{needs.variables.outputs.release-patch}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
+            ":${{ fromJSON('["desert", "red_circle"]')[inputs.dry-run != 'true'] }}:
+            *Cannot proceed with upstream release ${{needs.variables.outputs.release-patch}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             "There has been no documentation branch created in
-            `${{env.docs_repository}}` repository." }},
+            `${{needs.properties.outputs.docs-repository}}` repository." }},
 
             { "type": "divider" },
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":arrow_right: *Create branch
             `${{needs.variables.outputs.docs-branch}}` from the `rhacs-docs`
-            branch in `${{env.docs_repository}}` repository and then restart the workflow.*" }},
+            branch in `${{needs.properties.outputs.docs-repository}}` repository and then restart the workflow.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ">
@@ -114,21 +138,35 @@ jobs:
   branch:
     name: Prepare release branch
     needs: [variables, check-docs-branch]
-    if: needs.variables.outputs.patch == 0
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code
+      - name: Check out code (normal release)
+        if: needs.variables.outputs.patch == 0
         uses: actions/checkout@v3
         with:
-          ref: ${{inputs.ref}}
+          ref: ${{ env.REF }}
+          # required to access internal test-gh-docs repository
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          submodules: true
+      - name: Check out code (patch release)
+        if: needs.variables.outputs.patch != 0
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.variables.outputs.branch }}
+          # required to access internal test-gh-docs repository
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          submodules: true
       - name: Check remote branch exists
         id: check-existing
         run: |
           if git ls-remote --quiet --exit-code origin "${{needs.variables.outputs.branch}}"; then
-            echo "::set-output name=branch-exists::true"
+            echo "branch-exists=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::set-output name=branch-exists::false"
+            echo "branch-exists=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Fail if there is no branch for patch release
+        if: steps.check-existing.outputs.branch-exists == 'false' && needs.variables.outputs.patch != 0
+        run: exit 1
       - name: Initialize mandatory git config
         run: |
           git config user.name "${{github.event.sender.login}}"
@@ -146,15 +184,14 @@ jobs:
           #       release version when main branch versioning is changed to
           #       'next.version-dev'.
       - name: Update docs submodule
-        if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
+          git -C docs/content config remote.origin.fetch "+refs/heads/${{needs.variables.outputs.docs-branch}}:refs/remotes/origin/${{needs.variables.outputs.docs-branch}}"
           git submodule set-branch --branch "${{needs.variables.outputs.docs-branch}}" -- docs/content
-          # This takes a bit long:
           git submodule update --init --remote -- docs/content
           git add .gitmodules docs/content
           if ! git diff-index --quiet HEAD; then
             git commit -am "Docs update for release ${{needs.variables.outputs.milestone}}"
-            echo "Documents submodule has been updated on the release branch." >> $GITHUB_STEP_SUMMARY
+            echo "Documents submodule has been updated on the release branch." >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Update the changelog
         if: steps.check-existing.outputs.branch-exists == 'false'
@@ -163,16 +200,21 @@ jobs:
           git add CHANGELOG.md
           if ! git diff-index --quiet HEAD; then
             git commit --message "Changelog for ${{inputs.version}}"
-            echo "\`CHANGELOG.md\` has been updated on the release branch." >> $GITHUB_STEP_SUMMARY
+            echo "\`CHANGELOG.md\` has been updated on the release branch." >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Push changes
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
         run: |
           git push --follow-tags --set-upstream origin "${{needs.variables.outputs.branch}}"
+      - name: Push changes
+        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'true'
+        run: |
+          git push --follow-tags
 
   ci:
     name: Configure OpenShift CI jobs
     needs: [variables, branch]
+    if: needs.variables.outputs.patch == 0
     runs-on: ubuntu-latest
     env:
       RELEASE: "${{needs.variables.outputs.release}}"
@@ -187,10 +229,10 @@ jobs:
         id: check-existing
         run: |
           if git ls-remote --quiet --exit-code origin "$BRANCH"; then
-            echo "::set-output name=branch-exists::true"
+            echo "branch-exists=true" >> "$GITHUB_OUTPUT"
             echo "::notice::OpenShift CI configuration branch exists. Assuming CI is ready."
           else
-            echo "::set-output name=branch-exists::false"
+            echo "branch-exists=false" >> "$GITHUB_OUTPUT"
             git switch --create "$BRANCH"
           fi
       - name: Initialize mandatory git config
@@ -222,7 +264,7 @@ jobs:
           make update
 
           git add ci-operator
-          git commit -m "Release $RELEASE files" >> $GITHUB_STEP_SUMMARY
+          git commit -m "Release $RELEASE files" >> "$GITHUB_STEP_SUMMARY"
       - name: Push and create PR
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
         run: |
@@ -234,11 +276,12 @@ jobs:
             --body "CI configuration files to support Stackrox release \`$RELEASE\`." \
             --assignee "$GITHUB_ACTOR")
 
-          echo ":arrow_right: Review and merge the [PR]($PR_URL) that has been created for the \`openshift/release\` repository." >> $GITHUB_STEP_SUMMARY
+          echo ":arrow_right: Review and merge the [PR]($PR_URL) that has been created for the \`openshift/release\` repository." >> "$GITHUB_STEP_SUMMARY"
 
   patch-changelog:
     name: Patch CHANGELOG.md
     needs: [variables, branch]
+    if: needs.variables.outputs.patch == 0
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -246,18 +289,18 @@ jobs:
         with:
           # Working on `inputs.ref` instead of `env.main_branch` may help
           # to spot changes happened to CHANGELOG.md after `inputs.ref`.
-          ref: ${{inputs.ref}}
+          ref: ${{ env.REF }}
       - name: Initialize mandatory git config
         run: |
           git config user.name "${{github.event.sender.login}}"
           git config user.email noreply@github.com
-      - name: Patch CHANGELOG.md on ${{inputs.ref}}
+      - name: Patch CHANGELOG.md on ${{ env.REF }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             patch-changelog \
             "${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}" \
-            "${{inputs.ref}}" \
+            "$REF" \
             "${{needs.variables.outputs.branch}}"
 
   milestone:
@@ -271,43 +314,73 @@ jobs:
           set -u
           if ! http_code=$(gh api --silent -X POST \
             "repos/${{github.repository}}/milestones" \
-            -f "title"="${{needs.variables.outputs.milestone}}" \
+            -f title="${{needs.variables.outputs.milestone}}" \
             2>&1); then
 
             if grep "HTTP 422" <<< "$http_code"; then
               echo ":arrow_right: Milestone ${{needs.variables.outputs.milestone}} already exists." \
-                "**Close it once it's finished.**" >>"$GITHUB_STEP_SUMMARY"
+                "**Close it once it's finished.**" >> "$GITHUB_STEP_SUMMARY"
             else
               echo "::error::Couldn't create milestone ${{needs.variables.outputs.milestone}}: $http_code"
               exit 1
             fi
           else
             echo ":arrow_right: Milestone ${{needs.variables.outputs.milestone}} has been created." \
-              "**Close it once it's finished.**" >>"$GITHUB_STEP_SUMMARY"
+              "**Close it once it's finished.**" >> "$GITHUB_STEP_SUMMARY"
           fi
 
   notify:
     name: Notify everybody
-    needs: [variables, branch, milestone]
+    needs: [variables, properties, branch, milestone]
     runs-on: ubuntu-latest
+    env:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
     steps:
-      - name: Post to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.19.0
+      - name: Post to Slack (normal release)
+        if: needs.variables.outputs.patch == 0
+        uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: ${{env.slack_channel}}
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             { "blocks": [
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":white_check_mark: *Upstream release ${{needs.variables.outputs.release-patch}}
-            has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
+            ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
+            *Upstream release ${{needs.variables.outputs.release-patch}}
+            has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}> by ${{ github.event.sender.login }}.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             "Branch `${{needs.variables.outputs.branch}}`
             and milestone `${{needs.variables.outputs.milestone}}`
             have been created.\n\nPRs merged to the ${{env.main_branch}} branch
+            and assigned to RC milestones will be cherry-picked when closing the respective milestones.
+            For the urgent fixes that must go exclusively to this release
+            open PRs to the `${{needs.variables.outputs.branch}}` branch." }},
+
+            { "type": "divider" },
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ">
+            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
+            Release: ${{needs.variables.outputs.release-patch}}\n>
+            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
+            ]}
+      - name: Post to Slack (patch release)
+        if: needs.variables.outputs.patch != 0
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
+          payload: >-
+            { "blocks": [
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
+            *Upstream patch release ${{needs.variables.outputs.release-patch}}
+            has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}> by ${{ github.event.sender.login }}.*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            "Milestone `${{needs.variables.outputs.milestone}}`
+            has been created.\n\nPRs merged to the ${{env.main_branch}} branch
             and assigned to RC milestones will be cherry-picked when closing the respective milestones.
             For the urgent fixes that must go exclusively to this release
             open PRs to the `${{needs.variables.outputs.branch}}` branch." }},

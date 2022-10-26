@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	namespacePool = newPool()
+	namespacePool                 = newPool()
+	namespacesWithDeploymentsPool = newPool()
 )
 
 func getNamespace(name string) *corev1.Namespace {

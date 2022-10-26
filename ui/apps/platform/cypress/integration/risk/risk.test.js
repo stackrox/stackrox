@@ -1,5 +1,6 @@
 import { selectors as RiskPageSelectors } from '../../constants/RiskPage';
 import withAuth from '../../helpers/basicAuth';
+import { reachNetworkGraph } from '../../helpers/networkGraph';
 import {
     deploymentswithprocessinfoAlias,
     deploymentscountAlias,
@@ -138,15 +139,12 @@ describe('Risk page', () => {
     });
 
     describe('with actual API', () => {
-        it('should navigate to network page with selected deployment', function () {
-            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-                this.skip();
-            }
+        it('should navigate to network page with selected deployment', () => {
             visitRiskDeployments();
-            viewRiskDeploymentByName('central');
-            viewRiskDeploymentInNetworkGraph();
-
-            cy.location('pathname').should('match', /^\/main\/network\/[-0-9a-z]+$/);
+            viewRiskDeploymentByName('collector');
+            reachNetworkGraph(() => {
+                viewRiskDeploymentInNetworkGraph();
+            });
         });
 
         const searchPlaceholderText = 'Add one or more resource filters';

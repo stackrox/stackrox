@@ -1,13 +1,16 @@
 package fake
 
-import "time"
+import (
+	"time"
+)
 
 // DeploymentWorkload defines a workload of deployment objects
 type DeploymentWorkload struct {
 	DeploymentType string `yaml:"deploymentType"`
 	NumDeployments int    `yaml:"numDeployments"`
 
-	NumLabels int `yaml:"numLabels"`
+	NumLabels    int  `yaml:"numLabels"`
+	RandomLabels bool `yaml:"randomLabels"`
 
 	PodWorkload PodWorkload `yaml:"podWorkload"`
 
@@ -19,8 +22,6 @@ type DeploymentWorkload struct {
 // NetworkPolicyWorkload defines a workload of networkPolicy objects
 type NetworkPolicyWorkload struct {
 	NumNetworkPolicies int `yaml:"numNetworkPolicies"`
-
-	NumLabels int `yaml:"numLabels"`
 
 	UpdateInterval    time.Duration `yaml:"updateInterval"`
 	LifecycleDuration time.Duration `yaml:"lifecycleDuration"`
@@ -69,7 +70,6 @@ type RBACWorkload struct {
 
 // ServiceWorkload defines the workload of services
 type ServiceWorkload struct {
-	NumLabels        int `yaml:"numLabels"`
 	NumClusterIPs    int `yaml:"numClusterIPs"`
 	NumNodePorts     int `yaml:"numNodePorts"`
 	NumLoadBalancers int `yaml:"numLoadBalancers"`
@@ -84,4 +84,5 @@ type Workload struct {
 	RBACWorkload          RBACWorkload            `yaml:"rbacWorkload"`
 	ServiceWorkload       ServiceWorkload         `yaml:"serviceWorkload"`
 	NumNamespaces         int                     `yaml:"numNamespaces"`
+	MatchLabels           bool                    `yaml:"matchLabels"`
 }

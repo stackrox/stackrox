@@ -60,7 +60,7 @@ func (s *CollectionsStoreSuite) TestStore() {
 
 	resourceCollection := &storage.ResourceCollection{}
 	s.NoError(testutils.FullInit(resourceCollection, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-	resourceCollection.EmbeddedCollections[0].Id = resourceCollection.Id
+	resourceCollection.EmbeddedCollections = nil
 
 	foundResourceCollection, exists, err := store.Get(ctx, resourceCollection.GetId())
 	s.NoError(err)
@@ -104,7 +104,7 @@ func (s *CollectionsStoreSuite) TestStore() {
 	for i := 0; i < 200; i++ {
 		resourceCollection := &storage.ResourceCollection{}
 		s.NoError(testutils.FullInit(resourceCollection, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		resourceCollection.EmbeddedCollections[0].Id = resourceCollection.Id
+		resourceCollection.EmbeddedCollections = nil
 		resourceCollections = append(resourceCollections, resourceCollection)
 	}
 

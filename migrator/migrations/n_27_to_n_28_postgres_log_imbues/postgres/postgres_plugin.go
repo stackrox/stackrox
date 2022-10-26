@@ -257,16 +257,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.LogImbue, bool
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.LogImbue](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.LogImbue
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.LogImbue, error) {
 
@@ -328,7 +324,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.LogIm
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.LogImbue](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -339,12 +335,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.LogIm
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.LogImbue)
-	for _, data := range rows {
-		msg := &storage.LogImbue{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.LogImbue, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))

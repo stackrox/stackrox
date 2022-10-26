@@ -25,7 +25,6 @@ import (
     "strings"
     "time"
 
-    "github.com/gogo/protobuf/proto"
     "github.com/hashicorp/go-multierror"
     "github.com/jackc/pgx/v4"
     "github.com/jackc/pgx/v4/pgxpool"
@@ -547,16 +546,12 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
     {{- end}}
     )
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg {{.Type}}
-	if err := proto.Unmarshal(data, &msg); err != nil {
-        return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 
 {{- if .GetAll }}
@@ -778,7 +773,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
         search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
     )
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -789,12 +784,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[{{$singlePK.Type}}]*{{.Type}})
-    for _, data := range rows {
-		msg := &{{.Type}}{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-		    return nil, nil, err
-		}
+	resultsByID := make(map[{{$singlePK.Type}}]*{{.Type}}, len(rows))
+    for _, msg := range rows {
 		resultsByID[{{$singlePK.Getter "msg"}}] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -854,22 +845,14 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
         query,
     )
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 		    return nil, nil
 		}
 		return nil, err
 	}
-	var results []*{{.Type}}
-    for _, data := range rows {
-		msg := &{{.Type}}{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-		    return nil, err
-		}
-		results = append(results, msg)
-	}
-	return results, nil
+	return rows, nil
 }
 {{- end }}
 
@@ -964,7 +947,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 		}
 		for _, data := range rows {
 			var msg {{.Type}}
-			if err := proto.Unmarshal(data, &msg); err != nil {
+			if err := msg.Unmarshal(data); err != nil {
 				return err
 			}
 			if err := fn(&msg); err != nil {

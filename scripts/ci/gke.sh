@@ -238,10 +238,17 @@ refresh_gke_token() {
     local real_kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
 
     # refresh token every 15m
+    local pid
     while true; do
-        # sleep & wait so that it will exit on TERM
         sleep 900 &
-        wait $!
+        pid="$!"
+        kill_sleep() {
+            echo "refresh_gke_token() terminated, killing the background sleep ($pid)"
+            kill "$pid"
+        }
+        trap kill_sleep SIGINT SIGTERM
+        wait "$pid"
+
         info "Refreshing the GKE auth token"
         gcloud config config-helper --force-auth-refresh >/dev/null
         echo >/tmp/kubeconfig-new

@@ -242,8 +242,14 @@ func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool
 	return
 }
 
+// RemoveStaleFlows - remove stale duplicate network flows
+// Only used for Postgres, needed to satisfy the interface for the datastore.
+func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
+	return nil
+}
+
 // Static helper functions.
-/////////////////////////
+// ///////////////////////
 func (s *flowStoreImpl) readFlow(id []byte) (flow *storage.NetworkFlow, err error) {
 	slice, err := s.db.Get(readOptions, id)
 	if err != nil {
