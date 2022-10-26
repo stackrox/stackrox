@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/resolver"
 )
 
 const (
@@ -29,7 +29,7 @@ type listenerImpl struct {
 	configHandler      config.Handler
 	resyncPeriod       time.Duration
 	traceWriter        io.Writer
-	outputQueue        output.Queue
+	resolverQueue      resolver.Resolver
 }
 
 func (k *listenerImpl) Start() error {

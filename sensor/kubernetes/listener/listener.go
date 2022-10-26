@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/resolver"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -21,7 +21,7 @@ var (
 )
 
 // New returns a new kubernetes listener.
-func New(client client.Interface, configHandler config.Handler, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, queue output.Queue) common.SensorComponent {
+func New(client client.Interface, configHandler config.Handler, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, resolverQueue resolver.Resolver) common.SensorComponent {
 	k := &listenerImpl{
 		client:             client,
 		eventsC:            make(chan *central.MsgFromSensor, 10),
@@ -30,7 +30,7 @@ func New(client client.Interface, configHandler config.Handler, nodeName string,
 		credentialsManager: createCredentialsManager(client, nodeName),
 		resyncPeriod:       resyncPeriod,
 		traceWriter:        traceWriter,
-		outputQueue:        queue,
+		resolverQueue:      resolverQueue,
 	}
 	return k
 }

@@ -13,8 +13,10 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/processfilter"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
@@ -65,6 +67,14 @@ func (k *listenerImpl) handleAllEvents() {
 			complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfileGVR).Informer()
 		}
 	}
+
+	serviceStore := resources.NewServiceStore()
+	rbacUpdater := rbac.NewStore()
+	deploymentStore := resources.DeploymentStoreSingleton()
+
+	deploymentResolver := resources.NewDeploymentResolver(deploymentStore, serviceStore, rbacUpdater)
+	k.resolverQueue.SetDeploymentResolver(deploymentResolver)
+
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := resyncingSif.Core().V1().Pods()
 	dispatchers := resources.NewDispatcherRegistry(
@@ -77,6 +87,8 @@ func (k *listenerImpl) handleAllEvents() {
 		orchestratornamespaces.Singleton(),
 		k.credentialsManager,
 		k.traceWriter,
+		serviceStore,
+		rbacUpdater,
 	)
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
@@ -96,15 +108,15 @@ func (k *listenerImpl) handleAllEvents() {
 	stopSignal := &k.stopSig
 
 	// Informers that need to be synced initially
-	handle(namespaceInformer, dispatchers.ForNamespaces(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
-	handle(secretInformer, dispatchers.ForSecrets(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
-	handle(saInformer, dispatchers.ForServiceAccounts(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+	handle(namespaceInformer, dispatchers.ForNamespaces(), k.resolverQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+	handle(secretInformer, dispatchers.ForSecrets(), k.resolverQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+	handle(saInformer, dispatchers.ForServiceAccounts(), k.resolverQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 
 	// RBAC dispatchers handles multiple sets of data
-	handle(roleInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
-	handle(clusterRoleInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
-	handle(roleBindingInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
-	handle(clusterRoleBindingInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+	handle(roleInformer, dispatchers.ForRBAC(), k.resolverQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+	handle(clusterRoleInformer, dispatchers.ForRBAC(), k.resolverQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+	handle(roleBindingInformer, dispatchers.ForRBAC(), k.resolverQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+	handle(clusterRoleBindingInformer, dispatchers.ForRBAC(), k.resolverQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 
 	var osConfigFactory osConfigExtVersions.SharedInformerFactory
 	if k.client.OpenshiftConfig() != nil {
@@ -119,16 +131,16 @@ func (k *listenerImpl) handleAllEvents() {
 	// For openshift clusters only
 	if osConfigFactory != nil {
 		handle(osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(),
-			k.outputQueue, nil, prePodWaitGroup, stopSignal, &eventLock)
+			k.resolverQueue, nil, prePodWaitGroup, stopSignal, &eventLock)
 	}
 
 	if crdSharedInformerFactory != nil {
 		log.Info("syncing compliance operator resources")
 		// Handle results, rules, and scan setting bindings first
-		handle(complianceResultInformer, dispatchers.ForComplianceOperatorResults(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
-		handle(complianceRuleInformer, dispatchers.ForComplianceOperatorRules(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
-		handle(complianceScanSettingBindingsInformer, dispatchers.ForComplianceOperatorScanSettingBindings(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
-		handle(complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+		handle(complianceResultInformer, dispatchers.ForComplianceOperatorResults(), k.resolverQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+		handle(complianceRuleInformer, dispatchers.ForComplianceOperatorRules(), k.resolverQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+		handle(complianceScanSettingBindingsInformer, dispatchers.ForComplianceOperatorScanSettingBindings(), k.resolverQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+		handle(complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.resolverQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 	}
 
 	sif.Start(stopSignal.Done())
@@ -158,26 +170,26 @@ func (k *listenerImpl) handleAllEvents() {
 	preTopLevelDeploymentWaitGroup := &concurrency.WaitGroup{}
 
 	// Non-deployment types.
-	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), k.resolverQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), k.resolverQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), k.resolverQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 
 	if osRouteFactory != nil {
-		handle(osRouteFactory.Route().V1().Routes().Informer(), dispatchers.ForOpenshiftRoutes(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+		handle(osRouteFactory.Route().V1().Routes().Informer(), dispatchers.ForOpenshiftRoutes(), k.resolverQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	}
 
 	// Deployment subtypes (this ensures that the hierarchy maps are generated correctly)
-	handle(resyncingSif.Batch().V1().Jobs().Informer(), dispatchers.ForJobs(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(resyncingSif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(resyncingSif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetes.ReplicationController), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(resyncingSif.Batch().V1().Jobs().Informer(), dispatchers.ForJobs(), k.resolverQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(resyncingSif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), k.resolverQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(resyncingSif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetes.ReplicationController), k.resolverQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 
 	if features.ComplianceOperatorCheckResults.Enabled() {
 		// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
 		if complianceProfileInformer != nil {
-			handle(complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+			handle(complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.resolverQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 		}
 		if complianceTailoredProfileInformer != nil {
-			handle(complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+			handle(complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(), k.resolverQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 		}
 	}
 
@@ -199,13 +211,13 @@ func (k *listenerImpl) handleAllEvents() {
 	wg := &concurrency.WaitGroup{}
 
 	// Deployment types.
-	handle(resyncingSif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetes.DaemonSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(resyncingSif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetes.Deployment), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(resyncingSif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetes.StatefulSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(resyncingSif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(resyncingSif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetes.DaemonSet), k.resolverQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(resyncingSif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetes.Deployment), k.resolverQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(resyncingSif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetes.StatefulSet), k.resolverQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(resyncingSif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), k.resolverQueue, &syncingResources, wg, stopSignal, &eventLock)
 
 	if osAppsFactory != nil {
-		handle(osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+		handle(osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), k.resolverQueue, &syncingResources, wg, stopSignal, &eventLock)
 	}
 
 	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
@@ -225,7 +237,7 @@ func (k *listenerImpl) handleAllEvents() {
 
 	// Finally, run the pod informer, and process pod events.
 	podWaitGroup := &concurrency.WaitGroup{}
-	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), k.outputQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock)
+	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), k.resolverQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock)
 	sif.Start(stopSignal.Done())
 
 	if !concurrency.WaitInContext(podWaitGroup, stopSignal) {
@@ -237,7 +249,7 @@ func (k *listenerImpl) handleAllEvents() {
 	// Set the flag that all objects present at start up have been consumed.
 	syncingResources.Set(false)
 
-	k.outputQueue.Send(&output.Message{
+	k.resolverQueue.Send(&message.ResourceEvent{
 		ForwardMessages: []*central.SensorEvent{
 			{
 				Resource: &central.SensorEvent_Synced{
@@ -253,7 +265,7 @@ func (k *listenerImpl) handleAllEvents() {
 func handle(
 	informer cache.SharedIndexInformer,
 	dispatcher resources.Dispatcher,
-	outputQueue output.Queue,
+	outputQueue resolver.Resolver,
 	syncingResources *concurrency.Flag,
 	wg *concurrency.WaitGroup,
 	stopSignal *concurrency.Signal,

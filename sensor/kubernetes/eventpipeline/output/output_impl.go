@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
 )
 
 var (
@@ -12,13 +13,13 @@ var (
 )
 
 type outputImpl struct {
-	innerQueue   chan *Message
+	innerQueue   chan *message.ResourceEvent
 	stopSig      *concurrency.Signal
 	forwardQueue chan *central.MsgFromSensor
 	detector     detector.Detector
 }
 
-func (q *outputImpl) Send(msg *Message) {
+func (q *outputImpl) Send(msg *message.ResourceEvent) {
 	q.innerQueue <- msg
 }
 
@@ -35,6 +36,7 @@ func (q *outputImpl) startProcessing() {
 			if !more {
 				return
 			}
+			//log.Infof("OUTPUT QUEUE MESSAGE: %+v", msg)
 			for _, resourceUpdates := range msg.ForwardMessages {
 				q.forwardQueue <- &central.MsgFromSensor{
 					Msg: &central.MsgFromSensor_Event{

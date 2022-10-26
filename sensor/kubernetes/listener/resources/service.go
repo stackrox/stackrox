@@ -4,7 +4,7 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -119,14 +119,14 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 
 // serviceDispatcher handles service resource events.
 type serviceDispatcher struct {
-	serviceStore           *serviceStore
+	serviceStore           *ServiceStore
 	deploymentStore        *DeploymentStore
 	endpointManager        endpointManager
 	portExposureReconciler portExposureReconciler
 }
 
 // newServiceDispatcher creates and returns a new service handler.
-func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *DeploymentStore, endpointManager endpointManager, portExposureReconciler portExposureReconciler) *serviceDispatcher {
+func newServiceDispatcher(serviceStore *ServiceStore, deploymentStore *DeploymentStore, endpointManager endpointManager, portExposureReconciler portExposureReconciler) *serviceDispatcher {
 	return &serviceDispatcher{
 		serviceStore:           serviceStore,
 		deploymentStore:        deploymentStore,
@@ -136,7 +136,7 @@ func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *Deploymen
 }
 
 // ProcessEvent processes a service resource event, and returns the sensor events to emit in response.
-func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
+func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *message.ResourceEvent {
 	svc := obj.(*v1.Service)
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
@@ -165,13 +165,13 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector) *output.Message {
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector) *message.ResourceEvent {
 	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)
 	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
 	return wrapOutputMessage(events, nil, nil)
 }
 
-func (sh *serviceDispatcher) processCreate(svc *v1.Service) *output.Message {
+func (sh *serviceDispatcher) processCreate(svc *v1.Service) *message.ResourceEvent {
 	svcWrap := wrapService(svc)
 	sh.serviceStore.addOrUpdateService(svcWrap)
 	events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(serviceWithRoutes{

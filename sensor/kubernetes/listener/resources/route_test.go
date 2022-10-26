@@ -109,7 +109,7 @@ type RouteAndServiceDispatcherTestSuite struct {
 	suite.Suite
 
 	depStore     *DeploymentStore
-	serviceStore *serviceStore
+	serviceStore *ServiceStore
 
 	serviceDispatcher *serviceDispatcher
 	routeDispatcher   *routeDispatcher
@@ -124,7 +124,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) SetupTest() {
 	suite.mockEndpointManager = &mockEndpointManager{}
 
 	suite.depStore = newDeploymentStore()
-	suite.serviceStore = newServiceStore()
+	suite.serviceStore = NewServiceStore()
 	suite.serviceDispatcher = newServiceDispatcher(suite.serviceStore, suite.depStore, suite.mockEndpointManager, suite.mockReconciler)
 	suite.routeDispatcher = newRouteDispatcher(suite.serviceStore, suite.mockReconciler)
 }

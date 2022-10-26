@@ -3,22 +3,22 @@ package resources
 import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
 )
 
 type routeDispatcher struct {
-	serviceStore           *serviceStore
+	serviceStore           *ServiceStore
 	portExposureReconciler portExposureReconciler
 }
 
-func newRouteDispatcher(serviceStore *serviceStore, portExposureReconciler portExposureReconciler) *routeDispatcher {
+func newRouteDispatcher(serviceStore *ServiceStore, portExposureReconciler portExposureReconciler) *routeDispatcher {
 	return &routeDispatcher{
 		serviceStore:           serviceStore,
 		portExposureReconciler: portExposureReconciler,
 	}
 }
 
-func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
+func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *message.ResourceEvent {
 	route, _ := obj.(*routeV1.Route)
 	if route == nil {
 		return nil

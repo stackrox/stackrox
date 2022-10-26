@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -40,7 +40,7 @@ func statusToProtoStatus(status v1alpha1.ComplianceCheckStatus) storage.Complian
 }
 
 // ProcessEvent processes a compliance operator check result
-func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
+func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *message.ResourceEvent {
 	var complianceCheckResult v1alpha1.ComplianceCheckResult
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

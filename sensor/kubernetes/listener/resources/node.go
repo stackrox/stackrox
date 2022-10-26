@@ -6,18 +6,18 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
 	v1 "k8s.io/api/core/v1"
 )
 
 type nodeDispatcher struct {
-	serviceStore    *serviceStore
+	serviceStore    *ServiceStore
 	deploymentStore *DeploymentStore
 	nodeStore       *nodeStore
 	endpointManager endpointManager
 }
 
-func newNodeDispatcher(serviceStore *serviceStore, deploymentStore *DeploymentStore, nodeStore *nodeStore, endpointManager endpointManager) *nodeDispatcher {
+func newNodeDispatcher(serviceStore *ServiceStore, deploymentStore *DeploymentStore, nodeStore *nodeStore, endpointManager endpointManager) *nodeDispatcher {
 	return &nodeDispatcher{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
@@ -38,7 +38,7 @@ func convertTaints(taints []v1.Taint) []*storage.Taint {
 	return roxTaints
 }
 
-func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
+func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *message.ResourceEvent {
 	node := obj.(*v1.Node)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		h.nodeStore.removeNode(node)

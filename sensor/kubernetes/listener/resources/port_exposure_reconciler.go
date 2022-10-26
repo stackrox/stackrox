@@ -13,10 +13,10 @@ type portExposureReconciler interface {
 
 type portExposureReconcilerImpl struct {
 	deploymentStore *DeploymentStore
-	serviceStore    *serviceStore
+	serviceStore    *ServiceStore
 }
 
-func newPortExposureReconciler(deploymentStore *DeploymentStore, serviceStore *serviceStore) portExposureReconciler {
+func newPortExposureReconciler(deploymentStore *DeploymentStore, serviceStore *ServiceStore) portExposureReconciler {
 	return &portExposureReconcilerImpl{
 		deploymentStore: deploymentStore,
 		serviceStore:    serviceStore,

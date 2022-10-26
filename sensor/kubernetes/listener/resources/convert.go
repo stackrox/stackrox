@@ -450,7 +450,7 @@ func (w *deploymentWrap) resetPortExposureNoLock() {
 	}
 }
 
-func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) {
+func (w *deploymentWrap) updatePortExposureFromStore(store *ServiceStore) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 

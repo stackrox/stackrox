@@ -259,6 +259,7 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 			messages := c.GetFakeCentral().GetAllMessages()
 			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, "sensor-integration", name)
 			deployment := lastDeploymentUpdate.GetEvent().GetDeployment()
+			c.t.Logf("checking state on deployment %v (%v) \n", deployment, messages)
 			if deployment != nil {
 				if lastErr = assertion(deployment); lastErr == nil {
 					return
