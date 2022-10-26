@@ -55,7 +55,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return errors.Errorf("unexpected resource type %T for node scan v2", event.GetResource())
 	}
 
-	//TODO(ROX-12240, ROX-13053): Do something meaningful with the nodeScan
+	// TODO(ROX-12240, ROX-13053): Do something meaningful with the nodeScan
 	log.Infof("Central received NodeScanV2: %+v", nodeScan)
 
 	return nil
