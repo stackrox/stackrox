@@ -23,8 +23,10 @@ import {
     Flex,
     FlexItem,
     Form,
+    FormGroup,
     Label,
     Text,
+    TextInput,
     Title,
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
@@ -112,7 +114,7 @@ function CollectionForm({
     const [isDeleting, setIsDeleting] = useState(false);
     const { toasts, addToast, removeToast } = useToasts();
 
-    const { values, isValid, errors, setFieldValue } = useFormik({
+    const { values, isValid, errors, handleChange, handleBlur, setFieldValue } = useFormik({
         initialValues: initialData,
         onSubmit: () => {},
         validationSchema: yup.object({
@@ -134,7 +136,7 @@ function CollectionForm({
         toggleDrawer(useInlineDrawer);
     }, [toggleDrawer, useInlineDrawer]);
 
-    const pageTitle = action.type === 'create' ? 'Create collection' : initialData.name;
+    const pageTitle = action.type === 'create' ? 'Create collection' : values.name;
 
     function onEditCollection(id: string) {
         history.push({
@@ -293,9 +295,38 @@ function CollectionForm({
                                 spaceItems={{ default: 'spaceItemsMd' }}
                                 direction={{ default: 'column' }}
                             >
-                                <div className="pf-u-background-color-100 pf-u-p-lg">
+                                <Flex
+                                    className="pf-u-background-color-100 pf-u-p-lg"
+                                    direction={{ default: 'column' }}
+                                    spaceItems={{ default: 'spaceItemsMd' }}
+                                >
                                     <Title headingLevel="h2">Collection details</Title>
-                                </div>
+                                    <Flex direction={{ default: 'column', lg: 'row' }}>
+                                        <FlexItem flex={{ default: 'flex_1' }}>
+                                            <FormGroup label="Name" fieldId="name" isRequired>
+                                                <TextInput
+                                                    id="name"
+                                                    name="name"
+                                                    value={values.name}
+                                                    validated={errors.name ? 'error' : 'default'}
+                                                    onChange={(_, e) => handleChange(e)}
+                                                    onBlur={handleBlur}
+                                                />
+                                            </FormGroup>
+                                        </FlexItem>
+                                        <FlexItem flex={{ default: 'flex_2' }}>
+                                            <FormGroup label="Description" fieldId="description">
+                                                <TextInput
+                                                    id="description"
+                                                    name="description"
+                                                    value={values.description}
+                                                    onChange={(_, e) => handleChange(e)}
+                                                    onBlur={handleBlur}
+                                                />
+                                            </FormGroup>
+                                        </FlexItem>
+                                    </Flex>
+                                </Flex>
 
                                 <Flex
                                     className="pf-u-background-color-100 pf-u-p-lg"
