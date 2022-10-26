@@ -154,7 +154,7 @@ func nvdCvssv2ToProtoCvssv2(baseMetricV2 *schema.NVDCVEFeedJSON10DefImpactBaseMe
 
 func nvdCvssv3ToProtoCvssv3(baseMetricV3 *schema.NVDCVEFeedJSON10DefImpactBaseMetricV3) (*storage.CVSSV3, error) {
 	if baseMetricV3.CVSSV3 == nil {
-		return nil, errors.New("CVSSv2 is missing vector and base score")
+		return nil, errors.New("CVSSv3 is missing vector and base score")
 	}
 
 	cvssV3, err := pkgCVSSV3.ParseCVSSV3(baseMetricV3.CVSSV3.VectorString)
