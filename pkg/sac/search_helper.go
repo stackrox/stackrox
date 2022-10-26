@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -211,38 +212,46 @@ func (h *pgSearchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) s
 	}
 }
 
+func (h *pgSearchHelper) enrichQueryWithSACFilter(effectiiveAccessScope *effectiveaccessscope.ScopeTree, q *v1.Query) (*v1.Query, error) {
+	var sacQueryFilter *v1.Query
+	var err error
+
+	// Build SAC filter
+	switch h.resourceMD.GetScope() {
+	case permissions.NamespaceScope:
+		sacQueryFilter, err = BuildClusterNamespaceLevelSACQueryFilter(effectiiveAccessScope)
+		if err != nil {
+			return nil, err
+		}
+	case permissions.ClusterScope:
+		sacQueryFilter, err = BuildClusterLevelSACQueryFilter(effectiiveAccessScope)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, errors.Errorf("Invalid scope %v for resource %v", h.resourceMD.GetScope(), h.resourceMD)
+	}
+	scopedQuery := search.ConjunctionQuery(q, sacQueryFilter)
+	scopedQuery.Pagination = q.GetPagination()
+
+	return scopedQuery, nil
+}
+
 func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, error) {
 	scopeChecker := h.scopeCheckerFactory(ctx, storage.Access_READ_ACCESS)
 	if scopeChecker.IsAllowed() {
 		return searcher.Search(ctx, q)
 	}
 
-	// Generate query filter
-	resourceWithAccess := permissions.ResourceWithAccess{
-		Resource: h.resourceMD,
-		Access:   storage.Access_READ_ACCESS,
-	}
-	effectiveaccessscope, err := scopeChecker.EffectiveAccessScope(resourceWithAccess)
+	resourceWithAccess := permissions.View(h.resourceMD)
+	effectiveAccessScope, err := scopeChecker.EffectiveAccessScope(resourceWithAccess)
 	if err != nil {
 		return nil, err
 	}
-	var sacQueryFilter *v1.Query
-	switch h.resourceMD.GetScope() {
-	case permissions.NamespaceScope:
-		sacQueryFilter, err = BuildClusterNamespaceLevelSACQueryFilter(effectiveaccessscope)
-		if err != nil {
-			return nil, err
-		}
-	case permissions.ClusterScope:
-		sacQueryFilter, err = BuildClusterLevelSACQueryFilter(effectiveaccessscope)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		sacQueryFilter = nil
+	scopedQuery, err := h.enrichQueryWithSACFilter(effectiveAccessScope, q)
+	if err != nil {
+		return nil, err
 	}
-	scopedQuery := search.ConjunctionQuery(q, sacQueryFilter)
-	scopedQuery.Pagination = q.GetPagination()
 
 	var opts []blevesearch.SearchOption
 	results, err := searcher.Search(ctx, scopedQuery, opts...)
