@@ -126,7 +126,7 @@ func manageSendingToSensor(ctx context.Context, cli sensor.ComplianceServiceClie
 	}
 }
 
-func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal) {
+func manageReceiveStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal) {
 	for {
 		select {
 		case <-ctx.Done():
