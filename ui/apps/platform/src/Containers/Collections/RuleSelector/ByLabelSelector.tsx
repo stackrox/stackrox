@@ -127,7 +127,9 @@ function ByLabelSelector({
                                 >
                                     <AutoCompleteSelect
                                         id={`${entityType}-label-key-${ruleIndex}`}
-                                        typeAheadAriaLabel={`Select label key for ${entityType} rule ${ruleIndex} of ${scopedResourceSelector.rules.length}`}
+                                        typeAheadAriaLabel={`Select label key for ${entityType.toLowerCase()} rule ${
+                                            ruleIndex + 1
+                                        } of ${scopedResourceSelector.rules.length}`}
                                         selectedOption={rule.key}
                                         onChange={(fieldValue: string) =>
                                             onChangeLabelKey(
@@ -172,9 +174,9 @@ function ByLabelSelector({
                                                         valueIndex + 1
                                                     } of ${
                                                         rule.values.length
-                                                    } for ${entityType} rule ${ruleIndex + 1} of ${
-                                                        scopedResourceSelector.rules.length
-                                                    }`}
+                                                    } for ${entityType.toLowerCase()} rule ${
+                                                        ruleIndex + 1
+                                                    } of ${scopedResourceSelector.rules.length}`}
                                                     className="pf-u-flex-grow-1 pf-u-w-auto"
                                                     selectedOption={value}
                                                     onChange={(fieldValue: string) =>
