@@ -1451,11 +1451,12 @@ junit2slack() {
         return
     fi
 
+    if ! command -v junit-parse >/dev/null 2>&1; then
+        get_junit_parse_cli || return
+    fi
+
     local junit_file_names="$ARTIFACT_DIR/**.*.xml"
-    pushd "$SCRIPTS_ROOT/tools/junit2slack" || return
-    get_junit_parse_cli
-    junit-parse "$junit_file_names"
-    popd
+    junit-parse "$junit_file_names" || return
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
