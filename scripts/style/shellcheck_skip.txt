@@ -68,7 +68,6 @@ scripts/ci/sensorbundle-label/list-resources.sh
 scripts/connect-ui.sh
 scripts/ensure_image.sh
 scripts/grab-data-from-central.sh
-scripts/k8s/get-lb-ip.sh
 scripts/k8s/kill-pod.sh
 scripts/k8s/local-port-forward.sh
 scripts/mergeswag.sh
