@@ -22,7 +22,6 @@ func (e *mockClaimExtractor) Claims(input interface{}) error {
 	default:
 		return errors.Errorf("unsupported type %T", input)
 	}
-	return nil
 }
 
 func TestExtractCustomClaims(t *testing.T) {
