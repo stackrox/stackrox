@@ -111,6 +111,9 @@ func (m *ProcessListeningOnPort) Clone() *ProcessListeningOnPort {
 }
 
 type ProcessListeningOnPortStorage struct {
+	// Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
+	// bigint with a sequence. Unfortunately at the moment some bits of store
+	// generator assume an id has to be a string.
 	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`
 	Port                 uint32           `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
 	Protocol             L4Protocol       `protobuf:"varint,3,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
