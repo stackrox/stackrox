@@ -72,11 +72,11 @@ test_upgrade() {
     export ORCHESTRATOR_FLAVOR="k8s"
     make -C qa-tests-backend smoke-test
 
-    touch /tmp/hold
-    while [[ -e /tmp/hold ]]; do
-        info "Holding this job for debug"
-        sleep 60
-    done
+    ### touch /tmp/hold
+    ### while [[ -e /tmp/hold ]]; do
+    ###     info "Holding this job for debug"
+    ###     sleep 60
+    ### done
 }
 
 preamble() {
