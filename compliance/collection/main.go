@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
 	"github.com/stackrox/rox/compliance/collection/nodescanv2"
-	complianceUtils "github.com/stackrox/rox/compliance/collection/utils"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -139,7 +138,7 @@ func manageNodeScanLoop(ctx context.Context, cli sensor.ComplianceServiceClient,
 		case <-ctx.Done():
 			return
 		case <-t.C:
-			client, _, err := initializeStream(ctx, cli)
+			client, err := cli.Communicate(ctx)
 			if err != nil {
 				t.Reset(5 * time.Second)
 				log.Errorf("error initializing node scan stream to sensor: %v", err)
@@ -213,7 +212,7 @@ func scanNode(client sensor.ComplianceService_CommunicateClient, scanner nodesca
 
 	result, err := scanner.Scan(nodeName)
 	if err != nil {
-		return errors.Wrap(err, "error scanning node")
+		return err
 	}
 	msg := sensor.MsgFromCompliance{
 		Node: nodeName,
@@ -246,9 +245,8 @@ func main() {
 	go manageStream(ctx, cli, &stoppedSig)
 
 	if features.RHCOSNodeScanning.Enabled() {
-		rescanInterval := complianceUtils.VerifyAndUpdateDuration(env.NodeRescanInterval.DurationSetting())
 		scanner := nodescanv2.FakeNodeScanner{} // TODO(ROX-12971): Replace with real scanner
-		go manageNodeScanLoop(ctx, cli, &scanner, rescanInterval)
+		go manageNodeScanLoop(ctx, cli, &scanner, env.GetNodeRescanInterval())
 	}
 
 	signalsC := make(chan os.Signal, 1)
