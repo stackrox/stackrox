@@ -55,11 +55,11 @@ type YamlTestFile struct {
 	File string
 }
 
-// requiredResources slice of resources that need to be awaited
-var requiredResources = []string{"Service"}
+// requiredWaitResources slice of resources that need to be awaited
+var requiredWaitResources = []string{"Service"}
 
-func isRequiredResource(kind string) bool {
-	for _, k := range requiredResources {
+func shouldWaitForResource(kind string) bool {
+	for _, k := range requiredWaitResources {
 		if k == kind {
 			return true
 		}
@@ -415,7 +415,7 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 		return nil, err
 	}
 
-	if isRequiredResource(file.Kind) {
+	if shouldWaitForResource(file.Kind) {
 		if err := execWithRetry(5*time.Minute, 5*time.Second, func() error {
 			return c.r.Create(ctx, obj)
 		}); err != nil {
@@ -434,7 +434,7 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 	}
 
 	return func() error {
-		if isRequiredResource(file.Kind) {
+		if shouldWaitForResource(file.Kind) {
 			err := c.r.Delete(ctx, obj)
 			if err != nil {
 				return err
