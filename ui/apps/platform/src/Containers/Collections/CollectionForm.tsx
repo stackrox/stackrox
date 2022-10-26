@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Alert,
@@ -7,8 +7,6 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Button,
-    Card,
-    CardBody,
     Divider,
     Drawer,
     DrawerActions,
@@ -24,15 +22,20 @@ import {
     DropdownToggle,
     Flex,
     FlexItem,
+    Form,
+    Label,
     Text,
     Title,
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
+import { useFormik } from 'formik';
+import * as yup from 'yup';
+import isEmpty from 'lodash/isEmpty';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import useToasts from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
 import { deleteCollection } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
@@ -40,42 +43,6 @@ import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
 import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
-
-type FormStateReducerAction =
-    | { type: 'setName'; name: string }
-    | { type: 'setDescription'; description: string }
-    | { type: 'setRules'; entity: SelectorEntityType; selector: ScopedResourceSelector }
-    | { type: 'attachCollection'; collectionId: string }
-    | { type: 'detachCollection'; collectionId: string };
-
-function formStateReducer(state: Collection, payload: FormStateReducerAction): Collection {
-    switch (payload.type) {
-        case 'setName':
-            return { ...state, name: payload.name };
-        case 'setDescription':
-            return { ...state, name: payload.description };
-        case 'setRules': {
-            const selectorRules = { ...state.selectorRules };
-            selectorRules[payload.entity] = payload.selector;
-            return { ...state, selectorRules };
-        }
-        case 'attachCollection':
-            return {
-                ...state,
-                embeddedCollectionIds: state.embeddedCollectionIds.concat(payload.collectionId),
-            };
-        case 'detachCollection':
-            return {
-                ...state,
-                embeddedCollectionIds: state.embeddedCollectionIds.filter(
-                    (id) => id !== payload.collectionId
-                ),
-            };
-        default:
-            // Type safe fallback to ensure we don't miss any cases
-            return ((_: never) => _)(payload);
-    }
-}
 
 export type CollectionFormProps = {
     hasWriteAccessForCollections: boolean;
@@ -93,6 +60,34 @@ export type CollectionFormProps = {
     appendTableLinkAction?: (collectionId: string) => void;
 };
 
+function yupResourceSelectorObject() {
+    return yup.lazy((ruleObject) => {
+        if (isEmpty(ruleObject)) {
+            return yup.object().shape({});
+        }
+
+        const { field } = ruleObject;
+        return typeof field === 'string' && field.endsWith('Label')
+            ? yup.object().shape({
+                  field: yup.string().required().matches(new RegExp(field)),
+                  rules: yup.array().of(
+                      yup.object().shape({
+                          operator: yup.string().required().matches(/OR/),
+                          key: yup.string().trim().required(),
+                          values: yup.array().of(yup.string().trim().required()).required(),
+                      })
+                  ),
+              })
+            : yup.object().shape({
+                  field: yup.string().required().matches(new RegExp(field)),
+                  rule: yup.object().shape({
+                      operator: yup.string().required().matches(/OR/),
+                      values: yup.array().of(yup.string().trim().required()).required(),
+                  }),
+              });
+    });
+}
+
 function CollectionForm({
     hasWriteAccessForCollections,
     action,
@@ -101,6 +96,7 @@ function CollectionForm({
     showBreadcrumbs,
 }: CollectionFormProps) {
     const history = useHistory();
+
     const {
         isOpen: drawerIsOpen,
         toggleSelect: toggleDrawer,
@@ -116,14 +112,29 @@ function CollectionForm({
     const [isDeleting, setIsDeleting] = useState(false);
     const { toasts, addToast, removeToast } = useToasts();
 
+    const { values, isValid, errors, setFieldValue } = useFormik({
+        initialValues: initialData,
+        onSubmit: () => {},
+        validationSchema: yup.object({
+            name: yup.string().trim().required(),
+            description: yup.string(),
+            embeddedCollectionIds: yup.array(yup.string()),
+            resourceSelectors: yup.object().shape({
+                Deployment: yupResourceSelectorObject(),
+                Namespace: yupResourceSelectorObject(),
+                Cluster: yupResourceSelectorObject(),
+            }),
+        }),
+    });
+
+    // eslint-disable-next-line no-console
+    console.log('formik change', isValid, values, errors);
+
     useEffect(() => {
         toggleDrawer(useInlineDrawer);
     }, [toggleDrawer, useInlineDrawer]);
 
     const pageTitle = action.type === 'create' ? 'Create collection' : initialData.name;
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [formState, dispatch] = useReducer(formStateReducer, initialData);
 
     function onEditCollection(id: string) {
         history.push({
@@ -163,6 +174,11 @@ function CollectionForm({
         setDeleteId(null);
     }
 
+    const onResourceSelectorChange = (
+        entityType: SelectorEntityType,
+        scopedResourceSelector: ScopedResourceSelector
+    ) => setFieldValue(`resourceSelectors.${entityType}`, scopedResourceSelector);
+
     return (
         <>
             <Drawer isExpanded={drawerIsOpen} isInline={useInlineDrawer}>
@@ -198,16 +214,19 @@ function CollectionForm({
                                 <Divider component="div" />
                             </>
                         )}
-                        <Flex className="pf-u-p-lg" alignItems={{ default: 'alignItemsCenter' }}>
-                            <FlexItem flex={{ default: 'flex_1' }}>
-                                <Title headingLevel="h1">{pageTitle}</Title>
-                            </FlexItem>
-                            <FlexItem align={{ default: 'alignRight' }}>
+                        <Flex
+                            className="pf-u-p-lg"
+                            direction={{ default: 'column', md: 'row' }}
+                            alignItems={{ default: 'alignItemsFlexStart', md: 'alignItemsCenter' }}
+                        >
+                            <Title className="pf-u-flex-grow-1" headingLevel="h1">
+                                {pageTitle}
+                            </Title>
+                            <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
                                 {action.type === 'view' && hasWriteAccessForCollections && (
                                     <>
                                         <Dropdown
                                             onSelect={closeMenu}
-                                            position="right"
                                             toggle={
                                                 <DropdownToggle
                                                     isPrimary
@@ -268,44 +287,80 @@ function CollectionForm({
                             </FlexItem>
                         </Flex>
                         <Divider component="div" />
-                        <Flex
-                            className="pf-u-background-color-200 pf-u-p-lg"
-                            spaceItems={{ default: 'spaceItemsMd' }}
-                            direction={{ default: 'column' }}
-                        >
-                            <Card>
-                                <CardBody>
+                        <Form className="pf-u-background-color-200">
+                            <Flex
+                                className="pf-u-p-lg"
+                                spaceItems={{ default: 'spaceItemsMd' }}
+                                direction={{ default: 'column' }}
+                            >
+                                <div className="pf-u-background-color-100 pf-u-p-lg">
                                     <Title headingLevel="h2">Collection details</Title>
-                                </CardBody>
-                            </Card>
-                            <Card>
-                                <CardBody>
-                                    <Title headingLevel="h2">Add new collection rules</Title>
-                                    <RuleSelector />
-                                    <RuleSelector />
-                                    <RuleSelector />
-                                </CardBody>
-                            </Card>
-                            <Card>
-                                <CardBody>
+                                </div>
+
+                                <Flex
+                                    className="pf-u-background-color-100 pf-u-p-lg"
+                                    direction={{ default: 'column' }}
+                                    spaceItems={{ default: 'spaceItemsMd' }}
+                                >
+                                    <Title className="pf-u-mb-xs" headingLevel="h2">
+                                        Add new collection rules
+                                    </Title>
+                                    <p>
+                                        Select deployments via rules. You can use regular
+                                        expressions (RE2 syntax).
+                                    </p>
+                                    <Divider className="pf-u-mb-lg" component="div" />
+                                    <RuleSelector
+                                        entityType="Deployment"
+                                        scopedResourceSelector={values.resourceSelectors.Deployment}
+                                        handleChange={onResourceSelectorChange}
+                                        validationErrors={errors.resourceSelectors?.Deployment}
+                                    />
+                                    <Label
+                                        variant="outline"
+                                        isCompact
+                                        className="pf-u-align-self-center"
+                                    >
+                                        in
+                                    </Label>
+                                    <RuleSelector
+                                        entityType="Namespace"
+                                        scopedResourceSelector={values.resourceSelectors.Namespace}
+                                        handleChange={onResourceSelectorChange}
+                                        validationErrors={errors.resourceSelectors?.Namespace}
+                                    />
+                                    <Label
+                                        variant="outline"
+                                        isCompact
+                                        className="pf-u-align-self-center"
+                                    >
+                                        in
+                                    </Label>
+                                    <RuleSelector
+                                        entityType="Cluster"
+                                        scopedResourceSelector={values.resourceSelectors.Cluster}
+                                        handleChange={onResourceSelectorChange}
+                                        validationErrors={errors.resourceSelectors?.Cluster}
+                                    />
+                                </Flex>
+
+                                <div className="pf-u-background-color-100 pf-u-p-lg">
                                     <Title headingLevel="h2">Attach existing collections</Title>
                                     <CollectionAttacher />
-                                </CardBody>
-                            </Card>
-                        </Flex>
-                        {action.type !== 'view' && (
-                            <div className="pf-u-p-lg pf-u-py-md">
-                                <>
+                                </div>
+                            </Flex>
+                            {action.type !== 'view' && (
+                                <div className="pf-u-background-color-100 pf-u-p-lg pf-u-py-md">
                                     <Button className="pf-u-mr-md">Save</Button>
                                     <Button variant="secondary">Cancel</Button>
-                                </>
-                            </div>
-                        )}
+                                </div>
+                            )}
+                        </Form>
                     </DrawerContentBody>
                 </DrawerContent>
             </Drawer>
             <AlertGroup isToast isLiveRegion>
-                {toasts.map(({ key, variant, title, children }: Toast) => (
+                {toasts.map(({ key, variant, title, children }) => (
                     <Alert
                         key={key}
                         variant={variant}
