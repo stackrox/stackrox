@@ -66,7 +66,6 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		auditlogstateupdate.GetPipeline(),
 	}
 	if features.RHCOSNodeScanning.Enabled() {
-		log.Info("adding nodescansv2 NewPipeline")
 		pipelines = append(pipelines, nodescansv2.GetPipeline())
 	}
 	if features.ComplianceOperatorCheckResults.Enabled() {
