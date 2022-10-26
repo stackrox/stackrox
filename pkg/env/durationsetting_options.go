@@ -4,6 +4,8 @@ type durationSettingOpts struct {
 	zeroAllowed bool
 }
 
+// DurationSettingOption represents an option which may be specified
+// for a DurationSetting environment variable.
 type DurationSettingOption interface {
 	apply(opts *durationSettingOpts)
 }
