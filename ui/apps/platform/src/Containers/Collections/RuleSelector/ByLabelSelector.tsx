@@ -127,7 +127,7 @@ function ByLabelSelector({
                                 >
                                     <AutoCompleteSelect
                                         id={`${entityType}-label-key-${ruleIndex}`}
-                                        typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} label key`}
+                                        typeAheadAriaLabel={`Select label key for ${entityType} rule ${ruleIndex} of ${scopedResourceSelector.rules.length}`}
                                         selectedOption={rule.key}
                                         onChange={(fieldValue: string) =>
                                             onChangeLabelKey(
@@ -168,7 +168,13 @@ function ByLabelSelector({
                                             <Flex key={keyFor(valueIndex)}>
                                                 <AutoCompleteSelect
                                                     id={`${entityType}-label-value-${ruleIndex}-${valueIndex}`}
-                                                    typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} label value`}
+                                                    typeAheadAriaLabel={`Select label value ${
+                                                        valueIndex + 1
+                                                    } of ${
+                                                        rule.values.length
+                                                    } for ${entityType} rule ${ruleIndex + 1} of ${
+                                                        scopedResourceSelector.rules.length
+                                                    }`}
                                                     className="pf-u-flex-grow-1 pf-u-w-auto"
                                                     selectedOption={value}
                                                     onChange={(fieldValue: string) =>

@@ -63,7 +63,9 @@ function ByNameSelector({
                     <Flex key={keyFor(index)}>
                         <AutoCompleteSelect
                             id={`${entityType}-name-value-${index}`}
-                            typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} name`}
+                            typeAheadAriaLabel={`Select value ${index + 1} of ${
+                                scopedResourceSelector.rule.values.length
+                            } for the ${entityType.toLowerCase()} name`}
                             className="pf-u-flex-grow-1 pf-u-w-auto"
                             selectedOption={value}
                             onChange={onChangeValue(scopedResourceSelector, index)}
