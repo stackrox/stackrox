@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -24,11 +23,10 @@ const (
 
 type NetworkflowStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       FlowStore
-	ctx         context.Context
-	pool        *pgxpool.Pool
-	gormDB      *gorm.DB
+	store  FlowStore
+	ctx    context.Context
+	pool   *pgxpool.Pool
+	gormDB *gorm.DB
 }
 
 func TestNetworkflowStore(t *testing.T) {
@@ -36,13 +34,11 @@ func TestNetworkflowStore(t *testing.T) {
 }
 
 func (s *NetworkflowStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	} else {
-		s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+		s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	}
 
 	s.ctx = context.Background()
@@ -68,8 +64,6 @@ func (s *NetworkflowStoreSuite) TearDownTest() {
 }
 
 func (s *NetworkflowStoreSuite) TearDownSuite() {
-	s.envIsolator.RestoreAll()
-
 	if s.pool != nil {
 		s.pool.Close()
 	}

@@ -6,13 +6,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type PostgresUtilitySuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 }
 
 func TestConfigSetup(t *testing.T) {
@@ -20,18 +18,13 @@ func TestConfigSetup(t *testing.T) {
 }
 
 func (s *PostgresUtilitySuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
 
-}
-
-func (s *PostgresUtilitySuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *PostgresUtilitySuite) TestSourceParser() {

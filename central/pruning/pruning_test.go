@@ -78,7 +78,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	versionUtils "github.com/stackrox/rox/pkg/version/testutils"
@@ -580,16 +579,13 @@ func TestImagePruning(t *testing.T) {
 }
 
 func TestClusterPruning(t *testing.T) {
-	isolator := envisolator.NewEnvIsolator(t)
-	defer isolator.RestoreAll()
-
-	isolator.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
+	t.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
 	if !features.DecommissionedClusterRetention.Enabled() {
 		// if it's still not enabled, we're probably in release tests so skip
 		t.Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
 	}
 
-	isolator.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+	t.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 
 	testbuildinfo.SetForTest(t)
 	versionUtils.SetExampleVersion(t)
@@ -816,16 +812,13 @@ func TestClusterPruning(t *testing.T) {
 }
 
 func TestClusterPruningCentralCheck(t *testing.T) {
-	isolator := envisolator.NewEnvIsolator(t)
-	defer isolator.RestoreAll()
-
-	isolator.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
+	t.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
 	if !features.DecommissionedClusterRetention.Enabled() {
 		// if it's still not enabled, we're probably in release tests so skip
 		t.Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
 	}
 
-	isolator.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+	t.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 
 	testbuildinfo.SetForTest(t)
 	versionUtils.SetExampleVersion(t)
