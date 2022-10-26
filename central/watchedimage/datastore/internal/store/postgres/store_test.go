@@ -100,12 +100,12 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, watchedImage.GetName()), sac.ErrResourceAccessDenied)
 
 	var watchedImages []*storage.WatchedImage
-	var watchedImageIds []string
+	var watchedImageIDs []string
 	for i := 0; i < 200; i++ {
 		watchedImage := &storage.WatchedImage{}
 		s.NoError(testutils.FullInit(watchedImage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		watchedImages = append(watchedImages, watchedImage)
-		watchedImageIds = append(watchedImageIds, watchedImage.GetName())
+		watchedImageIDs = append(watchedImageIDs, watchedImage.GetName())
 	}
 
 	s.NoError(store.UpsertMany(ctx, watchedImages))
@@ -114,7 +114,7 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, watchedImageCount)
 
-	s.NoError(store.DeleteMany(ctx, watchedImageIds))
+	s.NoError(store.DeleteMany(ctx, watchedImageIDs))
 
 	watchedImageCount, err = store.Count(ctx)
 	s.NoError(err)

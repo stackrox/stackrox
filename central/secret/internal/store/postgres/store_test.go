@@ -102,12 +102,12 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, secret.GetId()))
 
 	var secrets []*storage.Secret
-	var secretIds []string
+	var secretIDs []string
 	for i := 0; i < 200; i++ {
 		secret := &storage.Secret{}
 		s.NoError(testutils.FullInit(secret, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		secrets = append(secrets, secret)
-		secretIds = append(secretIds, secret.GetId())
+		secretIDs = append(secretIDs, secret.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, secrets))
@@ -116,7 +116,7 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, secretCount)
 
-	s.NoError(store.DeleteMany(ctx, secretIds))
+	s.NoError(store.DeleteMany(ctx, secretIDs))
 
 	secretCount, err = store.Count(ctx)
 	s.NoError(err)

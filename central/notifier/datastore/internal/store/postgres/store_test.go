@@ -100,12 +100,12 @@ func (s *NotifiersStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, notifier.GetId()), sac.ErrResourceAccessDenied)
 
 	var notifiers []*storage.Notifier
-	var notifierIds []string
+	var notifierIDs []string
 	for i := 0; i < 200; i++ {
 		notifier := &storage.Notifier{}
 		s.NoError(testutils.FullInit(notifier, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		notifiers = append(notifiers, notifier)
-		notifierIds = append(notifierIds, notifier.GetId())
+		notifierIDs = append(notifierIDs, notifier.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, notifiers))
@@ -117,7 +117,7 @@ func (s *NotifiersStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, notifierCount)
 
-	s.NoError(store.DeleteMany(ctx, notifierIds))
+	s.NoError(store.DeleteMany(ctx, notifierIDs))
 
 	notifierCount, err = store.Count(ctx)
 	s.NoError(err)

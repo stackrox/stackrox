@@ -102,12 +102,12 @@ func (s *ProcessBaselineResultsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, processBaselineResults.GetDeploymentId()))
 
 	var processBaselineResultss []*storage.ProcessBaselineResults
-	var processBaselineResultsIds []string
+	var processBaselineResultsIDs []string
 	for i := 0; i < 200; i++ {
 		processBaselineResults := &storage.ProcessBaselineResults{}
 		s.NoError(testutils.FullInit(processBaselineResults, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processBaselineResultss = append(processBaselineResultss, processBaselineResults)
-		processBaselineResultsIds = append(processBaselineResultsIds, processBaselineResults.GetDeploymentId())
+		processBaselineResultsIDs = append(processBaselineResultsIDs, processBaselineResults.GetDeploymentId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, processBaselineResultss))
@@ -116,7 +116,7 @@ func (s *ProcessBaselineResultsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, processBaselineResultsCount)
 
-	s.NoError(store.DeleteMany(ctx, processBaselineResultsIds))
+	s.NoError(store.DeleteMany(ctx, processBaselineResultsIDs))
 
 	processBaselineResultsCount, err = store.Count(ctx)
 	s.NoError(err)

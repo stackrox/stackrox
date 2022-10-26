@@ -125,7 +125,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	{{- end }}
 
 	var {{$name}}s []*{{.Type}}
-	var {{$name}}Ids []string
+	var {{$name}}IDs []string
     for i := 0; i < 200; i++ {
         {{$name}} := &{{.Type}}{}
         s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -133,7 +133,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
         {{$name}}.{{.EmbeddedFK}} = nil
         {{- end}}
         {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
-        {{$name}}Ids = append({{$name}}Ids, {{template "paramList" $}})
+        {{$name}}IDs = append({{$name}}IDs, {{template "paramList" $}})
     }
 
 	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
@@ -148,7 +148,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     s.NoError(err)
     s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
 
-    s.NoError(store.DeleteMany(ctx, {{$name}}Ids))
+    s.NoError(store.DeleteMany(ctx, {{$name}}IDs))
 
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
     s.NoError(err)

@@ -102,12 +102,12 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, processIndicator.GetId()))
 
 	var processIndicators []*storage.ProcessIndicator
-	var processIndicatorIds []string
+	var processIndicatorIDs []string
 	for i := 0; i < 200; i++ {
 		processIndicator := &storage.ProcessIndicator{}
 		s.NoError(testutils.FullInit(processIndicator, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processIndicators = append(processIndicators, processIndicator)
-		processIndicatorIds = append(processIndicatorIds, processIndicator.GetId())
+		processIndicatorIDs = append(processIndicatorIDs, processIndicator.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, processIndicators))
@@ -116,7 +116,7 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, processIndicatorCount)
 
-	s.NoError(store.DeleteMany(ctx, processIndicatorIds))
+	s.NoError(store.DeleteMany(ctx, processIndicatorIDs))
 
 	processIndicatorCount, err = store.Count(ctx)
 	s.NoError(err)

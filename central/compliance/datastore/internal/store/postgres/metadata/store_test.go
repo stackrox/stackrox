@@ -102,12 +102,12 @@ func (s *ComplianceRunMetadataStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, complianceRunMetadata.GetRunId()))
 
 	var complianceRunMetadatas []*storage.ComplianceRunMetadata
-	var complianceRunMetadataIds []string
+	var complianceRunMetadataIDs []string
 	for i := 0; i < 200; i++ {
 		complianceRunMetadata := &storage.ComplianceRunMetadata{}
 		s.NoError(testutils.FullInit(complianceRunMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceRunMetadatas = append(complianceRunMetadatas, complianceRunMetadata)
-		complianceRunMetadataIds = append(complianceRunMetadataIds, complianceRunMetadata.GetRunId())
+		complianceRunMetadataIDs = append(complianceRunMetadataIDs, complianceRunMetadata.GetRunId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceRunMetadatas))
@@ -116,7 +116,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, complianceRunMetadataCount)
 
-	s.NoError(store.DeleteMany(ctx, complianceRunMetadataIds))
+	s.NoError(store.DeleteMany(ctx, complianceRunMetadataIDs))
 
 	complianceRunMetadataCount, err = store.Count(ctx)
 	s.NoError(err)

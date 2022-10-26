@@ -100,12 +100,12 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, nodeCVE.GetId()))
 
 	var nodeCVEs []*storage.NodeCVE
-	var nodeCVEIds []string
+	var nodeCVEIDs []string
 	for i := 0; i < 200; i++ {
 		nodeCVE := &storage.NodeCVE{}
 		s.NoError(testutils.FullInit(nodeCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		nodeCVEs = append(nodeCVEs, nodeCVE)
-		nodeCVEIds = append(nodeCVEIds, nodeCVE.GetId())
+		nodeCVEIDs = append(nodeCVEIDs, nodeCVE.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, nodeCVEs))
@@ -114,7 +114,7 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, nodeCVECount)
 
-	s.NoError(store.DeleteMany(ctx, nodeCVEIds))
+	s.NoError(store.DeleteMany(ctx, nodeCVEIDs))
 
 	nodeCVECount, err = store.Count(ctx)
 	s.NoError(err)

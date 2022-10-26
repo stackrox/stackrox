@@ -100,12 +100,12 @@ func (s *ComplianceOperatorCheckResultsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorCheckResult.GetId()), sac.ErrResourceAccessDenied)
 
 	var complianceOperatorCheckResults []*storage.ComplianceOperatorCheckResult
-	var complianceOperatorCheckResultIds []string
+	var complianceOperatorCheckResultIDs []string
 	for i := 0; i < 200; i++ {
 		complianceOperatorCheckResult := &storage.ComplianceOperatorCheckResult{}
 		s.NoError(testutils.FullInit(complianceOperatorCheckResult, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorCheckResults = append(complianceOperatorCheckResults, complianceOperatorCheckResult)
-		complianceOperatorCheckResultIds = append(complianceOperatorCheckResultIds, complianceOperatorCheckResult.GetId())
+		complianceOperatorCheckResultIDs = append(complianceOperatorCheckResultIDs, complianceOperatorCheckResult.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorCheckResults))
@@ -114,7 +114,7 @@ func (s *ComplianceOperatorCheckResultsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, complianceOperatorCheckResultCount)
 
-	s.NoError(store.DeleteMany(ctx, complianceOperatorCheckResultIds))
+	s.NoError(store.DeleteMany(ctx, complianceOperatorCheckResultIDs))
 
 	complianceOperatorCheckResultCount, err = store.Count(ctx)
 	s.NoError(err)

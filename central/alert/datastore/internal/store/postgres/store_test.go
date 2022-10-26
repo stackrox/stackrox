@@ -102,12 +102,12 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, alert.GetId()))
 
 	var alerts []*storage.Alert
-	var alertIds []string
+	var alertIDs []string
 	for i := 0; i < 200; i++ {
 		alert := &storage.Alert{}
 		s.NoError(testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		alerts = append(alerts, alert)
-		alertIds = append(alertIds, alert.GetId())
+		alertIDs = append(alertIDs, alert.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, alerts))
@@ -116,7 +116,7 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, alertCount)
 
-	s.NoError(store.DeleteMany(ctx, alertIds))
+	s.NoError(store.DeleteMany(ctx, alertIDs))
 
 	alertCount, err = store.Count(ctx)
 	s.NoError(err)

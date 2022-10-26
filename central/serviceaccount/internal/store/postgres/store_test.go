@@ -102,12 +102,12 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, serviceAccount.GetId()))
 
 	var serviceAccounts []*storage.ServiceAccount
-	var serviceAccountIds []string
+	var serviceAccountIDs []string
 	for i := 0; i < 200; i++ {
 		serviceAccount := &storage.ServiceAccount{}
 		s.NoError(testutils.FullInit(serviceAccount, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		serviceAccounts = append(serviceAccounts, serviceAccount)
-		serviceAccountIds = append(serviceAccountIds, serviceAccount.GetId())
+		serviceAccountIDs = append(serviceAccountIDs, serviceAccount.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, serviceAccounts))
@@ -116,7 +116,7 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, serviceAccountCount)
 
-	s.NoError(store.DeleteMany(ctx, serviceAccountIds))
+	s.NoError(store.DeleteMany(ctx, serviceAccountIDs))
 
 	serviceAccountCount, err = store.Count(ctx)
 	s.NoError(err)
