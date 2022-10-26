@@ -334,7 +334,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ProcessListeni
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema[storage.ProcessesListeningOnPortStorage](ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.ProcessListeningOnPortStorage](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
@@ -455,7 +455,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.ProcessListeningOnPortStorage](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
