@@ -92,7 +92,9 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx c
 	//	ProcessesListeningOnPorts: []*storage.ProcessListeningOnPort{processListeningOnPort1, processListeningOnPort2},
 	//}
 
+	log.Info("In processlisteningonport service about to get processes")
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPortForDeployment(ctx, "nginx");
+	log.Info("In processlisteningonport service got processes")
 
 	result := &v1.GetProcessesListeningOnPortsResponse{
 		ProcessesListeningOnPorts: []*storage.ProcessListeningOnPort{processesListeningOnPorts},
