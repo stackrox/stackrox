@@ -466,7 +466,7 @@ wait_for_central_db() {
         if (( elapsed_seconds > max_seconds )); then
             kubectl -n stackrox get pod -o wide
             kubectl -n stackrox get deploy -o wide
-            echo >&2 "wait_for_api() timeout after $max_seconds seconds."
+            echo >&2 "wait_for_central_db() timeout after $max_seconds seconds."
             exit 1
         fi
 
