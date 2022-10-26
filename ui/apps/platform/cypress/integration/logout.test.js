@@ -5,9 +5,11 @@ import withAuth from '../helpers/basicAuth';
 import { visitMainDashboard } from '../helpers/main';
 import { interactAndWaitForResponses } from '../helpers/request';
 
+const logoutAlias = 'logout';
+
 const requestConfigForLogout = {
     routeMatcherMap: {
-        logout: {
+        [logoutAlias]: {
             method: 'POST',
             url: api.auth.logout,
         },
@@ -15,7 +17,7 @@ const requestConfigForLogout = {
 };
 
 const staticResponseMapForLogout = {
-    logout: {
+    [logoutAlias]: {
         body: {},
     },
 };
