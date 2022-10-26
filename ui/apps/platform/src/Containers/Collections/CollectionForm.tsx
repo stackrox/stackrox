@@ -301,9 +301,9 @@ function CollectionForm({
                                     spaceItems={{ default: 'spaceItemsMd' }}
                                 >
                                     <Title headingLevel="h2">Collection details</Title>
-                                    <Flex>
+                                    <Flex direction={{ default: 'column', lg: 'row' }}>
                                         <FlexItem flex={{ default: 'flex_1' }}>
-                                            <FormGroup label="Name" isRequired>
+                                            <FormGroup label="Name" fieldId="name" isRequired>
                                                 <TextInput
                                                     id="name"
                                                     name="name"
@@ -315,7 +315,7 @@ function CollectionForm({
                                             </FormGroup>
                                         </FlexItem>
                                         <FlexItem flex={{ default: 'flex_2' }}>
-                                            <FormGroup label="Description">
+                                            <FormGroup label="Description" fieldId="description">
                                                 <TextInput
                                                     id="description"
                                                     name="description"
