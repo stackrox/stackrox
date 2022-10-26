@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -54,11 +55,11 @@ type YamlTestFile struct {
 	File string
 }
 
-// awaitedResources slice of resources that need to be awaited
-var awaitedResources = []string{"Service"}
+// requiredResources slice of resources that need to be awaited
+var requiredResources = []string{"Service"}
 
-func isAwaitedResource(kind string) bool {
-	for _, k := range awaitedResources {
+func isRequiredResource(kind string) bool {
+	for _, k := range requiredResources {
 		if k == kind {
 			return true
 		}
@@ -414,8 +415,10 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 		return nil, err
 	}
 
-	if isAwaitedResource(file.Kind) {
-		if err := execWithRetry(5*time.Hour, createResourceFunc(ctx, c.r, obj)); err != nil {
+	if isRequiredResource(file.Kind) {
+		if err := execWithRetry(5*time.Minute, 5*time.Second, func() error {
+			return c.r.Create(ctx, obj)
+		}); err != nil {
 			return nil, err
 		}
 	} else {
@@ -431,7 +434,7 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 	}
 
 	return func() error {
-		if isAwaitedResource(file.Kind) {
+		if isRequiredResource(file.Kind) {
 			err := c.r.Delete(ctx, obj)
 			if err != nil {
 				return err
@@ -447,31 +450,20 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 	}, nil
 }
 
-type waitFunc func(time.Duration) error
-
-func createResourceFunc(ctx context.Context, r *resources.Resources, obj k8s.Object) func(time.Duration) error {
-	return func(sleepTime time.Duration) error {
-		if err := r.Create(ctx, obj); err != nil {
-			time.Sleep(sleepTime)
-			return err
-		}
-		return nil
+func execWithRetry(timeout, interval time.Duration, fn backoff.Operation) error {
+	exponential := backoff.NewExponentialBackOff()
+	exponential.MaxElapsedTime = timeout
+	exponential.MaxInterval = interval
+	var notifyErr error
+	if backoffErr := backoff.RetryNotify(fn, exponential, func(err error, d time.Duration) {
+		notifyErr = errors.Wrap(err, "timeout reached waiting for resource")
+	}); backoffErr != nil {
+		return backoffErr
 	}
-}
-
-func execWithRetry(timeout time.Duration, fn waitFunc) error {
-	afterTimeout := time.After(timeout)
-	var err error
-	for {
-		select {
-		case <-afterTimeout:
-			return errors.Wrap(err, "timeout reached waiting for resource")
-		default:
-			if err = fn(2 * time.Second); err == nil {
-				return nil
-			}
-		}
+	if notifyErr != nil {
+		return notifyErr
 	}
+	return nil
 }
 
 type condition func(event *central.SensorEvent) bool

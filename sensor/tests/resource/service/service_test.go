@@ -183,130 +183,140 @@ func (s *DeploymentExposureSuite) Test_ClusterIpPermutation() {
 	)
 }
 
-func testForNodePortService(testContext *resource.TestContext, resources []resource.YamlTestFile, serviceName string, port int32, deploymentName string) {
-	policyName := fmt.Sprintf(servicePolicyName, port)
-	testContext.RunWithResources(
-		resources, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-			// Test context already takes care of creating and destroying resources
-			testC.LastDeploymentState(deploymentName,
-				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
-					{
-						Protocol:      "TCP",
-						ContainerPort: 80,
-						Exposure:      storage.PortConfig_NODE,
-						ExposureInfos: []*storage.PortConfig_ExposureInfo{
-							{
-								ServiceName: serviceName,
-								ServicePort: 80,
-								NodePort:    port,
-								Level:       storage.PortConfig_NODE,
-							},
-						},
-					},
-				},
-				),
-				"'PortConfig' for Node Port service test not found",
-			)
-			testC.LastViolationState(deploymentName,
-				assertAlertTriggered(
-					&storage.Alert{
-						Policy: &storage.Policy{
-							Name: policyName,
-						},
-						State: storage.ViolationState_ACTIVE,
-					},
-				),
-				fmt.Sprintf("Alert '%s' should be triggered", policyName))
-			testC.GetFakeCentral().ClearReceivedBuffer()
-		})
-}
-
 func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
-	var port int32 = 30006
-	serviceNameFmt := "nginx-svc-node-port-%d"
-	nginxServiceNodePort := resource.YamlTestFile{
-		Kind: "Service",
-		File: fmt.Sprintf(serviceNodePortFmt, port),
+	// We need to use different ports in each NodePort/LoadBalancer test otherwise k8s could throw an error when the service is being created (provided port is already allocated).
+	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
+	// Adding retries on creation helped a lot, but it's still not enough.
+	cases := []struct {
+		port             int32
+		orderedResources []resource.YamlTestFile
+	}{
+		{
+			port: 30006,
+			orderedResources: []resource.YamlTestFile{
+				NginxDeployment,
+				{
+					Kind: "Service",
+					File: fmt.Sprintf(serviceNodePortFmt, 30006),
+				},
+			},
+		},
+		{
+			port: 30007,
+			orderedResources: []resource.YamlTestFile{
+				{
+					Kind: "Service",
+					File: fmt.Sprintf(serviceNodePortFmt, 30007),
+				},
+				NginxDeployment,
+			},
+		},
 	}
-
-	// Create deployment first
-	testForNodePortService(s.testContext, []resource.YamlTestFile{
-		NginxDeployment,
-		nginxServiceNodePort,
-	}, fmt.Sprintf(serviceNameFmt, port), port, nginxDeploymentName)
-
-	port = 30007
-	nginxServiceNodePort.File = fmt.Sprintf(serviceNodePortFmt, port)
-
-	// Create Service first
-	testForNodePortService(s.testContext, []resource.YamlTestFile{
-		nginxServiceNodePort,
-		NginxDeployment,
-	}, fmt.Sprintf(serviceNameFmt, port), port, nginxDeploymentName)
-}
-
-func testForLoadBalancerService(testContext *resource.TestContext, resources []resource.YamlTestFile, serviceName string, port int32) {
-	policyName := fmt.Sprintf(servicePolicyName, port)
-	testContext.RunWithResources(
-		resources, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-			// Test context already takes care of creating and destroying resources
-			testC.LastDeploymentState(nginxDeploymentName,
-				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
-					{
-						Protocol:      "TCP",
-						ContainerPort: 80,
-						Exposure:      storage.PortConfig_EXTERNAL,
-						ExposureInfos: []*storage.PortConfig_ExposureInfo{
-							{
-								ServiceName: serviceName,
-								ServicePort: 80,
-								NodePort:    port,
-								Level:       storage.PortConfig_EXTERNAL,
+	for _, c := range cases {
+		s.testContext.RunWithResources(
+			c.orderedResources, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+				// Test context already takes care of creating and destroying resources
+				testC.LastDeploymentState(nginxDeploymentName,
+					assertLastDeploymentHasPortExposure([]*storage.PortConfig{
+						{
+							Protocol:      "TCP",
+							ContainerPort: 80,
+							Exposure:      storage.PortConfig_NODE,
+							ExposureInfos: []*storage.PortConfig_ExposureInfo{
+								{
+									ServiceName: fmt.Sprintf("nginx-svc-node-port-%d", c.port),
+									ServicePort: 80,
+									NodePort:    c.port,
+									Level:       storage.PortConfig_NODE,
+								},
 							},
 						},
 					},
-				},
-				),
-				"'PortConfig' for Load Balancer service test not found",
-			)
-			testC.LastViolationState(nginxDeploymentName,
-				assertAlertTriggered(
-					&storage.Alert{
-						Policy: &storage.Policy{
-							Name: policyName,
+					),
+					"'PortConfig' for Node Port service test not found",
+				)
+				testC.LastViolationState(nginxDeploymentName,
+					assertAlertTriggered(
+						&storage.Alert{
+							Policy: &storage.Policy{
+								Name: fmt.Sprintf(servicePolicyName, c.port),
+							},
+							State: storage.ViolationState_ACTIVE,
 						},
-						State: storage.ViolationState_ACTIVE,
-					},
-				),
-				fmt.Sprintf("Alert '%s' should be triggered", policyName))
-			testC.GetFakeCentral().ClearReceivedBuffer()
-		},
-	)
+					),
+					fmt.Sprintf("Alert '%s' should be triggered", fmt.Sprintf(servicePolicyName, c.port)))
+				testC.GetFakeCentral().ClearReceivedBuffer()
+			})
 
+	}
 }
 
 func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
-	var port int32 = 30011
-	serviceNameFmt := "nginx-svc-load-balancer-%d"
-	nginxServiceLoadBalancer := resource.YamlTestFile{
-		Kind: "Service",
-		File: fmt.Sprintf(serviceLoadBalancerFmt, port),
+	// We need to use different ports in each NodePort/LoadBalancer test otherwise k8s could throw an error when the service is being created (provided port is already allocated).
+	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
+	// Adding retries on creation helped a lot, but it's still not enough.
+	cases := []struct {
+		port             int32
+		orderedResources []resource.YamlTestFile
+	}{
+		{
+			port: 30011,
+			orderedResources: []resource.YamlTestFile{
+				NginxDeployment,
+				{
+					Kind: "Service",
+					File: fmt.Sprintf(serviceLoadBalancerFmt, 30011),
+				},
+			},
+		},
+		{
+			port: 30012,
+			orderedResources: []resource.YamlTestFile{
+				{
+					Kind: "Service",
+					File: fmt.Sprintf(serviceLoadBalancerFmt, 30012),
+				},
+				NginxDeployment,
+			},
+		},
 	}
-
-	// Create deployment first
-	testForLoadBalancerService(s.testContext, []resource.YamlTestFile{
-		NginxDeployment,
-		nginxServiceLoadBalancer,
-	}, fmt.Sprintf(serviceNameFmt, port), port)
-
-	port = 30012
-	nginxServiceLoadBalancer.File = fmt.Sprintf(serviceLoadBalancerFmt, port)
-
-	// Create Service first
-	testForLoadBalancerService(s.testContext, []resource.YamlTestFile{
-		nginxServiceLoadBalancer,
-		NginxDeployment,
-	}, fmt.Sprintf(serviceNameFmt, port), port)
+	for _, c := range cases {
+		s.testContext.RunWithResources(
+			c.orderedResources, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+				// Test context already takes care of creating and destroying resources
+				testC.LastDeploymentState(nginxDeploymentName,
+					assertLastDeploymentHasPortExposure([]*storage.PortConfig{
+						{
+							Protocol:      "TCP",
+							ContainerPort: 80,
+							Exposure:      storage.PortConfig_EXTERNAL,
+							ExposureInfos: []*storage.PortConfig_ExposureInfo{
+								{
+									ServiceName: fmt.Sprintf("nginx-svc-load-balancer-%d", c.port),
+									ServicePort: 80,
+									NodePort:    c.port,
+									Level:       storage.PortConfig_EXTERNAL,
+								},
+							},
+						},
+					},
+					),
+					"'PortConfig' for Load Balancer service test not found",
+				)
+				testC.LastViolationState(nginxDeploymentName,
+					assertAlertTriggered(
+						&storage.Alert{
+							Policy: &storage.Policy{
+								Name: fmt.Sprintf(servicePolicyName, c.port),
+							},
+							State: storage.ViolationState_ACTIVE,
+						},
+					),
+					fmt.Sprintf("Alert '%s' should be triggered", fmt.Sprintf(servicePolicyName, c.port)))
+				testC.GetFakeCentral().ClearReceivedBuffer()
+			},
+		)
+	}
 }
 
 func (s *DeploymentExposureSuite) Test_NoExposure() {
@@ -341,6 +351,9 @@ func (s *DeploymentExposureSuite) Test_NoExposure() {
 }
 
 func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
+	// We need to use different ports in each NodePort/LoadBalancer test otherwise k8s could throw an error when the service is being created (provided port is already allocated).
+	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
+	// Adding retries on creation helped a lot, but it's still not enough.
 	s.testContext.RunBare("Update Port Exposure", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 		deleteDep, err := testC.ApplyFileNoObject(context.Background(), resource.DefaultNamespace, NginxDeployment)
 		defer utils.IgnoreError(deleteDep)
@@ -423,25 +436,68 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 }
 
 func (s *DeploymentExposureSuite) Test_NodePortPermutationWithPod() {
-	var port int32 = 30009
-	serviceNameFmt := "nginx-svc-node-port-%d"
-	nginxServiceNodePort := resource.YamlTestFile{
-		Kind: "Service",
-		File: fmt.Sprintf(serviceNodePortFmt, port),
+	// We need to use different ports in each NodePort/LoadBalancer test otherwise k8s could throw an error when the service is being created (provided port is already allocated).
+	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
+	// Adding retries on creation helped a lot, but it's still not enough.
+	cases := []struct {
+		port             int32
+		orderedResources []resource.YamlTestFile
+	}{
+		{
+			port: 30009,
+			orderedResources: []resource.YamlTestFile{
+				NginxPod,
+				{
+					Kind: "Service",
+					File: fmt.Sprintf(serviceNodePortFmt, 30009),
+				},
+			},
+		},
+		{
+			port: 30010,
+			orderedResources: []resource.YamlTestFile{
+				{
+					Kind: "Service",
+					File: fmt.Sprintf(serviceNodePortFmt, 30010),
+				},
+				NginxPod,
+			},
+		},
 	}
-
-	// Create deployment first
-	testForNodePortService(s.testContext, []resource.YamlTestFile{
-		NginxPod,
-		nginxServiceNodePort,
-	}, fmt.Sprintf(serviceNameFmt, port), port, nginxPodName)
-
-	port = 30010
-	nginxServiceNodePort.File = fmt.Sprintf(serviceNodePortFmt, port)
-
-	// Create Service first
-	testForNodePortService(s.testContext, []resource.YamlTestFile{
-		nginxServiceNodePort,
-		NginxPod,
-	}, fmt.Sprintf(serviceNameFmt, port), port, nginxPodName)
+	for _, c := range cases {
+		s.testContext.RunWithResources(
+			c.orderedResources, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+				// Test context already takes care of creating and destroying resources
+				testC.LastDeploymentState(nginxPodName,
+					assertLastDeploymentHasPortExposure([]*storage.PortConfig{
+						{
+							Protocol:      "TCP",
+							ContainerPort: 80,
+							Exposure:      storage.PortConfig_NODE,
+							ExposureInfos: []*storage.PortConfig_ExposureInfo{
+								{
+									ServiceName: fmt.Sprintf("nginx-svc-node-port-%d", c.port),
+									ServicePort: 80,
+									NodePort:    c.port,
+									Level:       storage.PortConfig_NODE,
+								},
+							},
+						},
+					},
+					),
+					"'PortConfig' for Node Port service test not found",
+				)
+				testC.LastViolationState(nginxPodName,
+					assertAlertTriggered(
+						&storage.Alert{
+							Policy: &storage.Policy{
+								Name: fmt.Sprintf(servicePolicyName, c.port),
+							},
+							State: storage.ViolationState_ACTIVE,
+						},
+					),
+					fmt.Sprintf("Alert '%s' should be triggered", fmt.Sprintf(servicePolicyName, c.port)))
+				testC.GetFakeCentral().ClearReceivedBuffer()
+			})
+	}
 }
