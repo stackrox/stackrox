@@ -2,33 +2,45 @@ import * as api from '../constants/apiEndpoints';
 
 import { interceptRequests, waitForResponses } from './request';
 
+// Single source of truth for keys in optional staticResponseMap argument.
+export const availableAuthProvidersAlias = 'availableAuthProviders';
+export const featureFlagsAlias = 'featureflags';
+export const loginAuthProvidersAlias = 'login/authproviders';
+export const myPermissionsAlias = 'mypermissions';
+export const configPublicAlias = 'config/public';
+export const authStatusAlias = 'auth/status';
+
 // generic requests to render the MainPage component
 const requestConfigGeneric = {
     routeMatcherMap: {
-        featureflags: {
+        [availableAuthProvidersAlias]: {
+            method: 'GET',
+            url: api.auth.availableAuthProviders,
+        }, // reducers/auth and sagas/authSagas
+        [featureFlagsAlias]: {
             method: 'GET',
             url: api.featureFlags,
         }, // reducers/featureFlags and sagas/featureFlagSagas
-        mypermissions: {
+        [myPermissionsAlias]: {
             method: 'GET',
             url: api.roles.mypermissions,
         }, // hooks/usePermissions and reducers/roles and sagas/authSagas
-        'config/public': {
+        [availableAuthProvidersAlias]: {
+            method: 'GET',
+            url: api.auth.availableAuthProviders,
+        }, // reducers/auth and sagas/authSagas
+        [configPublicAlias]: {
             method: 'GET',
             url: api.system.configPublic,
         }, // reducers/systemConfig and sagas/systemConfig
-        'auth/status': {
+        [authStatusAlias]: {
             method: 'GET',
             url: api.auth.authStatus,
         }, // sagas/authSagas
-        credentialexpiry_CENTRAL: {
-            method: 'GET',
-            url: api.certExpiry.central,
-        }, // MainPage/CredentialExpiryService
-        credentialexpiry_SCANNER: {
-            method: 'GET',
-            url: api.certExpiry.scanner,
-        }, // MainPage/CredentialExpiryService
+        /*
+         * Intentionally omit credentialexpiry requests for central and scanner,
+         * because they are in parallel with (and possibly even delayed by) page-specific requests.
+         */
     },
 };
 
