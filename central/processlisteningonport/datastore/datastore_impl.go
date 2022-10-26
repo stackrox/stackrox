@@ -78,6 +78,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			val.GetSignal().GetArgs(),
 			val.GetSignal().GetExecFilePath(),
 		)
+		log.Infof("indicators key= %s\n", key)
 
 		// A bit of paranoia is always good
 		if old, ok := indicatorsMap[key]; ok {
@@ -100,9 +101,12 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			val.Process.ProcessExecFilePath,
 		)
 
+		log.Infof("portProcess key= %s\n", key)
+
 		if indicator, ok := indicatorsMap[key]; ok {
 			indicatorId = indicator.GetId()
-			log.Debugf("Got indicator %s: %+v", indicatorId, indicator)
+			log.Infof("Got indicator %s: %+v", indicatorId, indicator)
+			//log.Debugf("Got indicator %s: %+v", indicatorId, indicator)
 		} else {
 			log.Warnf("Found no matching indicators for %s", key)
 		}
@@ -121,6 +125,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// Not save actual PLOP objects
 	err = ds.storage.UpsertMany(ctx, plopObjects)
 	if err != nil {
+			log.Warnf("Unable to upsert")
 		return err
 	}
 
