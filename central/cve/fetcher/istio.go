@@ -68,7 +68,7 @@ func (m *istioCVEManager) setCVEs(cves []*storage.EmbeddedVulnerability, nvdCVEs
 }
 
 func (m *istioCVEManager) updateCVEs(newCVEs []*schema.NVDCVEFeedJSON10DefCVEItem) error {
-	cves, err := utils.NvdCVEsToEmbeddedCVEs(newCVEs, utils.Istio)
+	cves, err := utils.NVDCVEsToEmbeddedCVEs(newCVEs, utils.Istio)
 	if err != nil {
 		return err
 	}
