@@ -5,8 +5,8 @@ import { interceptRequests, waitForResponses } from './request';
 // Single source of truth for keys in optional staticResponseMap argument.
 export const availableAuthProvidersAlias = 'availableAuthProviders';
 export const featureFlagsAlias = 'featureflags';
-export const loginAuthProvidersAlias = 'login/authproviders';
 export const myPermissionsAlias = 'mypermissions';
+export const loginAuthProvidersAlias = 'login/authproviders';
 export const configPublicAlias = 'config/public';
 export const authStatusAlias = 'auth/status';
 
@@ -25,9 +25,9 @@ const requestConfigGeneric = {
             method: 'GET',
             url: api.roles.mypermissions,
         }, // hooks/usePermissions and reducers/roles and sagas/authSagas
-        [availableAuthProvidersAlias]: {
+        [loginAuthProvidersAlias]: {
             method: 'GET',
-            url: api.auth.availableAuthProviders,
+            url: api.auth.loginAuthProviders,
         }, // reducers/auth and sagas/authSagas
         [configPublicAlias]: {
             method: 'GET',
