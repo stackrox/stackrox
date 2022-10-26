@@ -23,7 +23,6 @@ export const graphModel = {
 };
 
 export function transformData(nodes: Node[]): Model {
-    console.log(nodes);
     const dataModel = {
         graph: graphModel,
         nodes: [] as NodeModel[],
@@ -70,6 +69,8 @@ export function transformData(nodes: Node[]): Model {
                 type: 'edge',
                 source: entity.id,
                 target: nodes[nodeIdx].entity.id,
+                // TODO: figure out how to conditionally render performantly
+                // visible: false,
             };
             dataModel.edges.push(edge);
         });
