@@ -53,6 +53,7 @@ type ValueStream[T any] struct {
 // NewValueStream initializes a value stream with an initial value.
 func NewValueStream[T any](initVal T) *ValueStream[T] {
 	return &ValueStream[T]{
+		//#nosec G103
 		curr: unsafe.Pointer(&valueStreamStrictIter[T]{
 			valueStreamIterBase: valueStreamIterBase[T]{
 				currVal: initVal,
@@ -172,6 +173,7 @@ func (s *ValueStream[T]) Push(val T) (T, ValueStreamIter[T]) {
 		},
 	}
 
+	//#nosec G103
 	oldIter := (*valueStreamStrictIter[T])(atomic.SwapPointer(&s.curr, unsafe.Pointer(newIter)))
 	oldIter.next = newIter
 	close(oldIter.nextC)
