@@ -371,12 +371,16 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    EARLIER_SHA="9f82d2713cfec4b5c876d8dc0149f6d9cd70d349"
-    EARLIER_TAG="3.63.x-163-g2c4fe1563c"
+    EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
+    EARLIER_TAG="3.69.x-1-g870568de08"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
+    export FORCE_ROLLBACK_VERSION
 
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
+
+    # required to handle scanner protos
+    go mod tidy
 
     deploy_earlier_central
     wait_for_api
@@ -389,14 +393,14 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
     wait_for_api
 
-    validate_upgrade "00-3-63-x-to-current" "central upgrade to 3.63.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "00-3-69-x-to-current" "central upgrade to 3.69.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     force_rollback
     wait_for_api
 
     cd "$REPO_FOR_TIME_TRAVEL"
 
-    validate_upgrade "01-current-back-to-3-63-x" "forced rollback to 3.63.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "01-current-back-to-3-69-x" "forced rollback to 3.69.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     cd "$TEST_ROOT"
 

@@ -1,5 +1,16 @@
+import isEmpty from 'lodash/isEmpty';
+
 import { CollectionResponse } from 'services/CollectionsService';
-import { Collection, SelectorField, SelectorEntityType, isSupportedSelectorField } from './types';
+import {
+    Collection,
+    SelectorField,
+    SelectorEntityType,
+    isSupportedSelectorField,
+    isByNameSelector,
+    isByLabelSelector,
+    isByNameField,
+    isByLabelField,
+} from './types';
 
 const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
     Deployment: 'Deployment',
@@ -13,6 +24,8 @@ const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
     'Cluster Annotation': 'Cluster',
 };
 
+const LABEL_SEPARATOR = '=';
+
 /**
  * This function takes a raw `CollectionResponse` from the server and parses it into a representation
  * of a `Collection` that can be supported by the current UI controls. If any incompatibilities are detected
@@ -24,10 +37,10 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
         description: data.description,
         inUse: data.inUse,
         embeddedCollectionIds: data.embeddedCollections.map(({ id }) => id),
-        selectorRules: {
-            Deployment: null,
-            Namespace: null,
-            Cluster: null,
+        resourceSelectors: {
+            Deployment: {},
+            Namespace: {},
+            Cluster: {},
         },
     };
 
@@ -42,7 +55,7 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
     data.resourceSelectors[0]?.rules.forEach((rule) => {
         const entity = fieldToEntityMap[rule.fieldName];
         const field = rule.fieldName;
-        const existingEntityField = collection.selectorRules[entity]?.field;
+        const existingEntityField = collection.resourceSelectors[entity]?.field;
         const hasMultipleFieldsForEntity = existingEntityField && existingEntityField !== field;
         const isUnsupportedField = !isSupportedSelectorField(field);
         const isUnsupportedRuleOperator = rule.operator !== 'OR';
@@ -67,14 +80,38 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
             return;
         }
 
-        if (!collection.selectorRules[entity]) {
-            collection.selectorRules[entity] = {
-                field,
-                rules: [],
-            };
+        if (isEmpty(collection.resourceSelectors[entity])) {
+            if (isByLabelField(field)) {
+                collection.resourceSelectors[entity] = {
+                    field,
+                    rules: [],
+                };
+            } else if (isByNameField(field)) {
+                collection.resourceSelectors[entity] = {
+                    field,
+                    rule: { operator: 'OR', values: [] },
+                };
+            }
         }
 
-        collection.selectorRules[entity]?.rules.push(rule);
+        const selector = collection.resourceSelectors[entity];
+
+        if (isByLabelSelector(selector)) {
+            const firstValue = rule.values[0]?.value;
+
+            if (firstValue && firstValue.includes(LABEL_SEPARATOR)) {
+                const key = firstValue.split(LABEL_SEPARATOR)[0] ?? '';
+                selector.rules.push({
+                    operator: 'OR',
+                    key,
+                    // TODO Verify with BE whether or not this is a valid method to get the label values. Is
+                    //      it possible that multiple `=` symbols will appear in the data here?
+                    values: rule.values.map(({ value }) => value.split('=')[1] ?? ''),
+                });
+            }
+        } else if (isByNameSelector(selector)) {
+            selector.rule.values = rule.values.map(({ value }) => value);
+        }
     });
 
     if (errors.length > 0) {
