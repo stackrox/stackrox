@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/compute v1.10.0
 	cloud.google.com/go/containeranalysis v0.6.0
 	cloud.google.com/go/storage v1.27.0
-	github.com/BurntSushi/toml v1.2.0
+	github.com/BurntSushi/toml v1.2.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/NYTimes/gziphandler v1.1.1
