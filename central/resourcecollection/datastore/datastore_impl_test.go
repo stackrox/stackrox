@@ -111,7 +111,9 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 			objs := make([]*storage.ResourceCollection, 0, tc.size)
 			objIDs := make([]string, 0, tc.size+1)
 
-			objs = append(objs, getTestCollection("0", nil))
+			obj := getTestCollection("0", nil)
+			obj.Id = "0"
+			objs = append(objs, obj)
 			objIDs = append(objIDs, "0")
 			for i := 1; i < tc.size; i++ {
 				edges := make([]string, 0, i)
@@ -119,7 +121,9 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 					edges = append(edges, fmt.Sprintf("%d", j))
 				}
 				id := fmt.Sprintf("%d", i)
-				objs = append(objs, getTestCollection(id, edges))
+				obj = getTestCollection(id, edges)
+				obj.Id = id
+				objs = append(objs, obj)
 				objIDs = append(objIDs, id)
 			}
 
@@ -148,126 +152,125 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	ctx := sac.WithAllAccess(context.Background())
 
+	var err error
+
+	// dryrun add object with an id set
+	objID := getTestCollection("id", nil)
+	objID.Id = "id"
+	err = s.datastore.DryRunAddCollection(ctx, objID)
+	assert.Error(s.T(), err)
+
+	// add object with an id set
+	err = s.datastore.AddCollection(ctx, objID)
+	assert.Error(s.T(), err)
+
 	// dryrun add 'a', verify not present
 	objA := getTestCollection("a", nil)
-	err := s.datastore.DryRunAddCollection(ctx, objA)
+	err = s.datastore.DryRunAddCollection(ctx, objA)
 	assert.NoError(s.T(), err)
-	obj, ok, err := s.datastore.Get(ctx, "a")
+	count, err := s.datastore.Count(ctx, nil)
 	assert.NoError(s.T(), err)
-	assert.False(s.T(), ok)
-	assert.Nil(s.T(), obj)
+	assert.Equal(s.T(), 0, count)
 
 	// add 'a', verify present
 	err = s.datastore.AddCollection(ctx, objA)
 	assert.NoError(s.T(), err)
-	obj, ok, err = s.datastore.Get(ctx, "a")
+	obj, ok, err := s.datastore.Get(ctx, objA.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
 	assert.Equal(s.T(), objA, obj)
 
 	// dryrun add duplicate 'a'
-	err = s.datastore.DryRunAddCollection(ctx, objA)
+	objADup := getTestCollection("a", nil)
+	err = s.datastore.DryRunAddCollection(ctx, objADup)
 	assert.Error(s.T(), err)
-	_, ok = err.(dag.VertexDuplicateError)
-	assert.True(s.T(), ok)
 
-	// try to add duplicate 'a'
-	err = s.datastore.AddCollection(ctx, objA)
+	// add duplicate 'a'
+	err = s.datastore.AddCollection(ctx, objADup)
 	assert.Error(s.T(), err)
-	_, ok = err.(dag.VertexDuplicateError)
-	assert.True(s.T(), ok)
 
-	// dryrun add 'b' which points to 'a'
-	objB := getTestCollection("b", []string{"a"})
+	// dryrun add 'b' which points to 'a', verify not present
+	objB := getTestCollection("b", []string{objA.GetId()})
 	err = s.datastore.DryRunAddCollection(ctx, objB)
 	assert.NoError(s.T(), err)
-	obj, ok, err = s.datastore.Get(ctx, "b")
+	count, err = s.datastore.Count(ctx, nil)
 	assert.NoError(s.T(), err)
-	assert.False(s.T(), ok)
-	assert.Nil(s.T(), obj)
+	assert.Equal(s.T(), 1, count)
 
-	// add 'b' which points to 'a'
+	// add 'b' which points to 'a', verify present
 	err = s.datastore.AddCollection(ctx, objB)
 	assert.NoError(s.T(), err)
-	obj, ok, err = s.datastore.Get(ctx, "b")
+	obj, ok, err = s.datastore.Get(ctx, objB.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
 	assert.Equal(s.T(), objB, obj)
 
 	// try to delete 'a' while 'b' points to it
-	err = s.datastore.DeleteCollection(ctx, "a")
+	err = s.datastore.DeleteCollection(ctx, objA.GetId())
 	assert.Error(s.T(), err)
-
-	// dryrun add 'c' which has a self reference
-	err = s.datastore.DryRunAddCollection(ctx, getTestCollection("c", []string{"c"}))
-	assert.Error(s.T(), err)
-	_, ok = err.(dag.SrcDstEqualError)
-	assert.True(s.T(), ok)
-
-	// try to add 'c' which has a self reference
-	err = s.datastore.AddCollection(ctx, getTestCollection("c", []string{"c"}))
-	assert.Error(s.T(), err)
-	_, ok = err.(dag.SrcDstEqualError)
-	assert.True(s.T(), ok)
-
-	// dryrun add 'd' which has a duplicate name
-	objD := getTestCollection("d", nil)
-	objD.Name = "a"
-	err = s.datastore.DryRunAddCollection(ctx, objD)
-	assert.Error(s.T(), err)
-	_, ok = err.(dag.VertexDuplicateError)
-	assert.True(s.T(), ok)
-
-	// try to add 'd' which has duplicate name
-	err = s.datastore.AddCollection(ctx, objD)
-	assert.Error(s.T(), err)
-	_, ok = err.(dag.VertexDuplicateError)
-	assert.True(s.T(), ok)
 
 	// try to update 'a' to point to 'b' which creates a cycle
-	err = s.datastore.UpdateCollection(ctx, updateTestCollection(objA, []string{"b"}))
+	objACycle := getTestCollection("a", []string{objB.GetId()})
+	objACycle.Id = objA.GetId()
+	err = s.datastore.UpdateCollection(ctx, objACycle)
 	assert.Error(s.T(), err)
 	_, ok = err.(dag.EdgeLoopError)
 	assert.True(s.T(), ok)
 
 	// try to update 'a' to point to itself which creates a self cycle
-	err = s.datastore.UpdateCollection(ctx, updateTestCollection(objA, []string{"a"}))
+	updateTestCollection(objACycle, []string{objA.GetId()})
+	err = s.datastore.UpdateCollection(ctx, objACycle)
 	assert.Error(s.T(), err)
 	_, ok = err.(dag.SrcDstEqualError)
 	assert.True(s.T(), ok)
 
+	// try to update 'a' with a duplicate name
+	objADup.Id = objA.GetId()
+	objADup.Name = objB.GetName()
+	err = s.datastore.UpdateCollection(ctx, objADup)
+	assert.Error(s.T(), err)
+
+	// try to update 'a' with a new name
+	objA.Name = "A"
+	err = s.datastore.UpdateCollection(ctx, objA)
+	assert.NoError(s.T(), err)
+	obj, ok, err = s.datastore.Get(ctx, objA.GetId())
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), ok)
+	assert.Equal(s.T(), objA, obj)
+
 	// add 'e' that points to 'b' and verify
-	objE := getTestCollection("e", []string{"b"})
+	objE := getTestCollection("e", []string{objB.GetId()})
 	err = s.datastore.AddCollection(ctx, objE)
 	assert.NoError(s.T(), err)
-	obj, ok, err = s.datastore.Get(ctx, "e")
+	obj, ok, err = s.datastore.Get(ctx, objE.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
 	assert.Equal(s.T(), objE, obj)
 
 	// update 'e' to point to only 'a', this tests addition and removal of edges
-	objEUpdated := updateTestCollection(objE, []string{"a"})
-	err = s.datastore.UpdateCollection(ctx, objEUpdated)
+	updateTestCollection(objE, []string{objA.GetId()})
+	err = s.datastore.UpdateCollection(ctx, objE)
 	assert.NoError(s.T(), err)
-	obj, ok, err = s.datastore.Get(ctx, "e")
+	obj, ok, err = s.datastore.Get(ctx, objE.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objEUpdated, obj)
+	assert.Equal(s.T(), objE, obj)
 
 	// update 'b' to point to only 'e', making sure the original 'e' -> 'b' edge was removed
-	objBUpdated := updateTestCollection(objB, []string{"e"})
-	err = s.datastore.UpdateCollection(ctx, objBUpdated)
+	updateTestCollection(objB, []string{objE.GetId()})
+	err = s.datastore.UpdateCollection(ctx, objB)
 	assert.NoError(s.T(), err)
-	obj, ok, err = s.datastore.Get(ctx, "b")
+	obj, ok, err = s.datastore.Get(ctx, objB.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
-	assert.Equal(s.T(), objBUpdated, obj)
+	assert.Equal(s.T(), objB, obj)
 
 	// clean up testing data and verify the datastore is empty
-	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, "b"))
-	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, "e"))
-	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, "a"))
-	count, err := s.datastore.Count(ctx, nil)
+	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objB.GetId()))
+	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objE.GetId()))
+	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objA.GetId()))
+	count, err = s.datastore.Count(ctx, nil)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, count)
 }
@@ -276,10 +279,9 @@ func (s *CollectionPostgresDataStoreTestSuite) TestFoo() {
 	// TODO e2e testing ROX-12626
 }
 
-func getTestCollection(id string, ids []string) *storage.ResourceCollection {
+func getTestCollection(name string, ids []string) *storage.ResourceCollection {
 	return &storage.ResourceCollection{
-		Id:                  id,
-		Name:                id,
+		Name:                name,
 		EmbeddedCollections: getEmbeddedTestCollection(ids),
 	}
 }
