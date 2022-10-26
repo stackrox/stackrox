@@ -89,9 +89,7 @@ function wait_for_central {
     start_time="$(date '+%s')"
     local start_time
     local deadline=$((start_time + 10*60))  # 10 minutes
-    curl_central_out=$(curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping")
-    export curl_central_out
-    until curl_central_out; do
+    until curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping"; do
         if [[ "$(date '+%s')" > "$deadline" ]]; then
             echo >&2 "Exceeded deadline waiting for Central."
             central_pod="$("${ORCH_CMD}" -n stackrox get pods -l app=central -ojsonpath='{.items[0].metadata.name}')"
@@ -102,7 +100,6 @@ function wait_for_central {
         fi
         echo -n '.'
         sleep 1
-        curl_central_out=$(curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping")
     done
     set -e
     echo
