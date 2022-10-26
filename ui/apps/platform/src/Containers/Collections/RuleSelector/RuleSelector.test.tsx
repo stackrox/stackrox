@@ -1,14 +1,10 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import React, { useEffect, useState } from 'react';
 import { render, screen } from '@testing-library/react';
-// import userEvent from '@testing-library/user-event';
+import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
 import RuleSelector from './RuleSelector';
-import {
-    // ByNameResourceSelector,
-    ScopedResourceSelector,
-} from '../types';
+import { ByLabelResourceSelector, ByNameResourceSelector, ScopedResourceSelector } from '../types';
 
 jest.setTimeout(10000);
 
@@ -44,13 +40,6 @@ describe('Collection RuleSelector component', () => {
         expect(await screen.findByText('All deployments')).toBeInTheDocument();
     });
 
-    // eslint-disable-next-line jest/no-commented-out-tests
-    /*
-        This test is failing due to a console.error thrown when changing an option in one of the dropdowns,
-        which then forces a failure due to our `setupTests` Spy class.
-
-        The logic in the test passes, but the internal React rendering issue causes the test to fail.
-
     it('Should allow users to add name selectors', async () => {
         let resourceSelector: ByNameResourceSelector = {
             field: 'Deployment',
@@ -68,11 +57,10 @@ describe('Collection RuleSelector component', () => {
         await user.click(screen.getByLabelText('Select deployments by name or label'));
         await user.click(screen.getByText('Deployments with names matching'));
 
-        expect(resourceSelector).not.toBeNull();
         expect(resourceSelector.field).toBe('Deployment');
         expect(resourceSelector.rule.values).toEqual(['']);
 
-        const typeAheadInput = screen.getByLabelText('Select a value for the deployment name');
+        const typeAheadInput = screen.getByLabelText('Select value 1 of 1 for the deployment name');
         await user.type(typeAheadInput, 'visa-processor{Enter}');
 
         expect(resourceSelector.field).toBe('Deployment');
@@ -88,12 +76,12 @@ describe('Collection RuleSelector component', () => {
 
         // Add a couple more values
         await user.type(
-            screen.getAllByLabelText('Select a value for the deployment name')[1],
+            screen.getByLabelText('Select value 2 of 2 for the deployment name'),
             'mastercard-processor{Enter}'
         );
         await user.click(screen.getByText('Add value'));
         await user.type(
-            screen.getAllByLabelText('Select a value for the deployment name')[2],
+            screen.getByLabelText('Select value 3 of 3 for the deployment name'),
             'discover-processor{Enter}'
         );
 
@@ -116,5 +104,98 @@ describe('Collection RuleSelector component', () => {
         expect(screen.getByText('All deployments')).toBeInTheDocument();
     });
 
-    */
+    it('Should allow users to add label key/value selectors', async () => {
+        let resourceSelector: ByLabelResourceSelector = {
+            field: 'Deployment Label',
+            rules: [{ operator: 'OR', key: '', values: [''] }],
+        };
+
+        const user = userEvent.setup();
+
+        function onChange(newSelector) {
+            resourceSelector = newSelector;
+        }
+
+        render(<DeploymentRuleSelector defaultSelector={{}} onChange={onChange} />);
+
+        await user.click(screen.getByLabelText('Select deployments by name or label'));
+        await user.click(screen.getByText('Deployments with labels matching'));
+
+        expect(resourceSelector.field).toBe('Deployment Label');
+        expect(resourceSelector.rules[0].key).toEqual('');
+        expect(resourceSelector.rules[0].values).toEqual(['']);
+
+        await user.type(
+            screen.getByLabelText('Select label key for deployment rule 1 of 1'),
+            'kubernetes.io/metadata.name{Enter}'
+        );
+        await user.type(
+            screen.getByLabelText('Select label value 1 of 1 for deployment rule 1 of 1'),
+            'visa-processor{Enter}'
+        );
+        expect(resourceSelector.rules[0].key).toEqual('kubernetes.io/metadata.name');
+        expect(resourceSelector.rules[0].values).toEqual(['visa-processor']);
+
+        // Attempt to add multiple blank values
+        await user.click(screen.getByText('Add value'));
+        await user.click(screen.getByText('Add value'));
+
+        // Only a single blank value should be added
+        expect(resourceSelector.rules[0].values).toEqual(['visa-processor', '']);
+
+        await user.type(
+            screen.getByLabelText('Select label value 2 of 2 for deployment rule 1 of 1'),
+            'mastercard-processor{Enter}'
+        );
+        await user.click(screen.getByText('Add value'));
+        await user.type(
+            screen.getByLabelText('Select label value 3 of 3 for deployment rule 1 of 1'),
+            'discover-processor{Enter}'
+        );
+
+        expect(resourceSelector.rules[0].values).toEqual([
+            'visa-processor',
+            'mastercard-processor',
+            'discover-processor',
+        ]);
+
+        // Add another label rule and key'values
+        await user.click(screen.getByText('Add label rule'));
+
+        await user.type(
+            screen.getByLabelText('Select label key for deployment rule 2 of 2'),
+            'kubernetes.io/metadata.release{Enter}'
+        );
+        await user.type(
+            screen.getByLabelText('Select label value 1 of 1 for deployment rule 2 of 2'),
+            // typo
+            'stabl{Enter}'
+        );
+        await user.click(screen.getAllByText('Add value')[1]);
+        await user.type(
+            screen.getByLabelText('Select label value 2 of 2 for deployment rule 2 of 2'),
+            'beta{Enter}'
+        );
+        // test editing typo
+        await user.type(
+            screen.getByLabelText('Select label value 1 of 2 for deployment rule 2 of 2'),
+            'e{Enter}'
+        );
+
+        expect(resourceSelector).toEqual({
+            field: 'Deployment Label',
+            rules: [
+                {
+                    operator: 'OR',
+                    key: 'kubernetes.io/metadata.name',
+                    values: ['visa-processor', 'mastercard-processor', 'discover-processor'],
+                },
+                {
+                    operator: 'OR',
+                    key: 'kubernetes.io/metadata.release',
+                    values: ['stable', 'beta'],
+                },
+            ],
+        });
+    });
 });
