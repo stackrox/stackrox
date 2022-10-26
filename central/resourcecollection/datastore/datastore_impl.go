@@ -85,7 +85,7 @@ func (ds *datastoreImpl) initGraph() error {
 
 			// track names
 			if ds.names.Contains(obj.GetName()) {
-				return errors.New(fmt.Sprintf("encountered duplicate name building collection graph (%s)", obj.GetName()))
+				return fmt.Errorf("encountered duplicate name building collection graph (%s)", obj.GetName())
 			}
 			ds.names.Add(obj.GetName())
 
@@ -277,8 +277,8 @@ func (ds *datastoreImpl) undoEdgeUpdatesInGraph(updates *graphEdgeUpdates) error
 	}
 
 	// add back removed edges
-	for _, removedChildId := range updates.removedChildrenIDs {
-		err = graphCopy.AddEdge(updates.parentID, removedChildId)
+	for _, removedChildID := range updates.removedChildrenIDs {
+		err = graphCopy.AddEdge(updates.parentID, removedChildID)
 		if err != nil {
 			return errors.Wrap(err, "failed to restore removed edge")
 		}
@@ -383,10 +383,10 @@ func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.
 		return errors.New("passed collection must not be nil")
 	}
 	if collection.GetId() != "" {
-		return errors.New(fmt.Sprintf("added collections must not have an `id` preset (%s)", collection.GetId()))
+		return fmt.Errorf("added collections must not have an `id` preset (%s)", collection.GetId()))
 	}
 	if collection.GetName() == "" || ds.names.Contains(collection.GetName()) {
-		return errors.New(fmt.Sprintf("added collections must have non-empty, unique `name` values (%s)", collection.GetName()))
+		return fmt.Errorf("added collections must have non-empty, unique `name` values (%s)", collection.GetName()))
 	}
 	ds.names.Add(collection.GetName())
 
@@ -415,10 +415,10 @@ func (ds *datastoreImpl) DryRunAddCollection(ctx context.Context, collection *st
 		return err
 	}
 	if collection.GetId() != "" {
-		return errors.New(fmt.Sprintf("added collections must not have an `id` preset (%s)", collection.GetId()))
+		return fmt.Errorf("added collections must not have an `id` preset (%s)", collection.GetId()))
 	}
 	if collection.GetName() == "" || ds.names.Contains(collection.GetName()) {
-		return errors.New(fmt.Sprintf("added collections must have non-empty, unique `name` values (%s)", collection.GetName()))
+		return fmt.Errorf("added collections must have non-empty, unique `name` values (%s)", collection.GetName()))
 	}
 
 	// check for access since dryrun flow doesn't actually hit the postgres layer
@@ -440,7 +440,7 @@ func (ds *datastoreImpl) UpdateCollection(ctx context.Context, collection *stora
 		return errors.Wrap(err, "failed to resolve collection being updated")
 	}
 	if obj.GetName() != collection.GetName() && ds.names.Contains(collection.GetName()) {
-		return errors.New(fmt.Sprintf("collection name already in use (%s)", collection.GetName()))
+		return fmt.Errorf("collection name already in use (%s)", collection.GetName()))
 	}
 
 	// update graph first to detect cycles
