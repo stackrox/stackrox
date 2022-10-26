@@ -339,11 +339,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ProcessListeni
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.ProcessListeningOnPortStorage
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	//var msg storage.ProcessListeningOnPortStorage
+	//if err := proto.Unmarshal(data, &msg); err != nil {
+	//	return nil, false, err
+	//}
+	//return &msg, true, nil
+	return data, true, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
@@ -468,11 +469,12 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 	}
 	resultsByID := make(map[string]*storage.ProcessListeningOnPortStorage)
 	for _, data := range rows {
-		msg := &storage.ProcessListeningOnPortStorage{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
-		resultsByID[msg.GetId()] = msg
+		//msg := &storage.ProcessListeningOnPortStorage{}
+		//if err := proto.Unmarshal(data, msg); err != nil {
+		//	return nil, nil, err
+		//}
+		//resultsByID[msg.GetId()] = msg
+		resultsByID[data.GetId()] = data
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
 	// It is important that the elems are populated in the same order as the input ids
