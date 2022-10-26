@@ -2,7 +2,7 @@ import { Model, NodeModel, EdgeModel } from '@patternfly/react-topology';
 
 import { NetworkEntityInfo, Node } from 'types/networkFlow.proto';
 
-export function getLabel(entity: NetworkEntityInfo): string {
+function getLabel(entity: NetworkEntityInfo): string {
     const { type } = entity;
     switch (type) {
         case 'DEPLOYMENT':
@@ -16,17 +16,20 @@ export function getLabel(entity: NetworkEntityInfo): string {
     }
 }
 
+export const graphModel = {
+    id: 'stackrox-active-graph',
+    type: 'graph',
+    layout: 'ColaGroups',
+};
+
 export function transformData(nodes: Node[]): Model {
+    console.log(nodes);
     const dataModel = {
-        graph: {
-            id: 'stackrox-active-graph',
-            type: 'graph',
-            layout: 'ColaGroups',
-        },
+        graph: graphModel,
         nodes: [] as NodeModel[],
         edges: [] as EdgeModel[],
     };
-    const groupNodes = {};
+    const groupNodes = {} as NodeModel;
     nodes.forEach(({ entity, outEdges }) => {
         // creating each node and adding to data model
         const node = {
@@ -35,6 +38,7 @@ export function transformData(nodes: Node[]): Model {
             width: 75,
             height: 75,
             label: getLabel(entity),
+            data: {},
         };
         dataModel.nodes.push(node);
 
