@@ -2,7 +2,7 @@ import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 
 import { createFetchingActionTypes } from 'utils/fetchingReduxRoutines';
-import { fetchPublicConfig as fetchPublicConfigService } from 'services/SystemConfigService';
+import { fetchPublicConfig } from 'services/SystemConfigService';
 
 // Action types
 
@@ -12,18 +12,18 @@ export const types = {
 
 // Actions
 
-export const fetchPublicConfig = () => {
+export const fetchPublicConfigThunk = () => {
     return async (dispatch) => {
         dispatch({ type: types.FETCH_PUBLIC_CONFIG.REQUEST });
 
         try {
-            const result = await fetchPublicConfigService();
+            const result = await fetchPublicConfig();
             dispatch({
                 type: types.FETCH_PUBLIC_CONFIG.SUCCESS,
                 response: result.response,
             });
-        } catch (e) {
-            dispatch({ type: types.FETCH_PUBLIC_CONFIG.FAILURE, payload: e });
+        } catch (error) {
+            dispatch({ type: types.FETCH_PUBLIC_CONFIG.FAILURE, payload: error });
         }
     };
 };
@@ -37,16 +37,51 @@ const publicConfig = (state = {}, action) => {
     return state;
 };
 
+const error = (state = null, action) => {
+    switch (action.type) {
+        case types.FETCH_PUBLIC_CONFIG.REQUEST:
+        case types.FETCH_PUBLIC_CONFIG.SUCCESS:
+            return null;
+
+        case types.FETCH_PUBLIC_CONFIG.FAILURE:
+            return action.error;
+
+        default:
+            return state;
+    }
+};
+
+const isLoading = (state = true, action) => {
+    // Initialize true for edge case before authSagas call fetchUserRolePermissions action.
+    switch (action.type) {
+        case types.FETCH_PUBLIC_CONFIG.REQUEST:
+            return true;
+
+        case types.FETCH_PUBLIC_CONFIG.FAILURE:
+        case types.FETCH_PUBLIC_CONFIG.SUCCESS:
+            return false;
+
+        default:
+            return state;
+    }
+};
+
 const reducer = combineReducers({
     publicConfig,
+    error,
+    isLoading,
 });
 
 // Selectors
 
 const getPublicConfig = (state) => state.publicConfig;
+const getPublicConfigError = (state) => state.error;
+const getIsLoadingPublicConfig = (state) => state.isLoading;
 
 export const selectors = {
     getPublicConfig,
+    getPublicConfigError,
+    getIsLoadingPublicConfig,
 };
 
 export default reducer;

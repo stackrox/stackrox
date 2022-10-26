@@ -36,8 +36,8 @@ import { ThemeProvider } from 'Containers/ThemeProvider';
 import configureStore from 'store/configureStore';
 import installRaven from 'installRaven';
 import { ThunkAction, ThunkDispatch } from 'redux-thunk';
-import { fetchFeatureFlags } from './reducers/featureFlags';
-import { fetchPublicConfig } from './reducers/systemConfig';
+import { fetchFeatureFlagsThunk } from './reducers/featureFlags';
+import { fetchPublicConfigThunk } from './reducers/systemConfig';
 import configureApollo from './configureApolloClient';
 
 installRaven();
@@ -52,8 +52,8 @@ const dispatch = (action) =>
         action as ThunkAction<void, unknown, unknown, AnyAction>
     );
 
-dispatch(fetchFeatureFlags());
-dispatch(fetchPublicConfig());
+dispatch(fetchFeatureFlagsThunk());
+dispatch(fetchPublicConfigThunk());
 
 ReactDOM.render(
     <Provider store={store}>
