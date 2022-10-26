@@ -3,6 +3,7 @@ import { Select, ValidatedOptions } from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 export type AutoCompleteSelectProps = {
+    id: string;
     selectedOption: string;
     className?: string;
     typeAheadAriaLabel?: string;
@@ -12,6 +13,7 @@ export type AutoCompleteSelectProps = {
 
 /* TODO Implement autocompletion */
 export function AutoCompleteSelect({
+    id,
     selectedOption,
     className = '',
     typeAheadAriaLabel,
@@ -28,6 +30,7 @@ export function AutoCompleteSelect({
     return (
         <>
             <Select
+                toggleId={id}
                 validated={validated}
                 typeAheadAriaLabel={typeAheadAriaLabel}
                 className={className}
