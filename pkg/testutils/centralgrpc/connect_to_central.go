@@ -26,7 +26,8 @@ const (
 
 	apiEndpointEnvVar = "API_ENDPOINT"
 
-	defaultUsername     = "admin"
+	defaultUsername = "admin"
+	//#nosec G101 -- This is a false positive
 	defaultPasswordPath = "deploy/k8s/central-deploy/password"
 	defaultAPIEndpoint  = "localhost:8000"
 )
