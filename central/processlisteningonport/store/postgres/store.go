@@ -334,7 +334,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ProcessListeni
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.ProcessesListeningOnPortStorage](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
