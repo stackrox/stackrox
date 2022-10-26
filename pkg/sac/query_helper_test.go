@@ -65,12 +65,12 @@ func TestClusterScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Scope tree with one fully included cluster tree generates a Match query filter",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterTreeFullyIncluded,
-			expected:       clusterMatch(planetArrakis),
+			expected:       clusterVerboseMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Scope tree with one fully included cluster node generates a Match query filter",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterRootFullyIncluded,
-			expected:       clusterMatch(planetArrakis),
+			expected:       clusterVerboseMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Scope tree with only partial cluster nodes generates a MatchNone query filter",
@@ -80,12 +80,15 @@ func TestClusterScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Scope tree with one included cluster tree and partial clusters generate only a Match for the included cluster",
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceFullClusterMixIncluded,
-			expected:       clusterMatch(planetArrakis),
+			expected:       clusterVerboseMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Scope tree with multiple included cluster trees generates a Disjunction of Match for the included clusters",
 			scopeGenerator: effectiveaccessscope.TestTreeTwoClustersFullyIncluded,
-			expected:       search.DisjunctionQuery(clusterMatch(planetArrakis), clusterMatch(planetEarth)),
+			expected: search.DisjunctionQuery(
+				clusterVerboseMatch(topLevelTest, planetArrakis),
+				clusterVerboseMatch(topLevelTest, planetEarth),
+			),
 		},
 	}
 
@@ -139,35 +142,47 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Generated query filter for fully included cluster subtree is simple cluster match",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterTreeFullyIncluded,
-			expected:       search.ConjunctionQuery(clusterMatch(planetArrakis), getAnyNamespaceMatchQuery()),
+			expected: search.ConjunctionQuery(
+				clusterVerboseMatch(topLevelTest, planetArrakis),
+				getAnyNamespaceMatchQuery(),
+			),
 		},
 		{
 			description:    "Generated query filter for included cluster node is simple cluster match",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterRootFullyIncluded,
-			expected:       search.ConjunctionQuery(clusterMatch(planetArrakis), getAnyNamespaceMatchQuery()),
+			expected: search.ConjunctionQuery(
+				clusterVerboseMatch(topLevelTest, planetArrakis),
+				getAnyNamespaceMatchQuery(),
+			),
 		},
 		{
 			description:    "Generated query filter for single included namespace is the conjunction of the cluster and namespace matches",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterNamespacePairOnlyIncluded,
-			expected:       search.ConjunctionQuery(clusterMatch(planetArrakis), namespaceMatch(nsAtreides)),
+			expected: search.ConjunctionQuery(
+				clusterVerboseMatch(topLevelTest, planetArrakis),
+				namespaceVerboseMatch(topLevelTest, nsAtreides),
+			),
 		},
 		{
 			description:    "Generated query filter for two namespaces in the same cluster is the conjunction of the cluster and the disjunction of the namespaces",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterTwoNamespacesIncluded,
 			expected: search.ConjunctionQuery(
-				clusterMatch(planetArrakis),
-				search.DisjunctionQuery(namespaceMatch(nsAtreides), namespaceMatch(nsHarkonnen)),
+				clusterVerboseMatch(topLevelTest, planetArrakis),
+				search.DisjunctionQuery(
+					namespaceVerboseMatch(topLevelTest, nsAtreides),
+					namespaceVerboseMatch(topLevelTest, nsHarkonnen),
+				),
 			),
 		},
 		{
 			description:    "Generated query filter for multiple namespaces in the same cluster is the conjunction of the cluster and the disjunction of the namespaces",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterMultipleNamespacesIncluded,
 			expected: search.ConjunctionQuery(
-				clusterMatch(planetEarth),
+				clusterVerboseMatch(topLevelTest, planetEarth),
 				search.DisjunctionQuery(
-					namespaceMatch(nsSkunkWorks),
-					namespaceMatch(nsFraunhofer),
-					namespaceMatch(nsCERN),
+					namespaceVerboseMatch(topLevelTest, nsSkunkWorks),
+					namespaceVerboseMatch(topLevelTest, nsFraunhofer),
+					namespaceVerboseMatch(topLevelTest, nsCERN),
 				),
 			),
 		},
@@ -175,31 +190,47 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			description:    "Genreated query filter for multiple cluster-namespace pairs is the disjunction of each cluster-namespace query",
 			scopeGenerator: effectiveaccessscope.TestTreeTwoClusterNamespacePairsIncluded,
 			expected: search.DisjunctionQuery(
-				search.ConjunctionQuery(clusterMatch(planetEarth), namespaceMatch(nsSkunkWorks)),
-				search.ConjunctionQuery(clusterMatch(planetArrakis), namespaceMatch(nsSpacingGuild)),
+				search.ConjunctionQuery(
+					clusterVerboseMatch(topLevelTest, planetEarth),
+					namespaceVerboseMatch(topLevelTest, nsSkunkWorks),
+				),
+				search.ConjunctionQuery(
+					clusterVerboseMatch(topLevelTest, planetArrakis),
+					namespaceVerboseMatch(topLevelTest, nsSpacingGuild),
+				),
 			),
 		},
 		{
 			description:    "Generated query filter for a mix of cluster-namespace combination is the disjunction of the cluster queries",
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceMixIncluded,
 			expected: search.DisjunctionQuery(
-				search.ConjunctionQuery(clusterMatch(planetArrakis), namespaceMatch(nsSpacingGuild)),
 				search.ConjunctionQuery(
-					clusterMatch(planetEarth),
-					search.DisjunctionQuery(namespaceMatch(nsSkunkWorks), namespaceMatch(nsJPL))),
+					clusterVerboseMatch(topLevelTest, planetArrakis),
+					namespaceVerboseMatch(topLevelTest, nsSpacingGuild),
+				),
+				search.ConjunctionQuery(
+					clusterVerboseMatch(topLevelTest, planetEarth),
+					search.DisjunctionQuery(
+						namespaceVerboseMatch(topLevelTest, nsSkunkWorks),
+						namespaceVerboseMatch(topLevelTest, nsJPL),
+					),
+				),
 			),
 		},
 		{
 			description:    "Generated query filter for a full and a partial cluster is the disjunction of the full cluster match and the partial cluster tree",
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceFullClusterMixIncluded,
 			expected: search.DisjunctionQuery(
-				search.ConjunctionQuery(clusterMatch(planetArrakis), getAnyNamespaceMatchQuery()),
 				search.ConjunctionQuery(
-					clusterMatch(planetEarth),
+					clusterVerboseMatch(topLevelTest, planetArrakis),
+					getAnyNamespaceMatchQuery(),
+				),
+				search.ConjunctionQuery(
+					clusterVerboseMatch(topLevelTest, planetEarth),
 					search.DisjunctionQuery(
-						namespaceMatch(nsSkunkWorks),
-						namespaceMatch(nsFraunhofer),
-						namespaceMatch(nsCERN),
+						namespaceVerboseMatch(topLevelTest, nsSkunkWorks),
+						namespaceVerboseMatch(topLevelTest, nsFraunhofer),
+						namespaceVerboseMatch(topLevelTest, nsCERN),
 					),
 				),
 			),
@@ -208,16 +239,25 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			description:    "Generated query filter for a minimal scope tree matches exactly the tree structure",
 			scopeGenerator: effectiveaccessscope.TestTreeMinimalPartialTree,
 			expected: search.ConjunctionQuery(
-				clusterMatch(planetArrakis),
-				search.DisjunctionQuery(namespaceMatch(nsAtreides), namespaceMatch(nsHarkonnen)),
+				clusterVerboseMatch(topLevelTest, planetArrakis),
+				search.DisjunctionQuery(
+					namespaceVerboseMatch(topLevelTest, nsAtreides),
+					namespaceVerboseMatch(topLevelTest, nsHarkonnen),
+				),
 			),
 		},
 		{
 			description:    "Generated query filter for two fully included cluster tree is the disjunction of the cluster ID matches",
 			scopeGenerator: effectiveaccessscope.TestTreeTwoClustersFullyIncluded,
 			expected: search.DisjunctionQuery(
-				search.ConjunctionQuery(clusterMatch(planetArrakis), getAnyNamespaceMatchQuery()),
-				search.ConjunctionQuery(clusterMatch(planetEarth), getAnyNamespaceMatchQuery()),
+				search.ConjunctionQuery(
+					clusterVerboseMatch(topLevelTest, planetArrakis),
+					getAnyNamespaceMatchQuery(),
+				),
+				search.ConjunctionQuery(
+					clusterVerboseMatch(topLevelTest, planetEarth),
+					getAnyNamespaceMatchQuery(),
+				),
 			),
 		},
 	}
@@ -272,12 +312,12 @@ func TestNonVerboseClusterScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Scope tree with one fully included cluster tree generates a Match query filter",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterTreeFullyIncluded,
-			expected:       clusterNonVerboseMatch(planetArrakis),
+			expected:       clusterNonVerboseMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Scope tree with one fully included cluster node generates a Match query filter",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterRootFullyIncluded,
-			expected:       clusterNonVerboseMatch(planetArrakis),
+			expected:       clusterNonVerboseMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Scope tree with only partial cluster nodes generates a MatchNone query filter",
@@ -287,14 +327,14 @@ func TestNonVerboseClusterScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Scope tree with one included cluster tree and partial clusters generate only a Match for the included cluster",
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceFullClusterMixIncluded,
-			expected:       clusterNonVerboseMatch(planetArrakis),
+			expected:       clusterNonVerboseMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Scope tree with multiple included cluster trees generates a Disjunction of Match for the included clusters",
 			scopeGenerator: effectiveaccessscope.TestTreeTwoClustersFullyIncluded,
 			expected: search.DisjunctionQuery(
-				clusterNonVerboseMatch(planetArrakis),
-				clusterNonVerboseMatch(planetEarth)),
+				clusterNonVerboseMatch(topLevelTest, planetArrakis),
+				clusterNonVerboseMatch(topLevelTest, planetEarth)),
 		},
 	}
 
@@ -348,29 +388,29 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Generated query filter for fully included cluster subtree is simple cluster match",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterTreeFullyIncluded,
-			expected:       clusterNonVerboseMatch(planetArrakis),
+			expected:       clusterNonVerboseMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Generated query filter for included cluster node is simple cluster match",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterRootFullyIncluded,
-			expected:       clusterNonVerboseMatch(planetArrakis),
+			expected:       clusterNonVerboseMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Generated query filter for single included namespace is the conjunction of the cluster and namespace matches",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterNamespacePairOnlyIncluded,
 			expected: search.ConjunctionQuery(
-				clusterNonVerboseMatch(planetArrakis),
-				namespaceNonVerboseMatch(nsAtreides),
+				clusterNonVerboseMatch(topLevelTest, planetArrakis),
+				namespaceNonVerboseMatch(topLevelTest, nsAtreides),
 			),
 		},
 		{
 			description:    "Generated query filter for two namespaces in the same cluster is the conjunction of the cluster and the disjunction of the namespaces",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterTwoNamespacesIncluded,
 			expected: search.ConjunctionQuery(
-				clusterNonVerboseMatch(planetArrakis),
+				clusterNonVerboseMatch(topLevelTest, planetArrakis),
 				search.DisjunctionQuery(
-					namespaceNonVerboseMatch(nsAtreides),
-					namespaceNonVerboseMatch(nsHarkonnen),
+					namespaceNonVerboseMatch(topLevelTest, nsAtreides),
+					namespaceNonVerboseMatch(topLevelTest, nsHarkonnen),
 				),
 			),
 		},
@@ -378,11 +418,11 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			description:    "Generated query filter for multiple namespaces in the same cluster is the conjunction of the cluster and the disjunction of the namespaces",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterMultipleNamespacesIncluded,
 			expected: search.ConjunctionQuery(
-				clusterNonVerboseMatch(planetEarth),
+				clusterNonVerboseMatch(topLevelTest, planetEarth),
 				search.DisjunctionQuery(
-					namespaceNonVerboseMatch(nsSkunkWorks),
-					namespaceNonVerboseMatch(nsFraunhofer),
-					namespaceNonVerboseMatch(nsCERN),
+					namespaceNonVerboseMatch(topLevelTest, nsSkunkWorks),
+					namespaceNonVerboseMatch(topLevelTest, nsFraunhofer),
+					namespaceNonVerboseMatch(topLevelTest, nsCERN),
 				),
 			),
 		},
@@ -391,12 +431,12 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			scopeGenerator: effectiveaccessscope.TestTreeTwoClusterNamespacePairsIncluded,
 			expected: search.DisjunctionQuery(
 				search.ConjunctionQuery(
-					clusterNonVerboseMatch(planetEarth),
-					namespaceNonVerboseMatch(nsSkunkWorks),
+					clusterNonVerboseMatch(topLevelTest, planetEarth),
+					namespaceNonVerboseMatch(topLevelTest, nsSkunkWorks),
 				),
 				search.ConjunctionQuery(
-					clusterNonVerboseMatch(planetArrakis),
-					namespaceNonVerboseMatch(nsSpacingGuild),
+					clusterNonVerboseMatch(topLevelTest, planetArrakis),
+					namespaceNonVerboseMatch(topLevelTest, nsSpacingGuild),
 				),
 			),
 		},
@@ -405,14 +445,14 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceMixIncluded,
 			expected: search.DisjunctionQuery(
 				search.ConjunctionQuery(
-					clusterNonVerboseMatch(planetArrakis),
-					namespaceNonVerboseMatch(nsSpacingGuild),
+					clusterNonVerboseMatch(topLevelTest, planetArrakis),
+					namespaceNonVerboseMatch(topLevelTest, nsSpacingGuild),
 				),
 				search.ConjunctionQuery(
-					clusterNonVerboseMatch(planetEarth),
+					clusterNonVerboseMatch(topLevelTest, planetEarth),
 					search.DisjunctionQuery(
-						namespaceNonVerboseMatch(nsSkunkWorks),
-						namespaceNonVerboseMatch(nsJPL)),
+						namespaceNonVerboseMatch(topLevelTest, nsSkunkWorks),
+						namespaceNonVerboseMatch(topLevelTest, nsJPL)),
 				),
 			),
 		},
@@ -420,13 +460,13 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			description:    "Generated query filter for a full and a partial cluster is the disjunction of the full cluster match and the partial cluster tree",
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceFullClusterMixIncluded,
 			expected: search.DisjunctionQuery(
-				clusterNonVerboseMatch(planetArrakis),
+				clusterNonVerboseMatch(topLevelTest, planetArrakis),
 				search.ConjunctionQuery(
-					clusterNonVerboseMatch(planetEarth),
+					clusterNonVerboseMatch(topLevelTest, planetEarth),
 					search.DisjunctionQuery(
-						namespaceNonVerboseMatch(nsSkunkWorks),
-						namespaceNonVerboseMatch(nsFraunhofer),
-						namespaceNonVerboseMatch(nsCERN),
+						namespaceNonVerboseMatch(topLevelTest, nsSkunkWorks),
+						namespaceNonVerboseMatch(topLevelTest, nsFraunhofer),
+						namespaceNonVerboseMatch(topLevelTest, nsCERN),
 					),
 				),
 			),
@@ -435,10 +475,10 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			description:    "Generated query filter for a minimal scope tree matches exactly the tree structure",
 			scopeGenerator: effectiveaccessscope.TestTreeMinimalPartialTree,
 			expected: search.ConjunctionQuery(
-				clusterNonVerboseMatch(planetArrakis),
+				clusterNonVerboseMatch(topLevelTest, planetArrakis),
 				search.DisjunctionQuery(
-					namespaceNonVerboseMatch(nsAtreides),
-					namespaceNonVerboseMatch(nsHarkonnen),
+					namespaceNonVerboseMatch(topLevelTest, nsAtreides),
+					namespaceNonVerboseMatch(topLevelTest, nsHarkonnen),
 				),
 			),
 		},
@@ -446,8 +486,8 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			description:    "Generated query filter for two fully included cluster tree is the disjunction of the cluster ID matches",
 			scopeGenerator: effectiveaccessscope.TestTreeTwoClustersFullyIncluded,
 			expected: search.DisjunctionQuery(
-				clusterNonVerboseMatch(planetArrakis),
-				clusterNonVerboseMatch(planetEarth),
+				clusterNonVerboseMatch(topLevelTest, planetArrakis),
+				clusterNonVerboseMatch(topLevelTest, planetEarth),
 			),
 		},
 	}
@@ -465,20 +505,4 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			}
 		})
 	}
-}
-
-func clusterMatch(clusterID string) *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).MarkHighlighted(search.ClusterID).ProtoQuery()
-}
-
-func namespaceMatch(namespace string) *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.Namespace, namespace).MarkHighlighted(search.Namespace).ProtoQuery()
-}
-
-func clusterNonVerboseMatch(clusterID string) *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-}
-
-func namespaceNonVerboseMatch(namespace string) *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.Namespace, namespace).ProtoQuery()
 }
