@@ -41,10 +41,6 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetNodeScanV2() != nil
 }
 
-func (p *pipelineImpl) processRemove() error {
-	return nil
-}
-
 // Run runs the pipeline template on the input and returns the output.
 func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.NodeScanV2)

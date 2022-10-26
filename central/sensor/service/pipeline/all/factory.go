@@ -38,7 +38,7 @@ func NewFactory() pipeline.Factory {
 
 type factoryImpl struct{}
 
-// sendMessages grabs items from the queue, processes them, and sends them back to sensor.
+// PipelineForCluster grabs items from the queue, processes them, and potentially sends them back to sensor.
 func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) (pipeline.ClusterPipeline, error) {
 	flowUpdateFragment, err := networkflowupdate.Singleton().GetFragment(ctx, clusterID)
 	if err != nil {

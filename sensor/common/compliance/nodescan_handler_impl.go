@@ -39,8 +39,8 @@ func (c *nodeScanHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 }
 
 func (c *nodeScanHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	// This component doesn't actually process or handle any messages sent to Sensor. It uses the sensor component
-	// so that the lifecycle (start, stop) can be handled when Sensor starts up
+	// This component doesn't actually process or handle any messages sent from Central to Sensor (yet).
+	// It uses the sensor component so that the lifecycle (start, stop) can be handled when Sensor starts up.
 	return nil
 }
 
