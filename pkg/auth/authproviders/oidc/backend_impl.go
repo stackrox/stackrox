@@ -661,7 +661,7 @@ func extractCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings m
 	for fromClaimName, toClaimName := range mappings {
 		val, err := extractClaimFromPath(fromClaimName, claims)
 		if err != nil {
-			log.Debugf("Failed to extract claim from path: %w", err)
+			log.Debug(fmt.Sprintf("Failed to extract claim from path: %w", err))
 			continue
 		}
 		if err := addClaimToUserClaims(externalUserClaim, toClaimName, val); err != nil {
