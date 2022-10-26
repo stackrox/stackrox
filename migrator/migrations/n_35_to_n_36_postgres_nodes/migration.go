@@ -34,7 +34,7 @@ var (
 			return nil
 		},
 	}
-	batchSize = 10000
+	batchSize = 500
 	log       = loghelper.LogWrapper{}
 )
 
