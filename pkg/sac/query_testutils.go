@@ -84,8 +84,6 @@ func isSameQuery(expected, actual *v1.Query) bool {
 		utils.Must(fmt.Errorf("Unexpected query type %T", expected.Query))
 		return false
 	}
-	// This return statement should not be reachable
-	return true
 }
 
 func isSameBaseQuery(expected, actual *v1.BaseQuery) bool {
@@ -139,8 +137,6 @@ func isSameBaseQuery(expected, actual *v1.BaseQuery) bool {
 		utils.Must(fmt.Errorf("Unexpected base query type %T", expected.Query))
 		return false
 	}
-	// This return statement should not be reachable
-	return true
 }
 
 func isSameDocIDQuery(expected, actual *v1.DocIDQuery) bool {
