@@ -12,6 +12,7 @@ import { TrashIcon } from '@patternfly/react-icons';
 import { FormikErrors } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
 
+import useIndexKey from 'hooks/useIndexKey';
 import { SelectorEntityType, ScopedResourceSelector, ByLabelResourceSelector } from '../types';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
 
@@ -31,6 +32,7 @@ function ByLabelSelector({
     handleChange,
     validationErrors,
 }: ByLabelSelectorProps) {
+    const { keyFor, invalidateIndexKeys } = useIndexKey();
     function onChangeLabelKey(resourceSelector: ByLabelResourceSelector, ruleIndex, value) {
         const newSelector = cloneDeep(resourceSelector);
         newSelector.rules[ruleIndex].key = value;
@@ -73,10 +75,12 @@ function ByLabelSelector({
 
         if (newSelector.rules[ruleIndex].values.length > 1) {
             newSelector.rules[ruleIndex].values.splice(valueIndex, 1);
+            invalidateIndexKeys();
             handleChange(entityType, newSelector);
         } else if (newSelector.rules.length > 1) {
             // This was the last value, so drop the rule
             newSelector.rules.splice(ruleIndex, 1);
+            invalidateIndexKeys();
             handleChange(entityType, newSelector);
         } else {
             // This was the last value in the last rule, so drop the selector
@@ -93,7 +97,7 @@ function ByLabelSelector({
                         ? ValidatedOptions.error
                         : ValidatedOptions.default;
                 return (
-                    <div key={rule.key}>
+                    <div key={keyFor(ruleIndex)}>
                         {ruleIndex > 0 && (
                             <Flex
                                 className="pf-u-pt-md pf-u-pb-xl"
@@ -121,6 +125,7 @@ function ByLabelSelector({
                                     isRequired
                                 >
                                     <AutoCompleteSelect
+                                        typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} label key`}
                                         selectedOption={rule.key}
                                         onChange={(fieldValue: string) =>
                                             onChangeLabelKey(
@@ -157,8 +162,9 @@ function ByLabelSelector({
                                                 ? ValidatedOptions.error
                                                 : ValidatedOptions.default;
                                         return (
-                                            <Flex key={value}>
+                                            <Flex key={keyFor(valueIndex)}>
                                                 <AutoCompleteSelect
+                                                    typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} label value`}
                                                     className="pf-u-flex-grow-1 pf-u-w-auto"
                                                     selectedOption={value}
                                                     onChange={(fieldValue: string) =>
