@@ -120,12 +120,16 @@ function ByLabelSelector({
                         <Flex>
                             <Flex className="pf-u-flex-grow-1 pf-u-mb-md">
                                 <FormGroup
+                                    fieldId={`${entityType}-label-key-${ruleIndex}`}
                                     className="pf-u-flex-grow-1"
                                     label={ruleIndex === 0 ? 'Label key' : ''}
                                     isRequired
                                 >
                                     <AutoCompleteSelect
-                                        typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} label key`}
+                                        id={`${entityType}-label-key-${ruleIndex}`}
+                                        typeAheadAriaLabel={`Select label key for ${entityType.toLowerCase()} rule ${
+                                            ruleIndex + 1
+                                        } of ${scopedResourceSelector.rules.length}`}
                                         selectedOption={rule.key}
                                         onChange={(fieldValue: string) =>
                                             onChangeLabelKey(
@@ -145,6 +149,7 @@ function ByLabelSelector({
                                 </FlexItem>
                             </Flex>
                             <FormGroup
+                                fieldId={`${entityType}-label-value-${ruleIndex}`}
                                 className="pf-u-flex-grow-1"
                                 label={ruleIndex === 0 ? 'Label value(s)' : ''}
                                 isRequired
@@ -164,7 +169,14 @@ function ByLabelSelector({
                                         return (
                                             <Flex key={keyFor(valueIndex)}>
                                                 <AutoCompleteSelect
-                                                    typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} label value`}
+                                                    id={`${entityType}-label-value-${ruleIndex}-${valueIndex}`}
+                                                    typeAheadAriaLabel={`Select label value ${
+                                                        valueIndex + 1
+                                                    } of ${
+                                                        rule.values.length
+                                                    } for ${entityType.toLowerCase()} rule ${
+                                                        ruleIndex + 1
+                                                    } of ${scopedResourceSelector.rules.length}`}
                                                     className="pf-u-flex-grow-1 pf-u-w-auto"
                                                     selectedOption={value}
                                                     onChange={(fieldValue: string) =>
