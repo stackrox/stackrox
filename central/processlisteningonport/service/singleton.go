@@ -1,6 +1,9 @@
 package service
 
-import "github.com/stackrox/rox/pkg/sync"
+import (
+	"github.com/stackrox/rox/pkg/sync"
+	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
+)
 
 var (
 	once sync.Once
@@ -9,7 +12,7 @@ var (
 )
 
 func initialize() {
-	as = New()
+	as = New(datastore.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

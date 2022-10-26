@@ -4,6 +4,7 @@ import (
 	"context"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -21,6 +22,8 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New() Service {
-	return &serviceImpl{}
+func New(store datastore.DataStore) Service {
+	return &serviceImpl{
+		dataStore:	store,
+	}
 }
