@@ -6,4 +6,4 @@ until [ -n "${LB_IP}" ]; do
     sleep 1
 done
 
-echo $LB_IP
+echo "$LB_IP"
