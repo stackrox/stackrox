@@ -23,10 +23,10 @@ const defaultCollectionData = {
     description: '',
     inUse: false,
     embeddedCollectionIds: [],
-    selectorRules: {
-        Deployment: null,
-        Namespace: null,
-        Cluster: null,
+    resourceSelectors: {
+        Deployment: {},
+        Namespace: {},
+        Cluster: {},
     },
 };
 
@@ -59,7 +59,7 @@ function CollectionsFormPage({
                 {/* TODO - Handle UI for parse errors */}
             </>
         );
-    } else if (loading && !initialData) {
+    } else if (loading) {
         content = <>{/* TODO - Handle UI for loading state */}</>;
     } else if (initialData) {
         content = (

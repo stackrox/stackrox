@@ -12,7 +12,6 @@ deploy/openshift/deploy.sh
 deploy/openshift/sensor.sh
 dev-tools/add-host-alias.sh
 dev-tools/enable-hotreload.sh
-dev-tools/helmdiff.sh
 dev-tools/roxctl.sh
 image/assets/docker-auth.sh
 image/central-entrypoint.sh
@@ -30,7 +29,6 @@ image/templates/sensor/kubernetes/sensor.sh
 image/templates/sensor/openshift/delete-sensor.sh
 image/templates/sensor/openshift/sensor.sh
 licenses/generate-license-wrapper.sh
-local/expand-db.sh
 operator/hack/common.sh
 operator/hack/olm-operator-install.sh
 operator/hack/olm-operator-upgrade.sh
@@ -68,8 +66,6 @@ scripts/ci/sensorbundle-label/list-resources.sh
 scripts/connect-ui.sh
 scripts/ensure_image.sh
 scripts/grab-data-from-central.sh
-scripts/k8s/cleanup.sh
-scripts/k8s/get-lb-ip.sh
 scripts/k8s/kill-pod.sh
 scripts/k8s/local-port-forward.sh
 scripts/mergeswag.sh
