@@ -60,7 +60,7 @@ describe('Collection RuleSelector component', () => {
         expect(resourceSelector.field).toBe('Deployment');
         expect(resourceSelector.rule.values).toEqual(['']);
 
-        const typeAheadInput = screen.getByLabelText('Select a value for the deployment name');
+        const typeAheadInput = screen.getByLabelText('Select value 1 of 1 for the deployment name');
         await user.type(typeAheadInput, 'visa-processor{Enter}');
 
         expect(resourceSelector.field).toBe('Deployment');
@@ -76,12 +76,12 @@ describe('Collection RuleSelector component', () => {
 
         // Add a couple more values
         await user.type(
-            screen.getAllByLabelText('Select a value for the deployment name')[1],
+            screen.getByLabelText('Select value 2 of 2 for the deployment name'),
             'mastercard-processor{Enter}'
         );
         await user.click(screen.getByText('Add value'));
         await user.type(
-            screen.getAllByLabelText('Select a value for the deployment name')[2],
+            screen.getByLabelText('Select value 3 of 3 for the deployment name'),
             'discover-processor{Enter}'
         );
 
@@ -126,11 +126,11 @@ describe('Collection RuleSelector component', () => {
         expect(resourceSelector.rules[0].values).toEqual(['']);
 
         await user.type(
-            screen.getByLabelText('Select a value for the deployment label key'),
+            screen.getByLabelText('Select label key for deployment rule 1 of 1'),
             'kubernetes.io/metadata.name{Enter}'
         );
         await user.type(
-            screen.getByLabelText('Select a value for the deployment label value'),
+            screen.getByLabelText('Select label value 1 of 1 for deployment rule 1 of 1'),
             'visa-processor{Enter}'
         );
         expect(resourceSelector.rules[0].key).toEqual('kubernetes.io/metadata.name');
@@ -144,12 +144,12 @@ describe('Collection RuleSelector component', () => {
         expect(resourceSelector.rules[0].values).toEqual(['visa-processor', '']);
 
         await user.type(
-            screen.getAllByLabelText('Select a value for the deployment label value')[1],
+            screen.getByLabelText('Select label value 2 of 2 for deployment rule 1 of 1'),
             'mastercard-processor{Enter}'
         );
         await user.click(screen.getByText('Add value'));
         await user.type(
-            screen.getAllByLabelText('Select a value for the deployment label value')[2],
+            screen.getByLabelText('Select label value 3 of 3 for deployment rule 1 of 1'),
             'discover-processor{Enter}'
         );
 
@@ -163,22 +163,22 @@ describe('Collection RuleSelector component', () => {
         await user.click(screen.getByText('Add label rule'));
 
         await user.type(
-            screen.getAllByLabelText('Select a value for the deployment label key')[1],
+            screen.getByLabelText('Select label key for deployment rule 2 of 2'),
             'kubernetes.io/metadata.release{Enter}'
         );
         await user.type(
-            screen.getAllByLabelText('Select a value for the deployment label value')[3],
+            screen.getByLabelText('Select label value 1 of 1 for deployment rule 2 of 2'),
             // typo
             'stabl{Enter}'
         );
         await user.click(screen.getAllByText('Add value')[1]);
         await user.type(
-            screen.getAllByLabelText('Select a value for the deployment label value')[4],
+            screen.getByLabelText('Select label value 2 of 2 for deployment rule 2 of 2'),
             'beta{Enter}'
         );
         // test editing typo
         await user.type(
-            screen.getAllByLabelText('Select a value for the deployment label value')[3],
+            screen.getByLabelText('Select label value 1 of 2 for deployment rule 2 of 2'),
             'e{Enter}'
         );
 
