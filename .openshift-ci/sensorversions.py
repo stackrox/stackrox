@@ -11,10 +11,12 @@ def splitVersion(version):
     digits = re.search(r"(\d+)\.(\d+)\.\D*(\d+)", version)
     return int(digits.group(1)), int(digits.group(2)), int(digits.group(3))
 
+# TODO: figure out how to check if an image exists and check in this function
 def imageExists(version):
     x, y, z = splitVersion(version)
     return (y > z)
 
+# TODO: grab current_image from os.environ["MAIN_IMAGE_TAG"] after manual testing is done
 def getLast4SensorVersions(current_version):
     x,y,z = splitVersion(current_version)
     latestversions = []
