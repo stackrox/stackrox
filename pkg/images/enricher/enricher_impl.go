@@ -24,6 +24,7 @@ import (
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
 )
@@ -595,33 +596,44 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		return false, errors.Wrap(err, "getting registries for context")
 	}
 
-	matchingRegistries, err := getMatchingRegistries(registries, img)
-	if err != nil {
+	if err := checkForMatchingImageIntegrations(registries, img); err != nil {
 		// Do not return an error for internal images when no integration is found.
 		if enrichmentContext.Internal {
 			return false, nil
 		}
-		return false, errors.Wrapf(err, "getting matching registries for image %q", imgName)
+		return false, errors.Wrapf(err, "checking for matching registries for image %q", imgName)
 	}
 
 	var fetchedSignatures []*storage.Signature
-	for imageName, matchingRegs := range matchingRegistries {
-		for _, registry := range matchingRegs {
+	for _, name := range img.GetNames() {
+		matchingImageIntegrations, err := getMatchingImageIntegrations(registries, name)
+		if err != nil {
+			// Instead of propagating the error and stopping the image enrichment, we will instead log the occurrence
+			// and skip fetching signatures for this particular image name. We know that we have at least one matching
+			// image registry due to the call to checkForMatchingImageIntegrations above, so we do not want to abort
+			// enriching the image completely.
+			log.Infof("No matching image integration found for image name %q, hence no signatures will be "+
+				"attempted to be fetched", name)
+			continue
+		}
+
+		for _, registry := range matchingImageIntegrations {
 			// FetchImageSignaturesWithRetries will try fetching of signatures with retries.
-			sigs, err := signatures.FetchImageSignaturesWithRetries(ctx, e.signatureFetcher, img, imageName, registry)
+			sigs, err := signatures.FetchImageSignaturesWithRetries(ctx, e.signatureFetcher, img, name.GetFullName(),
+				registry)
 			fetchedSignatures = append(fetchedSignatures, sigs...)
-			// Skip other matching registries if we have a successful fetch of signatures for the respective image name,
-			// irrespective of whether signatures were found or not.
-			// Retrying this for other registries won't change the fact that signatures are available or not for this
-			// particular image name. Note that we still will fetch image signatures for _all_ other image
+			// Skip other matching image integrations if we have a successful fetch of signatures for the respective
+			// image name, irrespective of whether signatures were found or not.
+			// Retrying this for other image integrations won't change the fact that signatures are available or not for
+			// this particular image name. Note that we still will fetch image signatures for _all_ other image names.
 			if err == nil {
 				break
 			}
 
-			// We skip logging unauthorized errors. Each matching registry may either provide no credentials or different
-			// credentials, which makes it expected that we receive unauthorized errors on multiple occasions.
-			// The best way to handle this would be to keep a list of images which are matching but not authorized for each
-			// registry, but this can be tackled at a latter improvement.
+			// We skip logging unauthorized errors. Each matching image integration may either provide no credentials or
+			// different credentials, which makes it expected that we receive unauthorized errors on multiple occasions.
+			// The best way to handle this would be to keep a list of images which are matching but not authorized for
+			// each integration, but this can be tackled at a latter improvement.
 			if !errors.Is(err, errox.NotAuthorized) {
 				log.Errorf("Error fetching image signatures for image %q: %v", imgName, err)
 			} else {
@@ -714,23 +726,46 @@ func filterRegistriesBySource(requestSource *RequestSource, registries []registr
 	}
 }
 
-func getMatchingRegistries(registries []registryTypes.ImageRegistry,
-	image *storage.Image) (map[string][]registryTypes.ImageRegistry, error) {
-	matchingRegistries := make(map[string][]registryTypes.ImageRegistry, len(image.GetNames()))
+func getMatchingImageIntegrations(registries []registryTypes.ImageRegistry,
+	imageName *storage.ImageName) ([]registryTypes.ImageRegistry, error) {
+	var matchingIntegrations []registryTypes.ImageRegistry
 	for _, registry := range registries {
-		for _, name := range image.GetNames() {
-			if registry.Match(image.GetName()) {
-				matchingRegistries[name.GetFullName()] = append(matchingRegistries[name.GetFullName()], registry)
-			}
+		if registry.Match(imageName) {
+			matchingIntegrations = append(matchingIntegrations, registry)
 		}
 	}
 
-	if len(matchingRegistries) == 0 {
-		return nil, errox.NotFound.CausedByf("no matching registries found: please add "+
-			"an image integration for %q", image.GetName().GetFullName())
+	if len(matchingIntegrations) == 0 {
+		return nil, errox.NotFound.CausedByf("no matching image integrations found: please add "+
+			"an image integration for %q", imageName.GetFullName())
 	}
 
-	return matchingRegistries, nil
+	sort.Slice(matchingIntegrations, func(i, j int) bool {
+		// Note: the Name of ImageRegistry does not reflect the registry hostname used within the integration but a
+		// name chosen by the creator. Additionally, we have to trim the HTTP prefixes (http:// & https://).
+		if matchingIntegrations[i].Config() == nil {
+			return true
+		}
+		if matchingIntegrations[j].Config() == nil {
+			return false
+		}
+		return urlfmt.TrimHTTPPrefixes(matchingIntegrations[i].Config().RegistryHostname) <
+			urlfmt.TrimHTTPPrefixes(matchingIntegrations[j].Config().RegistryHostname)
+	})
+
+	return matchingIntegrations, nil
+}
+
+func checkForMatchingImageIntegrations(registries []registryTypes.ImageRegistry, image *storage.Image) error {
+	for _, name := range image.GetNames() {
+		for _, registry := range registries {
+			if registry.Match(name) {
+				return nil
+			}
+		}
+	}
+	return errox.NotFound.CausedByf("no matching image integrations found: please add "+
+		"an image integration for %q", image.GetName().GetFullName())
 }
 
 func normalizeVulnerabilities(scan *storage.ImageScan) {
