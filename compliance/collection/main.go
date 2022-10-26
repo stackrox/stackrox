@@ -82,7 +82,7 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 				}
 			}
 		default:
-			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
+			_ = utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}
 	}
 }
@@ -107,6 +107,25 @@ func startAuditLogCollection(ctx context.Context, client sensor.ComplianceServic
 	return auditReader
 }
 
+// manageSendingToSensor sends everything from sensorC channel to sensor
+func manageSendingToSensor(ctx context.Context, cli sensor.ComplianceServiceClient, sensorC <-chan *sensor.MsgFromCompliance) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case sc := <-sensorC:
+			client, err := initializeSendingStream(ctx, cli)
+			if err != nil && ctx.Err() == nil {
+				// error even after retries
+				log.Fatalf("unable to establish send stream to sensor: %v", err)
+			}
+			if err := client.Send(sc); err != nil {
+				log.Errorf("failed sending nodeScanV2 to sensor: %v", err)
+			}
+		}
+	}
+}
+
 func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal) {
 	for {
 		select {
@@ -129,34 +148,47 @@ func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *
 	}
 }
 
-func manageNodeScanLoop(ctx context.Context, cli sensor.ComplianceServiceClient, scanner nodescanv2.NodeScanner, rescanInterval time.Duration) {
-	t := time.NewTicker(5 * time.Second)
-	log.Infof("Node Rescan interval: %v", rescanInterval)
-	client, err := cli.Communicate(ctx)
-	if err != nil {
-		log.Errorf("error initializing node scan stream to sensor: %v", err)
-	} else if err := scanNode(client, scanner); err != nil {
-		log.Errorf("error running scanNode: %v", err)
-	}
+func manageNodeScanLoop(ctx context.Context, rescanInterval time.Duration, scanner nodescanv2.NodeScanner) <-chan *sensor.MsgFromCompliance {
+	sensorC := make(chan *sensor.MsgFromCompliance)
+	nodeName := getNode()
+	go func() {
+		defer close(sensorC)
+		t := time.NewTicker(rescanInterval)
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-			client, err := cli.Communicate(ctx)
-			if err != nil {
-				t.Reset(5 * time.Second)
-				log.Errorf("error initializing node scan stream to sensor: %v", err)
-				continue
-			}
-			if err := scanNode(client, scanner); err != nil {
-				log.Errorf("error running scanNode: %v", err)
-				continue
-			}
-			t.Reset(rescanInterval)
+		// first scan should happen on start
+		msg, err := scanNode(nodeName, scanner)
+		if err != nil {
+			log.Errorf("error running scanNode: %v", err)
+		} else {
+			sensorC <- msg
 		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				msg, err := scanNode(nodeName, scanner)
+				if err != nil {
+					log.Errorf("error running scanNode: %v", err)
+				} else {
+					sensorC <- msg
+				}
+			}
+		}
+	}()
+	return sensorC
+}
+
+func scanNode(nodeName string, scanner nodescanv2.NodeScanner) (*sensor.MsgFromCompliance, error) {
+	result, err := scanner.Scan(nodeName)
+	if err != nil {
+		return nil, err
 	}
+	return &sensor.MsgFromCompliance{
+		Node: nodeName,
+		Msg:  &sensor.MsgFromCompliance_NodeScanV2{NodeScanV2: result},
+	}, nil
 }
 
 func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
@@ -186,6 +218,34 @@ func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceCli
 	return client, config, nil
 }
 
+// initializeSendingStream returns a client for sending the data to sensor. It ensures that the stream is open and in case not,
+// then the connection is being reopened with exp. back off
+func initializeSendingStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, error) {
+	eb := backoff.NewExponentialBackOff()
+	eb.MaxInterval = 30 * time.Second
+	eb.MaxElapsedTime = 3 * time.Minute
+
+	var client sensor.ComplianceService_CommunicateClient
+
+	operation := func() error {
+		var err error
+		client, err = cli.Communicate(ctx)
+		if err != nil && ctx.Err() != nil {
+			return backoff.Permanent(err)
+		}
+		return err
+	}
+	err := backoff.RetryNotify(operation, eb, func(err error, t time.Duration) {
+		log.Infof("Sleeping for %0.2f seconds between attempts to connect to Sensor for sending", t.Seconds())
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to initialize sensor connection for sending")
+	}
+	log.Infof("Successfully connected to Sensor for sending at %s", env.AdvertisedEndpoint.Setting())
+
+	return client, nil
+}
+
 func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 30 * time.Second
@@ -213,20 +273,6 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 	return client, config, nil
 }
 
-func scanNode(client sensor.ComplianceService_CommunicateClient, scanner nodescanv2.NodeScanner) error {
-	nodeName := getNode()
-
-	result, err := scanner.Scan(nodeName)
-	if err != nil {
-		return err
-	}
-	msg := sensor.MsgFromCompliance{
-		Node: nodeName,
-		Msg:  &sensor.MsgFromCompliance_NodeScanV2{NodeScanV2: result},
-	}
-	return client.Send(&msg)
-}
-
 func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
@@ -248,11 +294,27 @@ func main() {
 
 	stoppedSig := concurrency.NewSignal()
 
-	go manageStream(ctx, cli, &stoppedSig)
+	go manageReceiveStream(ctx, cli, &stoppedSig)
 
 	if features.RHCOSNodeScanning.Enabled() {
-		scanner := nodescanv2.FakeNodeScanner{} // TODO(ROX-12971): Replace with real scanner
-		go manageNodeScanLoop(ctx, cli, &scanner, env.GetNodeRescanInterval())
+		log.Infof("Node Rescan interval: %v", env.GetNodeRescanInterval())
+		sensorC := make(chan *sensor.MsgFromCompliance)
+		defer close(sensorC)
+		go manageSendingToSensor(ctx, cli, sensorC)
+
+		// TODO(ROX-12971): Replace with real scanner
+		scanner := nodescanv2.FakeNodeScanner{}
+		nodeScansC := manageNodeScanLoop(ctx, env.GetNodeRescanInterval(), &scanner)
+		// multiplex producers (nodeScansC) into the output channel (sensorC)
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case sensorC <- <-nodeScansC:
+				}
+			}
+		}()
 	}
 
 	signalsC := make(chan os.Signal, 1)

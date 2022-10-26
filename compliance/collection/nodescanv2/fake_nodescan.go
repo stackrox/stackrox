@@ -45,7 +45,7 @@ func (f *FakeNodeScanner) Scan(nodeName string) (*storage.NodeScanV2, error) {
 					Version:   "2:7.4.629-6.el7.x86_64",
 					Arch:      "x86_64",
 					Module:    "FakeMod",
-					Cpes:      []string{"cpe:/a:redhat:enterprise_linux:7::baseos"},
+					Cpes:      []string{"cpe:/a:redhat:enterprise_linux:8::baseos"},
 					AddedBy:   "FakeLayer",
 					Executables: []*scannerV1.Executable{
 						{
