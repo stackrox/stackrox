@@ -262,7 +262,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
         "An nginx pod is started"
-        rebuildForRetries()
+        //  rebuildForRetries()
 
         //  String namespace = deployments[0].getNamespace()
         String namespace = "qa"

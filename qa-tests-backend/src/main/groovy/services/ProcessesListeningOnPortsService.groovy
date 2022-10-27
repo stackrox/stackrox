@@ -1,11 +1,11 @@
 package services
 
 import groovy.util.logging.Slf4j
-import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceGrpc
-import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceOuterClass.GetProcessesListeningOnPortsResponse
-import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceOuterClass.GetProcessesListeningOnPortsWithDeploymentResponse
-import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceOuterClass.GetProcessesListeningOnPortsByNamespaceRequest
-import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceOuterClass.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest
+import io.stackrox.proto.api.v1.ProcessListeningOnPortServiceGrpc
+import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsResponse
+import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsWithDeploymentResponse
+import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsByNamespaceRequest
+import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest
 
 @Slf4j
 class ProcessesListeningOnPortsService extends BaseService {
