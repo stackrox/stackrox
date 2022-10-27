@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
-# shellcheck disable=SC2086
 set -e
 
 K8S_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
@@ -12,6 +11,7 @@ source "$COMMON_DIR"/env.sh
 source "$K8S_DIR"/env.sh
 
 if [[ -z $CLUSTER ]]; then
+    # shellcheck disable=SC2162
     read -p "Enter cluster name to create: " CLUSTER
 fi
 echo "CLUSTER set to $CLUSTER"
@@ -20,6 +20,7 @@ if [[ -z "${ROX_ADMIN_PASSWORD}" ]]; then
     export ROX_ADMIN_PASSWORD="${ROX_PASSWORD:-}"
 fi
 if [[ -z "$ROX_ADMIN_PASSWORD" && -f "${K8S_DIR}/central-deploy/password" ]]; then
+	# shellcheck disable=SC2086
 	ROX_ADMIN_PASSWORD="$(cat ${K8S_DIR}/central-deploy/password)"
 	export ROX_ADMIN_PASSWORD
 fi
