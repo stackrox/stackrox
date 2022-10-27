@@ -20,8 +20,8 @@ export type GroupProperties = {
     id: string;
 
     authProviderId: string;
-    key: string;
-    value: string;
+    key?: string;
+    value?: string;
 
     traits?: Traits | null;
 };
