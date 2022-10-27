@@ -30,8 +30,8 @@ export function visitSystemConfiguration() {
 export function visitSystemConfigurationFromLeftNav() {
     visitFromLeftNavExpandable('Platform Configuration', title, requestConfigForGET);
 
-    cy.get(`h1:contains("${title}")`);
     cy.location('pathname').should('eq', basePath);
+    cy.get(`h1:contains("${title}")`);
 }
 
 export function visitSystemConfigurationWithStaticResponseForPermissions(
