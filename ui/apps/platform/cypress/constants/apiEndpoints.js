@@ -192,11 +192,6 @@ export const riskAcceptance = {
     markVulnerabilityFalsePositive: graphql('markVulnerabilityFalsePositive'),
 };
 
-export const system = {
-    config: '/v1/config',
-    configPublic: '/v1/config/public',
-};
-
 export const extensions = {
     diagnostics: '/api/extensions/diagnostics',
 };
