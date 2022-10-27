@@ -245,9 +245,8 @@ function setup_license() {
     echo "Injecting license ..."
     [[ -f "$license_file" ]] || { echo "License file $license_file not found!" ; return 1 ; }
 
-    tmp="$(mktemp)"
     local tmp
-
+    tmp="$(mktemp)"
     status=$(curl_central \
 	    -s \
 	    -o "$tmp" \
