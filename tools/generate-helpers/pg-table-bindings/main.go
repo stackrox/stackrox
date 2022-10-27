@@ -131,6 +131,9 @@ type properties struct {
 
 	// Indicates that there is a foreign key cycle relationship. Should be defined as <Embedded FK Field>:<Referenced Field>
 	Cycle string
+
+	// Indicates the batch size for migrating records.
+	MigrationBatchSize int
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -207,6 +210,7 @@ func main() {
 	c.Flags().IntVar(&props.MigrateSeq, "migration-seq", 0, "the unique sequence number to migrate to Postgres")
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
+	c.Flags().IntVar(&props.MigrationBatchSize, "migration-batch", 10000, "the batch size for data migration")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if (props.MigrateSeq == 0) != (props.MigrateFrom == "") {
@@ -318,32 +322,31 @@ func main() {
 				return err
 			}
 		}
-		if props.SchemaOnly {
-			return nil
-		}
-		if props.SingletonStore {
-			if err := renderFile(templateMap, singletonTemplate, "store.go"); err != nil {
-				return err
-			}
-			if err := renderFile(templateMap, singletonTestTemplate, "store_test.go"); err != nil {
-				return err
-			}
-		} else {
-			if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
-				return err
-			}
-			if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
-				return err
-			}
-
-			if props.SearchCategory != "" {
-				if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
+		if !props.SchemaOnly {
+			if props.SingletonStore {
+				if err := renderFile(templateMap, singletonTemplate, "store.go"); err != nil {
 					return err
 				}
-			}
-			if permissionCheckerEnabled {
-				if err := renderFile(templateMap, permissionCheckerTemplate, "permission_checker.go"); err != nil {
+				if err := renderFile(templateMap, singletonTestTemplate, "store_test.go"); err != nil {
 					return err
+				}
+			} else {
+				if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
+					return err
+				}
+				if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
+					return err
+				}
+
+				if props.SearchCategory != "" {
+					if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
+						return err
+					}
+				}
+				if permissionCheckerEnabled {
+					if err := renderFile(templateMap, permissionCheckerTemplate, "permission_checker.go"); err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -360,6 +363,7 @@ func main() {
 				MigrateSequence: props.MigrateSeq,
 				Dir:             migrationDir,
 				SingletonStore:  props.SingletonStore,
+				BatchSize:       props.MigrationBatchSize,
 			}
 
 			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {
