@@ -31,7 +31,7 @@ import FormLabelGroup from '../FormLabelGroup';
 export type GenericWebhookIntegration = {
     generic: {
         endpoint: string;
-        skipTlsVerify: boolean;
+        skipTLSVerify: boolean;
         auditLoggingEnabled: boolean;
         caCert: string;
         username: string;
@@ -105,7 +105,7 @@ export const defaultValues: GenericWebhookIntegrationFormValues = {
         name: '',
         generic: {
             endpoint: '',
-            skipTlsVerify: false,
+            skipTLSVerify: false,
             auditLoggingEnabled: false,
             caCert: '',
             username: '',
@@ -207,13 +207,13 @@ function GenericWebhookIntegrationForm({
                         </FormLabelGroup>
                         <FormLabelGroup
                             label=""
-                            fieldId="notifier.generic.skipTlsVerify"
+                            fieldId="notifier.generic.skipTLSVerify"
                             errors={errors}
                         >
                             <Checkbox
                                 label="Skip TLS verification"
-                                id="notifier.generic.skipTlsVerify"
-                                isChecked={values.notifier.generic.skipTlsVerify}
+                                id="notifier.generic.skipTLSVerify"
+                                isChecked={values.notifier.generic.skipTLSVerify}
                                 onChange={onChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
