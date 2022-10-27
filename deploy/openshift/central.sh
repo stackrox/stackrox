@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2086
 set -e
 
 K8S_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
