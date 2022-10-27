@@ -127,21 +127,20 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	return nil
 }
 
-func (ds *datastoreImpl) GetProcessListeningOnPortForDeployment(
+func (ds *datastoreImpl) GetProcessListeningOnPort(
 	ctx context.Context,
+	namespace string,
 	deploymentId string,
 ) (
-	*storage.ProcessListeningOnPort, error,
+	[]*storage.ProcessListeningOnPort, error,
 ) {
 
-	portProcessList, err := ds.storage.GetPLOPForDeployment(ctx, deploymentId)
+	portProcessList, err := ds.storage.GetProcessListeningOnPort(ctx,
+		namespace, deploymentId)
+
 	if err != nil {
 		return nil, err
 	}
 
-	if len(portProcessList) > 0 {
-		return portProcessList[0], nil
-	} else {
-		return nil, nil
-	}
+	return portProcessList, nil
 }

@@ -46,14 +46,14 @@ const (
 	// process_indicators. Used to provide information for queries like 'give
 	// me all PLOP by this deployment'.
 	// XXX: Verify the query plan to make sure needed indexes are in use.
-	getByDeploymentStmt =
+	getByNamespaceAndDeploymentStmt =
 		"SELECT plop.id, plop.serialized, " +
 		"proc.podid, proc.containername, proc.signal_name, " +
 		"proc.signal_args, proc.signal_execfilepath " +
 		"FROM process_listening_on_ports plop " +
 		"JOIN process_indicators proc " +
 		"ON plop.processindicatorid = proc.id " +
-		"WHERE proc.deploymentid = $1"
+		"WHERE proc.namespace = $1 AND proc.deploymentid = $2"
 )
 
 var (
@@ -571,25 +571,27 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 }
 
 // Manually written function to get PLOP joined with ProcessIndicators
-func (s *storeImpl) GetPLOPForDeployment(
+func (s *storeImpl) GetProcessListeningOnPort(
 	ctx context.Context,
+	namespace string,
 	deploymentID string,
 ) ([]*storage.ProcessListeningOnPort, error) {
 	// XXX: Use SetPostgresOperationDurationTime with a proper generated Metric
 
 	return pgutils.Retry2(func() ([]*storage.ProcessListeningOnPort, error) {
-		return s.retryableGetPLOPForDeployment(ctx, deploymentID)
+		return s.retryableGetPLOPForDeployment(ctx, namespace, deploymentID)
 	})
 }
 
 func (s *storeImpl) retryableGetPLOPForDeployment(
 	ctx context.Context,
+	namespace string,
 	deploymentID string,
 ) ([]*storage.ProcessListeningOnPort, error) {
 	var rows pgx.Rows
 	var err error
 
-	rows, err = s.db.Query(ctx, getByDeploymentStmt, deploymentID)
+	rows, err = s.db.Query(ctx, getByNamespaceAndDeploymentStmt, namespace, deploymentID)
 
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
