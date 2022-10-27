@@ -2,6 +2,7 @@ import static org.junit.Assume.assumeFalse
 import groups.BAT
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 import org.junit.experimental.categories.Category
 import services.ApiTokenService
@@ -18,7 +19,6 @@ import util.Env
 @Category(BAT)
 class VulnMgmtSACTest extends BaseSpecification {
     static final private String NONE = "None"
-    static final private String CENTOS_IMAGE = "quay.io/rhacs-eng/qa:centos7-base"
 
     static final private String NODE_ROLE = "node-role"
     static final private String IMAGE_ROLE = "image-role"
@@ -214,10 +214,9 @@ class VulnMgmtSACTest extends BaseSpecification {
     def setupSpec() {
         assumeFalse("This test is skipped in this environment", skipThisTest())
 
-        // Purposefully add an image that is not running to check the case
-        // where an image is orphaned
+        // Purposefully add an image (centos7-base) that is not running to check the case
+        // where an image is orphaned. The image is actually part of the re-scanned image set.
         ImageIntegrationService.addStackroxScannerIntegration()
-        ImageService.scanImage(CENTOS_IMAGE)
         // Re-scan the images used in previous test cases to ensure pruning did not leave orphan CVEs.
         for ( imageToScan in IMAGES_TO_RESCAN ) {
             ImageService.scanImage(imageToScan)
@@ -249,6 +248,12 @@ class VulnMgmtSACTest extends BaseSpecification {
     static String getToken(String tokenName, String role = NONE) {
         GenerateTokenResponse token = ApiTokenService.generateToken(tokenName, role)
         return token.token
+    }
+
+    private static List<ImageOuterClass.ListImage> getImagesWithCVE(String queryText) {
+        def imageQuery = RawQuery.newBuilder().setQuery("CVE:${queryText}").build()
+        def tstImages = ImageService.getImages(imageQuery)
+        return tstImages
     }
 
     def getImageCVEQuery() {
@@ -291,16 +296,8 @@ class VulnMgmtSACTest extends BaseSpecification {
         def baseSortedVulns = extractCVEsAndSort(baseVulnCallResult.value)
         def sortedVulns = extractCVEsAndSort(vulnCallResult.value)
         if ( baseSortedVulns != sortedVulns ) {
-            for ( v in baseSortedVulns ) {
-                if ( ! sortedVulns.contains(v) ) {
-                    log.info("Item found in baseVulnCallResult but not in vulnCallResults: " + v)
-                }
-            }
-            for ( v in sortedVulns ) {
-                if ( ! baseSortedVulns.contains(v) ) {
-                    log.info("Item found in vulnCallResults but not in baseVulnCallResult: " + v)
-                }
-            }
+            log.error("Item found in baseVulnCallResult but not in vulnCallResults: " + (baseSortedVulns-sortedVulns))
+            log.error("Item found in vulnCallResults but not in baseVulnCallResult: " + (sortedVulns-baseSortedVulns))
         }
 
         then:
@@ -339,24 +336,18 @@ class VulnMgmtSACTest extends BaseSpecification {
         def baseSortedVulns = extractCVEsAndSort(baseVulnCallResult.value)
         def sortedVulns = extractCVEsAndSort(vulnCallResult.value)
         if ( baseSortedVulns != sortedVulns ) {
-            for ( v in baseSortedVulns ) {
-                if ( ! sortedVulns.contains(v) ) {
-                    log.info("Item found in baseVulnCallResult but not in vulnCallResults: " + v)
-                    def imageQuery = RawQuery.newBuilder().setQuery("CVE:${v}").build()
-                    def tstImages = ImageService.getImages(imageQuery)
-                    for ( img in tstImages ) {
-                        log.debug "Image ${img} has vulnerability ${v}"
-                    }
+            (baseSortedVulns-sortedVulns).each {
+                item ->
+                log.error("Item found in baseVulnCallResult but not in vulnCallResults: " + item.cve)
+                for ( img in getImagesWithCVE(item.cve) ) {
+                    log.error("Vulnerability ${item.cve} is found in image {${img}}")
                 }
             }
-            for ( v in sortedVulns ) {
-                if ( ! baseSortedVulns.contains(v) ) {
-                    log.info("Item found in vulnCallResults but not in baseVulnCallResult: " + v)
-                    def imageQuery = RawQuery.newBuilder().setQuery("CVE:${v}").build()
-                    def tstImages = ImageService.getImages(imageQuery)
-                    for ( img in tstImages ) {
-                        log.debug "Image ${img} has vulnerability ${v}"
-                    }
+            (tewakesortedVulnsdArray-baseSortedVulns).each {
+                item ->
+                log.error("Item found in vulnCallResults but not in baseVulnCallResult: " + item.cve)
+                for ( img in getImagesWithCVE(item.cve) ) {
+                    log.error("Vulnerability ${item.cve} is found in image {${img}}")
                 }
             }
         }
@@ -384,8 +375,8 @@ class VulnMgmtSACTest extends BaseSpecification {
         def imageComponentQuery = getImageComponentQuery()
         def nodeCveQuery = getNodeCVEQuery()
         def nodeComponentQuery = getNodeComponentQuery()
-        def imageBaseQuery = isPostgresRun() ? imageBaseQuery : baseQuery
-        def nodeBaseQuery = isPostgresRun() ? nodeBaseQuery : baseQuery
+        def imageBaseQuery = isPostgresRun() ? imageQuery : baseQuery
+        def nodeBaseQuery = isPostgresRun() ? nodeQuery : baseQuery
         def baseImageVulnCallResult = gqlService.Call(imageCveQuery, [query: imageBaseQuery])
         assert baseImageVulnCallResult.hasNoErrors()
         def baseImageComponentCallResult = gqlService.Call(imageComponentQuery, [query: imageBaseQuery])
