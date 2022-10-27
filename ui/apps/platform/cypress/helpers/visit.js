@@ -82,18 +82,18 @@ export function visit(pageUrl, requestConfig, staticResponseMap) {
  * { fixture: 'fixtures/wherever/whatever.json' }
  *
  * @param {string} pageUrl
- * @param {{ body: { resourceToAccess: Record<string, string> } } | { fixture: string }} permissionsStaticResponseMap
+ * @param {{ body: { resourceToAccess: Record<string, string> } } | { fixture: string }} staticResponseForPermissions
  * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitWithPermissions(
     pageUrl,
-    permissionsStaticResponse,
+    staticResponseForPermissions,
     requestConfig,
     staticResponseMap
 ) {
     const staticResponseMapGeneric = {
-        mypermissions: permissionsStaticResponse,
+        [myPermissionsAlias]: staticResponseForPermissions,
     };
     interceptRequests(requestConfigGeneric, staticResponseMapGeneric);
     interceptRequests(requestConfig, staticResponseMap);
