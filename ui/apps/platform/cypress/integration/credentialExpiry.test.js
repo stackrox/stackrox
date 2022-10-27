@@ -24,7 +24,7 @@ describe('Credential expiry', () => {
             const expiry = dateFns.addMinutes(dateFns.addHours(new Date(), 23), 30);
 
             const staticResponseForPermissions = {
-                fixture: 'auth/mypermissionsMinimalAccess',
+                fixture: 'auth/mypermissionsMinimalAccess.json',
             };
 
             renderCentralCredentialExpiryBanner(expiry, staticResponseForPermissions);
@@ -78,7 +78,7 @@ describe('Credential expiry', () => {
             const expiry = dateFns.addMinutes(dateFns.addHours(new Date(), 23), 30);
 
             const staticResponseForPermissions = {
-                fixture: 'auth/mypermissionsMinimalAccess',
+                fixture: 'auth/mypermissionsMinimalAccess.json',
             };
 
             renderCentralCredentialExpiryBanner(expiry, staticResponseForPermissions);
