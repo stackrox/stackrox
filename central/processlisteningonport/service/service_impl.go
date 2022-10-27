@@ -57,7 +57,7 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Contex
 
 	log.Info("In processlisteningonport service about to get processes namespace level")
 	namespace := req.GetNamespace()
-	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPortForNamespace(ctx, namespace);
+	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPortNamespace(ctx, namespace);
 	log.Info("In processlisteningonport service got processes namespace level")
 
 	if err != nil {
@@ -89,7 +89,7 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx c
 	log.Info("In processlisteningonport service about to get processes")
 	namespace := req.GetNamespace()
 	deployment := req.GetDeploymentId()
-	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPortForDeployment(ctx, namespace, deployment);
+	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(ctx, namespace, deployment);
 	log.Info("In processlisteningonport service got processes")
 
 	if err != nil {
