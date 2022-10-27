@@ -14,6 +14,7 @@ import io.stackrox.proto.storage.ScopeOuterClass.Scope
 import common.Constants
 import groups.BAT
 import groups.SMOKE
+import groups.MultiArch
 import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
@@ -219,7 +220,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, SMOKE])
+    @Category([BAT, SMOKE, MultiArch])
     def "Verify policy configuration #policyName can be triggered"() {
         Assume.assumeTrue(canRun == null || canRun())
 
@@ -687,7 +688,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, SMOKE])
+    @Category([BAT, SMOKE, MultiArch])
     def "Verify env var policy configuration for source #envVarSource fails validation"() {
         expect:
         assert !PolicyService.createNewPolicy(Policy.newBuilder()

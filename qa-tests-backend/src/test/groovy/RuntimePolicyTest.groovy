@@ -3,6 +3,7 @@ import static Services.waitForResolvedViolation
 import static Services.waitForViolation
 import groups.BAT
 import groups.SMOKE
+import groups.MultiArch
 import io.stackrox.proto.storage.PolicyOuterClass
 import java.util.stream.Collectors
 import objects.Deployment
@@ -49,7 +50,7 @@ class RuntimePolicyTest extends BaseSpecification  {
     }
 
     @Unroll
-    @Category([BAT, SMOKE])
+    @Category([BAT, SMOKE, MultiArch])
     def "Verify runtime policy : #policyName can be triggered - #depName"() {
         when:
         "Validate if policy is present"
