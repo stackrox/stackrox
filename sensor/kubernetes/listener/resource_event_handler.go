@@ -26,7 +26,7 @@ import (
 
 func (k *listenerImpl) handleAllEvents() {
 	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
-	resyncingSif := informers.NewSharedInformerFactory(k.client.Kubernetes(), k.resyncPeriod)
+	resyncingSif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
 
 	// Create informer factories for needed orchestrators.
 	var osAppsFactory osAppsExtVersions.SharedInformerFactory

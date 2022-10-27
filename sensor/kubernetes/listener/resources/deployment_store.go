@@ -86,6 +86,22 @@ func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector
 	return
 }
 
+func (ds *DeploymentStore) getDeploymentsWithServiceAccountAndNamespace(namespace, sa string) (matching []*deploymentWrap) {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	for _, depl := range ds.deployments {
+		if namespace != "" && namespace != depl.GetNamespace() {
+			// TODO: check if we really want to filter out if namespace doesn't match? Probably yes.
+			continue
+		}
+		if depl.GetServiceAccount() == sa {
+			matching = append(matching, depl)
+		}
+	}
+	return
+}
+
 // CountDeploymentsForNamespace returns the number of deployments in a namespace
 func (ds *DeploymentStore) CountDeploymentsForNamespace(namespace string) int {
 	ds.lock.RLock()

@@ -48,6 +48,32 @@ func (rs *storeImpl) GetNamespacedRoleIDOrEmpty(roleRef namespacedRoleRef) strin
 	return ""
 }
 
+func (rs *storeImpl) FindSubjectForBinding(namespace, uuid string) []namespacedSubject {
+	rs.lock.RLock()
+	defer rs.lock.RUnlock()
+
+	id := namespacedBindingID{namespace: namespace, uid: uuid}
+	if binding, ok := rs.bindings[id]; !ok {
+		return nil
+	} else {
+		return binding.subjects
+	}
+}
+
+func (rs *storeImpl) FindSubjectsFromNamespacedRole(namespace, roleName string) []namespacedSubject {
+	rs.lock.RLock()
+	defer rs.lock.RUnlock()
+
+	var matched []namespacedSubject
+	for _, binding := range rs.bindings {
+		if binding.roleRef.name == roleName && binding.roleRef.namespace == namespace {
+			matched = append(matched, binding.subjects...)
+		}
+	}
+
+	return matched
+}
+
 func (rs *storeImpl) UpsertRole(role *v1.Role) {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()

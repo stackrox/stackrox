@@ -27,6 +27,9 @@ type Store interface {
 	UpsertClusterBinding(binding *v1.ClusterRoleBinding)
 	RemoveClusterBinding(binding *v1.ClusterRoleBinding)
 	GetPermissionLevelForDeployment(deployment NamespacedServiceAccount) storage.PermissionLevel
+
+	FindSubjectsFromNamespacedRole(namespace, roleName string) []namespacedSubject
+	FindSubjectForBinding(namespace, uuid string) []namespacedSubject
 }
 
 // NewStore creates a new instance of Store

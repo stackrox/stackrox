@@ -13,7 +13,7 @@ var (
 )
 
 type DeploymentResolver interface {
-	ProcessDependencies(ref message.DeploymentRef) (*storage.Deployment, error)
+	ProcessDependencies(ref message.DeploymentRef) ([]*storage.Deployment, error)
 }
 
 type Resolver interface {
@@ -59,25 +59,28 @@ func (r *resolverImpl) processMessage(pipelineMessage *message.ResourceEvent) {
 		// or if a dependency from a deployment was changed
 		// For dependencies, multiple deployments could have the resource as a
 		// dependency, this is why we need to process each one individually.
-		deployment, err := r.deploymentDependencyResolver.ProcessDependencies(deploymentRef)
+		deployments, err := r.deploymentDependencyResolver.ProcessDependencies(deploymentRef)
 		if err != nil {
-			log.Warnf("deployment resolver failed for deployment %s: %s", deploymentRef.Id, err)
+			log.Warnf("deployment resolver failed for deployments ref %s: %s", deploymentRef, err)
+			continue
 		}
 
-		pipelineMessage.CompatibilityDetectionDeployment = append(pipelineMessage.CompatibilityDetectionDeployment,
-			message.CompatibilityDetectionMessage{
-				Object: deployment,
-				Action: deploymentRef.Action,
-			})
+		for _, deployment := range deployments {
+			pipelineMessage.CompatibilityDetectionDeployment = append(pipelineMessage.CompatibilityDetectionDeployment,
+				message.CompatibilityDetectionMessage{
+					Object: deployment,
+					Action: deploymentRef.Action,
+				})
 
-		pipelineMessage.ForwardMessages = append(pipelineMessage.ForwardMessages,
-			&central.SensorEvent{
-				Id:     deploymentRef.Id,
-				Action: deploymentRef.Action,
-				Resource: &central.SensorEvent_Deployment{
-					Deployment: deployment,
-				},
-			})
+			pipelineMessage.ForwardMessages = append(pipelineMessage.ForwardMessages,
+				&central.SensorEvent{
+					Id:     deploymentRef.Id,
+					Action: deploymentRef.Action,
+					Resource: &central.SensorEvent_Deployment{
+						Deployment: deployment,
+					},
+				})
+		}
 	}
 
 	// Clean up deployment ref field
