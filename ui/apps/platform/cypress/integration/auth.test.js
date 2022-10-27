@@ -1,84 +1,122 @@
 import addSeconds from 'date-fns/add_seconds';
 
-import { url as loginUrl, selectors } from '../constants/LoginPage';
-import { url as dashboardURL } from '../constants/DashboardPage';
-
 import * as api from '../constants/apiEndpoints';
+import { url as loginUrl, selectors } from '../constants/LoginPage';
+import { systemConfigUrl } from '../constants/SystemConfigPage';
 
-const AUTHENTICATED = true;
-const UNAUTHENTICATED = false;
+// Authentication providers
+
+const loginAuthProvidersAlias = 'login/authproviders';
+
+function visitAndWaitForAuthProviders(destinationUrl) {
+    cy.intercept('GET', api.auth.loginAuthProviders, { fixture: 'auth/authProviders.json' }).as(
+        loginAuthProvidersAlias
+    );
+
+    cy.visit(destinationUrl);
+
+    cy.wait(`@${loginAuthProvidersAlias}`);
+}
+
+// Authentication status
+
+const authStatusAlias = 'auth/status';
+
+function interactAndWaitForAuthStatus(interactionCallback, staticResponseForAuthStatus) {
+    cy.intercept('GET', api.auth.authStatus, staticResponseForAuthStatus).as(authStatusAlias);
+
+    interactionCallback();
+
+    return cy.wait(`@${authStatusAlias}`);
+}
+
+// System Configuration
+
+const systemConfigAlias = 'config';
+
+function reachSystemConfiguration(interactionCallback) {
+    cy.intercept('GET', api.system.config).as(systemConfigAlias);
+
+    interactionCallback();
+
+    cy.location('pathname').should('eq', systemConfigUrl);
+    cy.wait(`@${systemConfigAlias}`);
+    cy.get('h1:contains("System Configuration")');
+}
 
 describe('Authentication', () => {
-    const setupAuth = (landingUrl, authStatusValid, authStatusResponse = {}) => {
-        cy.intercept('GET', api.auth.loginAuthProviders, { fixture: 'auth/authProviders.json' }).as(
-            'authProviders'
-        );
-        cy.intercept('GET', api.auth.authStatus, {
-            statusCode: authStatusValid ? 200 : 401,
-            body: authStatusResponse,
-        }).as('authStatus');
-
-        cy.visit(landingUrl);
-        cy.wait('@authProviders');
-    };
-
-    const stubAPIs = () => {
-        // Cypress routes have an override behaviour, so defining this first makes it the fallback.
-        // Replace /.*/ RegExp for route method with '/v1/*' string for intercept method
-        // because it is not limited to XHR, therefore it matches HTML requests too!
-        cy.intercept('/v1/*', { body: {} }).as('everythingElse');
-        cy.intercept('GET', api.clusters.list, { fixture: 'clusters/health.json' }).as('clusters');
-        cy.intercept('GET', api.search.options, { fixture: 'search/metadataOptions.json' }).as(
-            'searchOptions'
-        );
-        cy.intercept('GET', api.alerts.countsByCluster, { body: {} }).as('countsByCluster');
-        cy.intercept('GET', api.alerts.countsByCategory, { body: {} }).as('countsByCategory');
-        cy.intercept('GET', api.risks.riskyDeployments, { body: {} }).as('deployments');
-        cy.intercept('POST', api.logs, { body: {} }).as('logs');
-    };
+    // Intentionally omit withAuth() call.
 
     it('should redirect user to login page, authenticate and redirect to the requested page', () => {
-        stubAPIs();
-        setupAuth(dashboardURL, AUTHENTICATED);
+        const staticResponseForAuthStatusOK = {
+            status: 200,
+            body: {},
+        };
+
+        visitAndWaitForAuthProviders(systemConfigUrl);
+
         cy.location('pathname').should('eq', loginUrl);
+        // Assertion corresponds to value of name property in auth/authProviders.json fixture.
         cy.get(selectors.providerSelect).should('have.text', 'auth-provider-name');
-        cy.get(selectors.loginButton).click(); // stubbed auth provider will simulate redirect with 'my-token'
-        // Replace Authorization for route method with authorization for intercept method.
-        cy.wait('@authStatus').its('request.headers.authorization').should('eq', 'Bearer my-token');
-        cy.location('pathname').should('eq', dashboardURL);
+
+        reachSystemConfiguration(() => {
+            interactAndWaitForAuthStatus(() => {
+                cy.get(selectors.loginButton).click();
+            }, staticResponseForAuthStatusOK)
+                .its('request.headers.authorization')
+                .should('eq', 'Bearer my-token'); // assertion corresponds to token=my-token in fixture
+        });
     });
 
     it('should allow authenticated user to enter', () => {
-        stubAPIs();
-        localStorage.setItem('access_token', 'my-token'); // simulate authenticated user
-        setupAuth(dashboardURL, AUTHENTICATED);
+        const staticResponseForAuthStatusOK = {
+            status: 200,
+            body: {},
+        };
 
-        cy.wait('@authStatus');
+        localStorage.setItem('access_token', 'my-token'); // authenticated user
 
-        cy.location('pathname').should('eq', dashboardURL);
+        reachSystemConfiguration(() => {
+            interactAndWaitForAuthStatus(() => {
+                visitAndWaitForAuthProviders(systemConfigUrl);
+            }, staticResponseForAuthStatusOK);
+        });
     });
 
     it('should logout previously authenticated user with invalid token', () => {
-        stubAPIs();
-        localStorage.setItem('access_token', 'my-token'); // invalid token
-        setupAuth(dashboardURL, UNAUTHENTICATED);
+        const staticResponseForAuthStatusUnauthorized = {
+            status: 401,
+            body: {},
+        };
 
-        cy.wait('@authStatus');
+        localStorage.setItem('access_token', 'my-token'); // invalid token
+
+        interactAndWaitForAuthStatus(() => {
+            visitAndWaitForAuthProviders(systemConfigUrl);
+        }, staticResponseForAuthStatusUnauthorized);
 
         cy.location('pathname').should('eq', loginUrl);
     });
 
     // TODO: Fix it, see ROX-4983 for more explanation
     it.skip('should request token refresh 30 sec in advance', () => {
-        stubAPIs();
-        cy.intercept('POST', api.auth.tokenRefresh, { body: {} }).as('tokenRefresh');
+        const staticResponseForAuthStatusOK = {
+            status: 200,
+            body: {
+                expires: addSeconds(Date.now(), 33).toISOString(), // +3 sec should be enough
+            },
+        };
+
         localStorage.setItem('access_token', 'my-token'); // authenticated user
 
-        const expiryDate = addSeconds(Date.now(), 33); // +3 sec should be enough
-        setupAuth(dashboardURL, AUTHENTICATED, {
-            expires: expiryDate.toISOString(),
-        });
+        reachSystemConfiguration(() => {
+            cy.intercept('POST', api.auth.tokenRefresh, { body: {} }).as('tokenRefresh');
 
-        cy.wait('@tokenRefresh');
+            interactAndWaitForAuthStatus(() => {
+                visitAndWaitForAuthProviders(systemConfigUrl);
+            }, staticResponseForAuthStatusOK);
+
+            cy.wait('@tokenRefresh');
+        });
     });
 });
