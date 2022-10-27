@@ -5,7 +5,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -203,23 +202,24 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.LogImbue) error
 }
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.LogImbue) error {
-
-	return s.upsert(ctx, obj)
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.LogImbue) error {
+	return pgutils.Retry(func() error {
+		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+		// violations
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
 
-	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-	// violations
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	if len(objs) < batchAfter {
-		return s.upsert(ctx, objs...)
-	} else {
+		if len(objs) < batchAfter {
+			return s.upsert(ctx, objs...)
+		}
 		return s.copyFrom(ctx, objs...)
-	}
+	})
 }
 
 // Count returns the number of objects in the store
@@ -256,16 +256,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.LogImbue, bool
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.LogImbue](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.LogImbue
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.LogImbue, error) {
 
@@ -327,7 +323,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.LogIm
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.LogImbue](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -338,12 +334,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.LogIm
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.LogImbue)
-	for _, data := range rows {
-		msg := &storage.LogImbue{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.LogImbue, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -376,7 +368,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.LogImbue) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.LogImbue](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -386,12 +378,8 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.LogImbue) err
 		if err != nil {
 			return pgutils.ErrNilIfNoRows(err)
 		}
-		for _, data := range rows {
-			var msg storage.LogImbue
-			if err := proto.Unmarshal(data, &msg); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+		for _, msg := range rows {
+			if err := fn(msg); err != nil {
 				return err
 			}
 		}

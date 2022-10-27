@@ -55,8 +55,8 @@ type Pods struct {
 	Id           string `gorm:"column:id;type:varchar;primaryKey"`
 	Name         string `gorm:"column:name;type:varchar"`
 	DeploymentId string `gorm:"column:deploymentid;type:varchar"`
-	Namespace    string `gorm:"column:namespace;type:varchar"`
-	ClusterId    string `gorm:"column:clusterid;type:varchar"`
+	Namespace    string `gorm:"column:namespace;type:varchar;index:pods_sac_filter,type:btree"`
+	ClusterId    string `gorm:"column:clusterid;type:varchar;index:pods_sac_filter,type:btree"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
 

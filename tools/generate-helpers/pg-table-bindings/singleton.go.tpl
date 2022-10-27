@@ -14,7 +14,6 @@ import (
     "strings"
     "time"
 
-    "github.com/gogo/protobuf/proto"
     "github.com/jackc/pgx/v4"
     "github.com/jackc/pgx/v4/pgxpool"
     "github.com/pkg/errors"
@@ -111,6 +110,12 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
         return sac.ErrResourceAccessDenied
     }
     {{ end }}
+    return pgutils.Retry(func() error {
+        return s.retryableUpsert(ctx, obj)
+    })
+}
+
+func (s *storeImpl) retryableUpsert(ctx context.Context, obj *{{.Type}}) error {
     conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {
 	    return err
@@ -148,6 +153,12 @@ func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
         return nil, false, nil
     }
     {{ end}}
+    return pgutils.Retry3(func()(*{{.Type}}, bool, error) {
+        return s.retryableGet(ctx)
+    })
+}
+
+func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {
 	    return nil, false, err
@@ -161,7 +172,7 @@ func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
 	}
 
 	var msg {{.Type}}
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
         return nil, false, err
 	}
 	return &msg, true, nil
@@ -178,7 +189,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 	return conn, conn.Release, nil
 }
 
-// Delete removes the specified ID from the store
+// Delete removes the singleton from the store
 func (s *storeImpl) Delete(ctx context.Context) error {
     {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
@@ -188,6 +199,12 @@ func (s *storeImpl) Delete(ctx context.Context) error {
         return sac.ErrResourceAccessDenied
     }
     {{ end}}
+    return pgutils.Retry(func() error {
+        return s.retryableDelete(ctx)
+    })
+}
+
+func (s *storeImpl) retryableDelete(ctx context.Context) error {
     conn, release, err := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
 	if err != nil {
 	    return err

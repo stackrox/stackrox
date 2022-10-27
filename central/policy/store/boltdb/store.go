@@ -3,12 +3,12 @@ package boltdb
 import (
 	"context"
 
-	policyUtils "github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
@@ -130,7 +130,7 @@ func (s *storeImpl) addDefaults() {
 		count++
 
 		// fill multi-word sort helper field
-		policyUtils.FillSortHelperFields(p)
+		policyutils.FillSortHelperFields(p)
 
 		if err := s.Upsert(policyCtx, p); err != nil {
 			panic(err)

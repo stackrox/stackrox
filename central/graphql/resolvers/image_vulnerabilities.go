@@ -44,7 +44,8 @@ func init() {
 }
 
 // ImageVulnerabilityResolver represents the supported API on image vulnerabilities
-//  NOTE: This list is and should remain alphabetically ordered
+//
+//	NOTE: This list is and should remain alphabetically ordered
 type ImageVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
@@ -80,12 +81,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
-	vulnResolver, err := resolver.wrapImageCVE(ret, true, err)
-	if err != nil {
-		return nil, err
-	}
-	vulnResolver.ctx = ctx
-	return vulnResolver, nil
+	return resolver.wrapImageCVEWithContext(ctx, ret, true, err)
 }
 
 // ImageVulnerabilities resolves a set of image vulnerabilities for the input query
@@ -115,7 +111,8 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 
 	// get values
 	query = tryUnsuppressedQuery(query)
-	cveResolvers, err := resolver.wrapImageCVEs(loader.FromQuery(ctx, query))
+	vulns, err := loader.FromQuery(ctx, query)
+	cveResolvers, err := resolver.wrapImageCVEsWithContext(ctx, vulns, err)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +120,6 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	// cast as return type
 	ret := make([]ImageVulnerabilityResolver, 0, len(cveResolvers))
 	for _, res := range cveResolvers {
-		res.ctx = ctx
 		ret = append(ret, res)
 	}
 	return ret, nil
@@ -252,11 +248,10 @@ func (resolver *Resolver) TopImageVulnerability(ctx context.Context, args RawQue
 		return nil, errors.New("TopImageVulnerability query returned more than one vulnerabilities")
 	}
 
-	res, err := resolver.wrapImageCVE(topVuln[0], true, nil)
+	res, err := resolver.wrapImageCVEWithContext(ctx, topVuln[0], true, nil)
 	if err != nil {
 		return nil, err
 	}
-	res.ctx = ctx
 	return res, nil
 }
 
@@ -272,16 +267,14 @@ func imageCveToVulnerabilityWithSeverity(in []*storage.ImageCVE) []Vulnerability
 	return ret
 }
 
-func (resolver *imageCVEResolver) withImageVulnerabilityScope(ctx context.Context) context.Context {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return scoped.Context(ctx, scoped.Scope{
-			ID:    resolver.data.GetId(),
-			Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
-		})
+func (resolver *imageCVEResolver) imageVulnerabilityScopeContext() context.Context {
+	if resolver.ctx == nil {
+		log.Errorf("attempted to scope context on nil")
+		return nil
 	}
-	return scoped.Context(ctx, scoped.Scope{
+	return scoped.Context(resolver.ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
-		Level: v1.SearchCategory_VULNERABILITIES,
+		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 	})
 }
 
@@ -310,15 +303,23 @@ func (resolver *imageCVEResolver) EnvImpact(ctx context.Context) (float64, error
 	if err != nil || allCount == 0 {
 		return 0, err
 	}
-	scopedCount, err := resolver.root.DeploymentCount(resolver.withImageVulnerabilityScope(ctx), RawQuery{})
+	ctx = scoped.Context(ctx, scoped.Scope{
+		ID:    resolver.data.GetId(),
+		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+	})
+	scopedCount, err := resolver.root.DeploymentCount(ctx, RawQuery{})
 	if err != nil {
 		return 0, err
 	}
 	return float64(scopedCount) / float64(allCount), nil
 }
 
-func (resolver *imageCVEResolver) FixedByVersion(_ context.Context) (string, error) {
+func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "FixedByVersion")
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 
 	// Short path. Full image is embedded when image scan resolver is called.
 	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
@@ -341,8 +342,12 @@ func (resolver *imageCVEResolver) FixedByVersion(_ context.Context) (string, err
 	return edges[0].GetFixedBy(), nil
 }
 
-func (resolver *imageCVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, error) {
+func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 
 	// Short path. Full image is embedded when image scan resolver is called.
 	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
@@ -378,12 +383,16 @@ func (resolver *imageCVEResolver) IsFixable(_ context.Context, args RawQuery) (b
 func (resolver *imageCVEResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "LastScanned")
 
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
 	// Short path. Full image is embedded when image scan resolver is called.
 	if scanTime := embeddedobjs.LastScannedFromContext(resolver.ctx); scanTime != nil {
 		return timestamp(scanTime)
 	}
 
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +409,7 @@ func (resolver *imageCVEResolver) LastScanned(ctx context.Context) (*graphql.Tim
 		},
 	}
 
-	images, err := imageLoader.FromQuery(resolver.withImageVulnerabilityScope(ctx), q)
+	images, err := imageLoader.FromQuery(resolver.imageVulnerabilityScopeContext(), q)
 	if err != nil || len(images) == 0 {
 		return nil, err
 	} else if len(images) > 1 {
@@ -428,6 +437,10 @@ func (resolver *imageCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolve
 func (resolver *imageCVEResolver) VulnerabilityState(ctx context.Context) string {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "VulnerabilityState")
 
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
 	// Short path. Full image is embedded when image scan resolver is called.
 	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
 		return embeddedVuln.GetState().String()
@@ -447,12 +460,12 @@ func (resolver *imageCVEResolver) VulnerabilityState(ctx context.Context) string
 		return ""
 	}
 
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
 	if err != nil {
 		log.Error(errors.Wrap(err, "getting image loader"))
 		return ""
 	}
-	img, err := imageLoader.FromID(ctx, imageID)
+	img, err := imageLoader.FromID(resolver.ctx, imageID)
 	if err != nil {
 		log.Error(errors.Wrapf(err, "fetching image with id %s", imageID))
 		return ""
@@ -477,6 +490,11 @@ func (resolver *imageCVEResolver) VulnerabilityState(ctx context.Context) string
 
 func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ActiveState")
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
 	scopeQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -487,7 +505,7 @@ func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery
 	}
 	// We only support OS level component. The active state is not determined if there is no OS level component associate with this vuln.
 	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).AddStrings(search.ComponentSource, storage.SourceType_OS.String()).ProtoQuery()
-	osLevelComponents, err := resolver.root.ImageComponentDataStore.Count(ctx, query)
+	osLevelComponents, err := resolver.root.ImageComponentDataStore.Count(resolver.ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -502,7 +520,7 @@ func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery
 	}
 	query = search.ConjunctionQuery(resolver.getImageCVEQuery(), qb.ProtoQuery())
 
-	results, err := resolver.root.ActiveComponent.Search(ctx, query)
+	results, err := resolver.root.ActiveComponent.Search(resolver.ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -516,6 +534,11 @@ func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery
 
 func (resolver *imageCVEResolver) EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "EffectiveVulnerabilityRequest")
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
 	var imageID string
 	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
 	if hasScope {
@@ -525,17 +548,17 @@ func (resolver *imageCVEResolver) EffectiveVulnerabilityRequest(ctx context.Cont
 	if imageID == "" {
 		return nil, errors.Errorf("image scope must be provided for determining effective vulnerability request for cve %s", resolver.data.GetId())
 	}
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting image loader")
 	}
-	img, err := imageLoader.FromID(ctx, imageID)
+	img, err := imageLoader.FromID(resolver.ctx, imageID)
 	if err != nil {
 		log.Error(errors.Wrapf(err, "fetching image with id %s", imageID))
 		return nil, nil
 	}
 
-	req, err := resolver.root.vulnReqQueryMgr.EffectiveVulnReq(ctx, resolver.data.GetCveBaseInfo().GetCve(),
+	req, err := resolver.root.vulnReqQueryMgr.EffectiveVulnReq(resolver.ctx, resolver.data.GetCveBaseInfo().GetCve(),
 		common.VulnReqScope{
 			Registry: img.GetName().GetRegistry(),
 			Remote:   img.GetName().GetRemote(),
@@ -549,16 +572,30 @@ func (resolver *imageCVEResolver) EffectiveVulnerabilityRequest(ctx context.Cont
 
 func (resolver *imageCVEResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DeploymentCount")
-	return resolver.root.DeploymentCount(resolver.withImageVulnerabilityScope(ctx), args)
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	return resolver.root.DeploymentCount(resolver.imageVulnerabilityScopeContext(), args)
 }
 
 func (resolver *imageCVEResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Deployments")
-	return resolver.root.Deployments(resolver.withImageVulnerabilityScope(ctx), args)
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	return resolver.root.Deployments(resolver.imageVulnerabilityScopeContext(), args)
 }
 
-func (resolver *imageCVEResolver) DiscoveredAtImage(_ context.Context, args RawQuery) (*graphql.Time, error) {
+func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DiscoveredAtImage")
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 
 	// Short path. Full image is embedded when image scan resolver is called.
 	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
@@ -591,22 +628,42 @@ func (resolver *imageCVEResolver) DiscoveredAtImage(_ context.Context, args RawQ
 
 func (resolver *imageCVEResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponents")
-	return resolver.root.ImageComponents(resolver.withImageVulnerabilityScope(ctx), args)
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	return resolver.root.ImageComponents(resolver.imageVulnerabilityScopeContext(), args)
 }
 
 func (resolver *imageCVEResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponentCount")
-	return resolver.root.ImageComponentCount(resolver.withImageVulnerabilityScope(ctx), args)
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	return resolver.root.ImageComponentCount(resolver.imageVulnerabilityScopeContext(), args)
 }
 
 func (resolver *imageCVEResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageCount")
-	return resolver.root.ImageCount(resolver.withImageVulnerabilityScope(ctx), args)
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	return resolver.root.ImageCount(resolver.imageVulnerabilityScopeContext(), args)
 }
 
 func (resolver *imageCVEResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Images")
-	return resolver.root.Images(resolver.withImageVulnerabilityScope(ctx), args)
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	return resolver.root.Images(resolver.imageVulnerabilityScopeContext(), args)
 }
 
 func (resolver *imageCVEResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {

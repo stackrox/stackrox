@@ -1,7 +1,6 @@
 package detector
 
 import (
-	"github.com/mitchellh/hashstructure"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
@@ -27,25 +26,14 @@ func (d *deduper) reset() {
 }
 
 func (d *deduper) addDeployment(deployment *storage.Deployment) {
-	hashValue, err := hashstructure.Hash(deployment, &hashstructure.HashOptions{})
-	if err != nil {
-		log.Errorf("error calculating hash of deployment %q: %v", deployment.GetName(), err)
-		return
-	}
-
 	d.hashLock.Lock()
 	defer d.hashLock.Unlock()
 
-	d.hash[deployment.GetId()] = hashValue
+	d.hash[deployment.GetId()] = deployment.GetHash()
 }
 
 func (d *deduper) needsProcessing(deployment *storage.Deployment) bool {
-	// if removal then remove from hash and send empty alerts
-	hashValue, err := hashstructure.Hash(deployment, &hashstructure.HashOptions{})
-	if err != nil {
-		log.Errorf("error calculating hash of deployment %q: %v", deployment.GetName(), err)
-		return true
-	}
+	hashValue := deployment.GetHash()
 
 	var noUpdate bool
 	concurrency.WithRLock(&d.hashLock, func() {

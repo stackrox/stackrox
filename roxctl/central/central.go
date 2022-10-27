@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/roxctl/central/debug"
 	"github.com/stackrox/rox/roxctl/central/generate"
 	"github.com/stackrox/rox/roxctl/central/initbundles"
-	"github.com/stackrox/rox/roxctl/central/license"
 	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/central/whoami"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -26,7 +25,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		db.Command(cliEnvironment),
 		backup.Command(cliEnvironment, pointers.Bool(true)),
 		debug.Command(cliEnvironment),
-		license.Command(),
 		userpki.Command(cliEnvironment),
 		whoami.Command(cliEnvironment),
 		initbundles.Command(cliEnvironment),

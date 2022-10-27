@@ -2,7 +2,7 @@
     <withJansi>true</withJansi>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%gray(%d{HH:mm:ss}) | %highlight(%-5level) | %-25logger{0} | %m%n%rEx{full,
+            <pattern>%d{HH:mm:ss} | %-5level | %-25logger{0} | %m%n%rEx{full,
                 com.sun,
                 com.jayway.restassured.internal,
                 groovy.lang,

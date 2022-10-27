@@ -104,6 +104,7 @@ import (
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	reportService "github.com/stackrox/rox/central/reports/service"
 	"github.com/stackrox/rox/central/reprocessor"
+	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	"github.com/stackrox/rox/central/role"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
@@ -134,6 +135,7 @@ import (
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
+	versionUtils "github.com/stackrox/rox/central/version/utils"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	"github.com/stackrox/rox/generated/storage"
@@ -197,7 +199,8 @@ var (
 )
 
 const (
-	ssoURLPathPrefix     = "/sso/"
+	ssoURLPathPrefix = "/sso/"
+	//#nosec G101 -- This is a false positive
 	tokenRedirectURLPath = "/auth/response/generic"
 
 	grpcServerWatchdogTimeout = 20 * time.Second
@@ -256,9 +259,7 @@ func main() {
 		if err != nil {
 			log.Errorf("Failed to remove backup DB: %v", err)
 		}
-
-		migrations.SetCurrentVersionPostgres(globaldb.GetPostgres())
-
+		versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 	} else {
 		// Now that we verified that the DB can be loaded, remove the .backup directory
 		if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupClone())); err != nil {
@@ -281,7 +282,7 @@ func main() {
 func ensureDB(ctx context.Context) {
 	var versionStore vStore.Store
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		versionStore = vStore.NewPostgres(ctx, globaldb.InitializePostgres(ctx))
+		versionStore = vStore.NewPostgres(globaldb.InitializePostgres(ctx))
 	} else {
 		versionStore = vStore.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
 	}
@@ -377,6 +378,10 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
+	}
+
+	if features.ObjectCollections.Enabled() {
+		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
 	}
 
 	if features.NewPolicyCategories.Enabled() {

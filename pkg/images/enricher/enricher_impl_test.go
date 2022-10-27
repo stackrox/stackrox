@@ -177,6 +177,13 @@ func (f *fakeRegistryScanner) DataSource() *storage.DataSource {
 	}
 }
 
+func (f *fakeRegistryScanner) Source() *storage.ImageIntegration {
+	return &storage.ImageIntegration{
+		Id:   "id",
+		Name: f.Name(),
+	}
+}
+
 type fakeCVESuppressor struct{}
 
 func (f *fakeCVESuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) {
@@ -838,6 +845,7 @@ func TestEnrichWithSignature_Failures(t *testing.T) {
 
 	emptyRegistrySetMock := registryMocks.NewMockSet(ctrl)
 	emptyRegistrySetMock.EXPECT().IsEmpty().Return(true).AnyTimes()
+	emptyRegistrySetMock.EXPECT().GetAll().Return(nil).AnyTimes()
 
 	nonMatchingRegistrySetMock := registryMocks.NewMockSet(ctrl)
 	nonMatchingRegistrySetMock.EXPECT().IsEmpty().Return(false).AnyTimes()

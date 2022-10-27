@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	diagnosticBundleDownloadTimeout = 20 * time.Second
+	diagnosticBundleDownloadTimeout = 60 * time.Second
 )
 
 // downloadDiagnosticsCommand allows downloading the diagnostics bundle.

@@ -33,6 +33,8 @@ var (
 
 // serviceImpl provides APIs for CVEs.
 type serviceImpl struct {
+	v1.UnimplementedCVEServiceServer
+
 	cves       datastore.DataStore
 	vulnReqMgr vulnReqMgr.Manager
 }

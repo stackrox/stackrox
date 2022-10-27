@@ -77,6 +77,7 @@ class GKECluster:
             time.sleep(60)
 
         if self.refresh_token_cmd is not None:
+            print("Terminating GKE token refresh")
             try:
                 popen_graceful_kill(self.refresh_token_cmd)
             except Exception as err:

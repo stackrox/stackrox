@@ -24,7 +24,7 @@ let opnamesForDashboard = [
     'clustersWithMostClusterVulnerabilities',
 ];
 
-if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
     opnamesForDashboard = opnamesForDashboard.filter(
         (opname) =>
             opname !== 'clustersWithMostOrchestratorIstioVulnerabilities' &&
@@ -474,4 +474,22 @@ export function verifyFixableCVEsLinkAndRiskAcceptanceTabs(
                 waitForAnimations: false,
             });
         });
+}
+
+// table
+
+/*
+ * Assert table column headings in order with empty string if no text (for example, checkbox).
+ */
+export function hasTableColumnHeadings(tableColumnHeadings) {
+    tableColumnHeadings.forEach((tableColumnHeading, index0) => {
+        const index1 = index0 + 1; // nth-child selector has one-based index
+        if (tableColumnHeading.length === 0) {
+            cy.get(`.rt-th:nth-child(${index1})`);
+        } else {
+            cy.get(`.rt-th:nth-child(${index1}):contains("${tableColumnHeading}")`);
+        }
+    });
+
+    cy.get('.rt-th').should('have.length', tableColumnHeadings.length);
 }

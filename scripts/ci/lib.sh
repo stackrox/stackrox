@@ -39,6 +39,47 @@ ci_exit_trap() {
         info "Holding this job for debug"
         sleep 60
     done
+
+    handle_dangling_processes
+}
+
+# handle_dangling_processes() - The OpenShift CI ci-operator will not complete a
+# test job if there are processes remaining that were started by the job. While
+# processes _should_ be cleaned up by their creators it is common that some are
+# not, so this exists as a fail safe.
+handle_dangling_processes() {
+    info "Process state at exit:"
+    ps -e -O ppid
+
+    local psline this_pid pid
+    ps -e -O ppid | while read -r psline; do
+        # trim leading whitespace
+        psline="$(echo "$psline" | xargs)"
+        if [[ "$psline" =~ ^PID ]]; then
+            # Ignoring header
+            continue
+        fi
+        this_pid="$$"
+        if [[ "$psline" =~ ^$this_pid ]]; then
+            echo "Ignoring self: $psline"
+            continue
+        fi
+        # shellcheck disable=SC1087
+        if [[ "$psline" =~ [[:space:]]$this_pid[[:space:]] ]]; then
+            echo "Ignoring child: $psline"
+            continue
+        fi
+        if [[ "$psline" =~ entrypoint|defunct ]]; then
+            echo "Ignoring ci-operator entrypoint or defunct process: $psline"
+            continue
+        fi
+        echo "A candidate to kill: $psline"
+        pid="$(echo "$psline" | cut -d' ' -f1)"
+        echo "Will kill $pid"
+        kill "$pid" || {
+            echo "Error killing $pid"
+        }
+    done
 }
 
 create_exit_trap() {
@@ -344,6 +385,21 @@ push_race_condition_debug_image() {
     oc_image_mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet tag)-rcd"
 }
 
+push_mock_grpc_server_image() {
+    local registry="quay.io/rhacs-eng"
+    image="${registry}/grpc-server:$(make --quiet tag)"
+    info "Pushing the mock grpc server image: $MOCK_GRPC_SERVER_IMAGE to $image"
+
+    if ! is_OPENSHIFT_CI; then
+        die "Only supported in OpenShift CI"
+    fi
+
+    oc registry login
+
+    registry_rw_login "$registry"
+    oc_image_mirror "$MOCK_GRPC_SERVER_IMAGE" "$image"
+}
+
 registry_rw_login() {
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: registry_rw_login <registry>"
@@ -497,7 +553,7 @@ check_rhacs_eng_image_exists() {
     if [[ "$name" =~ stackrox-operator-(bundle|index) ]]; then
         tag="$(echo "v${tag}" | sed 's,x,0,')"
     elif [[ "$name" == "stackrox-operator" ]]; then
-        tag="$(echo "${tag}" | sed 's,x,0,')"
+        tag="${tag//x/0}"
     elif [[ "$name" == "main-rcd" ]]; then
         name="main"
         tag="${tag}-rcd"
@@ -646,6 +702,7 @@ mark_collector_release() {
 
     # RS-487: create_update_pr.sh needs to be fixed so it is not Circle CI dependent.
     export CIRCLE_USERNAME=roxbot
+    # shellcheck disable=SC2153
     export CIRCLE_PULL_REQUEST="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
     export GITHUB_TOKEN_FOR_PRS="${GITHUB_TOKEN}"
     /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
@@ -1222,46 +1279,70 @@ __EOM__
     commit_msg="${commit_msg%%$'\n'*}" # use first line of commit msg
     local commit_url
     commit_url=$(jq -r <<<"$commit_details" '.html_url') || exitstatus="$?"
-    local author
-    author=$(jq -r <<<"$commit_details" '.commit.author.name') || exitstatus="$?"
+    local author_name
+    author_name=$(jq -r <<<"$commit_details" '.commit.author.name') || exitstatus="$?"
+    local author_login
+    author_login=$(jq -r <<<"$commit_details" '.author.login') || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
         slack_error "Error parsing the commit details: ${commit_details}"
         return 1
     fi
 
+    local slack_mention
+    slack_mention="$("$SCRIPTS_ROOT"/scripts/ci/get-slack-user-id.sh "$author_login")"
+    if [[ -n "$slack_mention" ]]; then
+      slack_mention="<@${slack_mention}>"
+    else
+      slack_mention="_unable to resolve Slack user for GitHub login ${author_login}_"
+    fi
+
     # shellcheck disable=SC2016
     local body='
 {
-    "text": "*Job Name:* \($job_name)",
+    "text": "Prow job failure: \($job_name)",
     "blocks": [
-		{
-			"type": "header",
-			"text": {
-				"type": "plain_text",
-				"text": "Prow job failure: \($job_name)"
-			}
-		},
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Prow job failure: \($job_name)"
+            }
+        },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author)\n*Log:* \($log_url)"
+                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author_name), \($slack_mention)\n*Log:* \($log_url)"
             }
         },
-		{
-			"type": "divider"
-		}
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "You got tagged but have no idea why or what to do? Check <https://docs.google.com/document/d/1d5ga073jkv4CO1kAJqp8MPGpC6E1bwyrCGZ7S5wKg3w/edit#heading=h.li2pdsxtk1hu|this document>."
+                }
+            ]
+        },
+        {
+            "type": "divider"
+        }
     ]
 }
 '
 
-    echo "About to post:"
-    jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
-       --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body"
+    payload="$(jq --null-input \
+      --arg job_name "$job_name" \
+      --arg commit_url "$commit_url" \
+      --arg commit_msg "$commit_msg" \
+      --arg repo "$repo" \
+      --arg author_name "$author_name" \
+      --arg slack_mention "$slack_mention" \
+      --arg log_url "$log_url" \
+      "$body")"
+    echo -e "About to post:\n$payload"
 
-    jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
-       --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body" | \
-    curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" || {
+    echo "$payload" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" || {
         slack_error "Error posting to Slack"
         return 1
     }

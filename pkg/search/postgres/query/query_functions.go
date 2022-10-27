@@ -43,6 +43,7 @@ var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 	walker.DateTime:    newTimeQuery,
 	walker.Enum:        newEnumQuery,
 	walker.Integer:     newNumericQuery,
+	walker.BigInteger:  newNumericQuery,
 	walker.Numeric:     newNumericQuery,
 	walker.EnumArray:   queryOnArray(newEnumQuery, getEnumArrayPostTransformFunc),
 	walker.IntArray:    queryOnArray(newNumericQuery, getIntArrayPostTransformFunc),

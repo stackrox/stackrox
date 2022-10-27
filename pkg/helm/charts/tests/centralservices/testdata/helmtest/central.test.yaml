@@ -15,6 +15,7 @@ tests:
     .serviceaccounts["central"] | assertThat(. != null)
     .secrets["central-htpasswd"].stringData.htpasswd | assertThat(length > 0)
     .configmaps["central-config"].data.["central-config.yaml"] | assertThat(length > 0)
+    .configmaps["central-external-db"].data.["central-external-db.yaml"] | assertThat(. == null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
     .networkpolicys["allow-ext-to-central"] | assertThat(. != null)
@@ -27,8 +28,9 @@ tests:
     central:
       db:
         enabled: true
-  expect:
+  expect: |
     .networkpolicys["central-db"] | assertThat(. != null)
+    .configmaps["central-external-db"].data.["central-external-db.yaml"] | assertThat(. != null)
 
 - name: "central with deprecated PodSecurityPolicies enabled"
   values:
@@ -38,6 +40,15 @@ tests:
     .podsecuritypolicys["stackrox-central"] | assertThat(. != null)
     .rolebindings["stackrox-central-psp"] | assertThat(. != null)
     .clusterroles["stackrox-central-psp"] | assertThat(. != null)
+
+- name: "central with deprecated PodSecurityPolicies disabled"
+  values:
+    system:
+      enablePodSecurityPolicies: false
+  expect: |
+    .podsecuritypolicys["stackrox-central"] | assertThat(. == null)
+    .rolebindings["stackrox-central-psp"] | assertThat(. == null)
+    .clusterroles["stackrox-central-psp"] | assertThat(. == null)
 
 - name: "central with OpenShift 3 and enabled SCCs"
   server:

@@ -19,6 +19,16 @@ class UpgradesTest extends BaseSpecification {
     private final static String POLICIES_JSON_PATH =
             Env.get("POLICIES_JSON_RELATIVE_PATH", "../pkg/defaults/policies/files")
 
+    private static final String VULNERABILITY_RESOURCE_TYPE =
+        isPostgresRun() ?
+            "nodeVulnerabilities" :
+            "vulnerabilities"
+
+    private static final String COMPONENT_RESOURCE_TYPE =
+        isPostgresRun() ?
+            "nodeComponents" :
+            "components"
+
     private static final COMPLIANCE_QUERY = """query getAggregatedResults(
         \$groupBy: [ComplianceAggregation_Scope!],
         \$unit: ComplianceAggregation_Scope!,
@@ -89,8 +99,8 @@ class UpgradesTest extends BaseSpecification {
         "secrets"         | "Cluster ID:${CLUSTERID}" | 1
         "deployments"     | "Cluster ID:${CLUSTERID}" | 1
         "images"          | "Cluster ID:${CLUSTERID}" | 1
-        "components"      | "Cluster ID:${CLUSTERID}" | 1
-        "vulnerabilities" | "Cluster ID:${CLUSTERID}" | 1
+        COMPONENT_RESOURCE_TYPE      | "Cluster ID:${CLUSTERID}" | 1
+        VULNERABILITY_RESOURCE_TYPE | "Cluster ID:${CLUSTERID}" | 1
     }
 
     static getQuery(resourceType) {

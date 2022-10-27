@@ -44,6 +44,8 @@ var (
 
 // serviceImpl is the struct that manages the external backups API
 type serviceImpl struct {
+	v1.UnimplementedExternalBackupServiceServer
+
 	manager   manager.Manager
 	reporter  integrationhealth.Reporter
 	dataStore datastore.DataStore

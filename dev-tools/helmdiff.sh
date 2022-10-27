@@ -13,7 +13,7 @@ echo "Generating temporary files in ${TMP_ROOT}"
 
 echo "Rendering from metatemplates to helm charts:"
 for CHART in ${CHARTS}; do
-  $ROXCTL helm output --debug --remove ${CHART} --output-dir="${TMP_ROOT}/${CHART}-new"
+  $ROXCTL helm output --debug --remove "${CHART}" --output-dir="${TMP_ROOT}/${CHART}-new"
 done
 
 REPO_STAT="$(git diff --stat)"
@@ -24,9 +24,9 @@ if [[ -n $REPO_STAT ]]; then
 fi
 git switch master
 for CHART in ${CHARTS}; do
-  $ROXCTL helm output --debug --remove ${CHART} --output-dir="${TMP_ROOT}/${CHART}-old"
+  $ROXCTL helm output --debug --remove "${CHART}" --output-dir="${TMP_ROOT}/${CHART}-old"
 done
-git switch ${WORKING_BRANCH}
+git switch "${WORKING_BRANCH}"
 if [[ -n $REPO_STAT ]]; then
   echo "Restoring uncommitted changes with 'git stash pop'."
   git stash pop
@@ -38,8 +38,8 @@ for VERSION in "old" "new"; do
     -n stackrox \
     --disable-openapi-validation \
     stackrox-central-services \
-    ${TMP_ROOT}/central-services-${VERSION} \
-    > ${TMP_ROOT}/central-services-${VERSION}-installation.yaml
+    "${TMP_ROOT}"/central-services-${VERSION} \
+    > "${TMP_ROOT}"/central-services-${VERSION}-installation.yaml
 done
 
 echo "Rendering a dry run installation of the stackrox-secured-cluster-services helm charts as Kubernetes manifests:"
@@ -53,8 +53,8 @@ for VERSION in "old" "new"; do
     --set serviceTLS.key=c3 \
     --set createSecrets=false \
     stackrox-secured-cluster-services \
-    ${TMP_ROOT}/secured-cluster-services-${VERSION} \
-    > ${TMP_ROOT}/secured-cluster-services-${VERSION}-installation.yaml
+    "${TMP_ROOT}"/secured-cluster-services-${VERSION} \
+    > "${TMP_ROOT}"/secured-cluster-services-${VERSION}-installation.yaml
 done
 
 cat <<EOF

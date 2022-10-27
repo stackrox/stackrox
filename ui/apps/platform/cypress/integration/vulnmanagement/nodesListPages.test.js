@@ -5,8 +5,8 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
-import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
 import {
+    hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
@@ -17,7 +17,7 @@ describe('Vulnerability Management Nodes', () => {
     withAuth();
 
     before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }
     });
@@ -25,7 +25,8 @@ describe('Vulnerability Management Nodes', () => {
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
-        hasExpectedHeaderColumns([
+        hasTableColumnHeadings([
+            '', // hidden
             'Node',
             'Node CVEs',
             'Top CVSS',

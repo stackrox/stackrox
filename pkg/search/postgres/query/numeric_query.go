@@ -71,6 +71,8 @@ func getValueAsFloat64(foundValue interface{}) (float64, bool) {
 		return foundValue, true
 	case int:
 		return float64(foundValue), true
+	case int64:
+		return float64(foundValue), true
 	}
 	return 0, false
 }

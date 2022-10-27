@@ -17,8 +17,8 @@ type Manager interface {
 	UnregisterCollector(hostname string, sequenceID int64)
 	RegisterCollector(hostname string) (HostNetworkInfo, int64)
 
-	PublicIPsValueStream() concurrency.ReadOnlyValueStream
-	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream
+	PublicIPsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPAddressList]
+	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList]
 
 	common.SensorComponent
 }

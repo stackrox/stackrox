@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -634,37 +633,49 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Image) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
-	return s.upsert(ctx, obj)
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Image")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
-		return 0, err
-	}
-	return count, nil
+	return pgutils.Retry2(func() (int, error) {
+		row := s.db.QueryRow(ctx, countStmt)
+		var count int
+		if err := row.Scan(&count); err != nil {
+			return 0, err
+		}
+		return count, nil
+	})
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Image")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
-	}
-	return exists, nil
+	return pgutils.Retry2(func() (bool, error) {
+		row := s.db.QueryRow(ctx, existsStmt, id)
+		var exists bool
+		if err := row.Scan(&exists); err != nil {
+			return false, pgutils.ErrNilIfNoRows(err)
+		}
+		return exists, nil
+	})
 }
 
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Image")
 
+	return pgutils.Retry3(func() (*storage.Image, bool, error) {
+		return s.retryableGet(ctx, id)
+	})
+}
+
+func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image, bool, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
 	if err != nil {
 		return nil, false, err
@@ -686,7 +697,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx pgx.Tx, imageID string)
 	}
 
 	var image storage.Image
-	if err := proto.Unmarshal(data, &image); err != nil {
+	if err := image.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 
@@ -777,7 +788,7 @@ func getImageComponentEdges(ctx context.Context, tx pgx.Tx, imageID string) (map
 			return nil, err
 		}
 		msg := &storage.ImageComponentEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = msg
@@ -814,7 +825,7 @@ func getImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string) (map[strin
 			return nil, err
 		}
 		msg := &storage.ImageCVEEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		cveIDToEdgeMap[msg.GetImageCveId()] = msg
@@ -837,7 +848,7 @@ func getImageComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (
 			return nil, err
 		}
 		msg := &storage.ImageComponent{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -860,7 +871,7 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 			return nil, err
 		}
 		msg := &storage.ComponentCVEEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = append(componentIDToEdgeMap[msg.GetImageComponentId()], msg)
@@ -883,7 +894,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 			return nil, err
 		}
 		msg := &storage.ImageCVE{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg
@@ -895,6 +906,12 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Image")
 
+	return pgutils.Retry(func() error {
+		return s.retryableDelete(ctx, id)
+	})
+}
+
+func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "Image")
 	if err != nil {
 		return err
@@ -931,6 +948,12 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, tx pgx.Tx, imageID stri
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ImageIDs")
 
+	return pgutils.Retry2(func() ([]string, error) {
+		return s.retryableGetIDs(ctx)
+	})
+}
+
+func (s *storeImpl) retryableGetIDs(ctx context.Context) ([]string, error) {
 	rows, err := s.db.Query(ctx, getImageIDsStmt)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
@@ -946,6 +969,12 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
+	return pgutils.Retry3(func() ([]*storage.Image, []int, error) {
+		return s.retryableGetMany(ctx, ids)
+	})
+}
+
+func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Image")
 	if err != nil {
 		return nil, nil, err
@@ -1035,22 +1064,16 @@ func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.
 	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
 }
 
-//// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
-}
-
 // GetImageMetadata returns the image without scan/component data.
 func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
+	return pgutils.Retry3(func() (*storage.Image, bool, error) {
+		return s.retryableGetImageMetadata(ctx, id)
+	})
+}
+
+func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
 	if err != nil {
 		return nil, false, err
@@ -1064,7 +1087,7 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 	}
 
 	var msg storage.Image
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -1074,6 +1097,12 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
+	return pgutils.Retry3(func() ([]*storage.Image, []int, error) {
+		return s.retryableGetManyImageMetadata(ctx, ids)
+	})
+}
+
+func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	if len(ids) == 0 {
 		return nil, nil, nil
 	}
@@ -1086,7 +1115,7 @@ func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*
 	if err != nil {
 		return nil, nil, err
 	}
-	sacQueryFilter, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1095,7 +1124,7 @@ func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*
 		search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -1106,12 +1135,8 @@ func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.Image)
-	for _, data := range rows {
-		msg := &storage.Image{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.Image, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -1129,6 +1154,12 @@ func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*
 }
 
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
+	return pgutils.Retry(func() error {
+		return s.retryableUpdateVulnState(ctx, cve, imageIDs, state)
+	})
+}
+
+func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
 	if len(imageIDs) == 0 {
 		return nil
 	}

@@ -18,6 +18,9 @@ rules:
   - "replicasets"
   - "configmaps"
   - "services"
+  - "pods"
+  - "events"
+  - "namespaces"
   verbs:
   - get
   - list

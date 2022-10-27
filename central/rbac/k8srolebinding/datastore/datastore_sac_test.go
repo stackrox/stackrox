@@ -79,7 +79,7 @@ func (s *k8sRoleBindingSACSuite) TearDownSuite() {
 func (s *k8sRoleBindingSACSuite) SetupTest() {
 	s.testK8sRoleBindingIDs = make([]string, 0)
 
-	k8sRoleBindings := fixtures.GetSACTestStorageK8SRoleBindingSet(fixtures.GetScopedK8SRoleBinding)
+	k8sRoleBindings := fixtures.GetSACTestResourceSet(fixtures.GetScopedK8SRoleBinding)
 
 	for i := range k8sRoleBindings {
 		err := s.datastore.UpsertRoleBinding(s.testContexts[testutils.UnrestrictedReadWriteCtx], k8sRoleBindings[i])

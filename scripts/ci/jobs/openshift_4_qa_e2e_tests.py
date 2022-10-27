@@ -12,4 +12,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["OUTPUT_FORMAT"] = "helm"
 os.environ["OPENSHIFT_CI_CLUSTER_CLAIM"] = "openshift-4"
 
+# don't use postgres
+os.environ["ROX_POSTGRES_DATASTORE"] = "false"
+
 make_qa_e2e_test_runner(cluster=NullCluster()).run()

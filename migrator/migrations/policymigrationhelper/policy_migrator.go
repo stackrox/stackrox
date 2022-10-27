@@ -273,7 +273,7 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 }
 
 func getExclusionsUpdates(beforePolicy *storage.Policy, afterPolicy *storage.Policy, updates *PolicyUpdates) {
-	matchedAfterExclusionsIdxs := set.NewIntSet()
+	matchedAfterExclusionsIdxs := set.NewSet[int]()
 	for _, beforeExclusion := range beforePolicy.GetExclusions() {
 		var found bool
 		for afterExclusionIdx, afterExclusion := range afterPolicy.GetExclusions() {

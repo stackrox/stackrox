@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -71,13 +72,15 @@ type FakeEventsManager struct {
 	// Mode the creation mode (at the moment there is only one mode implemented)
 	Mode CreateMode
 	// Client the k8s ClientSet
-	Client *ClientSet
+	Client client.Interface
 	// Reader the TraceReader
 	Reader *TraceReader
 	// clientMap map with the k8s clients
 	clientMap map[string]func(string) interface{}
 	// resourceMap map with the k8s resources
 	resourceMap map[string]interface{}
+	// Verbose prints messages to stdout
+	Verbose bool
 }
 
 const (
@@ -298,7 +301,9 @@ func (f *FakeEventsManager) eventsCreation() (<-chan string, <-chan error) {
 				errorCh <- err
 				return
 			}
-			log.Printf("%s Event: %s", msg.Action, msg.ObjectType)
+			if f.Verbose {
+				log.Printf("%s Event: %s", msg.Action, msg.ObjectType)
+			}
 			if err := f.createEvent(msg, ch); err != nil {
 				errorCh <- errors.Wrapf(err, "cannot create event for %s", msg.ObjectType)
 				return

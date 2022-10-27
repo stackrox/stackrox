@@ -37,6 +37,7 @@ const (
 
 	// passedTemplate is a (raw) template for displaying when there are no
 	// failed policies.
+	//#nosec G101 -- This is a false positive
 	passedTemplate = `✔ The scanned resources passed all policies
 `
 

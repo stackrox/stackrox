@@ -1,11 +1,9 @@
 import addSeconds from 'date-fns/add_seconds';
 
 import { url as loginUrl, selectors } from '../constants/LoginPage';
-import { selectors as navSelectors } from '../constants/TopNavigation';
 import { url as dashboardURL } from '../constants/DashboardPage';
 
 import * as api from '../constants/apiEndpoints';
-import withAuth from '../helpers/basicAuth'; // used to make logout test less flakey
 
 const AUTHENTICATED = true;
 const UNAUTHENTICATED = false;
@@ -82,25 +80,5 @@ describe('Authentication', () => {
         });
 
         cy.wait('@tokenRefresh');
-    });
-
-    // the logout test has its own describe block, which uses our withAuth() helper function
-    //   to log in with a real auth token
-    //   because after a Cypress upgrade, using a fake token on this test became flakey
-    describe('Logout', () => {
-        withAuth();
-
-        // turning off for now, because of an issue with Cypress
-        // see https://srox.slack.com/archives/C7ERNFL0M/p1596839383218700
-        it.skip('should logout user by request', () => {
-            cy.intercept('POST', api.auth.logout, { body: {} }).as('logout');
-
-            cy.visit(dashboardURL);
-
-            cy.get(navSelectors.menuButton).click();
-            cy.get(navSelectors.menuList.logoutButton).click();
-            cy.wait('@logout');
-            cy.location('pathname').should('eq', loginUrl);
-        });
     });
 });

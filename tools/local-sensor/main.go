@@ -6,20 +6,26 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"path"
+	"runtime"
+	"runtime/pprof"
 	"syscall"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"github.com/stackrox/rox/sensor/testutils"
 	"google.golang.org/grpc"
@@ -74,6 +80,10 @@ type localSensorConfig struct {
 	CreateMode         k8s.CreateMode
 	Delay              time.Duration
 	PoliciesFile       string
+	FakeWorkloadFile   string
+	WithMetrics        bool
+	NoCPUProfile       bool
+	NoMemProfile       bool
 }
 
 const (
@@ -108,7 +118,9 @@ func writeOutputInBinaryFormat(messages []*central.MsgFromSensor, _, _ time.Time
 		_, err = file.Write(d)
 		utils.CrashOnError(err)
 	}
-	utils.CrashOnError(file.Sync())
+	if outfile != "/dev/null" {
+		utils.CrashOnError(file.Sync())
+	}
 }
 
 var validFormats = map[string]func([]*central.MsgFromSensor, time.Time, time.Time, string){
@@ -135,7 +147,14 @@ func mustGetCommandLineArgs() localSensorConfig {
 		Delay:              5 * time.Second,
 		CreateMode:         k8s.Delay,
 		PoliciesFile:       "",
+		FakeWorkloadFile:   "",
+		WithMetrics:        false,
+		NoCPUProfile:       false,
+		NoMemProfile:       false,
 	}
+	flag.BoolVar(&sensorConfig.NoCPUProfile, "no-cpu-prof", sensorConfig.NoCPUProfile, "disables producing CPU profile for performance analysis")
+	flag.BoolVar(&sensorConfig.NoMemProfile, "no-mem-prof", sensorConfig.NoMemProfile, "disables producing memory profile for performance analysis")
+
 	flag.BoolVar(&sensorConfig.Verbose, "verbose", sensorConfig.Verbose, "prints all messages to stdout as well as to the output file")
 	flag.DurationVar(&sensorConfig.Duration, "duration", sensorConfig.Duration, "duration that the scenario should run (leave it empty to run it without timeout)")
 	flag.StringVar(&sensorConfig.CentralOutput, "central-out", sensorConfig.CentralOutput, "file to store the events that would be sent to central")
@@ -147,12 +166,17 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.DurationVar(&sensorConfig.ResyncPeriod, "resync", sensorConfig.ResyncPeriod, "resync period")
 	flag.DurationVar(&sensorConfig.Delay, "delay", sensorConfig.Delay, "create events with a given delay")
 	flag.StringVar(&sensorConfig.PoliciesFile, "with-policies", sensorConfig.PoliciesFile, " a file containing a list of policies")
+	flag.StringVar(&sensorConfig.FakeWorkloadFile, "with-fakeworkload", sensorConfig.FakeWorkloadFile, " a file containing a FakeWorkload definition")
+	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
 
 	if sensorConfig.ReplayK8sEnabled && sensorConfig.RecordK8sEnabled {
 		log.Fatalf("cannot record and replay a trace at the same time. Use either -record or -replay flag")
+	}
+	if sensorConfig.ReplayK8sEnabled && sensorConfig.FakeWorkloadFile != "" {
+		log.Fatalf("cannot replay a trace and use fake workloads at the same time. Use either -replay or -record -with-fakeworkload")
 	}
 	if sensorConfig.RecordK8sEnabled && sensorConfig.RecordK8sFile == "" {
 		log.Printf("trace destination empty. Using default 'k8s-trace.jsonl'\n")
@@ -171,13 +195,30 @@ func mustGetCommandLineArgs() localSensorConfig {
 	return sensorConfig
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string, outputFormat string, cancelFunc context.CancelFunc) {
+func writeMemoryProfile() {
+	f, err := os.Create(fmt.Sprintf("local-sensor-mem-%s.prof", time.Now().UTC().Format(time.RFC3339)))
+	if err != nil {
+		log.Fatal("could not create memory profile: ", err)
+	}
+	defer utils.IgnoreError(f.Close)
+	runtime.GC()
+	if err := pprof.Lookup("allocs").WriteTo(f, 0); err != nil {
+		log.Fatal("could not write memory profile: ", err)
+	}
+	log.Printf("Wrote memory profile")
+}
+
+func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
 	// We cancel the creation of Events
 	cancelFunc()
 	endTime := time.Now()
+	if writeMemProfile {
+		writeMemoryProfile()
+	}
+	pprof.StopCPUProfile()
 	allMessages := fakeCentral.GetAllMessages()
 	dumpMessages(allMessages, startTime, endTime, outfile, outputFormat)
 	os.Exit(0)
@@ -191,12 +232,35 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
 	localConfig := mustGetCommandLineArgs()
+	if localConfig.WithMetrics {
+		// Start the prometheus metrics server
+		metrics.NewDefaultHTTPServer().RunForever()
+		metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
+	}
+	var fakeClient client.Interface
 	fakeClient, err := k8s.MakeOutOfClusterClient()
 	// when replying a trace, there is no need to connect to K8s cluster
 	if localConfig.ReplayK8sEnabled {
 		fakeClient = k8s.MakeFakeClient()
 	}
+	var workloadManager *fake.WorkloadManager
+	// if we are using a fake workload we don't want to connect to a real K8s cluster
+	if localConfig.FakeWorkloadFile != "" {
+		workloadManager = fake.NewWorkloadManager(fake.ConfigDefaults().
+			WithWorkloadFile(localConfig.FakeWorkloadFile))
+		fakeClient = workloadManager.Client()
+	}
 	utils.CrashOnError(err)
+	if !localConfig.NoCPUProfile {
+		f, err := os.Create(fmt.Sprintf("local-sensor-cpu-%s.prof", time.Now().UTC().Format(time.RFC3339)))
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer utils.IgnoreError(f.Close)
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+	}
 
 	startTime := time.Now()
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tools/local-sensor/certs/cert.pem"))
@@ -225,7 +289,7 @@ func main() {
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	go registerHostKillSignals(startTime, fakeCentral, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc)
+	go registerHostKillSignals(startTime, fakeCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc)
 
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	defer shutdownFakeServer()
@@ -235,7 +299,8 @@ func main() {
 		WithK8sClient(fakeClient).
 		WithCentralConnectionFactory(fakeConnectionFactory).
 		WithLocalSensor(true).
-		WithResyncPeriod(localConfig.ResyncPeriod)
+		WithResyncPeriod(localConfig.ResyncPeriod).
+		WithWorkloadManager(workloadManager)
 
 	if localConfig.RecordK8sEnabled {
 		traceRec := &k8s.TraceWriter{
@@ -256,10 +321,11 @@ func main() {
 		}
 
 		fm := k8s.FakeEventsManager{
-			Delay:  localConfig.Delay,
-			Mode:   localConfig.CreateMode,
-			Client: fakeClient,
-			Reader: trReader,
+			Delay:   localConfig.Delay,
+			Mode:    localConfig.CreateMode,
+			Client:  fakeClient,
+			Reader:  trReader,
+			Verbose: localConfig.Verbose,
 		}
 		min, errCh := fm.CreateEvents(ctx)
 		select {

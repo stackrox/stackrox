@@ -50,8 +50,8 @@ type TestMultiKeyStructs struct {
 	Key2              string                          `gorm:"column:key2;type:varchar;primaryKey"`
 	StringSlice       *pq.StringArray                 `gorm:"column:stringslice;type:text[]"`
 	Bool              bool                            `gorm:"column:bool;type:bool"`
-	Uint64            uint64                          `gorm:"column:uint64;type:integer"`
-	Int64             int64                           `gorm:"column:int64;type:integer"`
+	Uint64            uint64                          `gorm:"column:uint64;type:bigint"`
+	Int64             int64                           `gorm:"column:int64;type:bigint"`
 	Float             float32                         `gorm:"column:float;type:numeric"`
 	Labels            map[string]string               `gorm:"column:labels;type:jsonb"`
 	Timestamp         *time.Time                      `gorm:"column:timestamp;type:timestamp"`
@@ -70,9 +70,9 @@ type TestMultiKeyStructsNesteds struct {
 	Idx                     int                 `gorm:"column:idx;type:integer;primaryKey;index:testmultikeystructsnesteds_idx,type:btree"`
 	Nested                  string              `gorm:"column:nested;type:varchar"`
 	IsNested                bool                `gorm:"column:isnested;type:bool"`
-	Int64                   int64               `gorm:"column:int64;type:integer"`
+	Int64                   int64               `gorm:"column:int64;type:bigint"`
 	Nested2Nested2          string              `gorm:"column:nested2_nested2;type:varchar"`
 	Nested2IsNested         bool                `gorm:"column:nested2_isnested;type:bool"`
-	Nested2Int64            int64               `gorm:"column:nested2_int64;type:integer"`
+	Nested2Int64            int64               `gorm:"column:nested2_int64;type:bigint"`
 	TestMultiKeyStructsRef  TestMultiKeyStructs `gorm:"foreignKey:test_multi_key_structs_key1,test_multi_key_structs_key2;references:key1,key2;belongsTo;constraint:OnDelete:CASCADE"`
 }

@@ -27,7 +27,6 @@
         "WatchedImage": "READ_ACCESS",
         "AllComments": "NO_ACCESS",
         "ComplianceRuns": "NO_ACCESS",
-        "ComplianceRunSchedule": "NO_ACCESS",
         "Config": "READ_ACCESS",
         "DebugLogs": "NO_ACCESS",
         "NetworkGraphConfig": "NO_ACCESS",

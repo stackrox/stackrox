@@ -25,7 +25,6 @@ func init() {
 		schema.AddExtraResolvers("NodeComponent", []string{
 			"fixedIn: String!",
 			"lastScanned: Time",
-			"license: License",
 			"location(query: String): String!",
 			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
 			"nodeCount(query: String, scopeQuery: String): Int!",
@@ -50,7 +49,6 @@ type NodeComponentResolver interface {
 	FixedIn(ctx context.Context) string
 	Id(ctx context.Context) graphql.ID
 	LastScanned(ctx context.Context) (*graphql.Time, error)
-	License(ctx context.Context) (*licenseResolver, error)
 	Location(ctx context.Context, args RawQuery) (string, error)
 	Name(ctx context.Context) string
 	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
@@ -84,12 +82,7 @@ func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (Node
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
-	res, err := resolver.wrapNodeComponent(ret, true, err)
-	if err != nil {
-		return nil, err
-	}
-	res.ctx = ctx
-	return res, nil
+	return resolver.wrapNodeComponentWithContext(ctx, ret, true, err)
 }
 
 // NodeComponents returns node components that match the input query.
@@ -113,14 +106,14 @@ func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) 
 		return nil, err
 	}
 
-	componentResolvers, err := resolver.wrapNodeComponents(loader.FromQuery(ctx, query))
+	comps, err := loader.FromQuery(ctx, query)
+	componentResolvers, err := resolver.wrapNodeComponentsWithContext(ctx, comps, err)
 	if err != nil {
 		return nil, err
 	}
 
 	ret := make([]NodeComponentResolver, 0, len(componentResolvers))
 	for _, res := range componentResolvers {
-		res.ctx = ctx
 		ret = append(ret, res)
 	}
 	return ret, nil
@@ -159,15 +152,19 @@ func queryWithNodeIDRegexFilter(q string) string {
 		search.NewQueryBuilder().AddRegexes(search.NodeID, ".+").Query())
 }
 
-func (resolver *nodeComponentResolver) withNodeComponentScope(ctx context.Context) context.Context {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return scoped.Context(ctx, scoped.Scope{
-			Level: v1.SearchCategory_NODE_COMPONENTS,
+func (resolver *nodeComponentResolver) nodeComponentScopeContext() context.Context {
+	if resolver.ctx == nil {
+		log.Errorf("attempted to scope context on nil")
+		return nil
+	}
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return scoped.Context(resolver.ctx, scoped.Scope{
+			Level: v1.SearchCategory_IMAGE_COMPONENTS,
 			ID:    resolver.data.GetId(),
 		})
 	}
-	return scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_IMAGE_COMPONENTS,
+	return scoped.Context(resolver.ctx, scoped.Scope{
+		Level: v1.SearchCategory_NODE_COMPONENTS,
 		ID:    resolver.data.GetId(),
 	})
 }
@@ -185,14 +182,17 @@ Sub Resolver Functions
 */
 
 // FixedIn returns the node component version that fixes all the fixable vulnerabilities in this component.
-func (resolver *nodeComponentResolver) FixedIn(ctx context.Context) string {
+func (resolver *nodeComponentResolver) FixedIn(_ context.Context) string {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "FixedIn")
 	return ""
 }
 
 // LastScanned is the last time the node component was scanned in a node.
-func (resolver *nodeComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
+func (resolver *nodeComponentResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "LastScanned")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	nodeLoader, err := loaders.GetNodeLoader(resolver.ctx)
 	if err != nil {
 		return nil, err
@@ -220,12 +220,6 @@ func (resolver *nodeComponentResolver) LastScanned(_ context.Context) (*graphql.
 	return timestamp(nodes[0].GetScan().GetScanTime())
 }
 
-// License of the node component
-func (resolver *nodeComponentResolver) License(_ context.Context) (*licenseResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "License")
-	return nil, nil
-}
-
 // Location of the node component.
 func (resolver *nodeComponentResolver) Location(_ context.Context, _ RawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "Location")
@@ -235,37 +229,55 @@ func (resolver *nodeComponentResolver) Location(_ context.Context, _ RawQuery) (
 // Nodes that contain the node component.
 func (resolver *nodeComponentResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "Nodes")
-	return resolver.root.Nodes(resolver.withNodeComponentScope(ctx), args)
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+	return resolver.root.Nodes(resolver.nodeComponentScopeContext(), args)
 }
 
 // NodeCount is the number of nodes that contain the node component
 func (resolver *nodeComponentResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeCount")
-	return resolver.root.NodeCount(resolver.withNodeComponentScope(ctx), args)
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+	return resolver.root.NodeCount(resolver.nodeComponentScopeContext(), args)
 }
 
 // NodeVulnerabilities contained in the node component
 func (resolver *nodeComponentResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeVulnerabilities")
-	return resolver.root.NodeVulnerabilities(resolver.withNodeComponentScope(ctx), args)
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+	return resolver.root.NodeVulnerabilities(resolver.nodeComponentScopeContext(), args)
 }
 
 // NodeVulnerabilityCount resolves the number of node vulnerabilities contained in the node component
 func (resolver *nodeComponentResolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeVulnerabilityCount")
-	return resolver.root.NodeVulnerabilityCount(resolver.withNodeComponentScope(ctx), args)
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+	return resolver.root.NodeVulnerabilityCount(resolver.nodeComponentScopeContext(), args)
 }
 
 // NodeVulnerabilityCounter resolves the number of different types of node vulnerabilities contained in a node component
 func (resolver *nodeComponentResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeVulnerabilityCounter")
-	return resolver.root.NodeVulnerabilityCounter(resolver.withNodeComponentScope(ctx), args)
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+	return resolver.root.NodeVulnerabilityCounter(resolver.nodeComponentScopeContext(), args)
 }
 
 // PlottedNodeVulnerabilities returns the data required by top risky component scatter-plot on vuln mgmt dashboard
 func (resolver *nodeComponentResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "PlottedNodeVulnerabilities")
-	return resolver.root.PlottedNodeVulnerabilities(resolver.withNodeComponentScope(ctx), args)
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+	return resolver.root.PlottedNodeVulnerabilities(resolver.nodeComponentScopeContext(), args)
 }
 
 // Source returns the source type of the node component
@@ -277,6 +289,9 @@ func (resolver *nodeComponentResolver) Source(_ context.Context) string {
 // TopNodeVulnerability returns the first node component vulnerability with the top CVSS score
 func (resolver *nodeComponentResolver) TopNodeVulnerability(ctx context.Context) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "TopNodeVulnerability")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		query := resolver.nodeComponentQuery()
 		query.Pagination = &v1.QueryPagination{
@@ -294,26 +309,25 @@ func (resolver *nodeComponentResolver) TopNodeVulnerability(ctx context.Context)
 			Offset: 0,
 		}
 
-		vulnLoader, err := loaders.GetCVELoader(ctx)
+		vulnLoader, err := loaders.GetCVELoader(resolver.ctx)
 		if err != nil {
 			return nil, err
 		}
-		vulns, err := vulnLoader.FromQuery(ctx, query)
+		vulns, err := vulnLoader.FromQuery(resolver.ctx, query)
 		if err != nil || len(vulns) == 0 {
 			return nil, err
 		} else if len(vulns) > 1 {
 			return nil, errors.New("multiple vulnerabilities matched for top node component vulnerability")
 		}
 
-		res, err := resolver.root.wrapCVE(vulns[0], true, nil)
+		res, err := resolver.root.wrapCVEWithContext(resolver.ctx, vulns[0], true, nil)
 		if err != nil {
 			return nil, err
 		}
-		res.ctx = ctx
 		return res, nil
 	}
 
-	return resolver.root.TopNodeVulnerability(resolver.withNodeComponentScope(ctx), RawQuery{})
+	return resolver.root.TopNodeVulnerability(resolver.nodeComponentScopeContext(), RawQuery{})
 }
 
 // UnusedVarSink represents a query sink

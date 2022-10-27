@@ -10,6 +10,7 @@ module.exports = {
     blockHosts: ['*.*'], // Browser options
     chromeWebSecurity: false, // Browser options
     numTestsKeptInMemory: 0, // Global options
+    requestTimeout: 10000, // Timeouts options
     viewportHeight: 850, // Viewport options
     viewportWidth: 1440, // Viewport options
 

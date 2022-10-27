@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "storage/resource_collection.proto";
+import "storage/deployment.proto";
+
+package v1;
+
+message GetCollectionRequest {
+    message Options {
+        bool with_matches = 1;
+    }
+    string id = 1;
+    Options options = 2;
+}
+
+message GetCollectionResponse {
+    storage.ResourceCollection collection = 1;
+    repeated storage.ListDeployment deployments = 2;
+}
+
+service CollectionService {
+
+    rpc GetCollection (GetCollectionRequest) returns (GetCollectionResponse) {
+        option (google.api.http) = {
+            get: "/v1/collections/{id}"
+        };
+    }
+}

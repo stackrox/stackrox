@@ -24,11 +24,18 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - `ids` field in `/v1/cves/suppress` and `/v1/cves/unsuppress` API payload renamed to `cves`.
 - ROX-11592: Support to Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field
   being set in the `/v1/groups` endpoint have been removed.
+- The unused "ComplianceRunSchedule" resource has been removed.
 
 ### Deprecated Features
 
 ### Technical Changes
 - ROX-11937: The Splunk integration now processes all additional standards of the compliance operator (ocp4-cis & ocp4-cis-node) correctly.
+- ROX-9342: Sensor no longer uses `anyuid` Security Context Constraint (SCC).
+  The default SCC for sensor is now `restricted[-v2]` or `stackrox-sensor` depending on the settings.
+  Both the `runAsUser` and `fsGroup` for the admission-control and sensor deployments are no longer hardcoded to 4000 on Openshift clusters
+  to allow using the `restricted` and `restricted-v2` SCCs.
+- The service account "central", which is used by the central deployment, will now include `get` and `list` access to the following resources in the namespace where central is deployed to:
+  `pods`, `events`, and `namespaces`. This fixes an issue when generating diagnostic bundles to now correctly include all relevant information within the namespace of central.
 
 ## [3.72.0]
 
@@ -63,7 +70,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-9484: When integrating Quay registry you can now optionally use robot account instead of just OAuth tokens. In fact this is Quay's recommended integration credentials. However, integration with Quay scanner still requires an OAuth token.
 - The `init-db` init-container for ScannerDB now specifies resource requests/limits which match the `db` container in ScannerDB.
 - Starting 3.73, CSV export API `/api/vm/export/csv` would require to pass `CVE Type` filter as part of the input query parameter. Requests that do not have the filter would error out.
-  - Examples : `CVE Type:NODE_CVE`, `CVE_Type:IMAGE_CVE`, `CVE_TYPE:K8S_CVE`
+  - Examples : `CVE Type:NODE_CVE`, `CVE Type:IMAGE_CVE`, `CVE Type:K8S_CVE`
 
 ## [3.71.0]
 

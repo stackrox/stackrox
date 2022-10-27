@@ -25,7 +25,7 @@ issues:
         - forbidigo
     - linters:
         - revive
-      text: "should have a package comment, unless it's in another file for this package"
+      text: "should have a package comment"
     - linters:
         - revive
       text: "should not use dot imports"
@@ -50,6 +50,9 @@ issues:
 linters-settings:
   gosec:
     includes:
+    - G101
+    - G102
+    - G303
     - G601
   revive:
     min-confidence: 0

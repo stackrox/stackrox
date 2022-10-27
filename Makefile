@@ -124,12 +124,8 @@ $(EASYJSON_BIN): deps
 CONTROLLER_GEN_BIN := $(GOBIN)/controller-gen
 $(CONTROLLER_GEN_BIN): deps
 	$(SILENT)echo "+ $@"
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen
-
-GOVERALLS_BIN := $(GOBIN)/goveralls
-$(GOVERALLS_BIN): deps
-	@echo "+ $@"
-	$(SILENT)cd tools/test/ && go install github.com/mattn/goveralls
+	@# We need to install a legacy version for compatibility reasons.
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
 
 ROXVET_BIN := $(GOBIN)/roxvet
 .PHONY: $(ROXVET_BIN)
@@ -147,11 +143,6 @@ $(MOCKGEN_BIN): deps
 	@echo "+ $@"
 	go install github.com/golang/mock/mockgen
 
-GENNY_BIN := $(GOBIN)/genny
-$(GENNY_BIN): deps
-	@echo "+ $@"
-	go install github.com/mauricelam/genny
-
 GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN): deps
 	@echo "+ $@"
@@ -166,7 +157,7 @@ $(PROTOLOCK_BIN): deps
 ## Style ##
 ###########
 .PHONY: style
-style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style
+style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style shell-style
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCILINT_BIN)
@@ -194,6 +185,17 @@ qa-tests-style:
 ui-lint:
 	@echo "+ $@"
 	make -C ui lint
+
+.PHONY: shell-style
+shell-style:
+	@echo "+ $@"
+	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh
+
+.PHONY: update-shellcheck-skip
+update-shellcheck-skip:
+	@echo "+ $@"
+	$(SILENT)rm -f scripts/style/shellcheck_skip.txt
+	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh update_failing_list
 
 .PHONY: ci-config-validate
 ci-config-validate:
@@ -309,7 +311,7 @@ pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go: $(CONTROLLER_GEN_B
 	go fmt ./pkg/complianceoperator/api/v1alpha1/...
 
 .PHONY: go-generated-srcs
-go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN) pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go
+go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go
 	@echo "+ $@"
 	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate -v -x ./...
 
@@ -515,7 +517,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests

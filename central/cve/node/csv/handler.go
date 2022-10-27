@@ -1,10 +1,13 @@
 package csv
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/pkg/errors"
 	csvCommon "github.com/stackrox/rox/central/cve/common/csv"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
@@ -54,17 +57,18 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 	)
 }
 
-type nodeCveRow struct {
-	cve            string
-	fixable        string
-	cvssScore      string
-	envImpact      string
-	impactScore    string
-	nodeCount      string
-	componentCount string
-	scannedTime    string
-	publishedTime  string
-	summary        string
+// NodeCVERow represents a row in Node CVE csv export
+type NodeCVERow struct {
+	CVE            string
+	Fixable        string
+	CvssScore      string
+	EnvImpact      string
+	ImpactScore    string
+	NodeCount      string
+	ComponentCount string
+	ScannedTime    string
+	PublishedTime  string
+	Summary        string
 }
 
 type csvResults struct {
@@ -77,19 +81,19 @@ func newCSVResults(header []string, sort bool) csvResults {
 	}
 }
 
-func (c *csvResults) addRow(row nodeCveRow) {
+func (c *csvResults) addRow(row *NodeCVERow) {
 	// node cve, fixable, cvss score, env impact, impact score, nodes, node components, scanned time, published time, summary
 	value := []string{
-		row.cve,
-		row.fixable,
-		row.cvssScore,
-		row.envImpact,
-		row.impactScore,
-		row.nodeCount,
-		row.componentCount,
-		row.scannedTime,
-		row.publishedTime,
-		row.summary,
+		row.CVE,
+		row.Fixable,
+		row.CvssScore,
+		row.EnvImpact,
+		row.ImpactScore,
+		row.NodeCount,
+		row.ComponentCount,
+		row.ScannedTime,
+		row.PublishedTime,
+		row.Summary,
 	}
 
 	c.AddValue(value)
@@ -105,24 +109,11 @@ func NodeCVECSVHandler() http.HandlerFunc {
 			csv.WriteError(w, http.StatusBadRequest, err)
 			return
 		}
-
-		ctx, err := csvHandler.GetScopeContext(loaders.WithLoaderContext(r.Context()), query)
-		if err != nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
-			log.Errorf("unable to determine resource scope for query %q: %v", query.String(), err)
-			return
-		}
-
 		rawQuery, paginatedQuery := resolvers.V1RawQueryAsResolverQuery(rQuery)
-		res := csvHandler.GetResolver()
-		if res == nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
-			log.Errorf("Unexpected value (nil) for resolver in Handler")
-		}
-		vulnResolvers, err := res.NodeVulnerabilities(ctx, paginatedQuery)
+
+		cveRows, err := NodeCVECSVRows(loaders.WithLoaderContext(r.Context()), query, rawQuery, paginatedQuery)
 		if err != nil {
 			csv.WriteError(w, http.StatusInternalServerError, err)
-			log.Errorf("unable to get node vulnerabilities for csv export: %v", err)
 			return
 		}
 
@@ -131,55 +122,84 @@ func NodeCVECSVHandler() http.HandlerFunc {
 			paginatedQuery.Pagination.SortOption.Field == nil
 
 		output := newCSVResults(csvHeader, postSortRequired)
-		for _, d := range vulnResolvers {
-			var errorList errorhelpers.ErrorList
-			dataRow := nodeCveRow{}
-			dataRow.cve = d.CVE(ctx)
-			// query to IsFixable should not have Fixable field
-			rawQueryWithoutFixable := resolvers.FilterFieldFromRawQuery(rawQuery, search.Fixable)
-			isFixable, err := d.IsFixable(ctx, rawQueryWithoutFixable)
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.fixable = strconv.FormatBool(isFixable)
-			dataRow.cvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
-			envImpact, err := d.EnvImpact(ctx)
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.envImpact = fmt.Sprintf("%.2f", envImpact*100)
-			dataRow.impactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
-			// Entity counts should be scoped to CVE only
-			nodeCount, err := d.NodeCount(ctx, resolvers.RawQuery{})
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.nodeCount = fmt.Sprint(nodeCount)
-			// Entity counts should be scoped to CVE only
-			componentCount, err := d.NodeComponentCount(ctx, resolvers.RawQuery{})
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.componentCount = fmt.Sprint(componentCount)
-			scannedTime, err := d.LastScanned(ctx)
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.scannedTime = csv.FromGraphQLTime(scannedTime)
-			publishedTime, err := d.PublishedOn(ctx)
-			if err != nil {
-				errorList.AddError(err)
-			}
-			dataRow.publishedTime = csv.FromGraphQLTime(publishedTime)
-			dataRow.summary = d.Summary(ctx)
-
-			output.addRow(dataRow)
-
-			if err := errorList.ToError(); err != nil {
-				log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.cve, err)
-			}
+		for _, row := range cveRows {
+			output.addRow(row)
 		}
-
-		output.Write(w, "node_cve_export")
+		filename := time.Now().Format("node_cve_export_2006_01_02_15_04_05")
+		output.Write(w, filename)
 	}
+}
+
+// NodeCVECSVRows returns data rows for Node CVE csv export
+func NodeCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery, paginatedQuery resolvers.PaginatedQuery) ([]*NodeCVERow, error) {
+	if csvHandler == nil {
+		return nil, errors.New("Handler not initialized")
+	}
+
+	ctx, err := csvHandler.GetScopeContext(c, query)
+	if err != nil {
+		log.Errorf("unable to determine resource scope for query %q: %v", query.String(), err)
+		return nil, err
+	}
+
+	res := csvHandler.GetResolver()
+	if res == nil {
+		log.Errorf("Unexpected value (nil) for resolver in Handler")
+		return nil, errors.New("Resolver not initialized in handler")
+	}
+	vulnResolvers, err := res.NodeVulnerabilities(ctx, paginatedQuery)
+	if err != nil {
+		log.Errorf("unable to get node vulnerabilities for csv export: %v", err)
+		return nil, err
+	}
+
+	cveRows := make([]*NodeCVERow, 0, len(vulnResolvers))
+	for _, d := range vulnResolvers {
+		var errorList errorhelpers.ErrorList
+		dataRow := &NodeCVERow{}
+		dataRow.CVE = d.CVE(ctx)
+		// query to IsFixable should not have Fixable field
+		rawQueryWithoutFixable := resolvers.FilterFieldFromRawQuery(rawQuery, search.Fixable)
+		isFixable, err := d.IsFixable(ctx, rawQueryWithoutFixable)
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.Fixable = strconv.FormatBool(isFixable)
+		dataRow.CvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
+		envImpact, err := d.EnvImpact(ctx)
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.EnvImpact = fmt.Sprintf("%.2f", envImpact*100)
+		dataRow.ImpactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
+		// Entity counts should be scoped to CVE only
+		nodeCount, err := d.NodeCount(ctx, resolvers.RawQuery{})
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.NodeCount = fmt.Sprint(nodeCount)
+		// Entity counts should be scoped to CVE only
+		componentCount, err := d.NodeComponentCount(ctx, resolvers.RawQuery{})
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.ComponentCount = fmt.Sprint(componentCount)
+		scannedTime, err := d.LastScanned(ctx)
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.ScannedTime = csv.FromGraphQLTime(scannedTime)
+		publishedTime, err := d.PublishedOn(ctx)
+		if err != nil {
+			errorList.AddError(err)
+		}
+		dataRow.PublishedTime = csv.FromGraphQLTime(publishedTime)
+		dataRow.Summary = d.Summary(ctx)
+
+		cveRows = append(cveRows, dataRow)
+		if err := errorList.ToError(); err != nil {
+			log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.CVE, err)
+		}
+	}
+	return cveRows, nil
 }

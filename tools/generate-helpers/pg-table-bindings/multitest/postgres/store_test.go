@@ -100,10 +100,12 @@ func (s *TestMultiKeyStructsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2()))
 
 	var testMultiKeyStructs []*storage.TestMultiKeyStruct
+	var testMultiKeyStructIDs []string
 	for i := 0; i < 200; i++ {
 		testMultiKeyStruct := &storage.TestMultiKeyStruct{}
 		s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testMultiKeyStructs = append(testMultiKeyStructs, testMultiKeyStruct)
+		testMultiKeyStructIDs = append(testMultiKeyStructIDs, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	}
 
 	s.NoError(store.UpsertMany(ctx, testMultiKeyStructs))
@@ -111,4 +113,10 @@ func (s *TestMultiKeyStructsStoreSuite) TestStore() {
 	testMultiKeyStructCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, testMultiKeyStructCount)
+
+	s.NoError(store.DeleteMany(ctx, testMultiKeyStructIDs))
+
+	testMultiKeyStructCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, testMultiKeyStructCount)
 }

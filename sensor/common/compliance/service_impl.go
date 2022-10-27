@@ -18,6 +18,8 @@ import (
 
 // ComplianceService is the struct that manages the compliance results and audit log events
 type serviceImpl struct {
+	sensor.UnimplementedComplianceServiceServer
+
 	output      chan *compliance.ComplianceReturn
 	auditEvents chan *sensor.AuditEvents
 

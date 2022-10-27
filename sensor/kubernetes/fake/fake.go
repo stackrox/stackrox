@@ -85,14 +85,32 @@ type WorkloadManager struct {
 	networkManager      manager.Manager
 }
 
+// WorkloadManagerConfig WorkloadManager's configuration
+type WorkloadManagerConfig struct {
+	workloadFile string
+}
+
+// ConfigDefaults default configuration
+func ConfigDefaults() *WorkloadManagerConfig {
+	return &WorkloadManagerConfig{
+		workloadFile: workloadPath,
+	}
+}
+
+// WithWorkloadFile configures the WorkloadManagerConfig's WorkloadFile field
+func (c *WorkloadManagerConfig) WithWorkloadFile(file string) *WorkloadManagerConfig {
+	c.workloadFile = file
+	return c
+}
+
 // Client returns the mock client
 func (w *WorkloadManager) Client() client.Interface {
 	return w.client
 }
 
 // NewWorkloadManager returns a fake kubernetes client interface that will be managed with the passed Workload
-func NewWorkloadManager() *WorkloadManager {
-	data, err := os.ReadFile(workloadPath)
+func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
+	data, err := os.ReadFile(config.workloadFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -150,6 +168,8 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		objects = append(objects, node)
 	}
 
+	labelsPool.matchLabels = w.workload.MatchLabels
+
 	objects = append(objects, getRBAC(w.workload.RBACWorkload)...)
 	var resources []*deploymentResourcesToBeManaged
 	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
@@ -164,6 +184,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
+	objects = append(objects, getService(w.workload.ServiceWorkload)...)
 	var npResources []*networkPolicyToBeManaged
 	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
 		for i := 0; i < npWorkload.NumNetworkPolicies; i++ {

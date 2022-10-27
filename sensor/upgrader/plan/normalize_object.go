@@ -109,7 +109,6 @@ var (
 func normalizeObject(obj *unstructured.Unstructured) {
 	obj.SetUID("")
 	obj.SetSelfLink("")
-	obj.SetClusterName("")
 	obj.SetCreationTimestamp(metav1.Time{})
 	obj.SetResourceVersion("")
 	obj.SetGeneration(0)

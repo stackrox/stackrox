@@ -10,6 +10,8 @@ import spock.lang.Retry
 import util.NetworkGraphUtil
 import util.Timer
 
+import spock.lang.Timeout
+
 @Retry(count = 0)
 class NetworkBaselineTest extends BaseSpecification {
     static final private String SERVER_DEP_NAME = "net-bl-server"
@@ -160,6 +162,7 @@ class NetworkBaselineTest extends BaseSpecification {
     }
 
     @Category(NetworkBaseline)
+    @Timeout(1600)
     def "Verify network baseline functionality"() {
         when:
         "Create initial set of deployments, wait for baseline to populate"

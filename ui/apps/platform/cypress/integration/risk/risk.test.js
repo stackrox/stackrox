@@ -1,5 +1,6 @@
 import { selectors as RiskPageSelectors } from '../../constants/RiskPage';
 import withAuth from '../../helpers/basicAuth';
+import { reachNetworkGraph } from '../../helpers/networkGraph';
 import {
     deploymentswithprocessinfoAlias,
     deploymentscountAlias,
@@ -13,6 +14,7 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
+import { hasFeatureFlag } from '../../helpers/features';
 
 describe('Risk page', () => {
     withAuth();
@@ -139,10 +141,10 @@ describe('Risk page', () => {
     describe('with actual API', () => {
         it('should navigate to network page with selected deployment', () => {
             visitRiskDeployments();
-            viewRiskDeploymentByName('central');
-            viewRiskDeploymentInNetworkGraph();
-
-            cy.location('pathname').should('match', /^\/main\/network\/[-0-9a-z]+$/);
+            viewRiskDeploymentByName('collector');
+            reachNetworkGraph(() => {
+                viewRiskDeploymentInNetworkGraph();
+            });
         });
 
         const searchPlaceholderText = 'Add one or more resource filters';
@@ -159,7 +161,10 @@ describe('Risk page', () => {
             cy.get(RiskPageSelectors.search.searchLabels).should('not.exist');
         });
 
-        it('should have a single URL search param key/value pair in its search bar', () => {
+        it('should have a single URL search param key/value pair in its search bar', function () {
+            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+                this.skip();
+            }
             visitRiskDeployments();
 
             const nsOption = 'Namespace';
@@ -191,7 +196,10 @@ describe('Risk page', () => {
             });
         });
 
-        it('should have multiple URL search param key/value pairs in its search bar', () => {
+        it('should have multiple URL search param key/value pairs in its search bar', function () {
+            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+                this.skip();
+            }
             visitRiskDeployments();
 
             const nsOption = 'Namespace';

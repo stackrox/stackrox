@@ -9,6 +9,7 @@ import (
 )
 
 // FlowStore stores all of the flows for a single cluster.
+//
 //go:generate mockgen-wrapper
 type FlowStore interface {
 	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
@@ -21,4 +22,7 @@ type FlowStore interface {
 
 	RemoveFlowsForDeployment(ctx context.Context, id string) error
 	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
+
+	// RemoveStaleFlows - remove stale duplicate network flows
+	RemoveStaleFlows(ctx context.Context) error
 }

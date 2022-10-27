@@ -113,6 +113,10 @@ func (w *errorWaitableWrapper) Err() error {
 	return nil
 }
 
+func (w *errorWaitableWrapper) IsDone() bool {
+	return w.isDone()
+}
+
 func (w *errorWaitableWrapper) Done() <-chan struct{} {
 	return w.w.Done()
 }

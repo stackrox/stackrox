@@ -102,10 +102,12 @@ func (s *ProcessBaselinesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, processBaseline.GetId()))
 
 	var processBaselines []*storage.ProcessBaseline
+	var processBaselineIDs []string
 	for i := 0; i < 200; i++ {
 		processBaseline := &storage.ProcessBaseline{}
 		s.NoError(testutils.FullInit(processBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processBaselines = append(processBaselines, processBaseline)
+		processBaselineIDs = append(processBaselineIDs, processBaseline.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, processBaselines))
@@ -113,6 +115,12 @@ func (s *ProcessBaselinesStoreSuite) TestStore() {
 	processBaselineCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, processBaselineCount)
+
+	s.NoError(store.DeleteMany(ctx, processBaselineIDs))
+
+	processBaselineCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, processBaselineCount)
 }
 
 func (s *ProcessBaselinesStoreSuite) TestSACUpsert() {

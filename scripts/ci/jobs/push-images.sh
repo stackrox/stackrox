@@ -65,6 +65,9 @@ push_images() {
             push_operator_image_set "$push_context" "$brand"
         fi
     fi
+    if [[ -n "${MOCK_GRPC_SERVER_IMAGE:-}" ]]; then
+        push_mock_grpc_server_image
+    fi
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]] && [[ -n "${MAIN_IMAGE}" ]]; then
         add_build_comment_to_pr || {
@@ -73,6 +76,7 @@ push_images() {
     fi
 }
 
+# TODO: this notification does not seem to belong to pushing images, move it to shared lib.sh and find a better place to call it
 slack_build_notice() {
     info "Slack a build notice"
 
@@ -108,10 +112,13 @@ slack_build_notice() {
         die "unexpected"
     fi
 
+    local github_url="https://github.com/stackrox/stackrox/releases/tag/$tag"
+
     jq -n \
     --arg build_url "$build_url" \
     --arg tag "$tag" \
-    '{"text": ":prow: Prow build for tag `\($tag)` started! Check the status of the build under the following URL: \($build_url)"}' \
+    --arg github_url "$github_url" \
+    '{"text": ":prow: Prow build for tag <\($github_url)|\($tag)> started! Check the status of the build under the following URL: \($build_url)"}' \
 | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 

@@ -63,6 +63,8 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	v1.UnimplementedNetworkGraphServiceServer
+
 	clusterFlows   networkFlowDS.ClusterDataStore
 	entities       networkEntityDS.EntityDataStore
 	networkTreeMgr networktree.Manager
@@ -320,13 +322,10 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 ) error {
 	// Build a possibly reduced map of only those deployments for which we can see network flows.
 	networkFlowsChecker := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(request.GetClusterId())
-	filteredSlice, err := sac.FilterSliceReflect(ctx, networkFlowsChecker, deployments, func(deployment *storage.ListDeployment) sac.ScopePredicate {
+	filteredDeployments := sac.FilterSlice(networkFlowsChecker, deployments, func(deployment *storage.ListDeployment) sac.ScopePredicate {
 		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
 	})
-	if err != nil {
-		return err
-	}
-	deploymentsWithFlows := objects.ListDeploymentsMapByID(filteredSlice.([]*storage.ListDeployment))
+	deploymentsWithFlows := objects.ListDeploymentsMapByID(filteredDeployments)
 	deploymentsMap := objects.ListDeploymentsMapByID(deployments)
 
 	// We can see all relevant flows if no deployments were filtered out in the previous step.

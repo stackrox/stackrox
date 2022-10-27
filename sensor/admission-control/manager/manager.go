@@ -20,7 +20,7 @@ type Manager interface {
 	SettingsUpdateC() chan<- *sensor.AdmissionControlSettings
 	ResourceUpdatesC() chan<- *sensor.AdmCtrlUpdateResourceRequest
 
-	SettingsStream() concurrency.ReadOnlyValueStream
+	SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
 	SensorConnStatusFlag() *concurrency.Flag
 	InitialResourceSyncSig() *concurrency.Signal
 

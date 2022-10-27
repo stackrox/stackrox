@@ -245,11 +245,8 @@ func (m *orchestratorCVEManager) getAffectedClusters(ctx context.Context, cveID 
 		return nil, err
 	}
 
-	filteredClusters, err := sac.FilterSliceReflect(ctx, clustersSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS), clusters, func(c *storage.Cluster) sac.ScopePredicate {
+	filteredClusters := sac.FilterSlice(clustersSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS), clusters, func(c *storage.Cluster) sac.ScopePredicate {
 		return sac.ScopeSuffix{sac.ClusterScopeKey(c.GetId())}
 	})
-	if err != nil {
-		return nil, err
-	}
-	return filteredClusters.([]*storage.Cluster), nil
+	return filteredClusters, nil
 }

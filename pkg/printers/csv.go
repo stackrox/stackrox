@@ -15,7 +15,7 @@ type CSVPrinterOption func(*CSVPrinter)
 // WithCSVColumnHeaders is a functional option for setting the CSV column headers.
 func WithCSVColumnHeaders(headers []string) CSVPrinterOption {
 	return func(p *CSVPrinter) {
-		p.columnHeaders = sliceutils.StringClone(headers)
+		p.columnHeaders = sliceutils.ShallowClone(headers)
 	}
 }
 

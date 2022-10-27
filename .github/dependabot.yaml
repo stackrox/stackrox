@@ -14,8 +14,6 @@ updates:
     versioning-strategy: increase
     open-pull-requests-limit: 10
     labels:
-      - "ci-no-api-tests"
-      - "ci-no-qa-tests"
       - "dependencies"
     reviewers:
       - "stackrox/ui-dep-updaters"
@@ -27,13 +25,7 @@ updates:
       interval: 'daily'
     open-pull-requests-limit: 1
     labels:
-      - "ci-aks-tests"
       - "ci-all-qa-tests"
-      - "ci-eks-tests"
-      - "ci-no-api-tests"
-      - "ci-no-ui-tests"
-      - "ci-openshift-4-tests"
-      - "ci-rhel-tests"
       - "dependencies"
     reviewers:
       - "stackrox/backend-dep-updaters"
@@ -43,6 +35,9 @@ updates:
     schedule:
       interval: 'daily'
     open-pull-requests-limit: 3
+    labels:
+      - "ci-all-qa-tests"
+      - "dependencies"
     reviewers:
       - "stackrox/backend-dep-updaters"
     ignore:
@@ -55,6 +50,8 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
     reviewers:
       - "stackrox/backend-dep-updaters"
 
@@ -64,6 +61,8 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
     reviewers:
       - "stackrox/backend-dep-updaters"
 
@@ -73,6 +72,8 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 1
+    labels:
+    - "dependencies"
     reviewers:
     - "stackrox/backend-dep-updaters"
 
@@ -82,6 +83,9 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 1
+    labels:
+    - "ci-all-qa-tests"
+    - "dependencies"
     reviewers:
     - "stackrox/backend-dep-updaters"
 
@@ -91,5 +95,8 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 1
+    labels:
+    - "ci-all-qa-tests"
+    - "dependencies"
     reviewers:
     - "stackrox/backend-dep-updaters"

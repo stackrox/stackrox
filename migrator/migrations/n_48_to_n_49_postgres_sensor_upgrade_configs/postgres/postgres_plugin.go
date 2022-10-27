@@ -4,7 +4,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
@@ -65,6 +64,12 @@ func insertIntoSensorUpgradeConfigs(ctx context.Context, tx pgx.Tx, obj *storage
 }
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SensorUpgradeConfig) error {
+	return pgutils.Retry(func() error {
+		return s.retryableUpsert(ctx, obj)
+	})
+}
+
+func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.SensorUpgradeConfig) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "SensorUpgradeConfig")
 	if err != nil {
 		return err
@@ -94,6 +99,12 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SensorUpgradeConfig
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context) (*storage.SensorUpgradeConfig, bool, error) {
+	return pgutils.Retry3(func() (*storage.SensorUpgradeConfig, bool, error) {
+		return s.retryableGet(ctx)
+	})
+}
+
+func (s *storeImpl) retryableGet(ctx context.Context) (*storage.SensorUpgradeConfig, bool, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "SensorUpgradeConfig")
 	if err != nil {
 		return nil, false, err
@@ -107,7 +118,7 @@ func (s *storeImpl) Get(ctx context.Context) (*storage.SensorUpgradeConfig, bool
 	}
 
 	var msg storage.SensorUpgradeConfig
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -121,8 +132,14 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 	return conn, conn.Release, nil
 }
 
-// Delete removes the specified ID from the store
+// Delete removes the singleton from the store
 func (s *storeImpl) Delete(ctx context.Context) error {
+	return pgutils.Retry(func() error {
+		return s.retryableDelete(ctx)
+	})
+}
+
+func (s *storeImpl) retryableDelete(ctx context.Context) error {
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "SensorUpgradeConfig")
 	if err != nil {
 		return err

@@ -32,6 +32,8 @@ var (
 
 // serviceImpl provides APIs for deployments.
 type serviceImpl struct {
+	v1.UnimplementedPodServiceServer
+
 	datastore datastore.DataStore
 }
 

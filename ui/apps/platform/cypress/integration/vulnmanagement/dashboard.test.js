@@ -76,17 +76,27 @@ describe('Vulnerability Management Dashboard', () => {
             });
     });
 
-    // TODO Delete skip when we delete ROX_FRONTEND_VM_UPDATES feature flag.
+    it('should show same number of Image CVEs in menu item and entities list', function () {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+            this.skip();
+        }
 
-    it.skip('should show same number of Image CVEs in menu item and entities list', () => {
         verifyVulnerabilityManagementDashboardCVEs('image-cves', /^\d+ Image CVEs?$/);
     });
 
-    it.skip('should show same number of Node CVEs in menu item and entities list', () => {
+    it('should show same number of Node CVEs in menu item and entities list', function () {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+            this.skip();
+        }
+
         verifyVulnerabilityManagementDashboardCVEs('node-cves', /^\d+ Node CVEs?$/);
     });
 
-    it.skip('should show same number of Cluster (Platform) CVEs in menu item and entities list', () => {
+    it('should show same number of Cluster (Platform) CVEs in menu item and entities list', function () {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+            this.skip();
+        }
+
         verifyVulnerabilityManagementDashboardCVEs('cluster-cves', /^\d+ Platform CVEs?$/);
     });
 
@@ -94,7 +104,7 @@ describe('Vulnerability Management Dashboard', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'images';
-        const tileToCheck = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES') ? 2 : 3;
+        const tileToCheck = hasFeatureFlag('ROX_POSTGRES_DATASTORE') ? 2 : 3;
         cy.get(`${selectors.tileLinks}:eq(${tileToCheck}) ${selectors.tileLinkValue}`)
             .invoke('text')
             .then((value) => {
@@ -142,9 +152,11 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    // TODO Delete skip when we delete ROX_FRONTEND_VM_UPDATES feature flag.
+    it('should navigate to the node components list', function () {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+            this.skip();
+        }
 
-    it.skip('should navigate to the node components list', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'node-components';
@@ -156,7 +168,11 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it.skip('should navigate to the image components list', () => {
+    it('should navigate to the image components list', function () {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+            this.skip();
+        }
+
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'image-components';
@@ -200,8 +216,8 @@ describe('Vulnerability Management Dashboard', () => {
     it('clicking the "Recently Detected Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
         visitVulnerabilityManagementDashboard();
 
-        const entitiesKey = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES') ? 'image-cves' : 'cves';
-        const widgetHeading = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+        const entitiesKey = hasFeatureFlag('ROX_POSTGRES_DATASTORE') ? 'image-cves' : 'cves';
+        const widgetHeading = hasFeatureFlag('ROX_POSTGRES_DATASTORE')
             ? 'Recently Detected Image Vulnerabilities'
             : 'Recently Detected Vulnerabilities';
 
@@ -215,8 +231,8 @@ describe('Vulnerability Management Dashboard', () => {
     it('clicking the "Most Common Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
         visitVulnerabilityManagementDashboard();
 
-        const entitiesKey = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES') ? 'image-cves' : 'cves';
-        const widgetHeading = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+        const entitiesKey = hasFeatureFlag('ROX_POSTGRES_DATASTORE') ? 'image-cves' : 'cves';
+        const widgetHeading = hasFeatureFlag('ROX_POSTGRES_DATASTORE')
             ? 'Most Common Image Vulnerabilities'
             : 'Most Common Vulnerabilities';
 

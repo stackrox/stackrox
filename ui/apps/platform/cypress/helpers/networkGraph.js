@@ -1,9 +1,10 @@
 import * as api from '../constants/apiEndpoints';
-import { selectors as networkGraphSelectors, url as networkUrl } from '../constants/NetworkPage';
+import { selectors as networkGraphSelectors } from '../constants/NetworkPage';
 import { visitFromLeftNav } from './nav';
 import { interactAndWaitForResponses } from './request';
 import { visit } from './visit';
 import selectSelectors from '../selectors/select';
+import tabSelectors from '../selectors/tab';
 
 const getNodeErrorMessage = (node) => `Could not find node "${node.name}" of type "${node.type}"`;
 
@@ -31,8 +32,21 @@ export function clickOnNodeByName(cytoscape, node) {
     filteredNodes.emit('click');
 }
 
+export const networkBaselineStatusAlias = 'networkbaseline/id/status';
+
+const requestConfigForDeploymentNode = {
+    routeMatcherMap: {
+        [networkBaselineStatusAlias]: {
+            method: 'POST',
+            url: api.network.networkBaselineStatus,
+        },
+    },
+};
+
 export function clickOnDeploymentNodeByName(cytoscape, name) {
-    clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name });
+    interactAndWaitForResponses(() => {
+        clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name });
+    }, requestConfigForDeploymentNode);
 }
 
 export function mouseOverNodeById(cytoscape, node) {
@@ -204,34 +218,62 @@ export function selectNamespaceFilterWithNetworkGraphResponse(namespace, respons
 
 // visit helpers
 
+export const notifiersAlias = 'notifiers';
+export const clustersAlias = 'clusters';
+export const networkPoliciesGraphEpochAlias = 'networkpolicies/graph/epoch';
+export const searchMetadataOptionsAlias = 'search/metadata/options';
+export const getClusterNamespaceNamesAlias = 'getClusterNamespaceNames';
+
 const requestConfigToVisitGraph = {
     routeMatcherMap: {
-        clusters: {
+        [notifiersAlias]: {
+            method: 'GET',
+            url: api.integrations.notifiers,
+        },
+        [clustersAlias]: {
             method: 'GET',
             url: api.clusters.list,
         },
-        // Network Graph makes the following query on the first visit, but not subsequent visit via browser Back button.
-        // Include it because each cypress test has a new connection, therefore behaves as a first visit.
-        getClusterNamespaceNames: {
-            method: 'POST',
-            url: api.graphql('getClusterNamespaceNames'),
+        [networkPoliciesGraphEpochAlias]: {
+            method: 'GET',
+            url: `${api.network.epoch}?clusterId=null`,
         },
-        'search/metadata/options': {
+        [searchMetadataOptionsAlias]: {
             method: 'GET',
             url: api.search.optionsCategories('DEPLOYMENTS'),
+        },
+        // Network Graph makes the following query on the first visit, but not subsequent visit via browser Back button.
+        // Include it because each cypress test has a new connection, therefore behaves as a first visit.
+        [getClusterNamespaceNamesAlias]: {
+            method: 'POST',
+            url: api.graphql('getClusterNamespaceNames'),
         },
     },
 };
 
+export const basePath = '/main/network';
+
+/*
+ * Reach clusters by interaction from another container.
+ * For example, click View Deployment in Network Graph button from Risk.
+ */
+export function reachNetworkGraph(interactionCallback, staticResponseMap) {
+    interactAndWaitForResponses(interactionCallback, requestConfigToVisitGraph, staticResponseMap);
+
+    cy.location('pathname').should('contain', basePath); // contain because pathname might have id
+    cy.get(networkGraphSelectors.networkGraphHeading);
+}
+
 export function visitNetworkGraphFromLeftNav() {
     visitFromLeftNav('Network', requestConfigToVisitGraph);
 
+    cy.location('pathname').should('eq', basePath);
     cy.get(networkGraphSelectors.networkGraphHeading);
     cy.get(networkGraphSelectors.emptyStateSubheading);
 }
 
 export function visitNetworkGraph(staticResponseMap) {
-    visit(networkUrl, requestConfigToVisitGraph, staticResponseMap);
+    visit(basePath, requestConfigToVisitGraph, staticResponseMap);
 
     cy.get(networkGraphSelectors.networkGraphHeading);
     cy.get(networkGraphSelectors.emptyStateSubheading);
@@ -248,5 +290,52 @@ export function visitNetworkGraphWithMockedData() {
         'stackrox',
         'network/networkGraph.json',
         'network/networkPolicies.json'
+    );
+}
+
+// deployment Network Flows
+
+export const networkBaselinePeersAlias = 'networkbaseline/id/peers';
+
+export function interactAndWaitForChangeToNetworkFlows(interactionCallback) {
+    interactAndWaitForResponses(interactionCallback, {
+        routeMatcherMap: {
+            [networkBaselinePeersAlias]: {
+                method: 'PATCH',
+                url: api.network.networkBaselinePeers,
+            },
+            [networkGraphClusterAlias]: {
+                method: 'GET',
+                url: api.network.networkGraph,
+            },
+            [networkPoliciesClusterAlias]: {
+                method: 'GET',
+                url: api.network.networkPoliciesGraph,
+            },
+            [networkBaselineStatusAlias]: {
+                method: 'POST',
+                url: api.network.networkBaselineStatus,
+            },
+        },
+    });
+}
+
+// deployment Baseline Settings
+
+export const networkBaselineAlias = 'networkbaseline/id';
+
+export function clickBaselineSettingsTab() {
+    interactAndWaitForResponses(
+        () => {
+            cy.get(`${tabSelectors.tabs}:contains('Baseline Settings')`).click();
+        },
+        {
+            routeMatcherMap: {
+                [networkBaselineAlias]: {
+                    method: 'GET',
+                    url: api.network.networkBaseline,
+                },
+            },
+        }
     );
 }

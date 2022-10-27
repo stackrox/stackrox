@@ -22,10 +22,10 @@ function launch_service {
             echo "Please upgrade to at least Helm v3.1.0"
             return 1
           fi
-          helm_install() { helm install "$dir/$1" --name "$1" --tiller-connection-timeout 10 ; }
+          helm_install() { helm upgrade --install "$dir/$1" --name "$1" --tiller-connection-timeout 10 ; }
         elif [[ "$helm_version" == v3.* ]]; then
           echo "Detected Helm v3"
-          helm_install() { helm install "$1" "$dir/$1" ; }
+          helm_install() { helm upgrade --install "$1" "$dir/$1" ; }
         else
           echo "Unknown helm version: ${helm_version}"
           return 1
@@ -39,7 +39,7 @@ function launch_service {
             echo "Waiting for helm to respond"
         done
     else
-        ${ORCH_CMD} create -R -f "$dir/$service"
+        ${ORCH_CMD} apply -R -f "$dir/$service"
     fi
 }
 
@@ -140,11 +140,6 @@ function launch_central {
 
     add_args "--offline=$OFFLINE_MODE"
 
-    if [[ -n "$ROX_LICENSE_KEY" ]]; then
-      add_args "--license"
-      add_maybe_file_arg "${ROX_LICENSE_KEY}"
-    fi
-
     if [[ -n "$SCANNER_IMAGE" ]]; then
         add_args "--scanner-image=$SCANNER_IMAGE"
     fi
@@ -194,8 +189,8 @@ function launch_central {
     	add_args "--with-config-file=${ROXDEPLOY_CONFIG_FILE_MAP}"
     fi
 
-    if [[ "$POD_SECURITY_POLICIES" == "true" ]]; then
-      add_args "--enable-pod-security-policies"
+    if [[ -n "$POD_SECURITY_POLICIES" ]]; then
+      add_args "--enable-pod-security-policies=${POD_SECURITY_POLICIES}"
     fi
 
     local unzip_dir="${k8s_dir}/central-deploy/"
@@ -238,8 +233,11 @@ function launch_central {
           helm_args+=(-f "${COMMON_DIR}/monitoring-values-local.yaml")
         fi
 
-        helm install -n stackrox --create-namespace stackrox-monitoring "${COMMON_DIR}/../charts/monitoring" "${helm_args[@]}"
-        echo
+        helm dependency update "${COMMON_DIR}/../charts/monitoring"
+        envsubst < "${COMMON_DIR}/../charts/monitoring/values.yaml" > "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml"
+        helm upgrade -n stackrox --install --create-namespace stackrox-monitoring "${COMMON_DIR}/../charts/monitoring" --values "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml" "${helm_args[@]}"
+        rm "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml"
+        echo "Deployed Monitoring..."
     fi
 
     if [[ -f "${unzip_dir}/password" ]]; then
@@ -296,9 +294,9 @@ function launch_central {
         )
       fi
 
-      if [[ "$POD_SECURITY_POLICIES" == "true" ]]; then
+      if [[ -n "$POD_SECURITY_POLICIES" ]]; then
         helm_args+=(
-          --set system.enablePodSecurityPolicies=true
+          --set system.enablePodSecurityPolicies="${POD_SECURITY_POLICIES}"
         )
       fi
 
@@ -313,7 +311,7 @@ function launch_central {
         helm lint "$unzip_dir/chart" -n stackrox
         helm lint "$unzip_dir/chart" -n stackrox "${helm_args[@]}"
       fi
-      helm install -n stackrox stackrox-central-services "$unzip_dir/chart" \
+      helm upgrade --install -n stackrox stackrox-central-services "$unzip_dir/chart" \
           "${helm_args[@]}"
     else
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
@@ -325,6 +323,9 @@ function launch_central {
 
       if [[ "${is_local_dev}" == "true" ]]; then
           kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
+          if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+            kubectl -n stackrox patch deploy/central-db --patch '{"spec":{"template":{"spec":{"initContainers":[{"name":"init-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":1,"memory":"1Gi"}}}],"containers":[{"name":"central-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
+          fi
       fi
 
       if [[ "${CGO_CHECKS}" == "true" ]]; then

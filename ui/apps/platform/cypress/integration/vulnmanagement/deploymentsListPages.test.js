@@ -14,6 +14,7 @@ import {
 } from '../../helpers/vmWorkflowUtils';
 import {
     getCountAndNounFromImageCVEsLinkResults,
+    hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyFilteredSecondaryEntitiesLink,
     verifySecondaryEntities,
@@ -27,7 +28,7 @@ describe('Vulnerability Management Deployments', () => {
 
     describe('with VM updates OFF', () => {
         before(function beforeHook() {
-            if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
                 this.skip();
             }
         });
@@ -66,7 +67,7 @@ describe('Vulnerability Management Deployments', () => {
 
     describe('with VM updates ON', () => {
         before(function beforeHook() {
-            if (!hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+            if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
                 this.skip();
             }
         });
@@ -74,7 +75,8 @@ describe('Vulnerability Management Deployments', () => {
         it('should display table columns', () => {
             visitVulnerabilityManagementEntities(entitiesKey);
 
-            hasExpectedHeaderColumns([
+            hasTableColumnHeadings([
+                '', // hidden
                 'Deployment',
                 'Image CVEs',
                 'Latest Violation',

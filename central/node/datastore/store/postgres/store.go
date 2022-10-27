@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -65,13 +64,9 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.Node, bool, error)
 	Upsert(ctx context.Context, obj *storage.Node) error
 	Delete(ctx context.Context, id string) error
-	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
 	// GetNodeMetadata gets the node without scan/component data.
 	GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error)
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -538,7 +533,9 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Node")
 
-	return s.upsert(ctx, obj)
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID string, objs ...*storage.Taint) error {
@@ -585,6 +582,12 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID s
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Node")
 
+	return pgutils.Retry2(func() (int, error) {
+		return s.retryableCount(ctx)
+	})
+}
+
+func (s *storeImpl) retryableCount(ctx context.Context) (int, error) {
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
@@ -605,6 +608,12 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Node")
 
+	return pgutils.Retry2(func() (bool, error) {
+		return s.retryableExists(ctx, id)
+	})
+}
+
+func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error) {
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
@@ -629,6 +638,12 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Node")
 
+	return pgutils.Retry3(func() (*storage.Node, bool, error) {
+		return s.retryableGet(ctx, id)
+	})
+}
+
+func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node, bool, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
 	if err != nil {
 		return nil, false, err
@@ -650,7 +665,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	}
 
 	var node storage.Node
-	if err := proto.Unmarshal(data, &node); err != nil {
+	if err := node.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 
@@ -728,7 +743,7 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 			return nil, err
 		}
 		msg := &storage.NodeComponentEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetNodeComponentId()] = msg
@@ -751,7 +766,7 @@ func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (m
 			return nil, err
 		}
 		msg := &storage.NodeComponent{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -774,7 +789,7 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 			return nil, err
 		}
 		msg := &storage.NodeComponentCVEEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
@@ -795,6 +810,12 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Node")
 
+	return pgutils.Retry(func() error {
+		return s.retryableDelete(ctx, id)
+	})
+}
+
+func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "Node")
 	if err != nil {
 		return err
@@ -826,37 +847,16 @@ func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeID string
 	return tx.Commit(ctx)
 }
 
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NodeIDs")
-	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, err
-	}
-	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]string, 0, len(result))
-	for _, entry := range result {
-		ids = append(ids, entry.ID)
-	}
-
-	return ids, nil
-}
-
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Node")
 
+	return pgutils.Retry3(func() ([]*storage.Node, []int, error) {
+		return s.retryableGetMany(ctx, ids)
+	})
+}
+
+func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
 	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Node")
 	if err != nil {
 		return nil, nil, err
@@ -898,6 +898,12 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Node,
 func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeMetadata")
 
+	return pgutils.Retry3(func() (*storage.Node, bool, error) {
+		return s.retryableGetNodeMetadata(ctx, id)
+	})
+}
+
+func (s *storeImpl) retryableGetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeMetadata")
 	if err != nil {
 		return nil, false, err
@@ -911,7 +917,7 @@ func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.No
 	}
 
 	var msg storage.Node
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := msg.Unmarshal(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -964,18 +970,6 @@ func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableNodes(ctx, db)
 }
 
-//// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
-}
-
 func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVEs")
 
@@ -991,7 +985,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 			return nil, err
 		}
 		msg := &storage.NodeCVE{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := msg.Unmarshal(data); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg
@@ -1011,18 +1005,4 @@ func gatherKeys(parts *nodePartsAsSlice) [][]byte {
 		keys = append(keys, []byte(vuln.GetId()))
 	}
 	return keys
-}
-
-func scanIDs(rows pgx.Rows) ([]string, error) {
-	defer rows.Close()
-	var ids []string
-
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
 }

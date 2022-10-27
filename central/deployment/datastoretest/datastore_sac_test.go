@@ -295,7 +295,7 @@ func (s *deploymentDatastoreSACSuite) setupMultipleDeploymentReadTest() ([]strin
 }
 
 func (s *deploymentDatastoreSACSuite) setupSearchTest() {
-	deployments := fixtures.GetSACTestStorageDeploymentSet(fixtures.GetScopedDeployment)
+	deployments := fixtures.GetSACTestResourceSet(fixtures.GetScopedDeployment)
 	pushedNamespaces := make(map[string]map[string]*storage.NamespaceMetadata, 0)
 	for _, d := range deployments {
 		clusterID := d.GetClusterId()

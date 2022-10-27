@@ -65,6 +65,22 @@ func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
+// GetMany mocks base method.
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
+	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetMany indicates an expected call of GetMany.
+func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
+}
+
 // Upsert mocks base method.
 func (m *MockStore) Upsert(arg0 context.Context, arg1 *storage.NamespaceMetadata) error {
 	m.ctrl.T.Helper()

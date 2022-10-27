@@ -88,5 +88,5 @@ func (f *policyRuleField) Grants(first, second *storage.PolicyRule) bool {
 }
 
 func (f *policyRuleField) hasValue(rule *storage.PolicyRule, value string) bool {
-	return sliceutils.StringFind(f.accessor(rule), value) >= 0
+	return sliceutils.Find(f.accessor(rule), value) >= 0
 }

@@ -47,7 +47,7 @@ const emptyCluster = {
 const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyCluster, ...data };

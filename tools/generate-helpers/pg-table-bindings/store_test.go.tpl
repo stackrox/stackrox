@@ -69,6 +69,9 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
 	{{$name}} := &{{.Type}}{}
 	s.NoError(testutils.FullInit({{$name}}, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	{{- if .Cycle}}
+	{{$name}}.{{.EmbeddedFK}} = nil
+	{{- end}}
 
 	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
@@ -122,13 +125,15 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	{{- end }}
 
 	var {{$name}}s []*{{.Type}}
+	var {{$name}}IDs []string
     for i := 0; i < 200; i++ {
         {{$name}} := &{{.Type}}{}
         s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
         {{- if .Cycle}}
-        {{$name}}.{{.EmbeddedFK}} = {{$name}}.{{.ReferencedField}}
+        {{$name}}.{{.EmbeddedFK}} = nil
         {{- end}}
         {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
+        {{$name}}IDs = append({{$name}}IDs, {{template "paramList" $}})
     }
 
 	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
@@ -142,6 +147,12 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
     s.NoError(err)
     s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
+
+    s.NoError(store.DeleteMany(ctx, {{$name}}IDs))
+
+    {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
+    s.NoError(err)
+    s.Equal(0, {{.TrimmedType|lowerCamelCase}}Count)
     {{- end }}
 }
 

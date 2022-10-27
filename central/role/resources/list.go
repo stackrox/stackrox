@@ -33,8 +33,8 @@ var (
 	// Administration groups all administration-like resources except those
 	// related to authentication and authorization. It aims to cover platform
 	// configuration. For instance, it has replaced: AllComments, Config,
-	// ComplianceRunSchedule, DebugLogs, NetworkGraphConfig, ProbeUpload,
-	// ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity.
+	// DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle,
+	// ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity.
 	Administration = newResourceMetadata("Administration", permissions.GlobalScope)
 
 	Alert      = newResourceMetadata("Alert", permissions.NamespaceScope)
@@ -87,8 +87,6 @@ var (
 	ClusterCVE     = newDeprecatedResourceMetadata("ClusterCVE", permissions.ClusterScope, Cluster)
 	ComplianceRuns = newDeprecatedResourceMetadata("ComplianceRuns", permissions.ClusterScope,
 		Compliance)
-	ComplianceRunSchedule = newDeprecatedResourceMetadata("ComplianceRunSchedule",
-		permissions.GlobalScope, Administration)
 	Config = newDeprecatedResourceMetadata("Config", permissions.GlobalScope,
 		Administration)
 	DebugLogs = newDeprecatedResourceMetadata("DebugLogs", permissions.GlobalScope,

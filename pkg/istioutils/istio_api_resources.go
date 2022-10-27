@@ -327,5 +327,5 @@ func GetAPIResourcesByVersion(istioVersion string) ([]string, error) {
 
 // ListKnownIstioVersions lists all known istio versions in sorted order.
 func ListKnownIstioVersions() []string {
-	return sliceutils.StringClone(allIstioVersions)
+	return sliceutils.ShallowClone(allIstioVersions)
 }

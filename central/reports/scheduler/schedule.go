@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
@@ -38,6 +39,36 @@ const (
 	numDeploymentsLimit = 50
 
 	reportDataQuery = `query getVulnReportData($scopequery: String, 
+							$cvequery: String, $pagination: Pagination) {
+							deployments: deployments(query: $scopequery, pagination: $pagination) {
+								cluster {
+									name
+								}
+								namespace
+								name
+								images {
+									name {
+										full_name:fullName
+									}
+									components {
+										name
+										vulns(query: $cvequery) {
+											...cveFields
+										}
+									}
+								}
+							}
+						}
+	fragment cveFields on EmbeddedVulnerability {
+        cve
+	    severity
+        fixedByVersion
+        isFixable
+        discoveredAtImage
+		link
+    }`
+
+	reportQueryPostgres = `query getVulnReportData($scopequery: String, 
 							$cvequery: String, $pagination: Pagination) {
 							deployments: deployments(query: $scopequery, pagination: $pagination) {
 								cluster {
@@ -249,7 +280,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	if err != nil {
 		return errors.Wrap(err, "error building report query: unable to get clusters")
 	}
-	namespaces, err := s.namespaceDatastore.GetNamespaces(req.Ctx)
+	namespaces, err := s.namespaceDatastore.GetAllNamespaces(req.Ctx)
 	if err != nil {
 		return errors.Wrap(err, "error building report query: unable to get namespaces")
 	}
@@ -348,8 +379,14 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 	offset := 0
 	var resultData common.Result
 	for {
+		var gqlQuery string
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			gqlQuery = reportQueryPostgres
+		} else {
+			gqlQuery = reportDataQuery
+		}
 		response := s.Schema.Exec(ctx,
-			reportDataQuery, "getVulnReportData", map[string]interface{}{
+			gqlQuery, "getVulnReportData", map[string]interface{}{
 				"scopequery": scopeQuery,
 				"cvequery":   cveQuery,
 				"pagination": map[string]interface{}{

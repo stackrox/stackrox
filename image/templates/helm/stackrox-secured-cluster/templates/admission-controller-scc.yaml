@@ -43,29 +43,4 @@ volumes:
   - emptyDir
   - secret
 
-{{- else if eq ._rox.env.openshift 4 }}
-
-{{- if false }}
-# "fake" document separator to aid GVK extraction heuristic
----
-{{- end }}
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: admission-control-use-scc
-  namespace: {{ ._rox._namespace }}
-  labels:
-    {{- include "srox.labels" (list . "rolebinding" "admission-control-use-scc") | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "rolebinding" "admission-control-use-scc") | nindent 4 }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: use-anyuid-scc
-subjects:
-- kind: ServiceAccount
-  name: admission-control
-  namespace: {{ ._rox._namespace }}
-
 {{- end }}

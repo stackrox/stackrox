@@ -446,6 +446,15 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments, clusters 
 		} else if store == nil {
 			continue
 		}
+
+		// First remove stale network flows
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			err = store.RemoveStaleFlows(pruningCtx)
+			if err != nil {
+				log.Errorf("error removing stale flows for cluster %q: %v", c, err)
+			}
+		}
+
 		now := types.TimestampNow()
 
 		keyMatchFn := func(props *storage.NetworkFlowProperties) bool {

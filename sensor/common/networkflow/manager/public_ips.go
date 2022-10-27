@@ -29,7 +29,7 @@ type publicIPsManager struct {
 	publicIPs          map[net.IPAddress]struct{}
 	publicIPDeletions  map[net.IPAddress]time.Time
 
-	publicIPListProtoStream *concurrency.ValueStream
+	publicIPListProtoStream *concurrency.ValueStream[*sensor.IPAddressList]
 
 	lastSentIPAddrList *sensor.IPAddressList
 }
@@ -40,7 +40,7 @@ func newPublicIPsManager() *publicIPsManager {
 		publicIPs:          make(map[net.IPAddress]struct{}),
 		publicIPDeletions:  make(map[net.IPAddress]time.Time),
 
-		publicIPListProtoStream: concurrency.NewValueStream(nil),
+		publicIPListProtoStream: concurrency.NewValueStream[*sensor.IPAddressList](nil),
 	}
 }
 
@@ -115,7 +115,7 @@ func (m *publicIPsManager) regenerateAndPushPublicIPsProto() {
 	m.lastSentIPAddrList = publicIPsList
 }
 
-func (m *publicIPsManager) PublicIPsProtoStream() concurrency.ReadOnlyValueStream {
+func (m *publicIPsManager) PublicIPsProtoStream() concurrency.ReadOnlyValueStream[*sensor.IPAddressList] {
 	return m.publicIPListProtoStream
 }
 
@@ -138,11 +138,11 @@ func (s sortableIPv6Slice) Swap(i, j int) {
 }
 
 func normalizeIPsList(listProto *sensor.IPAddressList) {
-	sliceutils.Uint32Sort(listProto.Ipv4Addresses)
+	sliceutils.NaturalSort(listProto.Ipv4Addresses)
 	sort.Sort(sortableIPv6Slice(listProto.Ipv6Addresses))
 }
 
 func ipsListsEqual(a, b *sensor.IPAddressList) bool {
-	return sliceutils.Uint32Equal(a.GetIpv4Addresses(), b.GetIpv4Addresses()) &&
-		sliceutils.Uint64Equal(a.GetIpv6Addresses(), b.GetIpv6Addresses())
+	return sliceutils.Equal(a.GetIpv4Addresses(), b.GetIpv4Addresses()) &&
+		sliceutils.Equal(a.GetIpv6Addresses(), b.GetIpv6Addresses())
 }

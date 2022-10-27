@@ -83,7 +83,7 @@ type manager struct {
 	pods             *resources.PodStore
 	initialSyncSig   concurrency.Signal
 
-	settingsStream     *concurrency.ValueStream
+	settingsStream     *concurrency.ValueStream[*sensor.AdmissionControlSettings]
 	settingsC          chan *sensor.AdmissionControlSettings
 	lastSettingsUpdate *types.Timestamp
 
@@ -111,7 +111,7 @@ func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient se
 	depStore := resources.NewDeploymentStore(podStore)
 	nsStore := resources.NewNamespaceStore(depStore, podStore)
 	return &manager{
-		settingsStream: concurrency.NewValueStream(nil),
+		settingsStream: concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
 		settingsC:      make(chan *sensor.AdmissionControlSettings),
 		stoppedSig:     concurrency.NewErrorSignal(),
 		syncC:          make(chan *concurrency.Signal),
@@ -136,7 +136,7 @@ func (m *manager) currentState() *state {
 	return (*state)(atomic.LoadPointer(&m.statePtr))
 }
 
-func (m *manager) SettingsStream() concurrency.ReadOnlyValueStream {
+func (m *manager) SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings] {
 	return m.settingsStream
 }
 

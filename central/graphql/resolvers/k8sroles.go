@@ -76,11 +76,7 @@ func (resolver *Resolver) K8sRoles(ctx context.Context, arg PaginatedQuery) ([]*
 		k8SRoleResolvers = append(k8SRoleResolvers, &k8SRoleResolver{root: resolver, data: k8srole})
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: query.Pagination,
-	}.paginate(k8SRoleResolvers, nil)
-
-	return resolvers.([]*k8SRoleResolver), err
+	return paginate(query.Pagination, k8SRoleResolvers, nil)
 }
 
 // K8sRoleCount returns count of all k8s roles across infrastructure
@@ -185,10 +181,7 @@ func (resolver *k8SRoleResolver) Subjects(ctx context.Context, args PaginatedQue
 	if err != nil {
 		return nil, err
 	}
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(subjectResolvers, nil)
-	return resolvers.([]*subjectResolver), err
+	return paginate(pagination, subjectResolvers, nil)
 }
 
 func (resolver *k8SRoleResolver) getSubjects(ctx context.Context, filterQ *v1.Query) ([]*storage.Subject, error) {
@@ -223,10 +216,7 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args Pagin
 	if err != nil {
 		return nil, err
 	}
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(serviceAccountResolvers, nil)
-	return resolvers.([]*serviceAccountResolver), err
+	return paginate(pagination, serviceAccountResolvers, nil)
 }
 
 // ServiceAccountCount returns the count of service accounts granted permissions to by a given k8s role

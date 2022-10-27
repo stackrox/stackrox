@@ -8,8 +8,8 @@ import {
     callbackForPairOfDescendingNumberValuesFromElements,
     callbackForPairOfDescendingVulnerabilitySeverityValuesFromElements,
 } from '../../helpers/sort';
-import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
 import {
+    hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
@@ -21,7 +21,7 @@ describe('Vulnerability Management Node CVEs', () => {
     withAuth();
 
     before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }
     });
@@ -29,21 +29,21 @@ describe('Vulnerability Management Node CVEs', () => {
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
-        hasExpectedHeaderColumns(
-            [
-                'CVE',
-                'Operating System',
-                'Fixable',
-                'Severity',
-                'CVSS Score',
-                'Env. Impact',
-                'Impact Score',
-                'Entities',
-                'Discovered Time',
-                'Published',
-            ],
-            1 // skip 1 additional column to account for checkbox column
-        );
+        hasTableColumnHeadings([
+            '', // checkbox
+            '', // hidden
+            'CVE',
+            'Operating System',
+            'Fixable',
+            'Severity',
+            'CVSS Score',
+            'Env. Impact',
+            'Impact Score',
+            'Entities',
+            'Discovered Time',
+            'Published',
+            '', // hidden
+        ]);
     });
 
     it('should sort the CVSS Score column', () => {

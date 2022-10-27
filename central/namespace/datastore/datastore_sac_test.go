@@ -88,7 +88,7 @@ func (s *namespaceDatastoreSACSuite) TearDownSuite() {
 func (s *namespaceDatastoreSACSuite) SetupTest() {
 	s.testNamespaceIDs = make([]string, 0)
 
-	namespaces := fixtures.GetSACTestStorageNamespaceMetadataSet(fixtures.GetScopedNamespace)
+	namespaces := fixtures.GetSACTestResourceSet(fixtures.GetScopedNamespace)
 
 	for i := range namespaces {
 		err := s.datastore.AddNamespace(s.testContexts[testutils.UnrestrictedReadWriteCtx], namespaces[i])
@@ -287,7 +287,7 @@ func (s *namespaceDatastoreSACSuite) TestGetNamespaces() {
 	for _, c := range cases {
 		s.Run(c.ScopeKey, func() {
 			ctx := s.testContexts[c.ScopeKey]
-			res, err := s.datastore.GetNamespaces(ctx)
+			res, err := s.datastore.GetAllNamespaces(ctx)
 			s.Require().NoError(err)
 			expectedNamespaceIDs := make([]string, 0, len(c.VisibleNamespaces))
 			for ix := range c.VisibleNamespaces {

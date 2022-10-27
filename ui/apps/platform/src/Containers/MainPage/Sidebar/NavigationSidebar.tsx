@@ -9,7 +9,7 @@ import {
     basePathToLabelMap,
     dashboardPath,
     networkBasePath,
-    networkPathPF,
+    networkBasePathPF,
     violationsBasePath,
     complianceBasePath,
     vulnManagementPath,
@@ -23,7 +23,7 @@ import {
     accessControlBasePathV2,
     systemConfigPath,
     systemHealthPath,
-    collectionsPath,
+    collectionsBasePath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
@@ -67,13 +67,13 @@ function NavigationSidebar({
         platformConfigurationPaths.splice(
             platformConfigurationPaths.indexOf(policyManagementBasePath) + 1,
             0,
-            collectionsPath
+            collectionsBasePath
         );
     }
 
     // TODO remove this temporary extra config menu item when the PF network graph goes live in the main menu
     if (isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY')) {
-        platformConfigurationPaths.push(networkPathPF);
+        platformConfigurationPaths.push(networkBasePathPF);
     }
 
     const Navigation = (
@@ -87,7 +87,7 @@ function NavigationSidebar({
                 <LeftNavItem
                     isActive={
                         location.pathname.includes(networkBasePath) &&
-                        !location.pathname.includes(networkPathPF)
+                        !location.pathname.includes(networkBasePathPF)
                     }
                     path={networkBasePath}
                     title={basePathToLabelMap[networkBasePath]}

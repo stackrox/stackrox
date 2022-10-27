@@ -43,7 +43,7 @@ func (rc *readerImpl) ReadAllIn(prefix []byte, dackTxn *dackbox.Transaction) ([]
 func (rc *readerImpl) ReadKeysIn(prefix []byte, dackTxn *dackbox.Transaction) ([][]byte, error) {
 	var ret [][]byte
 	err := dackTxn.BucketKeyForEach(prefix, false, func(k []byte) error {
-		ret = append(ret, sliceutils.ByteClone(k))
+		ret = append(ret, sliceutils.ShallowClone(k))
 		return nil
 	})
 	return ret, err

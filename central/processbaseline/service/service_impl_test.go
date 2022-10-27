@@ -332,7 +332,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 					assert.False(t, processes.Contains(remove))
 				}
 				for _, stockProcess := range stockProcesses {
-					if sliceutils.StringFind(c.toRemove, stockProcess) == -1 {
+					if sliceutils.Find(c.toRemove, stockProcess) == -1 {
 						assert.True(t, processes.Contains(stockProcess))
 					}
 				}

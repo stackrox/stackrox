@@ -448,7 +448,7 @@ func (suite *DeploymentIndexTestSuite) TestSearchSorting() {
 		suite.NoError(suite.indexer.AddDeployment(d))
 	}
 
-	reversedIds := sliceutils.StringClone(ids)
+	reversedIds := sliceutils.ShallowClone(ids)
 	sort.Sort(sort.Reverse(sort.StringSlice(reversedIds)))
 
 	var cases = []struct {

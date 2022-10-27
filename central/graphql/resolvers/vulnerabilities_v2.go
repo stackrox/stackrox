@@ -382,13 +382,10 @@ func (resolver *Resolver) unwrappedVulnerabilitiesV2Query(ctx context.Context, q
 	// If query was modified, it means the result was not paginated since the filtering removes pagination.
 	// If post sorting was needed, which means pagination was not performed because it was removed above.
 	if queryModified || postSortingNeeded {
-		paginatedVulns, err := paginationWrapper{
-			pv: originalQuery.GetPagination(),
-		}.paginate(vulns, nil)
+		vulns, err = paginate(originalQuery.GetPagination(), vulns, nil)
 		if err != nil {
 			return nil, err
 		}
-		vulns = paginatedVulns.([]*storage.CVE)
 	}
 
 	vulnResolvers, err := resolver.wrapCVEs(vulns, err)

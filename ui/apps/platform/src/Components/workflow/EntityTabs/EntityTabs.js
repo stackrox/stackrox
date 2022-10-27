@@ -16,7 +16,7 @@ import filterEntityRelationship from 'Containers/VulnMgmt/VulnMgmt.utils/filterE
 
 const EntityTabs = ({ entityType, activeTab }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const workflowState = useContext(workflowStateContext);
     function getTab(tabType) {
@@ -40,7 +40,7 @@ const EntityTabs = ({ entityType, activeTab }) => {
             workflowState.useCase
         ),
     ]
-        // @TODO: Remove the following filter step once ROX_FRONTEND_VM_UPDATES is ON
+        // @TODO: Remove the following filter step once ROX_POSTGRES_DATASTORE is ON
         .filter((match) => {
             return filterEntityRelationship(showVMUpdates, match);
         });

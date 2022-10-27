@@ -60,8 +60,8 @@ const (
 
 	centralClusterPrefix = "_central-cluster"
 
-	metricsPullTimeout     = 10 * time.Second
-	diagnosticsPullTimeout = 10 * time.Second
+	metricsPullTimeout     = 20 * time.Second
+	diagnosticsPullTimeout = 20 * time.Second
 	layout                 = "2006-01-02T15:04:05.000Z"
 	logWindow              = 20 * time.Minute
 )
@@ -114,6 +114,8 @@ func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemet
 }
 
 type serviceImpl struct {
+	v1.UnimplementedDebugServiceServer
+
 	sensorConnMgr        connection.Manager
 	clusters             datastore.DataStore
 	telemetryGatherer    *gatherers.RoxGatherer
@@ -529,11 +531,11 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 
 	if opts.logs == fullK8sIntrospectionData {
 		if err := s.getK8sDiagnostics(ctx, zipWriter, opts); err != nil {
-			log.Error(err)
+			log.Errorf("could not get K8s diagnostics: %+q", err)
 			opts.logs = localLogs // fallback to local logs
 		}
 		if err := s.pullSensorMetrics(ctx, zipWriter, opts); err != nil {
-			log.Error(err)
+			log.Errorf("could not get sensor metrics: %+q", err)
 		}
 	}
 
@@ -595,6 +597,9 @@ func (s *serviceImpl) getVersionsJSON(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(versionsJSON)
 }
 
+// getDebugDump aims to be a more involved version of getDiagnosticDump. For
+// instance, it records CPU profile live. Also getDebugDump focuses primarily
+// on Central and might not include all we know about secured clusters.
 func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 	opts := debugDumpOptions{
 		logs:              localLogs,
@@ -635,6 +640,8 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 	s.writeZippedDebugDump(r.Context(), w, filename, opts)
 }
 
+// getDiagnosticDump aims to provide a snapshot of some state information for
+// triaging. The size and download times of this dump shall stay reasonable.
 func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) {
 	filename := time.Now().Format("stackrox_diagnostic_2006_01_02_15_04_05.zip")
 

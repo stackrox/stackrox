@@ -82,6 +82,8 @@ func GetGRPCConnection(logger logger.Logger) (*grpc.ClientConn, error) {
 		}
 	}
 
+	grpcDialOpts = append(grpcDialOpts, grpc.WithUserAgent(GetUserAgent()))
+
 	connection, err := clientconn.GRPCConnection(common.Context(), mtls.CentralSubject, endpoint, opts, grpcDialOpts...)
 	return connection, errors.WithStack(err)
 }

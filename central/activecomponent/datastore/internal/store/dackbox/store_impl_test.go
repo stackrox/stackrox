@@ -54,39 +54,39 @@ func (suite *ActiveComponentStoreTestSuite) TestUpsertDelete() {
 
 	testCases := []struct {
 		name           string
-		upserts        set.IntSet
+		upserts        set.Set[int]
 		containerNames []string
-		deletes        set.IntSet
+		deletes        set.Set[int]
 	}{
 		{
 			name:           "Add all delete all from empty",
-			upserts:        set.NewIntSet(0, 1, 2, 3, 4, 5, 6, 7, 8),
+			upserts:        set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8),
 			containerNames: []string{"container0"},
-			deletes:        set.NewIntSet(0, 1, 2, 3, 4, 5, 6, 7, 8),
+			deletes:        set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8),
 		},
 		{
 			name:           "Add even delete odd",
-			upserts:        set.NewIntSet(0, 2, 4, 6, 8),
+			upserts:        set.NewSet(0, 2, 4, 6, 8),
 			containerNames: []string{"container1"},
-			deletes:        set.NewIntSet(1, 3, 5, 7),
+			deletes:        set.NewSet(1, 3, 5, 7),
 		},
 		{
 			name:           "Add none delete none",
-			upserts:        set.NewIntSet(),
+			upserts:        set.NewSet[int](),
 			containerNames: []string{"container2"},
-			deletes:        set.NewIntSet(),
+			deletes:        set.NewSet[int](),
 		},
 		{
 			name:           "Add old delete 1 and 3",
-			upserts:        set.NewIntSet(1, 3, 5, 7),
+			upserts:        set.NewSet(1, 3, 5, 7),
 			containerNames: []string{"container2"},
-			deletes:        set.NewIntSet(1, 3),
+			deletes:        set.NewSet(1, 3),
 		},
 		{
 			name:           "Add all delete all",
-			upserts:        set.NewIntSet(0, 1, 2, 3, 4, 5, 6, 7, 8),
+			upserts:        set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8),
 			containerNames: []string{"container4", "container5"},
-			deletes:        set.NewIntSet(0, 1, 2, 3, 4, 5, 6, 7),
+			deletes:        set.NewSet(0, 1, 2, 3, 4, 5, 6, 7),
 		},
 	}
 	expectedMapToContainerNames := make(map[int][]string)

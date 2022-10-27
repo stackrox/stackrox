@@ -75,18 +75,33 @@ var (
 )
 
 {{- define "createGormModel" }}
-{{- $schema := . }}
+{{- $obj := .Obj }}
+{{- $schema := .Schema }}
     // {{$schema.Table|upperCamelCase}} holds the Gorm model for Postgres table `{{$schema.Table|lowerCase}}`.
     type {{$schema.Table|upperCamelCase}} struct {
     {{- range $idx, $field := $schema.DBColumnFields }}
-        {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"column:{{$field.ColumnName|lowerCase}};type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{if $field.Options.Index}};index:{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}},type:{{$field.Options.Index}}{{end}}"`
+        {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"{{- /**/ -}}
+        column:{{$field.ColumnName|lowerCase}};{{- /**/ -}}
+        type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{- /**/ -}}
+        {{if $field.Options.Index}};{{- /**/ -}}
+            index:{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}},{{- /**/ -}}
+            type:{{$field.Options.Index}}{{- /**/ -}}
+        {{end}}{{- /**/ -}}
+        {{if $field|isSacScoping }};{{- /**/ -}}
+            index:{{$schema.Table|lowerCamelCase|lowerCase}}_sac_filter,type:{{- if $obj.IsClusterScope }}hash{{else}}btree{{end}}{{- /**/ -}}
+        {{end}}{{- /**/ -}}
+        "`
     {{- end}}
     {{- range $idx, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
-        {{$rel.OtherSchema.Table|upperCamelCase}}{{if $rel.CycleReference}}Cycle{{end}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"foreignKey:{{ (concatWith $rel.ThisSchemaColumnNames ",") | lowerCase}};references:{{ (concatWith $rel.OtherSchemaColumnNames ",")|lowerCase}};belongsTo;constraint:OnDelete:{{ if $rel.RestrictDelete }}RESTRICT{{ else }}CASCADE{{ end }}"`
+        {{$rel.OtherSchema.Table|upperCamelCase}}{{if $rel.CycleReference}}Cycle{{end}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"{{- /**/ -}}
+        foreignKey:{{ (concatWith $rel.ThisSchemaColumnNames ",") | lowerCase}};{{- /**/ -}}
+        references:{{ (concatWith $rel.OtherSchemaColumnNames ",")|lowerCase}};belongsTo;{{- /**/ -}}
+        constraint:OnDelete:{{ if $rel.RestrictDelete }}RESTRICT{{ else }}CASCADE{{ end }}{{- /**/ -}}
+        "`
     {{- end}}
     }
     {{- range $idx, $child := $schema.Children }}
-        {{- template "createGormModel" $child }}
+        {{- template "createGormModel"  dict "Schema" $child "Obj" $obj }}
     {{- end }}
 {{- end}}
 {{- define "createTableNames" }}
@@ -100,4 +115,4 @@ const (
     {{- template "createTableNames" .Schema }}
 )
 
-{{- template "createGormModel" .Schema }}
+{{- template "createGormModel" dict "Schema" .Schema "Obj" .Obj }}

@@ -10,6 +10,7 @@ import {
     visitClusterByNameWithFixture,
     visitClusterByNameWithFixtureMetadataDatetime,
 } from '../../helpers/clusters';
+import { hasFeatureFlag } from '../../helpers/features';
 
 describe('Clusters page', () => {
     withAuth();
@@ -49,7 +50,7 @@ describe('Clusters page', () => {
     });
 });
 
-describe.skip('Cluster Certificate Expiration', () => {
+describe('Cluster Certificate Expiration', () => {
     withAuth();
 
     const fixturePath = 'clusters/health.json';
@@ -151,7 +152,7 @@ describe.skip('Cluster Certificate Expiration', () => {
                 };
 
                 cy.intercept('GET', clustersApi.single, {
-                    body: { cluster },
+                    body: { cluster, clusterRetentionInfo: null },
                 }).as('getCluster');
                 cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
                 cy.wait('@getCluster');
@@ -310,7 +311,7 @@ describe('Cluster configuration', () => {
     });
 });
 
-describe.skip('Cluster Health', () => {
+describe('Cluster Health', () => {
     withAuth();
 
     const fixturePath = 'clusters/health.json';
@@ -330,6 +331,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Uninitialized',
                 sensorUpgrade: 'Not applicable',
                 credentialExpiration: 'Not applicable',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: null,
@@ -349,6 +351,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Unhealthy',
                 sensorUpgrade: 'Upgrade available',
                 credentialExpiration: 'in 6 days on Monday',
+                clusterDeletion: 'in 90 days',
             },
             expectedInSide: {
                 admissionControlHealthInfo: {
@@ -375,6 +378,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Unhealthy',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 29 days on 09/29/2020',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: {
@@ -401,6 +405,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Degraded',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 1 month',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: {
@@ -427,6 +432,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Degraded',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 2 months',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: {
@@ -453,6 +459,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Healthy',
                 sensorUpgrade: 'Upgrade available',
                 credentialExpiration: 'in 12 months',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: null,
@@ -475,6 +482,7 @@ describe.skip('Cluster Health', () => {
                 clusterStatus: 'Healthy',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 1 year',
+                clusterDeletion: 'Not applicable',
             },
             expectedInSide: {
                 admissionControlHealthInfo: {
@@ -496,14 +504,17 @@ describe.skip('Cluster Health', () => {
         },
     ];
 
-    it('should appear in the list', () => {
+    it('should appear in the list', function () {
+        if (!hasFeatureFlag('ROX_DECOMMISSIONED_CLUSTER_RETENTION')) {
+            this.skip();
+        }
+
         visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, datetimeISOString);
 
         /*
          * Some cells have no internal markup (for example, Name or Cloud Provider).
          * Other cells have div and spans for status color versus default color.
          */
-        // TODO add assertion for Cluster Deletion column after ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag is deleted.
         cy.get(selectors.clusters.tableDataCell).should(($tds) => {
             let n = 0;
             expectedClusters.forEach(({ expectedInListAndSide }) => {
@@ -534,98 +545,81 @@ describe.skip('Cluster Health', () => {
             admissionControlStatus,
         } = expectedInSide;
 
-        it(
-            `should appear in the form for ${clusterName}`,
-            // TODO(ROX-9546): Debug why we have network error here and remove retries
-            {
-                retries: {
-                    runMode: 1,
-                    openMode: 0,
-                },
-            },
-            () => {
-                visitClusterByNameWithFixtureMetadataDatetime(
-                    clusterName,
-                    fixturePath,
-                    metadata,
-                    datetimeISOString
-                );
+        it(`should appear in the form for ${clusterName}`, () => {
+            visitClusterByNameWithFixtureMetadataDatetime(
+                clusterName,
+                fixturePath,
+                metadata,
+                datetimeISOString
+            );
 
-                cy.get(selectors.clusterForm.nameInput).should('have.value', clusterName);
+            cy.get(selectors.clusterForm.nameInput).should('have.value', clusterName);
 
-                // Cluster Status
-                cy.get(selectors.clusterHealth.clusterStatus).should('have.text', clusterStatus);
+            // Cluster Status
+            cy.get(selectors.clusterHealth.clusterStatus).should('have.text', clusterStatus);
 
-                // Sensor Status
-                cy.get(selectors.clusterHealth.sensorStatus).should('have.text', sensorStatus);
+            // Sensor Status
+            cy.get(selectors.clusterHealth.sensorStatus).should('have.text', sensorStatus);
 
-                // Collector Status
-                cy.get(selectors.clusterHealth.collectorStatus).should(
+            // Collector Status
+            cy.get(selectors.clusterHealth.collectorStatus).should('have.text', collectorStatus);
+            if (collectorHealthInfo !== null) {
+                const { totalReadyPods, totalDesiredPods, totalRegisteredNodes } =
+                    collectorHealthInfo;
+                cy.get(selectors.clusterHealth.collectorHealthInfo.totalReadyPods).should(
                     'have.text',
-                    collectorStatus
+                    totalReadyPods
                 );
-                if (collectorHealthInfo !== null) {
-                    const { totalReadyPods, totalDesiredPods, totalRegisteredNodes } =
-                        collectorHealthInfo;
-                    cy.get(selectors.clusterHealth.collectorHealthInfo.totalReadyPods).should(
-                        'have.text',
-                        totalReadyPods
-                    );
-                    cy.get(selectors.clusterHealth.collectorHealthInfo.totalDesiredPods).should(
-                        'have.text',
-                        totalDesiredPods
-                    );
-                    cy.get(selectors.clusterHealth.collectorHealthInfo.totalRegisteredNodes).should(
-                        'have.text',
-                        totalRegisteredNodes
-                    );
-                }
-                // Admission Control Status
-                cy.get(selectors.clusterHealth.admissionControlStatus).should(
+                cy.get(selectors.clusterHealth.collectorHealthInfo.totalDesiredPods).should(
                     'have.text',
-                    admissionControlStatus
+                    totalDesiredPods
                 );
-                if (admissionControlHealthInfo !== null) {
-                    const { totalReadyPods, totalDesiredPods } = admissionControlHealthInfo;
-                    cy.get(
-                        selectors.clusterHealth.admissionControlHealthInfo.totalReadyPods
-                    ).should('have.text', totalReadyPods);
-                    cy.get(
-                        selectors.clusterHealth.admissionControlHealthInfo.totalDesiredPods
-                    ).should('have.text', totalDesiredPods);
-                }
-                if (healthInfoComplete !== null) {
-                    cy.get(selectors.clusterHealth.admissionControlInfoComplete).should(
-                        'have.text',
-                        healthInfoComplete.admissionControl
-                    );
-                    cy.get(selectors.clusterHealth.collectorInfoComplete).should(
-                        'have.text',
-                        healthInfoComplete.collector
-                    );
-                }
-
-                // Sensor Upgrade
-                cy.get(selectors.clusterHealth.sensorUpgrade).should('have.text', sensorUpgrade);
-                if (typeof sensorVersion === 'string') {
-                    cy.get(selectors.clusterHealth.sensorVersion).should(
-                        'have.text',
-                        sensorVersion
-                    );
-                }
-                if (typeof centralVersion === 'string') {
-                    cy.get(selectors.clusterHealth.centralVersion).should(
-                        'have.text',
-                        centralVersion
-                    );
-                }
-
-                // Credential Expiration
-                cy.get(selectors.clusterHealth.credentialExpiration).should(
+                cy.get(selectors.clusterHealth.collectorHealthInfo.totalRegisteredNodes).should(
                     'have.text',
-                    credentialExpiration
+                    totalRegisteredNodes
                 );
             }
-        );
+            // Admission Control Status
+            cy.get(selectors.clusterHealth.admissionControlStatus).should(
+                'have.text',
+                admissionControlStatus
+            );
+            if (admissionControlHealthInfo !== null) {
+                const { totalReadyPods, totalDesiredPods } = admissionControlHealthInfo;
+                cy.get(selectors.clusterHealth.admissionControlHealthInfo.totalReadyPods).should(
+                    'have.text',
+                    totalReadyPods
+                );
+                cy.get(selectors.clusterHealth.admissionControlHealthInfo.totalDesiredPods).should(
+                    'have.text',
+                    totalDesiredPods
+                );
+            }
+            if (healthInfoComplete !== null) {
+                cy.get(selectors.clusterHealth.admissionControlInfoComplete).should(
+                    'have.text',
+                    healthInfoComplete.admissionControl
+                );
+                cy.get(selectors.clusterHealth.collectorInfoComplete).should(
+                    'have.text',
+                    healthInfoComplete.collector
+                );
+            }
+
+            // Sensor Upgrade
+            cy.get(selectors.clusterHealth.sensorUpgrade).should('have.text', sensorUpgrade);
+            if (typeof sensorVersion === 'string') {
+                cy.get(selectors.clusterHealth.sensorVersion).should('have.text', sensorVersion);
+            }
+            if (typeof centralVersion === 'string') {
+                cy.get(selectors.clusterHealth.centralVersion).should('have.text', centralVersion);
+            }
+
+            // Credential Expiration
+            cy.get(selectors.clusterHealth.credentialExpiration).should(
+                'have.text',
+                credentialExpiration
+            );
+        });
     });
 });

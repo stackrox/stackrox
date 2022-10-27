@@ -6,9 +6,9 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
-import { hasExpectedHeaderColumns } from '../../helpers/vmWorkflowUtils';
 import {
     getCountAndNounFromImageCVEsLinkResults,
+    hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyFixableCVEsLinkAndRiskAcceptanceTabs,
     verifySecondaryEntities,
@@ -21,7 +21,7 @@ describe('Vulnerability Management Images', () => {
     withAuth();
 
     before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }
     });
@@ -29,7 +29,8 @@ describe('Vulnerability Management Images', () => {
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
-        hasExpectedHeaderColumns([
+        hasTableColumnHeadings([
+            '', // hidden
             'Image',
             'CVEs',
             'Top CVSS',

@@ -1,38 +1,6 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 import tableSelectors from '../selectors/table';
 
-const baseURL = '/main/configmanagement';
-
-export const url = {
-    dashboard: baseURL,
-    list: {
-        policies: `${baseURL}/policies`,
-        controls: `${baseURL}/controls`,
-        clusters: `${baseURL}/clusters`,
-        namespaces: `${baseURL}/namespaces`,
-        nodes: `${baseURL}/nodes`,
-        deployments: `${baseURL}/deployments`,
-        images: `${baseURL}/images`,
-        secrets: `${baseURL}/secrets`,
-        subjects: `${baseURL}/subjects`,
-        serviceAccounts: `${baseURL}/serviceaccounts`,
-        roles: `${baseURL}/roles`,
-    },
-    single: {
-        policy: `${baseURL}/policy`,
-        control: `${baseURL}/control`,
-        cluster: `${baseURL}/cluster`,
-        namespace: `${baseURL}/namespace`,
-        node: `${baseURL}/node`,
-        deployment: `${baseURL}/deployment`,
-        image: `${baseURL}/image`,
-        secret: `${baseURL}/secret`,
-        subject: `${baseURL}/subject`,
-        serviceAccount: `${baseURL}/serviceaccount`,
-        role: `${baseURL}/role`,
-    },
-};
-
 export const controlStatus = {
     pass: 'pass',
     fail: 'fail',

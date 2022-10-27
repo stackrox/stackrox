@@ -38,8 +38,8 @@ func RefOf(obj k8sutil.Object) ObjectRef {
 }
 
 // BuildObjectMap takes a slice of Objects, and returns a map keyed by object reference.
-func BuildObjectMap(objects []k8sutil.Object) map[ObjectRef]k8sutil.Object {
-	result := make(map[ObjectRef]k8sutil.Object, len(objects))
+func BuildObjectMap[T k8sutil.Object](objects []T) map[ObjectRef]T {
+	result := make(map[ObjectRef]T, len(objects))
 	for _, obj := range objects {
 		result[RefOf(obj)] = obj
 	}

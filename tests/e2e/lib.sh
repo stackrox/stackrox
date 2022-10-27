@@ -56,7 +56,6 @@ export_test_environment() {
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
     ci_export ROX_SEARCH_PAGE_UI "${ROX_SEARCH_PAGE_UI:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
-    ci_export ROX_FRONTEND_VM_UPDATES "${ROX_FRONTEND_VM_UPDATES:-true}"
     ci_export ROX_OBJECT_COLLECTIONS "${ROX_OBJECT_COLLECTIONS:-true}"
 }
 
@@ -164,8 +163,8 @@ patch_resources_for_test() {
     require_environment "TEST_ROOT"
     require_environment "API_HOSTNAME"
 
-    kubectl -n stackrox patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/.circleci/endpoints-test-lb-patch.yaml)"
-    kubectl -n stackrox apply -f "$TEST_ROOT/.circleci/endpoints-test-netpol.yaml"
+    kubectl -n stackrox patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/tests/e2e/yaml/endpoints-test-lb-patch.yaml)"
+    kubectl -n stackrox apply -f "$TEST_ROOT/tests/e2e/yaml/endpoints-test-netpol.yaml"
     # shellcheck disable=SC2034
     for i in $(seq 1 20); do
         if curl -sk --fail "https://${API_HOSTNAME}:8446/v1/metadata" &>/dev/null; then

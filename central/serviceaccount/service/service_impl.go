@@ -35,6 +35,8 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	v1.UnimplementedServiceAccountServiceServer
+
 	serviceAccounts saDatastore.DataStore
 	bindings        bindingDatastore.DataStore
 	roles           roleDatastore.DataStore

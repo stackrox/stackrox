@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/registries"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
@@ -32,6 +31,9 @@ import (
 const (
 	// The number of consecutive errors for a scanner or registry that cause its health status to be UNHEALTHY
 	consecutiveErrorThreshold = 3
+
+	openshiftConfigNamespace  = "openshift-config"
+	openshiftConfigPullSecret = "pull-secret"
 )
 
 var (
@@ -48,7 +50,7 @@ type enricherImpl struct {
 	errorsPerScanner   map[scannerTypes.ImageScannerWithDataSource]int32
 	scannerErrorsLock  sync.RWMutex
 
-	integrationHealthReporter integrationhealth.Reporter ``
+	integrationHealthReporter integrationhealth.Reporter
 
 	metadataLimiter *rate.Limiter
 	metadataCache   expiringcache.Cache
@@ -252,14 +254,14 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		return false, errorList.ToError()
 	}
 
-	registrySet, err := e.getRegistriesForContext(enrichmentContext)
+	registries, err := e.getRegistriesForContext(enrichmentContext)
 	if err != nil {
 		errorList.AddError(err)
 		return false, errorList.ToError()
 	}
 
 	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
-	for _, registry := range registrySet.GetAll() {
+	for _, registry := range registries {
 		updated, err := e.enrichImageWithRegistry(ctx, image, registry)
 		if err != nil {
 			var currentRegistryErrors int32
@@ -270,8 +272,8 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 
 			if currentRegistryErrors >= consecutiveErrorThreshold { // update health
 				e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-					Id:            registry.DataSource().Id,
-					Name:          registry.DataSource().Name,
+					Id:            registry.Source().GetId(),
+					Name:          registry.Source().GetName(),
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
 					LastTimestamp: timestamp.TimestampNow(),
@@ -295,8 +297,8 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 				})
 			}
 			e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-				Id:            registry.DataSource().Id,
-				Name:          registry.DataSource().Name,
+				Id:            registry.Source().GetId(),
+				Name:          registry.Source().GetName(),
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
 				LastTimestamp: timestamp.TimestampNow(),
@@ -320,6 +322,13 @@ func getRef(image *storage.Image) string {
 	return image.GetName().GetFullName()
 }
 
+func imageIntegrationToDataSource(i *storage.ImageIntegration) *storage.DataSource {
+	return &storage.DataSource{
+		Id:   i.GetId(),
+		Name: i.GetName(),
+	}
+}
+
 func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *storage.Image, registry registryTypes.ImageRegistry) (bool, error) {
 	if !registry.Match(image.GetName()) {
 		return false, nil
@@ -334,7 +343,7 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *stora
 	if err != nil {
 		return false, errors.Wrapf(err, "getting metadata from registry: %q", registry.Name())
 	}
-	metadata.DataSource = registry.DataSource()
+	metadata.DataSource = imageIntegrationToDataSource(registry.Source())
 	metadata.Version = metadataVersion
 	image.Metadata = metadata
 
@@ -581,12 +590,12 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		return false, errors.Wrapf(err, "checking registry for image %q", imgName)
 	}
 
-	registrySet, err := e.getRegistriesForContext(enrichmentContext)
+	registries, err := e.getRegistriesForContext(enrichmentContext)
 	if err != nil {
 		return false, errors.Wrap(err, "getting registries for context")
 	}
 
-	matchingRegistries, err := getMatchingRegistries(registrySet.GetAll(), img)
+	matchingRegistries, err := getMatchingRegistries(registries, img)
 	if err != nil {
 		// Do not return an error for internal images when no integration is found.
 		if enrichmentContext.Internal {
@@ -649,17 +658,56 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 	return nil
 }
 
-func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) (registries.Set, error) {
-	registrySet := e.integrations.RegistrySet()
+func isOpenshiftGlobalPullSecret(source *storage.ImageIntegration_Source) bool {
+	return source.GetNamespace() == openshiftConfigNamespace &&
+		source.GetImagePullSecretName() == openshiftConfigPullSecret
+}
+
+func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registryTypes.ImageRegistry, error) {
+	registries := e.integrations.RegistrySet().GetAll()
 	if ctx.Internal {
-		return registrySet, nil
+		if ctx.Source == nil {
+			return registries, nil
+		}
+		filterRegistriesBySource(ctx.Source, registries)
 	}
 
-	if registrySet.IsEmpty() {
+	if len(registries) == 0 {
 		return nil, errox.NotFound.CausedBy("no image registries are integrated: please add an image integration")
 	}
 
-	return registrySet, nil
+	return registries, nil
+}
+
+// filterRegistriesBySource will filter the registries based on the following conditions:
+// 1. If the registry is autogenerated
+// 2. If the integration's source matches with the EnrichmentContext.Source
+// Note that this function WILL modify the input array.
+func filterRegistriesBySource(requestSource *RequestSource, registries []registryTypes.ImageRegistry) {
+	filteredRegistries := registries[:0]
+	for _, registry := range registries {
+		integration := registry.Source()
+		if !integration.GetAutogenerated() {
+			filteredRegistries = append(filteredRegistries, registry)
+			continue
+		}
+		source := integration.GetSource()
+		if source.GetClusterId() != requestSource.ClusterID {
+			continue
+		}
+		// Check if the integration source is the global OpenShift registry
+		if isOpenshiftGlobalPullSecret(source) {
+			filteredRegistries = append(filteredRegistries, registry)
+			continue
+		}
+		if source.GetNamespace() != requestSource.Namespace {
+			continue
+		}
+		if !requestSource.ImagePullSecrets.Contains(source.GetImagePullSecretName()) {
+			continue
+		}
+		filteredRegistries = append(filteredRegistries, registry)
+	}
 }
 
 func getMatchingRegistries(registries []registryTypes.ImageRegistry,

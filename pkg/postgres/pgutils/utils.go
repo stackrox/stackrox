@@ -42,12 +42,10 @@ func ErrNilIfNoRows(err error) error {
 }
 
 // ConvertEnumSliceToIntArray converts an enum slice into a Postgres intarray
-func ConvertEnumSliceToIntArray(i interface{}) []int32 {
-	enumSlice := reflect.ValueOf(i)
-	enumSliceLen := enumSlice.Len()
-	resultSlice := make([]int32, 0, enumSliceLen)
-	for i := 0; i < enumSlice.Len(); i++ {
-		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+func ConvertEnumSliceToIntArray[T ~int32](enumSlice []T) []int32 {
+	resultSlice := make([]int32, 0, len(enumSlice))
+	for _, v := range enumSlice {
+		resultSlice = append(resultSlice, int32(v))
 	}
 	return resultSlice
 }
@@ -66,7 +64,9 @@ func NilOrTime(t *types.Timestamp) *time.Time {
 
 // CreateTableFromModel executes input create statement using the input connection.
 func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres.CreateStmts) {
-	err := db.WithContext(ctx).AutoMigrate(createStmt.GormModel)
+	err := Retry(func() error {
+		return db.WithContext(ctx).AutoMigrate(createStmt.GormModel)
+	})
 	err = errors.Wrapf(err, "Error creating table for %q: %v", reflect.TypeOf(createStmt.GormModel), err)
 	utils.Must(err)
 

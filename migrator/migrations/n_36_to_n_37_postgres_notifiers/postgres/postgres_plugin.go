@@ -5,7 +5,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -33,6 +32,7 @@ const (
 	batchSize = 10000
 
 	cursorBatchSize = 50
+	deleteBatchSize = 5000
 )
 
 var (
@@ -210,22 +210,26 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Notifier) error
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Notifier) error {
 
-	return s.upsert(ctx, obj)
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Notifier) error {
 
-	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-	// violations
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	return pgutils.Retry(func() error {
+		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+		// violations
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
 
-	if len(objs) < batchAfter {
-		return s.upsert(ctx, objs...)
-	} else {
-		return s.copyFrom(ctx, objs...)
-	}
+		if len(objs) < batchAfter {
+			return s.upsert(ctx, objs...)
+		} else {
+			return s.copyFrom(ctx, objs...)
+		}
+	})
 }
 
 // Count returns the number of objects in the store
@@ -262,16 +266,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Notifier, bool
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.Notifier](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.Notifier
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.Notifier, error) {
 
@@ -346,7 +346,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Notif
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.Notifier](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -357,12 +357,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Notif
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.Notifier)
-	for _, data := range rows {
-		msg := &storage.Notifier{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.Notifier, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -384,18 +380,41 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 
 	var sacQueryFilter *v1.Query
 
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
-	)
+	// Batch the deletes
+	localBatchSize := deleteBatchSize
+	numRecordsToDelete := len(ids)
+	for {
+		if len(ids) == 0 {
+			break
+		}
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+		if len(ids) < localBatchSize {
+			localBatchSize = len(ids)
+		}
+
+		idBatch := ids[:localBatchSize]
+		q := search.ConjunctionQuery(
+			sacQueryFilter,
+			search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
+		)
+
+		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
+			log.Error(err)
+			return err
+		}
+
+		// Move the slice forward to start the next batch
+		ids = ids[localBatchSize:]
+	}
+
+	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Notifier) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.Notifier](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -406,11 +425,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Notifier) err
 			return pgutils.ErrNilIfNoRows(err)
 		}
 		for _, data := range rows {
-			var msg storage.Notifier
-			if err := proto.Unmarshal(data, &msg); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+			if err := fn(data); err != nil {
 				return err
 			}
 		}

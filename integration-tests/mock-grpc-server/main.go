@@ -26,10 +26,14 @@ var (
 	dbPath                   = "/tmp/collector-test.db"
 	processBucket            = "Process"
 	networkBucket            = "Network"
+	endpointBucket           = "Endpoint"
 	processLineageInfoBucket = "LineageInfo"
 )
 
 type signalServer struct {
+	sensorAPI.UnimplementedSignalServiceServer
+	sensorAPI.UnimplementedNetworkConnectionInfoServiceServer
+
 	db *bolt.DB
 }
 
@@ -54,7 +58,7 @@ func (s *signalServer) PushSignals(stream sensorAPI.SignalService_PushSignalsSer
 
 		processInfo := fmt.Sprintf("%s:%s:%d:%d:%d:%s", processSignal.GetName(), processSignal.GetExecFilePath(), processSignal.GetUid(), processSignal.GetGid(), processSignal.GetPid(), processSignal.GetArgs())
 		fmt.Printf("ProcessInfo: %s %s\n", processSignal.GetContainerId(), processInfo)
-		if err := s.UpdateProcessSignals(processSignal.GetContainerId(), processSignal.GetName(), processInfo); err != nil {
+		if err := s.UpdateBucket(processSignal.GetContainerId(), processInfo, processBucket); err != nil {
 			return err
 		}
 
@@ -79,6 +83,7 @@ func (s *signalServer) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnect
 		}
 		networkConnInfo := signal.GetInfo()
 		networkConns := networkConnInfo.GetUpdatedConnections()
+		networkEndpoints := networkConnInfo.GetUpdatedEndpoints()
 
 		for _, networkConn := range networkConns {
 			networkInfo := fmt.Sprintf("%s|%s|%s|%s|%s", getEndpoint(networkConn.GetLocalAddress()), getEndpoint(networkConn.GetRemoteAddress()), networkConn.GetRole().String(), networkConn.GetSocketFamily().String(), networkConn.GetCloseTimestamp().String())
@@ -88,6 +93,13 @@ func (s *signalServer) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnect
 			}
 		}
 
+		for _, networkEndpoint := range networkEndpoints {
+			endpointInfo := fmt.Sprintf("EndpointInfo: %s|%s|%s|%s|%s\n", networkEndpoint.GetSocketFamily().String(), networkEndpoint.GetProtocol().String(), networkEndpoint.GetListenAddress().String(), networkEndpoint.GetCloseTimestamp().String(), networkEndpoint.GetOriginator().String())
+			fmt.Printf("EndpointInfo: %s %s\n", networkEndpoint.GetContainerId(), endpointInfo)
+			if err := s.UpdateBucket(networkEndpoint.GetContainerId(), endpointInfo, endpointBucket); err != nil {
+				return err
+			}
+		}
 	}
 }
 
@@ -104,9 +116,30 @@ func boltDB(path string) (db *bolt.DB, err error) {
 	return db, err
 }
 
-func (s *signalServer) UpdateProcessSignals(containerID string, processName string, processInfo string) error {
+func (s *signalServer) UpdateProcessLineageInfo(processName string, parentID string, lineageInfo string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([]byte(processBucket))
+		bucket, _ := tx.CreateBucketIfNotExists([]byte(processLineageInfoBucket))
+		processBucket, _ := bucket.CreateBucketIfNotExists([]byte(processName))
+		return processBucket.Put([]byte(parentID), []byte(lineageInfo))
+	})
+}
+
+func (s *signalServer) UpdateNetworkConnInfo(containerID string, networkInfo string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b, _ := tx.CreateBucketIfNotExists([]byte(networkBucket))
+		err := b.Put([]byte(containerID), []byte(networkInfo))
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (s *signalServer) UpdateBucket(containerID string, info string, bucket string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(bucket))
 		if err != nil {
 			return err
 		}
@@ -121,29 +154,7 @@ func (s *signalServer) UpdateProcessSignals(containerID string, processName stri
 			return err
 		}
 
-		return c.Put([]byte(strconv.FormatUint(idx, 10)), []byte(processInfo))
-	})
-}
-
-func (s *signalServer) UpdateProcessLineageInfo(processName string, parentID string, lineageInfo string) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		bucket, _ := tx.CreateBucketIfNotExists([]byte(processLineageInfoBucket))
-		processBucket, _ := bucket.CreateBucketIfNotExists([]byte(processName))
-		return processBucket.Put([]byte(parentID), []byte(lineageInfo))
-	})
-}
-
-func (s *signalServer) UpdateNetworkConnInfo(containerID string, networkInfo string) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		b, _ := tx.CreateBucketIfNotExists([]byte(networkBucket))
-
-		err := b.Put([]byte(containerID), []byte(networkInfo))
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-
-		return nil
+		return c.Put([]byte(strconv.FormatUint(idx, 10)), []byte(info))
 	})
 }
 

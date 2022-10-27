@@ -9,7 +9,7 @@
         - [Installation via Scripts](#installation-via-scripts)
             - [Kubernetes Distributions (EKS, AKS, GKE)](#kubernetes-distributions-eks-aks-gke)
             - [OpenShift](#openshift)
-            - [Docker for Desktop or Minikube](#docker-for-desktop-or-minikube)
+            - [Docker Desktop, Colima, or minikube](#docker-desktop-colima-or-minikube)
         - [Accessing the StackRox User Interface (UI)](#accessing-the-stackrox-user-interface-ui)
     - [Development](#development)
         - [Quickstart](#quickstart)
@@ -48,7 +48,7 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
 
 For event updates, blogs and other resources follow the StackRox community site at [stackrox.io](https://www.stackrox.io/).
 
-For the the StackRox [Code of Conduct](https://www.stackrox.io/code-conduct/).
+For the StackRox [Code of Conduct](https://www.stackrox.io/code-conduct/).
 
 To [report a vulnerability or bug](https://github.com/stackrox/stackrox/security/policy).
 
@@ -59,9 +59,9 @@ To [report a vulnerability or bug](https://github.com/stackrox/stackrox/security
 ### Quick Installation using Helm
 
 StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
-Then run the helm quick install script or proceed to section [Manual Helm Installation](#manual-helm-installation) for configuration options.
+Then run the helm quick installation script or proceed to section [Manual Installation using Helm](#manual-installation-using-helm) for configuration options.
 
-**<details><summary>Install StackRox via Helm Installation Script </summary>**
+<details><summary>Install StackRox via Helm Installation Script</summary>
 
 ```sh
 /bin/bash <(curl -fsSL https://raw.githubusercontent.com/stackrox/stackrox/master/scripts/quick-helm-install.sh)
@@ -91,7 +91,7 @@ Deploying using Helm consists of 4 steps
 3. Create a cluster configuration and a service identity (init bundle)
 4. Deploy the **StackRox Secured Cluster Services** using that configuration and those credentials (this step can be done multiple times to add more clusters to the StackRox Central Service)
 
-**<details><summary>Install StackRox Central Services </summary>**
+<details><summary>Install StackRox Central Services</summary>
 
 #### Default Central Installation
 First, the StackRox Central Services will be added to your Kubernetes cluster. This includes the UI and Scanner. To start, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
@@ -132,7 +132,7 @@ helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-ser
 
 </details>
 
-**<details><summary>Install StackRox Secured Cluster Services </summary>**
+<details><summary>Install StackRox Secured Cluster Services</summary>
 
 #### Default Secured Cluster Installation
 Next, the secured cluster component will need to be deployed to collect information on from the Kubernetes nodes.
@@ -207,7 +207,7 @@ After a few minutes, all resources should be deployed.
 
 **Credentials for the 'admin' user can be found in the `./deploy/k8s/central-deploy/password` file.**
 
-**Note:** While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted and you will not be able to alter the secret at runtime. If you lose the password, you will have to redeploy central.
+**Note:** While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted, and you will not be able to alter the secret at runtime. If you lose the password, you will have to redeploy central.
 
 </details>
 
@@ -231,7 +231,7 @@ After a few minutes, all resources should be deployed. The process will complete
 
 **Credentials for the 'admin' user can be found in the `./deploy/openshift/central-deploy/password` file.**
 
-**Note:** While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted and you will not be able to alter the secret at runtime. If you loose the password, you will have to redeploy central.
+**Note:** While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted, and you will not be able to alter the secret at runtime. If you loose the password, you will have to redeploy central.
 
 </details>
 
@@ -257,7 +257,7 @@ After a few minutes, all resources should be deployed.
 
 <details><summary>Click to expand</summary>
 
-After the deployment has completed (Helm or script install) a port-forward should exist so you can connect to https://localhost:8000/. Run the following
+After the deployment has completed (Helm or script install) a port-forward should exist, so you can connect to https://localhost:8000/. Run the following
 
 ```sh
 kubectl port-forward -n 'stackrox' svc/central "8000:443"
@@ -267,7 +267,7 @@ Then go to https://localhost:8000/ in your web browser.
 
 **Username** = The default user is `admin`
 
-**Password (Helm)**   = The password is in `$STACKROX_ADMIN_PASSWORD` after a manual installation, or printed at the end of the quick install script.
+**Password (Helm)**   = The password is in `$STACKROX_ADMIN_PASSWORD` after a manual installation, or printed at the end of the quick installation script.
 
 **Password (Script)** = The password will be located in the `/deploy/<orchestrator>/central-deploy/password.txt` folder for the script install.
 
@@ -306,7 +306,7 @@ The following tools are necessary to test code and build image(s):
 **Xcode - macOS Only**
 
 Usually you would have these already installed by brew.
-However if you get an error when building the golang x/tools,
+However, if you get an error when building the golang x/tools,
 try first making sure the EULA is agreed by:
 
 1. starting Xcode
@@ -384,7 +384,7 @@ $ ./deploy/k8s/deploy-local.sh
 $ logmein
 ```
 
-See the [deployment guide](#how-to-deploy) for further reading. To read more about the environment variables see the
+See [Installation via Scripts](#installation-via-scripts) for further reading. To read more about the environment variables, consult
 [deploy/README.md](https://github.com/stackrox/stackrox/blob/master/deploy/README.md#env-variables).
 
 #### Common Makefile Targets

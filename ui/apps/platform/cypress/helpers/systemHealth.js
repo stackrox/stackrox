@@ -13,6 +13,8 @@ export function setClock(currentDatetime) {
 
 // visit
 
+export const integrationHealthVulnDefinitionsAlias = 'integrationhealth/vulndefinitions';
+
 const routeMatcherMap = {
     'integrationhealth/imageintegrations': {
         method: 'GET',
@@ -42,7 +44,7 @@ const routeMatcherMap = {
         method: 'GET',
         url: api.clusters.list,
     },
-    'integrationhealth/vulndefinitions': {
+    [integrationHealthVulnDefinitionsAlias]: {
         method: 'GET',
         url: api.integrationHealth.vulnDefinitions,
     },

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import onClickOutside from 'react-onclickoutside';
+import { toast } from 'react-toastify';
 
 import downloadCSV from 'services/CSVDownloadService';
 import WorkflowPDFExportButton from 'Components/WorkflowPDFExportButton';
@@ -83,9 +84,13 @@ class ExportButton extends Component {
             }
 
             this.setState({ csvIsDownloading: true });
-            customCsvExportHandler(csvName).finally(() => {
-                this.setState({ toggleWidget: false, csvIsDownloading: false });
-            });
+            customCsvExportHandler(csvName)
+                .catch((err) => {
+                    toast(`An error occurred while trying to export: ${err}`);
+                })
+                .finally(() => {
+                    this.setState({ toggleWidget: false, csvIsDownloading: false });
+                });
         } else {
             // otherwise, use legacy compliance CSV export
             let queryStr = '';

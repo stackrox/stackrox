@@ -13,7 +13,7 @@ package storage;
 message ResourceCollection {
   message EmbeddedResourceCollection {
     // 'id' is searchable to force a separate table
-    string id = 1 [(gogoproto.moretags) = 'search:"Embedded Collection ID,hidden" sql:"fk(ResourceCollection:id)"'];
+    string id = 1 [(gogoproto.moretags) = 'search:"Embedded Collection ID,hidden" sql:"fk(ResourceCollection:id),restrict-delete"'];
   }
 
   string id                                                = 1 [(gogoproto.moretags) = 'sql:"pk"']; // primary key
