@@ -16,9 +16,9 @@ export function fetchGroups(): Promise<{ response: { groups: Group[] } }> {
 }
 
 /**
- * Update/Add a group rule.
+ * Update all groups to add, delete, or update any group.
  */
-export function updateOrAddGroup({ oldGroups, newGroups }: UpdateGroupsArg): Promise<Empty> {
+export function updateGroups({ oldGroups, newGroups }: UpdateGroupsArg): Promise<Empty> {
     return axios
         .post<Empty>(updateUrl, { previous_groups: oldGroups, required_groups: newGroups })
         .then((response) => response.data);
