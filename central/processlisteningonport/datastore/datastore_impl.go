@@ -145,6 +145,7 @@ func (ds *datastoreImpl) GetProcessListeningOnPortForDeployment(
 		return nil, err
 	}
 
+	// Why are we only returning the first element?
 	if len(portProcessList) > 0 {
 		return portProcessList[0], nil
 	} else {

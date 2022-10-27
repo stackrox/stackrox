@@ -54,6 +54,7 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(context.Context, *
 	result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
 		ProcessesListeningOnPortsWithDeployment: []*v1.ProcessListeningOnPortWithDeploymentId{processListeningOnPortWithDeploymentID},
 	}
+	log.Info("In processlisteningonport service returning mock response")
 	return result, nil
 }
 
@@ -96,6 +97,23 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx c
 	deployment := req.GetDeploymentId()
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPortForDeployment(ctx, deployment);
 	log.Info("In processlisteningonport service got processes")
+
+	if err != nil {
+		log.Info("In processlisteningonport service query return err")
+		log.Info("%v", err)
+		result := &v1.GetProcessesListeningOnPortsResponse{
+			ProcessesListeningOnPorts: make([]*storage.ProcessListeningOnPort, 0),
+		}
+		return result, nil
+	}
+
+	if processesListeningOnPorts == nil {
+		log.Info("In processlisteningonport service query return nil")
+		result := &v1.GetProcessesListeningOnPortsResponse{
+			ProcessesListeningOnPorts: make([]*storage.ProcessListeningOnPort, 0),
+		}
+		return result, nil
+	}
 
 	result := &v1.GetProcessesListeningOnPortsResponse{
 		ProcessesListeningOnPorts: []*storage.ProcessListeningOnPort{processesListeningOnPorts},
