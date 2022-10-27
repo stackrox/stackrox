@@ -555,7 +555,7 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 	verifySignatureCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	res := e.signatureVerifier(verifySignatureCtx, sigIntegrations, img)
+	res, verifiedReferences := e.signatureVerifier(verifySignatureCtx, sigIntegrations, img)
 	if res == nil {
 		return false, ctx.Err()
 	}
@@ -563,7 +563,8 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 	log.Debugf("Verification results found for image %q: %+v", imgName, res)
 
 	img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
-		Results: res,
+		Results:                 res,
+		VerifiedImageReferences: verifiedReferences,
 	}
 	return true, nil
 }

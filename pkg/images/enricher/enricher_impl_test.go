@@ -905,11 +905,11 @@ func TestEnrichWithSignatureVerificationData_Success(t *testing.T) {
 	}{
 		"verification result found without pre-existing verification results": {
 			img: &storage.Image{Id: "id", Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}},
-			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) ([]*storage.ImageSignatureVerificationResult, map[string]*storage.ImageSignatureVerificationData_ImageReference) {
 				return []*storage.ImageSignatureVerificationResult{
 					createSignatureVerificationResult("verifier1",
 						storage.ImageSignatureVerificationResult_VERIFIED),
-				}
+				}, map[string]*storage.ImageSignatureVerificationData_ImageReference{"verifier1": {Names: []string{image.GetName().GetFullName()}}}
 			},
 			sigIntegrationGetter: fakeSignatureIntegrationGetter("verifier1", false),
 			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
