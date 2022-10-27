@@ -52,7 +52,7 @@ const (
 		"proc.signal_args, proc.signal_execfilepath " +
 		"FROM process_listening_on_ports plop " +
 		"JOIN process_indicators proc " +
-		"ON plop.processindicatorid = proc.id" +
+		"ON plop.processindicatorid = proc.id " +
 		"WHERE proc.namespace = $1 AND proc.deploymentid = $2"
 
 	getByNamespaceStmt =
@@ -61,7 +61,7 @@ const (
 		"proc.signal_args, proc.signal_execfilepath " +
 		"FROM process_listening_on_ports plop " +
 		"JOIN process_indicators proc " +
-		"ON plop.processindicatorid = proc.id" +
+		"ON plop.processindicatorid = proc.id " +
 		"WHERE proc.namespace = $1"
 
 )
