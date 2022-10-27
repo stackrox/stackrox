@@ -114,7 +114,7 @@ func manageSendingToSensor(ctx context.Context, cli sensor.ComplianceServiceClie
 		case <-ctx.Done():
 			return
 		case sc := <-sensorC:
-			client, err := initializeSendingStream(ctx, cli)
+			client, _, err := initializeStream(ctx, cli)
 			if err != nil && ctx.Err() == nil {
 				// error even after retries
 				log.Fatalf("unable to establish send stream to sensor: %v", err)
@@ -216,34 +216,6 @@ func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceCli
 		}
 	}
 	return client, config, nil
-}
-
-// initializeSendingStream returns a client for sending the data to sensor. It ensures that the stream is open and in case not,
-// then the connection is being reopened with exp. back off
-func initializeSendingStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, error) {
-	eb := backoff.NewExponentialBackOff()
-	eb.MaxInterval = 30 * time.Second
-	eb.MaxElapsedTime = 3 * time.Minute
-
-	var client sensor.ComplianceService_CommunicateClient
-
-	operation := func() error {
-		var err error
-		client, err = cli.Communicate(ctx)
-		if err != nil && ctx.Err() != nil {
-			return backoff.Permanent(err)
-		}
-		return err
-	}
-	err := backoff.RetryNotify(operation, eb, func(err error, t time.Duration) {
-		log.Infof("Sleeping for %0.2f seconds between attempts to connect to Sensor for sending", t.Seconds())
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to initialize sensor connection for sending")
-	}
-	log.Infof("Successfully connected to Sensor for sending at %s", env.AdvertisedEndpoint.Setting())
-
-	return client, nil
 }
 
 func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
