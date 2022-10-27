@@ -1,7 +1,7 @@
 package services
 
 import groovy.util.logging.Slf4j
-import io.stackrox.proto.api.v1.ProcessListeningOnPortServiceGrpc
+import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceGrpc
 import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsResponse
 import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsWithDeploymentResponse
 import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsByNamespaceRequest
