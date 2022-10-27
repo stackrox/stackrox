@@ -12,7 +12,6 @@ deploy/openshift/deploy.sh
 deploy/openshift/sensor.sh
 dev-tools/add-host-alias.sh
 dev-tools/enable-hotreload.sh
-dev-tools/roxctl.sh
 image/assets/docker-auth.sh
 image/central-entrypoint.sh
 image/postgres/scripts/docker-entrypoint.sh

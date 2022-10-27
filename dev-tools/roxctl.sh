@@ -7,13 +7,16 @@ set -eo pipefail
 
 is_operator_on_openshift() {
   local result=0
-  kubectl get clusterversions.config.openshift.io version | grep -v "No resources found" > /dev/null
-  if [[ "$?" -ne "0" ]]; then
+  cmd() {
+      kubectl get clusterversions.config.openshift.io version | grep -v "No resources found" > /dev/null
+  }
+  if ! cmd; then
       result=1
   fi
-
-  kubectl get centrals.platform.stackrox.io -n stackrox | grep -v "No resources found" > /dev/null
-  if [[ "$?" -ne "0" ]]; then
+  mycmd() {
+      kubectl get centrals.platform.stackrox.io -n stackrox | grep -v "No resources found" > /dev/null      
+  }
+  if ! mycmd; then
     result=1
   fi
   return "$result"
@@ -28,18 +31,18 @@ fi
 
 cache=""
 if [[ -n "${KUBECONFIG}" ]]; then
-  cache="/tmp/$(md5 -q ${KUBECONFIG})"
+  cache="/tmp/$(md5 -q "${KUBECONFIG}")"
 fi
 endpoint="localhost:8000"
 password="$(cat "$DIR/../deploy/k8s/central-deploy/password")"
 
 if [[ -n "$cache" ]]; then
-  endpoint=$(cat "${cache}" | awk '{print $1}')
-  password=$(cat "${cache}" | awk '{print $2}')
+  endpoint=$(awk '{print $1}' < "${cache}")
+  password=$(awk '{print $2}' < "${cache}")
 elif is_operator_on_openshift; then
   endpoint="$(oc get route -n stackrox central -o json | jq -r '.spec.host'):443"
   password=$(oc get secret -n stackrox central-htpasswd -o json | jq -r '.data.password' | base64 --decode)
-  printf "$endpoint\t$password" > "${cache}"
+  printf "%s\t%s" "$endpoint" "$password" > "${cache}"
 fi
 
 "$roxctl_bin" -e "https://${endpoint}" -p "$password" --insecure-skip-tls-verify "$@"
