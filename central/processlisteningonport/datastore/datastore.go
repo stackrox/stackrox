@@ -13,6 +13,7 @@ type DataStore interface {
 	AddProcessListeningOnPort(context.Context, ...*storage.ProcessListeningOnPort) error
 	GetProcessListeningOnPortForDeployment(
 		ctx context.Context,
+		namespace string,
 		deploymentId string,
 	) ([]*storage.ProcessListeningOnPort, error)
 }
