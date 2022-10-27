@@ -477,7 +477,26 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         //  String namespace = deployments[0].getNamespace()
         String namespace = "qa"
-        String deploymentId = "nginx"
+        String deploymentId = targetDeployments[0].getDeploymentUid()
+        String name = targetDeployments[0].getName()
+        log.info ""
+        log.info ""
+        log.info "hi"
+        log.info "deploymentId= ${deploymentId}"
+        log.info "name= ${name}"
+        log.info "hi"
+        log.info ""
+        log.info ""
+        deploymentId = targetDeployments[1].getDeploymentUid()
+        name = deployments[1].getName()
+        log.info ""
+        log.info ""
+        log.info "hi"
+        log.info "deploymentId= ${deploymentId}"
+        log.info "name= ${name}"
+        log.info "hi"
+        log.info ""
+        log.info ""
 
         def processesListeningOnPorts = evaluateWithRetry(10, 10) {
                 def temp = ProcessesListeningOnPortsService
@@ -488,8 +507,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert processesListeningOnPorts
 
         def list = processesListeningOnPorts.processesListeningOnPortsList
-
-        log.info "${Env.mustGet("REGISTRY_USERNAME")}"
 
         assert list.size() == 2
 
