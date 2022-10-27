@@ -100,10 +100,12 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, reportConfiguration.GetId()), sac.ErrResourceAccessDenied)
 
 	var reportConfigurations []*storage.ReportConfiguration
+	var reportConfigurationIDs []string
 	for i := 0; i < 200; i++ {
 		reportConfiguration := &storage.ReportConfiguration{}
 		s.NoError(testutils.FullInit(reportConfiguration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		reportConfigurations = append(reportConfigurations, reportConfiguration)
+		reportConfigurationIDs = append(reportConfigurationIDs, reportConfiguration.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, reportConfigurations))
@@ -111,4 +113,10 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 	reportConfigurationCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, reportConfigurationCount)
+
+	s.NoError(store.DeleteMany(ctx, reportConfigurationIDs))
+
+	reportConfigurationCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, reportConfigurationCount)
 }

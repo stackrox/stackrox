@@ -100,10 +100,12 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, signatureIntegration.GetId()), sac.ErrResourceAccessDenied)
 
 	var signatureIntegrations []*storage.SignatureIntegration
+	var signatureIntegrationIDs []string
 	for i := 0; i < 200; i++ {
 		signatureIntegration := &storage.SignatureIntegration{}
 		s.NoError(testutils.FullInit(signatureIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		signatureIntegrations = append(signatureIntegrations, signatureIntegration)
+		signatureIntegrationIDs = append(signatureIntegrationIDs, signatureIntegration.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, signatureIntegrations))
@@ -111,4 +113,10 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	signatureIntegrationCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, signatureIntegrationCount)
+
+	s.NoError(store.DeleteMany(ctx, signatureIntegrationIDs))
+
+	signatureIntegrationCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, signatureIntegrationCount)
 }

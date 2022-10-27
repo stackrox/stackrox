@@ -102,10 +102,12 @@ func (s *RisksStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, risk.GetId()))
 
 	var risks []*storage.Risk
+	var riskIDs []string
 	for i := 0; i < 200; i++ {
 		risk := &storage.Risk{}
 		s.NoError(testutils.FullInit(risk, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		risks = append(risks, risk)
+		riskIDs = append(riskIDs, risk.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, risks))
@@ -113,6 +115,12 @@ func (s *RisksStoreSuite) TestStore() {
 	riskCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, riskCount)
+
+	s.NoError(store.DeleteMany(ctx, riskIDs))
+
+	riskCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, riskCount)
 }
 
 func (s *RisksStoreSuite) TestSACUpsert() {
