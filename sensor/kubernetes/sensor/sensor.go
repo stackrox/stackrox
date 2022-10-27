@@ -91,7 +91,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager()
 
-	indicators := make(chan *central.MsgFromSensor)
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
 	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager)
 
@@ -110,6 +109,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	// Create Process Pipeline
+	indicators := make(chan *central.MsgFromSensor)
 	processPipeline := processsignal.NewProcessPipeline(indicators, clusterentities.StoreInstance(), processfilter.Singleton(), policyDetector)
 	processSignals := signalService.New(processPipeline, indicators)
 	networkFlowManager :=
