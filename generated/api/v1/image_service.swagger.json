@@ -426,6 +426,18 @@
       ],
       "default": "UNKNOWN_VULNERABILITY"
     },
+    "ImageSignatureVerificationDataImageReference": {
+      "type": "object",
+      "properties": {
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "The full image names that are verified (meaning, having a successful signature verification) keyed by the\nsignature they were verified with."
+    },
     "WatchImageResponseErrorType": {
       "type": "string",
       "enum": [
@@ -1242,6 +1254,12 @@
           "items": {
             "$ref": "#/definitions/storageImageSignatureVerificationResult"
           }
+        },
+        "verifiedImageReferences": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ImageSignatureVerificationDataImageReference"
+          }
         }
       }
     },
@@ -1262,13 +1280,6 @@
         "description": {
           "type": "string",
           "description": "description is set in the case of an error with the specific error's message. Otherwise, this will not be set."
-        },
-        "verifiedImageReferences": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "The full image name that the signature references. Since images can come from different locations, this will\nensure we can verify the matching location as well."
         }
       },
       "title": "Next Tag: 5"
