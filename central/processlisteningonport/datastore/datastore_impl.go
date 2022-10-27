@@ -137,7 +137,7 @@ func (ds *datastoreImpl) GetProcessListeningOnPortForDeployment(
 	ctx context.Context,
 	deploymentId string,
 ) (
-	*storage.ProcessListeningOnPort, error,
+	[]*storage.ProcessListeningOnPort, error,
 ) {
 
 	portProcessList, err := ds.storage.GetPLOPForDeployment(ctx, deploymentId)
@@ -146,9 +146,11 @@ func (ds *datastoreImpl) GetProcessListeningOnPortForDeployment(
 	}
 
 	// Why are we only returning the first element?
-	if len(portProcessList) > 0 {
-		return portProcessList[0], nil
-	} else {
-		return nil, nil
-	}
+	//if len(portProcessList) > 0 {
+	//	return portProcessList[0], nil
+	//} else {
+	//	return nil, nil
+	//}
+
+	return portProcessList, nil
 }

@@ -116,7 +116,7 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx c
 	}
 
 	result := &v1.GetProcessesListeningOnPortsResponse{
-		ProcessesListeningOnPorts: []*storage.ProcessListeningOnPort{processesListeningOnPorts},
+		ProcessesListeningOnPorts: processesListeningOnPorts,
 	}
 
 	return result, err

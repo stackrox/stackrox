@@ -14,7 +14,7 @@ type DataStore interface {
 	GetProcessListeningOnPortForDeployment(
 		ctx context.Context,
 		deploymentId string,
-	) (*storage.ProcessListeningOnPort, error)
+	) ([]*storage.ProcessListeningOnPort, error)
 }
 
 func New(
