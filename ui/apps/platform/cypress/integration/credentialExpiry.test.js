@@ -8,10 +8,10 @@ import {
     renderScannerCredentialExpiryBanner,
 } from '../helpers/credentialExpiry';
 
-describe('Credential Expiry', () => {
+describe('Credential expiry', () => {
     withAuth();
 
-    describe('for Central', () => {
+    describe('for central', () => {
         it('should not display banner if central cert is expiring more than 14 days later', () => {
             const expiry = dateFns.addHours(dateFns.addDays(new Date(), 15), 1);
 
@@ -65,7 +65,7 @@ describe('Credential Expiry', () => {
         });
     });
 
-    describe('for Scanner', () => {
+    describe('for scanner', () => {
         it('should not display banner if scanner cert is expiring more than 14 days later', () => {
             const expiry = dateFns.addHours(dateFns.addDays(new Date(), 15), 1);
 
