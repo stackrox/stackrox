@@ -12,7 +12,7 @@ source "$COMMON_DIR"/env.sh
 source "$K8S_DIR"/env.sh
 
 if [[ -z $CLUSTER ]]; then
-    read -p -r "Enter cluster name to create: " CLUSTER
+    read -p "Enter cluster name to create: " CLUSTER
 fi
 echo "CLUSTER set to $CLUSTER"
 
