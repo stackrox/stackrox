@@ -100,10 +100,12 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, clusterHealthStatus.GetId()))
 
 	var clusterHealthStatuss []*storage.ClusterHealthStatus
+	var clusterHealthStatusIDs []string
 	for i := 0; i < 200; i++ {
 		clusterHealthStatus := &storage.ClusterHealthStatus{}
 		s.NoError(testutils.FullInit(clusterHealthStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		clusterHealthStatuss = append(clusterHealthStatuss, clusterHealthStatus)
+		clusterHealthStatusIDs = append(clusterHealthStatusIDs, clusterHealthStatus.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, clusterHealthStatuss))
@@ -111,4 +113,10 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 	clusterHealthStatusCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, clusterHealthStatusCount)
+
+	s.NoError(store.DeleteMany(ctx, clusterHealthStatusIDs))
+
+	clusterHealthStatusCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, clusterHealthStatusCount)
 }

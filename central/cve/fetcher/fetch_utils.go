@@ -17,8 +17,8 @@ import (
 const (
 	fetchDelay            = 2 * time.Hour
 	preloadedCVEsBasePath = "/stackrox/static-data"
-	istioCVEsURL          = "https://definitions.stackrox.io/cve/istio/cve-list.json"
-	istioCVEsChecksumURL  = "https://definitions.stackrox.io/cve/istio/checksum"
+	istioCVEsURL          = "https://definitions.stackrox.io/cve2/istio/cve-list.json"
+	istioCVEsChecksumURL  = "https://definitions.stackrox.io/cve2/istio/checksum"
 	commonCveDir          = "cve"
 	istioCVEsDir          = "istio"
 )

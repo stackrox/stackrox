@@ -329,6 +329,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		m.cacheVersion = newSettings.GetCacheVersion()
 	}
 
+	//#nosec G103
 	atomic.StorePointer(&m.statePtr, unsafe.Pointer(newState))
 	if m.lastSettingsUpdate == nil {
 		log.Info("RE-ENABLING admission control service")

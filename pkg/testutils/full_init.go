@@ -178,6 +178,7 @@ func fullInitStruct(structVal reflect.Value, init BasicTypeInitializer, fieldFil
 		fieldVal := structVal.FieldByIndex(field.Index)
 		if field.Name != "" && unicode.IsLower([]rune(field.Name)[0]) {
 			// If a field is not exported, we need to make it writable with the following hack.
+			//#nosec G103
 			fieldVal = reflect.NewAt(fieldVal.Type(), unsafe.Pointer(fieldVal.UnsafeAddr())).Elem()
 		}
 		fullInitRecursive(fieldVal, init, fieldFilter, append(fieldPath, field), seenTypes)

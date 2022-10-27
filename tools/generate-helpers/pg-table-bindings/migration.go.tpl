@@ -52,7 +52,7 @@ var (
 			return nil
 		},
 	}
-	batchSize	 = 10000
+	batchSize	 = {{.Migration.BatchSize}}
 	schema		= {{template "schemaVar" .Schema}}
 	log		   = loghelper.LogWrapper{}
 )

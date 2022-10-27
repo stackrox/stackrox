@@ -199,7 +199,8 @@ var (
 )
 
 const (
-	ssoURLPathPrefix     = "/sso/"
+	ssoURLPathPrefix = "/sso/"
+	//#nosec G101 -- This is a false positive
 	tokenRedirectURLPath = "/auth/response/generic"
 
 	grpcServerWatchdogTimeout = 20 * time.Second

@@ -102,10 +102,12 @@ func (s *ClustersStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, cluster.GetId()))
 
 	var clusters []*storage.Cluster
+	var clusterIDs []string
 	for i := 0; i < 200; i++ {
 		cluster := &storage.Cluster{}
 		s.NoError(testutils.FullInit(cluster, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		clusters = append(clusters, cluster)
+		clusterIDs = append(clusterIDs, cluster.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, clusters))
@@ -113,6 +115,12 @@ func (s *ClustersStoreSuite) TestStore() {
 	clusterCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, clusterCount)
+
+	s.NoError(store.DeleteMany(ctx, clusterIDs))
+
+	clusterCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, clusterCount)
 }
 
 func (s *ClustersStoreSuite) TestSACUpsert() {
