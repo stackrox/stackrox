@@ -100,10 +100,12 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, clusterCVE.GetId()))
 
 	var clusterCVEs []*storage.ClusterCVE
+	var clusterCVEIDs []string
 	for i := 0; i < 200; i++ {
 		clusterCVE := &storage.ClusterCVE{}
 		s.NoError(testutils.FullInit(clusterCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		clusterCVEs = append(clusterCVEs, clusterCVE)
+		clusterCVEIDs = append(clusterCVEIDs, clusterCVE.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, clusterCVEs))
@@ -111,4 +113,10 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	clusterCVECount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, clusterCVECount)
+
+	s.NoError(store.DeleteMany(ctx, clusterCVEIDs))
+
+	clusterCVECount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, clusterCVECount)
 }

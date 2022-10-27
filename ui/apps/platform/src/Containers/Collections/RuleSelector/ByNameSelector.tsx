@@ -57,12 +57,15 @@ function ByNameSelector({
     }
 
     return (
-        <FormGroup label={`${entityType} name`} isRequired>
+        <FormGroup fieldId={`${entityType}-name-value`} label={`${entityType} name`} isRequired>
             <Flex spaceItems={{ default: 'spaceItemsSm' }} direction={{ default: 'column' }}>
                 {scopedResourceSelector.rule.values.map((value, index) => (
                     <Flex key={keyFor(index)}>
                         <AutoCompleteSelect
-                            typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} name`}
+                            id={`${entityType}-name-value-${index}`}
+                            typeAheadAriaLabel={`Select value ${index + 1} of ${
+                                scopedResourceSelector.rule.values.length
+                            } for the ${entityType.toLowerCase()} name`}
                             className="pf-u-flex-grow-1 pf-u-w-auto"
                             selectedOption={value}
                             onChange={onChangeValue(scopedResourceSelector, index)}

@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	//#nosec G101 -- This is a false positive
 	apiKeyEnv = "PAGERDUTY_APIKEY"
 )
 

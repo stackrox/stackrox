@@ -29,9 +29,10 @@ import (
 const (
 	fragmentCallbackURLPath = "/auth/response/oidc"
 
-	issuerConfigKey                    = "issuer"
-	clientIDConfigKey                  = "client_id"
-	clientSecretConfigKey              = "client_secret"
+	issuerConfigKey       = "issuer"
+	clientIDConfigKey     = "client_id"
+	clientSecretConfigKey = "client_secret"
+	//#nosec G101 -- This is a false positive
 	dontUseClientSecretConfigKey       = "do_not_use_client_secret"
 	modeConfigKey                      = "mode"
 	disableOfflineAccessScopeConfigKey = "disable_offline_access_scope"

@@ -50,8 +50,9 @@ issues:
 linters-settings:
   gosec:
     includes:
-    - G103
+    - G101
     - G102
+    - G103
     - G303
     - G601
   revive:

@@ -100,10 +100,12 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, networkGraphConfig.GetId()), sac.ErrResourceAccessDenied)
 
 	var networkGraphConfigs []*storage.NetworkGraphConfig
+	var networkGraphConfigIDs []string
 	for i := 0; i < 200; i++ {
 		networkGraphConfig := &storage.NetworkGraphConfig{}
 		s.NoError(testutils.FullInit(networkGraphConfig, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkGraphConfigs = append(networkGraphConfigs, networkGraphConfig)
+		networkGraphConfigIDs = append(networkGraphConfigIDs, networkGraphConfig.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkGraphConfigs))
@@ -111,4 +113,10 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 	networkGraphConfigCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, networkGraphConfigCount)
+
+	s.NoError(store.DeleteMany(ctx, networkGraphConfigIDs))
+
+	networkGraphConfigCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, networkGraphConfigCount)
 }
