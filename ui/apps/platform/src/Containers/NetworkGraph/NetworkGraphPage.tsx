@@ -16,16 +16,16 @@ function NetworkGraphPage() {
     const [model, setModel] = useState<Model>({
         graph: graphModel,
     });
-    const [epoch, setEpoch] = useState(0);
     const [clusters, setClusters] = useState<Cluster[]>([]);
 
     useEffect(() => {
         fetchClustersAsArray()
             .then((response) => {
                 setClusters(response);
-                setEpoch(1);
             })
-            .catch((err) => console.error(err));
+            .catch(() => {
+                // TODO
+            });
     }, []);
 
     useEffect(() => {
@@ -34,9 +34,10 @@ function NetworkGraphPage() {
                 .then(({ response }) => {
                     const dataModel = transformData(response.nodes);
                     setModel(dataModel);
-                    setEpoch(response.epoch);
                 })
-                .catch((err) => console.error(err));
+                .catch(() => {
+                    // TODO
+                });
         }
     }, [clusters]);
 
