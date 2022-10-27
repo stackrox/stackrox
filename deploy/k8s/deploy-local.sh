@@ -8,4 +8,4 @@ export COLLECTION_METHOD="${COLLECTION_METHOD:-ebpf}"
 export MONITORING_SUPPORT="${MONITORING_SUPPORT:-false}"
 export POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
 
-$DIR/deploy.sh
+"$DIR"/deploy.sh
