@@ -9,9 +9,8 @@ import { systemConfigUrl } from '../constants/SystemConfigPage';
 const loginAuthProvidersAlias = 'login/authproviders';
 
 function visitAndWaitForAuthProviders(destinationUrl) {
-    cy.intercept('GET', api.auth.loginAuthProviders, { fixture: 'auth/authProviders.json' }).as(
-        loginAuthProvidersAlias
-    );
+    const fixture = 'auth/authProviders.json';
+    cy.intercept('GET', api.auth.loginAuthProviders, { fixture }).as(loginAuthProvidersAlias);
 
     cy.visit(destinationUrl);
 
@@ -56,7 +55,7 @@ describe('Authentication', () => {
         visitAndWaitForAuthProviders(systemConfigUrl);
 
         cy.location('pathname').should('eq', loginUrl);
-        // Assertion corresponds to value of name property in auth/authProviders.json fixture.
+        // Assertion corresponds to value of name property in fixture for visit function call above.
         cy.get(selectors.providerSelect).should('have.text', 'auth-provider-name');
 
         reachSystemConfiguration(() => {
