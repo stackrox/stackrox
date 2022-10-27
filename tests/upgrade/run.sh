@@ -70,9 +70,9 @@ test_upgrade() {
     # TODO(sbostick): run the groovy e2e tests
     export CLUSTER="K8S"
     export ORCHESTRATOR_FLAVOR="k8s"
-    make -C qa-tests-backend smoke-test || touch FAIL
-    store_qa_test_results "smoke-tests"
-    [[ ! -f FAIL ]] || die "Smoke tests failed"
+    make -C qa-tests-backend multiarch-tests || touch FAIL
+    store_qa_test_results "multiarch-tests"
+    [[ ! -f FAIL ]] || die "multiarch-tests failed"
 
     ### touch /tmp/hold
     ### while [[ -e /tmp/hold ]]; do

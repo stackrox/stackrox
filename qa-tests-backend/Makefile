@@ -62,6 +62,11 @@ smoke-test: compile
 	@echo "+ $@"
 	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SMOKE
 
+.PHONY: multiarch-test
+multiarch-test: compile
+	@echo "+ $@"
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=MultiArch
+
 .PHONY: compatibility-test
 compatibility-test: compile
 	@echo "+ $@"
