@@ -2,7 +2,7 @@ import React from 'react';
 
 import NetworkPolicies from '../common/NetworkPolicies';
 
-function NamespaceNetworkPolicies() {
+function DeploymentNetworkPolicies() {
     // @TODO: We will eventually do an API call to fetch the network policies based on the
     // network policy ids for the selected node
     const networkPolicies = [
@@ -20,7 +20,12 @@ metadata:
 kind: NetworkPolicy
 metadata:
   name: ''
-  namespace: test-service-registry`,
+  namespace: test-service-registry
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox`,
         },
     ];
 
@@ -31,4 +36,4 @@ metadata:
     );
 }
 
-export default NamespaceNetworkPolicies;
+export default DeploymentNetworkPolicies;

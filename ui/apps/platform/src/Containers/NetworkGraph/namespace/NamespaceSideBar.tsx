@@ -67,6 +67,7 @@ function NamespaceSideBar() {
                     eventKey="Network policies"
                     id="Network policies"
                     hidden={activeKeyTab !== 'Network policies'}
+                    className="pf-u-h-100"
                 >
                     <NamespaceNetworkPolicies />
                 </TabContent>
