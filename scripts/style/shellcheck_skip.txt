@@ -4,7 +4,6 @@ deploy/common/docker-auth.sh
 deploy/common/k8sbased.sh
 deploy/k8s/deploy-local.sh
 deploy/k8s/deploy.sh
-deploy/openshift/central.sh
 deploy/openshift/deploy-local.sh
 deploy/openshift/deploy.sh
 deploy/openshift/sensor.sh
