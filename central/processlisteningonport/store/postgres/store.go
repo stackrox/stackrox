@@ -83,8 +83,8 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ProcessListeningOnPortStorage, []int, error)
 	//GetPLOPForDeployment(ctx context.Context, deploymentID string) ([]*storage.ProcessListeningOnPort, error)
-	GetProcessListeningOnPort(ctx context.Context, namespace string, deploymentID string) ([]*storage.ProcessListeningOnPort, error)
-	GetProcessListeningOnPortNamespace(ctx context.Context, namespace string) ([]*v1.ProcessListeningOnPortWithDeploymentId, error)
+	GetProcessListeningOnPortForDeployment(ctx context.Context, namespace string, deploymentID string) ([]*storage.ProcessListeningOnPort, error)
+	GetProcessListeningOnPortForNamespace(ctx context.Context, namespace string) ([]*v1.ProcessListeningOnPortWithDeploymentId, error)
 
 
 	DeleteMany(ctx context.Context, ids []string) error
@@ -586,7 +586,7 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 }
 
 // Manually written function to get PLOP joined with ProcessIndicators
-func (s *storeImpl) GetProcessListeningOnPort(
+func (s *storeImpl) GetProcessListeningOnPortForDeployment(
 	ctx context.Context,
 	namespace string,
 	deploymentID string,
@@ -619,7 +619,7 @@ func (s *storeImpl) retryableGetPLOPForDeployment(
 }
 
 // Manually written function to get PLOP joined with ProcessIndicators
-func (s *storeImpl) GetProcessListeningOnPortNamespace(
+func (s *storeImpl) GetProcessListeningOnPortForNamespace(
 	ctx context.Context,
 	namespace string,
 ) ([]*v1.ProcessListeningOnPortWithDeploymentId, error) {

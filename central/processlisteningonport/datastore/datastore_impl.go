@@ -140,7 +140,7 @@ func (ds *datastoreImpl) GetProcessListeningOnPortForDeployment(
 	[]*storage.ProcessListeningOnPort, error,
 ) {
 
-	portProcessList, err := ds.storage.GetProcessListeningOnPort(ctx, namespace, deploymentId)
+	portProcessList, err := ds.storage.GetProcessListeningOnPortForDeployment(ctx, namespace, deploymentId)
 
 	if err != nil {
 		return nil, err
@@ -156,7 +156,7 @@ func (ds *datastoreImpl) GetProcessListeningOnPortForNamespace(
 	[]*v1.ProcessListeningOnPortWithDeploymentId, error,
 ) {
 
-	portProcessList, err := ds.storage.GetProcessListeningOnPortNamespace(ctx, namespace)
+	portProcessList, err := ds.storage.GetProcessListeningOnPortForNamespace(ctx, namespace)
 
 	if err != nil {
 		return nil, err
