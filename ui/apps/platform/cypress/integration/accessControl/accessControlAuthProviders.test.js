@@ -6,7 +6,7 @@ import {
 import * as api from '../../constants/apiEndpoints';
 import sampleCert from '../../helpers/sampleCert';
 import { generateNameWithDate, getInputByLabel } from '../../helpers/formHelpers';
-import { visit, visitWithPermissions } from '../../helpers/visit';
+import { visit, visitWithStaticResponseForPermissions } from '../../helpers/visit';
 import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAccessRole.json';
 
 import withAuth from '../../helpers/basicAuth';
@@ -47,10 +47,10 @@ describe('Access Control Auth providers', () => {
     withAuth();
 
     it('displays alert if no permission', () => {
-        const permissionsStaticResponse = {
+        const staticResponseForPermissions = {
             fixture: 'auth/mypermissionsMinimalAccess.json',
         };
-        visitWithPermissions(authProvidersUrl, permissionsStaticResponse);
+        visitWithStaticResponseForPermissions(authProvidersUrl, staticResponseForPermissions);
 
         cy.get(`${selectors.h1}:contains("${h1}")`);
         cy.get(selectors.navLink).should('not.exist');

@@ -86,7 +86,7 @@ export function visit(pageUrl, requestConfig, staticResponseMap) {
  * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
-export function visitWithPermissions(
+export function visitWithStaticResponseForPermissions(
     pageUrl,
     staticResponseForPermissions,
     requestConfig,
