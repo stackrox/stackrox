@@ -153,9 +153,9 @@ create_cluster() {
             success=1
             break
         elif [[ "${status}" == 124 ]]; then
-            echo >&2 "gcloud command timed out. Checking to see if cluster is still creating"
+            info "gcloud command timed out. Checking to see if cluster is still creating"
             if ! gcloud container clusters describe "${CLUSTER_NAME}" >/dev/null; then
-                echo >&2 "Create cluster did not create the cluster in Google. Trying a different zone..."
+                info "Create cluster did not create the cluster in Google. Trying a different zone..."
             else
                 for i in {1..60}; do
                     if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format json | jq -r .status)" == "RUNNING" ]]; then
@@ -163,22 +163,25 @@ create_cluster() {
                         break
                     fi
                     sleep 20
-                    echo "Currently have waited $((i * 5)) for cluster ${CLUSTER_NAME} in ${zone} to move to running state"
+                    info "Waiting for cluster ${CLUSTER_NAME} in ${zone} to move to running state (wait $i of 60)"
                 done
             fi
 
             if [[ "${success}" == 1 ]]; then
-                echo "Successfully launched cluster ${CLUSTER_NAME}"
+                info "Successfully launched cluster ${CLUSTER_NAME}"
                 break
             fi
-            echo >&2 "Timed out after 10 more minutes. Trying another zone..."
-            echo >&2 "Deleting the cluster"
-            gcloud container clusters delete "${CLUSTER_NAME}" --async
+            info "Timed out"
+            info "Attempting to delete the cluster before trying another zone"
+            gcloud container clusters delete "${CLUSTER_NAME}" || {
+                info "An error occurred deleting the cluster: $?"
+                true
+            }
         fi
     done
 
     if [[ "${success}" == "0" ]]; then
-        echo "Cluster creation failed"
+        info "Cluster creation failed"
         return 1
     fi
 }
