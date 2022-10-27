@@ -11,10 +11,11 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	AddProcessListeningOnPort(context.Context, ...*storage.ProcessListeningOnPort) error
-	GetProcessListeningOnPortForDeployment(
+	GetProcessListeningOnPort(
 		ctx context.Context,
+		namespace string,
 		deploymentId string,
-	) (*storage.ProcessListeningOnPort, error)
+	) ([]*storage.ProcessListeningOnPort, error)
 }
 
 func New(
