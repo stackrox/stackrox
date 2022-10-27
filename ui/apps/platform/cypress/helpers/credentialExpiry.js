@@ -47,8 +47,10 @@ export function renderScannerCredentialExpiryBanner(expiry, staticResponseForPer
 
 function interactAndWaitForCertificateDownload(componentLowerCase, interactionCallback) {
     const requestConfig = {
-        method: 'POST',
-        url: `api/extensions/certgen/${componentLowerCase}`,
+        reouteMatcherMap: {
+            method: 'POST',
+            url: `api/extensions/certgen/${componentLowerCase}`,
+        },
     };
 
     interactAndWaitForResponses(interactionCallback, requestConfig);
