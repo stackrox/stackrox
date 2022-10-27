@@ -132,7 +132,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	return nil
 }
 
-// I think we need to specify namespace and deployment
 func (ds *datastoreImpl) GetProcessListeningOnPortForDeployment(
 	ctx context.Context,
 	namespace string,
@@ -141,7 +140,23 @@ func (ds *datastoreImpl) GetProcessListeningOnPortForDeployment(
 	[]*storage.ProcessListeningOnPort, error,
 ) {
 
-	portProcessList, err := ds.storage.GetPprocessListeningOnPort(ctx, namespace, deploymentId)
+	portProcessList, err := ds.storage.GetProcessListeningOnPort(ctx, namespace, deploymentId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return portProcessList, nil
+}
+
+func (ds *datastoreImpl) GetProcessListeningOnPortForNamespace(
+	ctx context.Context,
+	namespace string,
+) (
+	[]*v1.ProcessListeningOnPortWithDeploymentId, error,
+) {
+
+	portProcessList, err := ds.storage.GetProcessListeningOnPortNamespace(ctx, namespace)
 
 	if err != nil {
 		return nil, err

@@ -30,36 +30,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(context.Context, *v1.GetProcessesListeningOnPortsByNamespaceRequest) (*v1.GetProcessesListeningOnPortsWithDeploymentResponse, error) {
-	processIndicatorUniqueKey := &storage.ProcessIndicatorUniqueKey{
-		PodId:               "nginx-5da7f5-fdsaf",
-		ContainerName:       "nginx",
-		ProcessName:         "nginx",
-		ProcessExecFilePath: "/usr/bin/nginx",
-		ProcessArgs:         "fake args",
-	}
-
-	processListeningOnPort := &storage.ProcessListeningOnPort{
-		Port:           80,
-		Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
-		Process:        processIndicatorUniqueKey,
-		CloseTimestamp: nil,
-	}
-
-	processListeningOnPortWithDeploymentID := &v1.ProcessListeningOnPortWithDeploymentId{
-		DeploymentId:              "nginx",
-		ProcessesListeningOnPorts: []*storage.ProcessListeningOnPort{processListeningOnPort},
-	}
-
-	result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
-		ProcessesListeningOnPortsWithDeployment: []*v1.ProcessListeningOnPortWithDeploymentId{processListeningOnPortWithDeploymentID},
-	}
-	log.Info("In processlisteningonport service returning mock response")
-	return result, nil
-}
-
-func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx context.Context, req *v1.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) (*v1.GetProcessesListeningOnPortsResponse, error) {
-	//processIndicatorUniqueKey1 := &storage.ProcessIndicatorUniqueKey{
+func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Context, req *v1.GetProcessesListeningOnPortsByNamespaceRequest) (*v1.GetProcessesListeningOnPortsWithDeploymentResponse, error) {
+	//processIndicatorUniqueKey := &storage.ProcessIndicatorUniqueKey{
 	//	PodId:               "nginx-5da7f5-fdsaf",
 	//	ContainerName:       "nginx",
 	//	ProcessName:         "nginx",
@@ -67,35 +39,57 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx c
 	//	ProcessArgs:         "fake args",
 	//}
 
-	//processListeningOnPort1 := &storage.ProcessListeningOnPort{
+	//processListeningOnPort := &storage.ProcessListeningOnPort{
 	//	Port:           80,
 	//	Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
-	//	Process:        processIndicatorUniqueKey1,
+	//	Process:        processIndicatorUniqueKey,
 	//	CloseTimestamp: nil,
 	//}
 
-	//processIndicatorUniqueKey2 := &storage.ProcessIndicatorUniqueKey{
-	//	PodId:               "visa-5da7f5-fdsaf",
-	//	ContainerName:       "visa",
-	//	ProcessName:         "visa",
-	//	ProcessExecFilePath: "/usr/bin/visa",
-	//	ProcessArgs:         "fake args for visa",
+	//processListeningOnPortWithDeploymentID := &v1.ProcessListeningOnPortWithDeploymentId{
+	//	DeploymentId:              "nginx",
+	//	ProcessesListeningOnPorts: []*storage.ProcessListeningOnPort{processListeningOnPort},
 	//}
 
-	//processListeningOnPort2 := &storage.ProcessListeningOnPort{
-	//	Port:           8080,
-	//	Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-	//	Process:        processIndicatorUniqueKey2,
-	//	CloseTimestamp: nil,
+	//result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
+	//	ProcessesListeningOnPortsWithDeployment: []*v1.ProcessListeningOnPortWithDeploymentId{processListeningOnPortWithDeploymentID},
 	//}
 
-	//result := &v1.GetProcessesListeningOnPortsResponse{
-	//	ProcessesListeningOnPorts: []*storage.ProcessListeningOnPort{processListeningOnPort1, processListeningOnPort2},
-	//}
+	log.Info("In processlisteningonport service about to get processes namespace level")
+	namespace := req.GetNamespace()
+	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPortForNamespace(ctx, namespace);
+	log.Info("In processlisteningonport service got processes namespace level")
+
+	if err != nil {
+		log.Info("In processlisteningonport service query return err")
+		log.Info("%v", err)
+		result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
+			ProcessesListeningOnPortsWithDeployment: make([]*v1.ProcessListeningOnPortWithDeploymentId, 0),
+		}
+		return result, nil
+	}
+
+	if processesListeningOnPorts == nil {
+		log.Info("In processlisteningonport service query return nil")
+		result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
+			ProcessesListeningOnPortsWithDeployment: make([]*v1.ProcessListeningOnPortWithDeploymentId, 0),
+		}
+		return result, nil
+	}
+
+	result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
+		ProcessesListeningOnPortsWithDeployment: processesListeningOnPorts,
+	}
+
+	return result, err
+}
+
+func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx context.Context, req *v1.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) (*v1.GetProcessesListeningOnPortsResponse, error) {
 
 	log.Info("In processlisteningonport service about to get processes")
+	namespace := req.GetNamespace()
 	deployment := req.GetDeploymentId()
-	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPortForDeployment(ctx, deployment);
+	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPortForDeployment(ctx, namespace, deployment);
 	log.Info("In processlisteningonport service got processes")
 
 	if err != nil {
