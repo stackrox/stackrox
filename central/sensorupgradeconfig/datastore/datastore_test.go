@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -10,7 +9,6 @@ import (
 	storeMocks "github.com/stackrox/rox/central/sensorupgradeconfig/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,8 +29,6 @@ type sensorUpgradeConfigDataStoreTestSuite struct {
 	storage   *storeMocks.MockStore
 
 	mockCtrl *gomock.Controller
-
-	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) SetupTest() {
@@ -52,17 +48,11 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil)
-	var err error
-	s.dataStore, err = New(s.storage)
-	s.Require().NoError(err)
-
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	s.dataStore = New(s.storage)
 }
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
-	s.envIsolator.RestoreAll()
 }
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TestEnforcesGet() {
@@ -106,21 +96,4 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) TestAllowsUpdate() {
 
 	err = s.dataStore.UpsertSensorUpgradeConfig(s.hasWriteAdministrationCtx, &storage.SensorUpgradeConfig{})
 	s.NoError(err, "expected no error trying to write with Administration permissions")
-}
-
-func (s *sensorUpgradeConfigDataStoreTestSuite) TestDefault() {
-	testCases := map[string]struct {
-		env                     bool
-		expectedAutoUpgradeFlag bool
-	}{
-		"ROX_MANAGED_CENTRAL=true":  {true, false},
-		"ROX_MANAGED_CENTRAL=false": {false, true},
-	}
-
-	for _, testCase := range testCases {
-		s.envIsolator.Setenv("ROX_MANAGED_CENTRAL", strconv.FormatBool(testCase.env))
-		s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil)
-		s.storage.EXPECT().Upsert(gomock.Any(), gomock.Eq(upgradeConfig(testCase.expectedAutoUpgradeFlag))).Return(nil)
-		s.Require().NoError(addDefaultConfigIfEmpty(s.dataStore))
-	}
 }
