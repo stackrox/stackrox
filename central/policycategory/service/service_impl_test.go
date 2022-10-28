@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -22,14 +21,10 @@ type PolicyCategoryServiceTestSuite struct {
 	categories *mocks.MockDataStore
 	tested     Service
 
-	envIsolator *envisolator.EnvIsolator
-
 	mockCtrl *gomock.Controller
 }
 
 func (s *PolicyCategoryServiceTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.tested = New(
@@ -38,7 +33,6 @@ func (s *PolicyCategoryServiceTestSuite) SetupTest() {
 }
 
 func (s *PolicyCategoryServiceTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 	s.mockCtrl.Finish()
 }
 

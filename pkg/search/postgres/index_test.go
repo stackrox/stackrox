@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/multitest/postgres"
 	"github.com/stretchr/testify/suite"
@@ -32,7 +31,6 @@ var (
 
 type IndexSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 
 	pool    *pgxpool.Pool
 	store   postgres.Store
@@ -46,8 +44,7 @@ func TestIndex(t *testing.T) {
 }
 
 func (s *IndexSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres index tests")
@@ -71,7 +68,6 @@ func (s *IndexSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
-	s.envIsolator.RestoreAll()
 }
 
 func (s *IndexSuite) getStruct(i int, f func(s *storage.TestMultiKeyStruct)) *storage.TestMultiKeyStruct {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -15,19 +14,10 @@ func TestTlsConfig(t *testing.T) {
 
 type tlsConfigTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *tlsConfigTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *tlsConfigTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *tlsConfigTestSuite) TestGetAdditionalCAs() {
-	s.envIsolator.Setenv("ROX_MTLS_ADDITIONAL_CA_DIR", "testdata")
+	s.T().Setenv("ROX_MTLS_ADDITIONAL_CA_DIR", "testdata")
 
 	additionalCAs, err := GetAdditionalCAs()
 	s.Require().NoError(err)

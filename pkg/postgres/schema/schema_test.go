@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -31,11 +30,10 @@ var (
 
 type SchemaTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	connConfig  *pgx.ConnConfig
-	pool        *pgxpool.Pool
-	gormDB      *gorm.DB
-	ctx         context.Context
+	connConfig *pgx.ConnConfig
+	pool       *pgxpool.Pool
+	gormDB     *gorm.DB
+	ctx        context.Context
 }
 
 func TestSchema(t *testing.T) {
@@ -43,8 +41,7 @@ func TestSchema(t *testing.T) {
 }
 
 func (s *SchemaTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -75,7 +72,6 @@ func (s *SchemaTestSuite) SetupSuite() {
 }
 
 func (s *SchemaTestSuite) TearDownSuite() {
-	s.envIsolator.RestoreAll()
 	if s.pool == nil {
 		return
 	}

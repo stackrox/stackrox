@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,7 +28,6 @@ func TestClusterService(t *testing.T) {
 type ClusterServiceTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
-	ei       *envisolator.EnvIsolator
 
 	dataStore          *datastoreMocks.MockDataStore
 	sysConfigDatastore *configDatastoreMocks.MockDataStore
@@ -41,15 +39,12 @@ func (suite *ClusterServiceTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.sysConfigDatastore = configDatastoreMocks.NewMockDataStore(suite.mockCtrl)
-	suite.ei = envisolator.NewEnvIsolator(suite.T())
-
-	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+	suite.T().Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }
 
 func (suite *ClusterServiceTestSuite) TearDownTest() {
-	suite.ei.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 
@@ -82,10 +77,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterDefaults() {
 }
 
 func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
-	isolator := envisolator.NewEnvIsolator(suite.T())
-	defer isolator.RestoreAll()
-
-	isolator.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
+	suite.T().Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
 	if !features.DecommissionedClusterRetention.Enabled() {
 		// if it's still not enabled, we're probably in release tests so skip
 		suite.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
@@ -174,10 +166,8 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 }
 
 func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
-	isolator := envisolator.NewEnvIsolator(suite.T())
-	defer isolator.RestoreAll()
+	suite.T().Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
 
-	isolator.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
 	if !features.DecommissionedClusterRetention.Enabled() {
 		// if it's still not enabled, we're probably in release tests so skip
 		suite.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")

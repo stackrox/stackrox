@@ -12,7 +12,6 @@ import (
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -28,15 +27,6 @@ func TestServiceImpl(t *testing.T) {
 
 type serviceImplTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *serviceImplTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *serviceImplTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *serviceImplTestSuite) SetupTest() {
@@ -44,9 +34,9 @@ func (s *serviceImplTestSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	testdata := filepath.Join(wd, "testdata")
-	s.envIsolator.Setenv("ROX_MTLS_ADDITIONAL_CA_DIR", path.Join(testdata, "additional-ca"))
+	s.T().Setenv("ROX_MTLS_ADDITIONAL_CA_DIR", path.Join(testdata, "additional-ca"))
 
-	err = testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
+	err = testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
 }
 

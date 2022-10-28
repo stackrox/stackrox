@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/test/postgres"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,7 +28,6 @@ var (
 
 type SingleIndexSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 
 	pool    *pgxpool.Pool
 	store   postgres.Store
@@ -43,8 +41,7 @@ func TestSingleIndex(t *testing.T) {
 }
 
 func (s *SingleIndexSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres index tests")
@@ -68,7 +65,6 @@ func (s *SingleIndexSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
-	s.envIsolator.RestoreAll()
 }
 
 func getStruct(id int) *storage.TestSingleKeyStruct {

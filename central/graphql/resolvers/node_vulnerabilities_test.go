@@ -39,7 +39,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/scoped"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -63,13 +62,10 @@ type GraphQLNodeVulnerabilityTestSuite struct {
 	db       *pgxpool.Pool
 	gormDB   *gorm.DB
 	resolver *Resolver
-
-	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -166,8 +162,6 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 }
 
 func (s *GraphQLNodeVulnerabilityTestSuite) TearDownSuite() {
-	s.envIsolator.RestoreAll()
-
 	nodePostgres.Destroy(s.ctx, s.db)
 	nodeComponentPostgres.Destroy(s.ctx, s.db)
 	nodeCVEPostgres.Destroy(s.ctx, s.db)
