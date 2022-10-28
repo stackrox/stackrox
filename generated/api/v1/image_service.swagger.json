@@ -426,18 +426,6 @@
       ],
       "default": "UNKNOWN_VULNERABILITY"
     },
-    "ImageSignatureVerificationDataImageReference": {
-      "type": "object",
-      "properties": {
-        "names": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "description": "The full image names that are verified (meaning, having a successful signature verification) keyed by the\nsignature they were verified with."
-    },
     "WatchImageResponseErrorType": {
       "type": "string",
       "enum": [
@@ -1254,12 +1242,6 @@
           "items": {
             "$ref": "#/definitions/storageImageSignatureVerificationResult"
           }
-        },
-        "verifiedImageReferences": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ImageSignatureVerificationDataImageReference"
-          }
         }
       }
     },
@@ -1280,9 +1262,16 @@
         "description": {
           "type": "string",
           "description": "description is set in the case of an error with the specific error's message. Otherwise, this will not be set."
+        },
+        "verifiedImageReferences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The full image names that are verified by this specific signature integration ID."
         }
       },
-      "title": "Next Tag: 5"
+      "title": "Next Tag: 6"
     },
     "storageImageSignatureVerificationResultStatus": {
       "type": "string",

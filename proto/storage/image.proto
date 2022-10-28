@@ -83,15 +83,9 @@ message ImageScan {
 
 message ImageSignatureVerificationData {
     repeated ImageSignatureVerificationResult results = 1;
-    // The full image names that are verified (meaning, having a successful signature verification) keyed by the
-    // signature they were verified with.
-    message ImageReference {
-        repeated string names = 1;
-    }
-    map<string, ImageReference> verified_image_references     = 2;
 }
 
-// Next Tag: 5
+// Next Tag: 6
 message ImageSignatureVerificationResult {
     google.protobuf.Timestamp verification_time = 1;
     // verifier_id correlates to the ID of the signature integration used to verify the signature.
@@ -113,7 +107,9 @@ message ImageSignatureVerificationResult {
     }
     Status status                               = 3;
     // description is set in the case of an error with the specific error's message. Otherwise, this will not be set.
-    string description                          = 4 ;
+    string description                          = 4;
+    // The full image names that are verified by this specific signature integration ID.
+    repeated string verified_image_references   = 5;
 }
 
 // Next Tag: 13
