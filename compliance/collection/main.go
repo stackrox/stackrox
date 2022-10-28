@@ -10,11 +10,13 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
+	"github.com/stackrox/rox/compliance/collection/nodescanv2"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -80,7 +82,7 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 				}
 			}
 		default:
-			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
+			_ = utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}
 	}
 }
@@ -105,7 +107,26 @@ func startAuditLogCollection(ctx context.Context, client sensor.ComplianceServic
 	return auditReader
 }
 
-func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal) {
+// manageSendingToSensor sends everything from sensorC channel to sensor
+func manageSendingToSensor(ctx context.Context, cli sensor.ComplianceServiceClient, sensorC <-chan *sensor.MsgFromCompliance) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case sc := <-sensorC:
+			client, _, err := initializeStream(ctx, cli)
+			if err != nil && ctx.Err() == nil {
+				// error even after retries
+				log.Fatalf("unable to establish send stream to sensor: %v", err)
+			}
+			if err := client.Send(sc); err != nil {
+				log.Errorf("failed sending nodeScanV2 to sensor: %v", err)
+			}
+		}
+	}
+}
+
+func manageReceiveStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -125,6 +146,49 @@ func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *
 			}
 		}
 	}
+}
+
+func manageNodeScanLoop(ctx context.Context, rescanInterval time.Duration, scanner nodescanv2.NodeScanner) <-chan *sensor.MsgFromCompliance {
+	sensorC := make(chan *sensor.MsgFromCompliance)
+	nodeName := getNode()
+	go func() {
+		defer close(sensorC)
+		t := time.NewTicker(rescanInterval)
+
+		// first scan should happen on start
+		msg, err := scanNode(nodeName, scanner)
+		if err != nil {
+			log.Errorf("error running scanNode: %v", err)
+		} else {
+			sensorC <- msg
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				msg, err := scanNode(nodeName, scanner)
+				if err != nil {
+					log.Errorf("error running scanNode: %v", err)
+				} else {
+					sensorC <- msg
+				}
+			}
+		}
+	}()
+	return sensorC
+}
+
+func scanNode(nodeName string, scanner nodescanv2.NodeScanner) (*sensor.MsgFromCompliance, error) {
+	result, err := scanner.Scan(nodeName)
+	if err != nil {
+		return nil, err
+	}
+	return &sensor.MsgFromCompliance{
+		Node: nodeName,
+		Msg:  &sensor.MsgFromCompliance_NodeScanV2{NodeScanV2: result},
+	}, nil
 }
 
 func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
@@ -201,7 +265,29 @@ func main() {
 	ctx = metadata.AppendToOutgoingContext(ctx, "rox-compliance-nodename", getNode())
 
 	stoppedSig := concurrency.NewSignal()
-	go manageStream(ctx, cli, &stoppedSig)
+
+	go manageReceiveStream(ctx, cli, &stoppedSig)
+
+	if features.RHCOSNodeScanning.Enabled() {
+		log.Infof("Node Rescan interval: %v", env.GetNodeRescanInterval())
+		sensorC := make(chan *sensor.MsgFromCompliance)
+		defer close(sensorC)
+		go manageSendingToSensor(ctx, cli, sensorC)
+
+		// TODO(ROX-12971): Replace with real scanner
+		scanner := nodescanv2.FakeNodeScanner{}
+		nodeScansC := manageNodeScanLoop(ctx, env.GetNodeRescanInterval(), &scanner)
+		// multiplex producers (nodeScansC) into the output channel (sensorC)
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case sensorC <- <-nodeScansC:
+				}
+			}
+		}()
+	}
 
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)

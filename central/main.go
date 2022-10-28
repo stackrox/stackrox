@@ -121,7 +121,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/all"
 	sensorUpgradeControlService "github.com/stackrox/rox/central/sensorupgrade/controlservice"
 	sensorUpgradeService "github.com/stackrox/rox/central/sensorupgrade/service"
-	sensorUpgradeConfigStore "github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
@@ -388,7 +387,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
 	}
 
-	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
+	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
 		networkEntityDataStore.Singleton(),
