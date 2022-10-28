@@ -8,7 +8,7 @@ set -eo pipefail
 is_operator_on_openshift() {
   local result=0
   cmd() {
-      kubectl get clusterversions.config.openshift.io version | grep -v "No resources found" > /dev/null
+      kubectl get clusterversions.config.openshift.io version | grep -v "No resources found" > /dev/null && kubectl get centrals.platform.stackrox.io -n stackrox | grep -v "No resources found" > /dev/null
   }
   if ! cmd; then
       result=1
