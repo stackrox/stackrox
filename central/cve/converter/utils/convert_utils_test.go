@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNVDCVEToEmbeddedCVEs(t *testing.T) {
-	data, err := os.ReadFile("testdata/cve-list.json")
+func TestNVDCVEToEmbeddedCVEs_Istio(t *testing.T) {
+	data, err := os.ReadFile("testdata/istio/cve-list.json")
 	require.NoError(t, err)
 	var cveEntries []*schema.NVDCVEFeedJSON10DefCVEItem
 	require.NoError(t, json.Unmarshal(data, &cveEntries))
