@@ -7,10 +7,16 @@ import { STANDARDS_QUERY } from 'queries/standard';
 import ComplianceByStandard from './ComplianceByStandard';
 
 type ComplianceByStandardsProps = {
+    entityId?: string;
+    entityName?: string;
     entityType?: ResourceType;
 };
 
-function ComplianceByStandards({ entityType }: ComplianceByStandardsProps): ReactElement {
+function ComplianceByStandards({
+    entityId,
+    entityName,
+    entityType,
+}: ComplianceByStandardsProps): ReactElement {
     const { loading, data, error } = useQuery(STANDARDS_QUERY);
     if (loading) {
         return <Loader />;
@@ -38,6 +44,9 @@ function ComplianceByStandards({ entityType }: ComplianceByStandardsProps): Reac
                     key={standardId}
                     standardName={standardName}
                     standardId={standardId}
+                    entityId={entityId}
+                    entityName={entityName}
+                    entityType={entityType}
                     className="pdf-page"
                 />
             ))}
