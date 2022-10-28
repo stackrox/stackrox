@@ -15,38 +15,17 @@ import { PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
 
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
-
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import { GenericNotifierIntegration as GenericWebhookIntegration } from 'types/notifier.proto';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
-
-export type GenericWebhookIntegration = {
-    generic: {
-        endpoint: string;
-        skipTLSVerify: boolean;
-        auditLoggingEnabled: boolean;
-        caCert: string;
-        username: string;
-        password: string;
-        headers: {
-            key: string;
-            value: string;
-        }[];
-        extraFields: {
-            key: string;
-            value: string;
-        }[];
-    };
-    type: 'generic';
-} & NotifierIntegrationBase;
 
 export type GenericWebhookIntegrationFormValues = {
     notifier: GenericWebhookIntegration;
