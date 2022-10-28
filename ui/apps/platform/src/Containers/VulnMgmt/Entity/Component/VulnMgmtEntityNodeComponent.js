@@ -55,7 +55,7 @@ const VulnMgmtEntityNodeComponent = ({
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-            query getNodeComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+            query getNodeComponent${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
                 result: nodeComponent(id: $id) {
                     id
                     ${nodeComponentCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
