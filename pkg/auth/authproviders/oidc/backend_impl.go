@@ -658,8 +658,8 @@ func extractCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings m
 	if err := claimExtractor.Claims(&claims); err != nil {
 		return errors.Wrap(err, "failed to extract claims")
 	}
-	for fromClaimName, toClaimName := range mappings {
-		val, err := extractClaimFromPath(fromClaimName, claims)
+	for fromClaimPath, toClaimName := range mappings {
+		val, err := extractClaimFromPath(fromClaimPath, claims)
 		if err != nil {
 			log.Debugf("Failed to extract claim from path: %v", err)
 			continue
@@ -677,12 +677,11 @@ func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attribute
 		for i, arrayVal := range v {
 			_, isArray := arrayVal.([]interface{})
 			_, isNestedStruct := arrayVal.(map[string]interface{})
-			if !isNestedStruct && !isArray {
-				if err := addClaimToUserClaims(externalUserClaim, attributeName, arrayVal); err != nil {
-					return errors.Wrapf(err, "failed to add %d element of %+v", i, v)
-				}
-			} else {
+			if isArray || isNestedStruct {
 				return errors.Errorf("Unsupported claim type %T with value %+v", arrayVal, arrayVal)
+			}
+			if err := addClaimToUserClaims(externalUserClaim, attributeName, arrayVal); err != nil {
+				return errors.Wrapf(err, "failed to add %d element of %+v", i, v)
 			}
 		}
 	case string:
