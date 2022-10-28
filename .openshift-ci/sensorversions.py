@@ -8,9 +8,13 @@ import sys
 import re
 import requests
 import json
+import subprocess
 
-def __isReleaseTagGit(version):
-    return bool(re.search(r"^\D+\d+\.\d+\.\d+$", version))
+def __isReleaseTagGitAPI(version):
+    return bool(re.search(r"^refs/tags/\d+\.\d+\.\d+$", version))
+
+def __isReleaseTagGitCLI(version):
+    return bool(re.search(r"^\d+\.\d+\.\d+$", version))
 
 def __isReleaseTagQuay(version):
     return bool(re.search(r"\d+\.\d+\.\d+$", version))
@@ -47,57 +51,66 @@ def __splitVersion(version):
     digits = re.search(r"(\d+)\.(\d+)\.\D*(\d+)", version)
     return int(digits.group(1)), int(digits.group(2)), int(digits.group(3))
 
-def __filterGitTags():
-    apiresponse = requests.get("https://api.github.com/repos/stackrox/stackrox/git/refs/tags")
-    rawtags = apiresponse.json()
+def __filterGitTags(rawtags):
     filteredtags = []
     for t in rawtags:
         name = t['ref']
-        if __isReleaseTagGit(name):
+        if __isReleaseTagGitAPI(name):
             filteredtags.append(name)
     return set(filteredtags)
+
+def __cliOutputToTags(stdoutput):
+    separated = stdoutput.decode(encoding="utf-8").splitlines()
+    return separated
+
+def __filterGitCLITags(rawtags):
+    filteredtags = []
+    for t in rawtags:
+        if __isReleaseTagGitCLI(t):
+            filteredtags.append(t)
+    return set(filteredtags)
+
+def __getLatestTags(current_version, tags, num_versions):
+    numericaltags = __transformTagsToNumbers(tags)
+    _,y,_ = __splitVersion(current_version)
+    latestversions = []
+    ycurr = y
+    for tags in numericaltags[::-1]:
+        if tags[1] < y-num_versions+1:
+            break
+        if tags[1] < ycurr:
+            ycurr = tags[1]
+        if tags[1] == ycurr:
+            latestversions.append(str(tags[0]) + "." + str(tags[1]) + "." + str(tags[2]))
+            ycurr-=1
+    return latestversions
 
 # TODO: grab current_image from os.environ["MAIN_IMAGE_TAG"] after manual testing is done
 # getLastSensorVersionsFromQuay gets the latest patches of the last num_versions major versions
 # querying quay API is slow, prefer using git tag API
-def getLastSensorVersionsFromQuay(current_version, num_versions):
+def getLastSensorVersionsFromQuayAPI(current_version, num_versions):
     tags = __queryQuayForTags()
-    numericaltags = __transformTagsToNumbers(tags)
-    x,y,z = __splitVersion(current_version)
-    latestversions = []
-    ycurr = y
-    for tags in numericaltags[::-1]:
-        if tags[1] < y-num_versions+1:
-            break
-        if tags[1] < ycurr:
-            ycurr = tags[1]
-        if tags[1] == ycurr:
-            latestversions.append(str(tags[0]) + "." + str(tags[1]) + "." + str(tags[2]))
-            ycurr-=1
-    return latestversions
+    return __getLatestTags(current_version, tags, num_versions)
 
 # TODO: grab current_image from os.environ["MAIN_IMAGE_TAG"] after manual testing is done
-# getLastSensorVersionsFromGitTags gets the latest patches of the last num_versions major versions
+# getLastSensorVersionsFromGitTagsAPI gets the latest patches of the last num_versions major versions via Git API
 # much faster than querying quay
-def getLastSensorVersionsFromGitTags(current_version, num_versions):
-    tags = __filterGitTags()
-    numericaltags = __transformTagsToNumbers(tags)
-    x,y,z = __splitVersion(current_version)
-    latestversions = []
-    ycurr = y
-    for tags in numericaltags[::-1]:
-        if tags[1] < y-num_versions+1:
-            break
-        if tags[1] < ycurr:
-            ycurr = tags[1]
-        if tags[1] == ycurr:
-            latestversions.append(str(tags[0]) + "." + str(tags[1]) + "." + str(tags[2]))
-            ycurr-=1
-    return latestversions
+def getLastSensorVersionsFromGitTagsAPI(current_version, num_versions):
+    apiresponse = requests.get("https://api.github.com/repos/stackrox/stackrox/git/refs/tags")
+    tags = __filterGitTags(apiresponse.json())
+    return __getLatestTags(current_version, tags, num_versions)
+
+# getLastSensorVersionsFromGitTagsCLI gets the latest patches of the last num_versions major versions via Git CLI
+# preferably use this to avoid API calls if possible
+def getLastSensorVersionsFromGitTagsCLI(current_version, num_versions):
+    rawtags = __cliOutputToTags(subprocess.check_output(["git", "tag", "--list"]))
+    tags = __filterGitCLITags(rawtags)
+    return __getLatestTags(current_version, tags, num_versions)
 
 def main(argv):
-    latestversions = getLastSensorVersionsFromGitTags(argv[1], 4)
-    #latestversions = getLastSensorVersionsFromQuay(argv[1], 4)
+    latestversions = getLastSensorVersionsFromGitTagsCLI(argv[1], 4)
+    #latestversions = getLastSensorVersionsFromGitTagsAPI(argv[1], 4)
+    #latestversions = getLastSensorVersionsFromQuayAPI(argv[1], 4)
     printversions = ""
     for version in latestversions:
         printversions += str(version) + " "
