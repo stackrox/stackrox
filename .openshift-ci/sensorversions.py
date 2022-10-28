@@ -10,9 +10,9 @@ import requests
 import json
 
 def isReleaseVersion(version):
-    return bool(re.search(r"\d+\.\d+\.\d+$", version))
+    return bool(re.search(r"^\D+\d+\.\d+\.\d+$", version))
 
-def filterTags(tags):
+def filterQuayTags(tags):
     filteredtags = []
     for t in tags:
         name = t['name']
@@ -28,17 +28,17 @@ def queryQuayForTags():
         print("Going through page " + str(page))
         apiresponse = requests.get("https://quay.io/api/v1/repository/stackrox-io/main/tag/?page=" + str(page) + "&limit=100")
         rawtags = apiresponse.json()['tags']
-        tags.extend(filterTags(rawtags))
+        tags.extend(filterQuayTags(rawtags))
         if not bool(rawtags):
             pageNotEmpty = False
         page+=1
-    return sorted(set(tags))
+    return set(tags)
 
 def transformTagsToNumbers(tags):
     numTags = []
     for t in tags:
         numTags.append(splitVersion(t))
-    return numTags
+    return sorted(numTags)
 
 def splitVersion(version):
     digits = re.search(r"(\d+)\.(\d+)\.\D*(\d+)", version)
@@ -48,13 +48,8 @@ def splitVersion(version):
 def getLastSensorVersionsFromQuay(current_version, num_versions):
     tags = queryQuayForTags()
     numericaltags = transformTagsToNumbers(tags)
-    print(numericaltags)
-    print(numericaltags[::-1])
-
     x,y,z = splitVersion(current_version)
-
     latestversions = []
-
     ycurr = y
     for tags in numericaltags[::-1]:
         if tags[1] < y-num_versions+1:
@@ -64,16 +59,50 @@ def getLastSensorVersionsFromQuay(current_version, num_versions):
         if tags[1] == ycurr:
             latestversions.append(str(tags[0]) + "." + str(tags[1]) + "." + str(tags[2]))
             ycurr-=1
-
     return latestversions
 
+
+def filterGitTags():
+    apiresponse = requests.get("https://api.github.com/repos/stackrox/stackrox/git/refs/tags")
+    rawtags = apiresponse.json()
+    filteredtags = []
+    for t in rawtags:
+        name = t['ref']
+        if isReleaseVersion(name):
+            filteredtags.append(name)
+    return set(filteredtags)
+
+def jprint(obj):
+    # create a formatted string of the Python JSON object
+    text = json.dumps(obj, sort_keys=True, indent=4)
+    print(text)
+
+
+# TODO: grab current_image from os.environ["MAIN_IMAGE_TAG"] after manual testing is done
+def getLastSensorVersionsFromGitTags(current_version, num_versions):
+    tags = filterGitTags()
+    numericaltags = transformTagsToNumbers(tags)
+    x,y,z = splitVersion(current_version)
+    latestversions = []
+    ycurr = y
+    for tags in numericaltags[::-1]:
+        if tags[1] < y-num_versions+1:
+            break
+        if tags[1] < ycurr:
+            ycurr = tags[1]
+        if tags[1] == ycurr:
+            latestversions.append(str(tags[0]) + "." + str(tags[1]) + "." + str(tags[2]))
+            ycurr-=1
+    return latestversions
+
+
 def main(argv):
-    latestversions = getLastSensorVersionsFromQuay(argv[1], 4)
+    latestversions = getLastSensorVersionsFromGitTags(argv[1], 4)
+    #latestversions = getLastSensorVersionsFromQuay(argv[1], 4)
     printversions = ""
     for version in latestversions:
         printversions += str(version) + " "
     print(printversions)
-
 
 if (__name__ == "__main__"):
     main(sys.argv)
