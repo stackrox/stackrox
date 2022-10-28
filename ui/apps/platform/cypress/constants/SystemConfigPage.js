@@ -1,7 +1,5 @@
 import navigationSelectors from '../selectors/navigation';
 
-export const systemConfigUrl = '/main/systemconfig';
-
 const selectors = {
     navLinks: {
         configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
@@ -13,7 +11,6 @@ const selectors = {
     pageHeader: {
         editButton: 'button:contains("Edit")',
         cancelButton: 'button:contains("Cancel")',
-        saveButton: 'button:contains("Save")',
     },
     header: {
         widget: '[data-testid="header-config"]',
