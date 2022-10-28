@@ -59,7 +59,7 @@ message MsgToCompliance {
     }
 }
 
-// A Sensor service that allows Compliance to report node scrapes results and audit events.
+// A Sensor service that allows Compliance to report node scrapes results, audit events, and node scans v2.
 service ComplianceService {
     rpc Communicate (stream MsgFromCompliance) returns (stream MsgToCompliance);
 }
