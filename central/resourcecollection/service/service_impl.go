@@ -8,19 +8,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/vulnerabilityrequest/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 )
 
@@ -41,6 +39,13 @@ var (
 		},
 	}))
 )
+
+type collectionRequest interface {
+	GetName() string
+	GetDescription() string
+	GetResourceSelectors() []*storage.ResourceSelector
+	GetEmbeddedCollectionIds() []string
+}
 
 // serviceImpl is the struct that manages the collection API
 type serviceImpl struct {
@@ -99,36 +104,10 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 	if request.GetName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
 	}
-	// check if collection with same name doesn't already exist
-	nameQuery := search.NewQueryBuilder().AddExactMatches(search.CollectionName, request.GetName()).ProtoQuery()
-	c, err := s.datastore.Count(ctx, nameQuery)
+
+	collection, err := collectionRequestToCollection(ctx, request, true)
 	if err != nil {
 		return nil, err
-	}
-	if c != 0 {
-		return nil, errors.Wrap(errox.AlreadyExists, "A collection with that name already exists")
-	}
-
-	creator := extractUserIdentity(ctx)
-	if creator == nil {
-		return nil, errors.New("User identity not provided")
-	}
-
-	collection := &storage.ResourceCollection{
-		Id:                uuid.NewV4().String(),
-		Name:              request.GetName(),
-		Description:       request.GetDescription(),
-		CreatedAt:         protoconv.ConvertTimeToTimestamp(time.Now()),
-		CreatedBy:         creator,
-		ResourceSelectors: request.GetResourceSelectors(),
-	}
-
-	if len(request.GetEmbeddedCollectionIds()) > 0 {
-		embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(request.GetEmbeddedCollectionIds()))
-		for _, id := range request.GetEmbeddedCollectionIds() {
-			embeddedCollections = append(embeddedCollections, &storage.ResourceCollection_EmbeddedResourceCollection{Id: id})
-		}
-		collection.EmbeddedCollections = embeddedCollections
 	}
 
 	err = s.datastore.AddCollection(ctx, collection)
@@ -139,14 +118,34 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 	return &v1.CreateCollectionResponse{Collection: collection}, nil
 }
 
-func extractUserIdentity(ctx context.Context) *storage.SlimUser {
-	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
-	if ctxIdentity == nil {
-		return nil
+func collectionRequestToCollection(ctx context.Context, request collectionRequest, isCreate bool) (*storage.ResourceCollection, error) {
+	user := utils.UserFromContext(ctx)
+	if user == nil {
+		return nil, errors.New("User identity not provided")
 	}
 
-	return &storage.SlimUser{
-		Id:   ctxIdentity.UID(),
-		Name: ctxIdentity.FullName(),
+	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
+
+	collection := &storage.ResourceCollection{
+		Name:              request.GetName(),
+		Description:       request.GetDescription(),
+		LastUpdated:       timeNow,
+		UpdatedBy:         user,
+		ResourceSelectors: request.GetResourceSelectors(),
 	}
+
+	if isCreate {
+		collection.CreatedBy = user
+		collection.CreatedAt = timeNow
+	}
+
+	if len(request.GetEmbeddedCollectionIds()) > 0 {
+		embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(request.GetEmbeddedCollectionIds()))
+		for _, id := range request.GetEmbeddedCollectionIds() {
+			embeddedCollections = append(embeddedCollections, &storage.ResourceCollection_EmbeddedResourceCollection{Id: id})
+		}
+		collection.EmbeddedCollections = embeddedCollections
+	}
+
+	return collection, nil
 }

@@ -101,21 +101,10 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	suite.NotNil(err)
 	suite.Nil(resp)
 
-	// test error when collection name exists
-	request = &v1.CreateCollectionRequest{
-		Name: "a",
-	}
-	expectedQuery := search.NewQueryBuilder().AddExactMatches(search.CollectionName, request.GetName()).ProtoQuery()
-	suite.dataStore.EXPECT().Count(gomock.Any(), expectedQuery).Times(1).Return(1, nil)
-	resp, err = suite.collectionService.CreateCollection(ctx, request)
-	suite.NotNil(err)
-	suite.Nil(resp)
-
 	// test error on context without identity
 	request = &v1.CreateCollectionRequest{
 		Name: "b",
 	}
-	suite.dataStore.EXPECT().Count(gomock.Any(), gomock.Any()).Times(1).Return(0, nil)
 	resp, err = suite.collectionService.CreateCollection(ctx, request)
 	suite.NotNil(err)
 	suite.Nil(resp)
@@ -142,17 +131,16 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 		EmbeddedCollectionIds: []string{"id1", "id2"},
 	}
 
-	id := mockIdentity.NewMockIdentity(suite.mockCtrl)
-	id.EXPECT().UID().Return("uid").Times(1)
-	id.EXPECT().FullName().Return("name").Times(1)
-	ctx = authn.ContextWithIdentity(ctx, id, suite.T())
+	mockIdentity := mockIdentity.NewMockIdentity(suite.mockCtrl)
+	mockIdentity.EXPECT().UID().Return("uid").Times(1)
+	mockIdentity.EXPECT().FullName().Return("name").Times(1)
+	mockIdentity.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx = authn.ContextWithIdentity(ctx, mockIdentity, suite.T())
 
-	suite.dataStore.EXPECT().Count(gomock.Any(), gomock.Any()).Times(1).Return(0, nil)
 	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	resp, err = suite.collectionService.CreateCollection(ctx, request)
 	suite.NoError(err)
 	suite.NotNil(resp.GetCollection())
-	suite.NotNil(resp.GetCollection().GetId())
 	suite.Equal(request.Name, resp.GetCollection().GetName())
 	suite.Equal(request.GetDescription(), resp.GetCollection().GetDescription())
 	suite.Equal(request.GetResourceSelectors(), resp.GetCollection().GetResourceSelectors())
