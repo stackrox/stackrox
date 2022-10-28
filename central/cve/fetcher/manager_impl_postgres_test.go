@@ -40,7 +40,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -48,9 +47,7 @@ import (
 )
 
 func TestReconcileCVEsInPostgres(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
+	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		t.Skip("Skip postgres store tests")
@@ -261,13 +258,10 @@ type TestClusterCVEOpsInPostgresTestSuite struct {
 	netFlows            *netFlowsMocks.MockClusterDataStore
 	mockImages          *mockImageDataStore.MockDataStore
 	cveManager          *orchestratorCVEManager
-	envIsolator         *envisolator.EnvIsolator
 }
 
 func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
@@ -339,7 +333,6 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TearDownSuite() {
 	s.db.Close()
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.mockCtrl.Finish()
-	s.envIsolator.RestoreAll()
 }
 
 func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {

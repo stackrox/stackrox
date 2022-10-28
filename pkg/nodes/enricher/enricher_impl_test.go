@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/scanners/types"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
@@ -147,9 +146,7 @@ func TestEnricherFlow(t *testing.T) {
 }
 
 func TestEnricherFlowWithPostgres(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
+	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		t.Skip("Skip postgres store tests")
@@ -346,9 +343,7 @@ func TestFillScanStats(t *testing.T) {
 }
 
 func TestFillScanStatsWithPostgres(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
+	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		t.Skip("Skip postgres store tests")

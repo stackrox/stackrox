@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/image"
 	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -101,19 +100,10 @@ system:
 
 type baseSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 }
 
 func TestBase(t *testing.T) {
 	suite.Run(t, new(baseSuite))
-}
-
-func (s *baseSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *baseSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...string) (*chart.Chart, map[string]string) {

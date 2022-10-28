@@ -11,13 +11,11 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ImagesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 }
 
 func TestImagesStore(t *testing.T) {
@@ -25,17 +23,12 @@ func TestImagesStore(t *testing.T) {
 }
 
 func (s *ImagesStoreSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
-
-func (s *ImagesStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ImagesStoreSuite) TestStore() {

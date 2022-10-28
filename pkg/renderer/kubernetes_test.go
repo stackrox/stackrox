@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,20 +31,17 @@ func TestRender(t *testing.T) {
 
 type renderSuite struct {
 	suite.Suite
-	restorer    *testbuildinfo.TestBuildTimestampRestorer
-	envIsolator *envisolator.EnvIsolator
-	testFlavor  defaults.ImageFlavor
+	restorer   *testbuildinfo.TestBuildTimestampRestorer
+	testFlavor defaults.ImageFlavor
 }
 
 func (suite *renderSuite) SetupSuite() {
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv("TEST_VERSIONS", "true")
+	suite.T().Setenv("TEST_VERSIONS", "true")
 	suite.testFlavor = flavorUtils.MakeImageFlavorForTest(suite.T())
 }
 
 func (suite *renderSuite) TearDownSuite() {
 	suite.restorer.Restore()
-	suite.envIsolator.RestoreAll()
 }
 
 func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {

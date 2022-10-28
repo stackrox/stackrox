@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/roxctl/help"
 	"github.com/stackrox/rox/roxctl/maincommand"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,6 @@ import (
 
 type helpKeysTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 }
 
 func TestHelpKeys(t *testing.T) {
@@ -26,13 +24,8 @@ func TestHelpKeys(t *testing.T) {
 }
 
 func (s *helpKeysTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.RoxctlNetpolGenerate.EnvVar(), "true")
+	s.T().Setenv(features.RoxctlNetpolGenerate.EnvVar(), "true")
 	testbuildinfo.SetForTest(s.T())
-}
-
-func (s *helpKeysTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 // TestHelpKeysExist tests that the short and long help key values exist for each command in the properties file

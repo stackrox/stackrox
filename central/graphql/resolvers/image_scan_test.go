@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -52,9 +51,8 @@ func TestImageScanResolver(t *testing.T) {
 type ImageScanResolverTestSuite struct {
 	suite.Suite
 
-	ctx         context.Context
-	envIsolator *envisolator.EnvIsolator
-	mockCtrl    *gomock.Controller
+	ctx      context.Context
+	mockCtrl *gomock.Controller
 
 	imageDataStore          *imageDSMocks.MockDataStore
 	imageComponentDataStore *imageComponentsDSMocks.MockDataStore
@@ -65,8 +63,7 @@ type ImageScanResolverTestSuite struct {
 }
 
 func (s *ImageScanResolverTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -90,7 +87,6 @@ func (s *ImageScanResolverTestSuite) TearDownTest() {
 }
 
 func (s *ImageScanResolverTestSuite) TearDownSuite() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ImageScanResolverTestSuite) TestGetImagesWithScan() {

@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/serviceidentities/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,19 +18,10 @@ func TestGenerateCerts(t *testing.T) {
 
 type generateCertsTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *generateCertsTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *generateCertsTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *generateCertsTestSuite) SetupTest() {
-	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
+	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
 }
 
