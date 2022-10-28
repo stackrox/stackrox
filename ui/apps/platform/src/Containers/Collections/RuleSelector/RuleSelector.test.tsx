@@ -6,8 +6,6 @@ import '@testing-library/jest-dom/extend-expect';
 import RuleSelector from './RuleSelector';
 import { ByLabelResourceSelector, ByNameResourceSelector, ScopedResourceSelector } from '../types';
 
-jest.setTimeout(10000);
-
 // Component wrapper to allow a higher level component to feed updated state back to the RuleSelector.
 function DeploymentRuleSelector({ defaultSelector, onChange }) {
     const [resourceSelector, setResourceSelector] =
