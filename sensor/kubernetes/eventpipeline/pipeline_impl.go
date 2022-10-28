@@ -51,7 +51,6 @@ func (p *eventPipeline) Stop(err error) {
 }
 
 // forwardMessages from listener component to responses channel
-// TODO: Remove this and refactor listeners so they send message to the pipeline queue instead.
 func (p *eventPipeline) forwardMessages() {
 	for {
 		select {
@@ -59,13 +58,7 @@ func (p *eventPipeline) forwardMessages() {
 			return
 		case msg, more := <-p.output.ResponseC():
 			if !more {
-				// TODO: Add warning / error / log
-				return
-			}
-			p.eventsC <- msg
-		case msg, more := <-p.listener.ResponsesC():
-			if !more {
-				// TODO: Add warning / error / log
+				log.Error("Output component channel closed")
 				return
 			}
 			p.eventsC <- msg

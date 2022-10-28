@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/registry"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -226,7 +226,7 @@ func imageIntegationIDSetFromSecret(secret *v1.Secret) (set.StringSet, error) {
 	return imageIntegrationIDSet, nil
 }
 
-func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret, action central.ResourceAction) *output.Message {
+func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret, action central.ResourceAction) *message.ResourceEvent {
 	dockerConfig := getDockerConfigFromSecret(secret)
 	if len(dockerConfig) == 0 {
 		return nil
@@ -298,8 +298,8 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 		},
 	}}
 	// return append(sensorEvents, secretToSensorEvent(action, protoSecret))
-	events := wrapOutputMessage(sensorEvents, nil, nil)
-	events = mergeOutputMessages(events, secretToSensorEvent(action, protoSecret))
+	events := message.WrapOutputMessage(sensorEvents, nil, nil)
+	events = message.MergeOutputMessages(events, secretToSensorEvent(action, protoSecret))
 	return events
 }
 
@@ -314,7 +314,7 @@ func getProtoSecret(secret *v1.Secret) *storage.Secret {
 	}
 }
 
-func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) *output.Message {
+func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) *message.ResourceEvent {
 	event := &central.SensorEvent{
 		Id:     secret.GetId(),
 		Action: action,
@@ -322,11 +322,11 @@ func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) 
 			Secret: secret,
 		},
 	}
-	return wrapOutputMessage([]*central.SensorEvent{event}, nil, nil)
+	return message.WrapOutputMessage([]*central.SensorEvent{event}, nil, nil)
 }
 
 // ProcessEvent processes a secret resource event, and returns the sensor events to emit in response.
-func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *output.Message {
+func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *message.ResourceEvent {
 	secret := obj.(*v1.Secret)
 
 	oldSecret, ok := oldObj.(*v1.Secret)

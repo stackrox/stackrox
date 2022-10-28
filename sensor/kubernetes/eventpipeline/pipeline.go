@@ -14,14 +14,15 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 )
 
+// New Creates a new eventPipeline component
 func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer) common.SensorComponent {
 	stopSig := concurrency.NewSignal()
 	outputQueue := output.New(&stopSig, detector)
 	resourceListener := listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue)
 
-	pipelineResposnes := make(chan *central.MsgFromSensor)
+	pipelineResponses := make(chan *central.MsgFromSensor)
 	return &eventPipeline{
-		eventsC:  pipelineResposnes,
+		eventsC:  pipelineResponses,
 		listener: resourceListener,
 		stopSig:  &stopSig,
 		output:   outputQueue,

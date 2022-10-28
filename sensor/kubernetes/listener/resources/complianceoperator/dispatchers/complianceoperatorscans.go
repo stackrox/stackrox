@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -18,7 +18,7 @@ func NewScanDispatcher() *ScanDispatcher {
 }
 
 // ProcessEvent processes a compliance operator scan
-func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *output.Message {
+func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *message.ResourceEvent {
 	var complianceScan v1alpha1.ComplianceScan
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
@@ -48,5 +48,5 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			},
 		},
 	}
-	return wrapOutputMessage(events, nil, nil)
+	return message.WrapOutputMessage(events, nil, nil)
 }

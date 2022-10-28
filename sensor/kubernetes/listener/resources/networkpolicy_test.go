@@ -43,7 +43,7 @@ func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 	suite.deploymentStore = newDeploymentStore()
 	suite.detector = mocks.NewMockDetector(suite.mockCtrl)
 
-	suite.dispatcher = newNetworkPolicyDispatcher(suite.netpolStore, suite.deploymentStore, suite.detector)
+	suite.dispatcher = newNetworkPolicyDispatcher(suite.netpolStore, suite.deploymentStore)
 
 	// TODO(ROX-9990): Use the DeploymentStore mock
 	deployments := []*deploymentWrap{
@@ -386,10 +386,6 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 	for name, c := range cases {
 		suite.T().Run(name, func(t *testing.T) {
 			c.expectedEvents = createSensorEvent(c.netpol.(*networkingV1.NetworkPolicy), c.action)
-			deps := set.NewStringSet()
-			reprocessDeploymentMock := suite.detector.EXPECT().ReprocessDeployments(gomock.Any()).DoAndReturn(func(ids ...string) {
-				deps.AddAll(ids...)
-			})
 			upsertMock := suite.netpolStore.EXPECT().Upsert(gomock.Any()).Return()
 			deleteMock := suite.netpolStore.EXPECT().Delete(gomock.Any(), gomock.Any()).Return()
 			if c.action == central.ResourceAction_REMOVE_RESOURCE {
@@ -400,12 +396,13 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 				deleteMock.Times(0)
 			}
 			events := suite.dispatcher.ProcessEvent(c.netpol, c.oldNetpol, c.action)
-			reprocessDeploymentMock.Times(1)
+			deps := set.NewStringSet()
+			deps.AddAll(events.ReprocessDeployments...)
 			for _, d := range c.expectedDeployments {
 				_, ok := deps[d.GetId()]
-				assert.Truef(t, ok, "Expected call to ProcessDeployment with Deployment Id %s not found", d.GetId())
+				assert.Truef(t, ok, "Expected Id %s not found in the ReprocessDeployments slice", d.GetId())
 			}
-			for _, e := range events {
+			for _, e := range events.ForwardMessages {
 				_, ok := c.expectedEvents[e.Id]
 				assert.Truef(t, ok, "Expected SensorEvent with NetworkPolicy Id %s not found", e.Id)
 			}

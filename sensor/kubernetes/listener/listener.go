@@ -5,7 +5,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
@@ -24,7 +23,6 @@ var (
 func New(client client.Interface, configHandler config.Handler, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, queue output.Queue) common.SensorComponent {
 	k := &listenerImpl{
 		client:             client,
-		eventsC:            make(chan *central.MsgFromSensor, 10),
 		stopSig:            concurrency.NewSignal(),
 		configHandler:      configHandler,
 		credentialsManager: createCredentialsManager(client, nodeName),

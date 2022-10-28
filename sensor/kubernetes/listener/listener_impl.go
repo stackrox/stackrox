@@ -23,7 +23,6 @@ const (
 
 type listenerImpl struct {
 	client             client.Interface
-	eventsC            chan *central.MsgFromSensor
 	stopSig            concurrency.Signal
 	credentialsManager awscredentials.RegistryCredentialsManager
 	configHandler      config.Handler
@@ -60,7 +59,7 @@ func (k *listenerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 func (k *listenerImpl) ResponsesC() <-chan *central.MsgFromSensor {
-	return k.eventsC
+	return nil
 }
 
 func clusterOperatorCRDExists(client client.Interface) (bool, error) {
