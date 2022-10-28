@@ -88,16 +88,6 @@ export const auth = {
     tokenRefresh: '/sso/session/tokenrefresh',
 };
 
-export const certExpiry = {
-    central: 'v1/credentialexpiry?component=CENTRAL',
-    scanner: 'v1/credentialexpiry?component=SCANNER',
-};
-
-export const certGen = {
-    central: 'api/extensions/certgen/central',
-    scanner: 'api/extensions/certgen/scanner',
-};
-
 export const dashboard = {
     summaryCounts: graphql('summary_counts'),
 };
@@ -200,11 +190,6 @@ export const riskAcceptance = {
     getImageVulnerabilities: graphql('getImageVulnerabilities'),
     deferVulnerability: graphql('deferVulnerability'),
     markVulnerabilityFalsePositive: graphql('markVulnerabilityFalsePositive'),
-};
-
-export const system = {
-    config: '/v1/config',
-    configPublic: '/v1/config/public',
 };
 
 export const extensions = {

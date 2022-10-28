@@ -31,7 +31,7 @@ const requestConfigGeneric = {
         }, // hooks/usePermissions and reducers/roles and sagas/authSagas
         [configPublicAlias]: {
             method: 'GET',
-            url: api.system.configPublic,
+            url: '/v1/config/public',
         }, // reducers/systemConfig and sagas/systemConfig
         [authStatusAlias]: {
             method: 'GET',
