@@ -10,14 +10,14 @@ import requests
 import json
 import subprocess
 
+def __isReleaseTagQuay(version):
+    return bool(re.search(r"\d+\.\d+\.\d+$", version))
+
 def __isReleaseTagGitAPI(version):
     return bool(re.search(r"^refs/tags/\d+\.\d+\.\d+$", version))
 
 def __isReleaseTagGitCLI(version):
     return bool(re.search(r"^\d+\.\d+\.\d+$", version))
-
-def __isReleaseTagQuay(version):
-    return bool(re.search(r"\d+\.\d+\.\d+$", version))
 
 def __filterQuayTags(tags):
     filteredtags = []
@@ -26,6 +26,21 @@ def __filterQuayTags(tags):
         if __isReleaseTagQuay(name):
             filteredtags.append(name)
     return filteredtags
+
+def __filterGitTags(rawtags):
+    filteredtags = []
+    for t in rawtags:
+        name = t['ref']
+        if __isReleaseTagGitAPI(name):
+            filteredtags.append(name)
+    return set(filteredtags)
+
+def __filterGitCLITags(rawtags):
+    filteredtags = []
+    for t in rawtags:
+        if __isReleaseTagGitCLI(t):
+            filteredtags.append(t)
+    return set(filteredtags)
 
 def __queryQuayForTags():
     tags = []
@@ -41,6 +56,10 @@ def __queryQuayForTags():
         page+=1
     return set(tags)
 
+def __cliOutputToTags(stdoutput):
+    separated = stdoutput.decode(encoding="utf-8").splitlines()
+    return separated
+
 def __transformTagsToNumbers(tags):
     numTags = []
     for t in tags:
@@ -50,25 +69,6 @@ def __transformTagsToNumbers(tags):
 def __splitVersion(version):
     digits = re.search(r"(\d+)\.(\d+)\.\D*(\d+)", version)
     return int(digits.group(1)), int(digits.group(2)), int(digits.group(3))
-
-def __filterGitTags(rawtags):
-    filteredtags = []
-    for t in rawtags:
-        name = t['ref']
-        if __isReleaseTagGitAPI(name):
-            filteredtags.append(name)
-    return set(filteredtags)
-
-def __cliOutputToTags(stdoutput):
-    separated = stdoutput.decode(encoding="utf-8").splitlines()
-    return separated
-
-def __filterGitCLITags(rawtags):
-    filteredtags = []
-    for t in rawtags:
-        if __isReleaseTagGitCLI(t):
-            filteredtags.append(t)
-    return set(filteredtags)
 
 def __getLatestTags(current_version, tags, num_versions):
     numericaltags = __transformTagsToNumbers(tags)
