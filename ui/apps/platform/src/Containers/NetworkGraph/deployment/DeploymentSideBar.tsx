@@ -14,6 +14,7 @@ import {
 
 import useTabs from 'hooks/patternfly/useTabs';
 import DeploymentDetails from './DeploymentDetails';
+import DeploymentNetworkPolicies from './DeploymentNetworkPolicies';
 
 function DeploymentSideBar() {
     const { activeKeyTab, onSelectTab } = useTabs({
@@ -50,32 +51,40 @@ function DeploymentSideBar() {
                         title={<TabTitleText>Details</TabTitleText>}
                     />
                     <Tab
-                        eventKey="Flows"
-                        tabContentId="Flows"
-                        title={<TabTitleText>Flows</TabTitleText>}
+                        eventKey="Traffic"
+                        tabContentId="Traffic"
+                        title={<TabTitleText>Traffic</TabTitleText>}
                     />
                     <Tab
-                        eventKey="Baseline"
-                        tabContentId="Baseline"
-                        title={<TabTitleText>Baseline</TabTitleText>}
+                        eventKey="Baselines"
+                        tabContentId="Baselines"
+                        title={<TabTitleText>Baselines</TabTitleText>}
                     />
                     <Tab
-                        eventKey="Policies"
-                        tabContentId="Policies"
-                        title={<TabTitleText>Policies</TabTitleText>}
+                        eventKey="Network policies"
+                        tabContentId="Network policies"
+                        title={<TabTitleText>Network policies</TabTitleText>}
                     />
                 </Tabs>
                 <TabContent eventKey="Details" id="Details" hidden={activeKeyTab !== 'Details'}>
                     <DeploymentDetails />
                 </TabContent>
-                <TabContent eventKey="Flows" id="Flows" hidden={activeKeyTab !== 'Flows'}>
-                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Flows</div>
+                <TabContent eventKey="Traffic" id="Traffic" hidden={activeKeyTab !== 'Traffic'}>
+                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Traffic</div>
                 </TabContent>
-                <TabContent eventKey="Baseline" id="Baseline" hidden={activeKeyTab !== 'Baseline'}>
-                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Baseline</div>
+                <TabContent
+                    eventKey="Baselines"
+                    id="Baselines"
+                    hidden={activeKeyTab !== 'Baselines'}
+                >
+                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Baselines</div>
                 </TabContent>
-                <TabContent eventKey="Policies" id="Policies" hidden={activeKeyTab !== 'Policies'}>
-                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Policies</div>
+                <TabContent
+                    eventKey="Network policies"
+                    id="Network policies"
+                    hidden={activeKeyTab !== 'Network policies'}
+                >
+                    <DeploymentNetworkPolicies />
                 </TabContent>
             </FlexItem>
         </Flex>

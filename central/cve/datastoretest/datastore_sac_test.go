@@ -964,7 +964,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchCVEs() {
 		s.Run(c.contextKey, func() {
 
 			testCtx := s.nodeTestContexts[c.contextKey]
-			results, err := s.nodeCVEStore.SearchCVEs(testCtx, nil)
+			results, err := s.nodeCVEStore.SearchNodeCVEs(testCtx, nil)
 			s.NoError(err)
 			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
 			for name, visible := range c.expectedCVEFound {
