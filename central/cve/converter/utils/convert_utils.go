@@ -55,7 +55,7 @@ func (c CVEType) ToStorageCVEType() storage.CVE_CVEType {
 	return storage.CVE_UNKNOWN_CVE
 }
 
-// NVDCVEToEmbeddedCVE converts a nvd.CVEEntry object to *storage.EmbeddedVulnerability object
+// NVDCVEToEmbeddedCVE converts a *schema.NVDCVEFeedJSON10DefCVEItem to *storage.EmbeddedVulnerability.
 func NVDCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) (*storage.EmbeddedVulnerability, error) {
 	if nvdCVE.CVE == nil || nvdCVE.CVE.CVEDataMeta == nil || nvdCVE.CVE.CVEDataMeta.ID == "" {
 		return nil, errors.New("CVE cannot be identified")
@@ -177,7 +177,7 @@ func nvdCvssv3ToProtoCvssv3(baseMetricV3 *schema.NVDCVEFeedJSON10DefImpactBaseMe
 	return cvssV3, nil
 }
 
-// NVDCVEsToEmbeddedCVEs converts  NVD CVEs to *storage.CVE objects
+// NVDCVEsToEmbeddedCVEs converts *schema.NVDCVEFeedJSON10DefCVEItem CVEs to *storage.EmbeddedVulnerability objects.
 func NVDCVEsToEmbeddedCVEs(cves []*schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) ([]*storage.EmbeddedVulnerability, error) {
 	ret := make([]*storage.EmbeddedVulnerability, 0, len(cves))
 	for _, cve := range cves {
