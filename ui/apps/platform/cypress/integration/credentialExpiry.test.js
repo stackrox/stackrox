@@ -81,7 +81,7 @@ describe('Credential expiry', () => {
                 fixture: 'auth/mypermissionsMinimalAccess.json',
             };
 
-            renderCentralCredentialExpiryBanner(expiry, staticResponseForPermissions);
+            renderScannerCredentialExpiryBanner(expiry, staticResponseForPermissions);
 
             cy.get(selectors.scannerCertExpiryBanner)
                 .invoke('text')
