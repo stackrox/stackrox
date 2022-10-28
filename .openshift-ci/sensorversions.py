@@ -9,14 +9,17 @@ import re
 import requests
 import json
 
-def __isReleaseVersion(version):
+def __isReleaseTagGit(version):
     return bool(re.search(r"^\D+\d+\.\d+\.\d+$", version))
+
+def __isReleaseTagQuay(version):
+    return bool(re.search(r"\d+\.\d+\.\d+$", version))
 
 def __filterQuayTags(tags):
     filteredtags = []
     for t in tags:
         name = t['name']
-        if __isReleaseVersion(name):
+        if __isReleaseTagQuay(name):
             filteredtags.append(name)
     return filteredtags
 
@@ -50,11 +53,13 @@ def __filterGitTags():
     filteredtags = []
     for t in rawtags:
         name = t['ref']
-        if __isReleaseVersion(name):
+        if __isReleaseTagGit(name):
             filteredtags.append(name)
     return set(filteredtags)
 
 # TODO: grab current_image from os.environ["MAIN_IMAGE_TAG"] after manual testing is done
+# getLastSensorVersionsFromQuay gets the latest patches of the last num_versions major versions
+# querying quay API is slow, prefer using git tag API
 def getLastSensorVersionsFromQuay(current_version, num_versions):
     tags = __queryQuayForTags()
     numericaltags = __transformTagsToNumbers(tags)
@@ -72,6 +77,8 @@ def getLastSensorVersionsFromQuay(current_version, num_versions):
     return latestversions
 
 # TODO: grab current_image from os.environ["MAIN_IMAGE_TAG"] after manual testing is done
+# getLastSensorVersionsFromGitTags gets the latest patches of the last num_versions major versions
+# much faster than querying quay
 def getLastSensorVersionsFromGitTags(current_version, num_versions):
     tags = __filterGitTags()
     numericaltags = __transformTagsToNumbers(tags)
@@ -89,8 +96,8 @@ def getLastSensorVersionsFromGitTags(current_version, num_versions):
     return latestversions
 
 def main(argv):
-    #latestversions = getLastSensorVersionsFromGitTags(argv[1], 4)
-    latestversions = getLastSensorVersionsFromQuay(argv[1], 4)
+    latestversions = getLastSensorVersionsFromGitTags(argv[1], 4)
+    #latestversions = getLastSensorVersionsFromQuay(argv[1], 4)
     printversions = ""
     for version in latestversions:
         printversions += str(version) + " "
