@@ -6,7 +6,11 @@ import {
 
 // credentialexpiry
 
-function renderCredentialExpiryBanner(componentUpperCase, expiry, staticResponseForPermissions) {
+function visitSystemConfigurationWithCredentialExpiryBanner(
+    componentUpperCase,
+    expiry,
+    staticResponseForPermissions
+) {
     const credentialExpiryAlias = 'credentialexpiry';
 
     const requestConfig = {
@@ -35,12 +39,26 @@ function renderCredentialExpiryBanner(componentUpperCase, expiry, staticResponse
     waitForResponses(requestConfig);
 }
 
-export function renderCentralCredentialExpiryBanner(expiry, staticResponseForPermissions) {
-    renderCredentialExpiryBanner('CENTRAL', expiry, staticResponseForPermissions);
+export function visitSystemConfigurationWithCentralCredentialExpiryBanner(
+    expiry,
+    staticResponseForPermissions
+) {
+    visitSystemConfigurationWithCredentialExpiryBanner(
+        'CENTRAL',
+        expiry,
+        staticResponseForPermissions
+    );
 }
 
-export function renderScannerCredentialExpiryBanner(expiry, staticResponseForPermissions) {
-    renderCredentialExpiryBanner('SCANNER', expiry, staticResponseForPermissions);
+export function visitSystemConfigurationWithScannerCredentialExpiryBanner(
+    expiry,
+    staticResponseForPermissions
+) {
+    visitSystemConfigurationWithCredentialExpiryBanner(
+        'SCANNER',
+        expiry,
+        staticResponseForPermissions
+    );
 }
 
 // certgen
