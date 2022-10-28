@@ -11,8 +11,7 @@ source "$COMMON_DIR"/env.sh
 source "$K8S_DIR"/env.sh
 
 if [[ -z $CLUSTER ]]; then
-    # shellcheck disable=SC2162
-    read -p "Enter cluster name to create: " CLUSTER
+    read -p -r "Enter cluster name to create: " CLUSTER
 fi
 echo "CLUSTER set to $CLUSTER"
 
