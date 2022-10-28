@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -61,9 +60,7 @@ func mustGetBadRequest(t *testing.T) *http.Request {
 }
 
 func TestServeHTTP_Offline_Get(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(env.OfflineModeEnv.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
+	t.Setenv(env.OfflineModeEnv.EnvVar(), "true")
 
 	tmpDir := t.TempDir()
 	h := New(nil, handlerOpts{

@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/cryptoutils/mocks"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -54,19 +53,17 @@ func TestClient(t *testing.T) {
 type ClientTestSuite struct {
 	suite.Suite
 
-	envIsolator   *envisolator.EnvIsolator
 	clientCertDir string
 	mockCtrl      *gomock.Controller
 }
 
 func (t *ClientTestSuite) SetupSuite() {
-	t.envIsolator = envisolator.NewEnvIsolator(t.T())
 
 	t.mockCtrl = gomock.NewController(t.T())
 
 	cwd, err := os.Getwd()
 	t.Require().NoError(err)
-	t.envIsolator.Setenv(mtls.CAFileEnvName, filepath.Join(cwd, "testdata", "central-ca.pem"))
+	t.T().Setenv(mtls.CAFileEnvName, filepath.Join(cwd, "testdata", "central-ca.pem"))
 
 	// Generate a client certificate (this does not need to be related to the central CA from testdata).
 	ca, err := certgen.GenerateCA()
@@ -79,12 +76,8 @@ func (t *ClientTestSuite) SetupSuite() {
 
 	t.Require().NoError(os.WriteFile(filepath.Join(t.clientCertDir, "cert.pem"), leafCert.CertPEM, 0644))
 	t.Require().NoError(os.WriteFile(filepath.Join(t.clientCertDir, "key.pem"), leafCert.KeyPEM, 0600))
-	t.envIsolator.Setenv(mtls.CertFilePathEnvName, filepath.Join(t.clientCertDir, "cert.pem"))
-	t.envIsolator.Setenv(mtls.KeyFileEnvName, filepath.Join(t.clientCertDir, "key.pem"))
-}
-
-func (t *ClientTestSuite) TearDownSuite() {
-	t.envIsolator.RestoreAll()
+	t.T().Setenv(mtls.CertFilePathEnvName, filepath.Join(t.clientCertDir, "cert.pem"))
+	t.T().Setenv(mtls.KeyFileEnvName, filepath.Join(t.clientCertDir, "key.pem"))
 }
 
 func (t *ClientTestSuite) newSelfSignedCertificate(commonName string) *tls.Certificate {

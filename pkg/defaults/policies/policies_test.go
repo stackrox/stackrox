@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/mitre"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,14 +24,11 @@ func Test_DefaultPolicies_FilterByFeatureFlag(t *testing.T) {
 		"deployment_has_ingress_network_policy.json": "Deployments should have at least one ingress Network Policy",
 	}
 
-	isolator := envisolator.NewEnvIsolator(t)
-	defer isolator.RestoreAll()
 	for filename, ff := range featureFlagFileGuard {
-		isolator.Setenv(ff.EnvVar(), "false")
+		t.Setenv(ff.EnvVar(), "false")
 		require.False(t, checkPoliciesContain(t, fileToPolicyName[filename]))
-		isolator.Setenv(ff.EnvVar(), "true")
+		t.Setenv(ff.EnvVar(), "true")
 		require.True(t, checkPoliciesContain(t, fileToPolicyName[filename]))
-		isolator.RestoreAll()
 	}
 }
 

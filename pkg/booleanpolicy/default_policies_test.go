@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -76,8 +75,6 @@ type DefaultPoliciesTestSuite struct {
 	images                  map[string]*storage.Image
 	deploymentsToImages     map[string][]*storage.Image
 	deploymentsToIndicators map[string][]*storage.ProcessIndicator
-
-	envIsolator *envisolator.EnvIsolator
 }
 
 func (suite *DefaultPoliciesTestSuite) SetupSuite() {
@@ -97,8 +94,7 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 		suite.customPolicies[customPolicy.GetName()] = customPolicy
 	}
 
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
+	suite.T().Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
 }
 
 func (suite *DefaultPoliciesTestSuite) TearDownSuite() {}

@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -22,20 +21,11 @@ func TestGetSecretRenewalTime(t *testing.T) {
 
 type getSecretRenewalTimeSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *getSecretRenewalTimeSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *getSecretRenewalTimeSuite) SetupTest() {
-	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
+	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
-}
-
-func (s *getSecretRenewalTimeSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *getSecretRenewalTimeSuite) TestGetSecretsCertRenewalTime() {

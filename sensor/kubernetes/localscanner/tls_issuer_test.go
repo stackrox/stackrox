@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/assert"
@@ -229,20 +228,11 @@ func TestLocalScannerTLSIssuerIntegrationTests(t *testing.T) {
 
 type localScannerTLSIssueIntegrationTests struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *localScannerTLSIssueIntegrationTests) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *localScannerTLSIssueIntegrationTests) SetupTest() {
-	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
+	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
-}
-
-func (s *localScannerTLSIssueIntegrationTests) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {

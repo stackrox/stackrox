@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,11 +24,10 @@ const (
 
 type PostgresRestoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	pool        *pgxpool.Pool
-	config      *pgxpool.Config
-	sourceMap   map[string]string
-	ctx         context.Context
+	pool      *pgxpool.Pool
+	config    *pgxpool.Config
+	sourceMap map[string]string
+	ctx       context.Context
 }
 
 func TestRestore(t *testing.T) {
@@ -37,14 +35,12 @@ func TestRestore(t *testing.T) {
 }
 
 func (s *PostgresRestoreSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
 
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -71,8 +67,6 @@ func (s *PostgresRestoreSuite) TearDownTest() {
 		s.Nil(DropDB(s.sourceMap, s.config, tempDB))
 		s.pool.Close()
 	}
-
-	s.envIsolator.RestoreAll()
 }
 
 func (s *PostgresRestoreSuite) TestUtilities() {

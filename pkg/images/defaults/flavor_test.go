@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -14,7 +13,6 @@ import (
 
 type imageFlavorTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 }
 
 func TestImageFlavor(t *testing.T) {
@@ -22,13 +20,8 @@ func TestImageFlavor(t *testing.T) {
 }
 
 func (s *imageFlavorTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	testbuildinfo.SetForTest(s.T())
 	testutils.SetExampleVersion(s.T())
-}
-
-func (s *imageFlavorTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *imageFlavorTestSuite) getEnvShouldPanic() {
@@ -66,7 +59,7 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 
 	for envValue, testCase := range testCases {
 		s.Run(envValue, func() {
-			s.envIsolator.Setenv(imageFlavorEnvName, envValue)
+			s.T().Setenv(imageFlavorEnvName, envValue)
 			if testCase.shouldPanicAlways {
 				s.getEnvShouldPanic()
 				return
