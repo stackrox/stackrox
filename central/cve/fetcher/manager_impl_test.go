@@ -403,6 +403,17 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 						},
 					},
 				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
+					},
+				},
 			},
 			components: []string{
 				kubernetes.KubeControllerManager,
@@ -426,6 +437,17 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 								},
 							},
 						},
+					},
+				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
 					},
 				},
 			},
@@ -457,6 +479,17 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 						},
 					},
 				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
+					},
+				},
 			},
 			components: []string{
 				kubernetes.KubeAggregator,
@@ -484,6 +517,17 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 						},
 					},
 				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
+					},
+				},
 			},
 			components: []string{
 				"openshift",
@@ -509,6 +553,17 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 								},
 							},
 						},
+					},
+				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
 					},
 				},
 			},
