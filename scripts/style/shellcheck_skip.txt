@@ -6,7 +6,6 @@ deploy/k8s/deploy-local.sh
 deploy/k8s/deploy.sh
 deploy/openshift/deploy-local.sh
 deploy/openshift/deploy.sh
-deploy/openshift/sensor.sh
 dev-tools/add-host-alias.sh
 dev-tools/enable-hotreload.sh
 dev-tools/roxctl.sh
