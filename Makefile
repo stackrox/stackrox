@@ -723,6 +723,14 @@ else
 endif
 endif
 
+.PHONY: shortcommit
+shortcommit:
+ifdef SHORTCOMMIT
+	@echo $(SHORTCOMMIT)
+else
+	@git rev-parse --short HEAD
+endif
+
 .PHONY: image-flavor
 image-flavor:
 	@echo $(ROX_IMAGE_FLAVOR)
