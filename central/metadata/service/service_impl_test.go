@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	//#nosec G101 -- This is a false positive
 	validChallengeToken   = "h83_PGhSqS8OAvplb8asYMfPHy1JhVVMKcajYyKmrIU="
 	invalidChallengeToken = "invalid"
 )

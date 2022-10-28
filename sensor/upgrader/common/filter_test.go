@@ -21,7 +21,7 @@ auto-upgrade.stackrox.io/component: "sensor"
 imagePullSecrets:
 - name: stackrox
 `
-
+	//#nosec G101 -- This is a false positive
 	sensorTLSSecretYAML = `apiVersion: v1
 kind: Secret
 data:
@@ -38,6 +38,7 @@ metadata:
   namespace: stackrox
 type: Opaque
 `
+	//#nosec G101 -- This is a false positive
 	centralTLSSecretYAML = `apiVersion: v1
 kind: Secret
 type: Opaque

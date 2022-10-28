@@ -100,10 +100,12 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, testSingleKeyStruct.GetKey()))
 
 	var testSingleKeyStructs []*storage.TestSingleKeyStruct
+	var testSingleKeyStructIDs []string
 	for i := 0; i < 200; i++ {
 		testSingleKeyStruct := &storage.TestSingleKeyStruct{}
 		s.NoError(testutils.FullInit(testSingleKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testSingleKeyStructs = append(testSingleKeyStructs, testSingleKeyStruct)
+		testSingleKeyStructIDs = append(testSingleKeyStructIDs, testSingleKeyStruct.GetKey())
 	}
 
 	s.NoError(store.UpsertMany(ctx, testSingleKeyStructs))
@@ -114,4 +116,10 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	testSingleKeyStructCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, testSingleKeyStructCount)
+
+	s.NoError(store.DeleteMany(ctx, testSingleKeyStructIDs))
+
+	testSingleKeyStructCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, testSingleKeyStructCount)
 }

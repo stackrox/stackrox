@@ -31,7 +31,7 @@ func (s *nodeCVEDataStoreFromGenericStore) Search(ctx context.Context, q *v1.Que
 	return s.genericStore.Search(ctx, q)
 }
 
-func (s *nodeCVEDataStoreFromGenericStore) SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+func (s *nodeCVEDataStoreFromGenericStore) SearchNodeCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	return s.genericStore.SearchCVEs(ctx, q)
 }
 

@@ -100,10 +100,12 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, simpleAccessScope.GetId()), sac.ErrResourceAccessDenied)
 
 	var simpleAccessScopes []*storage.SimpleAccessScope
+	var simpleAccessScopeIDs []string
 	for i := 0; i < 200; i++ {
 		simpleAccessScope := &storage.SimpleAccessScope{}
 		s.NoError(testutils.FullInit(simpleAccessScope, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		simpleAccessScopes = append(simpleAccessScopes, simpleAccessScope)
+		simpleAccessScopeIDs = append(simpleAccessScopeIDs, simpleAccessScope.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, simpleAccessScopes))
@@ -111,4 +113,10 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	simpleAccessScopeCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, simpleAccessScopeCount)
+
+	s.NoError(store.DeleteMany(ctx, simpleAccessScopeIDs))
+
+	simpleAccessScopeCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, simpleAccessScopeCount)
 }

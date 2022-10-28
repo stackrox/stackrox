@@ -34,6 +34,7 @@ type LazyClientConn struct {
 // client conn type that returns an error right away.
 func NewLazyClientConn() *LazyClientConn {
 	return &LazyClientConn{
+		//#nosec G103
 		state: unsafe.Pointer(makeState(nil)),
 	}
 }
@@ -42,6 +43,7 @@ func NewLazyClientConn() *LazyClientConn {
 // become available will be woken up, although they might block again soon afterwards if nil was specified.
 func (c *LazyClientConn) Set(cc grpc.ClientConnInterface) {
 	newState := makeState(cc)
+	//#nosec G103
 	oldState := (*lazyConnState)(atomic.SwapPointer(&c.state, unsafe.Pointer(newState)))
 	if oldState.waitC != nil {
 		oldState.cc = cc

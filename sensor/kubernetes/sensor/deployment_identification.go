@@ -17,7 +17,8 @@ import (
 
 const (
 	namespaceFile = `/run/secrets/kubernetes.io/serviceaccount/namespace`
-	tokenFile     = `/run/secrets/kubernetes.io/serviceaccount/token`
+	//#nosec G101 -- This is a false positive
+	tokenFile = `/run/secrets/kubernetes.io/serviceaccount/token`
 
 	namespaceClaimKey        = `kubernetes.io/serviceaccount/namespace`
 	serviceAccountIDClaimKey = `kubernetes.io/serviceaccount/service-account.uid`

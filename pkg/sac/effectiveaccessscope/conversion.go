@@ -188,6 +188,7 @@ func newUnvalidatedRequirement(key string, op selection.Operator, values []strin
 
 	setValue := func(fieldName string, value interface{}) {
 		field := reqUnleashed.FieldByName(fieldName)
+		//#nosec G103
 		field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
 		field.Set(reflect.ValueOf(value).Elem())
 	}

@@ -100,10 +100,12 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, networkEntity.GetInfo().GetId()), sac.ErrResourceAccessDenied)
 
 	var networkEntitys []*storage.NetworkEntity
+	var networkEntityIDs []string
 	for i := 0; i < 200; i++ {
 		networkEntity := &storage.NetworkEntity{}
 		s.NoError(testutils.FullInit(networkEntity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkEntitys = append(networkEntitys, networkEntity)
+		networkEntityIDs = append(networkEntityIDs, networkEntity.GetInfo().GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkEntitys))
@@ -111,4 +113,10 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	networkEntityCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, networkEntityCount)
+
+	s.NoError(store.DeleteMany(ctx, networkEntityIDs))
+
+	networkEntityCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, networkEntityCount)
 }

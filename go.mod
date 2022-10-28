@@ -3,7 +3,7 @@ module github.com/stackrox/rox
 go 1.18
 
 require (
-	cloud.google.com/go/compute v1.10.0
+	cloud.google.com/go/compute/metadata v0.1.0
 	cloud.google.com/go/containeranalysis v0.6.0
 	cloud.google.com/go/storage v1.27.0
 	github.com/BurntSushi/toml v1.2.1
@@ -26,7 +26,7 @@ require (
 	github.com/dexidp/dex v0.0.0-20220607113954-3836196af2e7
 	github.com/docker/distribution v2.8.1+incompatible
 	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
-	github.com/docker/docker v20.10.20+incompatible
+	github.com/docker/docker v20.10.21+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/facebookincubator/nvdtools v0.1.5
@@ -106,7 +106,7 @@ require (
 	golang.org/x/tools v0.2.0
 	golang.stackrox.io/grpc-http1 v0.2.5
 	google.golang.org/api v0.101.0
-	google.golang.org/genproto v0.0.0-20221018160656-63c7b68cfc55
+	google.golang.org/genproto v0.0.0-20221024183307-1bc688fe9f3e
 	google.golang.org/grpc v1.50.1
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
@@ -131,6 +131,7 @@ require (
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.104.0 // indirect
+	cloud.google.com/go/compute v1.12.1 // indirect
 	cloud.google.com/go/iam v0.5.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
