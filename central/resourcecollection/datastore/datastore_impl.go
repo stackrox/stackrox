@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/heimdalr/dag"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -144,7 +144,7 @@ func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) (
 
 	// add vertex
 	id, err := graph.AddVertex(graphEntry{
-		id: uuid.New().String(),
+		id: uuid.NewV4().String(),
 	})
 	if err != nil {
 		return nil, err

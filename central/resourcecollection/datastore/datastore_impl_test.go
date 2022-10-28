@@ -168,6 +168,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	objA := getTestCollection("a", nil)
 	err = s.datastore.DryRunAddCollection(ctx, objA)
 	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), "", objA.Id)
 	count, err := s.datastore.Count(ctx, nil)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, count)
@@ -175,6 +176,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	// add 'a', verify present
 	err = s.datastore.AddCollection(ctx, objA)
 	assert.NoError(s.T(), err)
+	assert.NotEqual(s.T(), "", objA.Id)
 	obj, ok, err := s.datastore.Get(ctx, objA.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
@@ -184,15 +186,18 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	objADup := getTestCollection("a", nil)
 	err = s.datastore.DryRunAddCollection(ctx, objADup)
 	assert.Error(s.T(), err)
+	assert.Equal(s.T(), "", objADup.Id)
 
 	// add duplicate 'a'
 	err = s.datastore.AddCollection(ctx, objADup)
 	assert.Error(s.T(), err)
+	assert.Equal(s.T(), "", objADup.Id)
 
 	// dryrun add 'b' which points to 'a', verify not present
 	objB := getTestCollection("b", []string{objA.GetId()})
 	err = s.datastore.DryRunAddCollection(ctx, objB)
 	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), "", objB.Id)
 	count, err = s.datastore.Count(ctx, nil)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 1, count)
@@ -200,6 +205,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	// add 'b' which points to 'a', verify present
 	err = s.datastore.AddCollection(ctx, objB)
 	assert.NoError(s.T(), err)
+	assert.NotEqual(s.T(), "", objB.Id)
 	obj, ok, err = s.datastore.Get(ctx, objB.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
@@ -243,6 +249,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	objE := getTestCollection("e", []string{objB.GetId()})
 	err = s.datastore.AddCollection(ctx, objE)
 	assert.NoError(s.T(), err)
+	assert.NotEqual(s.T(), "", objE.Id)
 	obj, ok, err = s.datastore.Get(ctx, objE.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)

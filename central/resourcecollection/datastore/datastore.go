@@ -28,6 +28,7 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ResourceCollection, error)
 
+	// AddCollection adds the given collection object and populates the `Id` field on the object
 	AddCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	DeleteCollection(ctx context.Context, id string) error
 	DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error
