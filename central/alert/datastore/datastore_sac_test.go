@@ -203,13 +203,17 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 			_, err = s.datastore.MarkAlertStaleBatch(ctx, alert1.GetId())
 			if !c.expectError {
 				s.NoError(err)
-			} else {
+				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
+				// hence `missing` var is set indicate that the record is missing.
+			} else if !env.PostgresDatastoreEnabled.BooleanSetting() {
 				s.Equal(c.expectedError, err)
 			}
 			_, err = s.datastore.MarkAlertStaleBatch(ctx, alert2.GetId())
 			if !c.expectError {
 				s.NoError(err)
-			} else {
+				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
+				// hence `missing` var is set indicate that the record is missing.
+			} else if !env.PostgresDatastoreEnabled.BooleanSetting() {
 				s.Equal(c.expectedError, err)
 			}
 		})

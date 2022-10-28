@@ -19,13 +19,13 @@ import (
 )
 
 func BenchmarkDBsWithPostgres(b *testing.B) {
-	ctx := sac.WithAllAccess(context.Background())
 	b.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		b.Skipf("%q not set. Skip postgres test", env.PostgresDatastoreEnabled.EnvVar())
 		b.SkipNow()
 	}
 
+	ctx := sac.WithAllAccess(context.Background())
 	source := pgtest.GetConnectionString(b)
 	config, err := pgxpool.ParseConfig(source)
 	require.NoError(b, err)

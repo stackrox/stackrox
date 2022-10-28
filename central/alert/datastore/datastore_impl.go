@@ -239,7 +239,6 @@ func (ds *datastoreImpl) MarkAlertStaleBatch(ctx context.Context, ids ...string)
 		if err != nil {
 			return err
 		}
-
 		if len(missing) > 0 {
 			// Warn and continue marking the found alerts stale instead of returning error.
 			// Marking alerts stale essentially removes the alerts from APIs by default anyway.
@@ -254,6 +253,7 @@ func (ds *datastoreImpl) MarkAlertStaleBatch(ctx context.Context, ids ...string)
 			if !ok {
 				return sac.ErrResourceAccessDenied
 			}
+
 			alert.State = storage.ViolationState_RESOLVED
 			alert.ResolvedAt = resolvedAt
 		}
