@@ -726,18 +726,20 @@ func (ds *datastoreImpl) getAlerts(ctx context.Context, deploymentID string) ([]
 }
 
 func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.Alert) error {
+	if len(alerts) == 0 {
+		return nil
+	}
+
 	ids := make([]string, 0, len(alerts))
 	for _, alert := range alerts {
 		ids = append(ids, alert.GetId())
 	}
-
 	resolvedAlerts, err := ds.alertDataStore.MarkAlertStaleBatch(ctx, ids...)
 	if err != nil {
 		return err
 	}
-
-	for _, alert := range resolvedAlerts {
-		ds.notifier.ProcessAlert(ctx, alert)
+	for _, resolvedAlert := range resolvedAlerts {
+		ds.notifier.ProcessAlert(ctx, resolvedAlert)
 	}
 	return nil
 }

@@ -1363,9 +1363,7 @@ func TestMarkOrphanedAlerts(t *testing.T) {
 					}
 					return nil
 				})
-			for _, a := range c.expectedDeletions {
-				alerts.EXPECT().MarkAlertStale(pruningCtx, a)
-			}
+			alerts.EXPECT().MarkAlertStaleBatch(pruningCtx, c.expectedDeletions)
 			gci.markOrphanedAlertsAsResolved(c.deployments)
 		})
 	}

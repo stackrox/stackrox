@@ -103,11 +103,14 @@ func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*stor
 
 // markAlertsStale marks all input alerts stale in the input datastore.
 func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*storage.Alert) error {
+	if len(alertsToMark) == 0 {
+		return nil
+	}
+
 	ids := make([]string, 0, len(alertsToMark))
 	for _, alert := range alertsToMark {
 		ids = append(ids, alert.GetId())
 	}
-
 	resolvedAlerts, err := d.alerts.MarkAlertStaleBatch(ctx, ids...)
 	if err != nil {
 		return err

@@ -143,8 +143,7 @@ func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Al
 	defer waitGroup.Done()
 	ds.keyedMutex.Lock(alert.GetId())
 	defer ds.keyedMutex.Unlock(alert.GetId())
-	// Avoid `ds.GetMany` since it performs read SAC check, which is not expected for user performing an upsert.
-	// Reading a record out of DB during an upsert is only a side effect.
+	// Avoid `ds.GetAlert` since that leads to extra read SAC check in addition to read-write check below.
 	oldAlert, exists, err := ds.storage.Get(ctx, alert.GetId())
 	if err != nil {
 		log.Errorf("error in get alert: %+v", err)
@@ -201,14 +200,13 @@ func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
 	ds.keyedMutex.Lock(id)
 	defer ds.keyedMutex.Unlock(id)
 
-	// Avoid `ds.GetMany` since it performs read SAC check, which is not expected for user performing an upsert.
-	// Reading a record out of DB during an upsert is only a side effect.
+	// Avoid `ds.GetAlert` since that leads to extra read SAC check in addition to read-write check below.
 	alert, exists, err := ds.storage.Get(ctx, id)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("alert with id '%s' does not exist", id)
+		return errors.Errorf("alert with id '%s' does not exist", id)
 	}
 
 	ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...)
@@ -226,27 +224,29 @@ func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
 func (ds *datastoreImpl) MarkAlertStaleBatch(ctx context.Context, ids ...string) ([]*storage.Alert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertStaleBatch")
 
+	resolvedAt := types.TimestampNow()
 	idsAsBytes := make([][]byte, 0, len(ids))
 	for _, id := range ids {
 		idsAsBytes = append(idsAsBytes, []byte(id))
 	}
 
-	var resolvableAlerts []*storage.Alert
+	var resolvedAlerts []*storage.Alert
 	err := ds.keyFence.DoStatusWithLock(dackboxConcurrency.DiscreteKeySet(idsAsBytes...), func() error {
 		var err error
 		var missing []int
-		// Avoid `ds.GetMany` since it performs read SAC check, which is not expected for user performing an upsert.
-		// Reading record out of DB during an upsert is only a side effect.
-		resolvableAlerts, missing, err = ds.storage.GetMany(ctx, ids)
+		// Avoid `ds.GetAlert` since that leads to extra read SAC check in addition to read-write check below.
+		resolvedAlerts, missing, err = ds.storage.GetMany(ctx, ids)
 		if err != nil {
 			return err
 		}
 
 		if len(missing) > 0 {
-			return errors.Errorf("%d/%d alert(s) to be marked stale do not exist", len(missing), len(ids))
+			// Warn and continue marking the found alerts stale instead of returning error.
+			// Marking alerts stale essentially removes the alerts from APIs by default anyway.
+			log.Warnf("%d/%d alert(s) to be marked stale do not exist", len(missing), len(ids))
 		}
 
-		for _, alert := range resolvableAlerts {
+		for _, alert := range resolvedAlerts {
 			ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...)
 			if err != nil {
 				return err
@@ -254,15 +254,13 @@ func (ds *datastoreImpl) MarkAlertStaleBatch(ctx context.Context, ids ...string)
 			if !ok {
 				return sac.ErrResourceAccessDenied
 			}
+			alert.State = storage.ViolationState_RESOLVED
+			alert.ResolvedAt = resolvedAt
 		}
 
-		for _, alert := range resolvableAlerts {
-			alert.State = storage.ViolationState_RESOLVED
-			alert.ResolvedAt = types.TimestampNow()
-		}
-		return ds.updateAlertNoLock(ctx, resolvableAlerts...)
+		return ds.updateAlertNoLock(ctx, resolvedAlerts...)
 	})
-	return resolvableAlerts, err
+	return resolvedAlerts, err
 }
 
 func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error {
@@ -311,7 +309,10 @@ func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject 
 }
 
 func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*storage.Alert) error {
-	// Checks pass then update.
+	if len(alerts) == 0 {
+		return nil
+	}
+
 	if err := ds.storage.UpsertMany(ctx, alerts); err != nil {
 		return err
 	}

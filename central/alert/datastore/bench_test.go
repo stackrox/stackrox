@@ -25,7 +25,9 @@ func BenchmarkDBs(b *testing.B) {
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	require.NoError(b, err)
-	defer tmpIndex.Close()
+	defer func() {
+		_ = tmpIndex.Close()
+	}()
 
 	s := rocksDBStore.New(db)
 	idx := index.New(tmpIndex)
