@@ -1,5 +1,4 @@
 .github/workflows/scripts/patch-changelog.sh
-deploy/common/deploy.sh
 deploy/common/docker-auth.sh
 deploy/common/k8sbased.sh
 deploy/k8s/deploy-local.sh
