@@ -116,22 +116,6 @@ const headingPlural = {
     policies: 'policies',
 };
 
-const opnamePrefixForPrimaryAndSecondaryEntities = {
-    clusters: 'getCluster_',
-    components: 'getComponentSubEntity',
-    'image-components': 'getComponentSubEntity',
-    'node-components': 'getNodeComponentSubEntity',
-    cves: 'getCve',
-    'image-cves': 'getCve',
-    'node-cves': 'getCve',
-    'cluster-cves': 'getCve',
-    deployments: 'getDeployment',
-    images: 'getImage',
-    namespaces: 'getNamespace',
-    nodes: 'getNode',
-    policies: 'getPolicy',
-};
-
 const typeOfEntity = {
     clusters: 'CLUSTER',
     components: 'COMPONENT',
@@ -152,7 +136,7 @@ const typeOfEntity = {
  * For example, given 'deployments' and 'image' return: 'getDeploymentIMAGE'
  */
 function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
-    return `${opnamePrefixForPrimaryAndSecondaryEntities[entitiesKey1]}${typeOfEntity[entitiesKey2]}`;
+    return `${opnameForEntity[entitiesKey1]}${typeOfEntity[entitiesKey2]}`;
 }
 
 const basePath = '/main/vulnerability-management'; // dashboard
