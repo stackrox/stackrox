@@ -61,11 +61,12 @@ func getLocalCVEs(cveFile string) ([]*schema.NVDCVEFeedJSON10DefCVEItem, error) 
 }
 
 func overwriteCVEs(cveFile, cveChecksumFile, checksum, CVEs string) error {
+	//nolint:gosec:G306
 	err := os.WriteFile(cveFile, []byte(CVEs), 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to overwrite CVEs file: %q", cveFile)
 	}
-
+	//nolint:gosec:G306
 	err = os.WriteFile(cveChecksumFile, []byte(checksum), 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to overwrite CVEs cveChecksumFile file: %q", cveChecksumFile)

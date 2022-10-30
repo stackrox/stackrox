@@ -159,7 +159,7 @@ func renderFile(templateMap map[string]interface{}, temp func(s string) *templat
 		fmt.Println(strings.Join(fileLines[mathutil.MaxInt(0, e.Pos.Line-2):mathutil.MinInt(len(fileLines), e.Pos.Line+1)], "\n"))
 		return err
 	}
-	if err := os.WriteFile(templateFileName, formatted, 0644); err != nil {
+	if err := os.WriteFile(templateFileName, formatted, 0600); err != nil {
 		return err
 	}
 	if importProcessingDuration > time.Second {

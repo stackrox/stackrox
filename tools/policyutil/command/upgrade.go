@@ -196,7 +196,7 @@ func upgradeSingle() error {
 		common.PrintLog("Saving upgraded policy to %q SKIPPED (dry run)", out)
 	} else {
 		common.PrintVerboseLog("Saving upgraded policy to %q", out)
-		err = os.WriteFile(out, []byte(upgraded+"\n"), 0644)
+		err = os.WriteFile(out, []byte(upgraded+"\n"), 0600)
 		if err != nil {
 			return errors.Wrap(err, "writing file failed")
 		}
@@ -290,7 +290,7 @@ func upgradeFolder() error {
 			common.PrintVerboseLog("Saving policy to %q SKIPPED", target)
 		} else {
 			common.PrintVerboseLog("Saving upgraded policy to %q", target)
-			err = os.WriteFile(target, []byte(upgraded+"\n"), 0644)
+			err = os.WriteFile(target, []byte(upgraded+"\n"), 0600)
 			if err != nil {
 				totalFailed++
 				multiErr = multierror.Append(multiErr, errors.Wrap(err, "writing file failed"))

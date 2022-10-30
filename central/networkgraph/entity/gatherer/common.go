@@ -12,6 +12,7 @@ import (
 )
 
 func writeChecksumLocally(checksum []byte) error {
+	//nolint:gosec:G306
 	if err := os.WriteFile(defaultexternalsrcs.LocalChecksumFile, checksum, 0644); err != nil {
 		return errors.Wrapf(err, "writing provider networks checksum %s", defaultexternalsrcs.LocalChecksumFile)
 	}

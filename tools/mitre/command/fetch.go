@@ -91,7 +91,7 @@ func fetchC(_ *cobra.Command, _ []string) error {
 		return errors.Wrap(err, "marshalling parsed MITRE ATT&CK bundle")
 	}
 
-	if err := os.WriteFile(out, []byte(str), 0644); err != nil {
+	if err := os.WriteFile(out, []byte(str), 0600); err != nil {
 		return errors.Wrapf(err, "writing MITRE ATT&CK bundle to file %q", out)
 	}
 	return nil

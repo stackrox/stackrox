@@ -120,6 +120,7 @@ var (
 func main() {
 	w := &bytes.Buffer{}
 	codegen.GenerateResolvers(walkParameters, w)
+	//nolint:gosec:G306
 	err := os.WriteFile("generated.go", w.Bytes(), 0644)
 	if err != nil {
 		panic(err)

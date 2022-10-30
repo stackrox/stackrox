@@ -231,7 +231,7 @@ func TestReport(t *testing.T) {
 			// If the -update flag was passed to go test, update the contents
 			// of all golden files.
 			if *updateFlag {
-				a.NoError(os.WriteFile(test.goldenFile, buf.Bytes(), 0644))
+				a.NoError(os.WriteFile(test.goldenFile, buf.Bytes(), 0600))
 				return
 			}
 

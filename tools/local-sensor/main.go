@@ -99,7 +99,7 @@ func writeOutputInJSONFormat(messages []*central.MsgFromSensor, start, end time.
 		MessagesFromSensor: messages,
 	})
 	utils.CrashOnError(err)
-	utils.CrashOnError(os.WriteFile(outfile, data, 0644))
+	utils.CrashOnError(os.WriteFile(outfile, data, 0600))
 }
 
 func writeOutputInBinaryFormat(messages []*central.MsgFromSensor, _, _ time.Time, outfile string) {

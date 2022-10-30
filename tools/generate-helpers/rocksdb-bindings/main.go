@@ -277,7 +277,7 @@ func main() {
 		if err := t.Execute(buf, templateMap); err != nil {
 			return err
 		}
-		if err := os.WriteFile("store.go", buf.Bytes(), 0644); err != nil {
+		if err := os.WriteFile("store.go", buf.Bytes(), 0600); err != nil {
 			return err
 		}
 		if props.MigrationSeq == 0 {
@@ -292,7 +292,7 @@ func main() {
 		if err := t.Execute(buf, templateMap); err != nil {
 			return err
 		}
-		if err := os.WriteFile(filepath.Join(root, "legacy/rocksdb_plugin.go"), buf.Bytes(), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(root, "legacy/rocksdb_plugin.go"), buf.Bytes(), 0600); err != nil {
 			return err
 		}
 

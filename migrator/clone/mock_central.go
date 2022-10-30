@@ -168,7 +168,7 @@ func (m *mockCentral) upgradeDB(path, clone, pgClone string) {
 			require.NoError(m.t, err)
 			require.LessOrEqual(m.t, currDBSeq, migrations.CurrentDBVersionSeqNum())
 		}
-
+		//nolint:gosec:G306
 		require.NoError(m.t, os.WriteFile(filepath.Join(path, "db"), []byte(fmt.Sprintf("%d", migrations.CurrentDBVersionSeqNum())), 0644))
 	}
 }
@@ -249,6 +249,7 @@ func (m *mockCentral) runCentral() {
 			migrations.SetCurrent(migrations.CurrentPath())
 		}
 		if exists, _ := fileutils.Exists(filepath.Join(migrations.CurrentPath(), "db")); !exists {
+			//nolint:gosec:G306
 			require.NoError(m.t, os.WriteFile(filepath.Join(migrations.CurrentPath(), "db"), []byte(fmt.Sprintf("%d", migrations.CurrentDBVersionSeqNum())), 0644))
 		}
 	}
@@ -344,7 +345,7 @@ func (m *mockCentral) setMigrationVersion(path string, ver *versionPair) {
 	migVer := migrations.MigrationVersion{MainVersion: ver.version, SeqNum: ver.seqNum}
 	bytes, err := yaml.Marshal(migVer)
 	require.NoError(m.t, err)
-	require.NoError(m.t, os.WriteFile(filepath.Join(path, migrations.MigrationVersionFile), bytes, 0644))
+	require.NoError(m.t, os.WriteFile(filepath.Join(path, migrations.MigrationVersionFile), bytes, 0600))
 }
 
 func (m *mockCentral) setMigrationVersionPostgres(clone string, ver *versionPair) {

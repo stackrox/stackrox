@@ -103,7 +103,7 @@ func (p *persister) persistCurrent() error {
 	}
 
 	defer func() { _ = os.Remove(settingsTempPath) }()
-	if err := os.WriteFile(settingsTempPath, bytes, 0640); err != nil {
+	if err := os.WriteFile(settingsTempPath, bytes, 0600); err != nil {
 		return errors.Wrapf(err, "writing to temporary file %s", settingsTempPath)
 	}
 

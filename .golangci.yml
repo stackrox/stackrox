@@ -54,6 +54,7 @@ linters-settings:
     - G102
     - G103
     - G303
+    - G306
     - G601
   revive:
     min-confidence: 0
