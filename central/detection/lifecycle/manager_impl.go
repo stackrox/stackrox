@@ -116,6 +116,7 @@ func (m *managerImpl) buildIndicatorFilter() {
 		return nil
 	})
 	if err != nil {
+		//#nosec G104
 		utils.Should(errors.Wrap(err, "error building indicator filter"))
 	}
 
