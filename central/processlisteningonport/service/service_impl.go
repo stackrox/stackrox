@@ -55,14 +55,14 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Contex
 	//	ProcessesListeningOnPortsWithDeployment: []*v1.ProcessListeningOnPortWithDeploymentId{processListeningOnPortWithDeploymentID},
 	//}
 
-	log.Info("In processlisteningonport service about to get processes namespace level")
+	log.Debug("In processlisteningonport service about to get processes namespace level")
 	namespace := req.GetNamespace()
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPortForNamespace(ctx, namespace);
-	log.Info("In processlisteningonport service got processes namespace level")
+	log.Debug("In processlisteningonport service got processes namespace level")
 
 	if err != nil {
-		log.Info("In processlisteningonport service query return err")
-		log.Info("%v", err)
+		log.Debug("In processlisteningonport service query return err")
+		log.Debug("%v", err)
 		result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
 			ProcessesListeningOnPortsWithDeployment: make([]*v1.ProcessListeningOnPortWithDeploymentId, 0),
 		}
@@ -70,7 +70,7 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Contex
 	}
 
 	if processesListeningOnPorts == nil {
-		log.Info("In processlisteningonport service query return nil")
+		log.Debug("In processlisteningonport service query return nil")
 		result := &v1.GetProcessesListeningOnPortsWithDeploymentResponse{
 			ProcessesListeningOnPortsWithDeployment: make([]*v1.ProcessListeningOnPortWithDeploymentId, 0),
 		}
@@ -86,15 +86,15 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespace(ctx context.Contex
 
 func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx context.Context, req *v1.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) (*v1.GetProcessesListeningOnPortsResponse, error) {
 
-	log.Info("In processlisteningonport service about to get processes")
+	log.Debug("In processlisteningonport service about to get processes")
 	namespace := req.GetNamespace()
 	deployment := req.GetDeploymentId()
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPortForDeployment(ctx, namespace, deployment);
-	log.Info("In processlisteningonport service got processes")
+	log.Debug("In processlisteningonport service got processes")
 
 	if err != nil {
-		log.Info("In processlisteningonport service query return err")
-		log.Info("%v", err)
+		log.Debug("In processlisteningonport service query return err")
+		log.Debug("%v", err)
 		result := &v1.GetProcessesListeningOnPortsResponse{
 			ProcessesListeningOnPorts: make([]*storage.ProcessListeningOnPort, 0),
 		}
@@ -102,7 +102,7 @@ func (s *serviceImpl) GetProcessesListeningOnPortsByNamespaceAndDeployment(ctx c
 	}
 
 	if processesListeningOnPorts == nil {
-		log.Info("In processlisteningonport service query return nil")
+		log.Debug("In processlisteningonport service query return nil")
 		result := &v1.GetProcessesListeningOnPortsResponse{
 			ProcessesListeningOnPorts: make([]*storage.ProcessListeningOnPort, 0),
 		}

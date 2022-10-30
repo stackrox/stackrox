@@ -301,17 +301,17 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 	def deploymentId1 = targetDeployments[0].getDeploymentUid()
 	def deploymentId2 = targetDeployments[1].getDeploymentUid()
 
-	processesForDeployment1 = list.find { it.deploymentId == deploymentId1 }
-	processesForDeployment2 = list.find { it.deploymentId == deploymentId2 }
+	def processesForDeployment1 = list.find { it.deploymentId == deploymentId1 }
+	def processesForDeployment2 = list.find { it.deploymentId == deploymentId2 }
 
         log.info "${processesForDeployment1}"
         log.info "${processesForDeployment2}"
 
-        list1 = processesForDeployment1.processesListeningOnPortsList
+        def list1 = processesForDeployment1.processesListeningOnPortsList
 
         assert list1.size() == 2
 
-        endpoint1_1 = list1.find { it.port == [80] }
+        def endpoint1_1 = list1.find { it.port == 80 }
 
         assert endpoint1_1
 
