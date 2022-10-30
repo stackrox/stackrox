@@ -34,7 +34,7 @@ const VulnMgmtEntityNodeComponent = ({
     const workflowState = useContext(workflowStateContext);
 
     const overviewQuery = gql`
-        query getComponent($id: ID!, $query: String, $scopeQuery: String) {
+        query getNodeComponent($id: ID!, $query: String, $scopeQuery: String) {
             result: nodeComponent(id: $id) {
                 id
                 name
