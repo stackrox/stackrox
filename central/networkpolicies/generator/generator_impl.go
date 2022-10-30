@@ -157,6 +157,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 
 	// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
 	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	//#nosec G104
 	utils.Should(err)
 	flows = aggr.Aggregate(flows)
 	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments),

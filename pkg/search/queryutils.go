@@ -34,6 +34,7 @@ func ApplyFnToAllBaseQueries(q *v1.Query, fn func(*v1.BaseQuery)) {
 	case *v1.Query_BaseQuery:
 		fn(typedQ.BaseQuery)
 	default:
+		//#nosec G104
 		utils.Should(fmt.Errorf("unhandled query type: %T; query was %s", q, proto.MarshalTextString(q)))
 	}
 }

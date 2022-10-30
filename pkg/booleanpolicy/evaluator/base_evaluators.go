@@ -436,6 +436,7 @@ func generateEnumMatcher(value string, enumRef protoreflect.ProtoEnum, matchAll 
 		asInt := instance.Int()
 		matchedValue := numberToName[int32(asInt)]
 		if matchedValue == "" {
+			//#nosec G104
 			utils.Should(errors.Errorf("enum query matched (%v), but no value in numberToName (%v) (got number: %d)",
 				value, numberToName, asInt))
 			matchedValue = strconv.Itoa(int(asInt))

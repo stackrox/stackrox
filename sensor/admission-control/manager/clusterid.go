@@ -16,6 +16,7 @@ func getClusterID() string {
 	clusterIDInit.Do(func() {
 		var err error
 		clusterID, err = clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_ADMISSION_CONTROL_SERVICE)
+		//#nosec G104
 		utils.Should(err) // use an empty cluster ID in release builds, better than crashing.
 	})
 	return clusterID

@@ -68,6 +68,7 @@ func (e *panicCatchingEvaluator) Evaluate(obj pathutil.AugmentedValue) (res *Res
 		// Panics can occur in evaluators, mainly due to incorrect uses of reflect.
 		// This is always a programming error, but let's not panic in prod over it.
 		if r := recover(); r != nil || panicked {
+			//#nosec G104
 			utils.Should(errors.Errorf("panic running fieldEvaluator: %v", r))
 			res = nil
 			matched = false
@@ -113,6 +114,7 @@ func (f *Factory) generateInternalEvaluator(q *query.Query) (Evaluator, error) {
 
 			filteredResult, matched, err := pathutil.FilterMatchesToResults(fieldsToPathsAndValues)
 			if err != nil {
+				//#nosec G104
 				utils.Should(errors.Wrap(err, "filtering paths to linked matches"))
 				return nil, false
 			}

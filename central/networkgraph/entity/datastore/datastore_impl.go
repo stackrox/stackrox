@@ -130,6 +130,7 @@ func (ds *dataStoreImpl) GetIDs(ctx context.Context) ([]string, error) {
 	ret := make([]string, 0, len(ids))
 	for _, id := range ids {
 		resID, err := sac.ParseResourceID(id)
+		//#nosec G104
 		utils.Should(err)
 
 		ok, found := allowed[resID.ClusterID()]

@@ -76,6 +76,7 @@ func (m *deploymentMatcher) anyScopeMatches(scopes []*storage.Scope) bool {
 func (m *deploymentMatcher) scopeMatches(scope *storage.Scope) bool {
 	cs, err := scopecomp.CompileScope(scope)
 	if err != nil {
+		//#nosec G104
 		utils.Should(errors.Wrap(err, "could not compile scope"))
 		return false
 	}

@@ -106,6 +106,7 @@ func (p *networkDataParser) generateEntity(provider, region, service, cidr strin
 
 	// Error is unexpected.
 	id, err := externalsrcs.NewGlobalScopedScopedID(cidr)
+	//#nosec G104
 	utils.Should(errors.Wrapf(err, "generating id for network %s/%s/%s", provider, region, cidr))
 
 	entity := p.entities[id.String()]

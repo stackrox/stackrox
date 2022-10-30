@@ -76,6 +76,7 @@ func newStringQueryWhereClause(columnName string, value string, queryModifiers .
 		}, nil
 	}
 	err := fmt.Errorf("unknown query modifier: %s", queryModifiers[0])
+	//#nosec G104
 	utils.Should(err)
 	return WhereClause{}, err
 }

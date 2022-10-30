@@ -91,12 +91,14 @@ func ForWriteableHostMount() QueryBuilder {
 		values := mapValues(group, nil)
 		// Should never happen, will be enforced by validation.
 		if len(values) != 1 {
+			//#nosec G104
 			utils.Should(errors.Errorf("received unexpected number of values for host mount field: %v", values))
 			return nil
 		}
 		asBool, err := strconv.ParseBool(values[0])
 		// Should never happen, will be enforced by validation.
 		if err != nil {
+			//#nosec G104
 			utils.Should(errors.Wrap(err, "invalid value for host mount field path"))
 			return nil
 		}

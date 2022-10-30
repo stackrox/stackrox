@@ -224,6 +224,7 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 			}
 
 			if obj.GetName() != name {
+				//#nosec G104
 				utils.Should(errors.Errorf("received watch event for unexpected object %s of type %T", name, obj))
 				continue // should not happen
 			}

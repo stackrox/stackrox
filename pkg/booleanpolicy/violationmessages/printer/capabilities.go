@@ -22,6 +22,7 @@ func dropCapabilityPrinter(fieldMap map[string][]string) ([]string, error) {
 	sb.WriteString("does not drop expected capabilities")
 	dropped := fieldMap[search.DropCapabilities.String()]
 	if len(dropped) == 0 {
+		//#nosec G104
 		utils.Should(errors.New("found no values in dropped capabilities"))
 		return []string{sb.String()}, nil
 	}

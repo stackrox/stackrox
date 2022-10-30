@@ -71,6 +71,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			}
 		}
 	default:
+		//#nosec G104
 		utils.Should(errors.New("handler only supports events"))
 	}
 	queue := s.typeToQueue[typ]

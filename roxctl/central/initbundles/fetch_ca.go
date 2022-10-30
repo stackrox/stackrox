@@ -33,6 +33,7 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string) er
 		defer func() {
 			if bundleOutput != nil {
 				_ = bundleOutput.Close()
+				//#nosec G104
 				utils.Should(os.Remove(outputFile))
 			}
 		}()

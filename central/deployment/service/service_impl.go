@@ -212,6 +212,7 @@ func (s *serviceImpl) GetLabels(ctx context.Context, _ *v1.Empty) (*v1.Deploymen
 func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.DeploymentLabelsResponse_LabelValues, []string) {
 	labelField, ok := deployments.OptionsMap.Get(search.DeploymentLabel.String())
 	if !ok {
+		//#nosec G104
 		utils.Should(errors.Errorf("could not find label %q in options map", search.DeploymentLabel.String()))
 		return nil, nil
 	}
@@ -225,6 +226,7 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 	for _, r := range results {
 		keyMatches, valueMatches := r.Matches[keyFieldPath], r.Matches[valueFieldPath]
 		if len(keyMatches) != len(valueMatches) {
+			//#nosec G104
 			utils.Should(errors.Errorf("mismatch between key and value matches: %d != %d", len(keyMatches), len(valueMatches)))
 			continue
 		}

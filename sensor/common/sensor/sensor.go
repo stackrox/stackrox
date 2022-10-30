@@ -146,6 +146,7 @@ func (s *Sensor) Start() {
 
 	koCacheSource, err := createKOCacheSource(s.centralEndpoint)
 	if err != nil {
+		//#nosec G104
 		utils.Should(errors.Wrap(err, "Failed to create kernel object download/caching layer"))
 	} else {
 		probeDownloadHandler := probeupload.NewProbeServerHandler(probeupload.LogCallback(log), koCacheSource)
@@ -162,6 +163,7 @@ func (s *Sensor) Start() {
 	if env.LocalImageScanningEnabled.BooleanSetting() {
 		route, err := newScannerDefinitionsRoute(s.centralEndpoint)
 		if err != nil {
+			//#nosec G104
 			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
 		}
 		customRoutes = append(customRoutes, *route)

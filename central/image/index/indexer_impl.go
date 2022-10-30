@@ -46,6 +46,7 @@ func getVulnPath(s string) (string, []string) {
 func getSubMappingOrPanic(mapping *mapping.DocumentMapping, subPath string) *mapping.DocumentMapping {
 	subMapping := mapping.Properties[subPath]
 	if subMapping == nil {
+		//#nosec G104
 		utils.Should(errors.Errorf("no mapping with name %q", subPath))
 	}
 	return subMapping
@@ -53,6 +54,7 @@ func getSubMappingOrPanic(mapping *mapping.DocumentMapping, subPath string) *map
 
 func getFieldOrPanic(mapping *mapping.DocumentMapping) *mapping.FieldMapping {
 	if len(mapping.Fields) == 0 {
+		//#nosec G104
 		utils.Should(errors.Errorf("no fields are available for mapping: %+v", mapping))
 	}
 	return mapping.Fields[0]

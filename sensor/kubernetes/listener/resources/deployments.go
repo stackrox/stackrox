@@ -196,7 +196,6 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 // The method doesn't process REMOVE_RESOURCE actions. Notice that this means
 // integrations are only recreated if the deployment exists, so it can be
 // permanently deleted in Central.
-//
 func (d *deploymentHandler) appendIntegrationsOnCredentials(
 	action central.ResourceAction,
 	containers []*storage.Container,
@@ -263,6 +262,7 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 	if action != central.ResourceAction_REMOVE_RESOURCE && oldObj != nil {
 		oldPod, ok := oldObj.(*v1.Pod)
 		if !ok {
+			//#nosec G104
 			utils.Should(errors.Errorf("previous version of pod is not a pod (got %T)", oldObj))
 			return nil
 		}

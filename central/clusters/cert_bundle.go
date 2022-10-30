@@ -15,6 +15,7 @@ func (b CertBundle) FileMap() map[string]string {
 	for svcType, cert := range b {
 		serviceName := services.ServiceTypeToSlugName(svcType)
 		if serviceName == "" {
+			//#nosec G104
 			utils.Should(errors.Errorf("invalid service type %v when creating certificate bundle to file map", svcType))
 			continue // ignore
 		}

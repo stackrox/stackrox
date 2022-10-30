@@ -160,6 +160,7 @@ func (g *networkGraphWrapper) getNodeOutEdges(id string) map[string]*v1.NetworkE
 	ret := make(map[string]*v1.NetworkEdgePropertiesBundle)
 	for i, edge := range node.GetOutEdges() {
 		if i < 0 || i >= int32(len(g.idxToIDs)) {
+			//#nosec G104
 			utils.Should(errors.Errorf("invalid network graph node %d index", i))
 			continue
 		}

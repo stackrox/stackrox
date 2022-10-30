@@ -40,9 +40,11 @@ func initialize() {
 			sac.ResourceScopeKeys(resources.Group)))
 
 	grps, err := ds.GetFiltered(ctx, isEmptyGroupPropertiesF)
+	//#nosec G104
 	utils.Should(err)
 	for _, grp := range grps {
 		err = ds.Remove(ctx, grp.GetProps(), true)
+		//#nosec G104
 		utils.Should(err)
 	}
 }

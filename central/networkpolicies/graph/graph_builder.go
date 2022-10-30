@@ -386,6 +386,7 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 		srcQueried := b.deploymentPredicate(src.deployment.GetId())
 		for tgt := range src.adjacentNodes {
 			if tgt == nil {
+				//#nosec G104
 				utils.Should(errors.New("network policy graph peer node is nil"))
 				continue
 			}
@@ -421,8 +422,10 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 			tgtIdx, ok := nodeMap[tgt]
 			if !ok {
 				if tgt.deployment != nil {
+					//#nosec G104
 					utils.Should(errors.Errorf("deployment node %s not found in network node map", tgt.deployment.GetId()))
 				} else if tgt.extSrc != nil {
+					//#nosec G104
 					utils.Should(errors.Errorf("external node %s not found in network node map", tgt.extSrc.GetId()))
 				}
 				continue
@@ -506,6 +509,7 @@ func (b *graphBuilder) getRelevantNodeIDs() set.StringSet {
 
 		for adjNode := range currNode.adjacentNodes {
 			if adjNode == nil || (adjNode.deployment == nil && adjNode.extSrc == nil) {
+				//#nosec G104
 				utils.Should(errors.New("network policy graph peer node is nil"))
 				continue
 			}
@@ -564,6 +568,7 @@ func (b *graphBuilder) getRelevantNodeIDs() set.StringSet {
 	for _, node := range b.extSrcs {
 		for adjNode := range node.adjacentNodes {
 			if adjNode == nil {
+				//#nosec G104
 				utils.Should(errors.New("network policy graph peer node is nil"))
 				continue
 			}

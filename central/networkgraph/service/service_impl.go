@@ -257,6 +257,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	if requestClone.GetSince() == nil {
 		since, err := types.TimestampProto(time.Now().Add(defaultSince))
 		if err != nil {
+			//#nosec G104
 			utils.Should(err)
 		}
 		requestClone.Since = since
@@ -383,6 +384,7 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 
 	// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
 	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	//#nosec G104
 	utils.Should(err)
 	flows = aggr.Aggregate(flows)
 

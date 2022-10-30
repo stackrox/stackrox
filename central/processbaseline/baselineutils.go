@@ -56,6 +56,7 @@ func LockedUnderMode(baseline *storage.ProcessBaseline, mode EvaluationMode) boo
 	case RoxAndUserLocked:
 		return IsRoxLocked(baseline) && IsUserLocked(baseline)
 	}
+	//#nosec G104
 	utils.Should(errors.Errorf("invalid evaluation mode: %v", mode))
 	return false
 }

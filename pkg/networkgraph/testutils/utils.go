@@ -91,6 +91,7 @@ func GenRandomExtSrcNetworkEntity(family pkgNet.Family, numNetworks int, cluster
 	entities := make([]*storage.NetworkEntity, 0, len(nets))
 	for k := range nets {
 		id, err := externalsrcs.NewClusterScopedID(clusterID, k)
+		//#nosec G104
 		utils.Should(err)
 		entities = append(entities, GetExtSrcNetworkEntity(id.String(), k, k, false, clusterID))
 	}

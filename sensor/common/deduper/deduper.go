@@ -70,6 +70,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		TagName: "sensorhash",
 		Hasher:  d.hasher,
 	})
+	//#nosec G104
 	utils.Should(err)
 
 	if d.lastSent[key] == hashValue {

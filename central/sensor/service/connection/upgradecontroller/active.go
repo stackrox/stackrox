@@ -25,6 +25,7 @@ func (u *upgradeController) makeProcessActive(cluster *storage.Cluster, processS
 	}
 
 	if u.active != nil {
+		//#nosec G104
 		utils.Should(errors.Errorf("Making process %s active when there already is an active one. This should not happen...", processStatus.GetId()))
 	}
 
@@ -111,6 +112,7 @@ func (u *upgradeController) reconcileUpgradeStateRegularly(processID string) {
 
 		// This function should never return an error unless there's a programming mistake.
 		// Note that setUpgradeProgress does no DB operations.
+		//#nosec G104
 		utils.Should(u.do(func() error {
 			// The upgrade progress we were monitoring is complete. Exit this goroutine.
 			if u.active == nil || u.active.status.GetId() != processID {

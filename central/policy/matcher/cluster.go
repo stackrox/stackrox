@@ -52,6 +52,7 @@ func (m *clusterMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) bo
 func (m *clusterMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
 	cs, err := scopecomp.CompileScope(exclusion.GetDeployment().GetScope())
 	if err != nil {
+		//#nosec G104
 		utils.Should(errors.Wrap(err, "could not compile excluded scopes"))
 		return false
 	}
@@ -88,6 +89,7 @@ func (m *clusterMatcher) anyScopeMatches(scopes []*storage.Scope) bool {
 func (m *clusterMatcher) scopeMatches(scope *storage.Scope) bool {
 	cs, err := scopecomp.CompileScope(scope)
 	if err != nil {
+		//#nosec G104
 		utils.Should(errors.Wrap(err, "could not compile scope"))
 		return false
 	}

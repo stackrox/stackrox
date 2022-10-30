@@ -40,6 +40,7 @@ func clearServiceAccountDynamicFields(obj *unstructured.Unstructured) {
 			filteredSecrets = append(filteredSecrets, secret)
 		}
 	}
+	//#nosec G104
 	utils.Should(unstructured.SetNestedSlice(obj.Object, filteredSecrets, "secrets"))
 }
 

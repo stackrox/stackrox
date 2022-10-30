@@ -92,6 +92,7 @@ func (np KubernetesNetworkPolicyWrap) convertPorts(k8sPorts []networkingV1.Netwo
 					PortName: p.Port.StrVal,
 				}
 			default:
+				//#nosec G104
 				utils.Should(errors.Errorf(
 					"UNEXPECTED: port IntOrStr %+v is neither int nor string, treating as no port spec", p.Port))
 			}

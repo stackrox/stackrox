@@ -67,6 +67,7 @@ func (m *namespaceMatcher) anyScopeMatches(scopes []*storage.Scope) bool {
 func (m *namespaceMatcher) scopeMatches(scope *storage.Scope) bool {
 	cs, err := scopecomp.CompileScope(scope)
 	if err != nil {
+		//#nosec G104
 		utils.Should(errors.Wrap(err, "could not compiled scope"))
 		return false
 	}

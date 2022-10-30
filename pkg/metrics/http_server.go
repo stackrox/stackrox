@@ -29,6 +29,7 @@ type HTTPServer struct {
 // NewDefaultHTTPServer creates and returns a new metrics http server with configured settings.
 func NewDefaultHTTPServer() *HTTPServer {
 	if err := env.ValidateMetricsSetting(); err != nil {
+		//#nosec G104
 		utils.Should(errors.Wrap(err, "invalid metrics port setting"))
 		log.Error(errors.Wrap(err, "metrics server is disabled"))
 		return nil

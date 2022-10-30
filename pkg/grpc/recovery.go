@@ -21,6 +21,7 @@ func anyToError(x interface{}) error {
 
 func panicHandler(p interface{}) error {
 	err := anyToError(p)
+	//#nosec G104
 	utils.Should(errors.Errorf("Caught panic in gRPC call. Reason: %v. Stack trace:\n%s", err, string(debug.Stack())))
 	return err
 }

@@ -265,6 +265,7 @@ func getPool(postgresConfig *pgxpool.Config) *pgxpool.Pool {
 func getAvailablePostgresCapacity(postgresConfig *pgxpool.Config) (int64, error) {
 	// When using managed services, Postgres space is not a concern at this time.
 	if env.ManagedCentral.BooleanSetting() {
+		//#nosec G104
 		utils.Should(errors.New("unexpected call, cannot yet determine managed capacity.  Calculation is an estimate based on suggested size."))
 
 		// Cannot get managed services capacity via Postgres.  Assume size for now.
@@ -370,6 +371,7 @@ func getAvailablePostgresCapacity(postgresConfig *pgxpool.Config) (int64, error)
 func GetRemainingCapacity(postgresConfig *pgxpool.Config) (int64, error) {
 	// When using managed services, Postgres space is not a concern at this time.
 	if env.ManagedCentral.BooleanSetting() {
+		//#nosec G104
 		utils.Should(errors.New("unexpected call, cannot yet determine managed capacity.  Calculation is an estimate based on suggested size."))
 
 		// Cannot get managed services capacity via Postgres.  Assume size for now.

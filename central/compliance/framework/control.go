@@ -78,6 +78,7 @@ func finalize(ctx ComplianceContext, panicked *bool) {
 		}
 
 		if !halted {
+			//#nosec G104
 			utils.Should(err)
 		}
 	}

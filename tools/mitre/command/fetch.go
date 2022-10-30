@@ -100,12 +100,14 @@ func fetchC(_ *cobra.Command, _ []string) error {
 func fetch(domain string, platforms []string) (*storage.MitreAttackBundle, error) {
 	data, mitreDomain, err := fetchForDomain(domain)
 	if err != nil {
+		//#nosec G104
 		utils.Should(err)
 		return nil, nil
 	}
 
 	mitrePlatforms, err := getMitrePlatforms(platforms...)
 	if err != nil {
+		//#nosec G104
 		utils.Should(err)
 		return nil, nil
 	}

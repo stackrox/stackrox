@@ -98,6 +98,7 @@ func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, f
 		return errox.InvalidArgs.Newf("auth provider %q is immutable and can only be removed"+
 			" via API and specifying the force flag", id)
 	default:
+		//#nosec G104
 		utils.Should(errors.Wrapf(errox.InvalidArgs, "unknown mutability mode given: %q",
 			provider.GetTraits().GetMutabilityMode()))
 	}

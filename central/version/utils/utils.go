@@ -17,6 +17,7 @@ func ReadVersionPostgres(pool *pgxpool.Pool) (*migrations.MigrationVersion, erro
 
 	ver, err := store.GetVersion()
 	if err != nil {
+		//#nosec G104
 		utils.Should(err)
 		return nil, err
 	}

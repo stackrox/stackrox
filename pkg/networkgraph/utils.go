@@ -29,6 +29,7 @@ func IsKnownDefaultExternal(entity *storage.NetworkEntityInfo) bool {
 
 	id, err := sac.ParseResourceID(entity.GetId())
 	if err != nil {
+		//#nosec G104
 		utils.Should(errors.Wrapf(err, "parsing external source ID %s", entity.GetId()))
 	}
 	return id.GlobalScoped()

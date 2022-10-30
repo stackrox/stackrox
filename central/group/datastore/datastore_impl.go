@@ -377,6 +377,7 @@ func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id st
 		return errox.InvalidArgs.Newf("group %q is immutable and can only be removed"+
 			" via API and specifying the force flag", id)
 	default:
+		//#nosec G104
 		utils.Should(errors.Wrapf(errox.InvalidArgs, "unknown mutability mode given: %q",
 			group.GetProps().GetTraits().GetMutabilityMode().String()))
 	}

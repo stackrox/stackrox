@@ -515,6 +515,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		if conn := ds.cm.GetConnection(cluster.GetId()); conn != nil {
 			conn.Terminate(errors.New("cluster was deleted"))
 			if !concurrency.WaitWithTimeout(conn.Stopped(), connectionTerminationTimeout) {
+				//#nosec G104
 				utils.Should(errors.Errorf("connection to sensor from cluster %s not terminated after %v", cluster.GetId(), connectionTerminationTimeout))
 			}
 		}

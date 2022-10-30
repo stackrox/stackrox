@@ -46,6 +46,7 @@ func RegisterChecksForStandard(standardName string, standardChecks map[string]*C
 
 	for checkName, checkAndMetadata := range standardChecks {
 		if _, ok := standard[checkName]; ok {
+			//#nosec G104
 			utils.Should(errors.Errorf("duplicate check in collector: %s", checkName))
 		}
 		standard[checkName] = checkAndMetadata

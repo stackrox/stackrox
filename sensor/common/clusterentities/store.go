@@ -336,6 +336,7 @@ func (e *Store) incPublicIPRefNoLock(addr net.IPAddress) {
 func (e *Store) decPublicIPRefNoLock(addr net.IPAddress) {
 	refCnt := e.publicIPRefCounts[addr]
 	if refCnt == nil {
+		//#nosec G104
 		utils.Should(errors.New("public IP has zero refcount already"))
 		return
 	}

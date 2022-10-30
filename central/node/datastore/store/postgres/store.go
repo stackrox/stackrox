@@ -684,6 +684,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	}
 
 	if len(componentEdgeMap) != len(componentMap) {
+		//#nosec G104
 		utils.Should(
 			errors.Errorf("Number of node component from edges (%d) is unexpected (%d) for node %s (id=%s)",
 				len(componentEdgeMap), len(componentMap), node.GetName(), node.GetId()),

@@ -84,6 +84,7 @@ func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAct
 	}
 	if ok, err := wrap.populateNonStaticFields(obj, action, lister, namespaceStore, hierarchy, namespaces); err != nil {
 		// Panic on dev because we should always be able to parse the deployments
+		//#nosec G104
 		utils.Should(err)
 		return nil
 	} else if !ok {

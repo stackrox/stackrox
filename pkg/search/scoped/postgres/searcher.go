@@ -46,6 +46,7 @@ func scopeQuery(q *v1.Query, scopes []scoped.Scope) (*v1.Query, error) {
 	for _, scope := range scopes {
 		schema := mapping.GetTableFromCategory(scope.Level)
 		if schema == nil {
+			//#nosec G104
 			utils.Should(errors.Errorf("no schema registered for search category %s", scope.Level))
 			return q, nil
 		}

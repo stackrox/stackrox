@@ -69,6 +69,7 @@ func SetCurrent(dbPath string) {
 		}
 		err := newVersion.atomicWrite()
 		if err != nil {
+			//#nosec G104
 			utils.Should(errors.Wrapf(err, "failed to write migration version to %s", dbPath))
 		}
 	}

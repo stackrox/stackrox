@@ -22,6 +22,7 @@ func DetermineNextStateAndWorkflowForUpgrader(upgradeType storage.ClusterUpgrade
 
 	// This should never happen in practice; it means that we're in an unexpected situation.
 	// Respond by telling the upgrader to clean up.
+	//#nosec G104
 	utils.Should(errors.Errorf("UNEXPECTED: No transition found for state: %s; workflow: %s; state; %s; upgraderErr: %s", currentUpgradeState, workflow, stage, upgraderErr))
 	return currentUpgradeState, sensorupgrader.CleanupWorkflow, false
 }

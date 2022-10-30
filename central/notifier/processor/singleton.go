@@ -43,6 +43,7 @@ func initialize() {
 	for _, protoNotifier := range protoNotifiers {
 		notifier, err := notifiers.CreateNotifier(protoNotifier)
 		if err != nil {
+			//#nosec G104
 			utils.Should(errors.Wrapf(err, "error creating notifier with %v (%v) and type %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType()))
 			continue
 		}

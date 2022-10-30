@@ -217,6 +217,7 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 		searcher, ok := searchers[category]
 		if searcher == nil {
 			if ok {
+				//#nosec G104
 				utils.Should(errors.Errorf("searchers map has an entry for category %v, but the returned searcher was nil", category))
 			}
 			return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())

@@ -242,6 +242,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 	default:
 		podTemplate, err := SpecToPodTemplateSpec(spec)
 		if err != nil {
+			//#nosec G104
 			utils.Should(errors.Wrapf(err, "spec obj %+v cannot be converted to a pod template spec", spec))
 			return
 		}

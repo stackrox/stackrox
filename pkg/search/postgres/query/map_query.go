@@ -22,6 +22,7 @@ func readMapValue(val interface{}) map[string]string {
 	// We know that supported maps are only map[string]string, so we unmarshal accordingly.
 	var mapValue map[string]string
 	if err := json.Unmarshal(*val.(*[]byte), &mapValue); err != nil {
+		//#nosec G104
 		utils.Should(err)
 		return nil
 	}

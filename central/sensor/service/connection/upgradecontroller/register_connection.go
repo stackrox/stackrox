@@ -14,6 +14,7 @@ import (
 func (u *upgradeController) RegisterConnection(sensorCtx context.Context, conn SensorConn) concurrency.ErrorWaitable {
 	var errCond concurrency.ErrorWaitable
 
+	//#nosec G104
 	utils.Should(u.do(func() error {
 		u.errorSig.Reset()
 
@@ -39,6 +40,7 @@ func (u *upgradeController) watchConnection(sensorCtx context.Context, conn Sens
 	case <-sensorCtx.Done():
 	}
 
+	//#nosec G104
 	utils.Should(u.do(func() error {
 		if u.activeSensorConn != nil && u.activeSensorConn.conn == conn {
 			u.activeSensorConn = nil

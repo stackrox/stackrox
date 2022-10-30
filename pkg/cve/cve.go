@@ -67,6 +67,7 @@ func IDToParts(id string) (string, string) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		parts := postgres.IDToParts(id)
 		if len(parts) > 2 {
+			//#nosec G104
 			utils.Should(errors.Errorf("unexpected number of parts for CVE ID %s", id))
 			return "", ""
 		}

@@ -37,6 +37,7 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 	case *central.MsgFromSensor_AuditLogStatusInfo:
 		return "AuditLogStatusInfo"
 	default:
+		//#nosec G104
 		utils.Should(errors.Errorf("Unknown message type: %T", t))
 		return "Unknown"
 	}

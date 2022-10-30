@@ -36,6 +36,7 @@ func generateInitBundle(cliEnvironment environment.Environment, name string, out
 			if f != nil && f != os.Stdout {
 				name := f.Name()
 				_ = f.Close()
+				//#nosec G104
 				utils.Should(os.Remove(name))
 			}
 		}

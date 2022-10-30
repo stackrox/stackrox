@@ -43,6 +43,7 @@ func New(s store.Store) DataStore {
 		))
 
 	if err := ds.initDefaultConfig(ctx); err != nil {
+		//#nosec G104
 		utils.Should(errors.Wrap(err, "could not initialize default network graph configuration"))
 	}
 

@@ -290,6 +290,7 @@ func (p *restoreProcess) onReaderDetached(event ioutils.ReaderDetachmentEvent) {
 
 	if event.ReadError() == io.EOF {
 		if err := event.Finish(io.EOF); err != nil {
+			//#nosec G104
 			utils.Should(err)
 		}
 		return
@@ -319,11 +320,13 @@ func (p *restoreProcess) onReaderDetached(event ioutils.ReaderDetachmentEvent) {
 		select {
 		case <-p.cancelSig.Done():
 			if err := event.Finish(errors.New("process canceled")); err != nil {
+				//#nosec G104
 				utils.Should(err)
 			}
 			return
 		case <-timer.C:
 			if err := event.Finish(errors.Errorf("timeout: no new data stream attached after %v", p.reattachTimeout)); err != nil {
+				//#nosec G104
 				utils.Should(err)
 			}
 			return

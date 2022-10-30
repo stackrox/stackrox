@@ -16,6 +16,7 @@ func Singleton() Manager {
 	instanceInit.Do(func() {
 		instance = newManager(migrations.DBMountPath())
 		if err := instance.Initialize(); err != nil {
+			//#nosec G104
 			utils.Should(err)
 			log.Error("There was an error initializing the probe upload functionality. Probe upload/download functionality will likely be affected.")
 		}

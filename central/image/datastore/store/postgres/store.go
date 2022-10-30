@@ -735,6 +735,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx pgx.Tx, imageID string)
 	}
 
 	if len(componentEdgeMap) != len(componentMap) {
+		//#nosec G104
 		utils.Should(
 			errors.Errorf("Number of component (%d) in image-component edges is not equal to number of stored components (%d) for image %s (imageID=%s)",
 				len(componentEdgeMap), len(componentMap), image.GetName().GetFullName(), image.GetId()),

@@ -123,6 +123,7 @@ func getObjUID(newObj interface{}) types.UID {
 		return objWithID.GetUID()
 	}
 
+	//#nosec G104
 	utils.Should(errors.Errorf("this object didn't have an ID %T", newObj))
 	return ""
 }

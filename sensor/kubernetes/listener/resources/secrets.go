@@ -200,6 +200,7 @@ func getDockerConfigFromSecret(secret *v1.Secret) config.DockerConfig {
 		}
 		dockerConfig = dockerConfigJSON.Auths
 	default:
+		//#nosec G104
 		_ = utils.Should(errors.New("only Docker Config secrets are allowed"))
 		return nil
 	}

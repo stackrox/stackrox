@@ -100,10 +100,12 @@ func (r *runner) Err() error {
 
 func (r *runner) RunNextStage() {
 	if r.Err() != nil {
+		//#nosec G104
 		utils.Should(errors.Wrap(r.Err(), "cannot run next stage; runner is in error"))
 		return
 	}
 	if r.Finished() {
+		//#nosec G104
 		utils.Should(errors.New("cannot run next stage; runner is finished"))
 		return
 	}

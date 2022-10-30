@@ -170,6 +170,7 @@ func doDeriveChartVersion(mainVersion string) (string, error) {
 // DeriveChartVersion derives a Chart Version string from the provided Main Version string.
 func DeriveChartVersion(mainVersion string) string {
 	chartVersion, err := doDeriveChartVersion(mainVersion)
+	//#nosec G104
 	utils.Should(err)
 	return chartVersion
 }

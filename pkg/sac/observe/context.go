@@ -31,6 +31,7 @@ func AuthzTraceFromContext(ctx context.Context) *AuthzTrace {
 		return authzTraceValue
 	}
 
+	//#nosec G104
 	utils.Should(errors.Errorf("Per-request authorization trace is of type %T, expected %T", value, &AuthzTrace{}))
 	return nil
 }

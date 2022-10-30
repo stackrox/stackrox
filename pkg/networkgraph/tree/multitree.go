@@ -175,6 +175,7 @@ func getSmallestSupernet(entities ...*storage.NetworkEntityInfo) *storage.Networ
 
 		_, ipNet, err := net.ParseCIDR(entity.GetExternalSource().GetCidr())
 		if err != nil {
+			//#nosec G104
 			utils.Should(errors.Wrapf(err, "parsing CIDR %s", entity.GetExternalSource().GetCidr()))
 			continue
 		}
@@ -192,6 +193,7 @@ func getSmallestSupernet(entities ...*storage.NetworkEntityInfo) *storage.Networ
 
 func getLargestSubnets(entities ...*storage.NetworkEntityInfo) []*storage.NetworkEntityInfo {
 	tree, err := NewNetworkTreeWrapper(entities)
+	//#nosec G104
 	utils.Should(errors.Wrap(err, "creating network tree of subnets"))
 	// Subnets of Internet node are the matches since rest of the networks are covered by them.
 	return tree.GetSubnets(networkgraph.InternetExternalSourceID)

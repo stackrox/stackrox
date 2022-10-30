@@ -144,6 +144,7 @@ func (u *updaterImpl) updateForDeployment(ctx context.Context, deploymentID stri
 
 		result, ok := u.executableCache.Get(update.ImageID)
 		if !ok {
+			//#nosec G104
 			utils.Should(errors.New("cannot find image scan"))
 			continue
 		}
@@ -208,6 +209,7 @@ func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, dep
 	for id, activeContexts := range acToContexts {
 		_, componentID, err := converter.DecomposeID(id)
 		if err != nil {
+			//#nosec G104
 			utils.Should(err)
 			continue
 		}

@@ -134,6 +134,7 @@ func newStringQuery(category v1.SearchCategory, field string, value string, quer
 		return q, nil
 	}
 	err := errors.Errorf("unknown query modifier: %s", queryModifiers[0])
+	//#nosec G104
 	utils.Should(err)
 	return nil, err
 }

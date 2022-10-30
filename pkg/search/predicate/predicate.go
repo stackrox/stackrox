@@ -510,6 +510,7 @@ func createStructFieldNestedPredicate(field reflect.StructField, structTy reflec
 	}
 	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		if instance.Type() != structTy {
+			//#nosec G104
 			utils.Should(errors.Errorf("unexpected type mismatch for nested struct field: got %s, expected %s", instance.Type(), structTy))
 			return nil, false
 		}

@@ -131,6 +131,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 
 func (d *dbCloneManagerImpl) safeRemove(clone string) {
 	path := d.getPath(clone)
+	//#nosec G104
 	utils.Should(migrations.SafeRemoveDBWithSymbolicLink(path))
 	delete(d.cloneMap, clone)
 }
@@ -267,6 +268,7 @@ func (d *dbCloneManagerImpl) rollbackEnabled() bool {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			log.Warn("cannot find current clone for RocksDB")
 		} else {
+			//#nosec G104
 			utils.Should(errors.New("cannot find current clone"))
 		}
 
@@ -282,6 +284,7 @@ func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			log.Warn("cannot find current clone for RocksDB")
 		} else {
+			//#nosec G104
 			utils.Should(errors.New("cannot find current clone"))
 		}
 

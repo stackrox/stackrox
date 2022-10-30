@@ -181,6 +181,7 @@ func createEnumPredicate(fullPath, value string, enumRef protoreflect.ProtoEnum)
 				matchedValue := numberToName[int32(instanceAsInt)]
 				// Should basically never happen.
 				if matchedValue == "" {
+					//#nosec G104
 					utils.Should(errors.Errorf("enum query matched (%s/%s), but no value in numberToName (%d)", fullPath, value, instanceAsInt))
 					matchedValue = strconv.Itoa(int(instanceAsInt))
 				}

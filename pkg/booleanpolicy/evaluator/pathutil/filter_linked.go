@@ -42,6 +42,7 @@ func treeFromPathsAndValues(fieldName string, pathHolders []PathAndValueHolder) 
 	for _, pathHolder := range pathHolders {
 		path := pathHolder.GetPath()
 		if len(path.steps) == 0 {
+			//#nosec G104
 			utils.Should(errors.Errorf("empty path from search (paths: %v)", pathHolders))
 			continue
 		}

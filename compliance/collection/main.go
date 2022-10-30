@@ -82,6 +82,7 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 				}
 			}
 		default:
+			//#nosec G104
 			_ = utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}
 	}

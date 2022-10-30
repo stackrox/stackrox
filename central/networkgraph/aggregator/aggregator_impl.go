@@ -37,11 +37,13 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 		srcEntity, dstEntity := conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
 		// This is essentially an invalid connection.
 		if srcEntity == nil || dstEntity == nil {
+			//#nosec G104
 			utils.Should(errors.Errorf("network conn %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
 			continue
 		}
 
 		if networkgraph.IsExternal(srcEntity) && networkgraph.IsExternal(dstEntity) {
+			//#nosec G104
 			utils.Should(errors.Errorf("network conn %s with all external endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
 			continue
 		}
@@ -51,6 +53,7 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 
 		// If both endpoints are not external (including INTERNET), skip processing.
 		if !networkgraph.IsExternal(srcEntity) && !networkgraph.IsExternal(dstEntity) {
+			//#nosec G104
 			ret = append(ret, conn)
 			continue
 		}
@@ -104,11 +107,13 @@ func (a *aggregateDefaultToCustomExtSrcsImpl) Aggregate(conns []*storage.Network
 		srcEntity, dstEntity := conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
 		// This is essentially an invalid connection.
 		if srcEntity == nil || dstEntity == nil {
+			//#nosec G104
 			utils.Should(errors.Errorf("network conn %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
 			continue
 		}
 
 		if networkgraph.IsExternal(srcEntity) && networkgraph.IsExternal(dstEntity) {
+			//#nosec G104
 			utils.Should(errors.Errorf("network conn %s with all external endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
 			continue
 		}
@@ -163,11 +168,13 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 		srcEntity, dstEntity := flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
 		// This is essentially an invalid connection.
 		if srcEntity == nil || dstEntity == nil {
+			//#nosec G104
 			utils.Should(errors.Errorf("network conn %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(flow).String()))
 			continue
 		}
 
 		if networkgraph.IsExternal(srcEntity) && networkgraph.IsExternal(dstEntity) {
+			//#nosec G104
 			utils.Should(errors.Errorf("network conn %s with all external endpoints is unexpected", networkgraph.GetNetworkConnIndicator(flow).String()))
 			continue
 		}

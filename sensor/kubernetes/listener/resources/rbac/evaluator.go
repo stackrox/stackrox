@@ -42,6 +42,7 @@ func rolePermissionLevelToClusterPermissionLevel(permissionLevel rolePermissionL
 	case permissionNone:
 		return storage.PermissionLevel_NONE
 	}
+	//#nosec G104
 	_ = utils.Should(fmt.Errorf("unhandled permission level %d", permissionLevel))
 	return storage.PermissionLevel_UNSET
 }
@@ -55,6 +56,7 @@ func rolePermissionLevelToNamespacePermissionLevel(permissionLevel rolePermissio
 	case permissionNone:
 		return storage.PermissionLevel_NONE
 	}
+	//#nosec G104
 	_ = utils.Should(fmt.Errorf("unhandled permission level %d", permissionLevel))
 	return storage.PermissionLevel_UNSET
 }

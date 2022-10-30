@@ -22,11 +22,13 @@ var (
 func CompareExposureLevel(a, b storage.PortConfig_ExposureLevel) int {
 	aRank, ok := exposureRank[a]
 	if !ok {
+		//#nosec G104
 		utils.Should(errors.Errorf("invalid exposure level %v", a))
 		aRank = -1
 	}
 	bRank, ok := exposureRank[b]
 	if !ok {
+		//#nosec G104
 		utils.Should(errors.Errorf("invalid exposure level %v", b))
 		bRank = -1
 	}

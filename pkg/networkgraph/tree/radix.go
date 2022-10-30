@@ -46,6 +46,7 @@ func NewNRadixTree(family pkgNet.Family, entities []*storage.NetworkEntityInfo) 
 
 func newDefaultNRadixTree(family pkgNet.Family) *nRadixTree {
 	if family == pkgNet.InvalidFamily {
+		//#nosec G104
 		utils.Should(errors.New("failed to create network tree. Invalid IP address family provided"))
 	}
 

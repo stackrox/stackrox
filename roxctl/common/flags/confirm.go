@@ -26,6 +26,7 @@ func CheckConfirmation(c *cobra.Command, logger logger.Logger, io io.IO) error {
 	f, err := c.Flags().GetBool(forceFlag)
 	if err != nil {
 		logger.ErrfLn("Error checking value of --force flag: %w", err)
+		//#nosec G104
 		utils.Should(err)
 		f = false
 	}

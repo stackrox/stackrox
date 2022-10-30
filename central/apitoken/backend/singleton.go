@@ -34,10 +34,12 @@ func Singleton() Backend {
 		// Create and initialize source.
 		src := newSource()
 		err := src.initFromStore(ctx, datastore.Singleton())
+		//#nosec G104
 		utils.Should(errors.Wrap(err, "could not initialize API tokens source"))
 
 		// Create token issuer.
 		issuer, err := jwt.IssuerFactorySingleton().CreateIssuer(src, tokens.WithDefaultTTL(defaultTTL))
+		//#nosec G104
 		utils.Should(errors.Wrap(err, "could not create token issuer"))
 
 		// Create the final backend.

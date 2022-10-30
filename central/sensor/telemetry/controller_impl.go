@@ -146,6 +146,7 @@ func (c *controller) PullKubernetesInfo(ctx context.Context, cb KubernetesInfoCh
 	genericCB := func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error {
 		k8sInfo := chunk.GetKubernetesInfo()
 		if k8sInfo == nil {
+			//#nosec G104
 			utils.Should(errors.New("ignoring response in telemetry data stream with missing Kubernetes info payload"))
 			return nil
 		}
@@ -159,6 +160,7 @@ func (c *controller) PullMetrics(ctx context.Context, cb MetricsInfoChunkCallbac
 	genericCB := func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error {
 		metricsInfo := chunk.GetMetricsInfo()
 		if metricsInfo == nil {
+			//#nosec G104
 			utils.Should(errors.New("ignoring response in telemetry data stream with missing metrics info payload"))
 			return nil
 		}
@@ -172,6 +174,7 @@ func (c *controller) PullClusterInfo(ctx context.Context, cb ClusterInfoCallback
 	genericCB := func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error {
 		clusterInfo := chunk.GetClusterInfo()
 		if clusterInfo == nil {
+			//#nosec G104
 			utils.Should(errors.New("ignoring response in telemetry data stream with missing Cluster info payload"))
 			return nil
 		}

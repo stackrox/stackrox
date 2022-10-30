@@ -15,6 +15,7 @@ func ID(cve, os string) string {
 func IDToParts(id string) (string, string) {
 	parts := postgres.IDToParts(id)
 	if len(parts) > 2 {
+		//#nosec G104
 		utils.Should(errors.Errorf("unexpected number of parts for CVE ID %s", id))
 		return "", ""
 	}

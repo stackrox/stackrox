@@ -24,6 +24,7 @@ func NewDispatcher(store Store) *Dispatcher {
 func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
 	evt := r.processEvent(obj, action)
 	if evt == nil {
+		//#nosec G104
 		utils.Should(errors.Errorf("rbac obj %+v was not correlated to a sensor event", obj))
 		return nil
 	}

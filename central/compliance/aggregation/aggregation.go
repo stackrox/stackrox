@@ -393,6 +393,7 @@ func (a *aggregatorImpl) getCategoryID(controlID string) string {
 
 	category := a.standards.GetCategoryByControl(controlID)
 	if category == nil {
+		//#nosec G104
 		utils.Should(errors.Errorf("no category found for control %q", controlID))
 		return ""
 	}
@@ -646,6 +647,7 @@ func (a *aggregatorImpl) getResultsFromScope(ctx context.Context, scope storage.
 	funcAndMap, ok := a.getSearchFuncs()[scope]
 	// Programming error.
 	if !ok {
+		//#nosec G104
 		utils.Should(errors.Errorf("No search func registered for scope: %s", scope))
 		return
 	}
