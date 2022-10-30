@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	testChild1 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild1"
 	testChild1P4 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild1p4"
 	testChild2 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild2"
@@ -62,8 +61,7 @@ func TestGraphQueries(t *testing.T) {
 
 type GraphQueriesTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	pool        *pgxpool.Pool
+	pool *pgxpool.Pool
 
 	testGrandparentStore   testGrandparent.Store
 	testChild1Store        testChild1.Store
@@ -81,8 +79,7 @@ type GraphQueriesTestSuite struct {
 }
 
 func (s *GraphQueriesTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -631,5 +628,4 @@ func (s *GraphQueriesTestSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
-	s.envIsolator.RestoreAll()
 }

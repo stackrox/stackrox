@@ -48,7 +48,6 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -106,19 +105,14 @@ func TestSearchService(t *testing.T) {
 
 type SearchOperationsTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 
 	mockCtrl *gomock.Controller
 	rocksDB  *rocksdb.RocksDB
 	boltDB   *bolt.DB
 }
 
-func (s *SearchOperationsTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
 func (s *SearchOperationsTestSuite) SetupTest() {
-	s.envIsolator.Setenv(features.NewPolicyCategories.EnvVar(), "true")
+	s.T().Setenv(features.NewPolicyCategories.EnvVar(), "true")
 	s.mockCtrl = gomock.NewController(s.T())
 	s.rocksDB = rocksdbtest.RocksDBForT(s.T())
 	var err error
@@ -127,7 +121,6 @@ func (s *SearchOperationsTestSuite) SetupTest() {
 }
 
 func (s *SearchOperationsTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 	s.mockCtrl.Finish()
 	s.rocksDB.Close()
 }

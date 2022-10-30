@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,20 +18,10 @@ func TestToken(t *testing.T) {
 
 type tokenSuite struct {
 	suite.Suite
-
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *tokenSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *tokenSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *tokenSuite) Test_RetrieveAuthToken_WithEnv() {
-	s.envIsolator.Setenv(env.TokenEnv.EnvVar(), testTokenVal)
+	s.T().Setenv(env.TokenEnv.EnvVar(), testTokenVal)
 
 	got, err := retrieveAuthToken()
 
@@ -41,7 +30,7 @@ func (s *tokenSuite) Test_RetrieveAuthToken_WithEnv() {
 }
 
 func (s *tokenSuite) Test_RetrieveAuthToken_ShouldTrimLeadingAndTrailingWhitespace() {
-	s.envIsolator.Setenv(env.TokenEnv.EnvVar(), fmt.Sprintf(" \n %s \n", testTokenVal))
+	s.T().Setenv(env.TokenEnv.EnvVar(), fmt.Sprintf(" \n %s \n", testTokenVal))
 
 	got, err := retrieveAuthToken()
 
@@ -50,7 +39,7 @@ func (s *tokenSuite) Test_RetrieveAuthToken_ShouldTrimLeadingAndTrailingWhitespa
 }
 
 func (s *tokenSuite) Test_RetrieveAuthToken_ShouldTrimLeadingAndTrailingWhitespace_Windows() {
-	s.envIsolator.Setenv(env.TokenEnv.EnvVar(), fmt.Sprintf(" \r %s \r", testTokenVal))
+	s.T().Setenv(env.TokenEnv.EnvVar(), fmt.Sprintf(" \r %s \r", testTokenVal))
 
 	got, err := retrieveAuthToken()
 

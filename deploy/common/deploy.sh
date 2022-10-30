@@ -45,7 +45,8 @@ if [[ -z "${SCANNER_IMAGE}" ]]; then
 fi
 export SCANNER_DB_IMAGE="${SCANNER_DB_IMAGE:-}"
 if [[ -z "${SCANNER_DB_IMAGE}" ]]; then
-  export SCANNER_DB_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+  SCANNER_DB_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+  export SCANNER_DB_IMAGE
 fi
 echo "StackRox scanner image set to $SCANNER_IMAGE"
 
@@ -85,12 +86,13 @@ function wait_for_central {
 
     echo -n "Waiting for Central to respond."
     set +e
-    local start_time="$(date '+%s')"
+    local start_time
+    start_time="$(date '+%s')"
     local deadline=$((start_time + 10*60))  # 10 minutes
-    until $(curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping"); do
+    until curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping"; do
         if [[ "$(date '+%s')" > "$deadline" ]]; then
             echo >&2 "Exceeded deadline waiting for Central."
-            central_pod="$("${ORCH_CMD}" -n stackrox get pods -l app=central -ojsonpath={.items[0].metadata.name})"
+            central_pod="$("${ORCH_CMD}" -n stackrox get pods -l app=central -ojsonpath='{.items[0].metadata.name}')"
             if [[ -n "$central_pod" ]]; then
                 "${ORCH_CMD}" -n stackrox exec "${central_pod}" -c central -- kill -ABRT 1
             fi
@@ -150,7 +152,7 @@ function get_cluster_zip {
       exit 1
     fi
 
-    ID="$(cat "${TMP}" | jq -r .cluster.id)"
+    ID="$(jq -r .cluster.id "${TMP}")"
 
     echo "Getting zip file for cluster ${ID}"
     STATUS=$(curl_central -X POST \
@@ -185,8 +187,8 @@ function get_identity {
         "https://$LOCAL_API_ENDPOINT/v1/serviceIdentities")
     echo "Status: $STATUS"
     echo "Response: $(cat "${TMP}")"
-    cat "$TMP" | jq -r .certificate > "$OUTPUT_DIR/sensor-cert.pem"
-    cat "$TMP" | jq -r .privateKey > "$OUTPUT_DIR/sensor-key.pem"
+    jq -r .certificate "$TMP" > "$OUTPUT_DIR/sensor-cert.pem"
+    jq -r .privateKey "$TMP" > "$OUTPUT_DIR/sensor-key.pem"
     rm "$TMP"
     echo
 }
@@ -208,7 +210,7 @@ function get_authority {
         "https://$LOCAL_API_ENDPOINT/v1/authorities")
     echo "Status: $STATUS"
     echo "Response: $(cat "${TMP}")"
-    cat "$TMP" | jq -r .authorities[0].certificate > "$OUTPUT_DIR/ca.pem"
+    jq -r .authorities[0].certificate "$TMP" > "$OUTPUT_DIR/ca.pem"
     rm "$TMP"
     echo
 }
@@ -243,8 +245,8 @@ function setup_license() {
     echo "Injecting license ..."
     [[ -f "$license_file" ]] || { echo "License file $license_file not found!" ; return 1 ; }
 
-    local tmp="$(mktemp)"
-
+    local tmp
+    tmp="$(mktemp)"
     status=$(curl_central \
 	    -s \
 	    -o "$tmp" \

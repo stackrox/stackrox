@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -23,7 +22,6 @@ func TestCollectionService(t *testing.T) {
 type CollectionServiceTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
-	ei       *envisolator.EnvIsolator
 
 	dataStore *datastoreMocks.MockDataStore
 }
@@ -31,15 +29,13 @@ type CollectionServiceTestSuite struct {
 func (suite *CollectionServiceTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
-	suite.ei = envisolator.NewEnvIsolator(suite.T())
-	suite.ei.Setenv(features.ObjectCollections.EnvVar(), "true")
+	suite.T().Setenv(features.ObjectCollections.EnvVar(), "true")
 
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }
 
 func (suite *CollectionServiceTestSuite) TearDownSuite() {
-	suite.ei.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 
