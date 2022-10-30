@@ -112,11 +112,15 @@ func extractBundle(src string) (string, string, error) {
 			return "", "", errors.Wrap(err, "creating external networks temp file")
 		}
 
-		_, err = io.Copy(file, reader)
-		if err != nil {
-			return "", "", errors.Wrap(err, "copying external networks zip out")
+		for {
+			_, err := io.CopyN(file, reader, 1024)
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				return "", "", errors.Wrap(err, "copying external networks zip out")
+			}
 		}
-
 	}
 	return path.Join(tmpPath, defaultexternalsrcs.ChecksumFileName), path.Join(tmpPath, defaultexternalsrcs.DataFileName), nil
 }

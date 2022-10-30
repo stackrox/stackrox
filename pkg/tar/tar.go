@@ -104,9 +104,15 @@ func ToPath(untarTo string, fileReader io.Reader) error {
 		if err != nil {
 			return errors.Wrapf(err, "unable to open file for write: %s", path)
 		}
-		if _, err := io.Copy(f, tarReader); err != nil {
-			utils.IgnoreError(f.Close)
-			return errors.Wrapf(err, "unable to copy to opened file: %s", path)
+		for {
+			_, err := io.CopyN(f, tarReader, 1024)
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				utils.IgnoreError(f.Close)
+				return errors.Wrapf(err, "unable to copy to opened file: %s", path)
+			}
 		}
 		if err := f.Close(); err != nil {
 			return errors.Wrapf(err, "unable to close file: %s", path)
