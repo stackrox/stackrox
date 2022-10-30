@@ -93,15 +93,8 @@ const widgetTitleForEntity = {
     namespaces: 'Namespace',
 };
 
-// Default opname is entities path segment. For example, clusters.
-const opnameExceptionsForEntities = {
-    deployments: 'getDeployments',
-    roles: 'k8sRoles',
-    serviceaccounts: 'serviceAccounts',
-};
-
 function getRequestConfigForEntities(entitiesKey) {
-    const opname = opnameExceptionsForEntities[entitiesKey] ?? entitiesKey;
+    const opname = entitiesKey;
     return {
         routeMatcherMap: {
             [opname]: graphql(opname),
