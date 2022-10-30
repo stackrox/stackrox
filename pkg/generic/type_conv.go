@@ -28,6 +28,7 @@ func String(value interface{}) string {
 	case byte:
 		return string(v)
 	default:
+		//#nosec G104
 		utils.Should(errors.Errorf("unsupported type %T", v))
 		return fmt.Sprintf("%+v", v)
 	}

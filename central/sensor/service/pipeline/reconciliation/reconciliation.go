@@ -84,6 +84,7 @@ func NewStoreMap() *StoreMap {
 // Never return nil to prevent accidental panics if nil checks are not performed.
 func (s *StoreMap) Get(i interface{}) Store {
 	if s.reconciliationMap == nil {
+		//#nosec G104
 		utils.Should(errors.Errorf("Attempted to perform a Get on a closed reconciliation store for the following: %+v", i))
 		return NewStore()
 	}
@@ -99,6 +100,7 @@ func (s *StoreMap) Get(i interface{}) Store {
 // Add adds an id to the type
 func (s *StoreMap) Add(i interface{}, id string) {
 	if s.reconciliationMap == nil {
+		//#nosec G104
 		utils.Should(errors.Errorf("Attempted to perform an Add on a closed reconciliation store for the following ID: %s", id))
 		return
 	}
