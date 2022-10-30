@@ -53,6 +53,7 @@ linters-settings:
     - G101
     - G102
     - G103
+    - G113
     - G303
     - G601
   revive:
