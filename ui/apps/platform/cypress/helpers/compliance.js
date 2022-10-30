@@ -14,7 +14,7 @@ const routeMatcherMap = {};
     'getAggregatedResultsAcrossEntity_CLUSTER',
     'getAggregatedResultsByEntity_CLUSTER',
     'getAggregatedResultsAcrossEntity_NAMESPACE',
-    'getAggregatedResultsAcrottEntity_NODE',
+    'getAggregatedResultsAcrossEntity_NODE',
     'getComplianceStandards',
     'complianceStandards_CIS_Docker_v1_2_0',
     'complianceStandards_CIS_Kubernetes_v1_5',
