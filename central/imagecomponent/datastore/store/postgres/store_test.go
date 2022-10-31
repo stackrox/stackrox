@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ImageComponentsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestImageComponentsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestImageComponentsStore(t *testing.T) {
 }
 
 func (s *ImageComponentsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *ImageComponentsStoreSuite) SetupTest() {
 
 func (s *ImageComponentsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ImageComponentsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, imageComponent.GetId()))
 
 	var imageComponents []*storage.ImageComponent
+	var imageComponentIDs []string
 	for i := 0; i < 200; i++ {
 		imageComponent := &storage.ImageComponent{}
 		s.NoError(testutils.FullInit(imageComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		imageComponents = append(imageComponents, imageComponent)
+		imageComponentIDs = append(imageComponentIDs, imageComponent.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, imageComponents))
@@ -111,4 +109,10 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	imageComponentCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, imageComponentCount)
+
+	s.NoError(store.DeleteMany(ctx, imageComponentIDs))
+
+	imageComponentCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, imageComponentCount)
 }

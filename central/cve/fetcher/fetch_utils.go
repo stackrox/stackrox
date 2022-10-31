@@ -2,7 +2,6 @@ package fetcher
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -10,7 +9,6 @@ import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
-	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -19,21 +17,14 @@ import (
 const (
 	fetchDelay            = 2 * time.Hour
 	preloadedCVEsBasePath = "/stackrox/static-data"
-	k8sCVEsURL            = "https://definitions.stackrox.io/cve/k8s/cve-list.json"
-	k8sCVEsChecksumURL    = "https://definitions.stackrox.io/cve/k8s/checksum"
-	istioCVEsURL          = "https://definitions.stackrox.io/cve/istio/cve-list.json"
-	istioCVEsChecksumURL  = "https://definitions.stackrox.io/cve/istio/checksum"
+	istioCVEsURL          = "https://definitions.stackrox.io/cve2/istio/cve-list.json"
+	istioCVEsChecksumURL  = "https://definitions.stackrox.io/cve2/istio/checksum"
 	commonCveDir          = "cve"
-	k8sCVEsDir            = "k8s"
 	istioCVEsDir          = "istio"
 )
 
 var (
 	persistentCVEsPath                  = migrations.DBMountPath()
-	persistentK8sCVEsFilePath           = filepath.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir, "cve-list.json")
-	persistentK8sCVEsChecksumFilePath   = filepath.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir, "checksum")
-	preloadedK8sCVEsFilePath            = filepath.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Kubernetes].CVEFilename)
-	preloadedK8sCVEsChecksumFilePath    = filepath.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Kubernetes].ChecksumFilename)
 	persistentIstioCVEsFilePath         = filepath.Join(persistentCVEsPath, commonCveDir, istioCVEsDir, "cve-list.json")
 	persistentIstioCVEsChecksumFilePath = filepath.Join(persistentCVEsPath, commonCveDir, istioCVEsDir, "checksum")
 	preloadedIstioCVEsFilePath          = filepath.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Istio].CVEFilename)
@@ -83,13 +74,10 @@ func overwriteCVEs(cveFile, cveChecksumFile, checksum, CVEs string) error {
 	return nil
 }
 
-func copyCVEsFromPreloadedToPersistentDirIfAbsent(ct utils.CVEType) error {
-	paths, err := getPaths(ct)
-	if err != nil {
-		return err
-	}
+func copyCVEsFromPreloadedToPersistentDirIfAbsent() error {
+	paths := getIstioPaths()
 
-	// Copying k8s CVE files
+	// Copying Istio CVE files
 	if err := os.MkdirAll(paths.persistentCveDirPath, 0744); err != nil {
 		log.Errorf("failed to create directory %q, err: %v", paths.persistentCveDirPath, err)
 		return err
@@ -115,27 +103,14 @@ type cvePaths struct {
 	persistentCveChecksumFile string
 }
 
-func getPaths(ct utils.CVEType) (*cvePaths, error) {
-	if ct == utils.K8s {
-		return &cvePaths{
-			preloadedCveDirPath:       filepath.Join(preloadedCVEsBasePath, commonCveDir, k8sCVEsDir),
-			persistentCveDirPath:      filepath.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir),
-			preloadedCveFile:          preloadedK8sCVEsFilePath,
-			preloadedCveChecksumFile:  preloadedK8sCVEsChecksumFilePath,
-			persistentCveFile:         persistentK8sCVEsFilePath,
-			persistentCveChecksumFile: persistentK8sCVEsChecksumFilePath,
-		}, nil
-	} else if ct == utils.Istio {
-		return &cvePaths{
-			preloadedCveDirPath:       filepath.Join(preloadedCVEsBasePath, commonCveDir, istioCVEsDir),
-			persistentCveDirPath:      filepath.Join(persistentCVEsPath, commonCveDir, istioCVEsDir),
-			preloadedCveFile:          preloadedIstioCVEsFilePath,
-			preloadedCveChecksumFile:  preloadedIstioCVEsChecksumFilePath,
-			persistentCveFile:         persistentIstioCVEsFilePath,
-			persistentCveChecksumFile: persistentIstioCVEsChecksumFilePath,
-		}, nil
-	} else {
-		return &cvePaths{}, fmt.Errorf("unknown cve type: %d", ct)
+func getIstioPaths() *cvePaths {
+	return &cvePaths{
+		preloadedCveDirPath:       filepath.Join(preloadedCVEsBasePath, commonCveDir, istioCVEsDir),
+		persistentCveDirPath:      filepath.Join(persistentCVEsPath, commonCveDir, istioCVEsDir),
+		preloadedCveFile:          preloadedIstioCVEsFilePath,
+		preloadedCveChecksumFile:  preloadedIstioCVEsChecksumFilePath,
+		persistentCveFile:         persistentIstioCVEsFilePath,
+		persistentCveChecksumFile: persistentIstioCVEsChecksumFilePath,
 	}
 }
 
@@ -144,18 +119,9 @@ type cveURLs struct {
 	cveChecksumURL string
 }
 
-func getUrls(ct utils.CVEType) (*cveURLs, error) {
-	if ct == utils.K8s {
-		return &cveURLs{
-			cveURL:         k8sCVEsURL,
-			cveChecksumURL: k8sCVEsChecksumURL,
-		}, nil
-	} else if ct == utils.Istio {
-		return &cveURLs{
-			cveURL:         istioCVEsURL,
-			cveChecksumURL: istioCVEsChecksumURL,
-		}, nil
-	} else {
-		return &cveURLs{}, fmt.Errorf("unknown cve type: %d", ct)
+func getIstioUrls() *cveURLs {
+	return &cveURLs{
+		cveURL:         istioCVEsURL,
+		cveChecksumURL: istioCVEsChecksumURL,
 	}
 }

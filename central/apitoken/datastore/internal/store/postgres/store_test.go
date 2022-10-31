@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ApiTokensStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestApiTokensStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestApiTokensStore(t *testing.T) {
 }
 
 func (s *ApiTokensStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *ApiTokensStoreSuite) SetupTest() {
 
 func (s *ApiTokensStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ApiTokensStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *ApiTokensStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, tokenMetadata.GetId()), sac.ErrResourceAccessDenied)
 
 	var tokenMetadatas []*storage.TokenMetadata
+	var tokenMetadataIDs []string
 	for i := 0; i < 200; i++ {
 		tokenMetadata := &storage.TokenMetadata{}
 		s.NoError(testutils.FullInit(tokenMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		tokenMetadatas = append(tokenMetadatas, tokenMetadata)
+		tokenMetadataIDs = append(tokenMetadataIDs, tokenMetadata.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, tokenMetadatas))
@@ -111,4 +109,10 @@ func (s *ApiTokensStoreSuite) TestStore() {
 	tokenMetadataCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, tokenMetadataCount)
+
+	s.NoError(store.DeleteMany(ctx, tokenMetadataIDs))
+
+	tokenMetadataCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, tokenMetadataCount)
 }

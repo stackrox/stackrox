@@ -39,6 +39,8 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedProcessBaselineServiceServer
+
 	dataStore         datastore.DataStore
 	reprocessor       reprocessor.Loop
 	connectionManager connection.Manager

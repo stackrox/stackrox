@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ComplianceStringsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestComplianceStringsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestComplianceStringsStore(t *testing.T) {
 }
 
 func (s *ComplianceStringsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *ComplianceStringsStoreSuite) SetupTest() {
 
 func (s *ComplianceStringsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ComplianceStringsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *ComplianceStringsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, complianceStrings.GetId()))
 
 	var complianceStringss []*storage.ComplianceStrings
+	var complianceStringsIDs []string
 	for i := 0; i < 200; i++ {
 		complianceStrings := &storage.ComplianceStrings{}
 		s.NoError(testutils.FullInit(complianceStrings, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceStringss = append(complianceStringss, complianceStrings)
+		complianceStringsIDs = append(complianceStringsIDs, complianceStrings.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceStringss))
@@ -111,4 +109,10 @@ func (s *ComplianceStringsStoreSuite) TestStore() {
 	complianceStringsCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, complianceStringsCount)
+
+	s.NoError(store.DeleteMany(ctx, complianceStringsIDs))
+
+	complianceStringsCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, complianceStringsCount)
 }

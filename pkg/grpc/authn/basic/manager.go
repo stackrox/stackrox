@@ -24,6 +24,7 @@ func (m *Manager) hashFile() *htpasswd.HashFile {
 
 // SetHashFile sets the hash file to be used for basic auth.
 func (m *Manager) SetHashFile(hashFile *htpasswd.HashFile) {
+	//#nosec G103
 	atomic.StorePointer(&m.hashFilePtr, unsafe.Pointer(hashFile))
 }
 
@@ -50,6 +51,7 @@ func (m *Manager) IdentityForCreds(ctx context.Context, username, password strin
 // NewManager creates a new manager for basic authentication.
 func NewManager(hashFile *htpasswd.HashFile, roleMapper permissions.RoleMapper) *Manager {
 	return &Manager{
+		//#nosec G103
 		hashFilePtr: unsafe.Pointer(hashFile),
 		mapper:      roleMapper,
 	}

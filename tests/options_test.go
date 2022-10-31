@@ -2,10 +2,11 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
-	search "github.com/stackrox/rox/central/search"
+	"github.com/stackrox/rox/central/search"
 	"github.com/stackrox/rox/central/search/options"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
@@ -17,51 +18,23 @@ func TestOptions(t *testing.T) {
 	t.Parallel()
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
-
 	service := v1.NewSearchServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	categories := []v1.SearchCategory{v1.SearchCategory_ALERTS}
-	resp, err := service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
-	cancel()
-	require.NoError(t, err)
-	assert.ElementsMatch(t, options.GetOptions(categories), resp.GetOptions())
 
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	categories = []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS}
-	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
-	cancel()
-	require.NoError(t, err)
-	assert.ElementsMatch(t, options.GetOptions(categories), resp.GetOptions())
-
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	categories = []v1.SearchCategory{v1.SearchCategory_IMAGES}
-	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
-	cancel()
-	require.NoError(t, err)
-	assert.ElementsMatch(t, options.GetOptions(categories), resp.GetOptions())
-
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	categories = []v1.SearchCategory{v1.SearchCategory_POLICIES}
-	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
-	cancel()
-	require.NoError(t, err)
-	assert.ElementsMatch(t, options.GetOptions(categories), resp.GetOptions())
-
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-
-	// All category
-
-	categories = categories[:0]
-	categories = append(categories, search.GetGlobalSearchCategories().AsSlice()...)
-
-	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
-	cancel()
-	require.NoError(t, err)
-	assert.ElementsMatch(t, options.GetOptions(categories), resp.GetOptions())
-
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{})
-	cancel()
-	require.NoError(t, err)
-	assert.Equal(t, options.GetOptions(categories), resp.GetOptions())
+	for _, categories := range [][]v1.SearchCategory{
+		{},
+		{v1.SearchCategory_ALERTS},
+		{v1.SearchCategory_DEPLOYMENTS},
+		{v1.SearchCategory_IMAGES},
+		{v1.SearchCategory_POLICIES},
+		search.GetGlobalSearchCategories().AsSlice(),
+	} {
+		t.Run(fmt.Sprintf("%v", categories), func(t *testing.T) {
+			t.Parallel()
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			resp, err := service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
+			cancel()
+			require.NoError(t, err)
+			assert.ElementsMatch(t, options.GetOptions(categories), resp.GetOptions())
+		})
+	}
 }

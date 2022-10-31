@@ -5,7 +5,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -369,7 +368,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.LogImbue) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.LogImbue](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -379,12 +378,8 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.LogImbue) err
 		if err != nil {
 			return pgutils.ErrNilIfNoRows(err)
 		}
-		for _, data := range rows {
-			var msg storage.LogImbue
-			if err := proto.Unmarshal(data, &msg); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+		for _, msg := range rows {
+			if err := fn(msg); err != nil {
 				return err
 			}
 		}

@@ -63,6 +63,7 @@ func (s *Signal) Wait() {
 // actually performed (i.e., the signal was triggered). It returns false if the signal was not in the triggered state.
 func (s *Signal) Reset() bool {
 	ch := make(chan struct{})
+	//#nosec G103
 	return atomic.CompareAndSwapPointer(&s.ch, nil, unsafe.Pointer(&ch))
 }
 

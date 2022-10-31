@@ -34,6 +34,8 @@ var (
 )
 
 type serviceImpl struct {
+	central.UnimplementedSensorServiceServer
+
 	manager  connection.Manager
 	pf       pipeline.Factory
 	clusters clusterDataStore.DataStore

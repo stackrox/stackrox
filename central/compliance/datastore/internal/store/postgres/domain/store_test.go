@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ComplianceDomainsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestComplianceDomainsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestComplianceDomainsStore(t *testing.T) {
 }
 
 func (s *ComplianceDomainsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *ComplianceDomainsStoreSuite) SetupTest() {
 
 func (s *ComplianceDomainsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ComplianceDomainsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, complianceDomain.GetId()))
 
 	var complianceDomains []*storage.ComplianceDomain
+	var complianceDomainIDs []string
 	for i := 0; i < 200; i++ {
 		complianceDomain := &storage.ComplianceDomain{}
 		s.NoError(testutils.FullInit(complianceDomain, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceDomains = append(complianceDomains, complianceDomain)
+		complianceDomainIDs = append(complianceDomainIDs, complianceDomain.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceDomains))
@@ -111,4 +109,10 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 	complianceDomainCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, complianceDomainCount)
+
+	s.NoError(store.DeleteMany(ctx, complianceDomainIDs))
+
+	complianceDomainCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, complianceDomainCount)
 }

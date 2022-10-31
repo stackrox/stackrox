@@ -139,6 +139,11 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 	}
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		searchers[v1.SearchCategory_VULNERABILITIES] = resolver.CVEDataStore
+	} else {
+		searchers[v1.SearchCategory_IMAGE_VULNERABILITIES] = resolver.ImageCVEDataStore
+		searchers[v1.SearchCategory_NODE_VULNERABILITIES] = resolver.NodeCVEDataStore
+		searchers[v1.SearchCategory_CLUSTER_VULNERABILITIES] = resolver.ClusterCVEDataStore
+		searchers[v1.SearchCategory_NODE_COMPONENTS] = resolver.NodeComponentDataStore
 	}
 
 	return searchers
@@ -163,6 +168,11 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 	}
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		searchfuncs[v1.SearchCategory_VULNERABILITIES] = resolver.CVEDataStore.SearchCVEs
+	} else {
+		searchfuncs[v1.SearchCategory_IMAGE_VULNERABILITIES] = resolver.ImageCVEDataStore.SearchImageCVEs
+		searchfuncs[v1.SearchCategory_NODE_VULNERABILITIES] = resolver.NodeCVEDataStore.SearchNodeCVEs
+		searchfuncs[v1.SearchCategory_CLUSTER_VULNERABILITIES] = resolver.ClusterCVEDataStore.SearchClusterCVEs
+		searchfuncs[v1.SearchCategory_NODE_COMPONENTS] = resolver.NodeComponentDataStore.SearchNodeComponents
 	}
 	return searchfuncs
 }

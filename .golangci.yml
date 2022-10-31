@@ -50,6 +50,10 @@ issues:
 linters-settings:
   gosec:
     includes:
+    - G101
+    - G102
+    - G103
+    - G303
     - G601
   revive:
     min-confidence: 0

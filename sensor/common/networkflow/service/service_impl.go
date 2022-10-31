@@ -34,6 +34,8 @@ func NewService(networkFlowManager manager.Manager) Service {
 }
 
 type serviceImpl struct {
+	sensor.UnimplementedNetworkConnectionInfoServiceServer
+
 	manager manager.Manager
 }
 

@@ -1,19 +1,11 @@
-import selectors, { systemConfigUrl, text } from '../constants/SystemConfigPage';
+import selectors, { text } from '../constants/SystemConfigPage';
 import withAuth from '../helpers/basicAuth';
-import { visitFromLeftNavExpandable } from '../helpers/nav';
-import { system as configApi } from '../constants/apiEndpoints';
-
-function visitSytemConfigurationFromLeftNav() {
-    cy.intercept('GET', configApi.config).as('getSystemConfiguration');
-    visitFromLeftNavExpandable('Platform Configuration', 'System Configuration');
-    cy.wait('@getSystemConfiguration');
-}
-
-function visitSystemConfiguration() {
-    cy.intercept('GET', configApi.config).as('getSystemConfiguration');
-    cy.visit(systemConfigUrl);
-    cy.wait('@getSystemConfiguration');
-}
+import {
+    saveSystemConfiguration,
+    visitSystemConfiguration,
+    visitSystemConfigurationFromLeftNav,
+    visitSystemConfigurationWithStaticResponseForPermissions,
+} from '../helpers/systemConfig';
 
 function editBaseConfig(type) {
     cy.get(selectors.pageHeader.editButton).click();
@@ -34,16 +26,12 @@ function editBannerConfig(type) {
     cy.get(selectors[type].widget).click();
 }
 
-function saveSystemConfiguration() {
-    cy.intercept('PUT', configApi.config).as('putSystemConfiguration');
-    cy.get(selectors.pageHeader.saveButton).click();
-    cy.wait('@putSystemConfiguration');
-}
-
 function disableConfig(type) {
     cy.get(selectors.pageHeader.editButton).click();
     cy.get(selectors[type].config.toggle).uncheck({ force: true }); // force for PatternFly Switch element
+
     saveSystemConfiguration();
+
     cy.get(selectors[type].state).contains('Disabled');
 }
 
@@ -59,13 +47,22 @@ describe('System Configuration', () => {
     withAuth();
 
     it('should go to System Configuration from main navigation', () => {
-        visitSytemConfigurationFromLeftNav();
-        cy.location('pathname').should('eq', systemConfigUrl);
-        cy.get('h1:contains("System Configuration")');
+        visitSystemConfigurationFromLeftNav();
+
         cy.get(selectors.dataRetention.widget).should('exist');
         cy.get(selectors.header.widget).should('exist');
         cy.get(selectors.footer.widget).should('exist');
         cy.get(selectors.loginNotice.widget).should('exist');
+    });
+
+    it('should not render Edit button if READ_ACCESS to resource', () => {
+        const staticResponseForPermissions = {
+            fixture: 'auth/mypermissionsMinimalAccess.json',
+        };
+
+        visitSystemConfigurationWithStaticResponseForPermissions(staticResponseForPermissions);
+
+        cy.get(selectors.pageHeader.editButton).should('not.exist');
     });
 
     it('should allow the user to set data retention to "never delete"', () => {

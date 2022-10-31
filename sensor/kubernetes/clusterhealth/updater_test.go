@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
@@ -35,7 +34,6 @@ type UpdaterTestSuite struct {
 	suite.Suite
 
 	client *fake.Clientset
-	env    *envisolator.EnvIsolator
 }
 
 type expectedHealthInfo struct {
@@ -46,12 +44,7 @@ type expectedHealthInfo struct {
 
 func (s *UpdaterTestSuite) SetupTest() {
 	s.client = fake.NewSimpleClientset()
-	s.env = envisolator.NewEnvIsolator(s.T())
-	s.env.Setenv(namespaceVar, "stackrox-mock-ns")
-}
-
-func (s *UpdaterTestSuite) TearDownTest() {
-	s.env.RestoreAll()
+	s.T().Setenv(namespaceVar, "stackrox-mock-ns")
 }
 
 func (s *UpdaterTestSuite) TestHappyCase() {
@@ -148,7 +141,7 @@ func (s *UpdaterTestSuite) TestCanSendMultipleUpdates() {
 
 func (s *UpdaterTestSuite) TestCustomNamespaceHappyCase() {
 	const customNs = "custom-test-ns"
-	s.env.Setenv(namespaceVar, customNs)
+	s.T().Setenv(namespaceVar, customNs)
 
 	ds := makeDaemonSet()
 	ds.ObjectMeta.Namespace = customNs
@@ -163,8 +156,7 @@ func (s *UpdaterTestSuite) TestCustomNamespaceHappyCase() {
 }
 
 func (s *UpdaterTestSuite) TestNamespaceFallback() {
-	s.env.Unsetenv(namespaceVar)
-
+	s.T().Setenv(namespaceVar, "")
 	ds := makeDaemonSet()
 	ds.ObjectMeta.Namespace = namespaces.StackRox
 	s.addDaemonSet(ds)
@@ -178,7 +170,7 @@ func (s *UpdaterTestSuite) TestNamespaceFallback() {
 }
 
 func (s *UpdaterTestSuite) TestNamespaceMismatch() {
-	s.env.Setenv(namespaceVar, "where-things-should-be")
+	s.T().Setenv(namespaceVar, "where-things-should-be")
 
 	ds := makeDaemonSet()
 	ds.ObjectMeta.Namespace = "where-things-are"

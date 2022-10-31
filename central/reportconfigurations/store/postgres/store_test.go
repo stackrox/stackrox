@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ReportConfigurationsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestReportConfigurationsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestReportConfigurationsStore(t *testing.T) {
 }
 
 func (s *ReportConfigurationsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *ReportConfigurationsStoreSuite) SetupTest() {
 
 func (s *ReportConfigurationsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ReportConfigurationsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, reportConfiguration.GetId()), sac.ErrResourceAccessDenied)
 
 	var reportConfigurations []*storage.ReportConfiguration
+	var reportConfigurationIDs []string
 	for i := 0; i < 200; i++ {
 		reportConfiguration := &storage.ReportConfiguration{}
 		s.NoError(testutils.FullInit(reportConfiguration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		reportConfigurations = append(reportConfigurations, reportConfiguration)
+		reportConfigurationIDs = append(reportConfigurationIDs, reportConfiguration.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, reportConfigurations))
@@ -111,4 +109,10 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 	reportConfigurationCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, reportConfigurationCount)
+
+	s.NoError(store.DeleteMany(ctx, reportConfigurationIDs))
+
+	reportConfigurationCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, reportConfigurationCount)
 }

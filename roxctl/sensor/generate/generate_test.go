@@ -25,7 +25,7 @@ import (
 )
 
 type mockClustersServiceServer struct {
-	v1.ClustersServiceServer
+	v1.UnimplementedClustersServiceServer
 
 	// injected behavior
 	getKernelSupportInjectedFn getKernelSupportFn

@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type RisksStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestRisksStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestRisksStore(t *testing.T) {
 }
 
 func (s *RisksStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *RisksStoreSuite) SetupTest() {
 
 func (s *RisksStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *RisksStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *RisksStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, risk.GetId()))
 
 	var risks []*storage.Risk
+	var riskIDs []string
 	for i := 0; i < 200; i++ {
 		risk := &storage.Risk{}
 		s.NoError(testutils.FullInit(risk, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		risks = append(risks, risk)
+		riskIDs = append(riskIDs, risk.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, risks))
@@ -113,6 +111,12 @@ func (s *RisksStoreSuite) TestStore() {
 	riskCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, riskCount)
+
+	s.NoError(store.DeleteMany(ctx, riskIDs))
+
+	riskCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, riskCount)
 }
 
 func (s *RisksStoreSuite) TestSACUpsert() {

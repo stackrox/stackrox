@@ -42,7 +42,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -60,7 +59,6 @@ func TestClusterDataStore(t *testing.T) {
 type ClusterDataStoreTestSuite struct {
 	suite.Suite
 
-	ei          *envisolator.EnvIsolator
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
@@ -94,8 +92,7 @@ var _ suite.TearDownTestSuite = (*ClusterDataStoreTestSuite)(nil)
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.ei = envisolator.NewEnvIsolator(suite.T())
-	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+	suite.T().Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skip dackbox tests if postgres is enabled")
@@ -173,7 +170,6 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TearDownTest() {
-	suite.ei.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 

@@ -16,7 +16,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
@@ -136,9 +135,6 @@ func (ds *datastoreImpl) CountImages(ctx context.Context) (int, error) {
 }
 
 func (ds *datastoreImpl) canReadImage(ctx context.Context, sha string) (bool, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return true, nil
-	}
 	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {
 		return false, err
 	} else if ok {

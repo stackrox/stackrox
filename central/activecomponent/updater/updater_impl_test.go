@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -158,7 +157,6 @@ type acUpdaterTestSuite struct {
 	mockDeploymentDatastore       *deploymentMocks.MockDataStore
 	mockActiveComponentDataStore  *acMocks.MockDataStore
 	mockProcessIndicatorDataStore *piMocks.MockDataStore
-	envIsolator                   *envisolator.EnvIsolator
 	mockImageDataStore            *imageMocks.MockDataStore
 	executableCache               simplecache.Cache
 	mockAggregator                *mocks.MockProcessAggregator
@@ -171,12 +169,10 @@ func (s *acUpdaterTestSuite) SetupTest() {
 	s.mockProcessIndicatorDataStore = piMocks.NewMockDataStore(s.mockCtrl)
 	s.mockImageDataStore = imageMocks.NewMockDataStore(s.mockCtrl)
 	s.executableCache = simplecache.New()
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.mockAggregator = mocks.NewMockProcessAggregator(s.mockCtrl)
 }
 
 func (s *acUpdaterTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 	s.mockCtrl.Finish()
 }
 

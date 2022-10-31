@@ -6,7 +6,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/require"
 )
 
@@ -73,9 +72,7 @@ const (
 )
 
 func BenchmarkImageResolver(b *testing.B) {
-	envIsolator := envisolator.NewEnvIsolator(b)
-	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
+	b.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		b.Skip("Skip postgres store tests")

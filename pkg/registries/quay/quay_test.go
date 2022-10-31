@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -77,8 +76,7 @@ func TestValidate(t *testing.T) {
 // Split from other test for easier reading and deletion
 // TODO: Remove when ROX_QUAY_ROBOT_ACCOUNTS is removed.
 func TestValidateWithoutFeatureFlag(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(features.QuayRobotAccounts.EnvVar(), "false")
+	t.Setenv(features.QuayRobotAccounts.EnvVar(), "false")
 
 	if features.QuayRobotAccounts.Enabled() {
 		t.Skip("Skip test if ROX_QUAY_ROBOT_ACCOUNTS is enabled")

@@ -2,7 +2,7 @@ import qs from 'qs';
 
 import { ListDeployment } from 'types/deployment.proto';
 import { SearchFilter, ApiSortOption } from 'types/search';
-import { ResourceSelector, SelectorField } from 'Containers/Collections/types';
+import { SelectorField } from 'Containers/Collections/types';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import axios from './instance';
@@ -12,6 +12,16 @@ export const collectionsBaseUrl = '/v1/collections';
 export const collectionsCountUrl = '/v1/collections/count';
 export const collectionsDryRunUrl = '/v1/collections/dryrun';
 export const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
+
+export type SelectorRule = {
+    fieldName: SelectorField;
+    values: { value: string }[];
+    operator: 'AND' | 'OR';
+};
+
+export type ResourceSelector = {
+    rules: SelectorRule[];
+};
 
 export type CollectionRequest = {
     name: string;

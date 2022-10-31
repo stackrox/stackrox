@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ComplianceOperatorProfilesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestComplianceOperatorProfilesStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestComplianceOperatorProfilesStore(t *testing.T) {
 }
 
 func (s *ComplianceOperatorProfilesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *ComplianceOperatorProfilesStoreSuite) SetupTest() {
 
 func (s *ComplianceOperatorProfilesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorProfile.GetId()), sac.ErrResourceAccessDenied)
 
 	var complianceOperatorProfiles []*storage.ComplianceOperatorProfile
+	var complianceOperatorProfileIDs []string
 	for i := 0; i < 200; i++ {
 		complianceOperatorProfile := &storage.ComplianceOperatorProfile{}
 		s.NoError(testutils.FullInit(complianceOperatorProfile, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorProfiles = append(complianceOperatorProfiles, complianceOperatorProfile)
+		complianceOperatorProfileIDs = append(complianceOperatorProfileIDs, complianceOperatorProfile.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorProfiles))
@@ -111,4 +109,10 @@ func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
 	complianceOperatorProfileCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, complianceOperatorProfileCount)
+
+	s.NoError(store.DeleteMany(ctx, complianceOperatorProfileIDs))
+
+	complianceOperatorProfileCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, complianceOperatorProfileCount)
 }

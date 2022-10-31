@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ActiveComponentsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestActiveComponentsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestActiveComponentsStore(t *testing.T) {
 }
 
 func (s *ActiveComponentsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *ActiveComponentsStoreSuite) SetupTest() {
 
 func (s *ActiveComponentsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ActiveComponentsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, activeComponent.GetId()))
 
 	var activeComponents []*storage.ActiveComponent
+	var activeComponentIDs []string
 	for i := 0; i < 200; i++ {
 		activeComponent := &storage.ActiveComponent{}
 		s.NoError(testutils.FullInit(activeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		activeComponents = append(activeComponents, activeComponent)
+		activeComponentIDs = append(activeComponentIDs, activeComponent.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, activeComponents))
@@ -111,4 +109,10 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 	activeComponentCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, activeComponentCount)
+
+	s.NoError(store.DeleteMany(ctx, activeComponentIDs))
+
+	activeComponentCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, activeComponentCount)
 }

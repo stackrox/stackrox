@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type TestMultiKeyStructsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestTestMultiKeyStructsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestTestMultiKeyStructsStore(t *testing.T) {
 }
 
 func (s *TestMultiKeyStructsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *TestMultiKeyStructsStoreSuite) SetupTest() {
 
 func (s *TestMultiKeyStructsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *TestMultiKeyStructsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *TestMultiKeyStructsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2()))
 
 	var testMultiKeyStructs []*storage.TestMultiKeyStruct
+	var testMultiKeyStructIDs []string
 	for i := 0; i < 200; i++ {
 		testMultiKeyStruct := &storage.TestMultiKeyStruct{}
 		s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testMultiKeyStructs = append(testMultiKeyStructs, testMultiKeyStruct)
+		testMultiKeyStructIDs = append(testMultiKeyStructIDs, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	}
 
 	s.NoError(store.UpsertMany(ctx, testMultiKeyStructs))
@@ -111,4 +109,10 @@ func (s *TestMultiKeyStructsStoreSuite) TestStore() {
 	testMultiKeyStructCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, testMultiKeyStructCount)
+
+	s.NoError(store.DeleteMany(ctx, testMultiKeyStructIDs))
+
+	testMultiKeyStructCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, testMultiKeyStructCount)
 }

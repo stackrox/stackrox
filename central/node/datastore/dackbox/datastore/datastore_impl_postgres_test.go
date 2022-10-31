@@ -35,7 +35,6 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -55,12 +54,10 @@ type NodePostgresDataStoreTestSuite struct {
 	mockRisk           *mockRisks.MockDataStore
 	componentDataStore nodeComponentDS.DataStore
 	nodeCVEDataStore   nodeCVEDS.DataStore
-	envIsolator        *envisolator.EnvIsolator
 }
 
 func (suite *NodePostgresDataStoreTestSuite) SetupSuite() {
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	suite.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.T().Skip("Skip postgres tests")
@@ -106,7 +103,6 @@ func (suite *NodePostgresDataStoreTestSuite) TearDownSuite() {
 	suite.mockCtrl.Finish()
 	suite.db.Close()
 	pgtest.CloseGormDB(suite.T(), suite.gormDB)
-	suite.envIsolator.RestoreAll()
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {

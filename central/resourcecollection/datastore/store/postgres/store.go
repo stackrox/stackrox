@@ -36,6 +36,7 @@ const (
 	batchSize = 10000
 
 	cursorBatchSize = 50
+	deleteBatchSize = 5000
 )
 
 var (
@@ -548,12 +549,35 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
-	)
+	// Batch the deletes
+	localBatchSize := deleteBatchSize
+	numRecordsToDelete := len(ids)
+	for {
+		if len(ids) == 0 {
+			break
+		}
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+		if len(ids) < localBatchSize {
+			localBatchSize = len(ids)
+		}
+
+		idBatch := ids[:localBatchSize]
+		q := search.ConjunctionQuery(
+			sacQueryFilter,
+			search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
+		)
+
+		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
+			log.Error(err)
+			return err
+		}
+
+		// Move the slice forward to start the next batch
+		ids = ids[localBatchSize:]
+	}
+
+	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
@@ -563,7 +587,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ResourceColle
 	if !scopeChecker.IsAllowed() {
 		return nil
 	}
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.ResourceCollection](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -574,11 +598,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ResourceColle
 			return pgutils.ErrNilIfNoRows(err)
 		}
 		for _, data := range rows {
-			var msg storage.ResourceCollection
-			if err := msg.Unmarshal(data); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+			if err := fn(data); err != nil {
 				return err
 			}
 		}

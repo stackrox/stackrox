@@ -32,6 +32,8 @@ var (
 
 // serviceImpl provides APIs for CVEs.
 type serviceImpl struct {
+	v1.UnimplementedClusterCVEServiceServer
+
 	cves datastore.DataStore
 }
 

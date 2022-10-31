@@ -50,6 +50,8 @@ var (
 
 // serviceImpl provides APIs for deployments.
 type serviceImpl struct {
+	v1.UnimplementedDeploymentServiceServer
+
 	datastore              datastore.DataStore
 	processBaselines       processBaselineStore.DataStore
 	processIndicators      processIndicatorStore.DataStore

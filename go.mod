@@ -3,10 +3,10 @@ module github.com/stackrox/rox
 go 1.18
 
 require (
-	cloud.google.com/go/compute v1.10.0
+	cloud.google.com/go/compute/metadata v0.2.0
 	cloud.google.com/go/containeranalysis v0.6.0
 	cloud.google.com/go/storage v1.27.0
-	github.com/BurntSushi/toml v1.2.0
+	github.com/BurntSushi/toml v1.2.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/NYTimes/gziphandler v1.1.1
@@ -14,7 +14,7 @@ require (
 	github.com/RoaringBitmap/roaring v1.2.1
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.16.0
-	github.com/aws/aws-sdk-go v1.44.114
+	github.com/aws/aws-sdk-go v1.44.119
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
@@ -26,7 +26,7 @@ require (
 	github.com/dexidp/dex v0.0.0-20220607113954-3836196af2e7
 	github.com/docker/distribution v2.8.1+incompatible
 	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
-	github.com/docker/docker v20.10.20+incompatible
+	github.com/docker/docker v20.10.21+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/facebookincubator/nvdtools v0.1.5
@@ -80,14 +80,14 @@ require (
 	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/sergi/go-diff v1.2.0
 	github.com/sigstore/cosign v1.13.1
-	github.com/sigstore/sigstore v1.4.4
-	github.com/spf13/cobra v1.6.0
+	github.com/sigstore/sigstore v1.4.5
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20220930104945-c4a3c15e834a
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
 	github.com/stackrox/scanner v0.0.0-20220929215850-334d4658d5e6
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
 	github.com/tkuchiki/go-timezone v0.2.2
@@ -103,10 +103,10 @@ require (
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.1.0
 	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af
-	golang.org/x/tools v0.1.12
+	golang.org/x/tools v0.2.0
 	golang.stackrox.io/grpc-http1 v0.2.5
-	google.golang.org/api v0.100.0
-	google.golang.org/genproto v0.0.0-20221014213838-99cd37c6964a
+	google.golang.org/api v0.101.0
+	google.golang.org/genproto v0.0.0-20221024183307-1bc688fe9f3e
 	google.golang.org/grpc v1.50.1
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
@@ -324,7 +324,7 @@ require (
 	github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd // indirect
 	github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d // indirect
 	github.com/steveyen/gtreap v0.1.0 // indirect
-	github.com/stretchr/objx v0.4.0 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect

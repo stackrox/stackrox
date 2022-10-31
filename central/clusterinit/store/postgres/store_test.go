@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ClusterInitBundlesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestClusterInitBundlesStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestClusterInitBundlesStore(t *testing.T) {
 }
 
 func (s *ClusterInitBundlesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *ClusterInitBundlesStoreSuite) SetupTest() {
 
 func (s *ClusterInitBundlesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ClusterInitBundlesStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, initBundleMeta.GetId()), sac.ErrResourceAccessDenied)
 
 	var initBundleMetas []*storage.InitBundleMeta
+	var initBundleMetaIDs []string
 	for i := 0; i < 200; i++ {
 		initBundleMeta := &storage.InitBundleMeta{}
 		s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		initBundleMetas = append(initBundleMetas, initBundleMeta)
+		initBundleMetaIDs = append(initBundleMetaIDs, initBundleMeta.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, initBundleMetas))
@@ -111,4 +109,10 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	initBundleMetaCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, initBundleMetaCount)
+
+	s.NoError(store.DeleteMany(ctx, initBundleMetaIDs))
+
+	initBundleMetaCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, initBundleMetaCount)
 }

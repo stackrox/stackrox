@@ -81,6 +81,8 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	v1.UnimplementedImageServiceServer
+
 	datastore   datastore.DataStore
 	riskManager manager.Manager
 

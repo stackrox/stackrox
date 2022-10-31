@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type GroupsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestGroupsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestGroupsStore(t *testing.T) {
 }
 
 func (s *GroupsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *GroupsStoreSuite) SetupTest() {
 
 func (s *GroupsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *GroupsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *GroupsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, group.GetProps().GetId()), sac.ErrResourceAccessDenied)
 
 	var groups []*storage.Group
+	var groupIDs []string
 	for i := 0; i < 200; i++ {
 		group := &storage.Group{}
 		s.NoError(testutils.FullInit(group, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		groups = append(groups, group)
+		groupIDs = append(groupIDs, group.GetProps().GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, groups))
@@ -114,4 +112,10 @@ func (s *GroupsStoreSuite) TestStore() {
 	groupCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, groupCount)
+
+	s.NoError(store.DeleteMany(ctx, groupIDs))
+
+	groupCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, groupCount)
 }

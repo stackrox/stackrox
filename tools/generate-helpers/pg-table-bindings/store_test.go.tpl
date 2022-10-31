@@ -21,14 +21,12 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type {{$namePrefix}}StoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 	store Store
 	testDB *pgtest.TestPostgres
 }
@@ -38,8 +36,7 @@ func Test{{$namePrefix}}Store(t *testing.T) {
 }
 
 func (s *{{$namePrefix}}StoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -59,7 +56,6 @@ func (s *{{$namePrefix}}StoreSuite) SetupTest() {
 
 func (s *{{$namePrefix}}StoreSuite) TearDownSuite() {
     s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *{{$namePrefix}}StoreSuite) TestStore() {
@@ -125,6 +121,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	{{- end }}
 
 	var {{$name}}s []*{{.Type}}
+	var {{$name}}IDs []string
     for i := 0; i < 200; i++ {
         {{$name}} := &{{.Type}}{}
         s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -132,6 +129,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
         {{$name}}.{{.EmbeddedFK}} = nil
         {{- end}}
         {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
+        {{$name}}IDs = append({{$name}}IDs, {{template "paramList" $}})
     }
 
 	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
@@ -145,6 +143,12 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
     s.NoError(err)
     s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
+
+    s.NoError(store.DeleteMany(ctx, {{$name}}IDs))
+
+    {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
+    s.NoError(err)
+    s.Equal(0, {{.TrimmedType|lowerCamelCase}}Count)
     {{- end }}
 }
 

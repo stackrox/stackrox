@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/mtls/verifier"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,22 +18,13 @@ func TestClient(t *testing.T) {
 
 type ClientTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (t *ClientTestSuite) SetupSuite() {
-	t.envIsolator = envisolator.NewEnvIsolator(t.T())
 }
 
 func (t *ClientTestSuite) SetupTest() {
 	wd, _ := os.Getwd()
 	testdata := path.Join(wd, "testdata")
 
-	t.envIsolator.Setenv("ROX_MTLS_CA_FILE", path.Join(testdata, "ca.pem"))
-}
-
-func (t *ClientTestSuite) TearDownTest() {
-	t.envIsolator.RestoreAll()
+	t.T().Setenv("ROX_MTLS_CA_FILE", path.Join(testdata, "ca.pem"))
 }
 
 func (t *ClientTestSuite) TestAddRootCA() {

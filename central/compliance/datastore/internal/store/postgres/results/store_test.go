@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type ComplianceRunResultsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestComplianceRunResultsStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestComplianceRunResultsStore(t *testing.T) {
 }
 
 func (s *ComplianceRunResultsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *ComplianceRunResultsStoreSuite) SetupTest() {
 
 func (s *ComplianceRunResultsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, complianceRunResults.GetRunMetadata().GetRunId()))
 
 	var complianceRunResultss []*storage.ComplianceRunResults
+	var complianceRunResultsIDs []string
 	for i := 0; i < 200; i++ {
 		complianceRunResults := &storage.ComplianceRunResults{}
 		s.NoError(testutils.FullInit(complianceRunResults, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceRunResultss = append(complianceRunResultss, complianceRunResults)
+		complianceRunResultsIDs = append(complianceRunResultsIDs, complianceRunResults.GetRunMetadata().GetRunId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceRunResultss))
@@ -113,6 +111,12 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 	complianceRunResultsCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, complianceRunResultsCount)
+
+	s.NoError(store.DeleteMany(ctx, complianceRunResultsIDs))
+
+	complianceRunResultsCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, complianceRunResultsCount)
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACUpsert() {

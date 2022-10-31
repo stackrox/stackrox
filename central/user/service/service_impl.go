@@ -29,6 +29,8 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedUserServiceServer
+
 	users datastore.DataStore
 }
 

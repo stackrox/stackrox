@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type NetworkBaselinesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestNetworkBaselinesStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestNetworkBaselinesStore(t *testing.T) {
 }
 
 func (s *NetworkBaselinesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *NetworkBaselinesStoreSuite) SetupTest() {
 
 func (s *NetworkBaselinesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *NetworkBaselinesStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *NetworkBaselinesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, networkBaseline.GetDeploymentId()))
 
 	var networkBaselines []*storage.NetworkBaseline
+	var networkBaselineIDs []string
 	for i := 0; i < 200; i++ {
 		networkBaseline := &storage.NetworkBaseline{}
 		s.NoError(testutils.FullInit(networkBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkBaselines = append(networkBaselines, networkBaseline)
+		networkBaselineIDs = append(networkBaselineIDs, networkBaseline.GetDeploymentId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkBaselines))
@@ -113,6 +111,12 @@ func (s *NetworkBaselinesStoreSuite) TestStore() {
 	networkBaselineCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, networkBaselineCount)
+
+	s.NoError(store.DeleteMany(ctx, networkBaselineIDs))
+
+	networkBaselineCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, networkBaselineCount)
 }
 
 func (s *NetworkBaselinesStoreSuite) TestSACUpsert() {

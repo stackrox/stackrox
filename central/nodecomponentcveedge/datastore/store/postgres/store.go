@@ -273,7 +273,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NodeComponentCVEEdge) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.NodeComponentCVEEdge](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -284,11 +284,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NodeComponent
 			return pgutils.ErrNilIfNoRows(err)
 		}
 		for _, data := range rows {
-			var msg storage.NodeComponentCVEEdge
-			if err := msg.Unmarshal(data); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+			if err := fn(data); err != nil {
 				return err
 			}
 		}

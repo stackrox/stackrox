@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ComplianceOperatorScansStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestComplianceOperatorScansStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestComplianceOperatorScansStore(t *testing.T) {
 }
 
 func (s *ComplianceOperatorScansStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *ComplianceOperatorScansStoreSuite) SetupTest() {
 
 func (s *ComplianceOperatorScansStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ComplianceOperatorScansStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *ComplianceOperatorScansStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorScan.GetId()), sac.ErrResourceAccessDenied)
 
 	var complianceOperatorScans []*storage.ComplianceOperatorScan
+	var complianceOperatorScanIDs []string
 	for i := 0; i < 200; i++ {
 		complianceOperatorScan := &storage.ComplianceOperatorScan{}
 		s.NoError(testutils.FullInit(complianceOperatorScan, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorScans = append(complianceOperatorScans, complianceOperatorScan)
+		complianceOperatorScanIDs = append(complianceOperatorScanIDs, complianceOperatorScan.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorScans))
@@ -111,4 +109,10 @@ func (s *ComplianceOperatorScansStoreSuite) TestStore() {
 	complianceOperatorScanCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, complianceOperatorScanCount)
+
+	s.NoError(store.DeleteMany(ctx, complianceOperatorScanIDs))
+
+	complianceOperatorScanCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, complianceOperatorScanCount)
 }

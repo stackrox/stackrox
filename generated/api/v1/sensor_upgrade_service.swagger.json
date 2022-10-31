@@ -125,6 +125,25 @@
     }
   },
   "definitions": {
+    "GetSensorUpgradeConfigResponseSensorAutoUpgradeFeatureStatus": {
+      "type": "string",
+      "enum": [
+        "NOT_SUPPORTED",
+        "SUPPORTED"
+      ],
+      "default": "NOT_SUPPORTED"
+    },
+    "GetSensorUpgradeConfigResponseUpgradeConfig": {
+      "type": "object",
+      "properties": {
+        "enableAutoUpgrade": {
+          "type": "boolean"
+        },
+        "autoUpgradeFeature": {
+          "$ref": "#/definitions/GetSensorUpgradeConfigResponseSensorAutoUpgradeFeatureStatus"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -178,7 +197,7 @@
       "type": "object",
       "properties": {
         "config": {
-          "$ref": "#/definitions/storageSensorUpgradeConfig"
+          "$ref": "#/definitions/GetSensorUpgradeConfigResponseUpgradeConfig"
         }
       }
     },

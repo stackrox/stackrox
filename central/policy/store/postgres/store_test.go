@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type PoliciesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestPoliciesStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestPoliciesStore(t *testing.T) {
 }
 
 func (s *PoliciesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *PoliciesStoreSuite) SetupTest() {
 
 func (s *PoliciesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *PoliciesStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *PoliciesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, policy.GetId()), sac.ErrResourceAccessDenied)
 
 	var policys []*storage.Policy
+	var policyIDs []string
 	for i := 0; i < 200; i++ {
 		policy := &storage.Policy{}
 		s.NoError(testutils.FullInit(policy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		policys = append(policys, policy)
+		policyIDs = append(policyIDs, policy.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, policys))
@@ -114,4 +112,10 @@ func (s *PoliciesStoreSuite) TestStore() {
 	policyCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, policyCount)
+
+	s.NoError(store.DeleteMany(ctx, policyIDs))
+
+	policyCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, policyCount)
 }

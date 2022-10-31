@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type NodeComponentsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestNodeComponentsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestNodeComponentsStore(t *testing.T) {
 }
 
 func (s *NodeComponentsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *NodeComponentsStoreSuite) SetupTest() {
 
 func (s *NodeComponentsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *NodeComponentsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, nodeComponent.GetId()))
 
 	var nodeComponents []*storage.NodeComponent
+	var nodeComponentIDs []string
 	for i := 0; i < 200; i++ {
 		nodeComponent := &storage.NodeComponent{}
 		s.NoError(testutils.FullInit(nodeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		nodeComponents = append(nodeComponents, nodeComponent)
+		nodeComponentIDs = append(nodeComponentIDs, nodeComponent.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, nodeComponents))
@@ -111,4 +109,10 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	nodeComponentCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, nodeComponentCount)
+
+	s.NoError(store.DeleteMany(ctx, nodeComponentIDs))
+
+	nodeComponentCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, nodeComponentCount)
 }

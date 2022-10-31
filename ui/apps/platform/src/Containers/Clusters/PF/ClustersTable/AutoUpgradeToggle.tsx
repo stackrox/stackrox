@@ -2,6 +2,7 @@ import React, { ReactElement, useState, useEffect } from 'react';
 import { Switch } from '@patternfly/react-core';
 
 import {
+    isAutoUpgradeSupported,
     getAutoUpgradeConfig,
     saveAutoUpgradeConfig,
     AutoUpgradeConfig,
@@ -10,9 +11,7 @@ import {
 // TODO: Connect this to the APIs and use real data
 function AutoUpgradeToggle(): ReactElement {
     const [isDisabled, setIsDisabled] = useState(true);
-    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig>({
-        enableAutoUpgrade: false,
-    });
+    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig | null>(null);
 
     function fetchConfig(): void {
         getAutoUpgradeConfig()
@@ -30,7 +29,15 @@ function AutoUpgradeToggle(): ReactElement {
         fetchConfig();
     }, []);
 
-    function handleChange(value) {
+    if (!autoUpgradeConfig) {
+        return <></>;
+    }
+
+    if (!isAutoUpgradeSupported(autoUpgradeConfig)) {
+        return <>Automatic upgrades are disabled for Cloud Service</>;
+    }
+
+    const handleChange = (value: boolean) => {
         setIsDisabled(true);
         // @TODO: wrap this settings change in a confirmation prompt of some sort
         const newConfig = {
@@ -48,14 +55,14 @@ function AutoUpgradeToggle(): ReactElement {
                 // reverse the optimistic update of the control in the UI
                 const rollbackConfig = {
                     ...autoUpgradeConfig,
-                    enableAutoUpgrade: value,
+                    enableAutoUpgrade: !value,
                 };
                 setAutoUpgradeConfig(rollbackConfig);
 
                 // also, re-fetch the data from the server, just in case it did update but we didn't get the network response
                 fetchConfig();
             });
-    }
+    };
 
     const label = 'Automatically upgrade secured clusters';
 

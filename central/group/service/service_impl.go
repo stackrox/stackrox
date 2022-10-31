@@ -35,6 +35,8 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedGroupServiceServer
+
 	groups datastore.DataStore
 }
 

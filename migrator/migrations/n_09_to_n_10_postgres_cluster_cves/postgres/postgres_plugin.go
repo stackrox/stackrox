@@ -6,7 +6,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -31,7 +30,7 @@ const (
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
+	batchSize = 500
 
 	cursorBatchSize = 50
 )
@@ -406,7 +405,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ClusterCVE) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.ClusterCVE](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -416,12 +415,8 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ClusterCVE) e
 		if err != nil {
 			return pgutils.ErrNilIfNoRows(err)
 		}
-		for _, data := range rows {
-			var msg storage.ClusterCVE
-			if err := proto.Unmarshal(data, &msg); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+		for _, msg := range rows {
+			if err := fn(msg); err != nil {
 				return err
 			}
 		}

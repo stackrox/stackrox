@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type TestSingleKeyStructsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestTestSingleKeyStructsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestTestSingleKeyStructsStore(t *testing.T) {
 }
 
 func (s *TestSingleKeyStructsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *TestSingleKeyStructsStoreSuite) SetupTest() {
 
 func (s *TestSingleKeyStructsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *TestSingleKeyStructsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, testSingleKeyStruct.GetKey()))
 
 	var testSingleKeyStructs []*storage.TestSingleKeyStruct
+	var testSingleKeyStructIDs []string
 	for i := 0; i < 200; i++ {
 		testSingleKeyStruct := &storage.TestSingleKeyStruct{}
 		s.NoError(testutils.FullInit(testSingleKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testSingleKeyStructs = append(testSingleKeyStructs, testSingleKeyStruct)
+		testSingleKeyStructIDs = append(testSingleKeyStructIDs, testSingleKeyStruct.GetKey())
 	}
 
 	s.NoError(store.UpsertMany(ctx, testSingleKeyStructs))
@@ -114,4 +112,10 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	testSingleKeyStructCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, testSingleKeyStructCount)
+
+	s.NoError(store.DeleteMany(ctx, testSingleKeyStructIDs))
+
+	testSingleKeyStructCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, testSingleKeyStructCount)
 }

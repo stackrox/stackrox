@@ -18,6 +18,8 @@ import (
 
 // ComplianceService is the struct that manages the compliance results and audit log events
 type serviceImpl struct {
+	sensor.UnimplementedComplianceServiceServer
+
 	output      chan *compliance.ComplianceReturn
 	auditEvents chan *sensor.AuditEvents
 
@@ -140,6 +142,8 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		case *sensor.MsgFromCompliance_AuditEvents:
 			s.auditEvents <- t.AuditEvents
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
+		case *sensor.MsgFromCompliance_NodeScanV2:
+			log.Infof("NodeScanV2 message received: %v", msg)
 		}
 	}
 }

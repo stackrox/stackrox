@@ -80,21 +80,12 @@ export const images = {
 };
 
 export const auth = {
+    availableAuthProviders: '/v1/availableAuthProviders',
     loginAuthProviders: '/v1/login/authproviders',
     authProviders: '/v1/authProviders',
     authStatus: '/v1/auth/status',
     logout: '/sso/session/logout',
     tokenRefresh: '/sso/session/tokenrefresh',
-};
-
-export const certExpiry = {
-    central: 'v1/credentialexpiry?component=CENTRAL',
-    scanner: 'v1/credentialexpiry?component=SCANNER',
-};
-
-export const certGen = {
-    central: 'api/extensions/certgen/central',
-    scanner: 'api/extensions/certgen/scanner',
 };
 
 export const dashboard = {
@@ -199,11 +190,6 @@ export const riskAcceptance = {
     getImageVulnerabilities: graphql('getImageVulnerabilities'),
     deferVulnerability: graphql('deferVulnerability'),
     markVulnerabilityFalsePositive: graphql('markVulnerabilityFalsePositive'),
-};
-
-export const system = {
-    config: '/v1/config',
-    configPublic: '/v1/config/public',
 };
 
 export const extensions = {

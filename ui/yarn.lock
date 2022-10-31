@@ -3409,6 +3409,17 @@
     victory-voronoi-container "^36.2.1"
     victory-zoom-container "^36.2.1"
 
+"@patternfly/react-code-editor@^4.82.26":
+  version "4.82.26"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-code-editor/-/react-code-editor-4.82.26.tgz#1418cb4592a6a8e274094f80638da24d64da9c76"
+  integrity sha512-bs5Btoo5CwH+5rMnwRt/RMv/bDmZYXC3VphuP34oHteLwzVNbnebfu1QlGkJD0fHOo2QowQ5bSvViYrF1noM+A==
+  dependencies:
+    "@patternfly/react-core" "^4.250.1"
+    "@patternfly/react-icons" "^4.92.6"
+    "@patternfly/react-styles" "^4.91.6"
+    react-dropzone "9.0.0"
+    tslib "^2.0.0"
+
 "@patternfly/react-core@4.231.8", "@patternfly/react-core@^4.231.8":
   version "4.231.8"
   resolved "https://registry.yarnpkg.com/@patternfly/react-core/-/react-core-4.231.8.tgz#2f9de38ecdd2fc53c63aff55433984fcf93a5fe6"
@@ -3435,6 +3446,19 @@
     tippy.js "5.1.2"
     tslib "^2.0.0"
 
+"@patternfly/react-core@^4.250.1":
+  version "4.250.1"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-core/-/react-core-4.250.1.tgz#2d69eabce3327e878f5527b84ff55c33ab8f8356"
+  integrity sha512-vAOZPQdZzYXl/vkHnHMIt1eC3nrPDdsuuErPatkNPwmSvilXuXmWP5wxoJ36FbSNRRURkprFwx52zMmWS3iHJA==
+  dependencies:
+    "@patternfly/react-icons" "^4.92.6"
+    "@patternfly/react-styles" "^4.91.6"
+    "@patternfly/react-tokens" "^4.93.6"
+    focus-trap "6.9.2"
+    react-dropzone "9.0.0"
+    tippy.js "5.1.2"
+    tslib "^2.0.0"
+
 "@patternfly/react-icons@4.82.8", "@patternfly/react-icons@^4.82.8":
   version "4.82.8"
   resolved "https://registry.yarnpkg.com/@patternfly/react-icons/-/react-icons-4.82.8.tgz#59ab1a139d3fc586fd384a58816e4608a060ee32"
@@ -3445,6 +3469,11 @@
   resolved "https://registry.yarnpkg.com/@patternfly/react-icons/-/react-icons-4.90.0.tgz#de729b63bb9b2e877a8e3d83001a8565195637d0"
   integrity sha512-qEnQKbxbUgyiosiKSkeKEBwmhgJwWEqniIAFyoxj+kpzAdeu7ueWe5iBbqo06mvDOedecFiM5mIE1N0MXwk8Yw==
 
+"@patternfly/react-icons@^4.92.6":
+  version "4.92.6"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-icons/-/react-icons-4.92.6.tgz#a1f2190edb49ab146c30ed07f8447af5d9401f13"
+  integrity sha512-UdMSDqJ7fCxi/E6vlsFHuDZ3L0+kqBZ4ujRi4mjokrsvzOR4WFdaMhC+7iRy4aPNjT0DpHVjVUUUoWwKID9VqA==
+
 "@patternfly/react-styles@4.81.8", "@patternfly/react-styles@^4.81.8":
   version "4.81.8"
   resolved "https://registry.yarnpkg.com/@patternfly/react-styles/-/react-styles-4.81.8.tgz#8d2f103e03a7edd997218600a54bd2cd452d3348"
@@ -3454,6 +3483,11 @@
   version "4.89.0"
   resolved "https://registry.yarnpkg.com/@patternfly/react-styles/-/react-styles-4.89.0.tgz#a4817f6ae7b143bea041d53f003dfe3b1850e8e6"
   integrity sha512-SkT+qx3Xqu70T5s+i/AUT2hI2sKAPDX4ffeiJIUDu/oyWiFdk+/9DEivnLSyJMruroXXN33zKibvzb5rH7DKTQ==
+
+"@patternfly/react-styles@^4.91.6":
+  version "4.91.6"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-styles/-/react-styles-4.91.6.tgz#2cd4f0d5dca7774fe6a64505b8a3e7bd2abd66c6"
+  integrity sha512-3wCYkvGRgbx6u5JrCaUNcpDvyTOrgvXU/Mh2hs8s/njBUDpyuyRb+gkFoE3l3Ro3Lk0DnRLYpIjCSjl38Bd0iA==
 
 "@patternfly/react-table@4.100.8":
   version "4.100.8"
@@ -3476,6 +3510,11 @@
   version "4.91.0"
   resolved "https://registry.yarnpkg.com/@patternfly/react-tokens/-/react-tokens-4.91.0.tgz#f173a5a36911a789ea966a7e5955de92aeccf8fc"
   integrity sha512-QeQCy8o8E/16fAr8mxqXIYRmpTsjCHJXi5p5jmgEDFmYMesN6Pqfv6N5D0FHb+CIaNOZWRps7GkWvlIMIE81sw==
+
+"@patternfly/react-tokens@^4.93.6":
+  version "4.93.6"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-tokens/-/react-tokens-4.93.6.tgz#b09e8935783dab86f10decd05e357570b2a70aec"
+  integrity sha512-rf4q5NoJNX7oBpRvGrWSjfK6sLA4yHSBgm6Rh5/2Uw1cgp47VaBY3XrErjT5YTu9uZCcvThGqBk8jiXI7tIRxw==
 
 "@patternfly/react-topology@^4.86.0":
   version "4.86.0"
@@ -7303,10 +7342,10 @@ cyclist@^1.0.1:
   resolved "https://registry.yarnpkg.com/cyclist/-/cyclist-1.0.1.tgz#596e9698fd0c80e12038c2b82d6eb1b35b6224d9"
   integrity sha1-WW6WmP0MgOEgOMK4LW6xs1tiJNk=
 
-cypress@^10.10.0:
-  version "10.10.0"
-  resolved "https://registry.yarnpkg.com/cypress/-/cypress-10.10.0.tgz#fd671297b2ca3e64dfffd55fe3857c388cfbb695"
-  integrity sha512-bU8r44x1NIYAUNNXt3CwJpLOVth7HUv2hUhYCxZmgZ1IugowDvuHNpevnoZRQx1KKOEisLvIJW+Xen5Pjn41pg==
+cypress@^10.11.0:
+  version "10.11.0"
+  resolved "https://registry.yarnpkg.com/cypress/-/cypress-10.11.0.tgz#e9fbdd7638bae3d8fb7619fd75a6330d11ebb4e8"
+  integrity sha512-lsaE7dprw5DoXM00skni6W5ElVVLGAdRUUdZjX2dYsGjbY/QnpzWZ95Zom1mkGg0hAaO/QVTZoFVS7Jgr/GUPA==
   dependencies:
     "@cypress/request" "^2.88.10"
     "@cypress/xvfb" "^1.2.4"
@@ -13636,6 +13675,11 @@ modify-values@^1.0.0:
   resolved "https://registry.yarnpkg.com/modify-values/-/modify-values-1.0.1.tgz#b3939fa605546474e3e3e3c63d64bd43b4ee6022"
   integrity sha512-xV2bxeN6F7oYjZWTe/YPAy6MN2M+sL4u/Rlm2AHCIVGfo2p1yGmBHQ6vHehl4bRTZBdHu3TSkWdYgkwpYzAGSw==
 
+monaco-editor@^0.34.1:
+  version "0.34.1"
+  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.34.1.tgz#1b75c4ad6bc4c1f9da656d740d98e0b850a22f87"
+  integrity sha512-FKc80TyiMaruhJKKPz5SpJPIjL+dflGvz4CpuThaPMc94AyN7SeC9HQ8hrvaxX7EyHdJcUY5i4D0gNyJj1vSZQ==
+
 move-concurrently@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/move-concurrently/-/move-concurrently-1.0.1.tgz#be2c005fda32e0b29af1f05d7c4b33214c701f92"
@@ -16026,6 +16070,13 @@ react-modal@^3.12.1:
     prop-types "^15.5.10"
     react-lifecycles-compat "^3.0.0"
     warning "^4.0.3"
+
+react-monaco-editor@^0.50.1:
+  version "0.50.1"
+  resolved "https://registry.yarnpkg.com/react-monaco-editor/-/react-monaco-editor-0.50.1.tgz#3b68ce03e4b316f435b9bcd8ec13ffd4c050c605"
+  integrity sha512-qvYdJhQdkPIrPDMxCrEl0T2x9TfBB+aUbrpFv69FwoTybeyfAjxgJ219MYSsgn3c/g06BgyLX4ENrXM4niZ9ag==
+  dependencies:
+    prop-types "^15.8.1"
 
 react-motion@^0.5.2:
   version "0.5.2"

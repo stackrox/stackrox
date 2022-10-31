@@ -35,7 +35,7 @@ type Evaluator interface {
 }
 
 type namespaceProvider interface {
-	GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
 }
 
 // evaluatorImpl handles all of the graph calculations
@@ -96,7 +96,7 @@ func (g *evaluatorImpl) GetAppliedPolicies(deployments []*storage.Deployment, ne
 }
 
 func (g *evaluatorImpl) getNamespacesByID() map[string]*storage.NamespaceMetadata {
-	namespaces, err := g.namespaceStore.GetNamespaces(allNamespaceReadAccess)
+	namespaces, err := g.namespaceStore.GetAllNamespaces(allNamespaceReadAccess)
 	if err != nil {
 		log.Errorf("unable to read namespaces: %v", err)
 		return nil

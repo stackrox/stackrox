@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -42,12 +41,11 @@ type versionPair struct {
 
 type PostgresCloneManagerSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	pool        *pgxpool.Pool
-	config      *pgxpool.Config
-	sourceMap   map[string]string
-	ctx         context.Context
-	gc          migGorm.Config
+	pool      *pgxpool.Pool
+	config    *pgxpool.Config
+	sourceMap map[string]string
+	ctx       context.Context
+	gc        migGorm.Config
 }
 
 func TestManagerSuite(t *testing.T) {
@@ -55,14 +53,12 @@ func TestManagerSuite(t *testing.T) {
 }
 
 func (s *PostgresCloneManagerSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
 
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -108,8 +104,6 @@ func (s *PostgresCloneManagerSuite) TearDownTest() {
 
 		s.pool.Close()
 	}
-
-	s.envIsolator.RestoreAll()
 }
 
 func (s *PostgresCloneManagerSuite) setVersion(t *testing.T, ver *versionPair) {

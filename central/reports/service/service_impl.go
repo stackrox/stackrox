@@ -32,6 +32,8 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedReportServiceServer
+
 	manager           manager.Manager
 	reportConfigStore reportConfigDS.DataStore
 	notifierStore     notifierDataStore.DataStore

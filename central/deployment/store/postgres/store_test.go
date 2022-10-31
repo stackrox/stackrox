@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type DeploymentsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestDeploymentsStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestDeploymentsStore(t *testing.T) {
 }
 
 func (s *DeploymentsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *DeploymentsStoreSuite) SetupTest() {
 
 func (s *DeploymentsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *DeploymentsStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, deployment.GetId()))
 
 	var deployments []*storage.Deployment
+	var deploymentIDs []string
 	for i := 0; i < 200; i++ {
 		deployment := &storage.Deployment{}
 		s.NoError(testutils.FullInit(deployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		deployments = append(deployments, deployment)
+		deploymentIDs = append(deploymentIDs, deployment.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, deployments))
@@ -113,6 +111,12 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	deploymentCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, deploymentCount)
+
+	s.NoError(store.DeleteMany(ctx, deploymentIDs))
+
+	deploymentCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, deploymentCount)
 }
 
 func (s *DeploymentsStoreSuite) TestSACUpsert() {

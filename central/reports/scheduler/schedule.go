@@ -280,7 +280,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	if err != nil {
 		return errors.Wrap(err, "error building report query: unable to get clusters")
 	}
-	namespaces, err := s.namespaceDatastore.GetNamespaces(req.Ctx)
+	namespaces, err := s.namespaceDatastore.GetAllNamespaces(req.Ctx)
 	if err != nil {
 		return errors.Wrap(err, "error building report query: unable to get namespaces")
 	}

@@ -180,10 +180,9 @@ var (
 
 // mock implementation for v1.DetectionServiceServer
 type mockDetectionServiceServer struct {
+	v1.UnimplementedDetectionServiceServer
+
 	alerts []*storage.Alert
-	// This will allow us to use the struct when registering it via v1.RegisterDetectionServiceServer without the need
-	// to implement all functions of the interface, only the one we require for testing.
-	v1.DetectionServiceServer
 }
 
 func (m *mockDetectionServiceServer) DetectBuildTime(context.Context, *v1.BuildDetectionRequest) (*v1.BuildDetectionResponse, error) {

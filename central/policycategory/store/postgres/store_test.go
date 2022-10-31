@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type PolicyCategoriesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestPolicyCategoriesStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestPolicyCategoriesStore(t *testing.T) {
 }
 
 func (s *PolicyCategoriesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *PolicyCategoriesStoreSuite) SetupTest() {
 
 func (s *PolicyCategoriesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *PolicyCategoriesStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, policyCategory.GetId()), sac.ErrResourceAccessDenied)
 
 	var policyCategorys []*storage.PolicyCategory
+	var policyCategoryIDs []string
 	for i := 0; i < 200; i++ {
 		policyCategory := &storage.PolicyCategory{}
 		s.NoError(testutils.FullInit(policyCategory, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		policyCategorys = append(policyCategorys, policyCategory)
+		policyCategoryIDs = append(policyCategoryIDs, policyCategory.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, policyCategorys))
@@ -111,4 +109,10 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	policyCategoryCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, policyCategoryCount)
+
+	s.NoError(store.DeleteMany(ctx, policyCategoryIDs))
+
+	policyCategoryCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, policyCategoryCount)
 }

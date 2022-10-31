@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type ProcessIndicatorsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestProcessIndicatorsStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestProcessIndicatorsStore(t *testing.T) {
 }
 
 func (s *ProcessIndicatorsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *ProcessIndicatorsStoreSuite) SetupTest() {
 
 func (s *ProcessIndicatorsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ProcessIndicatorsStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, processIndicator.GetId()))
 
 	var processIndicators []*storage.ProcessIndicator
+	var processIndicatorIDs []string
 	for i := 0; i < 200; i++ {
 		processIndicator := &storage.ProcessIndicator{}
 		s.NoError(testutils.FullInit(processIndicator, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processIndicators = append(processIndicators, processIndicator)
+		processIndicatorIDs = append(processIndicatorIDs, processIndicator.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, processIndicators))
@@ -113,6 +111,12 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	processIndicatorCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, processIndicatorCount)
+
+	s.NoError(store.DeleteMany(ctx, processIndicatorIDs))
+
+	processIndicatorCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, processIndicatorCount)
 }
 
 func (s *ProcessIndicatorsStoreSuite) TestSACUpsert() {

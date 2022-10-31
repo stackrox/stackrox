@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type NetworkGraphConfigsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestNetworkGraphConfigsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestNetworkGraphConfigsStore(t *testing.T) {
 }
 
 func (s *NetworkGraphConfigsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *NetworkGraphConfigsStoreSuite) SetupTest() {
 
 func (s *NetworkGraphConfigsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *NetworkGraphConfigsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, networkGraphConfig.GetId()), sac.ErrResourceAccessDenied)
 
 	var networkGraphConfigs []*storage.NetworkGraphConfig
+	var networkGraphConfigIDs []string
 	for i := 0; i < 200; i++ {
 		networkGraphConfig := &storage.NetworkGraphConfig{}
 		s.NoError(testutils.FullInit(networkGraphConfig, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkGraphConfigs = append(networkGraphConfigs, networkGraphConfig)
+		networkGraphConfigIDs = append(networkGraphConfigIDs, networkGraphConfig.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkGraphConfigs))
@@ -111,4 +109,10 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 	networkGraphConfigCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, networkGraphConfigCount)
+
+	s.NoError(store.DeleteMany(ctx, networkGraphConfigIDs))
+
+	networkGraphConfigCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, networkGraphConfigCount)
 }
