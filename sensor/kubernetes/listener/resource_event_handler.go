@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"k8s.io/apimachinery/pkg/types"
@@ -254,7 +253,7 @@ func (k *listenerImpl) handleAllEvents() {
 func handle(
 	informer cache.SharedIndexInformer,
 	dispatcher resources.Dispatcher,
-	outputQueue output.Queue,
+	outputQueue message.OutputQueue,
 	syncingResources *concurrency.Flag,
 	wg *concurrency.WaitGroup,
 	stopSignal *concurrency.Signal,

@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,7 +20,7 @@ type resourceEventHandlerImpl struct {
 	eventLock  *sync.Mutex
 	dispatcher resources.Dispatcher
 
-	outputQueue      output.Queue
+	outputQueue      message.OutputQueue
 	syncingResources *concurrency.Flag
 
 	syncLock                   sync.Mutex

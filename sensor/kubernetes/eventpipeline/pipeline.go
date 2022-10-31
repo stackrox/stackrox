@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 )
@@ -20,11 +21,16 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 	outputQueue := output.New(&stopSig, detector)
 	resourceListener := listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue)
 
+	components := []message.PipelineComponent{
+		outputQueue,
+		resourceListener,
+	}
+
 	pipelineResponses := make(chan *central.MsgFromSensor)
 	return &eventPipeline{
-		eventsC:  pipelineResponses,
-		listener: resourceListener,
-		stopSig:  &stopSig,
-		output:   outputQueue,
+		eventsC:    pipelineResponses,
+		stopSig:    &stopSig,
+		output:     outputQueue,
+		components: components,
 	}
 }

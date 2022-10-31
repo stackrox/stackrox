@@ -11,22 +11,15 @@ var (
 	boundedQueueSize = 100
 )
 
-// Queue component that redirects Resource Events and Alerts to the output channel
-type Queue interface {
-	Send(detectionObject *message.ResourceEvent)
-	ResponseC() <-chan *central.MsgFromSensor
-}
-
 // New Creates a new Queue component
-func New(stopSig *concurrency.Signal, detector detector.Detector) Queue {
+func New(stopSig *concurrency.Signal, detector detector.Detector) message.OutputQueue {
 	ch := make(chan *message.ResourceEvent, boundedQueueSize)
 	forwardQueue := make(chan *central.MsgFromSensor)
-	outputQueue := &outputImpl{
+	outputQueue := &outputQueueImpl{
 		detector:     detector,
 		stopSig:      stopSig,
 		innerQueue:   ch,
 		forwardQueue: forwardQueue,
 	}
-	go outputQueue.startProcessing()
 	return outputQueue
 }

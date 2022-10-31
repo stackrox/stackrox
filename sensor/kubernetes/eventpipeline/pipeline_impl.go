@@ -5,8 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
 )
 
 var (
@@ -14,8 +13,8 @@ var (
 )
 
 type eventPipeline struct {
-	listener common.SensorComponent
-	output   output.Queue
+	output     message.OutputQueue
+	components []message.PipelineComponent
 
 	eventsC chan *central.MsgFromSensor
 	stopSig *concurrency.Signal
@@ -38,8 +37,10 @@ func (p *eventPipeline) ResponsesC() <-chan *central.MsgFromSensor {
 
 // Start implements common.SensorComponent
 func (p *eventPipeline) Start() error {
-	if err := p.listener.Start(); err != nil {
-		return err
+	for _, c := range p.components {
+		if err := c.Start(); err != nil {
+			return err
+		}
 	}
 	go p.forwardMessages()
 	return nil
@@ -47,7 +48,11 @@ func (p *eventPipeline) Start() error {
 
 // Stop implements common.SensorComponent
 func (p *eventPipeline) Stop(err error) {
-	p.listener.Stop(err)
+	defer close(p.eventsC)
+	for _, c := range p.components {
+		c.Stop(err)
+	}
+	p.stopSig.Signal()
 }
 
 // forwardMessages from listener component to responses channel
@@ -56,14 +61,12 @@ func (p *eventPipeline) forwardMessages() {
 		select {
 		case <-p.stopSig.Done():
 			return
-		case msg, more := <-p.output.ResponseC():
+		case msg, more := <-p.output.ResponsesC():
 			if !more {
 				log.Error("Output component channel closed")
 				return
 			}
 			p.eventsC <- msg
 		}
-
 	}
-
 }

@@ -12,22 +12,39 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type outputImpl struct {
+type outputQueueImpl struct {
 	innerQueue   chan *message.ResourceEvent
 	stopSig      *concurrency.Signal
 	forwardQueue chan *central.MsgFromSensor
 	detector     detector.Detector
 }
 
-func (q *outputImpl) Send(msg *message.ResourceEvent) {
+// Send sends a ResourceEvent message to the inner queue
+func (q *outputQueueImpl) Send(msg *message.ResourceEvent) {
 	q.innerQueue <- msg
 }
 
-func (q *outputImpl) ResponseC() <-chan *central.MsgFromSensor {
+// ResponsesC returns the MsgFromSensor channel
+func (q *outputQueueImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return q.forwardQueue
 }
 
-func (q *outputImpl) startProcessing() {
+// Start starts the outputQueueImpl component
+func (q *outputQueueImpl) Start() error {
+	go q.runOutputQueue()
+	return nil
+}
+
+// Stop stops the outputQueueImpl component
+func (q *outputQueueImpl) Stop(_ error) {
+	defer close(q.innerQueue)
+	defer close(q.forwardQueue)
+	q.stopSig.Signal()
+}
+
+// runOutputQueue reads messages from the inner queue, forwards them to the forwardQueue channel
+// and sends the deployments (if needed) to Detector
+func (q *outputQueueImpl) runOutputQueue() {
 	for {
 		select {
 		case <-q.stopSig.Done():

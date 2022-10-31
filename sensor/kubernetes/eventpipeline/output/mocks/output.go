@@ -9,17 +9,27 @@ import (
 type MockQueue struct {
 }
 
-// Send implements output.Queue
+// Send implements OutputQueue
 func (m *MockQueue) Send(_ *message.ResourceEvent) {
 
 }
 
-// ResponseC implements output.Queue
-func (m *MockQueue) ResponseC() <-chan *central.MsgFromSensor {
+// ResponsesC implements OutputQueue
+func (m *MockQueue) ResponsesC() <-chan *central.MsgFromSensor {
 	return nil
 }
 
 // NewMockQueue creates a new mock instance
 func NewMockQueue() *MockQueue {
 	return &MockQueue{}
+}
+
+// Start implements OutputQueue
+func (m *MockQueue) Start() error {
+	return nil
+}
+
+// Stop implements OutputQueue
+func (m *MockQueue) Stop(_ error) {
+
 }
