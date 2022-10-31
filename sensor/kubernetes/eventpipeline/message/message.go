@@ -23,17 +23,17 @@ type ResourceEvent struct {
 	// This property should be removed in the future and only the
 	// DetectionObject should be sent
 	CompatibilityDetectionDeployment []CompatibilityDetectionMessage
-	// ReprocessDeployments is also used for compatibility reasons with Network Policy handlers
+	// CompatibilityReprocessDeployments is also used for compatibility reasons with Network Policy handlers
 	// in the future this will not be needed as the dependencies are taken care by the resolvers
-	ReprocessDeployments []string
+	CompatibilityReprocessDeployments []string
 }
 
-// WrapOutputMessage wraps the SensorEvents, CompatibilityDetectionMessages, and the ReprocessDeployments into a ResourceEvent message
+// WrapOutputMessage wraps the SensorEvents, CompatibilityDetectionMessages, and the CompatibilityReprocessDeployments into a ResourceEvent message
 func WrapOutputMessage(sensorMessages []*central.SensorEvent, detectionDeployment []CompatibilityDetectionMessage, reprocessDeploymentsIds []string) *ResourceEvent {
 	return &ResourceEvent{
-		ForwardMessages:                  sensorMessages,
-		CompatibilityDetectionDeployment: detectionDeployment,
-		ReprocessDeployments:             reprocessDeploymentsIds,
+		ForwardMessages:                   sensorMessages,
+		CompatibilityDetectionDeployment:  detectionDeployment,
+		CompatibilityReprocessDeployments: reprocessDeploymentsIds,
 	}
 }
 
@@ -44,7 +44,7 @@ func MergeOutputMessages(dest, src *ResourceEvent) *ResourceEvent {
 	}
 
 	if src != nil {
-		dest.ReprocessDeployments = append(dest.ReprocessDeployments, src.ReprocessDeployments...)
+		dest.CompatibilityReprocessDeployments = append(dest.CompatibilityReprocessDeployments, src.CompatibilityReprocessDeployments...)
 		dest.ForwardMessages = append(dest.ForwardMessages, src.ForwardMessages...)
 		dest.CompatibilityDetectionDeployment = append(dest.CompatibilityDetectionDeployment, src.CompatibilityDetectionDeployment...)
 	}

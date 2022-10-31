@@ -61,7 +61,7 @@ func (q *outputQueueImpl) runOutputQueue() {
 				}
 			}
 
-			q.detector.ReprocessDeployments(msg.ReprocessDeployments...)
+			q.detector.ReprocessDeployments(msg.CompatibilityReprocessDeployments...)
 			for _, detectorRequest := range msg.CompatibilityDetectionDeployment {
 				q.detector.ProcessDeployment(detectorRequest.Object, detectorRequest.Action)
 			}
