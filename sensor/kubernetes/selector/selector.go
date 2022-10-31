@@ -97,10 +97,10 @@ func EmptyMatchesEverything() Options {
 // CreateSelector returns a SelectorWrapper for the given map of labels; matchNil determines whether
 // an empty set of labels matches everything or nothing.
 func CreateSelector(labelsMap map[string]string, opts ...Options) Selector {
-	selWrapper := wrap{matchNil: false}
+	selWrapper := &wrap{matchNil: false}
 
 	for _, opt := range opts {
-		opt(&selWrapper)
+		opt(selWrapper)
 	}
 
 	selWrapper.numLabels = uint(len(labelsMap))
