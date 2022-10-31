@@ -20,6 +20,9 @@ import {
     DropdownItem,
     DropdownSeparator,
     DropdownToggle,
+    EmptyState,
+    EmptyStateIcon,
+    EmptyStateVariant,
     Flex,
     FlexItem,
     Form,
@@ -28,8 +31,9 @@ import {
     Text,
     TextInput,
     Title,
+    Truncate,
 } from '@patternfly/react-core';
-import { CaretDownIcon } from '@patternfly/react-icons';
+import { CaretDownIcon, CubesIcon } from '@patternfly/react-icons';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import isEmpty from 'lodash/isEmpty';
@@ -40,11 +44,40 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
 import { CollectionResponse, deleteCollection } from 'services/CollectionsService';
+import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
 import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
+
+function AttachedCollectionTable({ collections }: { collections: CollectionResponse[] }) {
+    return collections.length > 0 ? (
+        <TableComposable aria-label="Attached collections" variant={TableVariant.compact}>
+            <Tbody>
+                {collections.map(({ name, description }) => (
+                    <Tr key={name}>
+                        <Td dataLabel="Name">
+                            <Button variant="link" className="pf-u-pl-0" isInline>
+                                {name}
+                            </Button>
+                        </Td>
+                        <Td dataLabel="Description">
+                            <Truncate content={description} />
+                        </Td>
+                    </Tr>
+                ))}
+            </Tbody>
+        </TableComposable>
+    ) : (
+        <EmptyState variant={EmptyStateVariant.xs}>
+            <EmptyStateIcon icon={CubesIcon} />
+            <Title headingLevel="h4">
+                There are no other collections attached to this collection
+            </Title>
+        </EmptyState>
+    );
+}
 
 export type CollectionFormProps = {
     hasWriteAccessForCollections: boolean;
@@ -137,6 +170,7 @@ function CollectionForm({
     }, [toggleDrawer, useInlineDrawer]);
 
     const pageTitle = action.type === 'create' ? 'Create collection' : values.name;
+    const isReadOnly = action.type === 'view' || !hasWriteAccessForCollections;
 
     function onEditCollection(id: string) {
         history.push({
@@ -317,6 +351,7 @@ function CollectionForm({
                                                     validated={errors.name ? 'error' : 'default'}
                                                     onChange={(_, e) => handleChange(e)}
                                                     onBlur={handleBlur}
+                                                    isDisabled={isReadOnly}
                                                 />
                                             </FormGroup>
                                         </FlexItem>
@@ -328,6 +363,7 @@ function CollectionForm({
                                                     value={values.description}
                                                     onChange={(_, e) => handleChange(e)}
                                                     onBlur={handleBlur}
+                                                    isDisabled={isReadOnly}
                                                 />
                                             </FormGroup>
                                         </FlexItem>
@@ -352,6 +388,7 @@ function CollectionForm({
                                         scopedResourceSelector={values.resourceSelectors.Deployment}
                                         handleChange={onResourceSelectorChange}
                                         validationErrors={errors.resourceSelectors?.Deployment}
+                                        isDisabled={isReadOnly}
                                     />
                                     <Label
                                         variant="outline"
@@ -365,6 +402,7 @@ function CollectionForm({
                                         scopedResourceSelector={values.resourceSelectors.Namespace}
                                         handleChange={onResourceSelectorChange}
                                         validationErrors={errors.resourceSelectors?.Namespace}
+                                        isDisabled={isReadOnly}
                                     />
                                     <Label
                                         variant="outline"
@@ -378,6 +416,7 @@ function CollectionForm({
                                         scopedResourceSelector={values.resourceSelectors.Cluster}
                                         handleChange={onResourceSelectorChange}
                                         validationErrors={errors.resourceSelectors?.Cluster}
+                                        isDisabled={isReadOnly}
                                     />
                                 </Flex>
 
@@ -386,14 +425,29 @@ function CollectionForm({
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsMd' }}
                                 >
-                                    <Title className="pf-u-mb-xs" headingLevel="h2">
-                                        Attach existing collections
-                                    </Title>
-                                    <p>Extend this collection by attaching other sets.</p>
-                                    <CollectionAttacher
-                                        initialEmbeddedCollections={initialEmbeddedCollections}
-                                        onSelectionChange={onEmbeddedCollectionsChange}
-                                    />
+                                    {isReadOnly ? (
+                                        <>
+                                            <Title className="pf-u-mb-xs" headingLevel="h2">
+                                                Attached collections
+                                            </Title>
+                                            <AttachedCollectionTable
+                                                collections={initialEmbeddedCollections}
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Title className="pf-u-mb-xs" headingLevel="h2">
+                                                Attach existing collections
+                                            </Title>
+                                            <p>Extend this collection by attaching other sets.</p>
+                                            <CollectionAttacher
+                                                initialEmbeddedCollections={
+                                                    initialEmbeddedCollections
+                                                }
+                                                onSelectionChange={onEmbeddedCollectionsChange}
+                                            />
+                                        </>
+                                    )}
                                 </Flex>
                             </Flex>
                             {action.type !== 'view' && (
