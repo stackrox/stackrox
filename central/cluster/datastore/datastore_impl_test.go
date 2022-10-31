@@ -212,7 +212,7 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testDeployments, nil)
 	suite.podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testPods, nil)
 	suite.alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(testAlerts, nil)
-	suite.alertDataStore.EXPECT().MarkAlertStale(gomock.Any(), gomock.Any()).Return(nil)
+	suite.alertDataStore.EXPECT().MarkAlertStaleBatch(gomock.Any(), gomock.Any()).Return(testAlerts, nil)
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
 	suite.deploymentDataStore.EXPECT().RemoveDeployment(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	suite.podDataStore.EXPECT().RemovePod(gomock.Any(), "fakepod").Return(nil)
