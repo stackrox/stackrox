@@ -47,7 +47,7 @@ function HelpMenu(): ReactElement {
 
     return (
         <ApplicationLauncher
-            aria-label="Help Menu"
+            aria-label="Help menu"
             isGrouped
             isOpen={isHelpMenuOpen}
             items={appLauncherItems}
