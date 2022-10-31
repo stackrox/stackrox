@@ -64,14 +64,14 @@ func (m mockSelector) Matches(labels labels.Labels) bool {
 	return m.internalSelector.Matches(labels)
 }
 
-func (s *SelectorWrapperTestSuite) injectMockSelector(sw *Wrap) {
+func (s *SelectorWrapperTestSuite) injectMockSelector(sw wrap) {
 	sw.selector = mockSelector{sw.selector, s}
 }
 
 func (s *SelectorWrapperTestSuite) TestLabelMatching() {
 	tests := map[string]struct {
 		givenSelectorLabels                map[string]string
-		matchEmptySelector                 WrapOption
+		matchEmptySelector                 Options
 		givenMatchingLabels                map[string]string
 		expectedMatch                      bool
 		expectedMatchesInsideMatchesCalled bool
@@ -137,7 +137,9 @@ func (s *SelectorWrapperTestSuite) TestLabelMatching() {
 		s.Run(name, func() {
 			s.hasMatchesBeenCalled = false
 			selectorWrap := CreateSelector(tt.givenSelectorLabels, tt.matchEmptySelector)
-			s.injectMockSelector(&selectorWrap)
+			wrapObj, ok := selectorWrap.(wrap)
+			s.Require().True(ok, "return must be a wrap object")
+			s.injectMockSelector(wrapObj)
 
 			s.Equal(tt.expectedMatch, selectorWrap.Matches(CreateLabelsWithLen(tt.givenMatchingLabels)))
 			s.Equal(tt.expectedMatchesInsideMatchesCalled, s.hasMatchesBeenCalled)
@@ -148,49 +150,49 @@ func (s *SelectorWrapperTestSuite) TestLabelMatching() {
 func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 	tests := map[string]struct {
 		givenSelectorLabels                []map[string]string
-		matchEmptySelector                 []WrapOption
+		matchEmptySelector                 []Options
 		givenMatchingLabels                map[string]string
 		expectedMatch                      bool
 		expectedMatchesInsideMatchesCalled bool
 	}{
 		"Disjunction of empty list that should match nothing and labels with three elements": {
 			givenSelectorLabels:                []map[string]string{labelsEmpty, labelsThreeElements},
-			matchEmptySelector:                 []WrapOption{EmptyMatchesNothing(), EmptyMatchesEverything()},
+			matchEmptySelector:                 []Options{EmptyMatchesNothing(), EmptyMatchesEverything()},
 			givenMatchingLabels:                labelsOneElement,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: false,
 		},
 		"Disjunction of empty list that should match everything and labels with three elements": {
 			givenSelectorLabels:                []map[string]string{labelsEmpty, labelsThreeElements},
-			matchEmptySelector:                 []WrapOption{EmptyMatchesEverything(), EmptyMatchesEverything()},
+			matchEmptySelector:                 []Options{EmptyMatchesEverything(), EmptyMatchesEverything()},
 			givenMatchingLabels:                labelsOneElement,
 			expectedMatch:                      true,
 			expectedMatchesInsideMatchesCalled: false,
 		},
 		"Disjunction of two selectors with more labels than the input": {
 			givenSelectorLabels:                []map[string]string{labelsFiveElements, labelsThreeElements},
-			matchEmptySelector:                 []WrapOption{EmptyMatchesNothing(), EmptyMatchesNothing()},
+			matchEmptySelector:                 []Options{EmptyMatchesNothing(), EmptyMatchesNothing()},
 			givenMatchingLabels:                labelsOneElement,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: false,
 		},
 		"Disjunction of two selectors, one more labels than the input, one equal, without match": {
 			givenSelectorLabels:                []map[string]string{labelsFiveElements, labelsThreeElements},
-			matchEmptySelector:                 []WrapOption{EmptyMatchesNothing(), EmptyMatchesNothing()},
+			matchEmptySelector:                 []Options{EmptyMatchesNothing(), EmptyMatchesNothing()},
 			givenMatchingLabels:                labelsThreeElements2,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: true,
 		},
 		"Disjunction of two selectors, one more labels than the input, one equal, with match": {
 			givenSelectorLabels:                []map[string]string{labelsFiveElements, labelsThreeElements},
-			matchEmptySelector:                 []WrapOption{EmptyMatchesNothing(), EmptyMatchesNothing()},
+			matchEmptySelector:                 []Options{EmptyMatchesNothing(), EmptyMatchesNothing()},
 			givenMatchingLabels:                labelsThreeElements,
 			expectedMatch:                      true,
 			expectedMatchesInsideMatchesCalled: true,
 		},
 		"Disjunction of two selectors, with less labels than the input": {
 			givenSelectorLabels:                []map[string]string{labelsThreeElements2, labelsThreeElements},
-			matchEmptySelector:                 []WrapOption{EmptyMatchesNothing(), EmptyMatchesNothing()},
+			matchEmptySelector:                 []Options{EmptyMatchesNothing(), EmptyMatchesNothing()},
 			givenMatchingLabels:                labelsFiveElements,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: true,
@@ -202,7 +204,10 @@ func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 			var selectorWrappers []Selector
 			for i, label := range tt.givenSelectorLabels {
 				newSelector := CreateSelector(label, tt.matchEmptySelector[i])
-				s.injectMockSelector(&newSelector)
+				wrapObj, ok := newSelector.(wrap)
+				s.Require().True(ok, "return must be a wrap object")
+
+				s.injectMockSelector(wrapObj)
 				selectorWrappers = append(selectorWrappers, newSelector)
 			}
 

@@ -11,7 +11,7 @@ type LabelsWithLen interface {
 	Len() uint
 }
 
-// Selector is a restricted version of Wrap
+// Selector is a restricted version of wrap
 type Selector interface {
 	Matches(LabelsWithLen) bool
 }
@@ -41,15 +41,15 @@ func CreateLabelsWithLen(labels map[string]string) LabelsWithLen {
 	return labelWithLenImpl{labels}
 }
 
-// Wrap holds a selector and information allowing for additional checks before matching
-type Wrap struct {
+// wrap holds a selector and information allowing for additional checks before matching
+type wrap struct {
 	selector  labels.Selector
 	numLabels uint
 	matchNil  bool
 }
 
 // Matches a set of labels
-func (s Wrap) Matches(labels LabelsWithLen) bool {
+func (s wrap) Matches(labels LabelsWithLen) bool {
 	if s.numLabels > labels.Len() {
 		return false
 	}
@@ -77,27 +77,27 @@ func Or(sels ...Selector) Selector {
 	return selectorDisjunction(sels)
 }
 
-// WrapOption function interface to define properties of selectors
-type WrapOption func(*Wrap)
+// Options function interface to define properties of selectors
+type Options func(*wrap)
 
 // EmptyMatchesNothing means that a set with no labels should not match with anything
-func EmptyMatchesNothing() WrapOption {
-	return func(sw *Wrap) {
+func EmptyMatchesNothing() Options {
+	return func(sw *wrap) {
 		sw.matchNil = false
 	}
 }
 
 // EmptyMatchesEverything means that a set with no labels should match with everything
-func EmptyMatchesEverything() WrapOption {
-	return func(sw *Wrap) {
+func EmptyMatchesEverything() Options {
+	return func(sw *wrap) {
 		sw.matchNil = true
 	}
 }
 
 // CreateSelector returns a SelectorWrapper for the given map of labels; matchNil determines whether
 // an empty set of labels matches everything or nothing.
-func CreateSelector(labelsMap map[string]string, opts ...WrapOption) Wrap {
-	selWrapper := Wrap{matchNil: false}
+func CreateSelector(labelsMap map[string]string, opts ...Options) Selector {
+	selWrapper := wrap{matchNil: false}
 
 	for _, opt := range opts {
 		opt(&selWrapper)
