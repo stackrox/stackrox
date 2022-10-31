@@ -16,6 +16,7 @@ module.exports = {
 
     e2e: {
         baseUrl: 'https://localhost:3000',
+        experimentalSessionAndOrigin: true,
         specPattern: 'cypress/integration/**/*.test.js',
     },
 };
