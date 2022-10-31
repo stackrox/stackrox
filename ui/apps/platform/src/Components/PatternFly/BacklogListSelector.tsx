@@ -79,6 +79,8 @@ function BacklogTable<Item>({
                                         variant="link"
                                         onClick={() => listAction(item)}
                                         icon={actionIcon}
+                                        className="pf-u-text-nowrap"
+                                        isInline
                                     >
                                         {buttonText}
                                     </Button>

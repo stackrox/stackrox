@@ -9,7 +9,7 @@ const selectorListCells = [
     {
         name: 'Name',
         render: ({ name }) => (
-            <Button variant="link" className="pf-u-pl-0">
+            <Button variant="link" className="pf-u-pl-0" isInline>
                 {name}
             </Button>
         ),
