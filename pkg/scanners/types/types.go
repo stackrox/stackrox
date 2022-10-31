@@ -57,4 +57,5 @@ type OrchestratorScanner interface {
 	Type() string
 	KubernetesScan(string) (map[string][]*storage.EmbeddedVulnerability, error)
 	OpenShiftScan(string) ([]*storage.EmbeddedVulnerability, error)
+	IstioScan(string) ([]*storage.EmbeddedVulnerability, error)
 }

@@ -69,6 +69,10 @@ func (m *orchestratorCVEManager) Reconcile() {
 	if err != nil {
 		log.Errorf("failed to reconcile orchestrator OpenShift CVEs: %v", err)
 	}
+	err = m.reconcileCVEs(clusters, utils.Istio)
+	if err != nil {
+		log.Errorf("failed to reconcile orchestrator Istio CVEs: %v", err)
+	}
 }
 
 func (m *orchestratorCVEManager) Scan(version string, cveType utils.CVEType) ([]*storage.EmbeddedVulnerability, error) {
@@ -88,6 +92,8 @@ func (m *orchestratorCVEManager) Scan(version string, cveType utils.CVEType) ([]
 		return k8sScan(version, scanners)
 	case utils.OpenShift:
 		return openShiftScan(version, scanners)
+	case utils.Istio:
+		return istioScan(version, scanners)
 	}
 	return nil, errors.Errorf("unexpected kind %s", cveType)
 }
@@ -207,6 +213,19 @@ func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveT
 			version = metadata.GetVersion()
 		case utils.OpenShift:
 			version = metadata.GetOpenshiftVersion()
+		case utils.Istio:
+			allAccessCtx = sac.WithAllAccess(context.Background())
+			matcher := m.cveMatcher
+			versions, err := matcher.GetValidIstioVersions(allAccessCtx, cluster)
+			if err != nil || len(versions) < 1 {
+				continue
+			}
+			for _, v := range versions.AsSlice() {
+				if v != "" {
+					versionToClusters[v] = append(versionToClusters[v], cluster)
+				}
+			}
+			continue
 		}
 
 		if version == "" {
@@ -249,4 +268,26 @@ func (m *orchestratorCVEManager) getAffectedClusters(ctx context.Context, cveID 
 		return sac.ScopeSuffix{sac.ClusterScopeKey(c.GetId())}
 	})
 	return filteredClusters, nil
+}
+
+func istioScan(version string, scanners map[string]types.OrchestratorScanner) ([]*storage.EmbeddedVulnerability, error) {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for Kubernetes:%s", version))
+
+	var allVulns []*storage.EmbeddedVulnerability
+	for _, scanner := range scanners {
+		result, err := scanner.IstioScan(version)
+		if err != nil {
+			errorList.AddError(err)
+			continue
+		}
+		vulnIDsSet := set.NewStringSet()
+		for _, vuln := range result {
+			if vulnIDsSet.Add(vuln.GetCve()) {
+				allVulns = append(allVulns, vuln)
+			}
+		}
+		return allVulns, nil
+	}
+
+	return nil, errorList.ToError()
 }

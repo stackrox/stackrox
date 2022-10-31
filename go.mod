@@ -248,7 +248,7 @@ require (
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
 	github.com/klauspost/compress v1.15.11 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
-	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936 // indirect
+	github.com/knqyf263/go-rpm-version v0.0.0-20220614171824-631e686d1075 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
@@ -304,6 +304,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.13.0 // indirect
 	github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd // indirect
+	github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 // indirect
 	github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d // indirect
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
@@ -399,6 +400,7 @@ replace (
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20221003092512-fbf71229411f
+	github.com/stackrox/scanner => github.com/stackrox/scanner v0.0.0-20221031200236-942ec05c53b4
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 	// Our fork has a change exposing a method to do generic POST requests
