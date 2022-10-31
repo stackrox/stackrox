@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	{{ if $rocksDB}}"github.com/stackrox/rox/pkg/rocksdb"{{end}}
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	{{ if $rocksDB}}"github.com/stackrox/rox/pkg/testutils/rocksdbtest"{{end}}
 	"github.com/stretchr/testify/suite"
 	{{ if $rocksDB}}"github.com/tecbot/gorocksdb"{{end}}
@@ -37,7 +36,6 @@ func TestMigration(t *testing.T) {
 
 type postgresMigrationSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 	ctx		 context.Context
 
 	legacyDB {{if $boltDB}}*bolt.DB{{else}}*rocksdb.RocksDB{{end}}
@@ -47,8 +45,7 @@ type postgresMigrationSuite struct {
 var _ suite.TearDownTestSuite = (*postgresMigrationSuite)(nil)
 
 func (s *postgresMigrationSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
