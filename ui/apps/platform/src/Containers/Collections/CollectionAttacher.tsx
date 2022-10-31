@@ -2,8 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Button, debounce, Flex, SearchInput, Truncate } from '@patternfly/react-core';
 
 import BacklogListSelector from 'Components/PatternFly/BacklogListSelector';
+import { CollectionResponse } from 'services/CollectionsService';
 import useEmbeddedCollections from './hooks/useEmbeddedCollections';
-import { CollectionSlim } from './types';
 
 const selectorListCells = [
     {
@@ -21,8 +21,8 @@ const selectorListCells = [
 ];
 
 export type CollectionAttacherProps = {
-    initialEmbeddedCollections: CollectionSlim[];
-    onSelectionChange: (collections: CollectionSlim[]) => void;
+    initialEmbeddedCollections: CollectionResponse[];
+    onSelectionChange: (collections: CollectionResponse[]) => void;
 };
 
 function compareNameLowercase(search: string): (item: { name: string }) => boolean {

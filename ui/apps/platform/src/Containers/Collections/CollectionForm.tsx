@@ -39,12 +39,12 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
-import { deleteCollection } from 'services/CollectionsService';
+import { CollectionResponse, deleteCollection } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
-import { Collection, CollectionSlim, ScopedResourceSelector, SelectorEntityType } from './types';
+import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
 
 export type CollectionFormProps = {
     hasWriteAccessForCollections: boolean;
@@ -52,6 +52,8 @@ export type CollectionFormProps = {
     action: CollectionPageAction;
     /* initial data used to populate the form */
     initialData: Collection;
+    /* Collection object references for the list of ids in `initialData` */
+    initialEmbeddedCollections: CollectionResponse[];
     /* Whether or not to display the collection results in an inline drawer. If false, will
     display collection results in an overlay drawer. */
     useInlineDrawer: boolean;
@@ -94,6 +96,7 @@ function CollectionForm({
     hasWriteAccessForCollections,
     action,
     initialData,
+    initialEmbeddedCollections,
     useInlineDrawer,
     showBreadcrumbs,
 }: CollectionFormProps) {
@@ -120,13 +123,7 @@ function CollectionForm({
         validationSchema: yup.object({
             name: yup.string().trim().required(),
             description: yup.string(),
-            embeddedCollections: yup.array(
-                yup.object().shape({
-                    id: yup.string().trim().required(),
-                    name: yup.string().trim().required(),
-                    description: yup.string(),
-                })
-            ),
+            embeddedCollections: yup.array(yup.string().trim().required()),
             resourceSelectors: yup.object().shape({
                 Deployment: yupResourceSelectorObject(),
                 Namespace: yupResourceSelectorObject(),
@@ -184,8 +181,11 @@ function CollectionForm({
         scopedResourceSelector: ScopedResourceSelector
     ) => setFieldValue(`resourceSelectors.${entityType}`, scopedResourceSelector);
 
-    const onEmbeddedCollectionsChange = (newCollections: CollectionSlim[]) =>
-        setFieldValue('embeddedCollections', newCollections);
+    const onEmbeddedCollectionsChange = (newCollections: CollectionResponse[]) =>
+        setFieldValue(
+            'embeddedCollections',
+            newCollections.map(({ id }) => id)
+        );
 
     return (
         <>
@@ -391,7 +391,7 @@ function CollectionForm({
                                     </Title>
                                     <p>Extend this collection by attaching other sets.</p>
                                     <CollectionAttacher
-                                        initialEmbeddedCollections={initialData.embeddedCollections}
+                                        initialEmbeddedCollections={initialEmbeddedCollections}
                                         onSelectionChange={onEmbeddedCollectionsChange}
                                     />
                                 </Flex>

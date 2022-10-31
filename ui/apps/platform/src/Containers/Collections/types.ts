@@ -72,8 +72,6 @@ export function isByLabelSelector(
     return isByLabelField(selector.field);
 }
 
-export type CollectionSlim = { id: string; name: string; description: string };
-
 /**
  * `Collection` is the front end representation of a valid collection, which is more
  * restricted than Collection objects that can be created via the API.
@@ -84,5 +82,5 @@ export type Collection = {
     description: string;
     inUse: boolean;
     resourceSelectors: Record<SelectorEntityType, ScopedResourceSelector>;
-    embeddedCollections: CollectionSlim[];
+    embeddedCollections: string[];
 };

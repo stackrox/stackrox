@@ -1,11 +1,10 @@
 import { useReducer, useEffect, Dispatch } from 'react';
 import sortBy from 'lodash/sortBy';
 
-import { listCollections } from 'services/CollectionsService';
+import { CollectionResponse, listCollections } from 'services/CollectionsService';
 import { ensureExhaustive } from 'utils/type.utils';
-import { CollectionSlim } from '../types';
 
-type CollectionMap = Record<string, CollectionSlim>;
+type CollectionMap = Record<string, CollectionResponse>;
 
 // `pageSize` is the default number of items that will attempt to be pulled when the user
 // loads more items in the detached collections section
@@ -45,9 +44,9 @@ function fetchDetachedCollections(
     clientMap: CollectionMap,
     searchValue: string,
     pageNumber: number,
-    aggregateResult: CollectionSlim[]
+    aggregateResult: CollectionResponse[]
 ): Promise<{
-    detached: CollectionSlim[];
+    detached: CollectionResponse[];
     nextPage: number;
     lastResponseSize: number;
 }> {
@@ -115,7 +114,7 @@ function moveItem(from: CollectionMap, to: CollectionMap, id: string) {
     return [fromMap, toMap];
 }
 
-function arrayToMap(collections: CollectionSlim[]): Record<string, CollectionSlim> {
+function arrayToMap(collections: CollectionResponse[]): Record<string, CollectionResponse> {
     const map = {};
     collections.forEach(({ id, ...rest }) => {
         map[id] = { id, ...rest };
@@ -183,9 +182,9 @@ const initialState = {
 
 export type UseEmbeddedCollectionsReturn = {
     /** Client side state of attached collections */
-    attached: CollectionSlim[];
+    attached: CollectionResponse[];
     /** Client side state of detached collections */
-    detached: CollectionSlim[];
+    detached: CollectionResponse[];
     /** Move a collection from detached -> attached by id */
     attach: (id: string) => void;
     /** Move a collection from attached -> detached by id */
@@ -244,7 +243,7 @@ export type UseEmbeddedCollectionsReturn = {
  *      A list of attached collection ids used to populate the initial attached collection list.
  */
 export default function useEmbeddedCollections(
-    initialAttachedCollections: CollectionSlim[]
+    initialAttachedCollections: CollectionResponse[]
 ): UseEmbeddedCollectionsReturn {
     const [state, dispatch] = useReducer(embeddedCollectionsReducer, initialState, (init) => ({
         ...init,

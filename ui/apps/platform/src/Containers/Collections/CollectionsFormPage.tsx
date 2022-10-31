@@ -12,7 +12,6 @@ import {
 import { CollectionPageAction } from './collections.utils';
 import CollectionForm from './CollectionForm';
 import { parseCollection } from './parser';
-import { CollectionSlim } from './types';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
@@ -36,16 +35,17 @@ const defaultCollectionData = {
     },
 };
 
-function getEmbeddedCollections({
-    collection,
-}: ResolvedCollectionResponse): Promise<CollectionResponse & { embedded: CollectionSlim[] }> {
+function getEmbeddedCollections({ collection }: ResolvedCollectionResponse): Promise<{
+    collection: CollectionResponse;
+    embeddedCollections: CollectionResponse[];
+}> {
     if (collection.embeddedCollections.length === 0) {
-        return Promise.resolve({ ...collection, embedded: [] });
+        return Promise.resolve({ collection, embeddedCollections: [] });
     }
     const idSearchString = collection.embeddedCollections.map(({ id }) => id).join(',');
     const searchFilter = { 'Collection ID': idSearchString };
     const { request } = listCollections(searchFilter, { field: 'name', reversed: false });
-    return request.then((embedded) => ({ ...collection, embedded }));
+    return request.then((embeddedCollections) => ({ collection, embeddedCollections }));
 }
 
 function CollectionsFormPage({
@@ -62,7 +62,8 @@ function CollectionsFormPage({
         return { request: request.then(getEmbeddedCollections), cancel };
     }, [collectionId]);
     const { data, loading, error } = useRestQuery(collectionFetcher);
-    const initialData = data ? parseCollection(data) : defaultCollectionData;
+    const initialData = data ? parseCollection(data.collection) : defaultCollectionData;
+    const initialEmbeddedCollections = data ? data.embeddedCollections : [];
 
     let content: ReactElement | undefined;
 
@@ -88,6 +89,7 @@ function CollectionsFormPage({
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
                 action={pageAction}
                 initialData={initialData}
+                initialEmbeddedCollections={initialEmbeddedCollections}
                 useInlineDrawer={isLargeScreen}
                 showBreadcrumbs
                 appendTableLinkAction={() => {
