@@ -9,12 +9,12 @@ export default () => {
      *
      * Subsequent calls in a test file restore the cached session data.
      */
-    cy.session('ROX_AUTH_TOKEN', () => {
-        const token = Cypress.env('ROX_AUTH_TOKEN');
-        if (token) {
-            beforeEach(() => {
+    beforeEach(() => {
+        cy.session('ROX_AUTH_TOKEN', () => {
+            const token = Cypress.env('ROX_AUTH_TOKEN');
+            if (token) {
                 localStorage.setItem('access_token', token);
-            });
-        }
+            }
+        });
     });
 };
