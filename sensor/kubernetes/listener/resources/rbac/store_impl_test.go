@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -122,7 +122,7 @@ func TestStore(t *testing.T) {
 
 	// Add a binding with no role, should get a binding update with no role id.
 	assert.Equal(t,
-		&message.ResourceEvent{
+		&component.ResourceEvent{
 			ForwardMessages: []*central.SensorEvent{
 				{
 					Id:     "b1",
@@ -143,7 +143,7 @@ func TestStore(t *testing.T) {
 
 	// Upsert the role for the previous binding. The next binding update will get its ID.
 	assert.Equal(t,
-		&message.ResourceEvent{
+		&component.ResourceEvent{
 			ForwardMessages: []*central.SensorEvent{
 				{
 					Id:     "r1",
@@ -171,7 +171,7 @@ func TestStore(t *testing.T) {
 
 	// Add another binding for the first role. The binding update should contain the role ID.
 	assert.Equal(t,
-		&message.ResourceEvent{
+		&component.ResourceEvent{
 			ForwardMessages: []*central.SensorEvent{{
 				Id:     "b2",
 				Action: central.ResourceAction_UPDATE_RESOURCE,
@@ -191,7 +191,7 @@ func TestStore(t *testing.T) {
 
 	// Add binding for the second role. The binding update should NOT contain the role ID.
 	assert.Equal(t,
-		&message.ResourceEvent{
+		&component.ResourceEvent{
 			ForwardMessages: []*central.SensorEvent{{
 				Id:     "b5",
 				Action: central.ResourceAction_UPDATE_RESOURCE,
@@ -211,7 +211,7 @@ func TestStore(t *testing.T) {
 
 	// Add a cluster binding with no role, should get a cluster binding update with no role id.
 	assert.Equal(t,
-		&message.ResourceEvent{
+		&component.ResourceEvent{
 			ForwardMessages: []*central.SensorEvent{{
 				Id:     "b3",
 				Action: central.ResourceAction_CREATE_RESOURCE,
@@ -232,7 +232,7 @@ func TestStore(t *testing.T) {
 
 	// Upsert the role for the previous binding. The next binding update will get its ID.
 	assert.Equal(t,
-		&message.ResourceEvent{
+		&component.ResourceEvent{
 			ForwardMessages: []*central.SensorEvent{{
 				Id:     "r2",
 				Action: central.ResourceAction_UPDATE_RESOURCE,
@@ -252,7 +252,7 @@ func TestStore(t *testing.T) {
 
 	// Upsert binding for the second role. The binding update should contain the role ID.
 	assert.Equal(t,
-		&message.ResourceEvent{
+		&component.ResourceEvent{
 			ForwardMessages: []*central.SensorEvent{{
 				Id:     "b5",
 				Action: central.ResourceAction_UPDATE_RESOURCE,
@@ -272,7 +272,7 @@ func TestStore(t *testing.T) {
 
 	// Update the cluster binding to add a new Subject, should get a cluster binding update with the new role ID.
 	assert.Equal(t,
-		&message.ResourceEvent{
+		&component.ResourceEvent{
 			ForwardMessages: []*central.SensorEvent{{
 				Id:     "b3",
 				Action: central.ResourceAction_UPDATE_RESOURCE,
@@ -293,7 +293,7 @@ func TestStore(t *testing.T) {
 
 	// Remove the role. The role should get removed and the binding should get updated with an empty role id.
 	assert.Equal(t,
-		&message.ResourceEvent{
+		&component.ResourceEvent{
 			ForwardMessages: []*central.SensorEvent{{
 				Id:     "r2",
 				Action: central.ResourceAction_REMOVE_RESOURCE,
@@ -313,7 +313,7 @@ func TestStore(t *testing.T) {
 
 	// Update the cluster binding to add another Subject, should get a cluster binding update *without* role ID.
 	assert.Equal(t,
-		&message.ResourceEvent{
+		&component.ResourceEvent{
 			ForwardMessages: []*central.SensorEvent{{
 				Id:     "b3",
 				Action: central.ResourceAction_UPDATE_RESOURCE,

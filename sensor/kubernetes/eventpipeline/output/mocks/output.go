@@ -2,7 +2,7 @@ package mocks
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
 // MockQueue is a mock of the output.Queue interface
@@ -10,7 +10,7 @@ type MockQueue struct {
 }
 
 // Send implements OutputQueue
-func (m *MockQueue) Send(_ *message.ResourceEvent) {
+func (m *MockQueue) Send(_ *component.ResourceEvent) {
 
 }
 

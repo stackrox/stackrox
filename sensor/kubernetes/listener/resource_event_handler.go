@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/processfilter"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"k8s.io/apimachinery/pkg/types"
@@ -237,7 +237,7 @@ func (k *listenerImpl) handleAllEvents() {
 	// Set the flag that all objects present at start up have been consumed.
 	syncingResources.Set(false)
 
-	k.outputQueue.Send(&message.ResourceEvent{
+	k.outputQueue.Send(&component.ResourceEvent{
 		ForwardMessages: []*central.SensorEvent{
 			{
 				Resource: &central.SensorEvent_Synced{
@@ -253,7 +253,7 @@ func (k *listenerImpl) handleAllEvents() {
 func handle(
 	informer cache.SharedIndexInformer,
 	dispatcher resources.Dispatcher,
-	outputQueue message.OutputQueue,
+	outputQueue component.OutputQueue,
 	syncingResources *concurrency.Flag,
 	wg *concurrency.WaitGroup,
 	stopSignal *concurrency.Signal,

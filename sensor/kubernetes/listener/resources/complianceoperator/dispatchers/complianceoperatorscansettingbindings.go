@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -19,7 +19,7 @@ func NewScanSettingBindingsDispatcher() *ScanSettingBindings {
 }
 
 // ProcessEvent processes a scan setting binding event
-func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *message.ResourceEvent {
+func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	var scanSettingBindings v1alpha1.ScanSettingBinding
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
@@ -56,5 +56,5 @@ func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.Re
 			},
 		},
 	}
-	return message.WrapOutputMessage(events, nil, nil)
+	return component.WrapOutputMessage(events, nil, nil)
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
 var (
@@ -13,14 +13,14 @@ var (
 )
 
 type outputQueueImpl struct {
-	innerQueue   chan *message.ResourceEvent
+	innerQueue   chan *component.ResourceEvent
 	stopSig      *concurrency.Signal
 	forwardQueue chan *central.MsgFromSensor
 	detector     detector.Detector
 }
 
 // Send sends a ResourceEvent message to the inner queue
-func (q *outputQueueImpl) Send(msg *message.ResourceEvent) {
+func (q *outputQueueImpl) Send(msg *component.ResourceEvent) {
 	q.innerQueue <- msg
 }
 

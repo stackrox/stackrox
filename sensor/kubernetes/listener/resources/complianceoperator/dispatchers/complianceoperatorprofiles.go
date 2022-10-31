@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -23,7 +23,7 @@ func NewProfileDispatcher() *ProfileDispatcher {
 }
 
 // ProcessEvent processes a compliance operator profile
-func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *message.ResourceEvent {
+func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	var complianceProfile v1alpha1.Profile
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
@@ -60,5 +60,5 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 			},
 		},
 	}
-	return message.WrapOutputMessage(events, nil, nil)
+	return component.WrapOutputMessage(events, nil, nil)
 }

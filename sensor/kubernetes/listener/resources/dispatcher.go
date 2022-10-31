@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/registry"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -28,7 +28,7 @@ import (
 // in response.
 //go:generate mockgen-wrapper
 type Dispatcher interface {
-	ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *message.ResourceEvent
+	ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent
 }
 
 // DispatcherRegistry provides dispatchers to use.
@@ -146,12 +146,12 @@ type InformerK8sMsg struct {
 	EventsOutput []string
 }
 
-func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *message.ResourceEvent {
+func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
 	now := time.Now().Unix()
 	dispType := strings.Trim(fmt.Sprintf("%T", obj), "*")
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
 	if events == nil {
-		events = &message.ResourceEvent{}
+		events = &component.ResourceEvent{}
 	}
 
 	if m.writer == nil {
@@ -196,13 +196,13 @@ type metricDispatcher struct {
 	Dispatcher
 }
 
-func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *message.ResourceEvent {
+func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
 	start := time.Now().UnixNano()
 	dispatcher := strings.Trim(fmt.Sprintf("%T", obj), "*")
 
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
 	if events == nil {
-		events = &message.ResourceEvent{}
+		events = &component.ResourceEvent{}
 	}
 
 	for _, e := range events.ForwardMessages {

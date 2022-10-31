@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
 var (
@@ -13,8 +13,8 @@ var (
 )
 
 type eventPipeline struct {
-	output     message.OutputQueue
-	components []message.PipelineComponent
+	output     component.OutputQueue
+	components []component.PipelineComponent
 
 	eventsC chan *central.MsgFromSensor
 	stopSig *concurrency.Signal

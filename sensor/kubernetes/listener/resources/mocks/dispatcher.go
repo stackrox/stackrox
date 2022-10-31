@@ -9,7 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	resources "github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 )
 
@@ -37,10 +37,10 @@ func (m *MockDispatcher) EXPECT() *MockDispatcherMockRecorder {
 }
 
 // ProcessEvent mocks base method.
-func (m *MockDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *message.ResourceEvent {
+func (m *MockDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessEvent", obj, oldObj, action)
-	ret0, _ := ret[0].(*message.ResourceEvent)
+	ret0, _ := ret[0].(*component.ResourceEvent)
 	return ret0
 }
 

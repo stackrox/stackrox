@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/sensor/common/store"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/selector"
 	networkingV1 "k8s.io/api/networking/v1"
 )
@@ -25,7 +25,7 @@ func newNetworkPolicyDispatcher(networkPolicyStore store.NetworkPolicyStore, dep
 }
 
 // ProcessEvent processes a network policy resource event and returns the sensor events to generate.
-func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action central.ResourceAction) *message.ResourceEvent {
+func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action central.ResourceAction) *component.ResourceEvent {
 	np := obj.(*networkingV1.NetworkPolicy)
 
 	roxNetpol := networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
@@ -46,7 +46,7 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 		reprocessingIds = h.updateDeploymentsFromStore(roxNetpol, sel)
 	}
 
-	return message.WrapOutputMessage(
+	return component.WrapOutputMessage(
 		[]*central.SensorEvent{
 			{
 				Id:     string(np.UID),

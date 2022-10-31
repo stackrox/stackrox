@@ -1,4 +1,4 @@
-package message
+package component
 
 import "github.com/stackrox/rox/generated/internalapi/central"
 

@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
 var (
@@ -12,8 +12,8 @@ var (
 )
 
 // New Creates a new Queue component
-func New(stopSig *concurrency.Signal, detector detector.Detector) message.OutputQueue {
-	ch := make(chan *message.ResourceEvent, boundedQueueSize)
+func New(stopSig *concurrency.Signal, detector detector.Detector) component.OutputQueue {
+	ch := make(chan *component.ResourceEvent, boundedQueueSize)
 	forwardQueue := make(chan *central.MsgFromSensor)
 	outputQueue := &outputQueueImpl{
 		detector:     detector,

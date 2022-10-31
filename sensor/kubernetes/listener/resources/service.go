@@ -4,7 +4,6 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/message"
 	selector2 "github.com/stackrox/rox/sensor/kubernetes/selector"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -137,7 +136,7 @@ func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *Deploymen
 }
 
 // ProcessEvent processes a service resource event, and returns the sensor events to emit in response.
-func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *message.ResourceEvent {
+func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	svc := obj.(*v1.Service)
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
@@ -166,13 +165,13 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector2.Selector) *message.ResourceEvent {
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector2.Selector) *component.ResourceEvent {
 	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)
 	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
-	return message.WrapOutputMessage(events, nil, nil)
+	return component.WrapOutputMessage(events, nil, nil)
 }
 
-func (sh *serviceDispatcher) processCreate(svc *v1.Service) *message.ResourceEvent {
+func (sh *serviceDispatcher) processCreate(svc *v1.Service) *component.ResourceEvent {
 	svcWrap := wrapService(svc)
 	sh.serviceStore.addOrUpdateService(svcWrap)
 	events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(serviceWithRoutes{
@@ -180,5 +179,5 @@ func (sh *serviceDispatcher) processCreate(svc *v1.Service) *message.ResourceEve
 		routes:      sh.serviceStore.getRoutesForService(svcWrap),
 	})
 	sh.endpointManager.OnServiceCreate(svcWrap)
-	return message.WrapOutputMessage(events, nil, nil)
+	return component.WrapOutputMessage(events, nil, nil)
 }
