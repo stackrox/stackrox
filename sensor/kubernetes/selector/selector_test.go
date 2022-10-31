@@ -137,7 +137,7 @@ func (s *SelectorWrapperTestSuite) TestLabelMatching() {
 		s.Run(name, func() {
 			s.hasMatchesBeenCalled = false
 			selectorWrap := CreateSelector(tt.givenSelectorLabels, tt.matchEmptySelector)
-			wrapObj, ok := selectorWrap.(wrap)
+			wrapObj, ok := selectorWrap.(*wrap)
 			s.Require().True(ok, "return must be a wrap object")
 			s.injectMockSelector(wrapObj)
 
@@ -204,7 +204,7 @@ func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 			var selectorWrappers []Selector
 			for i, label := range tt.givenSelectorLabels {
 				newSelector := CreateSelector(label, tt.matchEmptySelector[i])
-				wrapObj, ok := newSelector.(wrap)
+				wrapObj, ok := newSelector.(*wrap)
 				s.Require().True(ok, "return must be a wrap object")
 
 				s.injectMockSelector(wrapObj)
