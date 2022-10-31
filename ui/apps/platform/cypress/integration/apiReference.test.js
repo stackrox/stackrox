@@ -1,3 +1,4 @@
+import withAuth from '../helpers/basicAuth';
 import { visitMainDashboard } from '../helpers/main';
 import { interactAndWaitForResponses } from '../helpers/request';
 import { visit } from '../helpers/visit';
@@ -15,6 +16,8 @@ const requestConfig = {
 const title = 'API Reference';
 
 describe('API Reference', () => {
+    withAuth();
+
     it('should visit via menu on top nav', () => {
         visitMainDashboard();
 
