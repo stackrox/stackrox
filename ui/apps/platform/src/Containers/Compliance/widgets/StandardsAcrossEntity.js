@@ -98,7 +98,7 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
         groupBy: [entityTypes.STANDARD, entityType],
         unit: entityTypes.CHECK,
     };
-    const { loading, error, data } = useQuery(AGGREGATED_RESULTS_ACROSS_ENTITY, {
+    const { loading, error, data } = useQuery(AGGREGATED_RESULTS_ACROSS_ENTITY(entityType), {
         variables,
     });
 
