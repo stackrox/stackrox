@@ -125,7 +125,7 @@ function arrayToMap(collections: CollectionResponse[]): Record<string, Collectio
 type UseEmbeddedCollectionsState = {
     page: number;
     hasMore: boolean;
-    fetchMoreLoading: boolean;
+    isFetchingMore: boolean;
     fetchMoreError: Error | null;
     attached: CollectionMap;
     detached: CollectionMap;
@@ -145,14 +145,14 @@ function embeddedCollectionsReducer(
 ): UseEmbeddedCollectionsState {
     switch (payload.type) {
         case 'fetchMoreRequest':
-            return { ...state, fetchMoreLoading: true };
+            return { ...state, isFetchingMore: true };
         case 'fetchMoreComplete': {
-            return { ...state, ...payload, fetchMoreLoading: false, fetchMoreError: null };
+            return { ...state, ...payload, isFetchingMore: false, fetchMoreError: null };
         }
         case 'fetchMoreError':
             return {
                 ...state,
-                fetchMoreLoading: false,
+                isFetchingMore: false,
                 fetchMoreError: payload.error,
             };
         case 'attachCollection': {
@@ -175,7 +175,7 @@ function embeddedCollectionsReducer(
 const initialState = {
     page: 1,
     hasMore: true,
-    fetchMoreLoading: false,
+    isFetchingMore: false,
     fetchMoreError: null,
     detached: {},
 };
@@ -196,7 +196,7 @@ export type UseEmbeddedCollectionsReturn = {
     /** Callback to fire when the search string changes */
     onSearch: (search: string) => void;
     /** Whether or not the current fetchMore request is loading */
-    fetchMoreLoading: boolean;
+    isFetchingMore: boolean;
     /** If a fetchMore request fails, the error, or null */
     fetchMoreError: Error | null;
 };
@@ -250,7 +250,7 @@ export default function useEmbeddedCollections(
         attached: arrayToMap(initialAttachedCollections),
     }));
 
-    const { attached, detached, page, hasMore, fetchMoreLoading, fetchMoreError } = state;
+    const { attached, detached, page, hasMore, isFetchingMore, fetchMoreError } = state;
 
     useEffect(() => {
         return fetchMore(arrayToMap(initialAttachedCollections), {}, '', 1, dispatch);
@@ -269,7 +269,7 @@ export default function useEmbeddedCollections(
         hasMore,
         fetchMore: (search: string) => fetchMore(attached, detached, search, page, dispatch),
         onSearch,
-        fetchMoreLoading,
+        isFetchingMore,
         fetchMoreError,
     };
 }

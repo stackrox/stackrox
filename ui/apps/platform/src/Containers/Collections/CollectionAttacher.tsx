@@ -36,7 +36,7 @@ function CollectionAttacher({
     const [search, setSearch] = useState('');
     const embedded = useEmbeddedCollections(initialEmbeddedCollections);
     const { attached, detached, attach, detach, hasMore, fetchMore, onSearch } = embedded;
-    const { fetchMoreLoading, fetchMoreError } = embedded;
+    const { isFetchingMore, fetchMoreError } = embedded;
 
     const onSearchInputChange = useMemo(
         () =>
@@ -83,7 +83,7 @@ function CollectionAttacher({
                     className="pf-u-align-self-flex-start"
                     variant="secondary"
                     onClick={() => fetchMore(search)}
-                    isLoading={fetchMoreLoading}
+                    isLoading={isFetchingMore}
                 >
                     View more
                 </Button>
