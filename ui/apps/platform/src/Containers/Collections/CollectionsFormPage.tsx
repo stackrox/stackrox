@@ -85,6 +85,9 @@ function CollectionsFormPage({
     } else if (loading) {
         content = <>{/* TODO - Handle UI for loading state */}</>;
     } else if (initialData) {
+        if (pageAction.type === 'clone') {
+            initialData.name += ' (COPY)';
+        }
         content = (
             <CollectionForm
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
