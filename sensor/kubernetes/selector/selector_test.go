@@ -64,7 +64,7 @@ func (m mockSelector) Matches(labels labels.Labels) bool {
 	return m.internalSelector.Matches(labels)
 }
 
-func (s *SelectorWrapperTestSuite) injectMockSelector(sw wrap) {
+func (s *SelectorWrapperTestSuite) injectMockSelector(sw *wrap) {
 	sw.selector = mockSelector{sw.selector, s}
 }
 
