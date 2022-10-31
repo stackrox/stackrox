@@ -98,14 +98,10 @@ func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetColl
 // CreateCollection creates a new collection from the given request
 func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCollectionRequest) (*v1.CreateCollectionResponse, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, nil
+		return nil, errors.New("Resource collections is not enabled")
 	}
 
-	if request.GetName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
-	}
-
-	collection, err := collectionRequestToCollection(ctx, request, true)
+	collection, err := collectionRequestToCollection(ctx, request, true, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -118,10 +114,18 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 	return &v1.CreateCollectionResponse{Collection: collection}, nil
 }
 
-func collectionRequestToCollection(ctx context.Context, request collectionRequest, isCreate bool) (*storage.ResourceCollection, error) {
-	user := utils.UserFromContext(ctx)
-	if user == nil {
-		return nil, errors.New("User identity not provided")
+func collectionRequestToCollection(ctx context.Context, request collectionRequest, isCreate bool, getID func() string) (*storage.ResourceCollection, error) {
+	if request.GetName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
+	}
+
+	slimUser := utils.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	if len(request.GetResourceSelectors()) == 0 {
+		return nil, errors.Wrap(errox.InvalidArgs, "No resource selectors were provided")
 	}
 
 	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
@@ -130,13 +134,15 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 		Name:              request.GetName(),
 		Description:       request.GetDescription(),
 		LastUpdated:       timeNow,
-		UpdatedBy:         user,
+		UpdatedBy:         slimUser,
 		ResourceSelectors: request.GetResourceSelectors(),
 	}
 
 	if isCreate {
-		collection.CreatedBy = user
+		collection.CreatedBy = slimUser
 		collection.CreatedAt = timeNow
+	} else if getID != nil {
+		collection.Id = getID()
 	}
 
 	if len(request.GetEmbeddedCollectionIds()) > 0 {

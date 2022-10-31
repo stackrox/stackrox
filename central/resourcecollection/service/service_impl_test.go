@@ -91,13 +91,13 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	if !features.ObjectCollections.Enabled() {
 		suite.T().Skip("skipping because env var is not set")
 	}
-	ctx := sac.WithAllAccess(context.Background())
+	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	// test error when collection name is empty
 	request := &v1.CreateCollectionRequest{
 		Name: "",
 	}
-	resp, err := suite.collectionService.CreateCollection(ctx, request)
+	resp, err := suite.collectionService.CreateCollection(allAccessCtx, request)
 	suite.NotNil(err)
 	suite.Nil(resp)
 
@@ -105,13 +105,26 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	request = &v1.CreateCollectionRequest{
 		Name: "b",
 	}
+	resp, err = suite.collectionService.CreateCollection(allAccessCtx, request)
+	suite.NotNil(err)
+	suite.Nil(resp)
+
+	// test error on empty/nil resource selectors
+	request = &v1.CreateCollectionRequest{
+		Name: "c",
+	}
+	mockID := mockIdentity.NewMockIdentity(suite.mockCtrl)
+	mockID.EXPECT().UID().Return("uid").Times(1)
+	mockID.EXPECT().FullName().Return("name").Times(1)
+	mockID.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx := authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
 	resp, err = suite.collectionService.CreateCollection(ctx, request)
 	suite.NotNil(err)
 	suite.Nil(resp)
 
 	// test successful collection creation
 	request = &v1.CreateCollectionRequest{
-		Name:        "c",
+		Name:        "d",
 		Description: "description",
 		ResourceSelectors: []*storage.ResourceSelector{
 			{
@@ -131,11 +144,10 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 		EmbeddedCollectionIds: []string{"id1", "id2"},
 	}
 
-	mockIdentity := mockIdentity.NewMockIdentity(suite.mockCtrl)
-	mockIdentity.EXPECT().UID().Return("uid").Times(1)
-	mockIdentity.EXPECT().FullName().Return("name").Times(1)
-	mockIdentity.EXPECT().FriendlyName().Return("name").Times(1)
-	ctx = authn.ContextWithIdentity(ctx, mockIdentity, suite.T())
+	mockID.EXPECT().UID().Return("uid").Times(1)
+	mockID.EXPECT().FullName().Return("name").Times(1)
+	mockID.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
 
 	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	resp, err = suite.collectionService.CreateCollection(ctx, request)
