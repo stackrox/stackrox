@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -146,7 +145,6 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 		"(full) read-only cannot mark alert stale": {
 			scopeKey:      testutils.UnrestrictedReadCtx,
 			expectError:   true,
-			expectedFound: true,
 			expectedError: sac.ErrResourceAccessDenied,
 		},
 		"full read-write can mark alert stale": {
@@ -156,22 +154,22 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 		"full read-write on wrong cluster cannot mark alert stale": {
 			scopeKey:      testutils.Cluster1ReadWriteCtx,
 			expectError:   true,
-			expectedFound: false,
+			expectedError: sac.ErrResourceAccessDenied,
 		},
 		"read-write on wrong cluster and wrong namespace name cannot mark alert stale": {
 			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
 			expectError:   true,
-			expectedFound: false,
+			expectedError: sac.ErrResourceAccessDenied,
 		},
 		"read-write on wrong cluster and matching namespace name cannot mark alert stale": {
 			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
 			expectError:   true,
-			expectedFound: false,
+			expectedError: sac.ErrResourceAccessDenied,
 		},
 		"read-write on right cluster but wrong namespaces cannot mark alert stale": {
 			scopeKey:      testutils.Cluster2NamespacesACReadWriteCtx,
 			expectError:   true,
-			expectedFound: false,
+			expectedError: sac.ErrResourceAccessDenied,
 		},
 		"full read-write on right cluster can mark alert stale": {
 			scopeKey:    testutils.Cluster2ReadWriteCtx,
@@ -202,20 +200,20 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 			s.NoError(err)
 
 			ctx := s.testContexts[c.scopeKey]
-			err = s.datastore.MarkAlertStale(ctx, alert1.GetId())
+			_, err = s.datastore.MarkAlertStaleBatch(ctx, alert1.GetId())
 			if !c.expectError {
 				s.NoError(err)
-			} else if !c.expectedFound {
-				s.Equal(fmt.Errorf("alert with id '%s' does not exist", alert1.GetId()), err)
-			} else {
+				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
+				// hence `missing` var is set indicate that the record is missing.
+			} else if !env.PostgresDatastoreEnabled.BooleanSetting() {
 				s.Equal(c.expectedError, err)
 			}
-			err = s.datastore.MarkAlertStale(ctx, alert2.GetId())
+			_, err = s.datastore.MarkAlertStaleBatch(ctx, alert2.GetId())
 			if !c.expectError {
 				s.NoError(err)
-			} else if !c.expectedFound {
-				s.Equal(fmt.Errorf("alert with id '%s' does not exist", alert2.GetId()), err)
-			} else {
+				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
+				// hence `missing` var is set indicate that the record is missing.
+			} else if !env.PostgresDatastoreEnabled.BooleanSetting() {
 				s.Equal(c.expectedError, err)
 			}
 		})

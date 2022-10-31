@@ -131,6 +131,26 @@ func (mr *MockDataStoreMockRecorder) MarkAlertStale(ctx, id interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAlertStale", reflect.TypeOf((*MockDataStore)(nil).MarkAlertStale), ctx, id)
 }
 
+// MarkAlertStaleBatch mocks base method.
+func (m *MockDataStore) MarkAlertStaleBatch(ctx context.Context, id ...string) ([]*storage.Alert, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx}
+	for _, a := range id {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MarkAlertStaleBatch", varargs...)
+	ret0, _ := ret[0].([]*storage.Alert)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarkAlertStaleBatch indicates an expected call of MarkAlertStaleBatch.
+func (mr *MockDataStoreMockRecorder) MarkAlertStaleBatch(ctx interface{}, id ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx}, id...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAlertStaleBatch", reflect.TypeOf((*MockDataStore)(nil).MarkAlertStaleBatch), varargs...)
+}
+
 // Search mocks base method.
 func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
