@@ -115,13 +115,24 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	)
 
 	imageToVulnerabilitySearchOptions := search.CombineOptionsMaps(
-		schema.ImageCvesSchema.OptionsMap,
-		schema.ImageCveEdgesSchema.OptionsMap,
+		schema.ImagesSchema.OptionsMap,
+		schema.ImageComponentEdgesSchema.OptionsMap,
+		schema.ImageComponentsSchema.OptionsMap,
 		schema.ImageComponentCveEdgesSchema.OptionsMap,
+		schema.ImageCvesSchema.OptionsMap,
+		schema.DeploymentsSchema.OptionsMap,
+	)
+
+	imageComponentToVulnerabilitySearchOptions := search.CombineOptionsMaps(
 		schema.ImageComponentsSchema.OptionsMap,
 		schema.ImageComponentEdgesSchema.OptionsMap,
+		schema.ImageComponentCveEdgesSchema.OptionsMap,
 		schema.ImagesSchema.OptionsMap,
+		schema.ImageCvesSchema.OptionsMap,
 		schema.DeploymentsSchema.OptionsMap,
+		schema.ImageCveEdgesSchema.OptionsMap,
+		schema.NamespacesSchema.OptionsMap,
+		schema.ClustersSchema.OptionsMap,
 	)
 
 	nodeToVulnerabilitySearchOptions := search.CombineOptionsMaps(
@@ -146,10 +157,10 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_CLUSTERS:                schema.ClustersSchema.OptionsMap,
 		v1.SearchCategory_COMPLIANCE_STANDARD:     index.StandardOptions,
 		v1.SearchCategory_COMPLIANCE_CONTROL:      index.ControlOptions,
-		v1.SearchCategory_COMPONENT_VULN_EDGE:     imageToVulnerabilitySearchOptions,
+		v1.SearchCategory_COMPONENT_VULN_EDGE:     schema.ImageComponentCveEdgesSchema.OptionsMap,
 		v1.SearchCategory_DEPLOYMENTS:             deploymentsCustomSearchOptions,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE:    imageToVulnerabilitySearchOptions,
-		v1.SearchCategory_IMAGE_COMPONENTS:        imageToVulnerabilitySearchOptions,
+		v1.SearchCategory_IMAGE_COMPONENTS:        imageComponentToVulnerabilitySearchOptions,
 		v1.SearchCategory_IMAGE_INTEGRATIONS:      schema.ImageIntegrationsSchema.OptionsMap,
 		v1.SearchCategory_IMAGE_VULN_EDGE:         imageToVulnerabilitySearchOptions,
 		v1.SearchCategory_IMAGE_VULNERABILITIES:   imageToVulnerabilitySearchOptions,
