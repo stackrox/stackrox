@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -48,14 +47,6 @@ func (k *listenerImpl) Stop(_ error) {
 		k.credentialsManager.Stop()
 	}
 	k.stopSig.Signal()
-}
-
-func (k *listenerImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (k *listenerImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	return nil
 }
 
 func (k *listenerImpl) ResponsesC() <-chan *central.MsgFromSensor {

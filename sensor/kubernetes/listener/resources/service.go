@@ -4,6 +4,7 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	selector2 "github.com/stackrox/rox/sensor/kubernetes/selector"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"

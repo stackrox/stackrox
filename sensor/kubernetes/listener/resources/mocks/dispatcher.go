@@ -9,7 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	component "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	resources "github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 )
 
