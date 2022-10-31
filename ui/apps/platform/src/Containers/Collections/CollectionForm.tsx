@@ -97,7 +97,7 @@ export type CollectionFormProps = {
 
 function yupResourceSelectorObject() {
     return yup.lazy((ruleObject) => {
-        if (isEmpty(ruleObject)) {
+        if (ruleObject.type === 'All') {
             return yup.object().shape({});
         }
 
@@ -154,8 +154,8 @@ function CollectionForm({
         validationSchema: yup.object({
             name: yup.string().trim().required(),
             description: yup.string(),
-            embeddedCollections: yup.array(yup.string().trim().required()),
-            resourceSelectors: yup.object().shape({
+            embeddedCollectionIds: yup.array(yup.string().trim().required()),
+            resourceSelector: yup.object().shape({
                 Deployment: yupResourceSelectorObject(),
                 Namespace: yupResourceSelectorObject(),
                 Cluster: yupResourceSelectorObject(),
@@ -211,11 +211,11 @@ function CollectionForm({
     const onResourceSelectorChange = (
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector
-    ) => setFieldValue(`resourceSelectors.${entityType}`, scopedResourceSelector);
+    ) => setFieldValue(`resourceSelector.${entityType}`, scopedResourceSelector);
 
     const onEmbeddedCollectionsChange = (newCollections: CollectionResponse[]) =>
         setFieldValue(
-            'embeddedCollections',
+            'embeddedCollectionIds',
             newCollections.map(({ id }) => id)
         );
 
@@ -389,9 +389,9 @@ function CollectionForm({
                                     )}
                                     <RuleSelector
                                         entityType="Deployment"
-                                        scopedResourceSelector={values.resourceSelectors.Deployment}
+                                        scopedResourceSelector={values.resourceSelector.Deployment}
                                         handleChange={onResourceSelectorChange}
-                                        validationErrors={errors.resourceSelectors?.Deployment}
+                                        validationErrors={errors.resourceSelector?.Deployment}
                                         isDisabled={isReadOnly}
                                     />
                                     <Label
@@ -403,9 +403,9 @@ function CollectionForm({
                                     </Label>
                                     <RuleSelector
                                         entityType="Namespace"
-                                        scopedResourceSelector={values.resourceSelectors.Namespace}
+                                        scopedResourceSelector={values.resourceSelector.Namespace}
                                         handleChange={onResourceSelectorChange}
-                                        validationErrors={errors.resourceSelectors?.Namespace}
+                                        validationErrors={errors.resourceSelector?.Namespace}
                                         isDisabled={isReadOnly}
                                     />
                                     <Label
@@ -417,9 +417,9 @@ function CollectionForm({
                                     </Label>
                                     <RuleSelector
                                         entityType="Cluster"
-                                        scopedResourceSelector={values.resourceSelectors.Cluster}
+                                        scopedResourceSelector={values.resourceSelector.Cluster}
                                         handleChange={onResourceSelectorChange}
-                                        validationErrors={errors.resourceSelectors?.Cluster}
+                                        validationErrors={errors.resourceSelector?.Cluster}
                                         isDisabled={isReadOnly}
                                     />
                                 </Flex>

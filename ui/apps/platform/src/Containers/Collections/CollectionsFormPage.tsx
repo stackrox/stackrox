@@ -11,7 +11,8 @@ import {
 } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import CollectionForm from './CollectionForm';
-import { parseCollection } from './parser';
+import { parseCollection } from './converter';
+import { Collection } from './types';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
@@ -23,15 +24,15 @@ const noopRequest = {
     cancel: () => {},
 };
 
-const defaultCollectionData = {
+const defaultCollectionData: Collection = {
     name: '',
     description: '',
     inUse: false,
-    embeddedCollections: [],
-    resourceSelectors: {
-        Deployment: {},
-        Namespace: {},
-        Cluster: {},
+    embeddedCollectionIds: [],
+    resourceSelector: {
+        Deployment: { type: 'All' },
+        Namespace: { type: 'All' },
+        Cluster: { type: 'All' },
     },
 };
 

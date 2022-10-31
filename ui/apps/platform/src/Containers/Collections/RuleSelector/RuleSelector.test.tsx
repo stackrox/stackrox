@@ -27,7 +27,7 @@ function DeploymentRuleSelector({ defaultSelector, onChange }) {
 
 describe('Collection RuleSelector component', () => {
     it('Should render "All entities" option when selector is null', async () => {
-        let resourceSelector: ScopedResourceSelector = {};
+        let resourceSelector: ScopedResourceSelector = { type: 'All' };
 
         function onChange(newSelector) {
             resourceSelector = newSelector;
@@ -40,6 +40,7 @@ describe('Collection RuleSelector component', () => {
 
     it('Should allow users to add name selectors', async () => {
         let resourceSelector: ByNameResourceSelector = {
+            type: 'ByName',
             field: 'Deployment',
             rule: { operator: 'OR', values: [] },
         };
@@ -104,6 +105,7 @@ describe('Collection RuleSelector component', () => {
 
     it('Should allow users to add label key/value selectors', async () => {
         let resourceSelector: ByLabelResourceSelector = {
+            type: 'ByLabel',
             field: 'Deployment Label',
             rules: [{ operator: 'OR', key: '', values: [''] }],
         };
