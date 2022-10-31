@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/store/service"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
@@ -66,7 +67,7 @@ func NewDispatcherRegistry(
 	credentialsManager awscredentials.RegistryCredentialsManager,
 	traceWriter io.Writer,
 ) DispatcherRegistry {
-	serviceStore := newServiceStore()
+	serviceStore := service.NewServiceStore()
 	serviceAccountStore := ServiceAccountStoreSingleton()
 	deploymentStore := DeploymentStoreSingleton()
 	podStore := PodStoreSingleton()

@@ -6,7 +6,9 @@ import (
 	"github.com/stackrox/rox/pkg/net"
 	podUtils "github.com/stackrox/rox/pkg/pods/utils"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"github.com/stackrox/rox/sensor/kubernetes/selector"
+	"github.com/stackrox/rox/sensor/common/selector"
+	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -14,7 +16,7 @@ type endpointManager interface {
 	OnDeploymentCreateOrUpdate(deployment *deploymentWrap)
 	OnDeploymentRemove(deployment *deploymentWrap)
 
-	OnServiceCreate(svc *serviceWrap)
+	OnServiceCreate(svc *servicewrapper.SelectorWrap)
 	OnServiceUpdateOrRemove(namespace string, sel selector.Selector)
 
 	OnNodeCreate(node *nodeWrap)
@@ -22,7 +24,7 @@ type endpointManager interface {
 }
 
 type endpointManagerImpl struct {
-	serviceStore    *serviceStore
+	serviceStore    store.ServiceStore
 	deploymentStore *DeploymentStore
 	podStore        *PodStore
 	nodeStore       *nodeStore
@@ -30,7 +32,7 @@ type endpointManagerImpl struct {
 	entityStore *clusterentities.Store
 }
 
-func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore, nodeStore *nodeStore, entityStore *clusterentities.Store) endpointManager {
+func newEndpointManager(serviceStore store.ServiceStore, deploymentStore *DeploymentStore, podStore *PodStore, nodeStore *nodeStore, entityStore *clusterentities.Store) endpointManager {
 	return &endpointManagerImpl{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
@@ -100,8 +102,8 @@ func (m *endpointManagerImpl) endpointDataForDeployment(w *deploymentWrap) *clus
 		m.addEndpointDataForPod(pod, result)
 	}
 
-	for _, svc := range m.serviceStore.getMatchingServicesWithRoutes(w.Namespace, w.PodLabels) {
-		m.addEndpointDataForService(w, svc.serviceWrap, result)
+	for _, svc := range m.serviceStore.GetMatchingServicesWithRoutes(w.Namespace, w.PodLabels) {
+		m.addEndpointDataForService(w, svc.SelectorWrap, result)
 	}
 
 	m.podStore.forEach(w.GetNamespace(), w.GetId(), func(p *storage.Pod) {
@@ -157,7 +159,7 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 	targetInfo := clusterentities.EndpointTargetInfo{
 		PortName: port.Name,
 	}
-	if portCfg := deployment.portConfigs[portRefOf(port)]; portCfg != nil {
+	if portCfg := deployment.portConfigs[servicewrapper.PortRefOf(port)]; portCfg != nil {
 		targetInfo.ContainerPort = uint16(portCfg.ContainerPort)
 	} else {
 		targetInfo.ContainerPort = uint16(port.TargetPort.IntValue())
@@ -176,7 +178,7 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 	}
 }
 
-func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWrap, svc *serviceWrap, data *clusterentities.EntityData) {
+func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWrap, svc *servicewrapper.SelectorWrap, data *clusterentities.EntityData) {
 	var allNodeIPs []net.IPAddress
 	if svc.Spec.Type == v1.ServiceTypeLoadBalancer || svc.Spec.Type == v1.ServiceTypeNodePort {
 		for _, node := range m.nodeStore.getNodes() {
@@ -190,9 +192,9 @@ func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWr
 	}
 }
 
-func (m *endpointManagerImpl) OnServiceCreate(svc *serviceWrap) {
+func (m *endpointManagerImpl) OnServiceCreate(svc *servicewrapper.SelectorWrap) {
 	updates := make(map[string]*clusterentities.EntityData)
-	for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
+	for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.Selector) {
 		update := &clusterentities.EntityData{}
 		m.addEndpointDataForService(deployment, svc, update)
 		updates[deployment.GetId()] = update
@@ -217,7 +219,7 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
-		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
+		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.Selector) {
 			update, ok := updates[deployment.GetId()]
 			if !ok {
 				update = &clusterentities.EntityData{}
@@ -238,7 +240,7 @@ func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 	affectedDeployments := make(map[*deploymentWrap]struct{})
 
 	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
-		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
+		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.Selector) {
 			affectedDeployments[deployment] = struct{}{}
 		}
 	}

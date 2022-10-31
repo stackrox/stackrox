@@ -1,9 +1,11 @@
-package resources
+package service
 
 import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/kubernetes/selector"
+	"github.com/stackrox/rox/sensor/common/selector"
+	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
 	v1 "k8s.io/api/core/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -14,35 +16,35 @@ type routeRef struct {
 	name      string
 }
 
-// serviceStore stores service objects (by namespace and UID)
-type serviceStore struct {
+// serviceStoreImpl stores service objects (by namespace and UID)
+type serviceStoreImpl struct {
 	// namespace->name->svcWrap
-	services map[string]map[string]*serviceWrap
-	// namespace->serviceName->routes
+	services map[string]map[string]*servicewrapper.SelectorWrap
+	// namespace->serviceName->Routes
 	routesByServiceMetadata map[string]map[string][]*routeV1.Route
 	routesByRouteRef        map[routeRef]*routeV1.Route
-	nodePortServices        map[types.UID]*serviceWrap
+	nodePortServices        map[types.UID]*servicewrapper.SelectorWrap
 
 	// Protects all fields
 	lock sync.RWMutex
 }
 
-// newServiceStore creates and returns a new service store.
-func newServiceStore() *serviceStore {
-	return &serviceStore{
-		services:                make(map[string]map[string]*serviceWrap),
+// NewServiceStore creates and returns a new service store.
+func NewServiceStore() store.ServiceStore {
+	return &serviceStoreImpl{
+		services:                make(map[string]map[string]*servicewrapper.SelectorWrap),
 		routesByServiceMetadata: make(map[string]map[string][]*routeV1.Route),
 		routesByRouteRef:        make(map[routeRef]*routeV1.Route),
-		nodePortServices:        make(map[types.UID]*serviceWrap),
+		nodePortServices:        make(map[types.UID]*servicewrapper.SelectorWrap),
 	}
 }
 
-func (ss *serviceStore) upsertRoute(route *routeV1.Route) {
+func (ss *serviceStoreImpl) UpsertRoute(route *routeV1.Route) {
 	ss.lock.Lock()
 	defer ss.lock.Unlock()
 	ref := routeRef{name: route.Name, namespace: route.Namespace}
 	if existing, ok := ss.routesByRouteRef[ref]; ok {
-		ss.removeRouteNoLock(existing)
+		ss.RemoveRouteNoLock(existing)
 	}
 	ss.routesByRouteRef[ref] = route
 	nsMap := ss.routesByServiceMetadata[route.Namespace]
@@ -53,18 +55,18 @@ func (ss *serviceStore) upsertRoute(route *routeV1.Route) {
 	nsMap[route.Spec.To.Name] = append(nsMap[route.Spec.To.Name], route)
 }
 
-func (ss *serviceStore) removeRoute(route *routeV1.Route) {
+func (ss *serviceStoreImpl) RemoveRoute(route *routeV1.Route) {
 	ss.lock.Lock()
 	defer ss.lock.Unlock()
-	ss.removeRouteNoLock(route)
+	ss.RemoveRouteNoLock(route)
 }
-func (ss *serviceStore) removeRouteNoLock(route *routeV1.Route) {
+func (ss *serviceStoreImpl) RemoveRouteNoLock(route *routeV1.Route) {
 	nsMap := ss.routesByServiceMetadata[route.Namespace]
 	thisRouteIdx := -1
 	svcName := route.Spec.To.Name
 	// Not very efficient, but we expect:
 	// 1. route updates/deletions are rare
-	// 2. there are usually very few routes per service (often just one)
+	// 2. there are usually very few Routes per service (often just one)
 	for i, routeFromMap := range nsMap[svcName] {
 		if routeFromMap.Name == route.Name {
 			thisRouteIdx = i
@@ -83,13 +85,13 @@ func (ss *serviceStore) removeRouteNoLock(route *routeV1.Route) {
 	delete(ss.routesByRouteRef, routeRef{name: route.Name, namespace: route.Namespace})
 }
 
-func (ss *serviceStore) addOrUpdateService(svc *serviceWrap) {
+func (ss *serviceStoreImpl) UpsertService(svc *servicewrapper.SelectorWrap) {
 	ss.lock.Lock()
 	defer ss.lock.Unlock()
 
 	nsMap := ss.services[svc.Namespace]
 	if nsMap == nil {
-		nsMap = make(map[string]*serviceWrap)
+		nsMap = make(map[string]*servicewrapper.SelectorWrap)
 		ss.services[svc.Namespace] = nsMap
 	}
 	nsMap[svc.Name] = svc
@@ -101,18 +103,18 @@ func (ss *serviceStore) addOrUpdateService(svc *serviceWrap) {
 }
 
 // NodePortServicesSnapshot returns a snapshot of the service wraps
-func (ss *serviceStore) NodePortServicesSnapshot() []*serviceWrap {
+func (ss *serviceStoreImpl) NodePortServicesSnapshot() []*servicewrapper.SelectorWrap {
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
 
-	wraps := make([]*serviceWrap, 0, len(ss.nodePortServices))
+	wraps := make([]*servicewrapper.SelectorWrap, 0, len(ss.nodePortServices))
 	for _, wrap := range ss.nodePortServices {
 		wraps = append(wraps, wrap)
 	}
 	return wraps
 }
 
-func (ss *serviceStore) removeService(svc *v1.Service) {
+func (ss *serviceStoreImpl) RemoveService(svc *v1.Service) {
 	ss.lock.Lock()
 	defer ss.lock.Unlock()
 
@@ -125,7 +127,7 @@ func (ss *serviceStore) removeService(svc *v1.Service) {
 }
 
 // OnNamespaceDeleted reacts to a namespace deletion, deleting all services in that namespace from the store.
-func (ss *serviceStore) OnNamespaceDeleted(ns string) {
+func (ss *serviceStoreImpl) OnNamespaceDeleted(ns string) {
 	ss.lock.Lock()
 	defer ss.lock.Unlock()
 
@@ -133,15 +135,15 @@ func (ss *serviceStore) OnNamespaceDeleted(ns string) {
 	delete(ss.routesByServiceMetadata, ns)
 }
 
-func (ss *serviceStore) getMatchingServicesWithRoutes(namespace string, labels map[string]string) (matching []serviceWithRoutes) {
+func (ss *serviceStoreImpl) GetMatchingServicesWithRoutes(namespace string, labels map[string]string) (matching []servicewrapper.SelectorRouteWrap) {
 	labelSet := k8sLabels.Set(labels)
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
 	for _, entry := range ss.services[namespace] {
-		if entry.selector.Matches(selector.CreateLabelsWithLen(labelSet)) {
-			svcWithRoutes := serviceWithRoutes{
-				serviceWrap: entry,
-				routes:      ss.routesByServiceMetadata[namespace][entry.Name],
+		if entry.Selector.Matches(selector.CreateLabelsWithLen(labelSet)) {
+			svcWithRoutes := servicewrapper.SelectorRouteWrap{
+				SelectorWrap: entry,
+				Routes:       ss.routesByServiceMetadata[namespace][entry.Name],
 			}
 			matching = append(matching, svcWithRoutes)
 		}
@@ -149,13 +151,13 @@ func (ss *serviceStore) getMatchingServicesWithRoutes(namespace string, labels m
 	return matching
 }
 
-func (ss *serviceStore) getService(namespace string, name string) *serviceWrap {
+func (ss *serviceStoreImpl) GetService(namespace string, name string) *servicewrapper.SelectorWrap {
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
 
 	return ss.services[namespace][name]
 }
 
-func (ss *serviceStore) getRoutesForService(svcWrap *serviceWrap) []*routeV1.Route {
+func (ss *serviceStoreImpl) GetRoutesForService(svcWrap *servicewrapper.SelectorWrap) []*routeV1.Route {
 	return ss.routesByServiceMetadata[svcWrap.Namespace][svcWrap.Name]
 }

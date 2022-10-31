@@ -20,9 +20,11 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/selector"
+	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
-	"github.com/stackrox/rox/sensor/kubernetes/selector"
 	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,7 +63,7 @@ type deploymentWrap struct {
 	*storage.Deployment
 	registryOverride string
 	original         interface{}
-	portConfigs      map[portRef]*storage.PortConfig
+	portConfigs      map[servicewrapper.PortRef]*storage.PortConfig
 	pods             []*v1.Pod
 	// registryStore is the image registry store to use when determining if an image is cluster-local.
 	registryStore *registry.Store
@@ -391,12 +393,12 @@ func (w *deploymentWrap) populatePorts() {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
-	w.portConfigs = make(map[portRef]*storage.PortConfig)
+	w.portConfigs = make(map[servicewrapper.PortRef]*storage.PortConfig)
 	for _, c := range w.GetContainers() {
 		for _, p := range c.GetPorts() {
-			w.portConfigs[portRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: v1.Protocol(p.Protocol)}] = p
+			w.portConfigs[servicewrapper.PortRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: v1.Protocol(p.Protocol)}] = p
 			if p.Name != "" {
-				w.portConfigs[portRef{Port: intstr.FromString(p.Name), Protocol: v1.Protocol(p.Protocol)}] = p
+				w.portConfigs[servicewrapper.PortRef{Port: intstr.FromString(p.Name), Protocol: v1.Protocol(p.Protocol)}] = p
 			}
 		}
 	}
@@ -451,19 +453,19 @@ func (w *deploymentWrap) resetPortExposureNoLock() {
 	}
 }
 
-func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) {
+func (w *deploymentWrap) updatePortExposureFromStore(store store.ServiceStore) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
 	w.resetPortExposureNoLock()
 
-	svcs := store.getMatchingServicesWithRoutes(w.Namespace, w.PodLabels)
+	svcs := store.GetMatchingServicesWithRoutes(w.Namespace, w.PodLabels)
 	for _, svc := range svcs {
 		w.updatePortExposureUncheckedNoLock(svc)
 	}
 }
 
-func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoutes) {
+func (w *deploymentWrap) updatePortExposureFromServices(svcs ...servicewrapper.SelectorRouteWrap) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
@@ -474,8 +476,8 @@ func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoute
 	}
 }
 
-func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
-	if svc.selector.Matches(selector.CreateLabelsWithLen(w.PodLabels)) {
+func (w *deploymentWrap) updatePortExposure(svc servicewrapper.SelectorRouteWrap) {
+	if svc.Selector.Matches(selector.CreateLabelsWithLen(w.PodLabels)) {
 		return
 	}
 
@@ -485,8 +487,8 @@ func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
 	w.updatePortExposureUncheckedNoLock(svc)
 }
 
-func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc serviceWithRoutes) {
-	for ref, exposureInfos := range svc.exposure() {
+func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc servicewrapper.SelectorRouteWrap) {
+	for ref, exposureInfos := range svc.Exposure() {
 		portCfg := w.portConfigs[ref]
 		if portCfg == nil {
 			if ref.Port.Type == intstr.String {
@@ -544,7 +546,7 @@ func (w *deploymentWrap) Clone() *deploymentWrap {
 		}
 	}
 	if w.portConfigs != nil {
-		ret.portConfigs = make(map[portRef]*storage.PortConfig)
+		ret.portConfigs = make(map[servicewrapper.PortRef]*storage.PortConfig)
 		for k, v := range w.portConfigs {
 			ret.portConfigs[k] = v.Clone()
 		}

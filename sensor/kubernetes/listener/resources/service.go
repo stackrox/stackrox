@@ -1,133 +1,24 @@
 package resources
 
 import (
-	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/selector"
+	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
-	selector2 "github.com/stackrox/rox/sensor/kubernetes/selector"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-type serviceWithRoutes struct {
-	*serviceWrap
-	routes []*routeV1.Route
-}
-
-type serviceWrap struct {
-	*v1.Service
-	selector selector2.Selector
-}
-
-func wrapService(svc *v1.Service) *serviceWrap {
-	return &serviceWrap{
-		Service:  svc,
-		selector: selector2.CreateSelector(svc.Spec.Selector, selector2.EmptyMatchesNothing()),
-	}
-}
-
-// getPortMatchFunc takes a target port specified in a route, and returns a function that takes in a
-// service port, and returns whether the route is targeting that port of the service or not.
-func getPortMatchFunc(port intstr.IntOrString) func(servicePort *v1.ServicePort) bool {
-	if port.Type == intstr.String {
-		return func(servicePort *v1.ServicePort) bool {
-			return servicePort.Name == port.StrVal
-		}
-	}
-	return func(servicePort *v1.ServicePort) bool {
-		return servicePort.Port == port.IntVal
-	}
-}
-
-func exposureInfoFromPort(template *storage.PortConfig_ExposureInfo, port v1.ServicePort) *storage.PortConfig_ExposureInfo {
-	out := template.Clone()
-	out.ServicePort = port.Port
-	out.NodePort = port.NodePort
-	return out
-}
-
-func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_ExposureInfo {
-	if s.Spec.Type == v1.ServiceTypeExternalName {
-		return nil
-	}
-
-	exposureTemplate := &storage.PortConfig_ExposureInfo{
-		Level:            storage.PortConfig_INTERNAL,
-		ServiceId:        string(s.UID),
-		ServiceName:      s.Name,
-		ServiceClusterIp: s.Spec.ClusterIP,
-	}
-
-	if s.Spec.Type == v1.ServiceTypeNodePort {
-		exposureTemplate.Level = storage.PortConfig_NODE
-	} else if s.Spec.Type == v1.ServiceTypeLoadBalancer {
-		exposureTemplate.Level = storage.PortConfig_EXTERNAL
-		for _, lbIngress := range s.Status.LoadBalancer.Ingress {
-			if lbIngress.IP != "" {
-				exposureTemplate.ExternalIps = append(exposureTemplate.ExternalIps, lbIngress.IP)
-			}
-			if lbIngress.Hostname != "" {
-				exposureTemplate.ExternalHostnames = append(exposureTemplate.ExternalHostnames, lbIngress.Hostname)
-			}
-		}
-	}
-
-	result := make(map[portRef][]*storage.PortConfig_ExposureInfo, len(s.Spec.Ports))
-	for _, port := range s.Spec.Ports {
-		ref := portRefOf(port)
-		exposureInfo := exposureInfoFromPort(exposureTemplate, port)
-		result[ref] = append(result[ref], exposureInfo)
-	}
-
-	for _, route := range s.routes {
-		routeExposureTemplate := &storage.PortConfig_ExposureInfo{
-			Level:            storage.PortConfig_ROUTE,
-			ServiceId:        string(s.UID),
-			ServiceName:      s.Name,
-			ServiceClusterIp: s.Spec.ClusterIP,
-		}
-		for _, ingress := range route.Status.Ingress {
-			if ingress.Host != "" {
-				routeExposureTemplate.ExternalHostnames = append(routeExposureTemplate.ExternalHostnames, ingress.Host)
-			}
-		}
-		// if route.Spec.Port is specified, then the route targets one specific port on the service.
-		if routePort := route.Spec.Port; routePort != nil {
-			matchFunc := getPortMatchFunc(routePort.TargetPort)
-			for i, port := range s.Spec.Ports {
-				if !matchFunc(&s.Spec.Ports[i]) {
-					continue
-				}
-				ref := portRefOf(port)
-				exposureInfo := exposureInfoFromPort(routeExposureTemplate, port)
-				result[ref] = append(result[ref], exposureInfo)
-				break // Only one port will ever match
-			}
-		} else {
-			// This is the case where route.Spec.Port is not specified, in which case
-			// the route targets all ports on the service.
-			for _, port := range s.Spec.Ports {
-				ref := portRefOf(port)
-				exposureInfo := exposureInfoFromPort(routeExposureTemplate, port)
-				result[ref] = append(result[ref], exposureInfo)
-			}
-		}
-	}
-
-	return result
-}
 
 // serviceDispatcher handles service resource events.
 type serviceDispatcher struct {
-	serviceStore           *serviceStore
+	serviceStore           store.ServiceStore
 	deploymentStore        *DeploymentStore
 	endpointManager        endpointManager
 	portExposureReconciler portExposureReconciler
 }
 
 // newServiceDispatcher creates and returns a new service handler.
-func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *DeploymentStore, endpointManager endpointManager, portExposureReconciler portExposureReconciler) *serviceDispatcher {
+func newServiceDispatcher(serviceStore store.ServiceStore, deploymentStore *DeploymentStore, endpointManager endpointManager, portExposureReconciler portExposureReconciler) *serviceDispatcher {
 	return &serviceDispatcher{
 		serviceStore:           serviceStore,
 		deploymentStore:        deploymentStore,
@@ -142,42 +33,42 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
-	var sel selector2.Selector
-	oldWrap := sh.serviceStore.getService(svc.Namespace, svc.Name)
+	var sel selector.Selector
+	oldWrap := sh.serviceStore.GetService(svc.Namespace, svc.Name)
 	if oldWrap != nil {
-		sel = oldWrap.selector
+		sel = oldWrap.Selector
 	}
 	if action == central.ResourceAction_UPDATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
-		newWrap := wrapService(svc)
-		sh.serviceStore.addOrUpdateService(newWrap)
+		newWrap := servicewrapper.WrapService(svc)
+		sh.serviceStore.UpsertService(newWrap)
 		if sel != nil {
-			sel = selector2.Or(sel, newWrap.selector)
+			sel = selector.Or(sel, newWrap.Selector)
 		} else {
-			sel = newWrap.selector
+			sel = newWrap.Selector
 		}
 	} else if action == central.ResourceAction_REMOVE_RESOURCE {
-		sh.serviceStore.removeService(svc)
+		sh.serviceStore.RemoveService(svc)
 	}
 	// If OnNamespaceDelete is called before we need to get the selector from the received object
 	if sel == nil {
-		wrap := wrapService(svc)
-		sel = wrap.selector
+		wrap := servicewrapper.WrapService(svc)
+		sel = wrap.Selector
 	}
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector2.Selector) *component.ResourceEvent {
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector.Selector) *component.ResourceEvent {
 	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)
 	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
 	return component.NewResourceEvent(events, nil, nil)
 }
 
 func (sh *serviceDispatcher) processCreate(svc *v1.Service) *component.ResourceEvent {
-	svcWrap := wrapService(svc)
-	sh.serviceStore.addOrUpdateService(svcWrap)
-	events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(serviceWithRoutes{
-		serviceWrap: svcWrap,
-		routes:      sh.serviceStore.getRoutesForService(svcWrap),
+	svcWrap := servicewrapper.WrapService(svc)
+	sh.serviceStore.UpsertService(svcWrap)
+	events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(servicewrapper.SelectorRouteWrap{
+		SelectorWrap: svcWrap,
+		Routes:       sh.serviceStore.GetRoutesForService(svcWrap),
 	})
 	sh.endpointManager.OnServiceCreate(svcWrap)
 	return component.NewResourceEvent(events, nil, nil)

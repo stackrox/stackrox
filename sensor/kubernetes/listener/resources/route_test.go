@@ -6,7 +6,10 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/kubernetes/selector"
+	"github.com/stackrox/rox/sensor/common/selector"
+	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/store/service"
+	"github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,7 +67,7 @@ func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(names
 	return nil
 }
 
-func (m *mockPortExposureReconciler) UpdateExposureOnServiceCreate(svc serviceWithRoutes) []*central.SensorEvent {
+func (m *mockPortExposureReconciler) UpdateExposureOnServiceCreate(svc servicewrapper.SelectorRouteWrap) []*central.SensorEvent {
 	m.orderedCalls = append(m.orderedCalls,
 		call{
 			"UpdateExposureOnServiceCreate",
@@ -83,7 +86,7 @@ func (m *mockEndpointManager) OnDeploymentCreateOrUpdate(*deploymentWrap) {
 func (m *mockEndpointManager) OnDeploymentRemove(*deploymentWrap) {
 }
 
-func (m *mockEndpointManager) OnServiceCreate(*serviceWrap) {
+func (m *mockEndpointManager) OnServiceCreate(*servicewrapper.SelectorWrap) {
 }
 
 func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selector.Selector) {
@@ -95,10 +98,10 @@ func (m *mockEndpointManager) OnNodeCreate(*nodeWrap) {
 func (m *mockEndpointManager) OnNodeUpdateOrRemove() {
 }
 
-func getSvcWithRoutes(svc *v1.Service, routes ...*routeV1.Route) serviceWithRoutes {
-	return serviceWithRoutes{
-		serviceWrap: wrapService(svc),
-		routes:      routes,
+func getSvcWithRoutes(svc *v1.Service, routes ...*routeV1.Route) servicewrapper.SelectorRouteWrap {
+	return servicewrapper.SelectorRouteWrap{
+		SelectorWrap: servicewrapper.WrapService(svc),
+		Routes:       routes,
 	}
 }
 
@@ -110,7 +113,7 @@ type RouteAndServiceDispatcherTestSuite struct {
 	suite.Suite
 
 	depStore     *DeploymentStore
-	serviceStore *serviceStore
+	serviceStore store.ServiceStore
 
 	serviceDispatcher *serviceDispatcher
 	routeDispatcher   *routeDispatcher
@@ -125,7 +128,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) SetupTest() {
 	suite.mockEndpointManager = &mockEndpointManager{}
 
 	suite.depStore = newDeploymentStore()
-	suite.serviceStore = newServiceStore()
+	suite.serviceStore = service.NewServiceStore()
 	suite.serviceDispatcher = newServiceDispatcher(suite.serviceStore, suite.depStore, suite.mockEndpointManager, suite.mockReconciler)
 	suite.routeDispatcher = newRouteDispatcher(suite.serviceStore, suite.mockReconciler)
 }

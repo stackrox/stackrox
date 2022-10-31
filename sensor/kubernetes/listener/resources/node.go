@@ -6,18 +6,19 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
 
 type nodeDispatcher struct {
-	serviceStore    *serviceStore
+	serviceStore    store.ServiceStore
 	deploymentStore *DeploymentStore
 	nodeStore       *nodeStore
 	endpointManager endpointManager
 }
 
-func newNodeDispatcher(serviceStore *serviceStore, deploymentStore *DeploymentStore, nodeStore *nodeStore, endpointManager endpointManager) *nodeDispatcher {
+func newNodeDispatcher(serviceStore store.ServiceStore, deploymentStore *DeploymentStore, nodeStore *nodeStore, endpointManager endpointManager) *nodeDispatcher {
 	return &nodeDispatcher{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,

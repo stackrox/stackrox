@@ -1,6 +1,11 @@
 package store
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	routeV1 "github.com/openshift/api/route/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
+	v1 "k8s.io/api/core/v1"
+)
 
 // DeploymentStore provides functionality to fetch all deployments from underlying store.
 //go:generate mockgen-wrapper
@@ -34,4 +39,24 @@ type ServiceAccountStore interface {
 	Add(sa *storage.ServiceAccount)
 	Remove(sa *storage.ServiceAccount)
 	GetImagePullSecrets(namespace, name string) []string
+}
+
+// ServiceStore provides functionality for find services
+// TODO: Remove dependency from servicewrapper package
+type ServiceStore interface {
+	UpsertRoute(route *routeV1.Route)
+	RemoveRoute(route *routeV1.Route)
+	UpsertService(svc *servicewrapper.SelectorWrap)
+	NodePortServicesSnapshot() []*servicewrapper.SelectorWrap
+	RemoveService(svc *v1.Service)
+	GetMatchingServicesWithRoutes(namespace string, labels map[string]string) []servicewrapper.SelectorRouteWrap
+	GetService(namespace, name string) *servicewrapper.SelectorWrap
+	GetRoutesForService(svc *servicewrapper.SelectorWrap) []*routeV1.Route
+	OnNamespaceDeleted(ns string)
+}
+
+// DeploymentDependencies are properties that belong to a storage.Deployment object, but don't come directly from the
+// k8s deployment spec. They need to be enhanced from other resources, like RBACs and Services.
+type DeploymentDependencies struct {
+	PermissionLevel storage.PermissionLevel
 }
