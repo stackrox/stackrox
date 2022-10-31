@@ -9,7 +9,7 @@ export default () => {
          *
          * Subsequent calls in a test file restore the cached session data.
          */
-        cy.session('ROX_AUTH_TOKEN', () => {});
+        cy.session('cleared', () => {});
 
         // Do not include auth token in cached session data, Because CI refreshes it periodically.
         const token = Cypress.env('ROX_AUTH_TOKEN');
