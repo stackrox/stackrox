@@ -11,8 +11,6 @@ import entityTypes, { standardEntityTypes } from 'constants/entityTypes';
 import { complianceBasePath, urlEntityListTypes } from 'routePaths';
 import ComplianceLevelsByStandard from './ComplianceLevelsByStandard';
 
-jest.setTimeout(10000);
-
 /*
 These standards have been formatted for easier verification of the expected ordering in
 tests compared to a direct hard coding in the mocked response below.
