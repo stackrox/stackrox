@@ -1,14 +1,45 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
+import { Model } from '@patternfly/react-topology';
 
+import { fetchNetworkFlowGraph } from 'services/NetworkService';
+import { fetchClustersAsArray, Cluster } from 'services/ClustersService';
 import PageTitle from 'Components/PageTitle';
 import NetworkGraph from './NetworkGraph';
+import { transformData, graphModel } from './utils';
 
 import './NetworkGraphPage.css';
 
 function NetworkGraphPage() {
     const { detailType, detailId } = useParams();
+    const [model, setModel] = useState<Model>({
+        graph: graphModel,
+    });
+    const [clusters, setClusters] = useState<Cluster[]>([]);
+
+    useEffect(() => {
+        fetchClustersAsArray()
+            .then((response) => {
+                setClusters(response);
+            })
+            .catch(() => {
+                // TODO
+            });
+    }, []);
+
+    useEffect(() => {
+        if (clusters.length > 0) {
+            fetchNetworkFlowGraph(clusters[0].id, [])
+                .then(({ response }) => {
+                    const dataModel = transformData(response.nodes);
+                    setModel(dataModel);
+                })
+                .catch(() => {
+                    // TODO
+                });
+        }
+    }, [clusters]);
 
     return (
         <>
@@ -21,7 +52,7 @@ function NetworkGraphPage() {
                 </Flex>
             </PageSection>
             <PageSection className="network-graph no-padding">
-                <NetworkGraph detailType={detailType} detailId={detailId} />
+                <NetworkGraph detailType={detailType} detailId={detailId} model={model} />
             </PageSection>
         </>
     );

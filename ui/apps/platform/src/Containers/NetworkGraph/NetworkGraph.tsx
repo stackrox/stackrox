@@ -37,132 +37,6 @@ export const UrlDetailType = {
 export type UrlDetailTypeKey = keyof typeof UrlDetailType;
 export type UrlDetailTypeValue = typeof UrlDetailType[UrlDetailTypeKey];
 
-// TODO: replace this dummy data with real parsed graph data
-const model: Model = {
-    graph: {
-        id: 'g1',
-        type: 'graph',
-        layout: 'ColaNoForce',
-    },
-    nodes: [
-        {
-            id: 'e337f873-64d8-46be-84ed-2a0c38c75fac',
-            label: 'Central',
-            type: 'node',
-            width: 75,
-            height: 75,
-            data: {
-                id: 'e337f873-64d8-46be-84ed-2a0c38c75fac',
-                label: 'Central',
-                type: 'node',
-                width: 75,
-                height: 75,
-                entityType: 'DEPLOYMENT',
-            },
-        },
-        {
-            id: '09134b5d-8c12-41e8-821b-c97a5a1331c9',
-            label: 'Sensor',
-            type: 'node',
-            width: 75,
-            height: 75,
-            data: {
-                id: '09134b5d-8c12-41e8-821b-c97a5a1331c9',
-                label: 'Sensor',
-                type: 'node',
-                width: 75,
-                height: 75,
-                entityType: 'DEPLOYMENT',
-            },
-        },
-        {
-            id: '__MzQuMTIwLjAuMC8xNg',
-            label: 'Google/global | 34.120.0.0/16',
-            type: 'node',
-            width: 75,
-            height: 75,
-            data: {
-                id: '__MzQuMTIwLjAuMC8xNg',
-                label: 'Google/global | 34.120.0.0/16',
-                type: 'node',
-                width: 75,
-                height: 75,
-                entityType: 'CIDR_BLOCK',
-            },
-        },
-        {
-            id: 'afa12424-bde3-4313-b810-bb463cbe8f90',
-            label: 'External entities',
-            type: 'node',
-            width: 75,
-            height: 75,
-            data: {
-                id: 'afa12424-bde3-4313-b810-bb463cbe8f90',
-                label: 'External entities',
-                type: 'node',
-                width: 75,
-                height: 75,
-                entityType: 'EXTERNAL_ENTITIES',
-            },
-        },
-        {
-            id: 'e8dabcb7-f471-414e-a999-fe91be5a28fa',
-            type: 'group',
-            children: [
-                'e337f873-64d8-46be-84ed-2a0c38c75fac',
-                '09134b5d-8c12-41e8-821b-c97a5a1331c9',
-            ],
-            group: true,
-            label: 'stackrox',
-            style: { padding: 15 },
-            data: {
-                collapsible: true,
-                showContextMenu: false,
-                entityType: 'NAMESPACE',
-            },
-        },
-        {
-            id: 'EXTERNAL',
-            type: 'group',
-            children: ['__MzQuMTIwLjAuMC8xNg', 'afa12424-bde3-4313-b810-bb463cbe8f90'],
-            group: true,
-            label: 'External to cluster',
-            style: { padding: 15 },
-            data: {
-                collapsible: true,
-                showContextMenu: false,
-                entityType: 'EXTERNAL',
-            },
-        },
-    ],
-    edges: [
-        {
-            id: 'e1',
-            type: 'edge',
-            source: 'e337f873-64d8-46be-84ed-2a0c38c75fac',
-            target: '09134b5d-8c12-41e8-821b-c97a5a1331c9',
-        },
-        {
-            id: 'e2',
-            type: 'edge',
-            source: '09134b5d-8c12-41e8-821b-c97a5a1331c9',
-            target: 'e337f873-64d8-46be-84ed-2a0c38c75fac',
-        },
-        {
-            id: 'e3',
-            type: 'edge',
-            source: '__MzQuMTIwLjAuMC8xNg',
-            target: 'e337f873-64d8-46be-84ed-2a0c38c75fac',
-        },
-        {
-            id: 'e4',
-            type: 'edge',
-            source: 'afa12424-bde3-4313-b810-bb463cbe8f90',
-            target: 'e337f873-64d8-46be-84ed-2a0c38c75fac',
-        },
-    ],
-};
-
 function findEntityById(
     graphModel: Model,
     id: string,
@@ -205,11 +79,12 @@ function getUrlParamsForEntity(selectEntity: {
 export type NetworkGraphProps = {
     detailType?: UrlDetailTypeValue;
     detailId?: string;
+    model: Model;
 };
 
 export type TopologyComponentProps = NetworkGraphProps;
 
-const TopologyComponent = ({ detailType, detailId }: TopologyComponentProps) => {
+const TopologyComponent = ({ detailType, detailId, model }: TopologyComponentProps) => {
     const selectedEntity = detailId && findEntityById(model, detailId, detailType);
     const history = useHistory();
 
@@ -296,7 +171,7 @@ const TopologyComponent = ({ detailType, detailId }: TopologyComponentProps) => 
     );
 };
 
-const NetworkGraph = React.memo<NetworkGraphProps>(({ detailType, detailId }) => {
+const NetworkGraph = React.memo<NetworkGraphProps>(({ detailType, detailId, model }) => {
     const controller = new Visualization();
     controller.registerLayoutFactory(defaultLayoutFactory);
     controller.registerComponentFactory(defaultComponentFactory);
@@ -305,7 +180,7 @@ const NetworkGraph = React.memo<NetworkGraphProps>(({ detailType, detailId }) =>
     return (
         <div className="pf-ri__topology-demo">
             <VisualizationProvider controller={controller}>
-                <TopologyComponent detailType={detailType} detailId={detailId} />
+                <TopologyComponent detailType={detailType} detailId={detailId} model={model} />
             </VisualizationProvider>
         </div>
     );
