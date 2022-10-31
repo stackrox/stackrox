@@ -175,6 +175,13 @@ type pgSearchHelper struct {
 
 // NewPgSearchHelper returns a new search helper for the given resource.
 func NewPgSearchHelper(resourceMD permissions.ResourceMetadata, factory scopeCheckerFactory) (SearchHelper, error) {
+	if resourceMD.GetScope() == permissions.GlobalScope {
+		return nil, errors.New("search helper cannot be used with globally-scoped resources")
+	}
+	resourceScope := resourceMD.GetScope()
+	if resourceScope != permissions.NamespaceScope && resourceScope != permissions.ClusterScope {
+		return nil, errors.Errorf("unknown resource scope %v", resourceMD.GetScope())
+	}
 	return &pgSearchHelper{
 		resourceMD:          resourceMD,
 		scopeCheckerFactory: factory,
@@ -212,27 +219,26 @@ func (h *pgSearchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) s
 	}
 }
 
-func (h *pgSearchHelper) enrichQueryWithSACFilter(effectiiveAccessScope *effectiveaccessscope.ScopeTree, q *v1.Query) (*v1.Query, error) {
+func (h *pgSearchHelper) enrichQueryWithSACFilter(effectiveAccessScope *effectiveaccessscope.ScopeTree, q *v1.Query) (*v1.Query, error) {
 	var sacQueryFilter *v1.Query
 	var err error
 
 	// Build SAC filter
 	switch h.resourceMD.GetScope() {
 	case permissions.NamespaceScope:
-		sacQueryFilter, err = BuildClusterNamespaceLevelSACQueryFilter(effectiiveAccessScope)
+		sacQueryFilter, err = BuildClusterNamespaceLevelSACQueryFilter(effectiveAccessScope)
 		if err != nil {
 			return nil, err
 		}
 	case permissions.ClusterScope:
-		sacQueryFilter, err = BuildClusterLevelSACQueryFilter(effectiiveAccessScope)
+		sacQueryFilter, err = BuildClusterLevelSACQueryFilter(effectiveAccessScope)
 		if err != nil {
 			return nil, err
 		}
 	default:
 		return nil, errors.Errorf("Invalid scope %v for resource %v", h.resourceMD.GetScope(), h.resourceMD)
 	}
-	scopedQuery := search.ConjunctionQuery(q, sacQueryFilter)
-	scopedQuery.Pagination = q.GetPagination()
+	scopedQuery := search.FilterQueryByQuery(q, sacQueryFilter)
 
 	return scopedQuery, nil
 }
