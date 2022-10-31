@@ -1,7 +1,5 @@
-import { url as apidocsUrl } from '../constants/ApiReferencePage';
 import { url as userUrl } from '../constants/UserPage';
 import selectors from '../constants/GeneralPage';
-import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import { visitComplianceDashboard, visitComplianceEntities } from '../helpers/compliance';
 import { visitMainDashboard, visitMainDashboardFromLeftNav } from '../helpers/main';
@@ -56,24 +54,6 @@ describe('General sanity checks', () => {
 
             cy.title().should('match', new RegExp(`User Profile | ${productNameRegExp}`));
         });
-
-        it('for API Docs', () => {
-            // User Profile test often failed when preceded by this test, so move to last place.
-            cy.intercept('GET', api.apiDocs.docs).as('apiDocs');
-            visit(apidocsUrl);
-            cy.wait('@apiDocs', { responseTimeout: 10000 }); // api docs are sloooooow
-
-            cy.title().should('match', new RegExp(`API Reference | ${productNameRegExp}`));
-        });
-    });
-
-    // TODO: Fix interactive steps for ROX-6826 and merge with the preceding tests to replace visit with assertion about apidocsUrl.
-    xit('should go to API docs', () => {
-        cy.visit('/');
-        cy.get(selectors.navLinks.apidocs).as('apidocs');
-        cy.get('@apidocs').click();
-
-        cy.url().should('contain', apidocsUrl);
     });
 
     it('should allow to navigate to another page after exception happens on a page', () => {
