@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type K8sRolesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestK8sRolesStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestK8sRolesStore(t *testing.T) {
 }
 
 func (s *K8sRolesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *K8sRolesStoreSuite) SetupTest() {
 
 func (s *K8sRolesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *K8sRolesStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *K8sRolesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, k8SRole.GetId()))
 
 	var k8SRoles []*storage.K8SRole
+	var k8SRoleIDs []string
 	for i := 0; i < 200; i++ {
 		k8SRole := &storage.K8SRole{}
 		s.NoError(testutils.FullInit(k8SRole, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		k8SRoles = append(k8SRoles, k8SRole)
+		k8SRoleIDs = append(k8SRoleIDs, k8SRole.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, k8SRoles))
@@ -113,6 +111,12 @@ func (s *K8sRolesStoreSuite) TestStore() {
 	k8SRoleCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, k8SRoleCount)
+
+	s.NoError(store.DeleteMany(ctx, k8SRoleIDs))
+
+	k8SRoleCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, k8SRoleCount)
 }
 
 func (s *K8sRolesStoreSuite) TestSACUpsert() {

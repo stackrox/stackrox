@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
 )
@@ -35,8 +34,6 @@ type FlowStoreUpdaterTestSuite struct {
 	mockCtrl    *gomock.Controller
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
-
-	envIsolator *envisolator.EnvIsolator
 }
 
 func (suite *FlowStoreUpdaterTestSuite) SetupSuite() {
@@ -53,12 +50,10 @@ func (suite *FlowStoreUpdaterTestSuite) SetupSuite() {
 	suite.mockFlows = nfDSMocks.NewMockFlowDataStore(suite.mockCtrl)
 	suite.mockBaselines = baselineMocks.NewMockManager(suite.mockCtrl)
 	suite.tested = newFlowPersister(suite.mockFlows, suite.mockBaselines)
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TearDownSuite() {
 	suite.mockCtrl.Finish()
-	suite.envIsolator.RestoreAll()
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {

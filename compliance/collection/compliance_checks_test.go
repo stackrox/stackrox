@@ -13,7 +13,6 @@ import (
 	complianceCompress "github.com/stackrox/rox/pkg/compliance/compress"
 	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/orchestrators"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 )
@@ -161,9 +160,7 @@ func (s *ComplianceResultsBuilderTestSuite) TestAddEvidence() {
 }
 
 func (s *ComplianceResultsBuilderTestSuite) TestSend() {
-	envIsolator := envisolator.NewEnvIsolator(s.T())
-	envIsolator.Setenv(string(orchestrators.NodeName), "fakeName")
-	defer envIsolator.RestoreAll()
+	s.T().Setenv(string(orchestrators.NodeName), "fakeName")
 
 	testResults, client, mockData := s.getMockData()
 

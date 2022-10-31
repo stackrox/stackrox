@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type ServiceAccountsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestServiceAccountsStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestServiceAccountsStore(t *testing.T) {
 }
 
 func (s *ServiceAccountsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *ServiceAccountsStoreSuite) SetupTest() {
 
 func (s *ServiceAccountsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ServiceAccountsStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, serviceAccount.GetId()))
 
 	var serviceAccounts []*storage.ServiceAccount
+	var serviceAccountIDs []string
 	for i := 0; i < 200; i++ {
 		serviceAccount := &storage.ServiceAccount{}
 		s.NoError(testutils.FullInit(serviceAccount, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		serviceAccounts = append(serviceAccounts, serviceAccount)
+		serviceAccountIDs = append(serviceAccountIDs, serviceAccount.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, serviceAccounts))
@@ -113,6 +111,12 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	serviceAccountCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, serviceAccountCount)
+
+	s.NoError(store.DeleteMany(ctx, serviceAccountIDs))
+
+	serviceAccountCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, serviceAccountCount)
 }
 
 func (s *ServiceAccountsStoreSuite) TestSACUpsert() {

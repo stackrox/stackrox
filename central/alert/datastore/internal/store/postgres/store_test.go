@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type AlertsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestAlertsStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestAlertsStore(t *testing.T) {
 }
 
 func (s *AlertsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *AlertsStoreSuite) SetupTest() {
 
 func (s *AlertsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *AlertsStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, alert.GetId()))
 
 	var alerts []*storage.Alert
+	var alertIDs []string
 	for i := 0; i < 200; i++ {
 		alert := &storage.Alert{}
 		s.NoError(testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		alerts = append(alerts, alert)
+		alertIDs = append(alertIDs, alert.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, alerts))
@@ -113,6 +111,12 @@ func (s *AlertsStoreSuite) TestStore() {
 	alertCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, alertCount)
+
+	s.NoError(store.DeleteMany(ctx, alertIDs))
+
+	alertCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, alertCount)
 }
 
 func (s *AlertsStoreSuite) TestSACUpsert() {

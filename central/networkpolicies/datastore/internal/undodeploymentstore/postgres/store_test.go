@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type NetworkpoliciesundodeploymentsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestNetworkpoliciesundodeploymentsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestNetworkpoliciesundodeploymentsStore(t *testing.T) {
 }
 
 func (s *NetworkpoliciesundodeploymentsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) SetupTest() {
 
 func (s *NetworkpoliciesundodeploymentsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId()))
 
 	var networkPolicyApplicationUndoDeploymentRecords []*storage.NetworkPolicyApplicationUndoDeploymentRecord
+	var networkPolicyApplicationUndoDeploymentRecordIDs []string
 	for i := 0; i < 200; i++ {
 		networkPolicyApplicationUndoDeploymentRecord := &storage.NetworkPolicyApplicationUndoDeploymentRecord{}
 		s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkPolicyApplicationUndoDeploymentRecords = append(networkPolicyApplicationUndoDeploymentRecords, networkPolicyApplicationUndoDeploymentRecord)
+		networkPolicyApplicationUndoDeploymentRecordIDs = append(networkPolicyApplicationUndoDeploymentRecordIDs, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkPolicyApplicationUndoDeploymentRecords))
@@ -111,4 +109,10 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, networkPolicyApplicationUndoDeploymentRecordCount)
+
+	s.NoError(store.DeleteMany(ctx, networkPolicyApplicationUndoDeploymentRecordIDs))
+
+	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, networkPolicyApplicationUndoDeploymentRecordCount)
 }

@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type ProcessBaselinesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestProcessBaselinesStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestProcessBaselinesStore(t *testing.T) {
 }
 
 func (s *ProcessBaselinesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *ProcessBaselinesStoreSuite) SetupTest() {
 
 func (s *ProcessBaselinesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ProcessBaselinesStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *ProcessBaselinesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, processBaseline.GetId()))
 
 	var processBaselines []*storage.ProcessBaseline
+	var processBaselineIDs []string
 	for i := 0; i < 200; i++ {
 		processBaseline := &storage.ProcessBaseline{}
 		s.NoError(testutils.FullInit(processBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processBaselines = append(processBaselines, processBaseline)
+		processBaselineIDs = append(processBaselineIDs, processBaseline.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, processBaselines))
@@ -113,6 +111,12 @@ func (s *ProcessBaselinesStoreSuite) TestStore() {
 	processBaselineCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, processBaselineCount)
+
+	s.NoError(store.DeleteMany(ctx, processBaselineIDs))
+
+	processBaselineCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, processBaselineCount)
 }
 
 func (s *ProcessBaselinesStoreSuite) TestSACUpsert() {

@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type RoleBindingsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestRoleBindingsStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestRoleBindingsStore(t *testing.T) {
 }
 
 func (s *RoleBindingsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *RoleBindingsStoreSuite) SetupTest() {
 
 func (s *RoleBindingsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *RoleBindingsStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, k8SRoleBinding.GetId()))
 
 	var k8SRoleBindings []*storage.K8SRoleBinding
+	var k8SRoleBindingIDs []string
 	for i := 0; i < 200; i++ {
 		k8SRoleBinding := &storage.K8SRoleBinding{}
 		s.NoError(testutils.FullInit(k8SRoleBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		k8SRoleBindings = append(k8SRoleBindings, k8SRoleBinding)
+		k8SRoleBindingIDs = append(k8SRoleBindingIDs, k8SRoleBinding.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, k8SRoleBindings))
@@ -113,6 +111,12 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 	k8SRoleBindingCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, k8SRoleBindingCount)
+
+	s.NoError(store.DeleteMany(ctx, k8SRoleBindingIDs))
+
+	k8SRoleBindingCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, k8SRoleBindingCount)
 }
 
 func (s *RoleBindingsStoreSuite) TestSACUpsert() {

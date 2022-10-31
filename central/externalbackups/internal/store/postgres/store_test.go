@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ExternalBackupsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestExternalBackupsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestExternalBackupsStore(t *testing.T) {
 }
 
 func (s *ExternalBackupsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *ExternalBackupsStoreSuite) SetupTest() {
 
 func (s *ExternalBackupsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ExternalBackupsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, externalBackup.GetId()), sac.ErrResourceAccessDenied)
 
 	var externalBackups []*storage.ExternalBackup
+	var externalBackupIDs []string
 	for i := 0; i < 200; i++ {
 		externalBackup := &storage.ExternalBackup{}
 		s.NoError(testutils.FullInit(externalBackup, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		externalBackups = append(externalBackups, externalBackup)
+		externalBackupIDs = append(externalBackupIDs, externalBackup.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, externalBackups))
@@ -114,4 +112,10 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	externalBackupCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, externalBackupCount)
+
+	s.NoError(store.DeleteMany(ctx, externalBackupIDs))
+
+	externalBackupCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, externalBackupCount)
 }

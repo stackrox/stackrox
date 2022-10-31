@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	buildTestutils "github.com/stackrox/rox/pkg/buildinfo/testutils"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,19 +24,10 @@ func TestHandler(t *testing.T) {
 
 type handlerTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *handlerTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *handlerTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *handlerTestSuite) SetupTest() {
-	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
+	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
 	testutils.SetExampleVersion(s.T())
 	buildTestutils.SetBuildTimestamp(s.T(), time.Now())

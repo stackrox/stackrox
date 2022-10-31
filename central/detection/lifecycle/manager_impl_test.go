@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -92,10 +91,7 @@ func makeIndicator() (*storage.ProcessBaselineKey, *storage.ProcessIndicator) {
 }
 
 func (suite *ManagerTestSuite) TestBaselineNotFound() {
-	envIsolator := envisolator.NewEnvIsolator(suite.T())
-	defer envIsolator.RestoreAll()
-
-	envIsolator.Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
+	suite.T().Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
 	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
@@ -120,10 +116,7 @@ func (suite *ManagerTestSuite) TestBaselineNotFound() {
 }
 
 func (suite *ManagerTestSuite) TestBaselineNotFoundInObservation() {
-	envIsolator := envisolator.NewEnvIsolator(suite.T())
-	defer envIsolator.RestoreAll()
-
-	envIsolator.Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
+	suite.T().Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
 	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)

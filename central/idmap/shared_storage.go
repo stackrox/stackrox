@@ -19,6 +19,7 @@ type sharedIDMapStorage struct {
 // newSharedIDMapStorage creates a new shared storage for an ID map.
 func newSharedIDMapStorage() *sharedIDMapStorage {
 	return &sharedIDMapStorage{
+		//#nosec G103
 		shared: unsafe.Pointer(NewIDMap()),
 	}
 }
@@ -31,6 +32,7 @@ func (s *sharedIDMapStorage) Update(updater func(m *IDMap) bool) {
 	if sharedInstance == nil {
 		// If we have no shared instance, clone the current read-only instance.
 		sharedInstance = (*IDMap)(atomic.LoadPointer(&s.readOnly)).Clone()
+		//#nosec G103
 		atomic.StorePointer(&s.shared, unsafe.Pointer(sharedInstance))
 	}
 
@@ -58,6 +60,7 @@ func (s *sharedIDMapStorage) Get() *IDMap {
 
 	// Claim the current shared instance as the read-only instance.
 	m = (*IDMap)(atomic.LoadPointer(&s.shared))
+	//#nosec G103
 	atomic.StorePointer(&s.readOnly, unsafe.Pointer(m))
 	atomic.StorePointer(&s.shared, nil)
 

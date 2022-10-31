@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type WatchedImagesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestWatchedImagesStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestWatchedImagesStore(t *testing.T) {
 }
 
 func (s *WatchedImagesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *WatchedImagesStoreSuite) SetupTest() {
 
 func (s *WatchedImagesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *WatchedImagesStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, watchedImage.GetName()), sac.ErrResourceAccessDenied)
 
 	var watchedImages []*storage.WatchedImage
+	var watchedImageIDs []string
 	for i := 0; i < 200; i++ {
 		watchedImage := &storage.WatchedImage{}
 		s.NoError(testutils.FullInit(watchedImage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		watchedImages = append(watchedImages, watchedImage)
+		watchedImageIDs = append(watchedImageIDs, watchedImage.GetName())
 	}
 
 	s.NoError(store.UpsertMany(ctx, watchedImages))
@@ -111,4 +109,10 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 	watchedImageCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, watchedImageCount)
+
+	s.NoError(store.DeleteMany(ctx, watchedImageIDs))
+
+	watchedImageCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, watchedImageCount)
 }

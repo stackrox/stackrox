@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type SignatureIntegrationsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestSignatureIntegrationsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestSignatureIntegrationsStore(t *testing.T) {
 }
 
 func (s *SignatureIntegrationsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *SignatureIntegrationsStoreSuite) SetupTest() {
 
 func (s *SignatureIntegrationsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *SignatureIntegrationsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, signatureIntegration.GetId()), sac.ErrResourceAccessDenied)
 
 	var signatureIntegrations []*storage.SignatureIntegration
+	var signatureIntegrationIDs []string
 	for i := 0; i < 200; i++ {
 		signatureIntegration := &storage.SignatureIntegration{}
 		s.NoError(testutils.FullInit(signatureIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		signatureIntegrations = append(signatureIntegrations, signatureIntegration)
+		signatureIntegrationIDs = append(signatureIntegrationIDs, signatureIntegration.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, signatureIntegrations))
@@ -111,4 +109,10 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	signatureIntegrationCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, signatureIntegrationCount)
+
+	s.NoError(store.DeleteMany(ctx, signatureIntegrationIDs))
+
+	signatureIntegrationCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, signatureIntegrationCount)
 }

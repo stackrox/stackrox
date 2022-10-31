@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type NotifiersStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestNotifiersStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestNotifiersStore(t *testing.T) {
 }
 
 func (s *NotifiersStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *NotifiersStoreSuite) SetupTest() {
 
 func (s *NotifiersStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *NotifiersStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *NotifiersStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, notifier.GetId()), sac.ErrResourceAccessDenied)
 
 	var notifiers []*storage.Notifier
+	var notifierIDs []string
 	for i := 0; i < 200; i++ {
 		notifier := &storage.Notifier{}
 		s.NoError(testutils.FullInit(notifier, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		notifiers = append(notifiers, notifier)
+		notifierIDs = append(notifierIDs, notifier.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, notifiers))
@@ -114,4 +112,10 @@ func (s *NotifiersStoreSuite) TestStore() {
 	notifierCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, notifierCount)
+
+	s.NoError(store.DeleteMany(ctx, notifierIDs))
+
+	notifierCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, notifierCount)
 }

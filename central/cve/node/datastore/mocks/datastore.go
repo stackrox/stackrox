@@ -126,19 +126,19 @@ func (mr *MockDataStoreMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
 }
 
-// SearchCVEs mocks base method.
-func (m *MockDataStore) SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+// SearchNodeCVEs mocks base method.
+func (m *MockDataStore) SearchNodeCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchCVEs", ctx, q)
+	ret := m.ctrl.Call(m, "SearchNodeCVEs", ctx, q)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchCVEs indicates an expected call of SearchCVEs.
-func (mr *MockDataStoreMockRecorder) SearchCVEs(ctx, q interface{}) *gomock.Call {
+// SearchNodeCVEs indicates an expected call of SearchNodeCVEs.
+func (mr *MockDataStoreMockRecorder) SearchNodeCVEs(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchCVEs), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchNodeCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchNodeCVEs), ctx, q)
 }
 
 // SearchRawCVEs mocks base method.

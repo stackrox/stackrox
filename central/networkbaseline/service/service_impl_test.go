@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,7 +25,6 @@ func TestNetworkBaselineService(t *testing.T) {
 
 type NetworkBaselineServiceTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 
 	mockCtrl  *gomock.Controller
 	baselines *networkBaselineDSMocks.MockDataStore
@@ -36,7 +34,6 @@ type NetworkBaselineServiceTestSuite struct {
 }
 
 func (s *NetworkBaselineServiceTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.baselines = networkBaselineDSMocks.NewMockDataStore(s.mockCtrl)
@@ -46,7 +43,6 @@ func (s *NetworkBaselineServiceTestSuite) SetupTest() {
 
 func (s *NetworkBaselineServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
-	s.envIsolator.RestoreAll()
 }
 
 func (s *NetworkBaselineServiceTestSuite) getBaselineWithCustomFlow(

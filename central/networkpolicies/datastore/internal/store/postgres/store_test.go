@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type NetworkpoliciesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestNetworkpoliciesStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestNetworkpoliciesStore(t *testing.T) {
 }
 
 func (s *NetworkpoliciesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *NetworkpoliciesStoreSuite) SetupTest() {
 
 func (s *NetworkpoliciesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *NetworkpoliciesStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, networkPolicy.GetId()))
 
 	var networkPolicys []*storage.NetworkPolicy
+	var networkPolicyIDs []string
 	for i := 0; i < 200; i++ {
 		networkPolicy := &storage.NetworkPolicy{}
 		s.NoError(testutils.FullInit(networkPolicy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkPolicys = append(networkPolicys, networkPolicy)
+		networkPolicyIDs = append(networkPolicyIDs, networkPolicy.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkPolicys))
@@ -113,6 +111,12 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 	networkPolicyCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, networkPolicyCount)
+
+	s.NoError(store.DeleteMany(ctx, networkPolicyIDs))
+
+	networkPolicyCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, networkPolicyCount)
 }
 
 func (s *NetworkpoliciesStoreSuite) TestSACUpsert() {

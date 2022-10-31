@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type TestGGrandChild1StoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestTestGGrandChild1Store(t *testing.T) {
@@ -29,8 +27,7 @@ func TestTestGGrandChild1Store(t *testing.T) {
 }
 
 func (s *TestGGrandChild1StoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *TestGGrandChild1StoreSuite) SetupTest() {
 
 func (s *TestGGrandChild1StoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *TestGGrandChild1StoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *TestGGrandChild1StoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, testGGrandChild1.GetId()))
 
 	var testGGrandChild1s []*storage.TestGGrandChild1
+	var testGGrandChild1IDs []string
 	for i := 0; i < 200; i++ {
 		testGGrandChild1 := &storage.TestGGrandChild1{}
 		s.NoError(testutils.FullInit(testGGrandChild1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testGGrandChild1s = append(testGGrandChild1s, testGGrandChild1)
+		testGGrandChild1IDs = append(testGGrandChild1IDs, testGGrandChild1.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, testGGrandChild1s))
@@ -111,4 +109,10 @@ func (s *TestGGrandChild1StoreSuite) TestStore() {
 	testGGrandChild1Count, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, testGGrandChild1Count)
+
+	s.NoError(store.DeleteMany(ctx, testGGrandChild1IDs))
+
+	testGGrandChild1Count, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, testGGrandChild1Count)
 }

@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,7 +23,6 @@ var (
 
 type AlertsIndexSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 
 	pool    *pgxpool.Pool
 	store   Store
@@ -36,8 +34,7 @@ func TestAlertsIndex(t *testing.T) {
 }
 
 func (s *AlertsIndexSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres index tests")
@@ -61,7 +58,6 @@ func (s *AlertsIndexSuite) TearDownTest() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.pool.Close()
 	}
-	s.envIsolator.RestoreAll()
 }
 
 func (s *AlertsIndexSuite) TestIndex() {

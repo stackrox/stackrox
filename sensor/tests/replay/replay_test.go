@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
@@ -37,20 +36,17 @@ type ReplayEventsSuite struct {
 	suite.Suite
 	fakeClient  *k8s.ClientSet
 	fakeCentral *centralDebug.FakeService
-	envIsolator *envisolator.EnvIsolator
 }
 
 var _ suite.SetupAllSuite = (*ReplayEventsSuite)(nil)
-var _ suite.TearDownAllSuite = (*ReplayEventsSuite)(nil)
 
 func (suite *ReplayEventsSuite) SetupSuite() {
 	suite.fakeClient = k8s.MakeFakeClient()
 
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv("ROX_MTLS_CERT_FILE", "../../../tools/local-sensor/certs/cert.pem")
-	suite.envIsolator.Setenv("ROX_MTLS_KEY_FILE", "../../../tools/local-sensor/certs/key.pem")
-	suite.envIsolator.Setenv("ROX_MTLS_CA_FILE", "../../../tools/local-sensor/certs/caCert.pem")
-	suite.envIsolator.Setenv("ROX_MTLS_CA_KEY_FILE", "../../../tools/local-sensor/certs/caKey.pem")
+	suite.T().Setenv("ROX_MTLS_CERT_FILE", "../../../tools/local-sensor/certs/cert.pem")
+	suite.T().Setenv("ROX_MTLS_KEY_FILE", "../../../tools/local-sensor/certs/key.pem")
+	suite.T().Setenv("ROX_MTLS_CA_FILE", "../../../tools/local-sensor/certs/caCert.pem")
+	suite.T().Setenv("ROX_MTLS_CA_KEY_FILE", "../../../tools/local-sensor/certs/caKey.pem")
 
 	policies, err := testutils.GetPoliciesFromFile("data/policies.json")
 	if err != nil {
@@ -61,10 +57,6 @@ func (suite *ReplayEventsSuite) SetupSuite() {
 		message.ClusterConfig(),
 		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
-}
-
-func (suite *ReplayEventsSuite) TearDownSuite() {
-	suite.envIsolator.RestoreAll()
 }
 
 func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, *centralDebug.FakeService, func()) {

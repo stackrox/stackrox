@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ClusterHealthStatusesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestClusterHealthStatusesStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestClusterHealthStatusesStore(t *testing.T) {
 }
 
 func (s *ClusterHealthStatusesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *ClusterHealthStatusesStoreSuite) SetupTest() {
 
 func (s *ClusterHealthStatusesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ClusterHealthStatusesStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, clusterHealthStatus.GetId()))
 
 	var clusterHealthStatuss []*storage.ClusterHealthStatus
+	var clusterHealthStatusIDs []string
 	for i := 0; i < 200; i++ {
 		clusterHealthStatus := &storage.ClusterHealthStatus{}
 		s.NoError(testutils.FullInit(clusterHealthStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		clusterHealthStatuss = append(clusterHealthStatuss, clusterHealthStatus)
+		clusterHealthStatusIDs = append(clusterHealthStatusIDs, clusterHealthStatus.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, clusterHealthStatuss))
@@ -111,4 +109,10 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 	clusterHealthStatusCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, clusterHealthStatusCount)
+
+	s.NoError(store.DeleteMany(ctx, clusterHealthStatusIDs))
+
+	clusterHealthStatusCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, clusterHealthStatusCount)
 }

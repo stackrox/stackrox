@@ -14,16 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type NamespacesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestNamespacesStore(t *testing.T) {
@@ -31,8 +29,7 @@ func TestNamespacesStore(t *testing.T) {
 }
 
 func (s *NamespacesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -52,7 +49,6 @@ func (s *NamespacesStoreSuite) SetupTest() {
 
 func (s *NamespacesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *NamespacesStoreSuite) TestStore() {
@@ -102,10 +98,12 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, namespaceMetadata.GetId()))
 
 	var namespaceMetadatas []*storage.NamespaceMetadata
+	var namespaceMetadataIDs []string
 	for i := 0; i < 200; i++ {
 		namespaceMetadata := &storage.NamespaceMetadata{}
 		s.NoError(testutils.FullInit(namespaceMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		namespaceMetadatas = append(namespaceMetadatas, namespaceMetadata)
+		namespaceMetadataIDs = append(namespaceMetadataIDs, namespaceMetadata.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, namespaceMetadatas))
@@ -113,6 +111,12 @@ func (s *NamespacesStoreSuite) TestStore() {
 	namespaceMetadataCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, namespaceMetadataCount)
+
+	s.NoError(store.DeleteMany(ctx, namespaceMetadataIDs))
+
+	namespaceMetadataCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, namespaceMetadataCount)
 }
 
 func (s *NamespacesStoreSuite) TestSACUpsert() {

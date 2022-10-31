@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/assert"
@@ -33,8 +32,6 @@ type NetworkPolicyDispatcherSuite struct {
 	deploymentStore *DeploymentStore
 	detector        *mocks.MockDetector
 	dispatcher      *networkPolicyDispatcher
-
-	envIsolator *envisolator.EnvIsolator
 }
 
 var _ suite.SetupTestSuite = (*NetworkPolicyDispatcherSuite)(nil)
@@ -47,8 +44,6 @@ func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 	suite.detector = mocks.NewMockDetector(suite.mockCtrl)
 
 	suite.dispatcher = newNetworkPolicyDispatcher(suite.netpolStore, suite.deploymentStore, suite.detector)
-
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 
 	// TODO(ROX-9990): Use the DeploymentStore mock
 	deployments := []*deploymentWrap{
@@ -98,12 +93,11 @@ func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 		suite.deploymentStore.addOrUpdateDeployment(d)
 	}
 
-	suite.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
+	suite.T().Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
 }
 
 func (suite *NetworkPolicyDispatcherSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
-	suite.envIsolator.RestoreAll()
 }
 
 func createNetworkPolicy(id, namespace string, podSelector map[string]string) *networkingV1.NetworkPolicy {

@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type TestGrandparentsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestTestGrandparentsStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestTestGrandparentsStore(t *testing.T) {
 }
 
 func (s *TestGrandparentsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *TestGrandparentsStoreSuite) SetupTest() {
 
 func (s *TestGrandparentsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *TestGrandparentsStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, testGrandparent.GetId()))
 
 	var testGrandparents []*storage.TestGrandparent
+	var testGrandparentIDs []string
 	for i := 0; i < 200; i++ {
 		testGrandparent := &storage.TestGrandparent{}
 		s.NoError(testutils.FullInit(testGrandparent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testGrandparents = append(testGrandparents, testGrandparent)
+		testGrandparentIDs = append(testGrandparentIDs, testGrandparent.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, testGrandparents))
@@ -111,4 +109,10 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	testGrandparentCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, testGrandparentCount)
+
+	s.NoError(store.DeleteMany(ctx, testGrandparentIDs))
+
+	testGrandparentCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, testGrandparentCount)
 }

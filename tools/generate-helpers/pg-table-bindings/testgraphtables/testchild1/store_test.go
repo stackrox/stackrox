@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type TestChild1StoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestTestChild1Store(t *testing.T) {
@@ -29,8 +27,7 @@ func TestTestChild1Store(t *testing.T) {
 }
 
 func (s *TestChild1StoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *TestChild1StoreSuite) SetupTest() {
 
 func (s *TestChild1StoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *TestChild1StoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *TestChild1StoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, testChild1.GetId()))
 
 	var testChild1s []*storage.TestChild1
+	var testChild1IDs []string
 	for i := 0; i < 200; i++ {
 		testChild1 := &storage.TestChild1{}
 		s.NoError(testutils.FullInit(testChild1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testChild1s = append(testChild1s, testChild1)
+		testChild1IDs = append(testChild1IDs, testChild1.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, testChild1s))
@@ -111,4 +109,10 @@ func (s *TestChild1StoreSuite) TestStore() {
 	testChild1Count, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, testChild1Count)
+
+	s.NoError(store.DeleteMany(ctx, testChild1IDs))
+
+	testChild1Count, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, testChild1Count)
 }

@@ -6,6 +6,9 @@ import {
     SELECTION_EVENT,
     TopologySideBar,
     TopologyView,
+    createTopologyControlButtons,
+    defaultControlButtonsOptions,
+    TopologyControlBar,
     useVisualizationController,
     Visualization,
     VisualizationProvider,
@@ -264,6 +267,29 @@ const TopologyComponent = ({ detailType, detailId }: TopologyComponentProps) => 
             }
             sideBarOpen={!!selectedEntity}
             sideBarResizable
+            controlBar={
+                <TopologyControlBar
+                    controlButtons={createTopologyControlButtons({
+                        ...defaultControlButtonsOptions,
+                        zoomInCallback: () => {
+                            controller.getGraph().scaleBy(4 / 3);
+                        },
+                        zoomOutCallback: () => {
+                            controller.getGraph().scaleBy(0.75);
+                        },
+                        fitToScreenCallback: () => {
+                            controller.getGraph().fit(80);
+                        },
+                        resetViewCallback: () => {
+                            controller.getGraph().reset();
+                            controller.getGraph().layout();
+                        },
+                        legendCallback: () => {
+                            // console.log('hi');
+                        },
+                    })}
+                />
+            }
         >
             <VisualizationSurface state={{ selectedIds }} />
         </TopologyView>

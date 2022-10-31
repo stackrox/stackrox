@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type AuthProvidersStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestAuthProvidersStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestAuthProvidersStore(t *testing.T) {
 }
 
 func (s *AuthProvidersStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *AuthProvidersStoreSuite) SetupTest() {
 
 func (s *AuthProvidersStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *AuthProvidersStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, authProvider.GetId()), sac.ErrResourceAccessDenied)
 
 	var authProviders []*storage.AuthProvider
+	var authProviderIDs []string
 	for i := 0; i < 200; i++ {
 		authProvider := &storage.AuthProvider{}
 		s.NoError(testutils.FullInit(authProvider, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		authProviders = append(authProviders, authProvider)
+		authProviderIDs = append(authProviderIDs, authProvider.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, authProviders))
@@ -114,4 +112,10 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 	authProviderCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, authProviderCount)
+
+	s.NoError(store.DeleteMany(ctx, authProviderIDs))
+
+	authProviderCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, authProviderCount)
 }

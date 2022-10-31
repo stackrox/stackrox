@@ -43,7 +43,7 @@ type Config struct {
 
 func (c *Config) postURL(findingID string) string {
 	return fmt.Sprintf(
-		"https://securitycenter.googleapis.com/v1beta1/%s/findings?findingId=%s",
+		"https://securitycenter.googleapis.com/v1p1beta1/%s/findings?findingId=%s",
 		c.SourceID,
 		findingID,
 	)
@@ -84,6 +84,7 @@ func (c *Config) request(finding *findings.Finding, id string) (*http.Request, e
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal")
 	}
+
 	c.Logger.Debugf("Request: %s", string(b))
 
 	req, err := http.NewRequest("POST", c.postURL(id), bytes.NewReader(b))

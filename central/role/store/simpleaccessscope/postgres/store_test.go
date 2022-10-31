@@ -13,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type SimpleAccessScopesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestSimpleAccessScopesStore(t *testing.T) {
@@ -29,8 +27,7 @@ func TestSimpleAccessScopesStore(t *testing.T) {
 }
 
 func (s *SimpleAccessScopesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -50,7 +47,6 @@ func (s *SimpleAccessScopesStoreSuite) SetupTest() {
 
 func (s *SimpleAccessScopesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *SimpleAccessScopesStoreSuite) TestStore() {
@@ -100,10 +96,12 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, simpleAccessScope.GetId()), sac.ErrResourceAccessDenied)
 
 	var simpleAccessScopes []*storage.SimpleAccessScope
+	var simpleAccessScopeIDs []string
 	for i := 0; i < 200; i++ {
 		simpleAccessScope := &storage.SimpleAccessScope{}
 		s.NoError(testutils.FullInit(simpleAccessScope, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		simpleAccessScopes = append(simpleAccessScopes, simpleAccessScope)
+		simpleAccessScopeIDs = append(simpleAccessScopeIDs, simpleAccessScope.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, simpleAccessScopes))
@@ -111,4 +109,10 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	simpleAccessScopeCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, simpleAccessScopeCount)
+
+	s.NoError(store.DeleteMany(ctx, simpleAccessScopeIDs))
+
+	simpleAccessScopeCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, simpleAccessScopeCount)
 }

@@ -12,4 +12,5 @@ type MigrationOptions struct {
 	MigrateSequence int
 	Dir             string
 	SingletonStore  bool
+	BatchSize       int
 }

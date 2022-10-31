@@ -28,6 +28,7 @@ func checkAuthParameters() error {
 	return nil
 }
 
+//#nosec G101 -- This is a false positive
 const userHelpLiteralToken = `There is no token in file %q. The token file should only contain a single authentication token.
 To provide a token value directly, set the ROX_API_TOKEN environment variable.
 `
