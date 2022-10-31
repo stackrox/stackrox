@@ -99,7 +99,7 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
         const countQuery = getConfigMgmtCountQuery(entityListType);
 
         return gql`
-            query getDeployment${entityListType}($id: ID!, $query: String, $pagination: Pagination) {
+            query getDeployment_${entityListType}($id: ID!, $query: String, $pagination: Pagination) {
                 deployment(id: $id) {
                     id
                     ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
