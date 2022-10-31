@@ -6,6 +6,8 @@ import { disableFragmentWarnings } from '@apollo/client';
 // `cveFields` fragment that is dynamically used throughout Vuln Management
 disableFragmentWarnings();
 
+jest.setTimeout(15000);
+
 class Spy {
     spy = null;
 
