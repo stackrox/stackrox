@@ -11,6 +11,38 @@
     "application/json"
   ],
   "paths": {
+    "/v1/collections": {
+      "post": {
+        "operationId": "CollectionService_CreateCollection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateCollectionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateCollectionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CollectionService"
+        ]
+      }
+    },
     "/v1/collections/{id}": {
       "get": {
         "operationId": "CollectionService_GetCollection",
@@ -224,6 +256,37 @@
         },
         "name": {
           "type": "string"
+        }
+      }
+    },
+    "v1CreateCollectionRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "resourceSelectors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageResourceSelector"
+          }
+        },
+        "embeddedCollectionIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1CreateCollectionResponse": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "$ref": "#/definitions/storageResourceCollection"
         }
       }
     },
