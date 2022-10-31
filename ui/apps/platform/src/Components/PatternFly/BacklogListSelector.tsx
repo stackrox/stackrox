@@ -32,6 +32,7 @@ type BacklogTableProps<Item> = {
         width?: BaseCellProps['width'];
     }[];
     buttonText: string;
+    showBadge: boolean;
 };
 
 function BacklogTable<Item>({
@@ -42,6 +43,7 @@ function BacklogTable<Item>({
     rowKey,
     cells,
     buttonText,
+    showBadge,
 }: BacklogTableProps<Item>) {
     const actionIcon =
         type === 'selected' ? (
@@ -54,9 +56,11 @@ function BacklogTable<Item>({
             label={
                 <>
                     {label}
-                    <Badge className="pf-u-ml-sm" isRead>
-                        {items.length}
-                    </Badge>
+                    {showBadge && (
+                        <Badge className="pf-u-ml-sm" isRead>
+                            {items.length}
+                        </Badge>
+                    )}
                 </>
             }
         >
@@ -108,6 +112,7 @@ export type BacklogListSelectorProps<Item> = {
     deselectedLabel?: string;
     selectButtonText?: string;
     deselectButtonText?: string;
+    showBadge?: boolean;
 };
 
 function BacklogListSelector<Item>({
@@ -122,6 +127,7 @@ function BacklogListSelector<Item>({
     deselectedLabel = 'Deselected items',
     selectButtonText = 'Add',
     deselectButtonText = 'Remove',
+    showBadge = false,
 }: BacklogListSelectorProps<Item>) {
     function onSelect(item: Item) {
         onSelectItem(item);
@@ -149,6 +155,7 @@ function BacklogListSelector<Item>({
                 buttonText={deselectButtonText}
                 rowKey={rowKey}
                 cells={cells}
+                showBadge={showBadge}
             />
             <BacklogTable
                 type="deselected"
@@ -158,6 +165,7 @@ function BacklogListSelector<Item>({
                 rowKey={rowKey}
                 buttonText={selectButtonText}
                 cells={cells}
+                showBadge={showBadge}
             />
         </Flex>
     );
