@@ -60,7 +60,7 @@ func NVDCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) 
 	if nvdCVE.CVE == nil || nvdCVE.CVE.CVEDataMeta == nil || nvdCVE.CVE.CVEDataMeta.ID == "" {
 		return nil, errors.New("CVE cannot be identified")
 	}
-	if nvdCVE.Impact == nil {
+	if nvdCVE.Impact == nil || (nvdCVE.Impact.BaseMetricV2 == nil && nvdCVE.Impact.BaseMetricV3 == nil) {
 		return nil, errors.New("CVE does not have either a CVSSv2 nor a CVSSv3 score")
 	}
 
