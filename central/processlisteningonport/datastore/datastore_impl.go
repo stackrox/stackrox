@@ -101,7 +101,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			val.Process.ProcessExecFilePath,
 		)
 
-		log.Deubg("portProcess key= %s\n", key)
+		log.Debugf("portProcess key= %s\n", key)
 
 		if indicator, ok := indicatorsMap[key]; ok {
 			indicatorId = indicator.GetId()
