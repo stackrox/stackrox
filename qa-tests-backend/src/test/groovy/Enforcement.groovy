@@ -2,6 +2,7 @@ import static Services.waitForViolation
 import groups.BAT
 import groups.Integration
 import groups.PolicyEnforcement
+import groups.MultiArch
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -265,7 +266,7 @@ class Enforcement extends BaseSpecification {
         }
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Category([BAT, Integration, PolicyEnforcement, MultiArch])
     def "Test Kill Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for Kill Pod enforcement
@@ -297,7 +298,7 @@ class Enforcement extends BaseSpecification {
         assert Services.getAlertEnforcementCount(KILL_ENFORCEMENT, KILL_ENFORCEMENT) > 0
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Category([BAT, Integration, PolicyEnforcement, MultiArch])
     def "Test Scale-down Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement
@@ -332,7 +333,7 @@ class Enforcement extends BaseSpecification {
                 SCALE_DOWN_ENFORCEMENT) == 1
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Category([BAT, Integration, PolicyEnforcement, MultiArch])
     def "Test Scale-down Enforcement - Integration (build,deploy - image tag)"() {
         // This test verifies enforcement by triggering a policy violation on an image
         // based policy that is configured for scale-down enforcement with both BUILD and
@@ -368,7 +369,7 @@ class Enforcement extends BaseSpecification {
                 SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE) == 1
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Category([BAT, Integration, PolicyEnforcement, MultiArch])
     def "Test Scale-down Enforcement - Integration (build,deploy - SEVERITY)"() {
         // This test verifies enforcement by triggering a policy violation on a SEVERITY
         // based policy that is configured for scale-down enforcement with both BUILD and
@@ -404,7 +405,7 @@ class Enforcement extends BaseSpecification {
                 SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY) == 1
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Category([BAT, Integration, PolicyEnforcement, MultiArch])
     def "Test Node Constraint Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for node constraint enforcement
@@ -442,7 +443,7 @@ class Enforcement extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Category([BAT, Integration, PolicyEnforcement, MultiArch])
     def "Test Fail Build Enforcement - #policyName - Integration (build,deploy)"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for fail build enforcement
@@ -473,7 +474,7 @@ class Enforcement extends BaseSpecification {
         FAIL_BUILD_ENFORCEMENT_WITH_SCALE_TO_ZERO | _
     }
 
-    @Category([Integration, PolicyEnforcement])
+    @Category([Integration, PolicyEnforcement, MultiArch])
     def "Test Scale-down and Node Constraint Enforcement - Deployment"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement
@@ -512,7 +513,7 @@ class Enforcement extends BaseSpecification {
                 SCALE_DOWN_AND_NODE_CONSTRAINT) == 1
     }
 
-    @Category([Integration, PolicyEnforcement])
+    @Category([Integration, PolicyEnforcement, MultiArch])
     def "Test Scale-down and Node Constraint Enforcement - DaemonSet"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement
@@ -551,7 +552,7 @@ class Enforcement extends BaseSpecification {
     }
 
     @Unroll
-    @Category([PolicyEnforcement])
+    @Category([PolicyEnforcement, MultiArch])
     def "Verify Policy Lifecycle combinations: #lifecycles:#policy"() {
         when:
         "attempt to update lifecycle stage for policy"
@@ -609,7 +610,7 @@ class Enforcement extends BaseSpecification {
     }
 
     @Unroll
-    @Category([PolicyEnforcement])
+    @Category([PolicyEnforcement, MultiArch])
     def "Verify Policy Enforcement/Lifecycle combinations: #lifecycles"() {
         when:
         "attempt to update lifecycle stage for policy"
@@ -667,7 +668,7 @@ class Enforcement extends BaseSpecification {
                 APT_GET_POLICY
     }
 
-    @Category([BAT, PolicyEnforcement])
+    @Category([BAT, PolicyEnforcement, MultiArch])
     def "Test Alert and Kill Pod Enforcement - Baseline Process"() {
         // This test verifies enforcement of kill pod after triggering a policy violation of
         //  Unauthorized Process Execution
@@ -716,7 +717,7 @@ class Enforcement extends BaseSpecification {
         }
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Category([BAT, Integration, PolicyEnforcement, MultiArch])
     def "Test Enforcement not done on updated - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement, but not applying enforcements because
@@ -763,7 +764,7 @@ class Enforcement extends BaseSpecification {
         }
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Category([BAT, Integration, PolicyEnforcement, MultiArch])
     def "Test Scale-down Enforcement Ignored due to Bypass Annotation - Integration"() {
         // This test verifies enforcement is skipped by triggering a policy violation on a policy
         // that is configured for scale-down enforcement with a deployment that carries a bypass

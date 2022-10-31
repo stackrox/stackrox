@@ -65,7 +65,7 @@ smoke-test: compile
 .PHONY: multiarch-test
 multiarch-test: compile
 	@echo "+ $@"
-	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=MultiArch
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=MultiArch,NetworkBaseline,NetworkFlowTests,NetworkFlowVisualization
 
 .PHONY: compatibility-test
 compatibility-test: compile
