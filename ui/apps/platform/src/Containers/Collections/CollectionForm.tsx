@@ -34,6 +34,7 @@ import {
     Truncate,
 } from '@patternfly/react-core';
 import { CaretDownIcon, CubesIcon } from '@patternfly/react-icons';
+import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import isEmpty from 'lodash/isEmpty';
@@ -44,7 +45,6 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
 import { CollectionResponse, deleteCollection } from 'services/CollectionsService';
-import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
