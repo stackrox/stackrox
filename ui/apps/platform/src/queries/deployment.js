@@ -76,7 +76,7 @@ export const DEPLOYMENT_NAME = gql`
 `;
 
 export const DEPLOYMENTS_QUERY = gql`
-    query getDeployments($query: String, $pagination: Pagination) {
+    query deployments($query: String, $pagination: Pagination) {
         results: deployments(query: $query, pagination: $pagination) {
             id
             name

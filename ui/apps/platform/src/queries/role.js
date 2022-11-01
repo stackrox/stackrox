@@ -51,7 +51,7 @@ export const ROLE_NAME = gql`
 `;
 
 export const K8S_ROLES_QUERY = gql`
-    query k8sRoles($query: String, $pagination: Pagination) {
+    query roles($query: String, $pagination: Pagination) {
         results: k8sRoles(query: $query, pagination: $pagination) {
             ...k8RoleFields
         }
