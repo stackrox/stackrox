@@ -107,6 +107,8 @@ spec:
         {{- if ._rox.env.managedServices }}
         - name: ROX_MANAGED_CENTRAL
           value: "true"
+        - name: ROX_DISABLE_CENTRAL_DIAGNOSTICS
+          value: "true"
         {{- end }}
         {{- if ._rox.central.db.enabled }}
         - name: ROX_POSTGRES_DATASTORE

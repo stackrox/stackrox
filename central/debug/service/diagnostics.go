@@ -276,8 +276,10 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writ
 	// Pull data from the central cluster.
 	// TODO: It would be nice if we could add a flag to a sensor connection that indicates whether this sensor is
 	// running colocated with central, so we could skip this.
-	wg.Add(1)
-	go pullCentralClusterDiagnostics(subCtx, filesC, &wg, opts.since)
+	if opts.withCentral {
+		wg.Add(1)
+		go pullCentralClusterDiagnostics(subCtx, filesC, &wg, opts.since)
+	}
 
 	go func() {
 		select {
