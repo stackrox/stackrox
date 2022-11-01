@@ -70,8 +70,7 @@ export function transformData(nodes: Node[]): Model {
                 type: 'edge',
                 source: entity.id,
                 target: nodes[nodeIdx].entity.id,
-                // TODO: figure out how to conditionally render performantly
-                // visible: false,
+                visible: false,
             };
             dataModel.edges.push(edge);
         });

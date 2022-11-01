@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import React from 'react';
+import { useHistory, useParams } from 'react-router-dom';
 import {
     Model,
     SELECTION_EVENT,
@@ -10,11 +11,12 @@ import {
     TopologyControlBar,
     useVisualizationController,
     Visualization,
-    VisualizationProvider,
     VisualizationSurface,
+    VisualizationProvider,
     NodeModel,
 } from '@patternfly/react-topology';
 
+import { networkBasePathPF } from 'routePaths';
 import stylesComponentFactory from './components/stylesComponentFactory';
 import defaultLayoutFactory from './layouts/defaultLayoutFactory';
 import defaultComponentFactory from './components/defaultComponentFactory';
@@ -49,24 +51,57 @@ function getUrlParamsForEntity(selectedEntity: NodeModel): [UrlDetailTypeValue, 
 }
 
 export type NetworkGraphProps = {
-    detailType?: UrlDetailTypeValue;
-    detailId?: string;
     model: Model;
-    closeSidebar: () => void;
-    onSelectNode: (type, id) => void;
 };
 
-export type TopologyComponentProps = NetworkGraphProps;
+export type TopologyComponentProps = {
+    model: Model;
+};
 
-const TopologyComponent = ({
-    detailId,
-    model,
-    closeSidebar,
-    onSelectNode,
-}: TopologyComponentProps) => {
-    const selectedEntity = findEntityById(model, detailId);
+function getNodeEdges(selectedNode) {
+    const egressEdges = selectedNode.getSourceEdges();
+    const ingressEdges = selectedNode.getTargetEdges();
+    return [...egressEdges, ...ingressEdges];
+}
 
+function setVisibleEdges(edges) {
+    edges.forEach((edge) => {
+        edge.setVisible(true);
+    });
+}
+
+const TopologyComponent = ({ model }: TopologyComponentProps) => {
+    const history = useHistory();
+    const { detailId } = useParams();
+    const selectedEntity = detailId && findEntityById(model, detailId);
     const controller = useVisualizationController();
+
+    console.log('TopologyComponent');
+
+    if (detailId) {
+        const selectedNode = controller.getNodeById(detailId);
+        if (selectedNode?.isGroup()) {
+            const children = selectedNode.getAllNodeChildren();
+            children.forEach((child) => {
+                // set visible edges
+                const relatedEdges = getNodeEdges(child);
+                setVisibleEdges(relatedEdges);
+            });
+        } else if (selectedNode) {
+            // set visible edges
+            const relatedEdges = getNodeEdges(selectedNode);
+            setVisibleEdges(relatedEdges);
+        }
+    } else if (controller.hasGraph()) {
+        const edges = controller.getGraph().getEdges();
+        edges.forEach((edge) => {
+            edge.setVisible(false);
+        });
+    }
+
+    function closeSidebar() {
+        history.push(`${networkBasePathPF}`);
+    }
 
     React.useEffect(() => {
         function onSelect(ids: string[]) {
@@ -76,7 +111,13 @@ const TopologyComponent = ({
             // @ts-ignore
             if (newSelectedEntity) {
                 const [newDetailType, newDetailId] = getUrlParamsForEntity(newSelectedEntity);
-                onSelectNode(newDetailType, newDetailId);
+                // if found, and it's not the logical grouping of all external sources, then trigger URL update
+                if (newDetailId !== 'EXTERNAL') {
+                    history.push(`${networkBasePathPF}/${newDetailType}/${newDetailId}`);
+                } else {
+                    // otherwise, return to the graph-only state
+                    history.push(`${networkBasePathPF}`);
+                }
             }
         }
 
@@ -86,7 +127,7 @@ const TopologyComponent = ({
         return () => {
             controller.removeEventListener(SELECTION_EVENT, onSelect);
         };
-    }, [controller, model, onSelectNode]);
+    }, [controller, model]);
 
     const selectedIds = selectedEntity ? [selectedEntity.id] : [];
 
@@ -139,28 +180,21 @@ const TopologyComponent = ({
     );
 };
 
-const NetworkGraph = React.memo<NetworkGraphProps>(
-    ({ detailType, detailId, closeSidebar, onSelectNode, model }) => {
-        const controller = new Visualization();
-        controller.registerLayoutFactory(defaultLayoutFactory);
-        controller.registerComponentFactory(defaultComponentFactory);
-        controller.registerComponentFactory(stylesComponentFactory);
+const NetworkGraph = React.memo<NetworkGraphProps>(({ model }) => {
+    const controller = new Visualization();
+    controller.registerLayoutFactory(defaultLayoutFactory);
+    controller.registerComponentFactory(defaultComponentFactory);
+    controller.registerComponentFactory(stylesComponentFactory);
+    console.log('NetworkGraph');
 
-        return (
-            <div className="pf-ri__topology-demo">
-                <VisualizationProvider controller={controller}>
-                    <TopologyComponent
-                        detailType={detailType}
-                        detailId={detailId}
-                        model={model}
-                        closeSidebar={closeSidebar}
-                        onSelectNode={onSelectNode}
-                    />
-                </VisualizationProvider>
-            </div>
-        );
-    }
-);
+    return (
+        <div className="pf-ri__topology-demo">
+            <VisualizationProvider controller={controller}>
+                <TopologyComponent model={model} />
+            </VisualizationProvider>
+        </div>
+    );
+});
 
 NetworkGraph.displayName = 'NetworkGraph';
 
