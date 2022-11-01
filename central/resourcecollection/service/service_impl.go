@@ -39,7 +39,7 @@ var (
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			// "/v1.CollectionService/AutoCompleteCollection", TODO ROX-12616
 			"/v1.CollectionService/CreateCollection",
-			// "/v1.CollectionService/DeleteCollection", TODO ROX-13030
+			"/v1.CollectionService/DeleteCollection",
 			// "/v1.CollectionService/DryRunCollection", TODO ROX-13031
 			// "/v1.CollectionService/UpdateCollection", TODO ROX-13032
 		},
@@ -84,6 +84,19 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 		return nil, errors.Wrap(errox.InvalidArgs, "Id field should be set when requesting a collection")
 	}
 	return s.getCollection(ctx, request.Id)
+}
+
+func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, nil
+	}
+	if request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "A collection id must be specified to delete a Collection")
+	}
+	if err := s.datastore.DeleteCollection(ctx, request.GetId()); err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetCollectionResponse, error) {
