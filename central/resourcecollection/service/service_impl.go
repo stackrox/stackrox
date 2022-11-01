@@ -104,10 +104,10 @@ func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetColl
 // DeleteCollection deletes the collection with the given ID
 func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, nil
+		return nil, errors.New("Support for resource collections is not enabled")
 	}
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "A collection id must be specified to delete a Collection")
+		return nil, errors.Wrap(errox.InvalidArgs, "A non empty collection id must be specified to delete a collection")
 	}
 	if err := s.datastore.DeleteCollection(ctx, request.GetId()); err != nil {
 		return nil, err
@@ -118,10 +118,10 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 // CreateCollection creates a new collection from the given request
 func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCollectionRequest) (*v1.CreateCollectionResponse, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, errors.New("Resource collections is not enabled")
+		return nil, errors.New("Support for resource collections is not enabled")
 	}
 
-	collection, err := collectionRequestToCollection(ctx, request, true, nil)
+	collection, err := collectionRequestToCollection(ctx, request, true)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 	return &v1.CreateCollectionResponse{Collection: collection}, nil
 }
 
-func collectionRequestToCollection(ctx context.Context, request collectionRequest, isCreate bool, getID func() string) (*storage.ResourceCollection, error) {
+func collectionRequestToCollection(ctx context.Context, request collectionRequest, isCreate bool) (*storage.ResourceCollection, error) {
 	if request.GetName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
 	}
@@ -161,12 +161,6 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 	if isCreate {
 		collection.CreatedBy = slimUser
 		collection.CreatedAt = timeNow
-	} else {
-		// is update
-		if getID == nil || getID() == "" {
-			return nil, errors.New("[Update collection] Valid ID getter func not found")
-		}
-		collection.Id = getID()
 	}
 
 	if len(request.GetEmbeddedCollectionIds()) > 0 {
