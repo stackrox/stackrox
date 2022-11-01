@@ -29,6 +29,14 @@ const validCVETypes = [
     resourceTypes.CLUSTER_CVE,
 ];
 
+// Distinguish GraphQL query name and therefore opname especially for integration tests.
+const queryNameMap = {
+    CVE: 'getCve',
+    IMAGE_CVE: 'getImageCve',
+    NODE_CVE: 'getNodeCve',
+    CLUSTER_CVE: 'getClusterCve',
+};
+
 const vulnQueryMap = {
     CVE: 'vulnerability',
     IMAGE_CVE: 'imageVulnerability',
@@ -56,6 +64,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
     const workflowState = useContext(workflowStateContext);
     const worklowStateStack = workflowState.getStateStack();
     const cveType = getCVETypeFromStack(worklowStateStack) || entityTypes.IMAGE_CVE;
+    const queryName = queryNameMap[cveType];
     const vulnQuery = vulnQueryMap[cveType];
     const vulnFields = vulnFieldMap[cveType];
 
@@ -71,7 +80,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
     }
 
     const overviewQuery = gql`
-        query getCve($id: ID!, $query: String, $scopeQuery: String) {
+        query ${queryName}($id: ID!, $query: String, $scopeQuery: String) {
             result: ${vulnQuery}(id: $id) {
                 ...cveFields
             }
@@ -81,7 +90,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-            query getCve${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+            query ${queryName}${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
                 result: ${vulnQuery}(id: $id) {
                     id
                     ${defaultCountKeyMap[entityListType]}(query: $query)

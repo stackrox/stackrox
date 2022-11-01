@@ -49,7 +49,7 @@ const VulnMgmtEntityImageComponent = ({
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-            query getComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+            query getImageComponent${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
                 result: imageComponent(id: $id) {
                     id
                     ${defaultCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
