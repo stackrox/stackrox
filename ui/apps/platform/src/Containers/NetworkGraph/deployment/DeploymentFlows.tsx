@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    Divider,
     DropdownItem,
     Flex,
     FlexItem,
@@ -25,8 +26,11 @@ import {
 } from '@patternfly/react-table';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
-import './DeploymentFlows.css';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import AdvancedFlowsFilter, { defaultAdvancedFlowsFilters } from '../flows/AdvancedFlowsFilter';
+
+import './DeploymentFlows.css';
+import { AdvancedFlowsFilterType } from '../flows/types';
 
 interface FlowBase {
     id: string;
@@ -118,16 +122,19 @@ const flows: Flow[] = [
 ];
 
 function DeploymentFlow() {
-    // derived values
+    // component state
+    const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
+        defaultAdvancedFlowsFilters
+    );
+    const initialExpandedRows = flows.filter((row) => !!row.children.length).map((row) => row.id); // Default to all expanded
+    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
+    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
+
+    // derived data
     const totalFlows = flows.reduce((acc, curr) => {
         // if there are no children then it counts as 1 flow
         return acc + (curr.children.length ? curr.children.length : 1);
     }, 0);
-
-    // component state
-    const initialExpandedRows = flows.filter((row) => !!row.children.length).map((row) => row.id); // Default to all expanded
-    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
-    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
 
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows.includes(row.id);
@@ -169,6 +176,18 @@ function DeploymentFlow() {
     return (
         <div className="pf-u-h-100 pf-u-p-md">
             <Stack hasGutter>
+                <StackItem>
+                    <Flex>
+                        <FlexItem flex={{ default: 'flex_1' }} />
+                        <FlexItem>
+                            <AdvancedFlowsFilter
+                                filters={advancedFilters}
+                                setFilters={setAdvancedFilters}
+                            />
+                        </FlexItem>
+                    </Flex>
+                </StackItem>
+                <Divider component="hr" />
                 <StackItem>
                     <Toolbar>
                         <ToolbarContent>
