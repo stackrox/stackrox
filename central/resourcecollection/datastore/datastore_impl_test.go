@@ -136,7 +136,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 			assert.NoError(s.T(), err)
 
 			// get data and check it
-			batch, err := s.datastore.GetBatch(ctx, objIDs)
+			batch, err := s.datastore.GetMany(ctx, objIDs)
 			assert.NoError(s.T(), err)
 			assert.ElementsMatch(s.T(), objs, batch)
 

@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/heimdalr/dag"
 	"github.com/pkg/errors"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -21,10 +21,13 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-var (
-	log           = logging.LoggerForModule()
+const (
 	initBatchSize = 20
-	workflowSAC   = sac.ForResource(resources.WorkflowAdministration)
+)
+
+var (
+	log         = logging.LoggerForModule()
+	workflowSAC = sac.ForResource(resources.WorkflowAdministration)
 )
 
 type datastoreImpl struct {
@@ -123,6 +126,7 @@ func (ds *datastoreImpl) initGraph() error {
 	return nil
 }
 
+// addCollectionToGraph creates a copy of the existing DAG and returns that copy with the collection added, or an appropriate error
 func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) (*dag.DAG, error) {
 	ds.initGraphOnce()
 
@@ -133,7 +137,7 @@ func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) (
 		return nil, err
 	}
 	if obj.GetId() != "" {
-		return nil, errors.New("invalid argument, added collection must not have a pre-set `id`")
+		return nil, errors.Wrap(errox.InvalidArgs, "new collection must not have a pre-set `id`")
 	}
 
 	// create graph copy to do this operation on
@@ -163,6 +167,7 @@ func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) (
 	return graph, nil
 }
 
+// updateCollectionInGraph creates a copy of the existing DAG and returns that copy with the collection updated, or an appropriate error
 func (ds *datastoreImpl) updateCollectionInGraph(obj *storage.ResourceCollection) (*dag.DAG, error) {
 	ds.initGraphOnce()
 
@@ -184,7 +189,7 @@ func (ds *datastoreImpl) updateCollectionInGraph(obj *storage.ResourceCollection
 	// get current children edges for the object
 	curChildren, err := graph.GetChildren(obj.GetId())
 	if err != nil {
-		return nil, errors.Wrap(err, "update attempt on unknown collection")
+		return nil, errors.Wrapf(err, "could not update collection (%s)", obj.GetId())
 	}
 
 	// determine additions
@@ -222,6 +227,7 @@ func (ds *datastoreImpl) updateCollectionInGraph(obj *storage.ResourceCollection
 	return graph, nil
 }
 
+// deleteCollectionFromGraph removes the collection from the DAG, or returns an appropriate error
 func (ds *datastoreImpl) deleteCollectionFromGraph(id string) error {
 	ds.initGraphOnce()
 
@@ -281,7 +287,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return true, nil
 }
 
-func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ResourceCollection, error) {
+func (ds *datastoreImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ResourceCollection, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -300,7 +306,7 @@ func (ds *datastoreImpl) addCollectionWorkflow(ctx context.Context, collection *
 		return err
 	}
 	if collection.GetId() != "" {
-		return fmt.Errorf("added collections must not have an `id` preset (%s)", collection.GetId())
+		return errors.New("new collections must not have a preset `id`")
 	}
 
 	ds.lock.Lock()
@@ -308,7 +314,7 @@ func (ds *datastoreImpl) addCollectionWorkflow(ctx context.Context, collection *
 
 	// verify that the name is not already in use
 	if collection.GetName() == "" || ds.names.Contains(collection.GetName()) {
-		return fmt.Errorf("collections must have non-empty, unique `name` values (%s)", collection.GetName())
+		return errors.Errorf("collections must have non-empty, unique `name` values (%s)", collection.GetName())
 	}
 
 	// add to graph to detect any cycles, this also sets the `id` field
@@ -363,12 +369,12 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 	defer ds.lock.Unlock()
 
 	// resolve object to check if the name was changed
-	obj, ok, err := ds.storage.Get(ctx, collection.GetId())
+	storedCollection, ok, err := ds.storage.Get(ctx, collection.GetId())
 	if err != nil || !ok {
 		return errors.Wrap(err, "failed to resolve collection being updated")
 	}
-	if obj.GetName() != collection.GetName() && ds.names.Contains(collection.GetName()) {
-		return fmt.Errorf("collection name already in use (%s)", collection.GetName())
+	if storedCollection.GetName() != collection.GetName() && ds.names.Contains(collection.GetName()) {
+		return errors.Errorf("collection name already in use (%s)", collection.GetName())
 	}
 
 	// update graph first to detect cycles
@@ -389,9 +395,8 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 	}
 
 	// success, we now update objects
-	if obj.GetName() != collection.GetName() {
-		ds.names.Remove(obj.GetName())
-		ds.names.Add(collection.GetName())
+	if ds.names.Add(collection.GetName()) {
+		ds.names.Remove(storedCollection.GetName())
 	}
 	ds.graph = graph
 	return nil
