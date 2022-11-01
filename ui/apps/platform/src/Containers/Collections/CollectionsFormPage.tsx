@@ -3,7 +3,12 @@ import { PageSection } from '@patternfly/react-core';
 import { useMediaQuery } from 'react-responsive';
 
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
-import { getCollection } from 'services/CollectionsService';
+import {
+    CollectionResponse,
+    getCollection,
+    listCollections,
+    ResolvedCollectionResponse,
+} from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import CollectionForm from './CollectionForm';
 import { parseCollection } from './parser';
@@ -22,7 +27,7 @@ const defaultCollectionData = {
     name: '',
     description: '',
     inUse: false,
-    embeddedCollectionIds: [],
+    embeddedCollections: [],
     resourceSelectors: {
         Deployment: {},
         Namespace: {},
@@ -30,18 +35,35 @@ const defaultCollectionData = {
     },
 };
 
+function getEmbeddedCollections({ collection }: ResolvedCollectionResponse): Promise<{
+    collection: CollectionResponse;
+    embeddedCollections: CollectionResponse[];
+}> {
+    if (collection.embeddedCollections.length === 0) {
+        return Promise.resolve({ collection, embeddedCollections: [] });
+    }
+    const idSearchString = collection.embeddedCollections.map(({ id }) => id).join(',');
+    const searchFilter = { 'Collection ID': idSearchString };
+    const { request } = listCollections(searchFilter, { field: 'name', reversed: false });
+    return request.then((embeddedCollections) => ({ collection, embeddedCollections }));
+}
+
 function CollectionsFormPage({
     hasWriteAccessForCollections,
     pageAction,
 }: CollectionsFormPageProps) {
     const isLargeScreen = useMediaQuery({ query: '(min-width: 992px)' }); // --pf-global--breakpoint--lg
     const collectionId = pageAction.type !== 'create' ? pageAction.collectionId : undefined;
-    const collectionFetcher = useCallback(
-        () => (collectionId ? getCollection(collectionId) : noopRequest),
-        [collectionId]
-    );
+    const collectionFetcher = useCallback(() => {
+        if (!collectionId) {
+            return noopRequest;
+        }
+        const { request, cancel } = getCollection(collectionId);
+        return { request: request.then(getEmbeddedCollections), cancel };
+    }, [collectionId]);
     const { data, loading, error } = useRestQuery(collectionFetcher);
     const initialData = data ? parseCollection(data.collection) : defaultCollectionData;
+    const initialEmbeddedCollections = data ? data.embeddedCollections : [];
 
     let content: ReactElement | undefined;
 
@@ -67,6 +89,7 @@ function CollectionsFormPage({
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
                 action={pageAction}
                 initialData={initialData}
+                initialEmbeddedCollections={initialEmbeddedCollections}
                 useInlineDrawer={isLargeScreen}
                 showBreadcrumbs
                 appendTableLinkAction={() => {
