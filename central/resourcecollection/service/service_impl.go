@@ -86,19 +86,6 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 	return s.getCollection(ctx, request.Id)
 }
 
-func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
-	if !features.ObjectCollections.Enabled() {
-		return nil, nil
-	}
-	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "A collection id must be specified to delete a Collection")
-	}
-	if err := s.datastore.DeleteCollection(ctx, request.GetId()); err != nil {
-		return nil, err
-	}
-	return &v1.Empty{}, nil
-}
-
 func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetCollectionResponse, error) {
 	collection, ok, err := s.datastore.Get(ctx, id)
 	if err != nil {
@@ -112,6 +99,20 @@ func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetColl
 		Collection:  collection,
 		Deployments: nil,
 	}, nil
+}
+
+// DeleteCollection deletes the collection with the given ID
+func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, nil
+	}
+	if request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "A collection id must be specified to delete a Collection")
+	}
+	if err := s.datastore.DeleteCollection(ctx, request.GetId()); err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
 }
 
 // CreateCollection creates a new collection from the given request
@@ -160,7 +161,11 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 	if isCreate {
 		collection.CreatedBy = slimUser
 		collection.CreatedAt = timeNow
-	} else if getID != nil {
+	} else {
+		// is update
+		if getID == nil || getID() == "" {
+			return nil, errors.New("[Update collection] Valid ID getter func not found")
+		}
 		collection.Id = getID()
 	}
 
