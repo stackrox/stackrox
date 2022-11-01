@@ -39,7 +39,7 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
-import { deleteCollection } from 'services/CollectionsService';
+import { CollectionResponse, deleteCollection } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
@@ -52,6 +52,8 @@ export type CollectionFormProps = {
     action: CollectionPageAction;
     /* initial data used to populate the form */
     initialData: Collection;
+    /* Collection object references for the list of ids in `initialData` */
+    initialEmbeddedCollections: CollectionResponse[];
     /* Whether or not to display the collection results in an inline drawer. If false, will
     display collection results in an overlay drawer. */
     useInlineDrawer: boolean;
@@ -94,6 +96,7 @@ function CollectionForm({
     hasWriteAccessForCollections,
     action,
     initialData,
+    initialEmbeddedCollections,
     useInlineDrawer,
     showBreadcrumbs,
 }: CollectionFormProps) {
@@ -114,13 +117,13 @@ function CollectionForm({
     const [isDeleting, setIsDeleting] = useState(false);
     const { toasts, addToast, removeToast } = useToasts();
 
-    const { values, isValid, errors, handleChange, handleBlur, setFieldValue } = useFormik({
+    const { values, errors, handleChange, handleBlur, setFieldValue } = useFormik({
         initialValues: initialData,
         onSubmit: () => {},
         validationSchema: yup.object({
             name: yup.string().trim().required(),
             description: yup.string(),
-            embeddedCollectionIds: yup.array(yup.string()),
+            embeddedCollections: yup.array(yup.string().trim().required()),
             resourceSelectors: yup.object().shape({
                 Deployment: yupResourceSelectorObject(),
                 Namespace: yupResourceSelectorObject(),
@@ -128,9 +131,6 @@ function CollectionForm({
             }),
         }),
     });
-
-    // eslint-disable-next-line no-console
-    console.log('formik change', isValid, values, errors);
 
     useEffect(() => {
         toggleDrawer(useInlineDrawer);
@@ -180,6 +180,12 @@ function CollectionForm({
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector
     ) => setFieldValue(`resourceSelectors.${entityType}`, scopedResourceSelector);
+
+    const onEmbeddedCollectionsChange = (newCollections: CollectionResponse[]) =>
+        setFieldValue(
+            'embeddedCollections',
+            newCollections.map(({ id }) => id)
+        );
 
     return (
         <>
@@ -375,10 +381,20 @@ function CollectionForm({
                                     />
                                 </Flex>
 
-                                <div className="pf-u-background-color-100 pf-u-p-lg">
-                                    <Title headingLevel="h2">Attach existing collections</Title>
-                                    <CollectionAttacher />
-                                </div>
+                                <Flex
+                                    className="pf-u-background-color-100 pf-u-p-lg"
+                                    direction={{ default: 'column' }}
+                                    spaceItems={{ default: 'spaceItemsMd' }}
+                                >
+                                    <Title className="pf-u-mb-xs" headingLevel="h2">
+                                        Attach existing collections
+                                    </Title>
+                                    <p>Extend this collection by attaching other sets.</p>
+                                    <CollectionAttacher
+                                        initialEmbeddedCollections={initialEmbeddedCollections}
+                                        onSelectionChange={onEmbeddedCollectionsChange}
+                                    />
+                                </Flex>
                             </Flex>
                             {action.type !== 'view' && (
                                 <div className="pf-u-background-color-100 pf-u-p-lg pf-u-py-md">
