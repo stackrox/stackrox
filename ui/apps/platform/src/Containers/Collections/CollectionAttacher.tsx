@@ -53,8 +53,8 @@ function CollectionAttacher({
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXl' }}>
             <SearchInput
-                aria-label="Search by name"
-                placeholder="Search by name"
+                aria-label="Filter by name"
+                placeholder="Filter by name"
                 value={search}
                 onChange={onSearchInputChange}
             />
