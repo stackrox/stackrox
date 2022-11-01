@@ -94,7 +94,7 @@ const VulmMgmtEntityCluster = ({
                 ? defaultCountKeyMap[entityTypes.K8S_CVE]
                 : defaultCountKeyMap[entityListType];
         return gql`
-            query getCluster_${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+            query getCluster${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
                 result: cluster(id: $id) {
                     id
                     ${parsedEntityListType}(query: $query)
