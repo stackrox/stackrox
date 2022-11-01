@@ -37,7 +37,7 @@ export function transformData(nodes: Node[]): Model {
             width: 75,
             height: 75,
             label: getLabel(entity),
-            data: {},
+            data: entity,
         };
         dataModel.nodes.push(node);
 
@@ -57,6 +57,7 @@ export function transformData(nodes: Node[]): Model {
                     data: {
                         collapsible: true,
                         showContextMenu: false,
+                        type: 'NAMESPACE',
                     },
                 };
             }
