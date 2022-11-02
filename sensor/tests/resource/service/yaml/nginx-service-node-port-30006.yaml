@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginx-svc-node-port
+  name: nginx-svc-node-port-30006
 spec:
   type: NodePort
   selector:
@@ -11,4 +11,4 @@ spec:
     name: port-1
     port: 80
     targetPort: 80
-    nodePort: 30007
+    nodePort: 30006
