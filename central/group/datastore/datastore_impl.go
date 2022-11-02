@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -56,14 +57,19 @@ func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.G
 	}
 
 	var groups []*storage.Group
-	err := ds.storage.Walk(ctx, func(g *storage.Group) error {
-		if filter == nil || filter(g.GetProps()) {
-			groups = append(groups, g)
-		}
-		return nil
-	})
-
-	return groups, err
+	walkFn := func() error {
+		groups = groups[:0]
+		return ds.storage.Walk(ctx, func(g *storage.Group) error {
+			if filter == nil || filter(g.GetProps()) {
+				groups = append(groups, g)
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
+	return groups, nil
 }
 
 // Walk is an optimization that allows to search through the datastore and find
@@ -78,16 +84,21 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attrib
 	// Search through the datastore and find all groups that apply to a user within a single transaction.
 	toSearch := getPossibleGroupProperties(authProviderID, attributes)
 	var groups []*storage.Group
-	err := ds.storage.Walk(ctx, func(group *storage.Group) error {
-		for _, check := range toSearch {
-			if propertiesMatch(group.GetProps(), check) {
-				groups = append(groups, group)
+	walkFn := func() error {
+		groups = groups[:0]
+		return ds.storage.Walk(ctx, func(group *storage.Group) error {
+			for _, check := range toSearch {
+				if propertiesMatch(group.GetProps(), check) {
+					groups = append(groups, group)
+				}
 			}
-		}
-		return nil
-	})
-
-	return groups, err
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
+	return groups, nil
 }
 
 func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
