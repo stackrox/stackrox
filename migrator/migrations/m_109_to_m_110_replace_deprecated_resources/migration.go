@@ -44,7 +44,7 @@ var (
 		StartingSeqNum: 109,
 		VersionAfter:   storage.Version{SeqNum: 110},
 		Run: func(databases *types.Databases) error {
-			return migatePermissionSets(databases.RocksDB)
+			return migrateReplacedResourcesInPermissionSets(databases.RocksDB)
 		},
 	}
 
@@ -75,18 +75,18 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func propagatePermission(resource string, accessLevel storage.Access, permissions map[string]storage.Access) storage.Access {
-	if _, found := permissions[resource]; !found {
+func propagateAccessForPermission(permission string, accessLevel storage.Access, permissionSet map[string]storage.Access) storage.Access {
+	oldLevel, found := permissionSet[permission]
+	if !found {
 		return accessLevel
 	}
-	oldLevel := permissions[resource]
 	if accessLevel > oldLevel {
 		return oldLevel
 	}
 	return accessLevel
 }
 
-func migatePermissionSets(db *gorocksdb.DB) error {
+func migrateReplacedResourcesInPermissionSets(db *gorocksdb.DB) error {
 	it := db.NewIterator(readOpts)
 	defer it.Close()
 	wb := gorocksdb.NewWriteBatch()
@@ -99,19 +99,14 @@ func migatePermissionSets(db *gorocksdb.DB) error {
 		// Copy the permission set, removing the deprecated resource permissions, and keeping the
 		// lowest access level between that of deprecated resource and their replacement
 		// for the replacement resource.
-		newPermissionSet := &storage.PermissionSet{
-			Id:               permissions.GetId(),
-			Name:             permissions.GetName(),
-			Description:      permissions.GetDescription(),
-			ResourceToAccess: make(map[string]storage.Access, len(permissions.GetResourceToAccess())),
-		}
+		newPermissionSet := permissions.Clone()
+		newPermissionSet.ResourceToAccess = make(map[string]storage.Access, len(permissions.GetResourceToAccess()))
 		for resource, accessLevel := range permissions.GetResourceToAccess() {
-			newResource := resource
 			if _, found := replacements[resource]; found {
-				newResource = replacements[resource]
+				resource = replacements[resource]
 			}
-			newPermissionSet.ResourceToAccess[newResource] =
-				propagatePermission(newResource, accessLevel, newPermissionSet.ResourceToAccess)
+			newPermissionSet.ResourceToAccess[resource] =
+				propagateAccessForPermission(resource, accessLevel, newPermissionSet.ResourceToAccess)
 		}
 		data, err := proto.Marshal(newPermissionSet)
 		if err != nil {

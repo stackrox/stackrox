@@ -25,9 +25,18 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-11592: Support to Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field
   being set in the `/v1/groups` endpoint have been removed.
 - The unused "ComplianceRunSchedule" resource has been removed.
+- ROX-11101: As announced in 3.71.0 (ROX-8520), some permissions for permission sets are being grouped for simplification. The deprecation process will remove and replace the deprecated permissions with the replacing permission as listed below. The access level granted to the replacing permission will be the lowest among all access levels of the replaced permissions.
+  - Permission `Access` replaces the deprecated permissions `AuthProvider, Group, Licenses, User`.
+  - Permission `DeploymentExtension` replaces the deprecated permissions `Indicator, NetworkBaseline, ProcessWhitelist, Risk`.
+  - Permission `Integration` replaces the deprecated permissions `APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration`.
+  - Permission `Image` replaces the deprecated permission `ImageComponent`.
+  - Note: the `Role` permission, previously announced as being grouped under `Access` remains a standalone permission.
 - ROX-13034: Central reaches out to scanner `scanner.<namespace>.svc` now to respect OpenShift's `NO_PROXY` configuration.
 
 ### Deprecated Features
+- ROX-11101: As first announced in 3.71.0 for ROX-8250, we continue to simplify access control management by grouping some permissions in permission sets. As a result:
+  - New permission `Administration` will deprecate the permissions `AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity`.
+  - The permission `Compliance` will deprecate the permission `ComplianceRuns`.
 
 ### Technical Changes
 - ROX-11937: The Splunk integration now processes all additional standards of the compliance operator (ocp4-cis & ocp4-cis-node) correctly.
@@ -38,19 +47,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The service account "central", which is used by the central deployment, will now include `get` and `list` access to the following resources in the namespace where central is deployed to:
   `pods`, `events`, and `namespaces`. This fixes an issue when generating diagnostic bundles to now correctly include all relevant information within the namespace of central.
 - ROX-13265: Fix missing rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
-
-### Removed Features
-### Deprecated Features
-- ROX-11101: Similar to what was announced in 3.71.0 for ROX-8520, more permissions for permission sets will be grouped for simplification. As a result, the following permissions will be deprecated in favor of a new permission:
-  - New permission `Administration` will deprecate the permissions `AllComments, ComplianceRunSchedule, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity`.
-  - The permission `Compliance` will deprecate the permission `ComplianceRuns`.
-### Technical Changes
-- ROX-11101: As announced in 3.71.0 (ROX-8520), some permissions for permissionsets are being grouped for simplification. The deprecation process will remove and replace the deprecated permissions with the replacing permission as listed below. The access level granted to the replacing permission will be the lowest of its defined access level if any and the defined access levels for all the permissions it replaces.  
-  - Permission `Access` deprecates and replaces the permissions `AuthPlugin, AuthProvider, Group, Licenses, User`.
-  - Permission `DeploymentExtension` deprecates and replaces the permissions `Indicator, NetworkBaseline, ProcessWhitelist, Risk`.
-  - Permission `Integration` deprecates and replaces the permissions `APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration`.
-  - Permission `Image` deprecates and replaces the permission `ImageComponent`.
-  - Note: the `Role` permission, previously announced as being grouped under `Access` remains a standalone permission.
 
 ## [3.72.0]
 
