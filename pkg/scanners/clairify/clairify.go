@@ -44,11 +44,15 @@ const (
 var (
 	_ scannerTypes.Scanner                  = (*clairify)(nil)
 	_ scannerTypes.ImageVulnerabilityGetter = (*clairify)(nil)
+
+	log             = logging.LoggerForModule()
+	scannerEndpoint = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+// GetScannerEndpoint returns the scanner endpoint with a configured namespace. env.ScannerGRPCEndpoint is only used by Sensor.
+func GetScannerEndpoint() string {
+	return scannerEndpoint
+}
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error)) {
@@ -144,9 +148,11 @@ func createGRPCConnectionToScanner(conf *storage.ClairifyConfig) (*grpc.ClientCo
 		return nil, err
 	}
 
+	// Checking for an empty endpoint can't be removed because of backward-compatibility. Existing image
+	// integrations are configured in the database on Central's startup and are not updated dynamically.
 	endpoint := conf.GetGrpcEndpoint()
 	if endpoint == "" {
-		endpoint = fmt.Sprintf("scanner.%s.svc:8443", env.Namespace.Setting())
+		endpoint = fmt.Sprintf("%s:8443", GetScannerEndpoint())
 	}
 
 	// Note: it is possible we call `grpc.Dial` multiple times per endpoint,
