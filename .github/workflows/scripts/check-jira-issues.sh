@@ -8,13 +8,13 @@ set -euo pipefail
 PROJECTS="$1"
 RELEASE="$2"
 PATCH="$3"
-RELEASE_PATCH="$4"
+
+RELEASE_PATCH="${RELEASE}.${PATCH}"
 
 check_not_empty \
     PROJECTS \
     RELEASE \
     PATCH \
-    RELEASE_PATCH \
     \
     JIRA_TOKEN \
     DRY_RUN
@@ -22,16 +22,16 @@ check_not_empty \
 # TODO: Jira returns 400 if requested fixVersion does not exist. That means
 # the named release must exist on Jira, which is not given.
 JQL_OPEN_ISSUES="project IN ($PROJECTS) \
-AND fixVersion = \"$RELEASE.$PATCH\" \
+AND fixVersion = \"$RELEASE_PATCH\" \
 AND statusCategory != done \
-AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Managed Service\")) \
+AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Cloud Service\")) \
 AND type NOT IN (Epic, \"Feature Request\") \
 ORDER BY assignee"
 
 JQL_CLOSED_WITH_PR="project IN ($PROJECTS) \
-AND fixVersion = \"$RELEASE.$PATCH\" \
+AND fixVersion = \"$RELEASE_PATCH\" \
 AND statusCategory = done \
-AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Managed Service\")) \
+AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Cloud Service\")) \
 AND issue.property[development].openprs > 0 \
 ORDER BY assignee"
 
@@ -42,8 +42,15 @@ get_issues() {
         "https://issues.redhat.com/rest/api/2/search"
 }
 
-comment_issue() {
-    curl --fail -sSL -X POST \
+comment_on_issues_list() {
+    ISSUES=$1
+    while read -r KEY; do
+        comment_on_single_issue "$KEY"
+    done < <(cut -d " " -f 1 <<< "$ISSUES")
+}
+
+comment_on_single_issue() {
+    curl --fail --output /dev/null -sSL -X POST \
         -H "Authorization: Bearer $JIRA_TOKEN" \
         -H "Content-Type: application/json" \
         --data "{\"body\": \
@@ -102,14 +109,13 @@ echo
 echo "Open issues:"
 echo "$OPEN_ISSUES"
 
-REPO_NAME=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
-
-if [ "$DRY_RUN" = "false" ] && [ "$REPO_NAME" = "stackrox/stackrox" ]; then
-    while read -r KEY; do
-        comment_issue "$KEY"
-    done < <(cut -d " " -f 1 <<< "$OPEN_ISSUES")
-else
-    exit 0
+if [ "$DRY_RUN" = "false" ]; then
+    if [ "$GITHUB_REPOSITORY" = "stackrox/stackrox" ] || ([ "$GITHUB_REPOSITORY" = "stackrox/test-gh-actions" ] && [ "$RELEASE_PATCH" == "0.0.0" ]); then
+        comment_on_issues_list "$OPEN_ISSUES"
+        comment_on_issues_list "$CLOSED_WITH_PR"
+    fi
 fi
 
-exit 1
+if [ -n "$OPEN_ISSUES" ] || [ -n "$CLOSED_WITH_PR" ]; then
+    exit 1
+fi
