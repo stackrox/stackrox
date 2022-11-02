@@ -113,7 +113,7 @@ func (s *serviceImpl) centralDBHandler(w http.ResponseWriter, r *http.Request) {
 
 	cert, err := mtls.IssueNewCert(mtls.CentralDBSubject)
 	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not issue Central DB CA %v", err)
+		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not issue Central DB CA: %v", err)
 		return
 	}
 	wrapper := zip.NewWrapper()
