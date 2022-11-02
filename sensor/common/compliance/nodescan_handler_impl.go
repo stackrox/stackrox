@@ -44,15 +44,14 @@ func (c *nodeScanHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 func (c *nodeScanHandlerImpl) run() {
-	defer c.stoppedC.Signal()
+	defer c.stoppedC.SignalWithError(c.stopC.Err())
 	for {
 		select {
 		case <-c.stopC.Done():
-			c.stoppedC.SignalWithError(c.stopC.Err())
 			return
 		case scan, ok := <-c.nodeScans:
 			if !ok {
-				c.stoppedC.SignalWithError(errors.New("channel receiving node scans v2 is closed"))
+				c.stopC.SignalWithError(errors.New("channel receiving node scans v2 is closed"))
 				return
 			}
 			// TODO(ROX-12943): Do something with the scan, e.g., attach NodeID
