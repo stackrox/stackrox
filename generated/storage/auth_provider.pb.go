@@ -42,8 +42,49 @@ type AuthProvider struct {
 	RequiredAttributes []*AuthProvider_RequiredAttribute `protobuf:"bytes,11,rep,name=required_attributes,json=requiredAttributes,proto3" json:"required_attributes,omitempty"`
 	Traits             *Traits                           `protobuf:"bytes,12,opt,name=traits,proto3" json:"traits,omitempty"`
 	// Specifies claims from IdP token that will be copied to Rox token attributes.
-	// For example, we can specify nested array claim "realm_access.roles" to be mapped to "groups" attribute.
-	// Currently we only support this feature only for OIDC auth provider.
+	//
+	// Each key in this map contains a path in IdP token we want to map. Path is separated by "." symbol.
+	// For example, if IdP token payload looks like:
+	//
+	//
+	// {
+	//
+	//      "a": {
+	//
+	//          "b" : "c",
+	//
+	//          "d": true,
+	//
+	//          "e": [ "val1", "val2", "val3" ],
+	//
+	//          "f": [ true, false, false ],
+	//
+	//          "g": 123.0,
+	//
+	//          "h": [ 1, 2, 3]
+	//
+	//      }
+	//
+	// }
+	//
+	//
+	// then "a.b" would be a valid key and "a.z" is not.
+	//
+	// We support the following types of claims:
+	// * string(path "a.b")
+	// * bool(path "a.d")
+	// * string array(path "a.e")
+	// * bool array (path "a.f.")
+	//
+	// We do NOT support the following types of claims:
+	// * complex claims(path "a")
+	// * float/integer claims(path "a.g")
+	// * float/integer array claims(path "a.h")
+	//
+	// Each value in this map contains a Rox token attribute name we want to add claim to.
+	// If, for example, value is "groups, claim would be found in "external_user.Attributes.groups" in token.
+	//
+	// Note: we only support this feature for OIDC auth provider.
 	ClaimMappings        map[string]string `protobuf:"bytes,13,rep,name=claim_mappings,json=claimMappings,proto3" json:"claim_mappings,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`

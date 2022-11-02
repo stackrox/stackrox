@@ -590,7 +590,7 @@ func (p *backendImpl) extractExternalClaims(extractor claimExtractor) (*tokens.E
 	}
 
 	externalClaims := userInfoToExternalClaims(&userInfo)
-	if err := extractCustomClaims(externalClaims, p.mappings, extractor); err != nil {
+	if err := mapCustomClaims(externalClaims, p.mappings, extractor); err != nil {
 		return nil, errors.Wrap(err, "failed to add custom mapped claims")
 	}
 	return externalClaims, nil
@@ -653,7 +653,7 @@ type claimExtractor interface {
 	Claims(v interface{}) error
 }
 
-func extractCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[string]string, claimExtractor claimExtractor) error {
+func mapCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[string]string, claimExtractor claimExtractor) error {
 	claims := make(map[string]interface{}, 0)
 	if err := claimExtractor.Claims(&claims); err != nil {
 		return errors.Wrap(err, "failed to extract claims from IdP's token")

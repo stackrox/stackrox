@@ -24,7 +24,7 @@ func (e *mockClaimExtractor) Claims(input interface{}) error {
 	}
 }
 
-func TestExtractCustomClaims(t *testing.T) {
+func TestMapCustomClaims(t *testing.T) {
 	for _, testCase := range []struct {
 		desc               string
 		claims             map[string]interface{}
@@ -97,8 +97,8 @@ func TestExtractCustomClaims(t *testing.T) {
 			claimExtractor := &mockClaimExtractor{
 				claims: c.claims,
 			}
-			if err := extractCustomClaims(claim, c.mappings, claimExtractor); (err == nil) == c.wantErr {
-				t.Errorf("extractCustomClaims() error = %v, wantErr %v", err, c.wantErr)
+			if err := mapCustomClaims(claim, c.mappings, claimExtractor); (err == nil) == c.wantErr {
+				t.Errorf("mapCustomClaims() error = %v, wantErr %v", err, c.wantErr)
 				return
 			}
 			for k, values := range c.expectedAttributes {
