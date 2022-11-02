@@ -5,19 +5,13 @@ import (
 
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
-)
-
-var (
-	sacHelper = sac.ForResource(resources.WorkflowAdministration).MustCreatePgSearchHelper()
 )
 
 // Searcher provides search functionality on existing Collections.
@@ -40,6 +34,7 @@ func New(storage postgres.Store, indexer index.Indexer) Searcher {
 }
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	scopedSafeSearcher := pkgPostgres.WithScoping(sacHelper.FilteredSearcher(unsafeSearcher))
+	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
+	scopedSafeSearcher := pkgPostgres.WithScoping(safeSearcher)
 	return sortfields.TransformSortFields(scopedSafeSearcher, schema.CollectionsSchema.OptionsMap)
 }
