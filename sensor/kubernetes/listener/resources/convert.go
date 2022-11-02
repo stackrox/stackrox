@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	"github.com/stackrox/rox/sensor/kubernetes/selector"
 	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -474,7 +475,7 @@ func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoute
 }
 
 func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
-	if svc.selector.Matches(createLabelsWithLen(w.PodLabels)) {
+	if svc.selector.Matches(selector.CreateLabelsWithLen(w.PodLabels)) {
 		return
 	}
 
