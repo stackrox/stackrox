@@ -341,7 +341,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestIDToKeyConversion() {
 	resKey, err := IDToKey(id)
 	suite.NoError(err)
 	suite.NotNil(resKey)
-	suite.Equal(*key, *resKey)
+	suite.Equal(key, resKey)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline() {

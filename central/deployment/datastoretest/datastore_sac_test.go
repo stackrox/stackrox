@@ -346,7 +346,7 @@ func (s *deploymentDatastoreSACSuite) TestUpsertDeployment() {
 			} else {
 				s.NoError(err)
 				s.True(found)
-				s.Equal(*deployment, *fetched)
+				s.Equal(deployment, fetched)
 			}
 		})
 	}
@@ -367,7 +367,7 @@ func (s *deploymentDatastoreSACSuite) TestGetDeployment() {
 			if c.ExpectedFound {
 				s.Require().True(found)
 				s.Require().NotNil(res)
-				s.Equal(*deployment, *res)
+				s.Equal(deployment, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -463,9 +463,9 @@ func (s *deploymentDatastoreSACSuite) runGetImagesForDeploymentTest(testContexts
 			s.NoError(err)
 			s.Require().Equal(1, len(images))
 			if (!expectOnlyDeploymentData) && c.ExpectedFound {
-				s.Equal(*imageToStore.GetName(), *images[0].GetName())
+				s.Equal(imageToStore.GetName(), images[0].GetName())
 			} else {
-				s.Equal(*imageFromDeployment.GetName(), *images[0].GetName())
+				s.Equal(imageFromDeployment.GetName(), images[0].GetName())
 			}
 		})
 	}
@@ -505,7 +505,7 @@ func (s *deploymentDatastoreSACSuite) TestListDeployment() {
 			if c.ExpectedFound {
 				s.True(found)
 				s.Require().NotNil(res)
-				s.Equal(*listDeployment, *res)
+				s.Equal(listDeployment, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -533,13 +533,13 @@ func (s *deploymentDatastoreSACSuite) TestRemoveDeployment() {
 			s.NoError(err)
 			s.Require().True(preFound)
 			listPreFetch := deploymentTypes.ConvertDeploymentToDeploymentList(preFetch)
-			s.Require().Equal(*listDeployment, *listPreFetch)
+			s.Require().Equal(listDeployment, listPreFetch)
 			if c.ExpectError {
 				s.Error(removeErr)
 				s.ErrorIs(removeErr, c.ExpectedError)
 				s.True(postFound)
 				listPostFetch := deploymentTypes.ConvertDeploymentToDeploymentList(postFetch)
-				s.Equal(*listDeployment, *listPostFetch)
+				s.Equal(listDeployment, listPostFetch)
 			} else {
 				s.NoError(removeErr)
 				s.False(postFound)

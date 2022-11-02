@@ -76,6 +76,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			if ty == nil || !isProtoMessageStructType(ty) {
 				continue
 			}
+			// Assignments to _struct literals_ are allowed
+			if _, isStructLit := expr.(*ast.CompositeLit); isStructLit {
+				continue
+			}
 			pass.Report(analysis.Diagnostic{
 				Pos:     expr.Pos(),
 				Message: "Do not copy protobuf message type values, use pointer assignments, Clone(), or github.com/stackrox/rox/pkg/transitional/protocompat.ShallowClone",

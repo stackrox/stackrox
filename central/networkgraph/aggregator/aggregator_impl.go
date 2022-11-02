@@ -84,7 +84,7 @@ func (a *aggregateToSupernetImpl) mapToSupernetIfNotfound(supernetCache map[stri
 			continue
 		}
 
-		mapToSupernet(a.tree, supernetCache, a.supernetPred, entity)
+		mapToSupernet(a.tree, supernetCache, a.supernetPred, &entity)
 	}
 }
 
@@ -124,9 +124,9 @@ func (a *aggregateDefaultToCustomExtSrcsImpl) Aggregate(conns []*storage.Network
 
 		// Move the connection from default external network to non-default supernet. If none is found, it gets mapped to INTERNET.
 		if networkgraph.IsKnownDefaultExternal(conn.GetProps().GetSrcEntity()) {
-			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.Props.SrcEntity)
+			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, &conn.Props.SrcEntity)
 		} else if networkgraph.IsKnownDefaultExternal(conn.GetProps().GetDstEntity()) {
-			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.Props.DstEntity)
+			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, &conn.Props.DstEntity)
 		}
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)

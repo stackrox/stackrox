@@ -114,10 +114,11 @@ func getCVEEdgeQuery(q *v1.Query) {
 		}
 
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.FixedBy.String() {
-			*q = *search.DisjunctionQuery(
+			// TODO: avoid this by making v1.Query a non-proto type.
+			q.Reset()
+			proto.Merge(q, search.DisjunctionQuery(
 				search.NewQueryBuilder().AddRegexes(search.FixedBy, matchFieldQuery.MatchFieldQuery.GetValue()).ProtoQuery(),
-				search.NewQueryBuilder().AddRegexes(search.ClusterCVEFixedBy, matchFieldQuery.MatchFieldQuery.GetValue()).ProtoQuery())
-
+				search.NewQueryBuilder().AddRegexes(search.ClusterCVEFixedBy, matchFieldQuery.MatchFieldQuery.GetValue()).ProtoQuery()))
 		}
 
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.Fixable.String() {
@@ -125,9 +126,12 @@ func getCVEEdgeQuery(q *v1.Query) {
 			if err != nil {
 				return
 			}
-			*q = *search.DisjunctionQuery(
+
+			// TODO: avoid this by making v1.Query a non-proto type.
+			q.Reset()
+			proto.Merge(q, search.DisjunctionQuery(
 				search.NewQueryBuilder().AddBools(search.Fixable, val).ProtoQuery(),
-				search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, val).ProtoQuery())
+				search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, val).ProtoQuery()))
 		}
 	default:
 		log.Errorf("Unhandled query type: %T; query was %s", q, proto.MarshalTextString(q))

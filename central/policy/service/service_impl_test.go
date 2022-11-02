@@ -187,7 +187,7 @@ func (s *PolicyServiceTestSuite) TestExportedPolicyHasNoSortFields() {
 func (s *PolicyServiceTestSuite) TestPoliciesHaveNoUnexpectedSORTFields() {
 	expectedSORTFields := set.NewStringSet("SORTLifecycleStage", "SORTEnforcement", "SORTName")
 	var policy storage.Policy
-	policyType := reflect.TypeOf(policy)
+	policyType := reflect.TypeOf(&policy).Elem()
 	numFields := policyType.NumField()
 	for i := 0; i < numFields; i++ {
 		fieldName := policyType.Field(i).Name

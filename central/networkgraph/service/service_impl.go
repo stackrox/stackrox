@@ -485,9 +485,13 @@ func filterFlowsAndMaskScopeAlienDeployments(
 	masker := newFlowGraphMasker()
 
 	for _, flow := range flows {
+		if flow.GetProps() == nil {
+			continue
+		}
 		skipFlow := false
-		entities := []*storage.NetworkEntityInfo{flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()}
-		for _, entity := range entities {
+		entityPtrs := []**storage.NetworkEntityInfo{&flow.Props.SrcEntity, &flow.Props.DstEntity}
+		for _, entityPtr := range entityPtrs {
+			entity := *entityPtr
 			// no masking or skipping required for non-deployment type entities.
 			if entity.GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
 				continue
@@ -511,7 +515,7 @@ func filterFlowsAndMaskScopeAlienDeployments(
 
 			// To avoid information leak we always show all masked neighbors
 			maskedDeployment := masker.GetMaskedDeployment(invisibleDeployment)
-			*entity = *networkgraph.NetworkEntityForDeployment(maskedDeployment)
+			*entityPtr = networkgraph.NetworkEntityForDeployment(maskedDeployment)
 		}
 		if skipFlow {
 			continue

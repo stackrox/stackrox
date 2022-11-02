@@ -129,7 +129,7 @@ func (s *podDatastoreSACSuite) TestGetPod() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(*pod, *res)
+				s.Equal(pod, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

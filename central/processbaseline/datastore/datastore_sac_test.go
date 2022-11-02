@@ -186,7 +186,7 @@ func (s *processBaselineSACTestSuite) TestGetProcessBaseline() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.Require().True(found)
-				s.Equal(*processBaseline, *res)
+				s.Equal(processBaseline, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

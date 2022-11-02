@@ -139,7 +139,7 @@ func (s *serviceAccountSACSuite) TestGetServiceAccount() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(*account, *res)
+				s.Equal(account, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

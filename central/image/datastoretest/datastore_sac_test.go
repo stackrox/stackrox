@@ -226,7 +226,7 @@ func (s *imageDatastoreSACSuite) TestUpsertImage() {
 				readImage, found, checkErr := s.datastore.GetImage(checkCtx, image.GetId())
 				s.NoError(checkErr)
 				s.True(found)
-				s.Equal(*image.GetName(), *readImage.GetName())
+				s.Equal(image.GetName(), readImage.GetName())
 			}
 		})
 	}
