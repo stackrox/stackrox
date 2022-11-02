@@ -87,11 +87,15 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
 
     function refreshClusterList(restSearch) {
         setFetchingClusters(true);
-        return fetchClustersWithRetentionInfo(restSearch).then((clustersResponse) => {
-            setCurrentClusters(clustersResponse.clusters);
-            setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
-            setFetchingClusters(false);
-        });
+        return fetchClustersWithRetentionInfo(restSearch)
+            .then((clustersResponse) => {
+                setCurrentClusters(clustersResponse.clusters);
+                setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
+                setFetchingClusters(false);
+            })
+            .catch(() => {
+                setFetchingClusters(false);
+            });
     }
 
     const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
@@ -270,7 +274,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
                     {(!fetchingClusters || pollingCount > 0) && currentClusters.length <= 0 && (
                         <AddClusterPrompt />
                     )}
-                    {(!fetchingClusters || pollingCount > 0) && currentClusters.length >= 0 && (
+                    {(!fetchingClusters || pollingCount > 0) && currentClusters.length > 0 && (
                         <div data-testid="clusters-table" className="h-full w-full">
                             <CheckboxTable
                                 ref={(table) => {
