@@ -53,6 +53,12 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 			ServerHandler: http.HandlerFunc(s.securedClusterHandler),
 			Compression:   false,
 		},
+		{
+			Route:         "/api/extensions/certgen/centraldb",
+			Authorizer:    user.With(permissions.Modify(resources.ServiceIdentity)),
+			ServerHandler: http.HandlerFunc(s.centralDBHandler),
+			Compression:   false,
+		},
 	}
 }
 
