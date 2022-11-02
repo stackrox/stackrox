@@ -656,7 +656,7 @@ type claimExtractor interface {
 func extractCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[string]string, claimExtractor claimExtractor) error {
 	claims := make(map[string]interface{}, 0)
 	if err := claimExtractor.Claims(&claims); err != nil {
-		return errors.Wrap(err, "failed to extract claims")
+		return errors.Wrap(err, "failed to extract claims from IdP's token")
 	}
 	for fromClaimPath, toClaimName := range mappings {
 		val, err := extractClaimFromPath(fromClaimPath, claims)
@@ -678,7 +678,7 @@ func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attribute
 			_, isArray := arrayVal.([]interface{})
 			_, isNestedStruct := arrayVal.(map[string]interface{})
 			if isArray || isNestedStruct {
-				return errors.Errorf("Unsupported claim type %T with value %+v", arrayVal, arrayVal)
+				return errors.Errorf("unsupported claim type %T with value %+v", arrayVal, arrayVal)
 			}
 			if err := addClaimToUserClaims(externalUserClaim, attributeName, arrayVal); err != nil {
 				return errors.Wrapf(err, "failed to add %d element of %+v", i, v)
@@ -689,7 +689,7 @@ func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attribute
 	case bool:
 		externalUserClaim.Attributes[attributeName] = append(externalUserClaim.Attributes[attributeName], strconv.FormatBool(v))
 	default:
-		return errors.Errorf("Unsupported claim type %T with value %+v", claimValue, claimValue)
+		return errors.Errorf("unsupported claim type %T with value %+v", claimValue, claimValue)
 	}
 	return nil
 }
