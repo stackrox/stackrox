@@ -1,0 +1,134 @@
+package marketing
+
+import (
+	"context"
+	"sync"
+	"time"
+
+	apDataStore "github.com/stackrox/rox/central/authprovider/datastore"
+	groupDataStore "github.com/stackrox/rox/central/group/datastore"
+	roles "github.com/stackrox/rox/central/role/datastore"
+	si "github.com/stackrox/rox/central/signatureintegration/datastore"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
+	mpkg "github.com/stackrox/rox/pkg/telemetry/marketing"
+	"github.com/stackrox/rox/pkg/version"
+)
+
+var (
+	log = logging.LoggerForModule()
+)
+
+type marketing struct {
+	telemeter mpkg.Telemeter
+	ticker    *time.Ticker
+	stopSig   concurrency.Signal
+	ctx       context.Context
+	cancel    context.CancelFunc
+	userAgent string
+}
+
+var (
+	m    *marketing
+	once sync.Once
+)
+
+func NewGatherer(t mpkg.Telemeter) {
+	once.Do(func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		m = &marketing{
+			telemeter: t,
+			userAgent: "central/" + version.GetMainVersion(),
+			ctx:       sac.WithAllAccess(ctx),
+			cancel:    cancel,
+			stopSig:   concurrency.NewSignal(),
+		}
+	})
+}
+
+func Singleton() *marketing {
+	return m
+}
+
+func (t *marketing) loop() {
+	for !t.stopSig.IsDone() {
+		select {
+		case <-t.ticker.C:
+			log.Info("Tick.")
+			go t.gather()
+		case <-t.stopSig.Done():
+			return
+		}
+	}
+	log.Info("Loop stopped.")
+}
+
+func (t *marketing) Start() {
+	if mpkg.Enabled() {
+		t.telemeter.Start()
+		t.ticker = time.NewTicker(1 * time.Minute)
+		go t.loop()
+		log.Info("Marketing telemetry data collection ticker enabled.")
+	}
+}
+
+func (t *marketing) Stop() {
+	if t != nil {
+		t.telemeter.Stop()
+		t.cancel()
+		t.stopSig.Signal()
+	}
+}
+
+func addTotal[T any](props map[string]any, key string, f func(context.Context) ([]*T, error)) {
+	ps, err := f(Singleton().ctx)
+	if err != nil {
+		log.Errorf("Failed to get %s: %v", key, err)
+	} else {
+		props["Total "+key] = len(ps)
+	}
+}
+
+func (t *marketing) gather() {
+	log.Info("Starting marketing telemetry data collection.")
+	defer log.Info("Done with marketing telemetry data collection.")
+
+	totals := make(map[string]any)
+	rs := roles.Singleton()
+
+	addTotal(totals, "PermissionSets", rs.GetAllPermissionSets)
+	addTotal(totals, "Roles", rs.GetAllRoles)
+	addTotal(totals, "Access Scopes", rs.GetAllAccessScopes)
+	addTotal(totals, "Signature Integrations", si.Singleton().GetAllSignatureIntegrations)
+
+	groups, err := groupDataStore.Singleton().GetAll(t.ctx)
+	if err != nil {
+		log.Error("Failed to get Groups: ", err)
+		return
+	}
+	providers, err := apDataStore.Singleton().GetAllAuthProviders(t.ctx)
+	if err != nil {
+		log.Error("Failed to get AuthProviders: ", err)
+		return
+	}
+
+	providerIdNames := make(map[string]string)
+	providerNames := make([]string, len(providers))
+	for _, provider := range providers {
+		providerIdNames[provider.GetId()] = provider.GetName()
+		providerNames = append(providerNames, provider.GetName())
+	}
+	totals["Auth Providers"] = providerNames
+
+	providerGroups := make(map[string]int)
+	for _, group := range groups {
+		id := group.GetProps().GetAuthProviderId()
+		providerGroups[id] = providerGroups[id] + 1
+	}
+
+	for id, n := range providerGroups {
+		totals["Total Groups of "+providerIdNames[id]] = n
+	}
+	t.telemeter.Identify(totals)
+}

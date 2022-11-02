@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/stackrox/rox/central/telemetry/marketing"
+
 	"github.com/NYTimes/gziphandler"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
@@ -312,6 +314,7 @@ func startServices() {
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
+	marketing.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -525,6 +528,10 @@ func startGRPCServer() {
 		observe.AuthzTraceInterceptor(authzTraceSink),
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
+
+	if enabledInterceptor := marketing.Init(); enabledInterceptor != nil {
+		config.UnaryInterceptors = append(config.UnaryInterceptors, enabledInterceptor)
+	}
 
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
@@ -814,6 +821,7 @@ func waitForTerminationSignal() {
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
+		{marketing.Singleton(), "marketing telemetry collector"},
 	}
 
 	var wg sync.WaitGroup
