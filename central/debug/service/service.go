@@ -563,13 +563,13 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	fetchAndAddJSONToZip(ctx, zipWriter, "system-configuration.json", s.getConfig)
 
 	// Get logs last to also catch logs made during creation of diag bundle.
-	if opts.logs == localLogs {
+	if opts.withCentral && opts.logs == localLogs {
 		if err := getLogs(zipWriter); err != nil {
 			log.Error(err)
 		}
 	}
 
-	if opts.withLogImbue {
+	if opts.withCentral && opts.withLogImbue {
 		if err := s.getLogImbue(ctx, zipWriter); err != nil {
 			log.Error(err)
 		}
@@ -628,11 +628,6 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 		} else {
 			opts.logs = noLogs
 		}
-	}
-
-	if env.DisableCentralDiagnostics.BooleanSetting() {
-		// Regardless of query, don't generate logs for managed central
-		opts.logs = noLogs
 	}
 
 	telemetryModeStr := query.Get("telemetry")
