@@ -54,7 +54,7 @@ describe('Clusters page', () => {
         it('should should redirect to the Clusters page', () => {
             visitDashboardWithNoClusters();
 
-            cy.url().should('contain', `${clustersUrl}/new`);
+            cy.url().should('contain', `${clustersUrl}`);
 
             cy.get(
                 'p:contains("You have successfully deployed a Red Hat Advanced Cluster Security platform.")'
