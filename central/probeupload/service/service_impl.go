@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -79,7 +80,7 @@ func (s *service) CustomRoutes() []routes.CustomRoute {
 		{
 			Route:         "/api/extensions/probeupload",
 			Authorizer:    user.With(permissions.Modify(resources.ProbeUpload)),
-			ServerHandler: http.HandlerFunc(s.handleProbeUpload),
+			ServerHandler: httputil.HandlerNotImplementedIfSettingDisabled(!env.DisableKernelPackageUpload.BooleanSetting(), http.HandlerFunc(s.handleProbeUpload)),
 			Compression:   false,
 		},
 		{
