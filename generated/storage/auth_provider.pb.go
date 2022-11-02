@@ -82,7 +82,7 @@ type AuthProvider struct {
 	// * float/integer array claims(path "a.h")
 	//
 	// Each value in this map contains a Rox token attribute name we want to add claim to.
-	// If, for example, value is "groups, claim would be found in "external_user.Attributes.groups" in token.
+	// If, for example, value is "groups", claim would be found in "external_user.Attributes.groups" in token.
 	//
 	// Note: we only support this feature for OIDC auth provider.
 	ClaimMappings        map[string]string `protobuf:"bytes,13,rep,name=claim_mappings,json=claimMappings,proto3" json:"claim_mappings,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
