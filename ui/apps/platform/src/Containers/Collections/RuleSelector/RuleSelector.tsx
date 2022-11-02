@@ -30,6 +30,7 @@ export type RuleSelectorProps = {
         scopedResourceSelector: ScopedResourceSelector
     ) => void;
     validationErrors: FormikErrors<ScopedResourceSelector> | undefined;
+    isDisabled?: boolean;
 };
 
 function RuleSelector({
@@ -37,6 +38,7 @@ function RuleSelector({
     scopedResourceSelector,
     handleChange,
     validationErrors,
+    isDisabled = false,
 }: RuleSelectorProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const pluralEntity = pluralize(entityType);
@@ -84,6 +86,7 @@ function RuleSelector({
                 onToggle={onToggle}
                 selections={selection}
                 onSelect={onRuleOptionSelect}
+                isDisabled={isDisabled}
             >
                 <SelectOption value="All">All {pluralEntity.toLowerCase()}</SelectOption>
                 <SelectOption value="ByName">{pluralEntity} with names matching</SelectOption>
@@ -96,6 +99,7 @@ function RuleSelector({
                     scopedResourceSelector={scopedResourceSelector}
                     handleChange={handleChange}
                     validationErrors={validationErrors}
+                    isDisabled={isDisabled}
                 />
             )}
 
@@ -105,6 +109,7 @@ function RuleSelector({
                     scopedResourceSelector={scopedResourceSelector}
                     handleChange={handleChange}
                     validationErrors={validationErrors}
+                    isDisabled={isDisabled}
                 />
             )}
         </div>

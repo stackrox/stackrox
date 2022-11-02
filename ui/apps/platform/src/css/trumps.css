@@ -80,6 +80,11 @@ button.pf-c-toggle-group__button:disabled {
     border-width: 1px !important;
 }
 
+/* Un-override the above override when the <Select> component is disabled */
+.pf-c-select__toggle.pf-m-disabled::before {
+    border-width: inherit !important;
+}
+
 /* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
 .pf-c-button__icon.pf-m-start svg,
 .pf-c-button__icon.pf-m-end svg,

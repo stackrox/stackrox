@@ -20,6 +20,9 @@ import {
     DropdownItem,
     DropdownSeparator,
     DropdownToggle,
+    EmptyState,
+    EmptyStateIcon,
+    EmptyStateVariant,
     Flex,
     FlexItem,
     Form,
@@ -28,8 +31,10 @@ import {
     Text,
     TextInput,
     Title,
+    Truncate,
 } from '@patternfly/react-core';
-import { CaretDownIcon } from '@patternfly/react-icons';
+import { CaretDownIcon, CubesIcon } from '@patternfly/react-icons';
+import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import isEmpty from 'lodash/isEmpty';
@@ -45,6 +50,32 @@ import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
 import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
+
+function AttachedCollectionTable({ collections }: { collections: CollectionResponse[] }) {
+    return collections.length > 0 ? (
+        <TableComposable aria-label="Attached collections" variant={TableVariant.compact}>
+            <Tbody>
+                {collections.map(({ name, description }) => (
+                    <Tr key={name}>
+                        <Td dataLabel="Name">
+                            <Button variant="link" className="pf-u-pl-0" isInline>
+                                {name}
+                            </Button>
+                        </Td>
+                        <Td dataLabel="Description">
+                            <Truncate content={description} />
+                        </Td>
+                    </Tr>
+                ))}
+            </Tbody>
+        </TableComposable>
+    ) : (
+        <EmptyState variant={EmptyStateVariant.xs}>
+            <EmptyStateIcon icon={CubesIcon} />
+            <p>There are no other collections attached to this collection</p>
+        </EmptyState>
+    );
+}
 
 export type CollectionFormProps = {
     hasWriteAccessForCollections: boolean;
@@ -137,6 +168,7 @@ function CollectionForm({
     }, [toggleDrawer, useInlineDrawer]);
 
     const pageTitle = action.type === 'create' ? 'Create collection' : values.name;
+    const isReadOnly = action.type === 'view' || !hasWriteAccessForCollections;
 
     function onEditCollection(id: string) {
         history.push({
@@ -317,6 +349,7 @@ function CollectionForm({
                                                     validated={errors.name ? 'error' : 'default'}
                                                     onChange={(_, e) => handleChange(e)}
                                                     onBlur={handleBlur}
+                                                    isDisabled={isReadOnly}
                                                 />
                                             </FormGroup>
                                         </FlexItem>
@@ -328,6 +361,7 @@ function CollectionForm({
                                                     value={values.description}
                                                     onChange={(_, e) => handleChange(e)}
                                                     onBlur={handleBlur}
+                                                    isDisabled={isReadOnly}
                                                 />
                                             </FormGroup>
                                         </FlexItem>
@@ -339,19 +373,26 @@ function CollectionForm({
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsMd' }}
                                 >
-                                    <Title className="pf-u-mb-xs" headingLevel="h2">
-                                        Add new collection rules
+                                    <Title
+                                        className={isReadOnly ? 'pf-u-mb-md' : 'pf-u-mb-xs'}
+                                        headingLevel="h2"
+                                    >
+                                        Collection rules
                                     </Title>
-                                    <p>
-                                        Select deployments via rules. You can use regular
-                                        expressions (RE2 syntax).
-                                    </p>
-                                    <Divider className="pf-u-mb-lg" component="div" />
+                                    {!isReadOnly && (
+                                        <>
+                                            <p>
+                                                Select deployments via rules. You can use regular
+                                                expressions (RE2 syntax).
+                                            </p>
+                                        </>
+                                    )}
                                     <RuleSelector
                                         entityType="Deployment"
                                         scopedResourceSelector={values.resourceSelectors.Deployment}
                                         handleChange={onResourceSelectorChange}
                                         validationErrors={errors.resourceSelectors?.Deployment}
+                                        isDisabled={isReadOnly}
                                     />
                                     <Label
                                         variant="outline"
@@ -365,6 +406,7 @@ function CollectionForm({
                                         scopedResourceSelector={values.resourceSelectors.Namespace}
                                         handleChange={onResourceSelectorChange}
                                         validationErrors={errors.resourceSelectors?.Namespace}
+                                        isDisabled={isReadOnly}
                                     />
                                     <Label
                                         variant="outline"
@@ -378,6 +420,7 @@ function CollectionForm({
                                         scopedResourceSelector={values.resourceSelectors.Cluster}
                                         handleChange={onResourceSelectorChange}
                                         validationErrors={errors.resourceSelectors?.Cluster}
+                                        isDisabled={isReadOnly}
                                     />
                                 </Flex>
 
@@ -387,13 +430,23 @@ function CollectionForm({
                                     spaceItems={{ default: 'spaceItemsMd' }}
                                 >
                                     <Title className="pf-u-mb-xs" headingLevel="h2">
-                                        Attach existing collections
+                                        Attached collections
                                     </Title>
-                                    <p>Extend this collection by attaching other sets.</p>
-                                    <CollectionAttacher
-                                        initialEmbeddedCollections={initialEmbeddedCollections}
-                                        onSelectionChange={onEmbeddedCollectionsChange}
-                                    />
+                                    {isReadOnly ? (
+                                        <AttachedCollectionTable
+                                            collections={initialEmbeddedCollections}
+                                        />
+                                    ) : (
+                                        <>
+                                            <p>Extend this collection by attaching other sets.</p>
+                                            <CollectionAttacher
+                                                initialEmbeddedCollections={
+                                                    initialEmbeddedCollections
+                                                }
+                                                onSelectionChange={onEmbeddedCollectionsChange}
+                                            />
+                                        </>
+                                    )}
                                 </Flex>
                             </Flex>
                             {action.type !== 'view' && (

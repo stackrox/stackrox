@@ -7,7 +7,6 @@ import {
     EmptyStateVariant,
     Flex,
     FormGroup,
-    Title,
 } from '@patternfly/react-core';
 import { CubesIcon, MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
@@ -92,7 +91,7 @@ function BacklogTable<Item>({
             ) : (
                 <EmptyState variant={EmptyStateVariant.xs}>
                     <EmptyStateIcon icon={CubesIcon} />
-                    <Title headingLevel="h4">No items remaining</Title>
+                    <p>No items remaining</p>
                 </EmptyState>
             )}
         </FormGroup>
