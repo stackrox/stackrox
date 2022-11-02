@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	mocks2 "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output/mocks"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/mocks"
 	"github.com/stretchr/testify/suite"
 	"k8s.io/apimachinery/pkg/types"
@@ -73,7 +74,7 @@ func (suite *ResourceEventHandlerImplTestSuite) newHandlerImpl() *resourceEventH
 	return &resourceEventHandlerImpl{
 		eventLock:        &eventLock,
 		dispatcher:       suite.dispatcher,
-		output:           make(chan *central.MsgFromSensor),
+		outputQueue:      mocks2.NewMockQueue(),
 		syncingResources: &treatCreatesAsUpdates,
 
 		hasSeenAllInitialIDsSignal: concurrency.NewSignal(),
