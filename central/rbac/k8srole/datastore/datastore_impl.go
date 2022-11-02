@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
@@ -39,18 +40,21 @@ func (d *datastoreImpl) buildIndex(ctx context.Context) error {
 
 	var roles []*storage.K8SRole
 	var count int
-	err := d.storage.Walk(ctx, func(role *storage.K8SRole) error {
-		roles = append(roles, role)
-		if len(roles) == batchSize {
-			if err := d.indexer.AddK8SRoles(roles); err != nil {
-				return err
+	// Postgres op retries not required. This is related to bleve indexing which is not used in postgres.
+	walkFn := func() error {
+		return d.storage.Walk(ctx, func(role *storage.K8SRole) error {
+			roles = append(roles, role)
+			if len(roles) == batchSize {
+				if err := d.indexer.AddK8SRoles(roles); err != nil {
+					return err
+				}
+				roles = roles[:0]
 			}
-			roles = roles[:0]
-		}
-		count++
-		return nil
-	})
-	if err != nil {
+			count++
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 	if err := d.indexer.AddK8SRoles(roles); err != nil {

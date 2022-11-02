@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -47,11 +48,14 @@ func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, erro
 
 func (ds *dataStoreImpl) getAllRolesNoScopeCheck(ctx context.Context) ([]*storage.Role, error) {
 	var roles []*storage.Role
-	err := ds.roleStorage.Walk(ctx, func(role *storage.Role) error {
-		roles = append(roles, role)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		roles = roles[:0]
+		return ds.roleStorage.Walk(ctx, func(role *storage.Role) error {
+			roles = append(roles, role)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 
@@ -143,11 +147,14 @@ func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.P
 	}
 
 	var permissionSets []*storage.PermissionSet
-	err := ds.permissionSetStorage.Walk(ctx, func(permissionSet *storage.PermissionSet) error {
-		permissionSets = append(permissionSets, permissionSet)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		permissionSets = permissionSets[:0]
+		return ds.permissionSetStorage.Walk(ctx, func(permissionSet *storage.PermissionSet) error {
+			permissionSets = append(permissionSets, permissionSet)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 
@@ -266,11 +273,14 @@ func (ds *dataStoreImpl) GetAllAccessScopes(ctx context.Context) ([]*storage.Sim
 	}
 
 	var scopes []*storage.SimpleAccessScope
-	err := ds.accessScopeStorage.Walk(ctx, func(scope *storage.SimpleAccessScope) error {
-		scopes = append(scopes, scope)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		scopes = scopes[:0]
+		return ds.accessScopeStorage.Walk(ctx, func(scope *storage.SimpleAccessScope) error {
+			scopes = append(scopes, scope)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 

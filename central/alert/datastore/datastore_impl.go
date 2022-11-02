@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -448,8 +449,11 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Walk(ctx, func(alert *storage.Alert) error {
-		listAlert := convert.AlertToListAlert(alert)
-		return fn(listAlert)
-	})
+	walkFn := func() error {
+		return ds.storage.Walk(ctx, func(alert *storage.Alert) error {
+			listAlert := convert.AlertToListAlert(alert)
+			return fn(listAlert)
+		})
+	}
+	return pgutils.RetryIfPostgres(walkFn)
 }
