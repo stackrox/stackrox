@@ -87,24 +87,24 @@ func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 			size: 2,
 		},
 		{
-			desc: "Test Graph Init initBatchSize-1",
-			size: initBatchSize - 1,
+			desc: "Test Graph Init graphInitBatchSize-1",
+			size: graphInitBatchSize - 1,
 		},
 		{
-			desc: "Test Graph Init initBatchSize",
-			size: initBatchSize,
+			desc: "Test Graph Init graphInitBatchSize",
+			size: graphInitBatchSize,
 		},
 		{
-			desc: "Test Graph Init initBatchSize+1",
-			size: initBatchSize + 1,
+			desc: "Test Graph Init graphInitBatchSize+1",
+			size: graphInitBatchSize + 1,
 		},
 		{
-			desc: "Test Graph Init initBatchSize+2",
-			size: initBatchSize + 2,
+			desc: "Test Graph Init graphInitBatchSize+2",
+			size: graphInitBatchSize + 2,
 		},
 		{
-			desc: "Test Graph Init initBatchSize*2",
-			size: initBatchSize * 2,
+			desc: "Test Graph Init graphInitBatchSize*2",
+			size: graphInitBatchSize * 2,
 		},
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
