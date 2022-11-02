@@ -49,7 +49,7 @@ func (c *nodeScanHandlerImpl) run() {
 		select {
 		case <-c.stopC.Done():
 			c.stoppedC.SignalWithError(c.stopC.Err())
-
+			return
 		case scan, ok := <-c.nodeScans:
 			if !ok {
 				c.stoppedC.SignalWithError(errors.New("channel receiving node scans v2 is closed"))
