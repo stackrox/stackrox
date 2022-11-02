@@ -35,9 +35,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	nodeFilter := []ast.Node{
 		(*ast.FuncType)(nil),
 		(*ast.StructType)(nil),
+		(*ast.CallExpr)(nil),
+		(*ast.AssignStmt)(nil),
 	}
 	common.FilteredPreorder(inspectResult, common.Not(common.IsGeneratedFile), nodeFilter, func(n ast.Node) {
 		var relevantFields []*ast.Field
+		var relevantExprs []ast.Expr
 		switch t := n.(type) {
 		case *ast.FuncType:
 			if t.Params != nil {
@@ -50,22 +53,17 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			if t.Fields != nil {
 				relevantFields = append(relevantFields, t.Fields.List...)
 			}
+		case *ast.CallExpr:
+			if !isNew(t.Fun) {
+				relevantExprs = append(relevantExprs, t.Args...)
+			}
+		case *ast.AssignStmt:
+			relevantExprs = append(relevantExprs, t.Rhs...)
 		}
 
 		for _, field := range relevantFields {
 			ty := pass.TypesInfo.TypeOf(field.Type)
-			if ty == nil {
-				continue
-			}
-			if named, _ := ty.(*types.Named); named == nil || !protoTypesRegex.MatchString(named.String()) {
-				continue
-			}
-			structTy, _ := ty.Underlying().(*types.Struct)
-			if structTy == nil {
-				continue
-			}
-			tyPtr := types.NewPointer(ty)
-			if !types.Implements(tyPtr, protoMsgType) {
+			if ty == nil || !isProtoMessageStructType(ty) {
 				continue
 			}
 			pass.Report(analysis.Diagnostic{
@@ -73,6 +71,39 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				Message: "Always use pointers to proto message types in parameters, return values, and struct fields",
 			})
 		}
+		for _, expr := range relevantExprs {
+			ty := pass.TypesInfo.TypeOf(expr)
+			if ty == nil || !isProtoMessageStructType(ty) {
+				continue
+			}
+			pass.Report(analysis.Diagnostic{
+				Pos:     expr.Pos(),
+				Message: "Do not copy protobuf message type values, use pointer assignments, Clone(), or github.com/stackrox/rox/pkg/transitional/protocompat.ShallowClone",
+			})
+		}
 	})
 	return nil, nil
+}
+
+func isProtoMessageStructType(ty types.Type) bool {
+	if named, _ := ty.(*types.Named); named == nil || !protoTypesRegex.MatchString(named.String()) {
+		return false
+	}
+	structTy, _ := ty.Underlying().(*types.Struct)
+	if structTy == nil {
+		return false
+	}
+	tyPtr := types.NewPointer(ty)
+	if !types.Implements(tyPtr, protoMsgType) {
+		return false
+	}
+	return true
+}
+
+func isNew(e ast.Expr) bool {
+	ident, _ := e.(*ast.Ident)
+	if ident == nil {
+		return false
+	}
+	return ident.Name == "new"
 }
