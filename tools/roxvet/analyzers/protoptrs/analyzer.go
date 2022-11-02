@@ -6,6 +6,7 @@ import (
 	"go/types"
 	"regexp"
 
+	"github.com/stackrox/rox/tools/roxvet/common"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
@@ -35,7 +36,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.FuncType)(nil),
 		(*ast.StructType)(nil),
 	}
-	inspectResult.Preorder(nodeFilter, func(n ast.Node) {
+	common.FilteredPreorder(inspectResult, common.Not(common.IsGeneratedFile), nodeFilter, func(n ast.Node) {
 		var relevantFields []*ast.Field
 		switch t := n.(type) {
 		case *ast.FuncType:
