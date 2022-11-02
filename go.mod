@@ -64,7 +64,7 @@ require (
 	github.com/mailru/easyjson v0.7.7
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220905143132-4bca39e41111
+	github.com/np-guard/cluster-topology-analyzer v1.3.2
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
