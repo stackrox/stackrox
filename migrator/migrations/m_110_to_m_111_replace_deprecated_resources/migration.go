@@ -1,4 +1,4 @@
-package m109tom110
+package m110tom111
 
 import (
 	"github.com/gogo/protobuf/proto"
@@ -41,8 +41,8 @@ const (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: 109,
-		VersionAfter:   storage.Version{SeqNum: 110},
+		StartingSeqNum: 110,
+		VersionAfter:   storage.Version{SeqNum: 111},
 		Run: func(databases *types.Databases) error {
 			return migrateReplacedResourcesInPermissionSets(databases.RocksDB)
 		},
