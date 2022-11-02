@@ -74,11 +74,11 @@ test_upgrade() {
     store_qa_test_results "multiarch-test"
     [[ ! -f FAIL ]] || die "multiarch-test failed"
 
-    ### touch /tmp/hold
-    ### while [[ -e /tmp/hold ]]; do
-    ###     info "Holding this job for debug"
-    ###     sleep 60
-    ### done
+    touch /tmp/hold
+    while [[ -e /tmp/hold ]]; do
+        info "Holding this job for debug"
+        sleep 60
+    done
 }
 
 preamble() {
