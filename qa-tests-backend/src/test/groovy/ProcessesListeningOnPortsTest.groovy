@@ -64,95 +64,9 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8081,fork STDOUT)" as String,]),
-//            new Deployment()
-//                    .setName(NGINXCONNECTIONTARGET)
-//                    .setImage("quay.io/rhacs-eng/qa:nginx")
-//                    .addPort(80)
-//                    .addLabel("app", NGINXCONNECTIONTARGET)
-//                    .setExposeAsService(true)
-//                    //.setCreateLoadBalancer(true)
-//                    //.setCreateRoute(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT),
         ]
     }
 
-//    // Source deployments
-//    @Shared
-//    private List<Deployment> sourceDeployments
-//
-//    def buildSourceDeployments() {
-//        return [
-//            new Deployment()
-//                    .setName(NOCONNECTIONSOURCE)
-//                    .setImage("quay.io/rhacs-eng/qa:nginx")
-//                    .addLabel("app", NOCONNECTIONSOURCE),
-//            new Deployment()
-//                    .setName(SHORTCONSISTENTSOURCE)
-//                    .setImage("quay.io/rhacs-eng/qa:nginx-1.15.4-alpine")
-//                    .addLabel("app", SHORTCONSISTENTSOURCE)
-//                    .setCommand(["/bin/sh", "-c",])
-//                    .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-//                                      "do wget -S -T 2 http://${NGINXCONNECTIONTARGET}; " +
-//                                      "done" as String,]),
-//            new Deployment()
-//                    .setName(SINGLECONNECTIONSOURCE)
-//                    .setImage("quay.io/rhacs-eng/qa:nginx-1.15.4-alpine")
-//                    .addLabel("app", SINGLECONNECTIONSOURCE)
-//                    .setCommand(["/bin/sh", "-c",])
-//                    .setArgs(["wget -S -T 2 http://${NGINXCONNECTIONTARGET} && " +
-//                                      "while sleep 30; do echo hello; done" as String,]),
-//            new Deployment()
-//                    .setName(UDPCONNECTIONSOURCE)
-//                    .setImage("quay.io/rhacs-eng/qa:socat")
-//                    .addLabel("app", UDPCONNECTIONSOURCE)
-//                    .setCommand(["/bin/sh", "-c",])
-//                    .setArgs(["while sleep 5; " +
-//                                      "do echo \"Hello from ${UDPCONNECTIONSOURCE}\" | " +
-//                                      "socat "+SOCAT_DEBUG+" -s STDIN UDP:${UDPCONNECTIONTARGET}:8080; " +
-//                                      "done" as String,]),
-//            new Deployment()
-//                    .setName(TCPCONNECTIONSOURCE)
-//                    .setImage("quay.io/rhacs-eng/qa:socat")
-//                    .addLabel("app", TCPCONNECTIONSOURCE)
-//                    .setCommand(["/bin/sh", "-c",])
-//                    .setArgs(["while sleep 5; " +
-//                                      "do echo \"Hello from ${TCPCONNECTIONSOURCE}\" | " +
-//                                      "socat "+SOCAT_DEBUG+" -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
-//                                      "done" as String,]),
-//            new Deployment()
-//                    .setName(MULTIPLEPORTSCONNECTION)
-//                    .setImage("quay.io/rhacs-eng/qa:socat")
-//                    .addLabel("app", MULTIPLEPORTSCONNECTION)
-//                    .setCommand(["/bin/sh", "-c",])
-//                    .setArgs(["while sleep 5; " +
-//                                      "do echo \"Hello from ${MULTIPLEPORTSCONNECTION}\" | " +
-//                                      "socat "+SOCAT_DEBUG+" -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
-//                                      "echo \"Hello from ${MULTIPLEPORTSCONNECTION}\" | " +
-//                                      "socat "+SOCAT_DEBUG+" -s STDIN TCP:${TCPCONNECTIONTARGET}:8080; " +
-//                                      "done" as String,]),
-//            new Deployment()
-//                    .setName(EXTERNALDESTINATION)
-//                    .setImage("quay.io/rhacs-eng/qa:nginx-1.15.4-alpine")
-//                    .addLabel("app", EXTERNALDESTINATION)
-//                    .setCommand(["/bin/sh", "-c",])
-//                    .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-//                                      "do wget -S -T 2 http://www.google.com; " +
-//                                      "done" as String,]),
-//            new Deployment()
-//                    .setName("${TCPCONNECTIONSOURCE}-qa2")
-//                    .setNamespace(OTHER_NAMESPACE)
-//                    .setImage("quay.io/rhacs-eng/qa:socat")
-//                    .addLabel("app", "${TCPCONNECTIONSOURCE}-qa2")
-//                    .setCommand(["/bin/sh", "-c",])
-//                    .setArgs(["while sleep 5; " +
-//                                      "do echo \"Hello from ${TCPCONNECTIONSOURCE}-qa2\" | " +
-//                                      "socat "+SOCAT_DEBUG+" -s STDIN "+
-//                                         "TCP:${TCPCONNECTIONTARGET}.qa.svc.cluster.local:80; " +
-//                                      "done" as String,]),
-//        ]
-//    }
-//
-//    @Shared
-//    private List<Deployment> deployments
 
     def createDeployments() {
         targetDeployments = buildTargetDeployments()
@@ -160,29 +74,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         for (Deployment d : targetDeployments) {
             assert Services.waitForDeployment(d)
         }
-        //sourceDeployments = buildSourceDeployments()
-        //orchestrator.batchCreateDeployments(sourceDeployments)
-        //for (Deployment d : sourceDeployments) {
-        //    assert Services.waitForDeployment(d)
-        //}
-        //deployments = sourceDeployments + targetDeployments
-        //
-        // Commenting out ICMP test setup for now
-        // See ROX-635
-        //
-        /*
-        def nginxIp = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.pods?.get(0)?.podIP
-        Deployment icmp = new Deployment()
-                .setName(ICMPCONNECTIONSOURCE)
-                .setImage("ubuntu")
-                .addLabel("app", ICMPCONNECTIONSOURCE)
-                .setCommand(["/bin/sh", "-c",])
-                .setArgs(["apt-get update && " +
-                                  "apt-get install iputils-ping -y && " +
-                                  "ping ${nginxIp}" as String,])
-        orchestrator.createDeployment(icmp)
-        DEPLOYMENTS.add(icmp)
-        */
     }
 
     def setupSpec() {
@@ -249,12 +140,12 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
         log.info ""
         log.info ""
-        log.info "hi"
+        log.info "*************"
         log.info "deploymentId= ${deploymentId}"
         log.info "name= ${name}"
         log.info "namespace= ${namespace}"
         log.info "${processesListeningOnPorts}"
-        log.info "hi"
+        log.info "*************"
         log.info ""
         log.info ""
 
@@ -268,12 +159,12 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
         log.info ""
         log.info ""
-        log.info "hi"
+        log.info "*************"
         log.info "deploymentId= ${deploymentId}"
         log.info "name= ${name}"
         log.info "namespace= ${namespace}"
         log.info "${processesListeningOnPorts}"
-        log.info "hi"
+        log.info "*************"
         log.info ""
         log.info ""
 
@@ -286,9 +177,9 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         log.info ""
         log.info ""
-        log.info "hi"
+        log.info "*************"
         log.info "${processesListeningOnPorts}"
-        log.info "hi"
+        log.info "*************"
         log.info ""
         log.info ""
 
@@ -314,35 +205,30 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint1_1 = list1.find { it.port == 80 }
 
         assert endpoint1_1
+	assert endpoint1_1.process.containerName == TCPCONNECTIONTARGET1 
+	assert endpoint1_1.process.processName == "socat"
+	assert endpoint1_1.process.processExecFilePath == "/usr/bin/socat"
+	// assert endpoint1_1.process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
 
+	def endpoint1_2 = list1.find { it.port == 8080 }
 
-//            new Deployment()
-//                    .setName(TCPCONNECTIONTARGET1)
-//                    .setImage("quay.io/rhacs-eng/qa:socat")
-//                    .addPort(80)
-//                    .addPort(8080)
-//                    .addLabel("app", TCPCONNECTIONTARGET1)
-//                    .setExposeAsService(true)
-//                    .setCommand(["/bin/sh", "-c",])
-//                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:80,fork STDOUT & " +
-//                                      "socat "+SOCAT_DEBUG+" TCP-LISTEN:8080,fork STDOUT)" as String,]),
-//            new Deployment()
-//                    .setName(TCPCONNECTIONTARGET2)
-//                    .setImage("quay.io/rhacs-eng/qa:socat")
-//                    .addPort(8081, "TCP")
-//                    .addLabel("app", TCPCONNECTIONTARGET2)
-//                    .setExposeAsService(true)
-//                    .setCommand(["/bin/sh", "-c",])
-//                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8081,fork STDOUT)" as String,]),
-//
-	
-	
+        assert endpoint1_2
+	assert endpoint1_2.process.containerName == TCPCONNECTIONTARGET1 
+	assert endpoint1_2.process.processName == "socat"
+	assert endpoint1_2.process.processExecFilePath == "/usr/bin/socat"
+	assert endpoint1_2.process.processArgs == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
 
-       // assert list.find { it.deploymentId == "nginx" } != null
-       // assert list.get(0).processesListeningOnPortsList.port == [80]
-       // assert list.get(0).processesListeningOnPortsList.process.processName == ["nginx"]
-       // assert list.get(0).processesListeningOnPortsList.process.processExecFilePath == ["/usr/bin/nginx"]
-       // assert list.get(0).processesListeningOnPortsList.process.processArgs == ["fake args"]
+        def list2 = processesForDeployment2.processesListeningOnPortsList
+
+	assert list2.size() == 1
+
+	def endpoint2 = list2.get(0)
+
+        assert endpoint2.port == 8081
+	assert endpoint2.process.containerName == TCPCONNECTIONTARGET2
+	assert endpoint2.process.processName == "socat"
+	assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
+	assert endpoint2.process.processArgs == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
     }
 
     @Category([BAT, Integration])
@@ -356,11 +242,11 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         String name = targetDeployments[0].getName()
         log.info ""
         log.info ""
-        log.info "hi"
+        log.info "*************"
         log.info "deploymentId= ${deploymentId}"
         log.info "name= ${name}"
         log.info "namespace= ${namespace}"
-        log.info "hi"
+        log.info "*************"
         log.info ""
         log.info ""
         def processesListeningOnPorts = evaluateWithRetry(10, 10) {
@@ -372,40 +258,22 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert processesListeningOnPorts
 
         def list = processesListeningOnPorts.processesListeningOnPortsList
-        assert list.size() == 3
+        assert list.size() == 2
 
-        assert list.get(0).port == [80]
-        assert list.get(0).process.containerName == [TCPCONNECTIONTARGET]
-        assert list.get(0).process.processName == ["socat"]
-        assert list.get(0).process.processExecFilePath == ["/usr/bin/socat"]
-        assert list.get(0).process.processArgs == ["-d -d -v TCP-LISTEN:80,fork STDOUT"]
+        def endpoint1 = list.find { it.port == 80 }
 
-//        deploymentId = targetDeployments[1].getDeploymentUid()
-//        name = targetdeployments[1].getName()
-//        log.info ""
-//        log.info ""
-//        log.info "hi"
-//        log.info "deploymentId= ${deploymentId}"
-//        log.info "name= ${name}"
-//        log.info "hi"
-//        log.info ""
-//        log.info ""
-//
-//        processesListeningOnPorts = evaluateWithRetry(10, 10) {
-//                def temp = ProcessesListeningOnPortsService
-//                        .getProcessesListeningOnPortsResponse(namespace, deploymentId)
-//                return temp
-//        }
-//
-//        assert processesListeningOnPorts
-//
-//        list = processesListeningOnPorts.processesListeningOnPortsList
-//        assert list.size() == 1
-//
-//        assert list.get(0).port == 80
-//        assert list.get(0).process.containerName == TCPCONNECTIONTARGET
-//        assert list.get(0).process.processName == "socat"
-//        assert list.get(0).process.processExecFilePath == "/usr/bin/socat"
-//        assert list.get(0).process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
+        assert endpoint1
+	assert endpoint1.process.containerName == TCPCONNECTIONTARGET1
+	assert endpoint1.process.processName == "socat"
+	assert endpoint1.process.processExecFilePath == "/usr/bin/socat"
+	// assert endpoint1.process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
+
+	def endpoint2 = list.find { it.port == 8080 }
+
+        assert endpoint2
+	assert endpoint2.process.containerName == TCPCONNECTIONTARGET1
+	assert endpoint2.process.processName == "socat"
+	assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
+	assert endpoint2.process.processArgs == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
     }
 }
