@@ -72,13 +72,14 @@ test_upgrade() {
     export ORCHESTRATOR_FLAVOR="k8s"
     make -C qa-tests-backend multiarch-test || touch FAIL
     store_qa_test_results "multiarch-test"
-    [[ ! -f FAIL ]] || die "multiarch-test failed"
 
     touch /tmp/hold
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
         sleep 60
     done
+
+    [[ ! -f FAIL ]] || die "multiarch-test failed"
 }
 
 preamble() {
