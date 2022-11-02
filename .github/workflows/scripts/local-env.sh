@@ -10,7 +10,8 @@ export GITHUB_STEP_SUMMARY=/dev/stdout
 export GITHUB_OUTPUT=/dev/stdout
 GITHUB_ACTOR=$(git config --get user.email)
 export GITHUB_ACTOR
-export GITHUB_REPOSITORY=stackrox/stackrox
+GITHUB_REPOSITORY=$(gh repo view --json nameWithOwner --jq '.nameWithOwner')
+export GITHUB_REPOSITORY
 export GITHUB_SERVER_URL=https://github.com
 
 main_branch=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
