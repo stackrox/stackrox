@@ -118,7 +118,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		admCtrlMsgForwarder,
 		enforcer,
 		networkFlowManager,
-		compliance.NewNodeScanHandler(complianceService.NodeScansV2()),
+		compliance.NewNodeScanHandler(complianceService.NodeScans()),
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),

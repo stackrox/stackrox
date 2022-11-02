@@ -18,7 +18,7 @@ type nodeScanHandlerImpl struct {
 }
 
 func (c *nodeScanHandlerImpl) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.NodeScanningV2}
+	return []centralsensor.SensorCapability{centralsensor.NodeScanningCap}
 }
 
 func (c *nodeScanHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
@@ -38,7 +38,7 @@ func (c *nodeScanHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return &c.stoppedC
 }
 
-func (c *nodeScanHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (c *nodeScanHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	// This component doesn't actually process or handle any messages sent from Central to Sensor (yet).
 	// It uses the sensor component so that the lifecycle (start, stop) can be handled when Sensor starts up.
 	return nil
@@ -56,7 +56,7 @@ func (c *nodeScanHandlerImpl) run() {
 				c.stoppedC.SignalWithError(errors.New("channel receiving node scans v2 is closed"))
 				return
 			}
-			// Do something with the scan if needed, e.g. attach NodeID
+			// TODO(ROX-12943): Do something with the scan, e.g., attach NodeID
 			c.sendScan(scan)
 		}
 	}

@@ -17,9 +17,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Template design pattern. We define control flow here and defer logic to subclasses.
-//////////////////////////////////////////////////////////////////////////////////////
-
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
 	return NewPipeline()
