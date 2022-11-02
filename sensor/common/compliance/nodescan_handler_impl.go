@@ -61,19 +61,15 @@ func (c *nodeScanHandlerImpl) run() {
 }
 
 func (c *nodeScanHandlerImpl) sendScan(scan *storage.NodeScanV2) {
-	select {
-	case <-c.stoppedC.Done():
-		log.Errorf("handler stopped. Not sending node scan from node: %s", scan.GetNodeName())
-		return
-	case c.toCentral <- &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_NodeScanV2{
-					NodeScanV2: scan,
+	if scan != nil {
+		c.toCentral <- &central.MsgFromSensor{
+			Msg: &central.MsgFromSensor_Event{
+				Event: &central.SensorEvent{
+					Resource: &central.SensorEvent_NodeScanV2{
+						NodeScanV2: scan,
+					},
 				},
 			},
-		},
-	}:
-		return
+		}
 	}
 }
