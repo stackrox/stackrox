@@ -16,6 +16,7 @@ export type ByNameSelectorProps = {
         scopedResourceSelector: ScopedResourceSelector
     ) => void;
     validationErrors: FormikErrors<ByNameResourceSelector> | undefined;
+    isDisabled: boolean;
 };
 
 function ByNameSelector({
@@ -23,6 +24,7 @@ function ByNameSelector({
     scopedResourceSelector,
     handleChange,
     validationErrors,
+    isDisabled,
 }: ByNameSelectorProps) {
     const { keyFor, invalidateIndexKeys } = useIndexKey();
 
@@ -74,21 +76,26 @@ function ByNameSelector({
                                     ? ValidatedOptions.error
                                     : ValidatedOptions.default
                             }
+                            isDisabled={isDisabled}
                         />
-                        <Button variant="plain" onClick={() => onDeleteValue(index)}>
-                            <TrashIcon
-                                aria-label={`Delete ${value}`}
-                                className="pf-u-flex-shrink-1"
-                                style={{ cursor: 'pointer' }}
-                                color="var(--pf-global--Color--dark-200)"
-                            />
-                        </Button>
+                        {!isDisabled && (
+                            <Button variant="plain" onClick={() => onDeleteValue(index)}>
+                                <TrashIcon
+                                    aria-label={`Delete ${value}`}
+                                    className="pf-u-flex-shrink-1"
+                                    style={{ cursor: 'pointer' }}
+                                    color="var(--pf-global--Color--dark-200)"
+                                />
+                            </Button>
+                        )}
                     </Flex>
                 ))}
             </Flex>
-            <Button className="pf-u-pl-0 pf-u-pt-md" variant="link" onClick={onAddValue}>
-                Add value
-            </Button>
+            {!isDisabled && (
+                <Button className="pf-u-pl-0 pf-u-pt-md" variant="link" onClick={onAddValue}>
+                    Add value
+                </Button>
+            )}
         </FormGroup>
     );
 }

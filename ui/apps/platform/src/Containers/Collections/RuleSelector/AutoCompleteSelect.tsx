@@ -9,6 +9,7 @@ export type AutoCompleteSelectProps = {
     typeAheadAriaLabel?: string;
     onChange: (value: string) => void;
     validated: ValidatedOptions;
+    isDisabled: boolean;
 };
 
 /* TODO Implement autocompletion */
@@ -19,6 +20,7 @@ export function AutoCompleteSelect({
     typeAheadAriaLabel,
     onChange,
     validated,
+    isDisabled,
 }: AutoCompleteSelectProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
 
@@ -40,6 +42,7 @@ export function AutoCompleteSelect({
                 onToggle={onToggle}
                 selections={selectedOption}
                 onSelect={onSelect}
+                isDisabled={isDisabled}
             />
         </>
     );
