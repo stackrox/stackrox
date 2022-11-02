@@ -60,6 +60,11 @@ const (
 
 	ephemeralProfileWithExpirationInDays             = "ephemeralWithExpirationInDays"
 	ephemeralProfileWithExpirationInDaysCertLifetime = 2 * 24 * time.Hour
+
+	// CentralDBCertFileName is the default file name for Central DB certificate.
+	CentralDBCertFileName = "central-db-cert.pem"
+	// CentralDBKeyFileName is the default file name for Central DB key.
+	CentralDBKeyFileName = "central-db-key.pem"
 )
 
 var (
