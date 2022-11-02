@@ -710,5 +710,6 @@ func extractClaimFromPath(fromClaimName string, claims map[string]interface{}) (
 			return nil, errors.Errorf("expected next value to be of map type but got %T", nextVal)
 		}
 	}
-	return nil, nil
+	log.Warnf("Suspicious loop exit while extracting claim from path %q", fromClaimName)
+	return nil, errors.Errorf("no value on path %q", fromClaimName)
 }
