@@ -1,7 +1,6 @@
 package compliance
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -65,7 +64,7 @@ func (c *nodeScanHandlerImpl) run() {
 func (c *nodeScanHandlerImpl) sendScan(scan *storage.NodeScanV2) {
 	select {
 	case <-c.stoppedC.Done():
-		log.Errorf("failed to send update: %s", proto.MarshalTextString(scan))
+		log.Errorf("handler stopped. Not sending node scan from node: %s", scan.GetNodeName())
 		return
 	case c.toCentral <- &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
