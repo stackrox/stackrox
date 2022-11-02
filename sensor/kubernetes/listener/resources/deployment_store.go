@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/selector"
+	"github.com/stackrox/rox/sensor/common/store/deployment"
 )
 
 // DeploymentStore stores deployments.
@@ -125,8 +126,7 @@ func (ds *DeploymentStore) GetAll() []*storage.Deployment {
 	return ret
 }
 
-// Get returns deployment for supplied id.
-func (ds *DeploymentStore) Get(id string) *storage.Deployment {
+func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -134,5 +134,41 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	if wrap == nil {
 		return nil
 	}
+	return wrap
+}
+
+// Get returns deployment for supplied id.
+func (ds *DeploymentStore) Get(id string) *storage.Deployment {
+	wrap := ds.getWrap(id)
 	return wrap.GetDeployment()
+}
+
+// GetDeploymentsWithServiceAccountAndNamespace returns ids for deployments that match namespace and service account
+func (ds *DeploymentStore) GetDeploymentsWithServiceAccountAndNamespace(namespace, sa string) []string {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	var matching []string
+	for id, deployment := range ds.deployments {
+		if namespace != "" && namespace != deployment.GetNamespace() {
+			continue
+		}
+		if deployment.GetServiceAccount() == sa {
+			matching = append(matching, id)
+		}
+	}
+	return matching
+}
+
+// BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies
+func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependencies deployment.Dependencies) (*storage.Deployment, error) {
+	wrap := ds.getWrap(id)
+	clonedWrap := wrap.Clone()
+
+	clonedWrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
+	clonedWrap.updatePortExposureFromServices(dependencies.Routes...)
+	if err := clonedWrap.updateHash(); err != nil {
+		return nil, err
+	}
+	return clonedWrap.GetDeployment(), nil
 }

@@ -3,6 +3,7 @@ package store
 import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/store/deployment"
 	"github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
 	v1 "k8s.io/api/core/v1"
 )
@@ -12,6 +13,8 @@ import (
 type DeploymentStore interface {
 	GetAll() []*storage.Deployment
 	Get(id string) *storage.Deployment
+	GetDeploymentsWithServiceAccountAndNamespace(namespace, sa string) []string
+	BuildDeploymentWithDependencies(id string, dependencies deployment.Dependencies) (*storage.Deployment, error)
 }
 
 // PodStore provides functionality to fetch all pods from underlying store.
@@ -53,10 +56,4 @@ type ServiceStore interface {
 	GetService(namespace, name string) *servicewrapper.SelectorWrap
 	GetRoutesForService(svc *servicewrapper.SelectorWrap) []*routeV1.Route
 	OnNamespaceDeleted(ns string)
-}
-
-// DeploymentDependencies are properties that belong to a storage.Deployment object, but don't come directly from the
-// k8s deployment spec. They need to be enhanced from other resources, like RBACs and Services.
-type DeploymentDependencies struct {
-	PermissionLevel storage.PermissionLevel
 }
