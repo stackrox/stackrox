@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
@@ -33,11 +34,14 @@ func (d *datastoreImpl) buildIndex(ctx context.Context) error {
 	log.Info("[STARTUP] Indexing secrets")
 
 	var secrets []*storage.Secret
-	err := d.storage.Walk(ctx, func(secret *storage.Secret) error {
-		secrets = append(secrets, secret)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		secrets = secrets[:0]
+		return d.storage.Walk(ctx, func(secret *storage.Secret) error {
+			secrets = append(secrets, secret)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 	if err := d.indexer.AddSecrets(secrets); err != nil {

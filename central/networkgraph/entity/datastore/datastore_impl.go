@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -94,10 +95,14 @@ func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {
 	// Create tree for default ones.
 	entitiesByCluster := make(map[string][]*storage.NetworkEntityInfo)
 	// If network tree for a cluster is not found, it means it must orphan which shall be cleaned at next garbage collection.
-	if err := ds.storage.Walk(ctx, func(obj *storage.NetworkEntity) error {
-		entitiesByCluster[obj.GetScope().GetClusterId()] = append(entitiesByCluster[obj.GetScope().GetClusterId()], obj.GetInfo())
-		return nil
-	}); err != nil {
+	walkFn := func() error {
+		entitiesByCluster = make(map[string][]*storage.NetworkEntityInfo)
+		return ds.storage.Walk(ctx, func(obj *storage.NetworkEntity) error {
+			entitiesByCluster[obj.GetScope().GetClusterId()] = append(entitiesByCluster[obj.GetScope().GetClusterId()], obj.GetInfo())
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		log.Errorf("Failed to initialize network tree: %v", err)
 	}
 
@@ -193,29 +198,34 @@ func (ds *dataStoreImpl) GetAllEntities(ctx context.Context) ([]*storage.Network
 func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(entity *storage.NetworkEntity) bool) ([]*storage.NetworkEntity, error) {
 	var entities []*storage.NetworkEntity
 	allowed := make(map[string]bool)
-	if err := ds.storage.Walk(ctx, func(entity *storage.NetworkEntity) error {
-		if !pred(entity) {
-			return nil
-		}
-
-		clusterID := entity.GetScope().GetClusterId()
-		ok, found := allowed[clusterID]
-		if !found {
-			var err error
-			ok, err = ds.readAllowed(ctx, entity.GetInfo().GetId())
-			if err != nil {
-				return err
+	walkFn := func() error {
+		entities = entities[:0]
+		allowed = make(map[string]bool)
+		return ds.storage.Walk(ctx, func(entity *storage.NetworkEntity) error {
+			if !pred(entity) {
+				return nil
 			}
-			allowed[clusterID] = ok
-		}
 
-		if !ok {
+			clusterID := entity.GetScope().GetClusterId()
+			ok, found := allowed[clusterID]
+			if !found {
+				var err error
+				ok, err = ds.readAllowed(ctx, entity.GetInfo().GetId())
+				if err != nil {
+					return err
+				}
+				allowed[clusterID] = ok
+			}
+
+			if !ok {
+				return nil
+			}
+
+			entities = append(entities, entity)
 			return nil
-		}
-
-		entities = append(entities, entity)
-		return nil
-	}); err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, errors.Wrap(err, "fetching network entities from storage")
 	}
 	return entities, nil
