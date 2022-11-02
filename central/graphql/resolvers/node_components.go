@@ -153,6 +153,12 @@ func queryWithNodeIDRegexFilter(q string) string {
 }
 
 func (resolver *nodeComponentResolver) nodeComponentScopeContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		err := utils.Should(errors.New("argument 'ctx' is nil"))
+		if err != nil {
+			log.Error(err)
+		}
+	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}

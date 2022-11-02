@@ -186,6 +186,12 @@ Utility Functions
 */
 
 func (resolver *imageComponentResolver) imageComponentScopeContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		err := utils.Should(errors.New("argument 'ctx' is nil"))
+		if err != nil {
+			log.Error(err)
+		}
+	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}

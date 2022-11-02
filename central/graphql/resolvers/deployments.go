@@ -603,6 +603,12 @@ func (resolver *deploymentResolver) ImageVulnerabilityCounter(ctx context.Contex
 }
 
 func (resolver *deploymentResolver) deploymentScopeContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		err := utils.Should(errors.New("argument 'ctx' is nil"))
+		if err != nil {
+			log.Error(err)
+		}
+	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
