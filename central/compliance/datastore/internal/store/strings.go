@@ -7,13 +7,13 @@ import (
 )
 
 type stringCollector struct {
-	stringsProto  storage.ComplianceStrings
+	stringsProto  *storage.ComplianceStrings
 	stringIndices map[string]int
 }
 
 func newStringCollector(runID string) *stringCollector {
 	return &stringCollector{
-		stringsProto: storage.ComplianceStrings{
+		stringsProto: &storage.ComplianceStrings{
 			Id: runID,
 		},
 		stringIndices: make(map[string]int),
@@ -42,7 +42,7 @@ func ExternalizeStrings(resultsProto *storage.ComplianceRunResults) *storage.Com
 	for _, nodeResults := range resultsProto.GetNodeResults() {
 		externalizeStringsForEntity(nodeResults, sc)
 	}
-	return &sc.stringsProto
+	return sc.stringsProto
 }
 
 func externalizeStringsForEntity(entityResults *storage.ComplianceRunResults_EntityResults, strings *stringCollector) {

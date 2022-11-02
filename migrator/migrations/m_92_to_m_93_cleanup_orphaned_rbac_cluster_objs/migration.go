@@ -24,7 +24,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 92,
-		VersionAfter:   storage.Version{SeqNum: 93},
+		VersionAfter:   &storage.Version{SeqNum: 93},
 		Run:            cleanupOrphanedRBACObjectsFromDeletedClusters,
 	}
 

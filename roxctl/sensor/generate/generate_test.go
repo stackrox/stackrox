@@ -70,7 +70,6 @@ func (m *mockClustersServiceServer) GetClusters(ctx context.Context, in *v1.GetC
 
 type sensorGenerateTestSuite struct {
 	suite.Suite
-	cmd sensorGenerateCommand
 }
 
 type expectedWarning struct {
@@ -122,7 +121,9 @@ func (s *sensorGenerateTestSuite) newTestMockEnvironmentWithConn(conn *grpc.Clie
 func (s *sensorGenerateTestSuite) createMockedCommand(getDefaultsF getDefaultsFn, postClusterF postClusterFn) (*bytes.Buffer, *bytes.Buffer, closeFunction, sensorGenerateCommand, *mockClustersServiceServer) {
 	var out, errOut *bytes.Buffer
 	conn, closeF, mock := s.createGRPCMockClustersService(getDefaultsF, postClusterF)
-	cmd := s.cmd
+	cmd := sensorGenerateCommand{
+		cluster: &storage.Cluster{},
+	}
 	cmd.env, out, errOut = s.newTestMockEnvironmentWithConn(conn)
 	return out, errOut, closeF, cmd, mock
 }

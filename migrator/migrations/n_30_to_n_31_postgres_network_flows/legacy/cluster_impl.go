@@ -34,7 +34,7 @@ func (s *clusterStoreImpl) GetFlowStore(clusterID string) store.FlowStore {
 }
 
 // Walk walks through all flows in cluster store
-func (s *clusterStoreImpl) Walk(ctx context.Context, fn func(clusterID string, ts types.Timestamp, allFlows []*storage.NetworkFlow) error) error {
+func (s *clusterStoreImpl) Walk(ctx context.Context, fn func(clusterID string, ts *types.Timestamp, allFlows []*storage.NetworkFlow) error) error {
 	iterator := s.db.NewIterator(readOptions)
 	defer iterator.Close()
 	// Runs are sorted by time, so we must iterate over each key to see if it has the correct run ID.

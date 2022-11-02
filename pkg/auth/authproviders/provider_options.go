@@ -27,9 +27,9 @@ func WithBackendFromFactory(ctx context.Context, factory BackendFactory) Provide
 	return func(pr *providerImpl) error {
 		pr.backendFactory = factory
 
-		backend, err := factory.CreateBackend(ctx, pr.storedInfo.Id, AllUIEndpoints(&pr.storedInfo), pr.storedInfo.Config, nil)
+		backend, err := factory.CreateBackend(ctx, pr.storedInfo.GetId(), AllUIEndpoints(pr.storedInfo), pr.storedInfo.GetConfig(), nil)
 		if err != nil {
-			return errors.Wrapf(err, "failed to create auth provider of type %s", pr.storedInfo.Type)
+			return errors.Wrapf(err, "failed to create auth provider of type %s", pr.storedInfo.GetType())
 		}
 
 		pr.backend = backend
@@ -57,7 +57,7 @@ func WithRoleMapper(roleMapper permissions.RoleMapper) ProviderOption {
 // WithStorageView sets the values in the store auth provider from the input value.
 func WithStorageView(stored *storage.AuthProvider) ProviderOption {
 	return func(pr *providerImpl) error {
-		pr.storedInfo = *stored
+		pr.storedInfo = stored.Clone()
 		return nil
 	}
 }
@@ -65,6 +65,9 @@ func WithStorageView(stored *storage.AuthProvider) ProviderOption {
 // WithID sets the id for the provider to the input value.
 func WithID(id string) ProviderOption {
 	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return errors.New("UNEXPECTED: no storage data for auth provider")
+		}
 		pr.storedInfo.Id = id
 		return nil
 	}
@@ -73,6 +76,9 @@ func WithID(id string) ProviderOption {
 // WithType sets the type for the provider.
 func WithType(typ string) ProviderOption {
 	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return errors.New("UNEXPECTED: no storage data for auth provider")
+		}
 		pr.storedInfo.Type = typ
 		return nil
 	}
@@ -81,6 +87,9 @@ func WithType(typ string) ProviderOption {
 // WithName sets the name for the provider.
 func WithName(name string) ProviderOption {
 	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return errors.New("UNEXPECTED: no storage data for auth provider")
+		}
 		pr.storedInfo.Name = name
 		return nil
 	}
@@ -89,6 +98,9 @@ func WithName(name string) ProviderOption {
 // WithEnabled sets the enabled flag for the provider.
 func WithEnabled(enabled bool) ProviderOption {
 	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return errors.New("UNEXPECTED: no storage data for auth provider")
+		}
 		pr.storedInfo.Enabled = enabled
 		return nil
 	}
@@ -107,6 +119,9 @@ func WithValidateCallback(store Store) ProviderOption {
 // WithActive sets the active flag for the provider.
 func WithActive(active bool) ProviderOption {
 	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return errors.New("UNEXPECTED: no storage data for auth provider")
+		}
 		pr.storedInfo.Validated = active
 		pr.storedInfo.Active = active
 		return nil
@@ -116,6 +131,9 @@ func WithActive(active bool) ProviderOption {
 // WithConfig sets the config for the provider.
 func WithConfig(config map[string]string) ProviderOption {
 	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return errors.New("UNEXPECTED: no storage data for auth provider")
+		}
 		pr.storedInfo.Config = config
 		return nil
 	}
@@ -136,6 +154,9 @@ func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
 // WithVisibility sets the visibility for the auth provider.
 func WithVisibility(visibility storage.Traits_Visibility) ProviderOption {
 	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return errors.New("UNEXPECTED: no storage data for auth provider")
+		}
 		if pr.storedInfo.GetTraits() != nil {
 			pr.storedInfo.Traits.Visibility = visibility
 		} else {

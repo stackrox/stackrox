@@ -423,6 +423,9 @@ replace (
 
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20220204234128-07f109db0819
 
+	// Fork of easyjson is needed to avoid value copies of protobuf messages.
+	github.com/mailru/easyjson => github.com/misberner/easyjson v0.0.0-20220806042407-84cd25193300
+
 	// github.com/mikefarah/yaml/v2 is a clone of github.com/go-yaml/yaml/v2.
 	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum
 	// so dependabot is not able to check dependecies.

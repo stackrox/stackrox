@@ -31,7 +31,7 @@ var _ Provider = (*providerImpl)(nil)
 type providerImpl struct {
 	mutex sync.RWMutex
 
-	storedInfo     storage.AuthProvider
+	storedInfo     *storage.AuthProvider
 	backendFactory BackendFactory
 
 	backend                    Backend
@@ -61,14 +61,14 @@ func (p *providerImpl) Type() string {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 
-	return p.storedInfo.Type
+	return p.storedInfo.GetType()
 }
 
 func (p *providerImpl) Name() string {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 
-	return p.storedInfo.Name
+	return p.storedInfo.GetName()
 }
 
 func (p *providerImpl) Enabled() bool {
@@ -89,13 +89,16 @@ func (p *providerImpl) StorageView() *storage.AuthProvider {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 
-	result := p.storedInfo
+	result := p.storedInfo.Clone()
+	if result == nil {
+		result = &storage.AuthProvider{}
+	}
 	if p.backendFactory != nil {
-		result.Config = p.backendFactory.RedactConfig(result.Config)
+		result.Config = p.backendFactory.RedactConfig(result.GetConfig())
 	} else {
 		result.Config = nil
 	}
-	return &result
+	return result
 }
 
 func (p *providerImpl) BackendFactory() BackendFactory {
@@ -135,7 +138,7 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 		// Calling reset on the default value of an ErrorSignal returns true
 		// so this works even in the default case
 		if p.backendCreationDone.Reset() {
-			go p.createBackendAsync(p.backendFactory, p.storedInfo.GetId(), AllUIEndpoints(&p.storedInfo), p.storedInfo.GetConfig(),
+			go p.createBackendAsync(p.backendFactory, p.storedInfo.GetId(), AllUIEndpoints(p.storedInfo), p.storedInfo.GetConfig(),
 				p.storedInfo.GetClaimMappings())
 
 			p.lastBackendCreationAttempt = time.Now()
@@ -260,7 +263,7 @@ func (p *providerImpl) MergeConfigInto(newCfg map[string]string) map[string]stri
 // Does a deep copy of the proto field 'storedInfo' so that it can support nested message fields.
 func cloneWithoutMutex(pr *providerImpl) *providerImpl {
 	return &providerImpl{
-		storedInfo:     *pr.storedInfo.Clone(),
+		storedInfo:     pr.storedInfo.Clone(),
 		backendFactory: pr.backendFactory,
 		backend:        pr.backend,
 		roleMapper:     pr.roleMapper,
@@ -270,7 +273,7 @@ func cloneWithoutMutex(pr *providerImpl) *providerImpl {
 
 // No need to do a deep copy of the 'storedInfo' field here since the 'from' input was created with a deep copy.
 func copyWithoutMutex(to *providerImpl, from *providerImpl) {
-	to.storedInfo = from.storedInfo
+	to.storedInfo = from.storedInfo.Clone()
 	to.backendFactory = from.backendFactory
 	to.backend = from.backend
 	to.roleMapper = from.roleMapper
