@@ -14,14 +14,16 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type NetworkBaselinesStoreSuite struct {
 	suite.Suite
-	store  Store
-	testDB *pgtest.TestPostgres
+	envIsolator *envisolator.EnvIsolator
+	store       Store
+	testDB      *pgtest.TestPostgres
 }
 
 func TestNetworkBaselinesStore(t *testing.T) {
@@ -29,7 +31,8 @@ func TestNetworkBaselinesStore(t *testing.T) {
 }
 
 func (s *NetworkBaselinesStoreSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -49,6 +52,7 @@ func (s *NetworkBaselinesStoreSuite) SetupTest() {
 
 func (s *NetworkBaselinesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
+	s.envIsolator.RestoreAll()
 }
 
 func (s *NetworkBaselinesStoreSuite) TestStore() {

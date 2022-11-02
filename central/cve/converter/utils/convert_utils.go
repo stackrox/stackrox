@@ -55,12 +55,60 @@ func (c CVEType) ToStorageCVEType() storage.CVE_CVEType {
 	return storage.CVE_UNKNOWN_CVE
 }
 
-// NvdCVEToEmbeddedCVE converts a nvd.CVEEntry object to *storage.EmbeddedVulnerability object
-func NvdCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) (*storage.EmbeddedVulnerability, error) {
-	if nvdCVE == nil || nvdCVE.CVE == nil || nvdCVE.CVE.CVEDataMeta == nil {
-		return nil, errors.Errorf("Missing CVE or CVE MetaData for type: %d", ct)
+// NvdCVEToProtoCVE converts a nvd.CVEEntry object to *storage.CVE object
+// Deprecated: Consider using scanner to fetch CVEs.
+func NvdCVEToProtoCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) (*storage.CVE, error) {
+	protoCVE := &storage.CVE{
+		Id: nvdCVE.CVE.CVEDataMeta.ID,
 	}
 
+	protoCVE.Type = ct.ToStorageCVEType()
+	if protoCVE.Type == storage.CVE_UNKNOWN_CVE {
+		return nil, errors.Errorf("unknown CVE type: %s", ct)
+	}
+
+	protoCVE.ScoreVersion = storage.CVE_UNKNOWN
+	if nvdCVE.Impact != nil {
+		cvssv2, err := nvdCvssv2ToProtoCvssv2(nvdCVE.Impact.BaseMetricV2)
+		if err != nil {
+			return nil, err
+		}
+		protoCVE.CvssV2 = cvssv2
+		protoCVE.Cvss = cvssv2.Score
+		protoCVE.ScoreVersion = storage.CVE_V2
+
+		cvssv3, err := nvdCvssv3ToProtoCvssv3(nvdCVE.Impact.BaseMetricV3)
+		if err != nil {
+			return nil, err
+		}
+		protoCVE.CvssV3 = cvssv3
+		protoCVE.Cvss = cvssv3.Score
+		protoCVE.ScoreVersion = storage.CVE_V3
+	}
+
+	if nvdCVE.PublishedDate != "" {
+		if ts, err := time.Parse(timeFormat, nvdCVE.PublishedDate); err == nil {
+			protoCVE.PublishedOn = protoconv.ConvertTimeToTimestamp(ts)
+		}
+	}
+
+	if nvdCVE.LastModifiedDate != "" {
+		if ts, err := time.Parse(timeFormat, nvdCVE.LastModifiedDate); err == nil {
+			protoCVE.LastModified = protoconv.ConvertTimeToTimestamp(ts)
+		}
+	}
+
+	if nvdCVE.CVE.Description != nil && len(nvdCVE.CVE.Description.DescriptionData) > 0 {
+		protoCVE.Summary = nvdCVE.CVE.Description.DescriptionData[0].Value
+	}
+
+	protoCVE.Link = scans.GetVulnLink(protoCVE.Id)
+
+	return protoCVE, nil
+}
+
+// NvdCVEToEmbeddedCVE converts a nvd.CVEEntry object to *storage.EmbeddedVulnerability object
+func NvdCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) (*storage.EmbeddedVulnerability, error) {
 	cve := &storage.EmbeddedVulnerability{
 		Cve: nvdCVE.CVE.CVEDataMeta.ID,
 	}
@@ -108,8 +156,7 @@ func NvdCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) 
 		}
 	}
 
-	// We have already checked that "nvdCVE.CVE" is not nil.
-	if nvdCVE.CVE.Description != nil && len(nvdCVE.CVE.Description.DescriptionData) > 0 && nvdCVE.CVE.Description.DescriptionData[0] != nil {
+	if nvdCVE.CVE.Description != nil && len(nvdCVE.CVE.Description.DescriptionData) > 0 {
 		cve.Summary = nvdCVE.CVE.Description.DescriptionData[0].Value
 	}
 
@@ -125,10 +172,6 @@ func NvdCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) 
 }
 
 func nvdCvssv2ToProtoCvssv2(baseMetricV2 *schema.NVDCVEFeedJSON10DefImpactBaseMetricV2) (*storage.CVSSV2, error) {
-	if baseMetricV2 == nil || baseMetricV2.CVSSV2 == nil {
-		return nil, errors.New("Missing CVSS Version 2 data")
-	}
-
 	cvssV2, err := pkgCVSSV2.ParseCVSSV2(baseMetricV2.CVSSV2.VectorString)
 	if err != nil {
 		return nil, err
@@ -151,10 +194,6 @@ func nvdCvssv2ToProtoCvssv2(baseMetricV2 *schema.NVDCVEFeedJSON10DefImpactBaseMe
 }
 
 func nvdCvssv3ToProtoCvssv3(baseMetricV3 *schema.NVDCVEFeedJSON10DefImpactBaseMetricV3) (*storage.CVSSV3, error) {
-	if baseMetricV3 == nil || baseMetricV3.CVSSV3 == nil {
-		return nil, errors.New("Missing CVSS Version 3 data")
-	}
-
 	cvssV3, err := pkgCVSSV3.ParseCVSSV3(baseMetricV3.CVSSV3.VectorString)
 	if err != nil {
 		return nil, err
@@ -186,6 +225,15 @@ func NvdCVEsToEmbeddedCVEs(cves []*schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType
 		ret = append(ret, ev)
 	}
 	return ret, nil
+}
+
+// ProtoCVEsToEmbeddedCVEs coverts Proto CVEs to Embedded Vulns
+func ProtoCVEsToEmbeddedCVEs(protoCVEs []*storage.CVE) ([]*storage.EmbeddedVulnerability, error) {
+	embeddedVulns := make([]*storage.EmbeddedVulnerability, 0, len(protoCVEs))
+	for _, protoCVE := range protoCVEs {
+		embeddedVulns = append(embeddedVulns, ProtoCVEToEmbeddedCVE(protoCVE))
+	}
+	return embeddedVulns, nil
 }
 
 // ProtoCVEToEmbeddedCVE coverts a Proto CVEs to Embedded Vuln
@@ -451,22 +499,17 @@ func embeddedVulnTypeToProtoType(protoCVEType storage.EmbeddedVulnerability_Vuln
 // GetFixedVersions gets the fixed version from a NVD CVE item.
 func GetFixedVersions(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem) []string {
 	var versions []string
-	if nvdCVE == nil || nvdCVE.Configurations == nil {
+	if nvdCVE.Configurations == nil {
 		return versions
 	}
 
 	for _, node := range nvdCVE.Configurations.Nodes {
-		if node == nil {
-			continue
-		}
-
 		for _, cpeMatch := range node.CPEMatch {
-			if cpeMatch != nil && cpeMatch.VersionEndExcluding != "" {
+			if cpeMatch.VersionEndExcluding != "" {
 				versions = append(versions, cpeMatch.VersionEndExcluding)
 			}
 		}
 	}
-
 	return versions
 }
 

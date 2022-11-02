@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
@@ -44,11 +45,14 @@ func (ds *datastoreImpl) buildIndex() error {
 		return nil
 	}
 	var categories []*storage.PolicyCategory
-	err := ds.storage.Walk(policyCategoryCtx, func(category *storage.PolicyCategory) error {
-		categories = append(categories, category)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		categories = categories[:0]
+		return ds.storage.Walk(policyCategoryCtx, func(category *storage.PolicyCategory) error {
+			categories = append(categories, category)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 	return ds.indexer.AddPolicyCategories(categories)
@@ -107,14 +111,17 @@ func (ds *datastoreImpl) GetAllPolicyCategories(ctx context.Context) ([]*storage
 	}
 
 	var categories []*storage.PolicyCategory
-	err := ds.storage.Walk(ctx, func(category *storage.PolicyCategory) error {
-		categories = append(categories, category)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		categories = categories[:0]
+		ds.storage.Walk(ctx, func(category *storage.PolicyCategory) error {
+			categories = append(categories, category)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
-	return categories, err
+	return categories, nil
 }
 
 // AddPolicyCategory inserts a policy category into the storage and the indexer

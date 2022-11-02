@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -45,6 +46,8 @@ type NetworkGraphServiceTestSuite struct {
 	tested    *serviceImpl
 
 	mockCtrl *gomock.Controller
+
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *NetworkGraphServiceTestSuite) SetupTest() {
@@ -59,10 +62,13 @@ func (s *NetworkGraphServiceTestSuite) SetupTest() {
 	s.networkTreeMgr = networkTreeMocks.NewMockManager(s.mockCtrl)
 
 	s.tested = newService(s.flows, s.entities, s.networkTreeMgr, s.deployments, s.clusters, s.graphConfig)
+
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *NetworkGraphServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
+	s.envIsolator.RestoreAll()
 }
 
 func (s *NetworkGraphServiceTestSuite) TestFailsIfClusterIsNotSet() {
@@ -823,7 +829,7 @@ func (s *NetworkGraphServiceTestSuite) TestReturnErrorIfNumberOfNodesExceedsLimi
 	for name, testCase := range testCases {
 		s.Run(name, func() {
 			if testCase.envValue != "" {
-				s.T().Setenv(maxNumberOfDeploymentsInGraphEnv.EnvVar(), testCase.envValue)
+				s.envIsolator.Setenv(maxNumberOfDeploymentsInGraphEnv.EnvVar(), testCase.envValue)
 			}
 
 			s.deployments.EXPECT().Count(gomock.Any(), gomock.Any()).Return(testCase.deploymentCount, nil)

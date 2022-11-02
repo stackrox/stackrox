@@ -48,11 +48,11 @@ func (m *orchestratorIstioCVEManagerImpl) initialize() {
 		m.mgrMode = online
 	}
 
-	if err := copyCVEsFromPreloadedToPersistentDirIfAbsent(); err != nil {
-		log.Errorf("could not copy preloaded Istio CVE files to persistent volume %q: %v", path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir), err)
+	if err := copyCVEsFromPreloadedToPersistentDirIfAbsent(utils.Istio); err != nil {
+		log.Errorf("could not copy preloaded istio CVE files to persistent volume %q: %v", path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir), err)
 		return
 	}
-	log.Infof("successfully copied preloaded CVE Istio files to persistent volume: %q", path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir))
+	log.Infof("successfully copied preloaded CVE istio files to persistent volume: %q", path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir))
 
 	m.orchestratorCVEMgr.initialize()
 	m.istioCVEMgr.initialize()

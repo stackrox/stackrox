@@ -93,7 +93,6 @@ func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIn
 
 func (m *managerImpl) buildIndicatorFilter() {
 	ctx := sac.WithAllAccess(context.Background())
-	var processesToRemove []string
 
 	deploymentIDs, err := m.deploymentDataStore.GetDeploymentIDs(ctx)
 	if err != nil {
@@ -102,7 +101,7 @@ func (m *managerImpl) buildIndicatorFilter() {
 	}
 
 	deploymentIDSet := set.NewStringSet(deploymentIDs...)
-
+	var processesToRemove []string
 	err = m.processesDataStore.WalkAll(ctx, func(pi *storage.ProcessIndicator) error {
 		if !deploymentIDSet.Contains(pi.GetDeploymentId()) {
 			// Don't remove as these processes will be removed by GC

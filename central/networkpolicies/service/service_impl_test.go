@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -103,6 +104,7 @@ type ServiceTestSuite struct {
 	notifiers        *nDataStoreMocks.MockDataStore
 	tested           Service
 	mockCtrl         *gomock.Controller
+	envIsolator      *envisolator.EnvIsolator
 }
 
 func (suite *ServiceTestSuite) SetupTest() {
@@ -120,7 +122,8 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.networkBaselines = networkBaselineDSMocks.NewMockDataStore(suite.mockCtrl)
 	suite.netTreeMgr = netTreeMgrMocks.NewMockManager(suite.mockCtrl)
 	suite.notifiers = nDataStoreMocks.NewMockDataStore(suite.mockCtrl)
-	suite.T().Setenv(features.NetworkDetectionBaselineSimulation.EnvVar(), "true")
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv(features.NetworkDetectionBaselineSimulation.EnvVar(), "true")
 
 	suite.tested = New(suite.networkPolicies, suite.deployments, suite.externalSrcs, suite.graphConfig, suite.networkBaselines, suite.netTreeMgr,
 		suite.evaluator, suite.namespaces, suite.clusters, suite.notifiers, nil, nil)
@@ -128,6 +131,7 @@ func (suite *ServiceTestSuite) SetupTest() {
 
 func (suite *ServiceTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
+	suite.envIsolator.RestoreAll()
 }
 
 func (suite *ServiceTestSuite) TestAuth() {

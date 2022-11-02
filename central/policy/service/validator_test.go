@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -31,7 +32,8 @@ type PolicyValidatorTestSuite struct {
 	nStorage       *notifierMocks.MockDataStore
 	cStorage       *clusterMocks.MockDataStore
 
-	mockCtrl *gomock.Controller
+	mockCtrl    *gomock.Controller
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *PolicyValidatorTestSuite) SetupTest() {
@@ -41,11 +43,14 @@ func (s *PolicyValidatorTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.nStorage = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.cStorage = clusterMocks.NewMockDataStore(s.mockCtrl)
+
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.validator = newPolicyValidator(s.nStorage)
 }
 
 func (s *PolicyValidatorTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
+	s.envIsolator.RestoreAll()
 }
 
 func (s *PolicyValidatorTestSuite) TestValidatesName() {
@@ -910,7 +915,8 @@ func (s *PolicyValidatorTestSuite) TestValidateNoDockerfileLineFrom() {
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
-	s.T().Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
+	s.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
+	defer s.envIsolator.RestoreAll()
 
 	validatorWithFlag := newPolicyValidator(s.nStorage)
 

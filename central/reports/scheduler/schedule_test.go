@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -29,6 +30,7 @@ const (
 )
 
 var _ suite.SetupAllSuite = (*ScheduleTestSuite)(nil)
+var _ suite.TearDownTestSuite = (*ScheduleTestSuite)(nil)
 
 func TestSchedule(t *testing.T) {
 	suite.Run(t, new(ScheduleTestSuite))
@@ -37,13 +39,19 @@ func TestSchedule(t *testing.T) {
 type ScheduleTestSuite struct {
 	suite.Suite
 
-	time time.Time
-	rc   *storage.ReportConfiguration
+	time        time.Time
+	rc          *storage.ReportConfiguration
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *ScheduleTestSuite) SetupSuite() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.rc = fixtures.GetValidReportConfiguration()
 	s.time = time.Date(1999, 12, 31, 23, 59, 59, 999, time.Local)
+}
+
+func (s *ScheduleTestSuite) TearDownTest() {
+	s.envIsolator.RestoreAll()
 }
 
 func (s *ScheduleTestSuite) TestFormatVulnMessage() {
@@ -62,7 +70,7 @@ func (s *ScheduleTestSuite) TestFormatVulnMessage() {
 	}
 	for productBranding, tt := range tests {
 		s.Run(productBranding, func() {
-			s.T().Setenv(branding.ProductBrandingEnvName, productBranding)
+			s.envIsolator.Setenv(branding.ProductBrandingEnvName, productBranding)
 
 			receivedBrandedVulnFound, err := formatMessage(s.rc, vulnReportEmailTemplate, s.time)
 			s.NoError(err)

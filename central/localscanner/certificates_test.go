@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,10 +25,19 @@ func TestHandler(t *testing.T) {
 
 type localScannerSuite struct {
 	suite.Suite
+	envIsolator *envisolator.EnvIsolator
+}
+
+func (s *localScannerSuite) SetupSuite() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+}
+
+func (s *localScannerSuite) TearDownTest() {
+	s.envIsolator.RestoreAll()
 }
 
 func (s *localScannerSuite) SetupTest() {
-	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
+	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
 	s.Require().NoError(err)
 }
 

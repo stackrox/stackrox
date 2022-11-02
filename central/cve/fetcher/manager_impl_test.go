@@ -28,22 +28,23 @@ import (
 )
 
 const (
-	cveListPath  = "testdata/cve-list.json"
-	checksumPath = "testdata/checksum"
+	correctCVEFile  = "testdata/correct_cves.json"
+	cveChecksumFile = "testdata/cve_checksum"
 )
 
-func TestJSONUnmarshalCVEs(t *testing.T) {
-	data, err := os.ReadFile(cveListPath)
-	require.NoError(t, err)
+func TestUnmarshalCorrectCVEs(t *testing.T) {
+	dat, err := os.ReadFile(correctCVEFile)
+	require.Nil(t, err)
 	var cveEntries []schema.NVDCVEFeedJSON10DefCVEItem
-	assert.NoError(t, json.Unmarshal(data, &cveEntries))
-	assert.Len(t, cveEntries, 22)
+	err = json.Unmarshal(dat, &cveEntries)
+	assert.Nil(t, err)
+	assert.Len(t, cveEntries, 2)
 }
 
 func TestReadChecksum(t *testing.T) {
-	data, err := os.ReadFile(checksumPath)
+	data, err := os.ReadFile(cveChecksumFile)
 	require.Nil(t, err)
-	assert.Equal(t, "9c210f795cdc93a458f06053033793e2907a75b28ec0aaeadd22b6d2e70f0e5e", string(data))
+	assert.Equal(t, string(data), "e76a63173f5b1e8bdcc9811faf4a4643266cdcb1e179229e30ffcb0e5d8dbe0c")
 }
 
 func TestReconcileCVEsInDB(t *testing.T) {

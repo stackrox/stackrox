@@ -123,6 +123,8 @@ type AlertManagerTestSuite struct {
 
 	mockCtrl *gomock.Controller
 	ctx      context.Context
+
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (suite *AlertManagerTestSuite) SetupTest() {
@@ -134,9 +136,11 @@ func (suite *AlertManagerTestSuite) SetupTest() {
 	suite.policySet = detection.NewPolicySet(policyMocks.NewMockDataStore(suite.mockCtrl))
 
 	suite.alertManager = New(suite.notifierMock, suite.alertsMock, suite.runtimeDetectorMock)
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 }
 
 func (suite *AlertManagerTestSuite) TearDownTest() {
+	suite.envIsolator.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 
@@ -241,7 +245,7 @@ func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
 	alerts := getAlerts()
 
-	suite.alertsMock.EXPECT().MarkAlertStaleBatch(suite.ctx, alerts[0].GetId()).Return([]*storage.Alert{alerts[0]}, nil)
+	suite.alertsMock.EXPECT().MarkAlertStale(suite.ctx, alerts[0].GetId()).Return(nil)
 
 	// Unchanged alerts should not be updated.
 
@@ -323,7 +327,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 }
 
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
-	suite.T().Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
+	suite.envIsolator.Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].Clone()
 	newAlert.Violations[0].Message = "new-violation"
@@ -411,7 +415,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 }
 
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfMoreThanMaxNoNotify() {
-	suite.T().Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
+	suite.envIsolator.Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].Clone()
 	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
@@ -472,7 +476,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 }
 
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolationsNoNotify() {
-	suite.T().Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
+	suite.envIsolator.Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
 	alerts := getResourceAlerts()
 	alerts[0].Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
 	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
@@ -516,15 +520,9 @@ func (suite *AlertManagerTestSuite) TestOldResourceAlertAreMarkedAsStaleWhenPoli
 	// Don't add any policies to simulate policies being deleted
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
 
-	ids := make([]string, 0, len(alerts))
-	for _, alert := range alerts {
-		ids = append(ids, alert.GetId())
-	}
-
 	// Verify that the other alerts get marked as stale and that the notifier sends a notification for them
-	suite.alertsMock.EXPECT().MarkAlertStaleBatch(suite.ctx, ids).Return(alerts, nil)
-
 	for _, a := range alerts {
+		suite.alertsMock.EXPECT().MarkAlertStale(suite.ctx, a.GetId()).Return(nil)
 		suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), a).Return()
 	}
 

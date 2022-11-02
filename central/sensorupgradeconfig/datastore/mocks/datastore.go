@@ -10,6 +10,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	concurrency "github.com/stackrox/rox/pkg/concurrency"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -33,6 +34,20 @@ func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
+}
+
+// AutoTriggerSetting mocks base method.
+func (m *MockDataStore) AutoTriggerSetting() *concurrency.Flag {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AutoTriggerSetting")
+	ret0, _ := ret[0].(*concurrency.Flag)
+	return ret0
+}
+
+// AutoTriggerSetting indicates an expected call of AutoTriggerSetting.
+func (mr *MockDataStoreMockRecorder) AutoTriggerSetting() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AutoTriggerSetting", reflect.TypeOf((*MockDataStore)(nil).AutoTriggerSetting))
 }
 
 // GetSensorUpgradeConfig mocks base method.

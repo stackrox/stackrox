@@ -140,9 +140,15 @@ func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnera
 
 // reconcileOnlineModeCVEs fetches new CVEs from definitions.stackrox.io and reconciles them
 func (m *istioCVEManager) reconcileOnlineModeCVEs(forceUpdate bool) error {
-	paths := getIstioPaths()
+	paths, err := getPaths(utils.Istio)
+	if err != nil {
+		return err
+	}
 
-	urls := getIstioUrls()
+	urls, err := getUrls(utils.Istio)
+	if err != nil {
+		return err
+	}
 
 	localCVEChecksum, err := getLocalCVEChecksum(paths.persistentCveChecksumFile)
 	if err != nil {
@@ -197,7 +203,10 @@ func (m *istioCVEManager) reconcileOnlineModeCVEs(forceUpdate bool) error {
 
 // reconcileOfflineModeCVEs reads the scanner bundle zip and updates the CVEs
 func (m *istioCVEManager) reconcileOfflineModeCVEs(zipPath string, forceUpdate bool) error {
-	paths := getIstioPaths()
+	paths, err := getPaths(utils.Istio)
+	if err != nil {
+		return err
+	}
 
 	bundlePath, err := extractK8sIstioCVEsInScannerBundleZip(zipPath)
 	if err != nil {

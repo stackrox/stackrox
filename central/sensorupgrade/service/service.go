@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -16,19 +15,13 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	AutoUpgradeSetting() *concurrency.Flag
-
 	v1.SensorUpgradeServiceServer
 }
 
 // New returns a new Service instance using the given DB and index.
-func New(configDataStore datastore.DataStore, manager connection.Manager) (Service, error) {
-	service := &service{
+func New(configDataStore datastore.DataStore, manager connection.Manager) Service {
+	return &service{
 		configDataStore: configDataStore,
 		manager:         manager,
 	}
-	if err := service.initialize(); err != nil {
-		return nil, err
-	}
-	return service, nil
 }

@@ -12,13 +12,15 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type PostgresPruningSuite struct {
 	suite.Suite
-	ctx    context.Context
-	testDB *pgtest.TestPostgres
+	envIsolator *envisolator.EnvIsolator
+	ctx         context.Context
+	testDB      *pgtest.TestPostgres
 }
 
 func TestPruning(t *testing.T) {
@@ -26,12 +28,14 @@ func TestPruning(t *testing.T) {
 }
 
 func (s *PostgresPruningSuite) SetupSuite() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
 
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	s.testDB = pgtest.ForT(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
@@ -39,6 +43,7 @@ func (s *PostgresPruningSuite) SetupSuite() {
 
 func (s *PostgresPruningSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
+	s.envIsolator.RestoreAll()
 }
 
 func (s *PostgresPruningSuite) TestPruneActiveComponents() {

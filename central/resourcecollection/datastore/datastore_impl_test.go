@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -27,15 +28,17 @@ func TestCollectionDataStoreWithPostgres(t *testing.T) {
 type CollectionPostgresDataStoreTestSuite struct {
 	suite.Suite
 
-	ctx       context.Context
-	db        *pgxpool.Pool
-	gormDB    *gorm.DB
-	store     postgres.Store
-	datastore DataStore
+	ctx         context.Context
+	db          *pgxpool.Pool
+	gormDB      *gorm.DB
+	store       postgres.Store
+	datastore   DataStore
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -69,6 +72,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TearDownSuite() {
 	postgres.Destroy(s.ctx, s.db)
 	s.db.Close()
 	pgtest.CloseGormDB(s.T(), s.gormDB)
+	s.envIsolator.RestoreAll()
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {

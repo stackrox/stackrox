@@ -13,13 +13,15 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type AuthProvidersStoreSuite struct {
 	suite.Suite
-	store  Store
-	testDB *pgtest.TestPostgres
+	envIsolator *envisolator.EnvIsolator
+	store       Store
+	testDB      *pgtest.TestPostgres
 }
 
 func TestAuthProvidersStore(t *testing.T) {
@@ -27,7 +29,8 @@ func TestAuthProvidersStore(t *testing.T) {
 }
 
 func (s *AuthProvidersStoreSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -47,6 +50,7 @@ func (s *AuthProvidersStoreSuite) SetupTest() {
 
 func (s *AuthProvidersStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
+	s.envIsolator.RestoreAll()
 }
 
 func (s *AuthProvidersStoreSuite) TestStore() {

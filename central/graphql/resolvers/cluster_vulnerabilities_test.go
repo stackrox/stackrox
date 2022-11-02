@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -55,11 +56,15 @@ type GraphQLClusterVulnerabilityTestSuite struct {
 	gormDB   *gorm.DB
 	resolver *Resolver
 
+	envIsolator *envisolator.EnvIsolator
+
 	clusterIDs []string
 }
 
 func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -152,6 +157,7 @@ func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
 }
 
 func (s *GraphQLClusterVulnerabilityTestSuite) TearDownSuite() {
+	s.envIsolator.RestoreAll()
 
 	clusterCVEPostgres.Destroy(s.ctx, s.db)
 	clusterCVEEdgePostgres.Destroy(s.ctx, s.db)

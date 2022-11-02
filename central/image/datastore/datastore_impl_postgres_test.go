@@ -33,6 +33,7 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -51,10 +52,13 @@ type ImagePostgresDataStoreTestSuite struct {
 	mockRisk           *mockRisks.MockDataStore
 	componentDataStore imageComponentDS.DataStore
 	cveDataStore       imageCVEDS.DataStore
+
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
@@ -93,6 +97,7 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 }
 
 func (s *ImagePostgresDataStoreTestSuite) TearDownSuite() {
+	s.envIsolator.RestoreAll()
 	s.db.Close()
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 )
@@ -25,10 +26,19 @@ func TestHandler(t *testing.T) {
 
 type testSuite struct {
 	suite.Suite
+	envIsolator *envisolator.EnvIsolator
+}
+
+func (s *testSuite) SetupSuite() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+}
+
+func (s *testSuite) TearDownTest() {
+	s.envIsolator.RestoreAll()
 }
 
 func (s *testSuite) SetupTest() {
-	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
+	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
 	s.Require().NoError(err)
 }
 

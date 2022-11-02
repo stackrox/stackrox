@@ -2,15 +2,12 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/vulnerabilityrequest/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -18,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"google.golang.org/grpc"
 )
 
@@ -32,20 +28,13 @@ var (
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			// "/v1.CollectionService/AutoCompleteCollection", TODO ROX-12616
-			"/v1.CollectionService/CreateCollection",
+			// "/v1.CollectionService/CreateCollection", TODO ROX-12622
 			// "/v1.CollectionService/DeleteCollection", TODO ROX-13030
 			// "/v1.CollectionService/DryRunCollection", TODO ROX-13031
 			// "/v1.CollectionService/UpdateCollection", TODO ROX-13032
 		},
 	}))
 )
-
-type collectionRequest interface {
-	GetName() string
-	GetDescription() string
-	GetResourceSelectors() []*storage.ResourceSelector
-	GetEmbeddedCollectionIds() []string
-}
 
 // serviceImpl is the struct that manages the collection API
 type serviceImpl struct {
@@ -93,65 +82,4 @@ func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetColl
 		Collection:  collection,
 		Deployments: nil,
 	}, nil
-}
-
-// CreateCollection creates a new collection from the given request
-func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCollectionRequest) (*v1.CreateCollectionResponse, error) {
-	if !features.ObjectCollections.Enabled() {
-		return nil, errors.New("Resource collections is not enabled")
-	}
-
-	collection, err := collectionRequestToCollection(ctx, request, true, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.datastore.AddCollection(ctx, collection)
-	if err != nil {
-		return nil, err
-	}
-
-	return &v1.CreateCollectionResponse{Collection: collection}, nil
-}
-
-func collectionRequestToCollection(ctx context.Context, request collectionRequest, isCreate bool, getID func() string) (*storage.ResourceCollection, error) {
-	if request.GetName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
-	}
-
-	slimUser := utils.UserFromContext(ctx)
-	if slimUser == nil {
-		return nil, errors.New("Could not determine user identity from provided context")
-	}
-
-	if len(request.GetResourceSelectors()) == 0 {
-		return nil, errors.Wrap(errox.InvalidArgs, "No resource selectors were provided")
-	}
-
-	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
-
-	collection := &storage.ResourceCollection{
-		Name:              request.GetName(),
-		Description:       request.GetDescription(),
-		LastUpdated:       timeNow,
-		UpdatedBy:         slimUser,
-		ResourceSelectors: request.GetResourceSelectors(),
-	}
-
-	if isCreate {
-		collection.CreatedBy = slimUser
-		collection.CreatedAt = timeNow
-	} else if getID != nil {
-		collection.Id = getID()
-	}
-
-	if len(request.GetEmbeddedCollectionIds()) > 0 {
-		embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(request.GetEmbeddedCollectionIds()))
-		for _, id := range request.GetEmbeddedCollectionIds() {
-			embeddedCollections = append(embeddedCollections, &storage.ResourceCollection_EmbeddedResourceCollection{Id: id})
-		}
-		collection.EmbeddedCollections = embeddedCollections
-	}
-
-	return collection, nil
 }

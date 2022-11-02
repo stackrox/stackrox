@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -13,9 +12,7 @@ var (
 )
 
 func initialize() {
-	var err error
-	singleton, err = New(datastore.Singleton(), connection.ManagerSingleton())
-	utils.CrashOnError(err)
+	singleton = New(datastore.Singleton(), connection.ManagerSingleton())
 }
 
 // Singleton returns the singleton instance to use.

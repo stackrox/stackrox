@@ -103,22 +103,17 @@ func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*stor
 
 // markAlertsStale marks all input alerts stale in the input datastore.
 func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*storage.Alert) error {
-	if len(alertsToMark) == 0 {
-		return nil
+	errList := errorhelpers.NewErrorList("Error marking alerts as stale: ")
+	for _, existingAlert := range alertsToMark {
+		err := d.alerts.MarkAlertStale(ctx, existingAlert.GetId())
+		if err == nil {
+			// run notifier for all the resolved alerts
+			existingAlert.State = storage.ViolationState_RESOLVED
+			d.notifier.ProcessAlert(ctx, existingAlert)
+		}
+		errList.AddError(err)
 	}
-
-	ids := make([]string, 0, len(alertsToMark))
-	for _, alert := range alertsToMark {
-		ids = append(ids, alert.GetId())
-	}
-	resolvedAlerts, err := d.alerts.MarkAlertStaleBatch(ctx, ids...)
-	if err != nil {
-		return err
-	}
-	for _, resolvedAlert := range resolvedAlerts {
-		d.notifier.ProcessAlert(ctx, resolvedAlert)
-	}
-	return nil
+	return errList.ToError()
 }
 
 func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert *storage.Alert) bool {

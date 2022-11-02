@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -304,5 +305,9 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pod *storage.Pod) 
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.podStore.Walk(ctx, fn)
+	return pgutils.RetryIfPostgres(
+		func() error {
+			return ds.podStore.Walk(ctx, fn)
+		},
+	)
 }
