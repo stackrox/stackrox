@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-C_YELLOW='\033[0;33m'
-C_PURPLE='\033[0;35m'
-C_OFF='\033[0m'
+export C_YELLOW='\033[0;33m'
+export C_PURPLE='\033[0;35m'
+export C_OFF='\033[0m'
 
 download_cluster_artifacts() {
-    mkdir -p ${ARTIFACTS_DIR}
-    infractl artifacts ${CLUSTER_NAME} -d ${ARTIFACTS_DIR} 2>&1 > /dev/null
+    mkdir -p "${ARTIFACTS_DIR}"
+    infractl artifacts "${CLUSTER_NAME}" -d "${ARTIFACTS_DIR}" > /dev/null 2>&1
 }
 
 fetch_cluster_credentials() {

@@ -2,7 +2,8 @@
 
 set -ueo pipefail
 
-CWD=$(dirname $0)
+CWD=$(dirname "$0")
+# shellcheck disable=1091
 source "${CWD}/lib.sh"
 
 if [[ $# -eq 0 ]]; then
@@ -10,6 +11,7 @@ if [[ $# -eq 0 ]]; then
     exit 1
 fi
 
+# shellcheck disable=2034
 CLUSTER_NAME=$1
 ARTIFACTS_DIR="$(mktemp -d)/artifacts"
 export KUBECONFIG="${ARTIFACTS_DIR}/kubeconfig"

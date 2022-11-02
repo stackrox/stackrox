@@ -110,7 +110,7 @@ echo "Open issues:"
 echo "$OPEN_ISSUES"
 
 if [ "$DRY_RUN" = "false" ]; then
-    if [ "$GITHUB_REPOSITORY" = "stackrox/stackrox" ] || ([ "$GITHUB_REPOSITORY" = "stackrox/test-gh-actions" ] && [ "$RELEASE_PATCH" == "0.0.0" ]); then
+    if [ "$GITHUB_REPOSITORY" = "stackrox/stackrox" ] || { [ "$GITHUB_REPOSITORY" = "stackrox/test-gh-actions" ] && [ "$RELEASE_PATCH" == "0.0.0" ]; }; then
         comment_on_issues_list "$OPEN_ISSUES"
         comment_on_issues_list "$CLOSED_WITH_PR"
     fi

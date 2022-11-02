@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-source "$(dirname $0)/lib.sh"
+# shellcheck disable=1091
+source "$(dirname "$0")/lib.sh"
 
 if [[ $# -eq 0 ]]; then
     echo -e "${C_YELLOW}Usage: $0 <MILESTONE>${C_OFF}"
@@ -19,7 +20,7 @@ download_cluster_artifacts
 fetch_cluster_credentials
 print_cluster_credentials
 
-CLUSTER_NAME_SENSOR_ONLY=$(echo ${CLUSTER_NAME} | sed s/test1/test2/g)
+CLUSTER_NAME_SENSOR_ONLY="${CLUSTER_NAME//test1/test2}"
 echo -e "To reproduce cluster access, run:
 
 \t${C_PURPLE}infractl artifacts upgrade-test1-${RELEASE//./-} --download-dir ./artifacts/test1${C_OFF}
