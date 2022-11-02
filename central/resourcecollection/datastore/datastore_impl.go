@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	initBatchSize = 20
+	graphInitBatchSize = 20
 )
 
 var (
@@ -74,10 +74,10 @@ func (ds *datastoreImpl) initGraph() error {
 	}
 
 	// add vertices by batches
-	for i := 0; i < len(ids); i += initBatchSize {
+	for i := 0; i < len(ids); i += graphInitBatchSize {
 		var objs []*storage.ResourceCollection
-		if i+initBatchSize < len(ids) {
-			objs, _, err = ds.storage.GetMany(ctx, ids[i:i+initBatchSize])
+		if i+graphInitBatchSize < len(ids) {
+			objs, _, err = ds.storage.GetMany(ctx, ids[i:i+graphInitBatchSize])
 		} else {
 			objs, _, err = ds.storage.GetMany(ctx, ids[i:])
 		}
@@ -100,10 +100,10 @@ func (ds *datastoreImpl) initGraph() error {
 	}
 
 	// then add edges by batches
-	for i := 0; i < len(ids); i += initBatchSize {
+	for i := 0; i < len(ids); i += graphInitBatchSize {
 		var parents []*storage.ResourceCollection
-		if i+initBatchSize < len(ids) {
-			parents, _, err = ds.storage.GetMany(ctx, ids[i:i+initBatchSize])
+		if i+graphInitBatchSize < len(ids) {
+			parents, _, err = ds.storage.GetMany(ctx, ids[i:i+graphInitBatchSize])
 		} else {
 			parents, _, err = ds.storage.GetMany(ctx, ids[i:])
 		}
@@ -126,8 +126,8 @@ func (ds *datastoreImpl) initGraph() error {
 	return nil
 }
 
-// addCollectionToGraph creates a copy of the existing DAG and returns that copy with the collection added, or an appropriate error
-func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) (*dag.DAG, error) {
+// addCollectionToGraphNoLock creates a copy of the existing DAG and returns that copy with the collection added, or an appropriate error
+func (ds *datastoreImpl) addCollectionToGraphNoLock(obj *storage.ResourceCollection) (*dag.DAG, error) {
 	ds.initGraphOnce()
 
 	var err error
@@ -167,8 +167,8 @@ func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) (
 	return graph, nil
 }
 
-// updateCollectionInGraph creates a copy of the existing DAG and returns that copy with the collection updated, or an appropriate error
-func (ds *datastoreImpl) updateCollectionInGraph(obj *storage.ResourceCollection) (*dag.DAG, error) {
+// updateCollectionInGraphNoLock creates a copy of the existing DAG and returns that copy with the collection updated, or an appropriate error
+func (ds *datastoreImpl) updateCollectionInGraphNoLock(obj *storage.ResourceCollection) (*dag.DAG, error) {
 	ds.initGraphOnce()
 
 	var err error
@@ -227,8 +227,8 @@ func (ds *datastoreImpl) updateCollectionInGraph(obj *storage.ResourceCollection
 	return graph, nil
 }
 
-// deleteCollectionFromGraph removes the collection from the DAG, or returns an appropriate error
-func (ds *datastoreImpl) deleteCollectionFromGraph(id string) error {
+// deleteCollectionFromGraphNoLock removes the collection from the DAG, or returns an appropriate error
+func (ds *datastoreImpl) deleteCollectionFromGraphNoLock(id string) error {
 	ds.initGraphOnce()
 
 	// this function covers removal of the vertex and any edges to or from other vertices, it is also threadsafe
@@ -236,38 +236,23 @@ func (ds *datastoreImpl) deleteCollectionFromGraph(id string) error {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	ds.lock.RLock()
-	defer ds.lock.RUnlock()
-
 	return ds.searcher.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	ds.lock.RLock()
-	defer ds.lock.RUnlock()
-
 	return ds.searcher.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchCollections(ctx context.Context, q *v1.Query) ([]*storage.ResourceCollection, error) {
-	ds.lock.RLock()
-	defer ds.lock.RUnlock()
-
 	return ds.searcher.SearchCollections(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	ds.lock.RLock()
-	defer ds.lock.RUnlock()
-
 	return ds.searcher.SearchResults(ctx, q)
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error) {
-	ds.lock.RLock()
-	defer ds.lock.RUnlock()
-
 	collection, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
@@ -277,9 +262,6 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ResourceC
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	ds.lock.RLock()
-	defer ds.lock.RUnlock()
-
 	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
@@ -288,9 +270,6 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ResourceCollection, error) {
-	ds.lock.RLock()
-	defer ds.lock.RUnlock()
-
 	collections, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
@@ -309,6 +288,11 @@ func (ds *datastoreImpl) addCollectionWorkflow(ctx context.Context, collection *
 		return errors.New("new collections must not have a preset `id`")
 	}
 
+	// check for access so we can fast fail before locking
+	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || !ok {
+		return err
+	}
+
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
@@ -318,7 +302,7 @@ func (ds *datastoreImpl) addCollectionWorkflow(ctx context.Context, collection *
 	}
 
 	// add to graph to detect any cycles, this also sets the `id` field
-	graph, err := ds.addCollectionToGraph(collection)
+	graph, err := ds.addCollectionToGraphNoLock(collection)
 	if err != nil {
 		return err
 	}
@@ -346,12 +330,6 @@ func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.
 }
 
 func (ds *datastoreImpl) DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
-
-	// check for access since dryrun flow doesn't actually hit the postgres layer
-	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || !ok {
-		return err
-	}
-
 	return ds.addCollectionWorkflow(ctx, collection, true)
 }
 
@@ -363,6 +341,11 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 	}
 	if collection.GetId() == "" {
 		return errors.New("update must be called on an existing collection")
+	}
+
+	// check for access so we can fast fail before locking
+	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || !ok {
+		return err
 	}
 
 	ds.lock.Lock()
@@ -378,7 +361,7 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 	}
 
 	// update graph first to detect cycles
-	graph, err := ds.updateCollectionInGraph(collection)
+	graph, err := ds.updateCollectionInGraphNoLock(collection)
 	if err != nil {
 		return err
 	}
@@ -408,6 +391,11 @@ func (ds *datastoreImpl) UpdateCollection(ctx context.Context, collection *stora
 
 func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error {
 
+	// check for access so we can fast fail before locking
+	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || !ok {
+		return err
+	}
+
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
@@ -425,7 +413,7 @@ func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error 
 
 	// update tracking collections
 	ds.names.Remove(obj.GetName())
-	err = ds.deleteCollectionFromGraph(id)
+	err = ds.deleteCollectionFromGraphNoLock(id)
 	if err != nil {
 		return errors.Wrap(err, "failed to remove collection from internal state object after removing from datastore")
 	}
