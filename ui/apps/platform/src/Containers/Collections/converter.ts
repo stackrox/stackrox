@@ -1,5 +1,3 @@
-import isEmpty from 'lodash/isEmpty';
-
 import { CollectionRequest, CollectionResponse, SelectorRule } from 'services/CollectionsService';
 import { ensureExhaustive } from 'utils/type.utils';
 import {

@@ -37,7 +37,6 @@ import { CaretDownIcon, CubesIcon } from '@patternfly/react-icons';
 import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-import isEmpty from 'lodash/isEmpty';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
