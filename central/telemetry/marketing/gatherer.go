@@ -51,33 +51,33 @@ func Singleton() *marketing {
 	return m
 }
 
-func (t *marketing) loop() {
-	for !t.stopSig.IsDone() {
+func (m *marketing) loop() {
+	for !m.stopSig.IsDone() {
 		select {
-		case <-t.ticker.C:
+		case <-m.ticker.C:
 			log.Info("Tick.")
-			go t.gather()
-		case <-t.stopSig.Done():
+			go m.gather()
+		case <-m.stopSig.Done():
 			return
 		}
 	}
 	log.Info("Loop stopped.")
 }
 
-func (t *marketing) Start() {
+func (m *marketing) Start() {
 	if mpkg.Enabled() {
-		t.telemeter.Start()
-		t.ticker = time.NewTicker(1 * time.Minute)
-		go t.loop()
+		m.telemeter.Start()
+		m.ticker = time.NewTicker(1 * time.Minute)
+		go m.loop()
 		log.Info("Marketing telemetry data collection ticker enabled.")
 	}
 }
 
-func (t *marketing) Stop() {
-	if t != nil {
-		t.telemeter.Stop()
-		t.cancel()
-		t.stopSig.Signal()
+func (m *marketing) Stop() {
+	if m != nil {
+		m.telemeter.Stop()
+		m.cancel()
+		m.stopSig.Signal()
 	}
 }
 
@@ -90,7 +90,7 @@ func addTotal[T any](props map[string]any, key string, f func(context.Context) (
 	}
 }
 
-func (t *marketing) gather() {
+func (m *marketing) gather() {
 	log.Info("Starting marketing telemetry data collection.")
 	defer log.Info("Done with marketing telemetry data collection.")
 
@@ -102,12 +102,12 @@ func (t *marketing) gather() {
 	addTotal(totals, "Access Scopes", rs.GetAllAccessScopes)
 	addTotal(totals, "Signature Integrations", si.Singleton().GetAllSignatureIntegrations)
 
-	groups, err := groupDataStore.Singleton().GetAll(t.ctx)
+	groups, err := groupDataStore.Singleton().GetAll(m.ctx)
 	if err != nil {
 		log.Error("Failed to get Groups: ", err)
 		return
 	}
-	providers, err := apDataStore.Singleton().GetAllAuthProviders(t.ctx)
+	providers, err := apDataStore.Singleton().GetAllAuthProviders(m.ctx)
 	if err != nil {
 		log.Error("Failed to get AuthProviders: ", err)
 		return
@@ -130,5 +130,5 @@ func (t *marketing) gather() {
 	for id, n := range providerGroups {
 		totals["Total Groups of "+providerIdNames[id]] = n
 	}
-	t.telemeter.Identify(totals)
+	m.telemeter.Identify(totals)
 }
