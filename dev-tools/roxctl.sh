@@ -13,12 +13,6 @@ is_operator_on_openshift() {
   if ! cmd; then
       result=1
   fi
-  mycmd() {
-      kubectl get centrals.platform.stackrox.io -n stackrox | grep -v "No resources found" > /dev/null      
-  }
-  if ! mycmd; then
-    result=1
-  fi
   return "$result"
 }
 
