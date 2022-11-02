@@ -93,15 +93,8 @@ const widgetTitleForEntity = {
     namespaces: 'Namespace',
 };
 
-// Default opname is entities path segment. For example, clusters.
-const opnameExceptionsForEntities = {
-    deployments: 'getDeployments',
-    roles: 'k8sRoles',
-    serviceaccounts: 'serviceAccounts',
-};
-
 function getRequestConfigForEntities(entitiesKey) {
-    const opname = opnameExceptionsForEntities[entitiesKey] ?? entitiesKey;
+    const opname = entitiesKey;
     return {
         routeMatcherMap: {
             [opname]: graphql(opname),
@@ -111,13 +104,13 @@ function getRequestConfigForEntities(entitiesKey) {
 
 const opnameForEntity = {
     clusters: 'getCluster',
-    controls: 'controlById',
+    controls: 'getControl',
     deployments: 'getDeployment',
     images: 'getImage',
     namespaces: 'getNamespace',
     nodes: 'getNode',
     policies: 'getPolicy',
-    roles: 'k8sRole',
+    roles: 'getRole',
     secrets: 'getSecret',
     serviceaccounts: 'getServiceAccount',
     subjects: 'getSubject',
@@ -131,18 +124,6 @@ function getRequestConfigForEntity(entitiesKey) {
         },
     };
 }
-
-// Exception if prefix differs from opnameForEntity above.
-const opnamePrefixExceptionForPrimaryAndSecondaryEntities = {
-    clusters: 'getCluster_',
-    images: 'getImage_',
-    namespaces: 'getNamespace_',
-    policies: 'getPolicy_',
-    roles: 'getRole_',
-    secrets: 'getSecret_',
-    serviceaccounts: 'getServiceAccount_',
-    subjects: 'subject_',
-};
 
 const typeOfEntity = {
     clusters: 'CLUSTER',
@@ -159,10 +140,7 @@ const typeOfEntity = {
 };
 
 function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
-    const opnamePrefix =
-        opnamePrefixExceptionForPrimaryAndSecondaryEntities[entitiesKey1] ??
-        opnameForEntity[entitiesKey1];
-    return `${opnamePrefix}${typeOfEntity[entitiesKey2]}`;
+    return `${opnameForEntity[entitiesKey1]}_${typeOfEntity[entitiesKey2]}`;
 }
 
 const routeMatcherMapForDashboard = {};

@@ -11,9 +11,17 @@ const routeMatcherMap = {};
     'nodesCount',
     'deploymentsCount',
     'runStatuses',
-    'getAggregatedResults', // 4 requests
+    'getAggregatedResultsAcrossEntity_CLUSTER',
+    'getAggregatedResultsByEntity_CLUSTER',
+    'getAggregatedResultsAcrossEntity_NAMESPACE',
+    'getAggregatedResultsAcrossEntity_NODE',
     'getComplianceStandards',
-    'complianceStandards', // 6 requests
+    'complianceStandards_CIS_Docker_v1_2_0',
+    'complianceStandards_CIS_Kubernetes_v1_5',
+    'complianceStandards_HIPAA_164',
+    'complianceStandards_NIST_800_190',
+    'complianceStandards_NIST_SP_800_53_Rev_4',
+    'complianceStandards_PCI_DSS_3_2',
 ].forEach((opname) => {
     routeMatcherMap[opname] = {
         method: 'POST',
@@ -21,49 +29,7 @@ const routeMatcherMap = {};
     };
 });
 
-/*
- * getAggregatedResults opname has 4 requests with 2 duplicates for CLUSTER.
- * Each entity alias has a predicate to match the payload of the corresponding request.
- */
-const getAggregatedResults = {};
-['CLUSTER', 'NAMESPACE', 'NODE'].forEach((entity) => {
-    getAggregatedResults[entity] = (req) => {
-        const { groupBy, unit } = req.body.variables;
-        // "variables": { "groupBy": ["STANDARD", "CLUSTER"], "unit": "CHECK" }
-        return (
-            Array.isArray(groupBy) &&
-            groupBy[0] === 'STANDARD' &&
-            groupBy[1] === entity &&
-            unit === 'CHECK'
-        );
-    };
-});
-
-/*
- * complianceStandards opname has 6 requests.
- * Each standard name alias has a predicate to match the payload of the corresponding request.
- */
-const complianceStandards = {};
-[
-    'CIS Docker v1.2.0',
-    'CIS Kubernetes v1.5',
-    'HIPAA 164',
-    'NIST SP 800-190',
-    'NIST SP 800-53',
-    'PCI DSS 3.2.1',
-].forEach((standardName) => {
-    complianceStandards[standardName] = (req) => {
-        const { where } = req.body.variables;
-        return where === `Standard:${standardName}`;
-    };
-});
-
-const opnameAliasesMap = {
-    getAggregatedResults,
-    complianceStandards,
-};
-
-const requestConfig = { routeMatcherMap, opnameAliasesMap };
+const requestConfig = { routeMatcherMap };
 
 export function visitComplianceDashboard() {
     visit(url.dashboard, requestConfig);

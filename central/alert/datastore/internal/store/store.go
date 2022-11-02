@@ -14,6 +14,7 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.Alert, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Alert, []int, error)
 	Upsert(ctx context.Context, alert *storage.Alert) error
+	UpsertMany(ctx context.Context, alerts []*storage.Alert) error
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
 

@@ -102,7 +102,11 @@ const ClusterPage = ({
                                         <ClusterVersion clusterId={id} />
                                     </div>
                                 </div>
-                                <ComplianceByStandards entityType={entityTypes.CLUSTER} />
+                                <ComplianceByStandards
+                                    entityId={id}
+                                    entityName={name}
+                                    entityType={entityTypes.CLUSTER}
+                                />
 
                                 {sidePanelMode && (
                                     <>

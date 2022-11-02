@@ -45,8 +45,8 @@ export type CollectionResponse = {
 export function listCollections(
     searchFilter: SearchFilter,
     sortOption: ApiSortOption,
-    page: number,
-    pageSize: number
+    page?: number,
+    pageSize?: number
 ): CancellableRequest<CollectionResponse[]> {
     const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
     return makeCancellableAxiosRequest((signal) =>

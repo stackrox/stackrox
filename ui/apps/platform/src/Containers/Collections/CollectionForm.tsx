@@ -20,6 +20,9 @@ import {
     DropdownItem,
     DropdownSeparator,
     DropdownToggle,
+    EmptyState,
+    EmptyStateIcon,
+    EmptyStateVariant,
     Flex,
     FlexItem,
     Form,
@@ -28,8 +31,10 @@ import {
     Text,
     TextInput,
     Title,
+    Truncate,
 } from '@patternfly/react-core';
-import { CaretDownIcon } from '@patternfly/react-icons';
+import { CaretDownIcon, CubesIcon } from '@patternfly/react-icons';
+import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import isEmpty from 'lodash/isEmpty';
@@ -39,12 +44,38 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
-import { deleteCollection } from 'services/CollectionsService';
+import { CollectionResponse, deleteCollection } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
 import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
+
+function AttachedCollectionTable({ collections }: { collections: CollectionResponse[] }) {
+    return collections.length > 0 ? (
+        <TableComposable aria-label="Attached collections" variant={TableVariant.compact}>
+            <Tbody>
+                {collections.map(({ name, description }) => (
+                    <Tr key={name}>
+                        <Td dataLabel="Name">
+                            <Button variant="link" className="pf-u-pl-0" isInline>
+                                {name}
+                            </Button>
+                        </Td>
+                        <Td dataLabel="Description">
+                            <Truncate content={description} />
+                        </Td>
+                    </Tr>
+                ))}
+            </Tbody>
+        </TableComposable>
+    ) : (
+        <EmptyState variant={EmptyStateVariant.xs}>
+            <EmptyStateIcon icon={CubesIcon} />
+            <p>There are no other collections attached to this collection</p>
+        </EmptyState>
+    );
+}
 
 export type CollectionFormProps = {
     hasWriteAccessForCollections: boolean;
@@ -52,6 +83,8 @@ export type CollectionFormProps = {
     action: CollectionPageAction;
     /* initial data used to populate the form */
     initialData: Collection;
+    /* Collection object references for the list of ids in `initialData` */
+    initialEmbeddedCollections: CollectionResponse[];
     /* Whether or not to display the collection results in an inline drawer. If false, will
     display collection results in an overlay drawer. */
     useInlineDrawer: boolean;
@@ -94,6 +127,7 @@ function CollectionForm({
     hasWriteAccessForCollections,
     action,
     initialData,
+    initialEmbeddedCollections,
     useInlineDrawer,
     showBreadcrumbs,
 }: CollectionFormProps) {
@@ -114,13 +148,13 @@ function CollectionForm({
     const [isDeleting, setIsDeleting] = useState(false);
     const { toasts, addToast, removeToast } = useToasts();
 
-    const { values, isValid, errors, handleChange, handleBlur, setFieldValue } = useFormik({
+    const { values, errors, handleChange, handleBlur, setFieldValue } = useFormik({
         initialValues: initialData,
         onSubmit: () => {},
         validationSchema: yup.object({
             name: yup.string().trim().required(),
             description: yup.string(),
-            embeddedCollectionIds: yup.array(yup.string()),
+            embeddedCollections: yup.array(yup.string().trim().required()),
             resourceSelectors: yup.object().shape({
                 Deployment: yupResourceSelectorObject(),
                 Namespace: yupResourceSelectorObject(),
@@ -129,14 +163,12 @@ function CollectionForm({
         }),
     });
 
-    // eslint-disable-next-line no-console
-    console.log('formik change', isValid, values, errors);
-
     useEffect(() => {
         toggleDrawer(useInlineDrawer);
     }, [toggleDrawer, useInlineDrawer]);
 
     const pageTitle = action.type === 'create' ? 'Create collection' : values.name;
+    const isReadOnly = action.type === 'view' || !hasWriteAccessForCollections;
 
     function onEditCollection(id: string) {
         history.push({
@@ -180,6 +212,12 @@ function CollectionForm({
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector
     ) => setFieldValue(`resourceSelectors.${entityType}`, scopedResourceSelector);
+
+    const onEmbeddedCollectionsChange = (newCollections: CollectionResponse[]) =>
+        setFieldValue(
+            'embeddedCollections',
+            newCollections.map(({ id }) => id)
+        );
 
     return (
         <>
@@ -311,6 +349,7 @@ function CollectionForm({
                                                     validated={errors.name ? 'error' : 'default'}
                                                     onChange={(_, e) => handleChange(e)}
                                                     onBlur={handleBlur}
+                                                    isDisabled={isReadOnly}
                                                 />
                                             </FormGroup>
                                         </FlexItem>
@@ -322,6 +361,7 @@ function CollectionForm({
                                                     value={values.description}
                                                     onChange={(_, e) => handleChange(e)}
                                                     onBlur={handleBlur}
+                                                    isDisabled={isReadOnly}
                                                 />
                                             </FormGroup>
                                         </FlexItem>
@@ -333,19 +373,26 @@ function CollectionForm({
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsMd' }}
                                 >
-                                    <Title className="pf-u-mb-xs" headingLevel="h2">
-                                        Add new collection rules
+                                    <Title
+                                        className={isReadOnly ? 'pf-u-mb-md' : 'pf-u-mb-xs'}
+                                        headingLevel="h2"
+                                    >
+                                        Collection rules
                                     </Title>
-                                    <p>
-                                        Select deployments via rules. You can use regular
-                                        expressions (RE2 syntax).
-                                    </p>
-                                    <Divider className="pf-u-mb-lg" component="div" />
+                                    {!isReadOnly && (
+                                        <>
+                                            <p>
+                                                Select deployments via rules. You can use regular
+                                                expressions (RE2 syntax).
+                                            </p>
+                                        </>
+                                    )}
                                     <RuleSelector
                                         entityType="Deployment"
                                         scopedResourceSelector={values.resourceSelectors.Deployment}
                                         handleChange={onResourceSelectorChange}
                                         validationErrors={errors.resourceSelectors?.Deployment}
+                                        isDisabled={isReadOnly}
                                     />
                                     <Label
                                         variant="outline"
@@ -359,6 +406,7 @@ function CollectionForm({
                                         scopedResourceSelector={values.resourceSelectors.Namespace}
                                         handleChange={onResourceSelectorChange}
                                         validationErrors={errors.resourceSelectors?.Namespace}
+                                        isDisabled={isReadOnly}
                                     />
                                     <Label
                                         variant="outline"
@@ -372,13 +420,34 @@ function CollectionForm({
                                         scopedResourceSelector={values.resourceSelectors.Cluster}
                                         handleChange={onResourceSelectorChange}
                                         validationErrors={errors.resourceSelectors?.Cluster}
+                                        isDisabled={isReadOnly}
                                     />
                                 </Flex>
 
-                                <div className="pf-u-background-color-100 pf-u-p-lg">
-                                    <Title headingLevel="h2">Attach existing collections</Title>
-                                    <CollectionAttacher />
-                                </div>
+                                <Flex
+                                    className="pf-u-background-color-100 pf-u-p-lg"
+                                    direction={{ default: 'column' }}
+                                    spaceItems={{ default: 'spaceItemsMd' }}
+                                >
+                                    <Title className="pf-u-mb-xs" headingLevel="h2">
+                                        Attached collections
+                                    </Title>
+                                    {isReadOnly ? (
+                                        <AttachedCollectionTable
+                                            collections={initialEmbeddedCollections}
+                                        />
+                                    ) : (
+                                        <>
+                                            <p>Extend this collection by attaching other sets.</p>
+                                            <CollectionAttacher
+                                                initialEmbeddedCollections={
+                                                    initialEmbeddedCollections
+                                                }
+                                                onSelectionChange={onEmbeddedCollectionsChange}
+                                            />
+                                        </>
+                                    )}
+                                </Flex>
                             </Flex>
                             {action.type !== 'view' && (
                                 <div className="pf-u-background-color-100 pf-u-p-lg pf-u-py-md">
