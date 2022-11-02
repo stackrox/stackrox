@@ -72,9 +72,7 @@ function AttachedCollectionTable({ collections }: { collections: CollectionRespo
     ) : (
         <EmptyState variant={EmptyStateVariant.xs}>
             <EmptyStateIcon icon={CubesIcon} />
-            <Title headingLevel="h4">
-                There are no other collections attached to this collection
-            </Title>
+            <p>There are no other collections attached to this collection</p>
         </EmptyState>
     );
 }
@@ -375,14 +373,20 @@ function CollectionForm({
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsMd' }}
                                 >
-                                    <Title className="pf-u-mb-xs" headingLevel="h2">
-                                        Add new collection rules
+                                    <Title
+                                        className={isReadOnly ? 'pf-u-mb-md' : 'pf-u-mb-xs'}
+                                        headingLevel="h2"
+                                    >
+                                        Collection rules
                                     </Title>
-                                    <p>
-                                        Select deployments via rules. You can use regular
-                                        expressions (RE2 syntax).
-                                    </p>
-                                    <Divider className="pf-u-mb-lg" component="div" />
+                                    {!isReadOnly && (
+                                        <>
+                                            <p>
+                                                Select deployments via rules. You can use regular
+                                                expressions (RE2 syntax).
+                                            </p>
+                                        </>
+                                    )}
                                     <RuleSelector
                                         entityType="Deployment"
                                         scopedResourceSelector={values.resourceSelectors.Deployment}
@@ -425,20 +429,15 @@ function CollectionForm({
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsMd' }}
                                 >
+                                    <Title className="pf-u-mb-xs" headingLevel="h2">
+                                        Attached collections
+                                    </Title>
                                     {isReadOnly ? (
-                                        <>
-                                            <Title className="pf-u-mb-xs" headingLevel="h2">
-                                                Attached collections
-                                            </Title>
-                                            <AttachedCollectionTable
-                                                collections={initialEmbeddedCollections}
-                                            />
-                                        </>
+                                        <AttachedCollectionTable
+                                            collections={initialEmbeddedCollections}
+                                        />
                                     ) : (
                                         <>
-                                            <Title className="pf-u-mb-xs" headingLevel="h2">
-                                                Attach existing collections
-                                            </Title>
                                             <p>Extend this collection by attaching other sets.</p>
                                             <CollectionAttacher
                                                 initialEmbeddedCollections={
