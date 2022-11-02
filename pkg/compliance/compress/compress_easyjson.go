@@ -72,7 +72,7 @@ func easyjson24245084DecodeGithubComStackroxRoxPkgComplianceCompress(in *jlexer.
 		in.Consumed()
 	}
 }
-func easyjson24245084EncodeGithubComStackroxRoxPkgComplianceCompress(out *jwriter.Writer, in *ResultWrapper) {
+func easyjson24245084EncodeGithubComStackroxRoxPkgComplianceCompress(out *jwriter.Writer, in ResultWrapper) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -95,7 +95,7 @@ func easyjson24245084EncodeGithubComStackroxRoxPkgComplianceCompress(out *jwrite
 				if v2Value == nil {
 					out.RawString("null")
 				} else {
-					easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(out, &*v2Value)
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(out, *v2Value)
 				}
 			}
 			out.RawByte('}')
@@ -105,14 +105,14 @@ func easyjson24245084EncodeGithubComStackroxRoxPkgComplianceCompress(out *jwrite
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v *ResultWrapper) MarshalJSON() ([]byte, error) {
+func (v ResultWrapper) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjson24245084EncodeGithubComStackroxRoxPkgComplianceCompress(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v *ResultWrapper) MarshalEasyJSON(w *jwriter.Writer) {
+func (v ResultWrapper) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson24245084EncodeGithubComStackroxRoxPkgComplianceCompress(w, v)
 }
 
@@ -212,7 +212,7 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 		in.Consumed()
 	}
 }
-func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(out *jwriter.Writer, in *compliance.ComplianceStandardResult) {
+func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(out *jwriter.Writer, in compliance.ComplianceStandardResult) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -234,7 +234,7 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(ou
 				if v5Value == nil {
 					out.RawString("null")
 				} else {
-					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, &*v5Value)
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, *v5Value)
 				}
 			}
 			out.RawByte('}')
@@ -262,7 +262,7 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(ou
 				if v6Value == nil {
 					out.RawString("null")
 				} else {
-					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, &*v6Value)
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, *v6Value)
 				}
 			}
 			out.RawByte('}')
@@ -332,7 +332,7 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer
 		in.Consumed()
 	}
 }
-func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out *jwriter.Writer, in *storage.ComplianceResultValue) {
+func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out *jwriter.Writer, in storage.ComplianceResultValue) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -349,7 +349,7 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out *jwriter.Wri
 				if v9 == nil {
 					out.RawString("null")
 				} else {
-					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out, &*v9)
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out, *v9)
 				}
 			}
 			out.RawByte(']')
@@ -402,7 +402,7 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorageComplianceResultV
 		in.Consumed()
 	}
 }
-func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out *jwriter.Writer, in *storage.ComplianceResultValue_Evidence) {
+func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out *jwriter.Writer, in storage.ComplianceResultValue_Evidence) {
 	out.RawByte('{')
 	first := true
 	_ = first

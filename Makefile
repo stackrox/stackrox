@@ -294,10 +294,10 @@ include make/protogen.mk
 .PHONY: go-easyjson-srcs
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
-	$(SILENT)easyjson -pkg -ptr_receivers pkg/docker/types/types.go
-	$(SILENT)easyjson -pkg -ptr_receivers pkg/docker/types/container.go
-	$(SILENT)easyjson -pkg -ptr_receivers pkg/docker/types/image.go
-	$(SILENT)easyjson -pkg -ptr_receivers pkg/compliance/compress/compress.go
+	$(SILENT)easyjson -pkg pkg/docker/types/types.go
+	$(SILENT)easyjson -pkg pkg/docker/types/container.go
+	$(SILENT)easyjson -pkg pkg/docker/types/image.go
+	$(SILENT)easyjson -pkg pkg/compliance/compress/compress.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:

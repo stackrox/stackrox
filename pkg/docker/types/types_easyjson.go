@@ -106,14 +106,14 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes(in *jlexer.Lexer, 
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Writer, in *Data) {
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Writer, in Data) {
 	out.RawByte('{')
 	first := true
 	_ = first
 	{
 		const prefix string = ",\"Info\":"
 		out.RawString(prefix[1:])
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out, &in.Info)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out, in.Info)
 	}
 	{
 		const prefix string = ",\"Containers\":"
@@ -126,7 +126,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 				if v3 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out, &v4)
+				easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out, v4)
 			}
 			out.RawByte(']')
 		}
@@ -142,7 +142,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 				if v5 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes2(out, &v6)
+				easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes2(out, v6)
 			}
 			out.RawByte(']')
 		}
@@ -150,20 +150,20 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 	{
 		const prefix string = ",\"BridgeNetwork\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out, &in.BridgeNetwork)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out, in.BridgeNetwork)
 	}
 	out.RawByte('}')
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v *Data) MarshalJSON() ([]byte, error) {
+func (v Data) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v *Data) MarshalEasyJSON(w *jwriter.Writer) {
+func (v Data) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(w, v)
 }
 
@@ -324,7 +324,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes1(in *jlexer.Lexer, out 
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, in *types.NetworkResource) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, in types.NetworkResource) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -361,7 +361,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, i
 	{
 		const prefix string = ",\"IPAM\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork(out, &in.IPAM)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork(out, in.IPAM)
 	}
 	{
 		const prefix string = ",\"Internal\":"
@@ -381,7 +381,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, i
 	{
 		const prefix string = ",\"ConfigFrom\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork1(out, &in.ConfigFrom)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork1(out, in.ConfigFrom)
 	}
 	{
 		const prefix string = ",\"ConfigOnly\":"
@@ -404,7 +404,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, i
 				}
 				out.String(string(v12Name))
 				out.RawByte(':')
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypes2(out, &v12Value)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypes2(out, v12Value)
 			}
 			out.RawByte('}')
 		}
@@ -460,7 +460,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, i
 				if v15 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork2(out, &v16)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork2(out, v16)
 			}
 			out.RawByte(']')
 		}
@@ -479,7 +479,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, i
 				}
 				out.String(string(v17Name))
 				out.RawByte(':')
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork3(out, &v17Value)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork3(out, v17Value)
 			}
 			out.RawByte('}')
 		}
@@ -565,7 +565,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork3(in *jlexer.Lexe
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork3(out *jwriter.Writer, in *network.ServiceInfo) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork3(out *jwriter.Writer, in network.ServiceInfo) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -606,7 +606,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork3(out *jwriter.Wr
 				if v22 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork4(out, &v23)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork4(out, v23)
 			}
 			out.RawByte(']')
 		}
@@ -664,7 +664,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork4(in *jlexer.Lexe
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork4(out *jwriter.Writer, in *network.Task) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork4(out *jwriter.Writer, in network.Task) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -739,7 +739,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork2(in *jlexer.Lexe
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork2(out *jwriter.Writer, in *network.PeerInfo) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork2(out *jwriter.Writer, in network.PeerInfo) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -794,7 +794,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes2(in *jlexer.Lexer, out 
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes2(out *jwriter.Writer, in *types.EndpointResource) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes2(out *jwriter.Writer, in types.EndpointResource) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -856,7 +856,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork1(in *jlexer.Lexe
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork1(out *jwriter.Writer, in *network.ConfigReference) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork1(out *jwriter.Writer, in network.ConfigReference) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -937,7 +937,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork(in *jlexer.Lexer
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork(out *jwriter.Writer, in *network.IPAM) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork(out *jwriter.Writer, in network.IPAM) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -978,7 +978,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork(out *jwriter.Wri
 				if v29 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork5(out, &v30)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork5(out, v30)
 			}
 			out.RawByte(']')
 		}
@@ -1040,7 +1040,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork5(in *jlexer.Lexe
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork5(out *jwriter.Writer, in *network.IPAMConfig) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork5(out *jwriter.Writer, in network.IPAMConfig) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1150,14 +1150,14 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes2(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes2(out *jwriter.Writer, in *ImageWrap) {
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes2(out *jwriter.Writer, in ImageWrap) {
 	out.RawByte('{')
 	first := true
 	_ = first
 	{
 		const prefix string = ",\"image\":"
 		out.RawString(prefix[1:])
-		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes3(out, &in.Image)
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes3(out, in.Image)
 	}
 	{
 		const prefix string = ",\"history\":"
@@ -1170,7 +1170,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes2(out *jwriter.Writ
 				if v34 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesImage(out, &v35)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesImage(out, v35)
 			}
 			out.RawByte(']')
 		}
@@ -1239,7 +1239,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesImage(in *jlexer.Lexer, 
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesImage(out *jwriter.Writer, in *image.HistoryResponseItem) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesImage(out *jwriter.Writer, in image.HistoryResponseItem) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1373,7 +1373,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes3(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes3(out *jwriter.Writer, in *ImageInspect) {
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes3(out *jwriter.Writer, in ImageInspect) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1413,7 +1413,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes3(out *jwriter.Writ
 	if in.Config != nil {
 		const prefix string = ",\"Config\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes4(out, &*in.Config)
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes4(out, *in.Config)
 	}
 	out.RawByte('}')
 }
@@ -1458,7 +1458,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes4(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes4(out *jwriter.Writer, in *Config) {
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes4(out *jwriter.Writer, in Config) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1466,7 +1466,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes4(out *jwriter.Writ
 		const prefix string = ",\"Healthcheck\":"
 		first = false
 		out.RawString(prefix[1:])
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer(out, &*in.Healthcheck)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer(out, *in.Healthcheck)
 	}
 	if in.User != "" {
 		const prefix string = ",\"User\":"
@@ -1540,7 +1540,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesContainer(in *jlexer.Lex
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer(out *jwriter.Writer, in *container.HealthConfig) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer(out *jwriter.Writer, in container.HealthConfig) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1702,7 +1702,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writer, in *ContainerJSON) {
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writer, in ContainerJSON) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1716,7 +1716,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writ
 				if v49 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes5(out, &v50)
+				easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes5(out, v50)
 			}
 			out.RawByte(']')
 		}
@@ -1729,7 +1729,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writ
 		} else {
 			out.RawString(prefix)
 		}
-		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes4(out, &*in.Config)
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes4(out, *in.Config)
 	}
 	if in.NetworkSettings != nil {
 		const prefix string = ",\"NetworkSettings\":"
@@ -1739,7 +1739,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writ
 		} else {
 			out.RawString(prefix)
 		}
-		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes6(out, &*in.NetworkSettings)
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes6(out, *in.NetworkSettings)
 	}
 	{
 		const prefix string = ",\"Id\":"
@@ -1759,7 +1759,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writ
 	if in.State != nil {
 		const prefix string = ",\"State\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes7(out, &*in.State)
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes7(out, *in.State)
 	}
 	if in.Name != "" {
 		const prefix string = ",\"Name\":"
@@ -1774,7 +1774,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writ
 	if in.HostConfig != nil {
 		const prefix string = ",\"HostConfig\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes8(out, &*in.HostConfig)
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes8(out, *in.HostConfig)
 	}
 	out.RawByte('}')
 }
@@ -1916,7 +1916,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes8(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes8(out *jwriter.Writer, in *HostConfig) {
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes8(out *jwriter.Writer, in HostConfig) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1991,7 +1991,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes8(out *jwriter.Writ
 		} else {
 			out.RawString(prefix)
 		}
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer1(out, &in.RestartPolicy)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer1(out, in.RestartPolicy)
 	}
 	if in.IpcMode != "" {
 		const prefix string = ",\"IpcMode\":"
@@ -2087,7 +2087,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes8(out *jwriter.Writ
 				if v60 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer2(out, &v61)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer2(out, v61)
 			}
 			out.RawByte(']')
 		}
@@ -2109,7 +2109,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes8(out *jwriter.Writ
 				if v63 == nil {
 					out.RawString("null")
 				} else {
-					easyjson6601e8cdEncodeGithubComDockerGoUnits(out, &*v63)
+					easyjson6601e8cdEncodeGithubComDockerGoUnits(out, *v63)
 				}
 			}
 			out.RawByte(']')
@@ -2152,7 +2152,7 @@ func easyjson6601e8cdDecodeGithubComDockerGoUnits(in *jlexer.Lexer, out *go_unit
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerGoUnits(out *jwriter.Writer, in *go_units.Ulimit) {
+func easyjson6601e8cdEncodeGithubComDockerGoUnits(out *jwriter.Writer, in go_units.Ulimit) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -2208,7 +2208,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesContainer2(in *jlexer.Le
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer2(out *jwriter.Writer, in *container.DeviceMapping) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer2(out *jwriter.Writer, in container.DeviceMapping) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -2262,7 +2262,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesContainer1(in *jlexer.Le
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer1(out *jwriter.Writer, in *container.RestartPolicy) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer1(out *jwriter.Writer, in container.RestartPolicy) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -2319,7 +2319,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes7(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes7(out *jwriter.Writer, in *ContainerState) {
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes7(out *jwriter.Writer, in ContainerState) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -2337,7 +2337,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes7(out *jwriter.Writ
 		} else {
 			out.RawString(prefix)
 		}
-		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes9(out, &*in.Health)
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes9(out, *in.Health)
 	}
 	out.RawByte('}')
 }
@@ -2372,7 +2372,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes9(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes9(out *jwriter.Writer, in *Health) {
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes9(out *jwriter.Writer, in Health) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -2474,7 +2474,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes6(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes6(out *jwriter.Writer, in *NetworkSettings) {
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes6(out *jwriter.Writer, in NetworkSettings) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -2493,7 +2493,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes6(out *jwriter.Writ
 				}
 				out.String(string(v67Name))
 				out.RawByte(':')
-				easyjson6601e8cdEncode(out, &v67Value)
+				easyjson6601e8cdEncode(out, v67Value)
 			}
 			out.RawByte('}')
 		}
@@ -2525,7 +2525,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes6(out *jwriter.Writ
 						if v69 > 0 {
 							out.RawByte(',')
 						}
-						easyjson6601e8cdEncodeGithubComDockerGoConnectionsNat(out, &v70)
+						easyjson6601e8cdEncodeGithubComDockerGoConnectionsNat(out, v70)
 					}
 					out.RawByte(']')
 				}
@@ -2568,7 +2568,7 @@ func easyjson6601e8cdDecodeGithubComDockerGoConnectionsNat(in *jlexer.Lexer, out
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerGoConnectionsNat(out *jwriter.Writer, in *nat.PortBinding) {
+func easyjson6601e8cdEncodeGithubComDockerGoConnectionsNat(out *jwriter.Writer, in nat.PortBinding) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -2613,7 +2613,7 @@ func easyjson6601e8cdDecode(in *jlexer.Lexer, out *struct{}) {
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncode(out *jwriter.Writer, in *struct{}) {
+func easyjson6601e8cdEncode(out *jwriter.Writer, in struct{}) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -2662,7 +2662,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes5(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes5(out *jwriter.Writer, in *MountPoint) {
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes5(out *jwriter.Writer, in MountPoint) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -3090,7 +3090,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in *types.Info) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in types.Info) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -3176,7 +3176,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 	{
 		const prefix string = ",\"Plugins\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out, &in.Plugins)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out, in.Plugins)
 	}
 	{
 		const prefix string = ",\"MemoryLimit\":"
@@ -3319,7 +3319,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 		if in.RegistryConfig == nil {
 			out.RawString("null")
 		} else {
-			easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out, &*in.RegistryConfig)
+			easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out, *in.RegistryConfig)
 		}
 	}
 	{
@@ -3343,7 +3343,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 				if v87 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm(out, &v88)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm(out, v88)
 			}
 			out.RawByte(']')
 		}
@@ -3425,7 +3425,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 				}
 				out.String(string(v91Name))
 				out.RawByte(':')
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypes4(out, &v91Value)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypes4(out, v91Value)
 			}
 			out.RawByte('}')
 		}
@@ -3438,7 +3438,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 	{
 		const prefix string = ",\"Swarm\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm1(out, &in.Swarm)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm1(out, in.Swarm)
 	}
 	{
 		const prefix string = ",\"LiveRestoreEnabled\":"
@@ -3458,17 +3458,17 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 	{
 		const prefix string = ",\"ContainerdCommit\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out, &in.ContainerdCommit)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out, in.ContainerdCommit)
 	}
 	{
 		const prefix string = ",\"RuncCommit\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out, &in.RuncCommit)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out, in.RuncCommit)
 	}
 	{
 		const prefix string = ",\"InitCommit\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out, &in.InitCommit)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out, in.InitCommit)
 	}
 	{
 		const prefix string = ",\"SecurityOptions\":"
@@ -3500,7 +3500,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 				if v94 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypes6(out, &v95)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypes6(out, v95)
 			}
 			out.RawByte(']')
 		}
@@ -3556,7 +3556,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes6(in *jlexer.Lexer, out 
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes6(out *jwriter.Writer, in *types.NetworkAddressPool) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes6(out *jwriter.Writer, in types.NetworkAddressPool) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -3605,7 +3605,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes5(in *jlexer.Lexer, out 
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out *jwriter.Writer, in *types.Commit) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out *jwriter.Writer, in types.Commit) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -3720,7 +3720,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm1(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm1(out *jwriter.Writer, in *swarm.Info) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm1(out *jwriter.Writer, in swarm.Info) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -3760,7 +3760,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm1(out *jwriter.Writ
 				if v100 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm2(out, &v101)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm2(out, v101)
 			}
 			out.RawByte(']')
 		}
@@ -3778,7 +3778,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm1(out *jwriter.Writ
 	if in.Cluster != nil {
 		const prefix string = ",\"Cluster\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm3(out, &*in.Cluster)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm3(out, *in.Cluster)
 	}
 	if len(in.Warnings) != 0 {
 		const prefix string = ",\"Warnings\":"
@@ -3870,7 +3870,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm3(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm3(out *jwriter.Writer, in *swarm.ClusterInfo) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm3(out *jwriter.Writer, in swarm.ClusterInfo) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -3882,12 +3882,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm3(out *jwriter.Writ
 	{
 		const prefix string = ",\"Spec\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out, &in.Spec)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out, in.Spec)
 	}
 	{
 		const prefix string = ",\"TLSInfo\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm5(out, &in.TLSInfo)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm5(out, in.TLSInfo)
 	}
 	{
 		const prefix string = ",\"RootRotationInProgress\":"
@@ -3923,7 +3923,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm3(out *jwriter.Writ
 	if true {
 		const prefix string = ",\"Version\":"
 		out.RawString(prefix)
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm6(out, &in.Version)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm6(out, in.Version)
 	}
 	if true {
 		const prefix string = ",\"CreatedAt\":"
@@ -3968,7 +3968,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm6(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm6(out *jwriter.Writer, in *swarm.Version) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm6(out *jwriter.Writer, in swarm.Version) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4025,7 +4025,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm5(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm5(out *jwriter.Writer, in *swarm.TLSInfo) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm5(out *jwriter.Writer, in swarm.TLSInfo) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4116,7 +4116,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm4(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out *jwriter.Writer, in *swarm.Spec) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out *jwriter.Writer, in swarm.Spec) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4124,7 +4124,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out *jwriter.Writ
 		const prefix string = ",\"Orchestration\":"
 		first = false
 		out.RawString(prefix[1:])
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm7(out, &in.Orchestration)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm7(out, in.Orchestration)
 	}
 	if true {
 		const prefix string = ",\"Raft\":"
@@ -4134,7 +4134,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out *jwriter.Writ
 		} else {
 			out.RawString(prefix)
 		}
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm8(out, &in.Raft)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm8(out, in.Raft)
 	}
 	if true {
 		const prefix string = ",\"Dispatcher\":"
@@ -4144,7 +4144,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out *jwriter.Writ
 		} else {
 			out.RawString(prefix)
 		}
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm9(out, &in.Dispatcher)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm9(out, in.Dispatcher)
 	}
 	if true {
 		const prefix string = ",\"CAConfig\":"
@@ -4154,7 +4154,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out *jwriter.Writ
 		} else {
 			out.RawString(prefix)
 		}
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm10(out, &in.CAConfig)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm10(out, in.CAConfig)
 	}
 	if true {
 		const prefix string = ",\"TaskDefaults\":"
@@ -4164,7 +4164,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out *jwriter.Writ
 		} else {
 			out.RawString(prefix)
 		}
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm11(out, &in.TaskDefaults)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm11(out, in.TaskDefaults)
 	}
 	if true {
 		const prefix string = ",\"EncryptionConfig\":"
@@ -4174,7 +4174,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out *jwriter.Writ
 		} else {
 			out.RawString(prefix)
 		}
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm12(out, &in.EncryptionConfig)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm12(out, in.EncryptionConfig)
 	}
 	if in.Name != "" {
 		const prefix string = ",\"Name\":"
@@ -4245,7 +4245,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm12(in *jlexer.Lexer
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm12(out *jwriter.Writer, in *swarm.EncryptionConfig) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm12(out *jwriter.Writer, in swarm.EncryptionConfig) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4295,7 +4295,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm11(in *jlexer.Lexer
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm11(out *jwriter.Writer, in *swarm.TaskDefaults) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm11(out *jwriter.Writer, in swarm.TaskDefaults) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4303,7 +4303,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm11(out *jwriter.Wri
 		const prefix string = ",\"LogDriver\":"
 		first = false
 		out.RawString(prefix[1:])
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm13(out, &*in.LogDriver)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm13(out, *in.LogDriver)
 	}
 	out.RawByte('}')
 }
@@ -4358,7 +4358,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm13(in *jlexer.Lexer
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm13(out *jwriter.Writer, in *swarm.Driver) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm13(out *jwriter.Writer, in swarm.Driver) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4462,7 +4462,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm10(in *jlexer.Lexer
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm10(out *jwriter.Writer, in *swarm.CAConfig) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm10(out *jwriter.Writer, in swarm.CAConfig) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4489,7 +4489,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm10(out *jwriter.Wri
 				if v119 == nil {
 					out.RawString("null")
 				} else {
-					easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm14(out, &*v119)
+					easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm14(out, *v119)
 				}
 			}
 			out.RawByte(']')
@@ -4582,7 +4582,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm14(in *jlexer.Lexer
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm14(out *jwriter.Writer, in *swarm.ExternalCA) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm14(out *jwriter.Writer, in swarm.ExternalCA) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4653,7 +4653,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm9(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm9(out *jwriter.Writer, in *swarm.DispatcherConfig) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm9(out *jwriter.Writer, in swarm.DispatcherConfig) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4712,7 +4712,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm8(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm8(out *jwriter.Writer, in *swarm.RaftConfig) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm8(out *jwriter.Writer, in swarm.RaftConfig) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4798,7 +4798,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm7(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm7(out *jwriter.Writer, in *swarm.OrchestrationConfig) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm7(out *jwriter.Writer, in swarm.OrchestrationConfig) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4843,7 +4843,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm2(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm2(out *jwriter.Writer, in *swarm.Peer) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm2(out *jwriter.Writer, in swarm.Peer) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4913,7 +4913,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes4(in *jlexer.Lexer, out 
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes4(out *jwriter.Writer, in *types.Runtime) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes4(out *jwriter.Writer, in types.Runtime) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4987,7 +4987,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm(in *jlexer.Lexer, 
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm(out *jwriter.Writer, in *swarm.GenericResource) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm(out *jwriter.Writer, in swarm.GenericResource) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -4995,7 +4995,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm(out *jwriter.Write
 		const prefix string = ",\"NamedResourceSpec\":"
 		first = false
 		out.RawString(prefix[1:])
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm15(out, &*in.NamedResourceSpec)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm15(out, *in.NamedResourceSpec)
 	}
 	if in.DiscreteResourceSpec != nil {
 		const prefix string = ",\"DiscreteResourceSpec\":"
@@ -5005,7 +5005,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm(out *jwriter.Write
 		} else {
 			out.RawString(prefix)
 		}
-		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm16(out, &*in.DiscreteResourceSpec)
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm16(out, *in.DiscreteResourceSpec)
 	}
 	out.RawByte('}')
 }
@@ -5042,7 +5042,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm16(in *jlexer.Lexer
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm16(out *jwriter.Writer, in *swarm.DiscreteGenericResource) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm16(out *jwriter.Writer, in swarm.DiscreteGenericResource) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -5097,7 +5097,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm15(in *jlexer.Lexer
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm15(out *jwriter.Writer, in *swarm.NamedGenericResource) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm15(out *jwriter.Writer, in swarm.NamedGenericResource) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -5284,7 +5284,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry(in *jlexer.Lexe
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Writer, in *registry.ServiceConfig) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Writer, in registry.ServiceConfig) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -5363,7 +5363,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Wr
 				if v136Value == nil {
 					out.RawString("null")
 				} else {
-					easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry1(out, &*v136Value)
+					easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry1(out, *v136Value)
 				}
 			}
 			out.RawByte('}')
@@ -5445,7 +5445,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry1(in *jlexer.Lex
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry1(out *jwriter.Writer, in *registry.IndexInfo) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry1(out *jwriter.Writer, in registry.IndexInfo) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -5603,7 +5603,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes3(in *jlexer.Lexer, out 
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out *jwriter.Writer, in *types.PluginsInfo) {
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out *jwriter.Writer, in types.PluginsInfo) {
 	out.RawByte('{')
 	first := true
 	_ = first
