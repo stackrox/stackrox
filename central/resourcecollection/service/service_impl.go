@@ -78,7 +78,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetCollection returns a collection for the given request
 func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollectionRequest) (*v1.GetCollectionResponse, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, nil
+		return nil, errors.New("Resource collections is not enabled")
 	}
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Id field should be set when requesting a collection")
@@ -164,7 +164,7 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 
 func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListCollectionsRequest) (*v1.ListCollectionsResponse, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, nil
+		return nil, errors.New("Resource collections is not enabled")
 	}
 
 	// parse query
