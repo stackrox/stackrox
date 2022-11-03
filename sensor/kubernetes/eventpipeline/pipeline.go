@@ -17,6 +17,7 @@ import (
 
 // New Creates a new eventPipeline component
 func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer) common.SensorComponent {
+	// TODO(ROX-13413): Move this env.EventPipelineOutputQueueSize to CreateOptions
 	outputQueue := output.New(detector, env.EventPipelineOutputQueueSize.IntegerSetting())
 	resourceListener := listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue)
 

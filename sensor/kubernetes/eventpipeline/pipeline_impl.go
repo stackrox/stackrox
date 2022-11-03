@@ -37,6 +37,8 @@ func (p *eventPipeline) ResponsesC() <-chan *central.MsgFromSensor {
 
 // Start implements common.SensorComponent
 func (p *eventPipeline) Start() error {
+	// The order is important here, we need to start the components
+	// that receive messages from other components first
 	if err := p.output.Start(); err != nil {
 		return err
 	}
@@ -52,6 +54,8 @@ func (p *eventPipeline) Start() error {
 // Stop implements common.SensorComponent
 func (p *eventPipeline) Stop(_ error) {
 	defer close(p.eventsC)
+	// The order is important here, we need to stop the components
+	// that send messages to other components first
 	p.listener.Stop(nil)
 	p.output.Stop(nil)
 	p.stopSig.Signal()

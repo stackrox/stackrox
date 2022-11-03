@@ -2,7 +2,6 @@ package output
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
@@ -13,7 +12,6 @@ func New(detector detector.Detector, queueSize int) component.OutputQueue {
 	forwardQueue := make(chan *central.MsgFromSensor)
 	outputQueue := &outputQueueImpl{
 		detector:     detector,
-		stopSig:      concurrency.NewSignal(),
 		innerQueue:   ch,
 		forwardQueue: forwardQueue,
 	}
