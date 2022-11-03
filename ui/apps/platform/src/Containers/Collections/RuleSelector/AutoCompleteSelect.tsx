@@ -1,11 +1,5 @@
 import React, { ReactElement, useCallback, useMemo, useState } from 'react';
-import {
-    debounce,
-    Select,
-    SelectOption,
-    SelectOptionProps,
-    ValidatedOptions,
-} from '@patternfly/react-core';
+import { debounce, Select, SelectOption, ValidatedOptions } from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import { CancellableRequest } from 'services/cancellationUtils';
@@ -21,6 +15,7 @@ export type AutoCompleteSelectProps = {
     validated: ValidatedOptions;
     isDisabled: boolean;
     autocompleteProvider?: (search: string) => CancellableRequest<string[]>;
+    entityType: SelectorEntityType;
 };
 
 function ResourceSelectOption({ option, entityType }) {
@@ -37,9 +32,12 @@ function ResourceSelectOption({ option, entityType }) {
     );
 }
 
-function getOptions(data: string[] | undefined): ReactElement[] | undefined {
+function getOptions(
+    data: string[] | undefined,
+    entityType: SelectorEntityType
+): ReactElement[] | undefined {
     return data?.map((option) => (
-        <ResourceSelectOption key={option} option={option} entityType="Deployment" />
+        <ResourceSelectOption key={option} option={option} entityType={entityType} />
     ));
 }
 
@@ -52,6 +50,7 @@ export function AutoCompleteSelect({
     validated,
     isDisabled,
     autocompleteProvider,
+    entityType,
 }: AutoCompleteSelectProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const [typeahead, setTypeahead] = useState(selectedOption);
@@ -90,14 +89,14 @@ export function AutoCompleteSelect({
                 variant="typeahead"
                 isCreatable
                 isOpen={isOpen}
-                onFilter={() => getOptions(data)}
+                onFilter={() => getOptions(data, entityType)}
                 onToggle={onToggle}
                 onTypeaheadInputChanged={updateTypeahead}
                 selections={selectedOption}
                 onSelect={onSelect}
                 isDisabled={isDisabled}
             >
-                {getOptions(data)}
+                {getOptions(data, entityType)}
             </Select>
         </>
     );

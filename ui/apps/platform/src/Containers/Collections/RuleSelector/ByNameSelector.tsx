@@ -94,6 +94,7 @@ function ByNameSelector({
                             }
                             isDisabled={isDisabled}
                             autocompleteProvider={onAutocomplete}
+                            entityType={entityType}
                         />
                         {!isDisabled && (
                             <Button variant="plain" onClick={() => onDeleteValue(index)}>
