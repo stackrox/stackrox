@@ -348,8 +348,14 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 		return err
 	}
 
-	ds.lock.Lock()
-	defer ds.lock.Unlock()
+	// if this a dryrun we don't ever end up calling upsert so we only need to get a read lock
+	if dryrun {
+		ds.lock.RLock()
+		defer ds.lock.RUnlock()
+	} else {
+		ds.lock.Lock()
+		defer ds.lock.Unlock()
+	}
 
 	// resolve object to check if the name was changed
 	storedCollection, ok, err := ds.storage.Get(ctx, collection.GetId())
@@ -387,6 +393,10 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 
 func (ds *datastoreImpl) UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error {
 	return ds.updateCollectionWorkflow(ctx, collection, false)
+}
+
+func (ds *datastoreImpl) DryRunUpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	return ds.updateCollectionWorkflow(ctx, collection, true)
 }
 
 func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error {

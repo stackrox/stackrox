@@ -33,6 +33,7 @@ type DataStore interface {
 	DeleteCollection(ctx context.Context, id string) error
 	DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error
+	DryRunUpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	// autocomplete workflow, maybe SearchResults? TODO ROX-12616
 }
 

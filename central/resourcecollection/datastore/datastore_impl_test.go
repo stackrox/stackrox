@@ -211,29 +211,54 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	err = s.datastore.DeleteCollection(ctx, objA.GetId())
 	assert.Error(s.T(), err)
 
-	// try to update 'a' to point to 'b' which creates a cycle
+	// dryrun update 'a' to point to 'b' which creates a cycle
 	objACycle := getTestCollection("a", []string{objB.GetId()})
 	objACycle.Id = objA.GetId()
+	err = s.datastore.DryRunUpdateCollection(ctx, objACycle)
+	assert.Error(s.T(), err)
+	_, ok = err.(dag.EdgeLoopError)
+	assert.True(s.T(), ok)
+
+	// update 'a' to point to 'b' which creates a cycle
 	err = s.datastore.UpdateCollection(ctx, objACycle)
 	assert.Error(s.T(), err)
 	_, ok = err.(dag.EdgeLoopError)
 	assert.True(s.T(), ok)
 
-	// try to update 'a' to point to itself which creates a self cycle
+	// dryrun update 'a' to point to itself which creates a self cycle
 	updateTestCollection(objACycle, []string{objA.GetId()})
+	err = s.datastore.DryRunUpdateCollection(ctx, objACycle)
+	assert.Error(s.T(), err)
+	_, ok = err.(dag.SrcDstEqualError)
+	assert.True(s.T(), ok)
+
+	// update 'a' to point to itself which creates a self cycle
 	err = s.datastore.UpdateCollection(ctx, objACycle)
 	assert.Error(s.T(), err)
 	_, ok = err.(dag.SrcDstEqualError)
 	assert.True(s.T(), ok)
 
-	// try to update 'a' with a duplicate name
+	// dryrun update 'a' with a duplicate name
 	objADup.Id = objA.GetId()
 	objADup.Name = objB.GetName()
+	err = s.datastore.DryRunUpdateCollection(ctx, objADup)
+	assert.Error(s.T(), err)
+
+	// update 'a' with a duplicate name
 	err = s.datastore.UpdateCollection(ctx, objADup)
 	assert.Error(s.T(), err)
 
-	// try to update 'a' with a new name
+	// dryrun update 'a' with a new name
+	objADup = objA.Clone()
 	objA.Name = "A"
+	err = s.datastore.DryRunUpdateCollection(ctx, objA)
+	assert.NoError(s.T(), err)
+	obj, ok, err = s.datastore.Get(ctx, objA.GetId())
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), ok)
+	assert.Equal(s.T(), objADup, obj)
+
+	// update 'a' with a new name
 	err = s.datastore.UpdateCollection(ctx, objA)
 	assert.NoError(s.T(), err)
 	obj, ok, err = s.datastore.Get(ctx, objA.GetId())
@@ -251,6 +276,16 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	assert.True(s.T(), ok)
 	assert.Equal(s.T(), objE, obj)
 
+	// dryrun update 'e' to point to only 'a'
+	objEDup := objE.Clone()
+	updateTestCollection(objE, []string{objA.GetId()})
+	err = s.datastore.DryRunUpdateCollection(ctx, objE)
+	assert.NoError(s.T(), err)
+	obj, ok, err = s.datastore.Get(ctx, objE.GetId())
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), ok)
+	assert.Equal(s.T(), objEDup, obj)
+
 	// update 'e' to point to only 'a', this tests addition and removal of edges
 	updateTestCollection(objE, []string{objA.GetId()})
 	err = s.datastore.UpdateCollection(ctx, objE)
@@ -260,8 +295,16 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	assert.True(s.T(), ok)
 	assert.Equal(s.T(), objE, obj)
 
-	// update 'b' to point to only 'e', making sure the original 'e' -> 'b' edge was removed
+	// dryrun update 'b' to point to only 'e'
+	objBDup := objB.Clone()
 	updateTestCollection(objB, []string{objE.GetId()})
+	err = s.datastore.DryRunUpdateCollection(ctx, objB)
+	obj, ok, err = s.datastore.Get(ctx, objB.GetId())
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), ok)
+	assert.Equal(s.T(), objBDup, obj)
+
+	// update 'b' to point to only 'e', making sure the original 'e' -> 'b' edge was removed
 	err = s.datastore.UpdateCollection(ctx, objB)
 	assert.NoError(s.T(), err)
 	obj, ok, err = s.datastore.Get(ctx, objB.GetId())
