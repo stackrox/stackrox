@@ -42,7 +42,7 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	return f
 }
 
-func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, error) {
+func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string, _ map[string]string) (authproviders.Backend, error) {
 	be, err := newBackend(ctx, f.urlPathPrefix+acsRelativePath, id, uiEndpoints, config)
 	if err != nil {
 		return nil, err
