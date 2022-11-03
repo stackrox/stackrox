@@ -80,12 +80,16 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
-		obj.GetDeploymentId(),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		obj.GetNamespace(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		log.Infof("id is not a valid uuid -- %v", obj)
+		return nil
 	}
 
 	finalStr := "INSERT INTO pods (Id, Name, DeploymentId, Namespace, ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
@@ -100,7 +104,7 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 	}
 
 	query = "delete from pods_live_instances where pods_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetLiveInstances()))
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetLiveInstances()))
 	return nil
 }
 
@@ -108,9 +112,13 @@ func insertIntoPodsLiveInstances(ctx context.Context, batch *pgx.Batch, obj *sto
 
 	values := []interface{}{
 		// parent primary keys start
-		pods_Id,
+		pgutils.NilOrUUID(pods_Id),
 		idx,
 		obj.GetImageDigest(),
+	}
+	if pgutils.NilOrUUID(pods_Id) == nil {
+		log.Infof("id is not a valid uuid -- %v", obj)
+		return nil
 	}
 
 	finalStr := "INSERT INTO pods_live_instances (pods_Id, idx, ImageDigest) VALUES($1, $2, $3) ON CONFLICT(pods_Id, idx) DO UPDATE SET pods_Id = EXCLUDED.pods_Id, idx = EXCLUDED.idx, ImageDigest = EXCLUDED.ImageDigest"
@@ -155,18 +163,22 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
-			obj.GetDeploymentId(),
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
 
 			obj.GetNamespace(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			log.Infof("id is not a valid uuid -- %v", obj)
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
@@ -225,12 +237,16 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 
 		inputRows = append(inputRows, []interface{}{
 
-			pods_Id,
+			pgutils.NilOrUUID(pods_Id),
 
 			idx,
 
 			obj.GetImageDigest(),
 		})
+		if pgutils.NilOrUUID(pods_Id) == nil {
+			log.Infof("id is not a valid uuid -- %v", obj)
+			continue
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {

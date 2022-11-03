@@ -15,6 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -91,7 +93,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestNoAccessAllowed() {
 
 	suite.Error(suite.datastore.DeleteNetworkBaseline(ctx, expectedBaseline.GetDeploymentId()), "permission denied")
 	// BTW if we try to delete non-existent/already deleted baseline, it should just return nil
-	suite.Nil(suite.datastore.DeleteNetworkBaseline(ctx, "non-existent deployment ID"))
+	suite.Nil(suite.datastore.DeleteNetworkBaseline(ctx, uuid.Nil.String()))
 }
 
 func (suite *NetworkBaselineDataStoreTestSuite) TestNetworkBaselines() {
@@ -130,7 +132,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkBaseline),
-				sac.ClusterScopeKeys("a-wrong-cluster")))
+				sac.ClusterScopeKeys(testconsts.Cluster3)))
 
 	ctxWithReadAccess :=
 		sac.WithGlobalAccessScopeChecker(
@@ -147,7 +149,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkBaseline),
-				sac.ClusterScopeKeys("a-wrong-cluster")))
+				sac.ClusterScopeKeys(testconsts.Cluster3)))
 
 	ctxWithWriteAccess :=
 		sac.WithGlobalAccessScopeChecker(

@@ -169,7 +169,7 @@ func TestMultiTableQueries(t *testing.T) {
 				search.MatchNoneQuery(),
 			),
 			expectedFrom:  "deployments",
-			expectedWhere: "(deployments.Id = ANY($$::text[]) and false)",
+			expectedWhere: "(deployments.Id = ANY($$::uuid[]) and false)",
 			expectedData:  []interface{}{[]string{"123"}},
 		},
 	} {

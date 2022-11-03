@@ -55,7 +55,7 @@ func (s *PoliciesStoreSuite) TestStore() {
 	store := s.store
 
 	policy := &storage.Policy{}
-	s.NoError(testutils.FullInit(policy, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(policy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundPolicy, exists, err := store.Get(ctx, policy.GetId())
 	s.NoError(err)

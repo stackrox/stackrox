@@ -55,7 +55,7 @@ func (s *NotifiersStoreSuite) TestStore() {
 	store := s.store
 
 	notifier := &storage.Notifier{}
-	s.NoError(testutils.FullInit(notifier, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(notifier, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundNotifier, exists, err := store.Get(ctx, notifier.GetId())
 	s.NoError(err)

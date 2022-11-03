@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -16,7 +17,7 @@ import (
 )
 
 const (
-	clusterID = "22"
+	clusterID = fixtureconsts.ClusterNotForSAC1
 
 	flowsCountStmt = "select count(*) from network_flows"
 )
@@ -79,7 +80,7 @@ func getTimestamp(seconds int64) *types.Timestamp {
 }
 
 func (s *NetworkflowStoreSuite) TestStore() {
-	secondCluster := "43"
+	secondCluster := fixtureconsts.ClusterNotForSAC2
 	store2 := New(s.pool, secondCluster)
 
 	networkFlow := &storage.NetworkFlow{
@@ -90,7 +91,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		LastSeenTimestamp: getTimestamp(1),
-		ClusterId:         "22",
+		ClusterId:         clusterID,
 	}
 	zeroTs := timestamp.MicroTS(0)
 

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -57,7 +58,7 @@ func (s *RisksStoreSuite) TestStore() {
 	store := s.store
 
 	risk := &storage.Risk{}
-	s.NoError(testutils.FullInit(risk, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(risk, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundRisk, exists, err := store.Get(ctx, risk.GetId())
 	s.NoError(err)
@@ -121,7 +122,7 @@ func (s *RisksStoreSuite) TestStore() {
 
 func (s *RisksStoreSuite) TestSACUpsert() {
 	obj := &storage.Risk{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -140,7 +141,7 @@ func (s *RisksStoreSuite) TestSACUpsert() {
 
 func (s *RisksStoreSuite) TestSACUpsertMany() {
 	obj := &storage.Risk{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -443,7 +444,7 @@ func getSACContexts(obj *storage.Risk, access storage.Access) map[string]context
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(access),
 				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys("unknown cluster"),
+				sac.ClusterScopeKeys(uuid.NewDummy().String()),
 			)),
 	}
 }

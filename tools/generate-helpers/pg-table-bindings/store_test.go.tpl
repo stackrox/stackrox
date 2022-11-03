@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+    "github.com/stackrox/rox/pkg/uuid"
 )
 
 type {{$namePrefix}}StoreSuite struct {
@@ -64,7 +65,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	store := s.store
 
 	{{$name}} := &{{.Type}}{}
-	s.NoError(testutils.FullInit({{$name}}, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	{{- if .Cycle}}
 	{{$name}}.{{.EmbeddedFK}} = nil
 	{{- end}}
@@ -157,7 +158,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
 func (s *{{$namePrefix}}StoreSuite) TestSACUpsert() {
 	obj := &{{.Type}}{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -176,7 +177,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACUpsert() {
 
 func (s *{{$namePrefix}}StoreSuite) TestSACUpsertMany() {
 	obj := &{{.Type}}{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -485,7 +486,7 @@ func getSACContexts(obj *{{.Type}}, access storage.Access) map[string]context.Co
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(access),
 				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys("unknown cluster"),
+				sac.ClusterScopeKeys(uuid.NewDummy().String()),
 		)),
 	}
 }

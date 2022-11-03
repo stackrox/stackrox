@@ -9,15 +9,16 @@ import (
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
 func namespaceWithAnnotation(annotationKey, annotationValue string) *storage.NamespaceMetadata {
 	ns := &storage.NamespaceMetadata{
-		Id:          "id",
+		Id:          fixtureconsts.Namespace1,
 		Name:        "name",
-		ClusterId:   "cluster-id",
+		ClusterId:   fixtureconsts.ClusterNotForSAC1,
 		ClusterName: "cluster-name",
 	}
 
@@ -198,7 +199,7 @@ func TestGetAnnotationValueReturnsDefaultIfNoStoreReturnsError(t *testing.T) {
 
 	alert := fixtures.GetAlert()
 
-	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, errors.New("testttt"))
+	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, errors.New(fixtureconsts.ClusterNotForSAC1))
 	value := GetAnnotationValue(context.Background(), alert, "somekey", "default", nsStore)
 
 	assert.Equal(t, "default", value)

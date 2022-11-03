@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -167,12 +168,12 @@ func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessB
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestGetById() {
-	suite.doGet(&storage.ProcessBaselineKey{DeploymentId: "FAKE", ContainerName: "whatever", ClusterId: "whatever", Namespace: "whatever"}, false, nil)
+	suite.doGet(&storage.ProcessBaselineKey{DeploymentId: fixtureconsts.Deployment1, ContainerName: "whatever", ClusterId: fixtureconsts.ClusterNotForSAC1, Namespace: "whatever"}, false, nil)
 
 	key := &storage.ProcessBaselineKey{
-		DeploymentId:  "blah",
+		DeploymentId:  fixtureconsts.Deployment1,
 		ContainerName: "container",
-		ClusterId:     "cluster1",
+		ClusterId:     fixtureconsts.ClusterNotForSAC1,
 		Namespace:     "namespace",
 	}
 	baseline := suite.createAndStoreBaseline(key)
@@ -300,14 +301,14 @@ func (suite *ProcessBaselineDataStoreTestSuite) doQuery(q *v1.Query, len int) {
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestRemoveByDeployment() {
-	dep1 := "1"
-	key1 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "1", ClusterId: "1", Namespace: "1"}
-	key2 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "2", ClusterId: "1", Namespace: "2"}
-	key3 := &storage.ProcessBaselineKey{DeploymentId: "2", ContainerName: "1", ClusterId: "1", Namespace: "3"}
+	dep1 := fixtureconsts.Deployment1
+	key1 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "1", ClusterId: fixtureconsts.ClusterNotForSAC1, Namespace: "1"}
+	key2 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "2", ClusterId: fixtureconsts.ClusterNotForSAC1, Namespace: "2"}
+	key3 := &storage.ProcessBaselineKey{DeploymentId: fixtureconsts.Deployment2, ContainerName: "1", ClusterId: fixtureconsts.ClusterNotForSAC1, Namespace: "3"}
 	suite.createAndStoreBaselines(key1, key2, key3)
 
 	queryDep1 := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, dep1).ProtoQuery()
-	queryDep2 := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, "2").ProtoQuery()
+	queryDep2 := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, fixtureconsts.Deployment2).ProtoQuery()
 	suite.doQuery(queryDep1, 2)
 	suite.doQuery(queryDep2, 1)
 	suite.doGet(key1, true, nil)
@@ -327,9 +328,9 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestRemoveByDeployment() {
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestIDToKeyConversion() {
 	key := &storage.ProcessBaselineKey{
-		DeploymentId:  "blah",
+		DeploymentId:  fixtureconsts.Deployment1,
 		ContainerName: "container",
-		ClusterId:     "cluster1",
+		ClusterId:     fixtureconsts.ClusterNotForSAC1,
 		Namespace:     "namespace",
 	}
 

@@ -88,8 +88,8 @@ func insertIntoProcessBaselines(ctx context.Context, batch *pgx.Batch, obj *stor
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetKey().GetDeploymentId(),
-		obj.GetKey().GetClusterId(),
+		pgutils.NilOrUUID(obj.GetKey().GetDeploymentId()),
+		pgutils.NilOrUUID(obj.GetKey().GetClusterId()),
 		obj.GetKey().GetNamespace(),
 		serialized,
 	}
@@ -136,9 +136,9 @@ func (s *storeImpl) copyFromProcessBaselines(ctx context.Context, tx pgx.Tx, obj
 
 			obj.GetId(),
 
-			obj.GetKey().GetDeploymentId(),
+			pgutils.NilOrUUID(obj.GetKey().GetDeploymentId()),
 
-			obj.GetKey().GetClusterId(),
+			pgutils.NilOrUUID(obj.GetKey().GetClusterId()),
 
 			obj.GetKey().GetNamespace(),
 

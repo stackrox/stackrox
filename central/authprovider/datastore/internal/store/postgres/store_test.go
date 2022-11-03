@@ -55,7 +55,7 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 	store := s.store
 
 	authProvider := &storage.AuthProvider{}
-	s.NoError(testutils.FullInit(authProvider, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(authProvider, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundAuthProvider, exists, err := store.Get(ctx, authProvider.GetId())
 	s.NoError(err)

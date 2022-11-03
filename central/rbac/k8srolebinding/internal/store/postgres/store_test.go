@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -57,7 +58,7 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 	store := s.store
 
 	k8SRoleBinding := &storage.K8SRoleBinding{}
-	s.NoError(testutils.FullInit(k8SRoleBinding, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(k8SRoleBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundK8SRoleBinding, exists, err := store.Get(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
@@ -121,7 +122,7 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 
 func (s *RoleBindingsStoreSuite) TestSACUpsert() {
 	obj := &storage.K8SRoleBinding{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -140,7 +141,7 @@ func (s *RoleBindingsStoreSuite) TestSACUpsert() {
 
 func (s *RoleBindingsStoreSuite) TestSACUpsertMany() {
 	obj := &storage.K8SRoleBinding{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -443,7 +444,7 @@ func getSACContexts(obj *storage.K8SRoleBinding, access storage.Access) map[stri
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(access),
 				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys("unknown cluster"),
+				sac.ClusterScopeKeys(uuid.NewDummy().String()),
 			)),
 	}
 }

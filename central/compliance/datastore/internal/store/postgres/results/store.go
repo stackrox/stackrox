@@ -89,7 +89,7 @@ func insertIntoComplianceRunResults(ctx context.Context, batch *pgx.Batch, obj *
 		// parent primary keys start
 		obj.GetRunMetadata().GetRunId(),
 		obj.GetRunMetadata().GetStandardId(),
-		obj.GetRunMetadata().GetClusterId(),
+		pgutils.NilOrUUID(obj.GetRunMetadata().GetClusterId()),
 		pgutils.NilOrTime(obj.GetRunMetadata().GetFinishTimestamp()),
 		serialized,
 	}
@@ -138,7 +138,7 @@ func (s *storeImpl) copyFromComplianceRunResults(ctx context.Context, tx pgx.Tx,
 
 			obj.GetRunMetadata().GetStandardId(),
 
-			obj.GetRunMetadata().GetClusterId(),
+			pgutils.NilOrUUID(obj.GetRunMetadata().GetClusterId()),
 
 			pgutils.NilOrTime(obj.GetRunMetadata().GetFinishTimestamp()),
 

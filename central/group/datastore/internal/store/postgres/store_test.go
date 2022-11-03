@@ -55,7 +55,7 @@ func (s *GroupsStoreSuite) TestStore() {
 	store := s.store
 
 	group := &storage.Group{}
-	s.NoError(testutils.FullInit(group, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(group, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundGroup, exists, err := store.Get(ctx, group.GetProps().GetId())
 	s.NoError(err)

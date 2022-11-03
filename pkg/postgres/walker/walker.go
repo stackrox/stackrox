@@ -184,6 +184,8 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 			opts.IgnoreSearchLabels.AddAll(strings.Split(csvLabels, ",")...)
 		case field == "id":
 			opts.ID = true
+		//case field == "uuid":
+		//	opts.UUID = true
 		case field == "pk":
 			// if we have a child object, we don't want to propagate its primary key
 			// an example of this is process_indicator.  It is its own object

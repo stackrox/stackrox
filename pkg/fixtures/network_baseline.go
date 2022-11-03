@@ -8,7 +8,7 @@ import (
 
 // GetNetworkBaseline returns a mock network baseline.
 func GetNetworkBaseline() *storage.NetworkBaseline {
-	return GetScopedNetworkBaseline(GetDeployment().GetId(), "prod cluster", "stackrox")
+	return GetScopedNetworkBaseline(GetDeployment().GetId(), testconsts.Cluster1, "stackrox")
 }
 
 // GetScopedNetworkBaseline returns a mock network baseline belonging to the input scope.

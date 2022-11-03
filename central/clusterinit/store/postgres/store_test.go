@@ -55,7 +55,7 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	store := s.store
 
 	initBundleMeta := &storage.InitBundleMeta{}
-	s.NoError(testutils.FullInit(initBundleMeta, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundInitBundleMeta, exists, err := store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)

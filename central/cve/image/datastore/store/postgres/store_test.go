@@ -55,7 +55,7 @@ func (s *ImageCvesStoreSuite) TestStore() {
 	store := s.store
 
 	imageCVE := &storage.ImageCVE{}
-	s.NoError(testutils.FullInit(imageCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(imageCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundImageCVE, exists, err := store.Get(ctx, imageCVE.GetId())
 	s.NoError(err)

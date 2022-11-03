@@ -80,9 +80,13 @@ func insertIntoPolicyCategories(ctx context.Context, batch *pgx.Batch, obj *stor
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		log.Infof("id is not a valid uuid -- %v", obj)
+		return nil
 	}
 
 	finalStr := "INSERT INTO policy_categories (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
@@ -121,12 +125,16 @@ func (s *storeImpl) copyFromPolicyCategories(ctx context.Context, tx pgx.Tx, obj
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			log.Infof("id is not a valid uuid -- %v", obj)
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())

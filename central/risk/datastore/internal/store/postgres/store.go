@@ -89,7 +89,7 @@ func insertIntoRisks(ctx context.Context, batch *pgx.Batch, obj *storage.Risk) e
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetSubject().GetNamespace(),
-		obj.GetSubject().GetClusterId(),
+		pgutils.NilOrUUID(obj.GetSubject().GetClusterId()),
 		obj.GetSubject().GetType(),
 		obj.GetScore(),
 		serialized,
@@ -141,7 +141,7 @@ func (s *storeImpl) copyFromRisks(ctx context.Context, tx pgx.Tx, objs ...*stora
 
 			obj.GetSubject().GetNamespace(),
 
-			obj.GetSubject().GetClusterId(),
+			pgutils.NilOrUUID(obj.GetSubject().GetClusterId()),
 
 			obj.GetSubject().GetType(),
 

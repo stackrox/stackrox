@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 
 	"github.com/gofrs/uuid"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 // UUID in a universally unique identifier. The type is a wrapper around the uuid library.
@@ -16,9 +17,13 @@ type UUID struct {
 
 // Nil UUID is special form of UUID that is specified to have all
 // 128 bits set to zero.
-var Nil = UUID{
-	uuid: uuid.Nil,
-}
+var (
+	log = logging.LoggerForModule()
+
+	Nil = UUID{
+		uuid: uuid.Nil,
+	}
+)
 
 // Equal returns true if u1 and u2 equals, otherwise returns false.
 func Equal(u1 UUID, u2 UUID) bool {

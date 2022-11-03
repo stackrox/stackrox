@@ -55,7 +55,7 @@ func (s *LogImbuesStoreSuite) TestStore() {
 	store := s.store
 
 	logImbue := &storage.LogImbue{}
-	s.NoError(testutils.FullInit(logImbue, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(logImbue, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundLogImbue, exists, err := store.Get(ctx, logImbue.GetId())
 	s.NoError(err)

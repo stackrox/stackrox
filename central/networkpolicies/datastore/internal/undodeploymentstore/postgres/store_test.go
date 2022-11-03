@@ -55,7 +55,7 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	store := s.store
 
 	networkPolicyApplicationUndoDeploymentRecord := &storage.NetworkPolicyApplicationUndoDeploymentRecord{}
-	s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err := store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
 	s.NoError(err)

@@ -85,7 +85,7 @@ func insertIntoPolicyCategories(ctx context.Context, batch *pgx.Batch, obj *stor
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		serialized,
 	}
@@ -126,7 +126,7 @@ func (s *storeImpl) copyFromPolicyCategories(ctx context.Context, tx pgx.Tx, obj
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 

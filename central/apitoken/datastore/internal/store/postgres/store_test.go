@@ -55,7 +55,7 @@ func (s *ApiTokensStoreSuite) TestStore() {
 	store := s.store
 
 	tokenMetadata := &storage.TokenMetadata{}
-	s.NoError(testutils.FullInit(tokenMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(tokenMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundTokenMetadata, exists, err := store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)

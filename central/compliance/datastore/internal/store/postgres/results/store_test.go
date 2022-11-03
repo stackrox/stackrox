@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -57,7 +58,7 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 	store := s.store
 
 	complianceRunResults := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(complianceRunResults, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(complianceRunResults, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundComplianceRunResults, exists, err := store.Get(ctx, complianceRunResults.GetRunMetadata().GetRunId())
 	s.NoError(err)
@@ -121,7 +122,7 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 
 func (s *ComplianceRunResultsStoreSuite) TestSACUpsert() {
 	obj := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -140,7 +141,7 @@ func (s *ComplianceRunResultsStoreSuite) TestSACUpsert() {
 
 func (s *ComplianceRunResultsStoreSuite) TestSACUpsertMany() {
 	obj := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -442,7 +443,7 @@ func getSACContexts(obj *storage.ComplianceRunResults, access storage.Access) ma
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(access),
 				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys("unknown cluster"),
+				sac.ClusterScopeKeys(uuid.NewDummy().String()),
 			)),
 	}
 }

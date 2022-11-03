@@ -87,17 +87,17 @@ func insertIntoProcessIndicators(ctx context.Context, batch *pgx.Batch, obj *sto
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
-		obj.GetDeploymentId(),
+		pgutils.NilOrUUID(obj.GetId()),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		obj.GetContainerName(),
 		obj.GetPodId(),
-		obj.GetPodUid(),
+		pgutils.NilOrUUID(obj.GetPodUid()),
 		obj.GetSignal().GetContainerId(),
 		obj.GetSignal().GetName(),
 		obj.GetSignal().GetArgs(),
 		obj.GetSignal().GetExecFilePath(),
 		obj.GetSignal().GetUid(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		serialized,
 	}
@@ -158,15 +158,15 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
-			obj.GetDeploymentId(),
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
 
 			obj.GetContainerName(),
 
 			obj.GetPodId(),
 
-			obj.GetPodUid(),
+			pgutils.NilOrUUID(obj.GetPodUid()),
 
 			obj.GetSignal().GetContainerId(),
 
@@ -178,7 +178,7 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 
 			obj.GetSignal().GetUid(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetNamespace(),
 

@@ -55,7 +55,7 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	store := s.store
 
 	imageComponent := &storage.ImageComponent{}
-	s.NoError(testutils.FullInit(imageComponent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(imageComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundImageComponent, exists, err := store.Get(ctx, imageComponent.GetId())
 	s.NoError(err)

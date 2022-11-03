@@ -55,7 +55,7 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 	store := s.store
 
 	activeComponent := &storage.ActiveComponent{}
-	s.NoError(testutils.FullInit(activeComponent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(activeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundActiveComponent, exists, err := store.Get(ctx, activeComponent.GetId())
 	s.NoError(err)

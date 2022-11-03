@@ -86,9 +86,9 @@ func insertIntoImageIntegrations(ctx context.Context, batch *pgx.Batch, obj *sto
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
 	}
 
@@ -130,11 +130,11 @@ func (s *storeImpl) copyFromImageIntegrations(ctx context.Context, tx pgx.Tx, ob
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			serialized,
 		})

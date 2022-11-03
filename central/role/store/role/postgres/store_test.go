@@ -55,7 +55,7 @@ func (s *RolesStoreSuite) TestStore() {
 	store := s.store
 
 	role := &storage.Role{}
-	s.NoError(testutils.FullInit(role, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(role, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundRole, exists, err := store.Get(ctx, role.GetName())
 	s.NoError(err)

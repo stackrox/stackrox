@@ -75,22 +75,22 @@ func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpda
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
-		obj.GetName(),
-		obj.GetClusterId(),
-		obj.GetClusterName(),
-		obj.GetLabels(),
-		obj.GetAnnotations(),
-		pgutils.NilOrTime(obj.GetJoinedAt()),
-		obj.GetContainerRuntime().GetVersion(),
-		obj.GetOsImage(),
-		pgutils.NilOrTime(obj.GetLastUpdated()),
-		pgutils.NilOrTime(obj.GetScan().GetScanTime()),
-		obj.GetComponents(),
-		obj.GetCves(),
-		obj.GetFixableCves(),
-		obj.GetRiskScore(),
-		obj.GetTopCvss(),
+		pgutils.NilOrUUID(cloned.GetId()),
+		cloned.GetName(),
+		pgutils.NilOrUUID(cloned.GetClusterId()),
+		cloned.GetClusterName(),
+		cloned.GetLabels(),
+		cloned.GetAnnotations(),
+		pgutils.NilOrTime(cloned.GetJoinedAt()),
+		cloned.GetContainerRuntime().GetVersion(),
+		cloned.GetOsImage(),
+		pgutils.NilOrTime(cloned.GetLastUpdated()),
+		pgutils.NilOrTime(cloned.GetScan().GetScanTime()),
+		cloned.GetComponents(),
+		cloned.GetCves(),
+		cloned.GetFixableCves(),
+		cloned.GetRiskScore(),
+		cloned.GetTopCvss(),
 		serialized,
 	}
 
@@ -109,7 +109,7 @@ func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpda
 	}
 
 	query = "delete from nodes_taints where nodes_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetTaints()))
+	_, err = tx.Exec(ctx, query, pgutils.NilOrUUID(cloned.GetId()), len(obj.GetTaints()))
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, n
 
 	values := []interface{}{
 		// parent primary keys start
-		nodeID,
+		pgutils.NilOrUUID(nodeID),
 		idx,
 		obj.GetKey(),
 		obj.GetValue(),
@@ -179,6 +179,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 		"name",
 		"version",
 		"operatingsystem",
+		"priority",
 		"riskscore",
 		"topcvss",
 		"serialized",
@@ -195,6 +196,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 			obj.GetName(),
 			obj.GetVersion(),
 			obj.GetOperatingSystem(),
+			obj.GetPriority(),
 			obj.GetRiskScore(),
 			obj.GetTopCvss(),
 			serialized,
@@ -241,7 +243,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage
 	}
 
 	// Copy does not upsert so have to delete first.
-	_, err = tx.Exec(ctx, "DELETE FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", objs[0].GetNodeId())
+	_, err = tx.Exec(ctx, "DELETE FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", pgutils.NilOrUUID(objs[0].GetNodeId()))
 	if err != nil {
 		return err
 	}
@@ -254,7 +256,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			obj.GetNodeId(),
+			pgutils.NilOrUUID(obj.GetNodeId()),
 			obj.GetNodeComponentId(),
 			serialized,
 		})
@@ -500,7 +502,7 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID s
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-			nodeID,
+			pgutils.NilOrUUID(nodeID),
 			idx,
 			obj.GetKey(),
 			obj.GetValue(),
@@ -558,7 +560,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 }
 
 func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (*storage.Node, bool, error) {
-	row := tx.QueryRow(ctx, getNodeMetaStmt, nodeID)
+	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -629,7 +631,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 }
 
 func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", nodeID)
+	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", pgutils.NilOrUUID(nodeID))
 	if err != nil {
 		return nil, err
 	}

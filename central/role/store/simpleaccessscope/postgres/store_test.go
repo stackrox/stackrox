@@ -55,7 +55,7 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	store := s.store
 
 	simpleAccessScope := &storage.SimpleAccessScope{}
-	s.NoError(testutils.FullInit(simpleAccessScope, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(simpleAccessScope, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundSimpleAccessScope, exists, err := store.Get(ctx, simpleAccessScope.GetId())
 	s.NoError(err)

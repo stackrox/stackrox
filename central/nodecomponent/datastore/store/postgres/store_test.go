@@ -55,7 +55,7 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	store := s.store
 
 	nodeComponent := &storage.NodeComponent{}
-	s.NoError(testutils.FullInit(nodeComponent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(nodeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundNodeComponent, exists, err := store.Get(ctx, nodeComponent.GetId())
 	s.NoError(err)

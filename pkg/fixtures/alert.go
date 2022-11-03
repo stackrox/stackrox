@@ -3,6 +3,7 @@ package fixtures
 import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -55,7 +56,7 @@ func GetScopedDeploymentAlert(ID string, clusterID string, namespace string) *st
 		Entity: &storage.Alert_Deployment_{
 			Deployment: &storage.Alert_Deployment{
 				Name:        "nginx_server",
-				Id:          "s79mdvmb6dsl",
+				Id:          fixtureconsts.Deployment1,
 				ClusterId:   clusterID,
 				ClusterName: "prod cluster",
 				Namespace:   namespace,
@@ -78,7 +79,7 @@ func GetScopedDeploymentAlert(ID string, clusterID string, namespace string) *st
 
 // GetAlert returns a Mock Alert
 func GetAlert() *storage.Alert {
-	return GetScopedDeploymentAlert("Alert1", "prod cluster", "stackrox")
+	return GetScopedDeploymentAlert(uuid.NewDummy().String(), fixtureconsts.ClusterNotForSAC1, "stackrox")
 }
 
 // GetAlertWithMitre returns a mock Alert with MITRE ATT&CK
@@ -90,7 +91,7 @@ func GetAlertWithMitre() *storage.Alert {
 
 // GetResourceAlert returns a Mock Alert with a resource entity
 func GetResourceAlert() *storage.Alert {
-	return GetScopedResourceAlert("some-resource-alert-on-secret", "cluster-id", "stackrox")
+	return GetScopedResourceAlert("some-resource-alert-on-secret", fixtureconsts.ClusterNotForSAC1, "stackrox")
 }
 
 // GetScopedResourceAlert returns a Mock alert with a resource entity belonging to the input scope

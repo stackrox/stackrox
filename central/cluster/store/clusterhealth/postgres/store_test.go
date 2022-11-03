@@ -55,7 +55,7 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 	store := s.store
 
 	clusterHealthStatus := &storage.ClusterHealthStatus{}
-	s.NoError(testutils.FullInit(clusterHealthStatus, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(clusterHealthStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundClusterHealthStatus, exists, err := store.Get(ctx, clusterHealthStatus.GetId())
 	s.NoError(err)

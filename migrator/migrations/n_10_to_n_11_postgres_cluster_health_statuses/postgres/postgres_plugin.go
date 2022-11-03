@@ -80,7 +80,7 @@ func insertIntoClusterHealthStatuses(ctx context.Context, batch *pgx.Batch, obj 
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetSensorHealthStatus(),
 		obj.GetCollectorHealthStatus(),
 		obj.GetOverallHealthStatus(),
@@ -88,6 +88,10 @@ func insertIntoClusterHealthStatuses(ctx context.Context, batch *pgx.Batch, obj 
 		obj.GetScannerHealthStatus(),
 		pgutils.NilOrTime(obj.GetLastContact()),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		log.Infof("id is not a valid uuid -- %v", obj)
+		return nil
 	}
 
 	finalStr := "INSERT INTO cluster_health_statuses (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, ScannerHealthStatus, LastContact, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, ScannerHealthStatus = EXCLUDED.ScannerHealthStatus, LastContact = EXCLUDED.LastContact, serialized = EXCLUDED.serialized"
@@ -136,7 +140,7 @@ func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx pgx.Tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetSensorHealthStatus(),
 
@@ -152,6 +156,10 @@ func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx pgx.Tx
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			log.Infof("id is not a valid uuid -- %v", obj)
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())

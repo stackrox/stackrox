@@ -55,7 +55,7 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 	store := s.store
 
 	testShortCircuit := &storage.TestShortCircuit{}
-	s.NoError(testutils.FullInit(testShortCircuit, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(testShortCircuit, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundTestShortCircuit, exists, err := store.Get(ctx, testShortCircuit.GetId())
 	s.NoError(err)

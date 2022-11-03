@@ -55,7 +55,7 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 	store := s.store
 
 	reportConfiguration := &storage.ReportConfiguration{}
-	s.NoError(testutils.FullInit(reportConfiguration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(reportConfiguration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundReportConfiguration, exists, err := store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)

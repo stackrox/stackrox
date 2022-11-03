@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	expectedFormattedDeploymentAlert = `Alert ID: Alert1
-Alert URL: https://localhost:8080/main/violations/Alert1
+	expectedFormattedDeploymentAlert = `Alert ID: aaaaaaaa-bbbb-4011-0000-111111111111
+Alert URL: https://localhost:8080/main/violations/aaaaaaaa-bbbb-4011-0000-111111111111
 Time (UTC): 2021-01-20 22:42:02
 Severity: Low
 
@@ -66,15 +66,15 @@ Policy Definition:
 			- Add Capabilities: ADD1 OR ADD2
 
 Deployment:
-	 - ID: s79mdvmb6dsl
+	 - ID: deaaaaaa-bbbb-4011-0000-111111111111
 	 - Name: nginx_server
 	 - Cluster: prod cluster
-	 - ClusterId: prod cluster
+	 - ClusterId: caaaaaaa-bbbb-4011-0000-111111111111
 	 - Namespace: stackrox
 	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
 `
-	expectedFormattedDeploymentAlertWithMitre = `Alert ID: Alert1
-Alert URL: https://localhost:8080/main/violations/Alert1
+	expectedFormattedDeploymentAlertWithMitre = `Alert ID: aaaaaaaa-bbbb-4011-0000-111111111111
+Alert URL: https://localhost:8080/main/violations/aaaaaaaa-bbbb-4011-0000-111111111111
 Time (UTC): 2021-01-20 22:42:02
 Severity: Low
 
@@ -130,14 +130,14 @@ Policy Definition:
 			- Add Capabilities: ADD1 OR ADD2
 
 Deployment:
-	 - ID: s79mdvmb6dsl
+	 - ID: deaaaaaa-bbbb-4011-0000-111111111111
 	 - Name: nginx_server
 	 - Cluster: prod cluster
-	 - ClusterId: prod cluster
+	 - ClusterId: caaaaaaa-bbbb-4011-0000-111111111111
 	 - Namespace: stackrox
 	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
 `
-	expectedFormatImageAlert = `Alert ID: Alert1
+	expectedFormatImageAlert = `Alert ID: aaaaaaaa-bbbb-4011-0000-111111111111
 Alert URL: https://localhost:8080/main/vulnerability-management/image/sha256:SHA2
 Time (UTC): 2021-01-20 22:42:02
 Severity: Low

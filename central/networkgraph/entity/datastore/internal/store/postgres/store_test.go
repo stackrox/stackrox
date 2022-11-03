@@ -55,7 +55,7 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	store := s.store
 
 	networkEntity := &storage.NetworkEntity{}
-	s.NoError(testutils.FullInit(networkEntity, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(networkEntity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundNetworkEntity, exists, err := store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)

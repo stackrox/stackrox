@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // This Flow is custom to match the existing interface and how the functionality works through the system.
@@ -34,13 +35,21 @@ const (
 	// the largest Flow_id.  The Flow_id is not included in the object and is purely handled by postgres.  Since flows
 	// have been flattened, the entire record except for the time is what makes it distinct, so we have to hit all
 	// the fields in the join.
-	joinStmt = " INNER JOIN (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId, MAX(Flow_Id) AS MaxFlow FROM network_flows GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) tmpflow on nf.Props_SrcEntity_Type = tmpflow.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = tmpflow.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = tmpflow.Props_DstEntity_Type AND nf.Props_DstEntity_Id = tmpflow.Props_DstEntity_Id AND nf.Props_DstPort = tmpflow.Props_DstPort AND nf.Props_L4Protocol = tmpflow.Props_L4Protocol AND nf.ClusterId = tmpflow.ClusterId and nf.Flow_id = tmpflow.MaxFlow "
+	joinStmt = ` INNER JOIN 
+	(SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, 
+	Props_L4Protocol, ClusterId, MAX(Flow_Id) AS MaxFlow 
+	FROM network_flows 
+	GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) tmpflow 
+	on nf.Props_SrcEntity_Type = tmpflow.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = tmpflow.Props_SrcEntity_Id AND 
+	nf.Props_DstEntity_Type = tmpflow.Props_DstEntity_Type AND nf.Props_DstEntity_Id = tmpflow.Props_DstEntity_Id AND 
+	nf.Props_DstPort = tmpflow.Props_DstPort AND nf.Props_L4Protocol = tmpflow.Props_L4Protocol AND 
+	nf.ClusterId = tmpflow.ClusterId and nf.Flow_id = tmpflow.MaxFlow `
 
 	deleteStmt = "DELETE FROM network_flows WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
-	walkStmt   = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM network_flows nf " + joinStmt
+	walkStmt   = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId ::text FROM network_flows nf " + joinStmt + " WHERE nf.ClusterId = $1"
 
 	// These mimic how the RocksDB version of the flow store work
-	getSinceStmt         = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM network_flows nf " + joinStmt + " WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2"
+	getSinceStmt         = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text FROM network_flows nf " + joinStmt + " WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2"
 	deleteDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
 )
 
@@ -60,10 +69,10 @@ var (
 
 type flowStoreImpl struct {
 	db        *pgxpool.Pool
-	clusterID string
+	clusterID uuid.UUID
 }
 
-func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, obj *storage.NetworkFlow) error {
+func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID uuid.UUID, obj *storage.NetworkFlow) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -135,9 +144,15 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool, clusterID string) store.FlowStore {
+	clusterUUID, err := uuid.FromString(clusterID)
+	if err != nil {
+		log.Errorf("cluster ID is not valid.  %v", err)
+		return nil
+	}
+
 	return &flowStoreImpl{
 		db:        db,
-		clusterID: clusterID,
+		clusterID: clusterUUID,
 	}
 }
 
@@ -283,7 +298,7 @@ func (s *flowStoreImpl) Delete(ctx context.Context, propsSrcEntityType storage.N
 // Walk iterates over all of the objects in the store and applies the closure
 // TODO(ROX-9921) Investigate this method to see if it is doing what it should
 func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFlow) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	rows, err := s.db.Query(ctx, walkStmt, s.clusterID)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
@@ -379,7 +394,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
-		rows, err = s.db.Query(ctx, walkStmt)
+		rows, err = s.db.Query(ctx, walkStmt, s.clusterID)
 	} else {
 		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since), s.clusterID)
 	}
@@ -412,7 +427,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
-		rows, err = s.db.Query(ctx, walkStmt)
+		rows, err = s.db.Query(ctx, walkStmt, s.clusterID)
 	} else {
 		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since), s.clusterID)
 	}

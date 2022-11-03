@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,6 +36,7 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -106,7 +108,7 @@ func (suite *NodePostgresDataStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
-	node := getTestNodeForPostgres("id1", "name1")
+	node := getTestNodeForPostgres(fixtureconsts.Node1, "name1")
 	allowAllCtx := sac.WithAllAccess(context.Background())
 
 	// Upsert.
@@ -126,10 +128,10 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	suite.EqualValues(expectedNode, storedNode)
 
 	// Exists tests.
-	exists, err = suite.datastore.Exists(allowAllCtx, "id1")
+	exists, err = suite.datastore.Exists(allowAllCtx, fixtureconsts.Node1)
 	suite.NoError(err)
 	suite.True(exists)
-	exists, err = suite.datastore.Exists(allowAllCtx, "id2")
+	exists, err = suite.datastore.Exists(allowAllCtx, uuid.Nil.String())
 	suite.NoError(err)
 	suite.False(exists)
 
@@ -146,13 +148,13 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	suite.Equal(expectedNode, storedNode)
 
 	newNode := node.Clone()
-	newNode.Id = "id2"
+	newNode.Id = fixtureconsts.Node2
 
 	// Upsert new node.
 	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, newNode))
 
 	// Exists test.
-	exists, err = suite.datastore.Exists(allowAllCtx, "id2")
+	exists, err = suite.datastore.Exists(allowAllCtx, fixtureconsts.Node2)
 	suite.NoError(err)
 	suite.True(exists)
 
@@ -170,27 +172,27 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	suite.Equal(2, count)
 
 	// Get batch.
-	nodes, err := suite.datastore.GetNodesBatch(allowAllCtx, []string{"id1", "id2"})
+	nodes, err := suite.datastore.GetNodesBatch(allowAllCtx, []string{fixtureconsts.Node1, fixtureconsts.Node2})
 	suite.NoError(err)
 	suite.Len(nodes, 2)
 	suite.ElementsMatch([]*storage.Node{expectedNode, newExpectedNode}, nodes)
 
 	// Delete both nodes.
-	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), "id1", storage.RiskSubjectType_NODE).Return(nil)
-	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), "id2", storage.RiskSubjectType_NODE).Return(nil)
-	suite.NoError(suite.datastore.DeleteNodes(allowAllCtx, "id1", "id2"))
+	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), fixtureconsts.Node1, storage.RiskSubjectType_NODE).Return(nil)
+	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), fixtureconsts.Node2, storage.RiskSubjectType_NODE).Return(nil)
+	suite.NoError(suite.datastore.DeleteNodes(allowAllCtx, fixtureconsts.Node1, fixtureconsts.Node2))
 
 	// Exists tests.
-	exists, err = suite.datastore.Exists(allowAllCtx, "id1")
+	exists, err = suite.datastore.Exists(allowAllCtx, fixtureconsts.Node1)
 	suite.NoError(err)
 	suite.False(exists)
-	exists, err = suite.datastore.Exists(allowAllCtx, "id2")
+	exists, err = suite.datastore.Exists(allowAllCtx, fixtureconsts.Node2)
 	suite.NoError(err)
 	suite.False(exists)
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestBasicSearch() {
-	node := getTestNodeForPostgres("id1", "name1")
+	node := getTestNodeForPostgres(fixtureconsts.Node1, "name1")
 	allowAllCtx := sac.WithAllAccess(context.Background())
 
 	// Basic unscoped search.
@@ -230,7 +232,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicSearch() {
 	suite.Equal(expectedNode, nodes[0])
 
 	// Upsert new node.
-	newNode := getTestNodeForPostgres("id2", "name2")
+	newNode := getTestNodeForPostgres(fixtureconsts.Node2, "name2")
 	newNode.GetScan().Components = append(newNode.GetScan().GetComponents(), &storage.EmbeddedNodeScanComponent{
 		Name:    "comp3",
 		Version: "ver1",
@@ -282,7 +284,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByVuln() {
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(results, 1)
-	suite.Equal("id2", results[0].ID)
+	suite.Equal(fixtureconsts.Node2, results[0].ID)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		ID:    cve.ID("cve4", "ubuntu"),
@@ -339,7 +341,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByComponent() {
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(results, 1)
-	suite.Equal("id2", results[0].ID)
+	suite.Equal(fixtureconsts.Node2, results[0].ID)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		ID:    scancomponent.ComponentID("comp4", "ver1", "ubuntu"),
@@ -430,13 +432,13 @@ func (suite *NodePostgresDataStoreTestSuite) TestSortByComponent() {
 }
 
 func (suite *NodePostgresDataStoreTestSuite) upsertTestNodes(ctx context.Context) {
-	node := getTestNodeForPostgres("id1", "name1")
+	node := getTestNodeForPostgres(fixtureconsts.Node1, "name1")
 
 	// Upsert node.
 	suite.NoError(suite.datastore.UpsertNode(ctx, node))
 
 	// Upsert new node.
-	newNode := getTestNodeForPostgres("id2", "name2")
+	newNode := getTestNodeForPostgres(fixtureconsts.Node2, "name2")
 	newNode.GetScan().Components = append(newNode.GetScan().GetComponents(), &storage.EmbeddedNodeScanComponent{
 		Name:    "comp3",
 		Version: "ver1",
@@ -452,9 +454,9 @@ func (suite *NodePostgresDataStoreTestSuite) upsertTestNodes(ctx context.Context
 }
 
 func (suite *NodePostgresDataStoreTestSuite) deleteTestNodes(ctx context.Context) {
-	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), "id1", storage.RiskSubjectType_NODE).Return(nil)
-	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), "id2", storage.RiskSubjectType_NODE).Return(nil)
-	suite.NoError(suite.datastore.DeleteNodes(ctx, "id1", "id2"))
+	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), fixtureconsts.Node1, storage.RiskSubjectType_NODE).Return(nil)
+	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), fixtureconsts.Node2, storage.RiskSubjectType_NODE).Return(nil)
+	suite.NoError(suite.datastore.DeleteNodes(ctx, fixtureconsts.Node1, fixtureconsts.Node2))
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
@@ -503,7 +505,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.ElementsMatch(cveIDsSet.AsSlice(), pkgSearch.ResultsToIDs(results))
 
 	testNode2 := testNode.Clone()
-	testNode2.Id = "2"
+	testNode2.Id = fixtureconsts.Node2
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
 	suite.NoError(err)

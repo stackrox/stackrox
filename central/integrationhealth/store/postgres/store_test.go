@@ -55,7 +55,7 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 	store := s.store
 
 	integrationHealth := &storage.IntegrationHealth{}
-	s.NoError(testutils.FullInit(integrationHealth, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(integrationHealth, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundIntegrationHealth, exists, err := store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)

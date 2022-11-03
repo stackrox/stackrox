@@ -220,7 +220,7 @@ func (s *deploymentDatastoreSACSuite) setupMultipleDeploymentReadTest() ([]strin
 	deploymentID2 := deployment2.GetId()
 	deployment3 := s.pushDeploymentToStore(testconsts.Cluster2, testconsts.NamespaceB)
 	deploymentID3 := deployment3.GetId()
-	deployment4 := s.pushDeploymentToStore(otherClusterID, otherNamespace)
+	deployment4 := s.pushDeploymentToStore(testconsts.Cluster3, otherNamespace)
 	deploymentID4 := deployment4.GetId()
 	pushedIDs := []string{deploymentID1, deploymentID2, deploymentID3, deploymentID4}
 	IDtoDeployment := map[string]*storage.Deployment{

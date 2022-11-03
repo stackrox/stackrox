@@ -55,7 +55,7 @@ func (s *ComplianceOperatorScansStoreSuite) TestStore() {
 	store := s.store
 
 	complianceOperatorScan := &storage.ComplianceOperatorScan{}
-	s.NoError(testutils.FullInit(complianceOperatorScan, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(complianceOperatorScan, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundComplianceOperatorScan, exists, err := store.Get(ctx, complianceOperatorScan.GetId())
 	s.NoError(err)

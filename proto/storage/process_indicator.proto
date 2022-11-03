@@ -11,16 +11,16 @@ package storage;
 
 // Next available tag: 13
 message ProcessIndicator {
-    // A unique uuid for the Indicator message
-    string id                                      = 1 [(gogoproto.moretags) = 'search:"Process ID,store,hidden"  sql:"pk"'];
+    // A unique type(uuid) for the Indicator message
+    string id                                      = 1 [(gogoproto.moretags) = 'search:"Process ID,store,hidden"  sql:"pk,type(uuid)"'];
 
-    string deployment_id                           = 2 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" policy:",prefer-parent" sql:"index=hash,fk(Deployment:id),no-fk-constraint"'];
+    string deployment_id                           = 2 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" policy:",prefer-parent" sql:"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)"'];
     reserved 10; // Previously deployment_state_ts
 
     string container_name                          = 3 [(gogoproto.moretags) = 'search:"Container Name,hidden" policy:",prefer-parent"'];
     // Pod name
     string pod_id                                  = 4 [(gogoproto.moretags) = 'search:"Pod ID,hidden"'];
-    string pod_uid                                 = 11 [(gogoproto.moretags) = 'search:"Pod UID,hidden" sql:"index=hash"'];
+    string pod_uid                                 = 11 [(gogoproto.moretags) = 'search:"Pod UID,hidden" sql:"index=hash,type(uuid)"'];
 
     // The emit timestamp of the message. Used for measuring latency
     reserved 5;
@@ -28,7 +28,7 @@ message ProcessIndicator {
     // A process signal message passed from Collector to Sensor
     ProcessSignal signal                           = 6;
 
-    string cluster_id                              = 7 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" policy:",prefer-parent"'];
+    string cluster_id                              = 7 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"'];
     string namespace                               = 8 [(gogoproto.moretags) = 'search:"Namespace,store,hidden" policy:",prefer-parent"'];
 
     google.protobuf.Timestamp container_start_time = 9;
@@ -55,7 +55,7 @@ message NetworkProcessUniqueKey {
 }
 
 message ProcessSignal {
-    // A unique UUID for identifying the message
+    // A unique type(uuid) for identifying the message
     // We have this here instead of at the top level
     // because we want to have each message to be
     // self contained.

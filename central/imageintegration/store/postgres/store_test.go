@@ -55,7 +55,7 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	store := s.store
 
 	imageIntegration := &storage.ImageIntegration{}
-	s.NoError(testutils.FullInit(imageIntegration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(imageIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundImageIntegration, exists, err := store.Get(ctx, imageIntegration.GetId())
 	s.NoError(err)

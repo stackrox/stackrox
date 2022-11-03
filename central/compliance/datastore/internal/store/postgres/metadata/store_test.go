@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -57,7 +58,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestStore() {
 	store := s.store
 
 	complianceRunMetadata := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(complianceRunMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(complianceRunMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundComplianceRunMetadata, exists, err := store.Get(ctx, complianceRunMetadata.GetRunId())
 	s.NoError(err)
@@ -121,7 +122,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestStore() {
 
 func (s *ComplianceRunMetadataStoreSuite) TestSACUpsert() {
 	obj := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -140,7 +141,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACUpsert() {
 
 func (s *ComplianceRunMetadataStoreSuite) TestSACUpsertMany() {
 	obj := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -442,7 +443,7 @@ func getSACContexts(obj *storage.ComplianceRunMetadata, access storage.Access) m
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(access),
 				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys("unknown cluster"),
+				sac.ClusterScopeKeys(uuid.NewDummy().String()),
 			)),
 	}
 }

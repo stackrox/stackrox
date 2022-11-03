@@ -79,8 +79,12 @@ func insertIntoNetworkpolicyapplicationundorecords(ctx context.Context, batch *p
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetClusterId()) == nil {
+		log.Infof("id is not a valid uuid -- %v", obj)
+		return nil
 	}
 
 	finalStr := "INSERT INTO networkpolicyapplicationundorecords (ClusterId, serialized) VALUES($1, $2) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
@@ -117,10 +121,14 @@ func (s *storeImpl) copyFromNetworkpolicyapplicationundorecords(ctx context.Cont
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetClusterId()) == nil {
+			log.Infof("id is not a valid uuid -- %v", obj)
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetClusterId())

@@ -87,8 +87,8 @@ func insertIntoNetworkBaselines(ctx context.Context, batch *pgx.Batch, obj *stor
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetDeploymentId(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		serialized,
 	}
@@ -131,9 +131,9 @@ func (s *storeImpl) copyFromNetworkBaselines(ctx context.Context, tx pgx.Tx, obj
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetDeploymentId(),
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetNamespace(),
 

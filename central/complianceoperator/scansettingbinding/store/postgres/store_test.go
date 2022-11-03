@@ -55,7 +55,7 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	store := s.store
 
 	complianceOperatorScanSettingBinding := &storage.ComplianceOperatorScanSettingBinding{}
-	s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundComplianceOperatorScanSettingBinding, exists, err := store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
 	s.NoError(err)

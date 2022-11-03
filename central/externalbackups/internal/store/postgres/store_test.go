@@ -55,7 +55,7 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	store := s.store
 
 	externalBackup := &storage.ExternalBackup{}
-	s.NoError(testutils.FullInit(externalBackup, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(externalBackup, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundExternalBackup, exists, err := store.Get(ctx, externalBackup.GetId())
 	s.NoError(err)

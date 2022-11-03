@@ -55,7 +55,7 @@ func (s *ComplianceStringsStoreSuite) TestStore() {
 	store := s.store
 
 	complianceStrings := &storage.ComplianceStrings{}
-	s.NoError(testutils.FullInit(complianceStrings, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(complianceStrings, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundComplianceStrings, exists, err := store.Get(ctx, complianceStrings.GetId())
 	s.NoError(err)

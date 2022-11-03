@@ -55,7 +55,7 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	store := s.store
 
 	clusterCVE := &storage.ClusterCVE{}
-	s.NoError(testutils.FullInit(clusterCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(clusterCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundClusterCVE, exists, err := store.Get(ctx, clusterCVE.GetId())
 	s.NoError(err)

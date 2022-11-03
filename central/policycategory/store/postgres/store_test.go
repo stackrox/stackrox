@@ -55,7 +55,7 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	store := s.store
 
 	policyCategory := &storage.PolicyCategory{}
-	s.NoError(testutils.FullInit(policyCategory, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(policyCategory, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundPolicyCategory, exists, err := store.Get(ctx, policyCategory.GetId())
 	s.NoError(err)

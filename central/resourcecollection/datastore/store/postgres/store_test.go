@@ -55,7 +55,7 @@ func (s *CollectionsStoreSuite) TestStore() {
 	store := s.store
 
 	resourceCollection := &storage.ResourceCollection{}
-	s.NoError(testutils.FullInit(resourceCollection, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(resourceCollection, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	resourceCollection.EmbeddedCollections = nil
 
 	foundResourceCollection, exists, err := store.Get(ctx, resourceCollection.GetId())

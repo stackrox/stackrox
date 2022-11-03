@@ -55,7 +55,7 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	store := s.store
 
 	serviceIdentity := &storage.ServiceIdentity{}
-	s.NoError(testutils.FullInit(serviceIdentity, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(serviceIdentity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundServiceIdentity, exists, err := store.Get(ctx, serviceIdentity.GetSerialStr())
 	s.NoError(err)

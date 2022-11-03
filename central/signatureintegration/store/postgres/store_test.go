@@ -55,7 +55,7 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	store := s.store
 
 	signatureIntegration := &storage.SignatureIntegration{}
-	s.NoError(testutils.FullInit(signatureIntegration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(signatureIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundSignatureIntegration, exists, err := store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)

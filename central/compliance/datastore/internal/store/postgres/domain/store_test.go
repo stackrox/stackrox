@@ -55,7 +55,7 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 	store := s.store
 
 	complianceDomain := &storage.ComplianceDomain{}
-	s.NoError(testutils.FullInit(complianceDomain, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(complianceDomain, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundComplianceDomain, exists, err := store.Get(ctx, complianceDomain.GetId())
 	s.NoError(err)

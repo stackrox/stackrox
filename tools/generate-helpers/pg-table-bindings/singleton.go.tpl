@@ -85,6 +85,8 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
         {{- range $field := $schema.DBColumnFields -}}
         {{- if eq $field.DataType "datetime" }}
         pgutils.NilOrTime({{$field.Getter "obj"}}),
+        {{- else if eq $field.SQLType "uuid" }}
+        uuid.FromStringOrNil({{$field.Getter "obj"}}),
         {{- else }}
         {{$field.Getter "obj"}},{{end}}
         {{- end}}

@@ -55,7 +55,7 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 	store := s.store
 
 	networkGraphConfig := &storage.NetworkGraphConfig{}
-	s.NoError(testutils.FullInit(networkGraphConfig, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(networkGraphConfig, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundNetworkGraphConfig, exists, err := store.Get(ctx, networkGraphConfig.GetId())
 	s.NoError(err)

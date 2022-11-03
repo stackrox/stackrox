@@ -2,6 +2,8 @@
     {{- $field := . }}
     {{- if eq $field.DataType "datetime" -}}
     pgutils.NilOrTime({{$field.Getter "obj"}}),
+    {{- else -}}{{if eq $field.SQLType "uuid" -}}
+    pgutils.NilOrUUID({{$field.Getter "obj"}}),
     {{- else -}}{{if eq $field.DataType "stringarray" -}}
     pq.Array({{$field.Getter "obj"}}).(*pq.StringArray),
     {{- else -}}{{if eq $field.DataType "enumarray" -}}
@@ -10,7 +12,7 @@
     pq.Array({{$field.Getter "obj"}}).(*pq.Int32Array),
     {{- else -}}
     {{$field.Getter "obj"}},
-    {{- end }}{{end}}{{end}}{{end -}}
+    {{- end }}{{end}}{{end}}{{end}}{{end -}}
 {{- end}}
 
 {{- define "convertProtoToModel" }}

@@ -55,7 +55,7 @@ func (s *TestParent3StoreSuite) TestStore() {
 	store := s.store
 
 	testParent3 := &storage.TestParent3{}
-	s.NoError(testutils.FullInit(testParent3, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(testParent3, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundTestParent3, exists, err := store.Get(ctx, testParent3.GetId())
 	s.NoError(err)

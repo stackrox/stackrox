@@ -86,7 +86,7 @@ func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Poli
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		obj.GetDescription(),
 		obj.GetDisabled(),
@@ -157,7 +157,7 @@ func (s *storeImpl) copyFromPolicies(ctx context.Context, tx pgx.Tx, objs ...*st
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
@@ -597,7 +597,7 @@ func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.
 	return New(db)
 }
 
-//// Stubs for satisfying legacy interfaces
+// // Stubs for satisfying legacy interfaces
 func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
 	return errors.New("unimplemented")
 }

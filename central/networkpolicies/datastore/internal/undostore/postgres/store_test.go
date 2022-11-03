@@ -55,7 +55,7 @@ func (s *NetworkpolicyapplicationundorecordsStoreSuite) TestStore() {
 	store := s.store
 
 	networkPolicyApplicationUndoRecord := &storage.NetworkPolicyApplicationUndoRecord{}
-	s.NoError(testutils.FullInit(networkPolicyApplicationUndoRecord, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(networkPolicyApplicationUndoRecord, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundNetworkPolicyApplicationUndoRecord, exists, err := store.Get(ctx, networkPolicyApplicationUndoRecord.GetClusterId())
 	s.NoError(err)

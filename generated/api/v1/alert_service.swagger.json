@@ -1350,7 +1350,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "A unique uuid for the Indicator message"
+          "title": "A unique type(uuid) for the Indicator message"
         },
         "deploymentId": {
           "type": "string"
@@ -1390,7 +1390,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "A unique UUID for identifying the message\nWe have this here instead of at the top level\nbecause we want to have each message to be\nself contained."
+          "description": "A unique type(uuid) for identifying the message\nWe have this here instead of at the top level\nbecause we want to have each message to be\nself contained."
         },
         "containerId": {
           "type": "string",

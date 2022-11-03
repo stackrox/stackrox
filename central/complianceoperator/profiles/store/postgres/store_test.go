@@ -55,7 +55,7 @@ func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
 	store := s.store
 
 	complianceOperatorProfile := &storage.ComplianceOperatorProfile{}
-	s.NoError(testutils.FullInit(complianceOperatorProfile, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(complianceOperatorProfile, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundComplianceOperatorProfile, exists, err := store.Get(ctx, complianceOperatorProfile.GetId())
 	s.NoError(err)

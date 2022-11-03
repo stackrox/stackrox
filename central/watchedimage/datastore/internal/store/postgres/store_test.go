@@ -55,7 +55,7 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 	store := s.store
 
 	watchedImage := &storage.WatchedImage{}
-	s.NoError(testutils.FullInit(watchedImage, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(watchedImage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundWatchedImage, exists, err := store.Get(ctx, watchedImage.GetName())
 	s.NoError(err)

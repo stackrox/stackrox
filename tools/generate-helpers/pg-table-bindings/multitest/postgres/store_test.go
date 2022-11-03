@@ -55,7 +55,7 @@ func (s *TestMultiKeyStructsStoreSuite) TestStore() {
 	store := s.store
 
 	testMultiKeyStruct := &storage.TestMultiKeyStruct{}
-	s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundTestMultiKeyStruct, exists, err := store.Get(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)

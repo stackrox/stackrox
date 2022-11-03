@@ -55,7 +55,7 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	store := s.store
 
 	testSingleKeyStruct := &storage.TestSingleKeyStruct{}
-	s.NoError(testutils.FullInit(testSingleKeyStruct, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(testSingleKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	foundTestSingleKeyStruct, exists, err := store.Get(ctx, testSingleKeyStruct.GetKey())
 	s.NoError(err)

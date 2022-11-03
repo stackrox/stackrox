@@ -99,6 +99,9 @@ func MatchFieldQuery(dbField *walker.Field, derivedMetadata *walker.DerivedSearc
 
 	qualifiedColName := dbField.Schema.Table + "." + dbField.ColumnName
 	dataType := dbField.DataType
+	if dbField.SQLType == "uuid" {
+		dataType = walker.Uuid
+	}
 	var goesIntoHavingClause bool
 	if derivedMetadata != nil {
 		switch derivedMetadata.DerivationType {
