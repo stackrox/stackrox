@@ -437,17 +437,14 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 	case *v1.Query_BaseQuery:
 		switch subBQ := q.GetBaseQuery().Query.(type) {
 		case *v1.BaseQuery_DocIdQuery:
+			cast := "::text[]"
 			if schema.ID().SQLType == "uuid" {
-				return &pgsearch.QueryEntry{Where: pgsearch.WhereClause{
-					Query:  fmt.Sprintf("%s.%s = ANY($$::uuid[])", schema.Table, schema.ID().ColumnName),
-					Values: []interface{}{subBQ.DocIdQuery.GetIds()},
-				}}, nil
-			} else {
-				return &pgsearch.QueryEntry{Where: pgsearch.WhereClause{
-					Query:  fmt.Sprintf("%s.%s = ANY($$::text[])", schema.Table, schema.ID().ColumnName),
-					Values: []interface{}{subBQ.DocIdQuery.GetIds()},
-				}}, nil
+				cast = "::uuid[]"
 			}
+			return &pgsearch.QueryEntry{Where: pgsearch.WhereClause{
+				Query:  fmt.Sprintf("%s.%s = ANY($$%s)", schema.Table, schema.ID().ColumnName, cast),
+				Values: []interface{}{subBQ.DocIdQuery.GetIds()},
+			}}, nil
 		case *v1.BaseQuery_MatchFieldQuery:
 			queryFieldMetadata := queryFields[subBQ.MatchFieldQuery.GetField()]
 			qe, err := pgsearch.MatchFieldQuery(

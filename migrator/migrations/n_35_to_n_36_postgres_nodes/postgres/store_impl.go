@@ -94,6 +94,11 @@ func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpda
 		serialized,
 	}
 
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		log.WriteToStderrf("id is not a valid uuid -- %v", obj)
+		return nil
+	}
+
 	finalStr := "INSERT INTO nodes (Id, Name, ClusterId, ClusterName, Labels, Annotations, JoinedAt, ContainerRuntime_Version, OsImage, LastUpdated, Scan_ScanTime, Components, Cves, FixableCves, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, JoinedAt = EXCLUDED.JoinedAt, ContainerRuntime_Version = EXCLUDED.ContainerRuntime_Version, OsImage = EXCLUDED.OsImage, LastUpdated = EXCLUDED.LastUpdated, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
@@ -159,6 +164,11 @@ func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, n
 		obj.GetKey(),
 		obj.GetValue(),
 		obj.GetTaintEffect(),
+	}
+
+	if pgutils.NilOrUUID(nodeID) == nil {
+		log.WriteToStderrf("id is not a valid uuid -- %v", obj)
+		return nil
 	}
 
 	finalStr := "INSERT INTO nodes_taints (nodes_Id, idx, Key, Value, TaintEffect) VALUES($1, $2, $3, $4, $5) ON CONFLICT(nodes_Id, idx) DO UPDATE SET nodes_Id = EXCLUDED.nodes_Id, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, TaintEffect = EXCLUDED.TaintEffect"
@@ -508,6 +518,11 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID s
 			obj.GetValue(),
 			obj.GetTaintEffect(),
 		})
+
+		if pgutils.NilOrUUID(nodeID) == nil {
+			log.WriteToStderrf("id is not a valid uuid -- %v", obj)
+			continue
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {

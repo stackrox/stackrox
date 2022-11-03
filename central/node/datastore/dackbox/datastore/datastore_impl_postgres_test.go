@@ -36,7 +36,6 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -131,7 +130,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	exists, err = suite.datastore.Exists(allowAllCtx, fixtureconsts.Node1)
 	suite.NoError(err)
 	suite.True(exists)
-	exists, err = suite.datastore.Exists(allowAllCtx, uuid.Nil.String())
+	exists, err = suite.datastore.Exists(allowAllCtx, fixtureconsts.Node2)
 	suite.NoError(err)
 	suite.False(exists)
 

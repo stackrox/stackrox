@@ -103,12 +103,12 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
-			Id:                    fixtureconsts.ClusterNotForSAC1,
+			Id:                    fixtureconsts.Cluster1,
 			SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 			CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
-			Id:                 fixtureconsts.ClusterNotForSAC2,
+			Id:                 fixtureconsts.Cluster2,
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 	}
@@ -119,7 +119,7 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 	count, err := clusterHealthStore.Count(s.ctx)
 	s.Nil(err)
 	s.Equal(count, 3)
-	exists, err := clusterHealthStore.Exists(s.ctx, fixtureconsts.ClusterNotForSAC2)
+	exists, err := clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
 	s.Nil(err)
 	s.True(exists)
 
@@ -128,7 +128,7 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 	count, err = clusterHealthStore.Count(s.ctx)
 	s.Nil(err)
 	s.Equal(count, 1)
-	exists, err = clusterHealthStore.Exists(s.ctx, fixtureconsts.ClusterNotForSAC2)
+	exists, err = clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
 	s.Nil(err)
 	s.False(exists)
 }

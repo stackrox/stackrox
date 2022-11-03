@@ -237,7 +237,7 @@ func (s *nodeDatastoreSACSuite) TestExists() {
 	clusterID := testconsts.Cluster2
 	nodeID := s.testNodeIDs[clusterID][2]
 
-	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, testconsts.Cluster3, resources.Node)
+	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context

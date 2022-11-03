@@ -10,7 +10,7 @@ import (
 func GetServiceAccount() *storage.ServiceAccount {
 	return &storage.ServiceAccount{
 		Id:          uuid.NewDummy().String(),
-		ClusterId:   fixtureconsts.ClusterNotForSAC1,
+		ClusterId:   fixtureconsts.Cluster1,
 		ClusterName: "clustername",
 		Namespace:   "namespace",
 	}

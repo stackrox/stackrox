@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	types2 "github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -59,7 +58,7 @@ func LightweightDeployment() *storage.Deployment {
 	return &storage.Deployment{
 		Name:        "nginx_server",
 		Id:          fixtureconsts.Deployment1,
-		ClusterId:   testconsts.Cluster1,
+		ClusterId:   fixtureconsts.Cluster1,
 		ClusterName: "prod cluster",
 		Namespace:   "stackrox",
 		Annotations: map[string]string{

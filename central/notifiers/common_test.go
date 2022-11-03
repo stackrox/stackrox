@@ -18,7 +18,7 @@ func namespaceWithAnnotation(annotationKey, annotationValue string) *storage.Nam
 	ns := &storage.NamespaceMetadata{
 		Id:          fixtureconsts.Namespace1,
 		Name:        "name",
-		ClusterId:   fixtureconsts.ClusterNotForSAC1,
+		ClusterId:   fixtureconsts.Cluster1,
 		ClusterName: "cluster-name",
 	}
 
@@ -199,7 +199,7 @@ func TestGetAnnotationValueReturnsDefaultIfNoStoreReturnsError(t *testing.T) {
 
 	alert := fixtures.GetAlert()
 
-	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, errors.New(fixtureconsts.ClusterNotForSAC1))
+	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, errors.New(fixtureconsts.Cluster1))
 	value := GetAnnotationValue(context.Background(), alert, "somekey", "default", nsStore)
 
 	assert.Equal(t, "default", value)

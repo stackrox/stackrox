@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	clusterID = fixtureconsts.ClusterNotForSAC1
+	clusterID = fixtureconsts.Cluster1
 
 	flowsCountStmt = "select count(*) from network_flows"
 )
@@ -80,7 +80,7 @@ func getTimestamp(seconds int64) *types.Timestamp {
 }
 
 func (s *NetworkflowStoreSuite) TestStore() {
-	secondCluster := fixtureconsts.ClusterNotForSAC2
+	secondCluster := fixtureconsts.Cluster2
 	store2 := New(s.pool, secondCluster)
 
 	networkFlow := &storage.NetworkFlow{

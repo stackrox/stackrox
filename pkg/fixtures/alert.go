@@ -79,7 +79,7 @@ func GetScopedDeploymentAlert(ID string, clusterID string, namespace string) *st
 
 // GetAlert returns a Mock Alert
 func GetAlert() *storage.Alert {
-	return GetScopedDeploymentAlert(uuid.NewDummy().String(), fixtureconsts.ClusterNotForSAC1, "stackrox")
+	return GetScopedDeploymentAlert(uuid.NewDummy().String(), fixtureconsts.Cluster1, "stackrox")
 }
 
 // GetAlertWithMitre returns a mock Alert with MITRE ATT&CK
@@ -91,7 +91,7 @@ func GetAlertWithMitre() *storage.Alert {
 
 // GetResourceAlert returns a Mock Alert with a resource entity
 func GetResourceAlert() *storage.Alert {
-	return GetScopedResourceAlert("some-resource-alert-on-secret", fixtureconsts.ClusterNotForSAC1, "stackrox")
+	return GetScopedResourceAlert("some-resource-alert-on-secret", fixtureconsts.Cluster1, "stackrox")
 }
 
 // GetScopedResourceAlert returns a Mock alert with a resource entity belonging to the input scope

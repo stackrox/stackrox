@@ -417,8 +417,6 @@ type PostgresOptions struct {
 	// IgnoreChildFKs is an option used to tell the walker that
 	// foreign keys of children of this field should be ignored.
 	IgnoreChildFKs bool
-
-	UUID bool
 }
 
 type foreignKeyRef struct {

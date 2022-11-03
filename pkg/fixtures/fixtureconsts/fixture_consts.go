@@ -2,8 +2,8 @@ package fixtureconsts
 
 // Deployment UUID constants for testing with fixtures
 const (
-	ClusterNotForSAC1   = "caaaaaaa-bbbb-4011-0000-111111111111"
-	ClusterNotForSAC2   = "caaaaaaa-bbbb-4011-0000-222222222222"
+	Cluster1            = "caaaaaaa-bbbb-4011-0000-111111111111"
+	Cluster2            = "caaaaaaa-bbbb-4011-0000-222222222222"
 	Deployment1         = "deaaaaaa-bbbb-4011-0000-111111111111"
 	Deployment2         = "deaaaaaa-bbbb-4011-0000-222222222222"
 	Deployment3         = "deaaaaaa-bbbb-4011-0000-333333333333"
@@ -19,5 +19,4 @@ const (
 	ProcessIndicatorID1 = "eaaaaaaa-bbbb-4011-0000-111111111111"
 	ProcessIndicatorID2 = "eaaaaaaa-bbbb-4011-0000-222222222222"
 	ProcessIndicatorID3 = "eaaaaaaa-bbbb-4011-0000-333333333333"
-	ProcessIndicatorID4 = "eaaaaaaa-bbbb-4011-0000-444444444444"
 )

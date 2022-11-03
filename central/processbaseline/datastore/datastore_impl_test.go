@@ -168,12 +168,12 @@ func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessB
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestGetById() {
-	suite.doGet(&storage.ProcessBaselineKey{DeploymentId: fixtureconsts.Deployment1, ContainerName: "whatever", ClusterId: fixtureconsts.ClusterNotForSAC1, Namespace: "whatever"}, false, nil)
+	suite.doGet(&storage.ProcessBaselineKey{DeploymentId: fixtureconsts.Deployment1, ContainerName: "whatever", ClusterId: fixtureconsts.Cluster1, Namespace: "whatever"}, false, nil)
 
 	key := &storage.ProcessBaselineKey{
 		DeploymentId:  fixtureconsts.Deployment1,
 		ContainerName: "container",
-		ClusterId:     fixtureconsts.ClusterNotForSAC1,
+		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     "namespace",
 	}
 	baseline := suite.createAndStoreBaseline(key)
@@ -302,9 +302,9 @@ func (suite *ProcessBaselineDataStoreTestSuite) doQuery(q *v1.Query, len int) {
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestRemoveByDeployment() {
 	dep1 := fixtureconsts.Deployment1
-	key1 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "1", ClusterId: fixtureconsts.ClusterNotForSAC1, Namespace: "1"}
-	key2 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "2", ClusterId: fixtureconsts.ClusterNotForSAC1, Namespace: "2"}
-	key3 := &storage.ProcessBaselineKey{DeploymentId: fixtureconsts.Deployment2, ContainerName: "1", ClusterId: fixtureconsts.ClusterNotForSAC1, Namespace: "3"}
+	key1 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "1", ClusterId: fixtureconsts.Cluster1, Namespace: "1"}
+	key2 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "2", ClusterId: fixtureconsts.Cluster1, Namespace: "2"}
+	key3 := &storage.ProcessBaselineKey{DeploymentId: fixtureconsts.Deployment2, ContainerName: "1", ClusterId: fixtureconsts.Cluster1, Namespace: "3"}
 	suite.createAndStoreBaselines(key1, key2, key3)
 
 	queryDep1 := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, dep1).ProtoQuery()
@@ -330,7 +330,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestIDToKeyConversion() {
 	key := &storage.ProcessBaselineKey{
 		DeploymentId:  fixtureconsts.Deployment1,
 		ContainerName: "container",
-		ClusterId:     fixtureconsts.ClusterNotForSAC1,
+		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     "namespace",
 	}
 

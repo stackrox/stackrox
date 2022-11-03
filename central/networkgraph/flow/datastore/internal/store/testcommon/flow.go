@@ -34,7 +34,7 @@ type FlowStoreTestSuite struct {
 // SetupSuite runs before any tests
 func (suite *FlowStoreTestSuite) SetupSuite() {
 	var err error
-	suite.tested, err = suite.store.CreateFlowStore(context.Background(), fixtureconsts.ClusterNotForSAC1)
+	suite.tested, err = suite.store.CreateFlowStore(context.Background(), fixtureconsts.Cluster1)
 	suite.Require().NoError(err)
 }
 
@@ -53,7 +53,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t1),
-			ClusterId:         fixtureconsts.ClusterNotForSAC1,
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -63,7 +63,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t2),
-			ClusterId:         fixtureconsts.ClusterNotForSAC1,
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -72,7 +72,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			ClusterId: fixtureconsts.ClusterNotForSAC1,
+			ClusterId: fixtureconsts.Cluster1,
 		},
 	}
 	var err error
@@ -187,7 +187,7 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t1),
-			ClusterId:         fixtureconsts.ClusterNotForSAC1,
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -197,7 +197,7 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t2),
-			ClusterId:         fixtureconsts.ClusterNotForSAC1,
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -206,7 +206,7 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			ClusterId: fixtureconsts.ClusterNotForSAC1,
+			ClusterId: fixtureconsts.Cluster1,
 		},
 	}
 	updateTS := timestamp.Now() - 1000000
