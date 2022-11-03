@@ -10,7 +10,7 @@ RELEASE="$2"
 PATCH="$3"
 RELEASE_PATCH="$4"
 
-echo check_not_empty \
+check_not_empty \
     PROJECTS \
     RELEASE \
     PATCH \
