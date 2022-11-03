@@ -1,11 +1,6 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 import tableSelectors from '../selectors/table';
 
-export const controlStatus = {
-    pass: 'pass',
-    fail: 'fail',
-};
-
 export const dashboardSelectors = {
     widgets: "[data-testid='widget']",
     tileLinks: "[data-testid='tile-link']",

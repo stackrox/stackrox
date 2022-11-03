@@ -8,12 +8,9 @@ import {
     sidePanelEntityCountMatchesTableRows,
     interactAndWaitForConfigurationManagementScan,
     visitConfigurationManagementDashboard,
-    visitConfigurationManagementEntities,
+    visitConfigurationManagementEntitiesWithSearch,
 } from '../../helpers/configWorkflowUtils';
-import {
-    selectors as configManagementSelectors,
-    controlStatus,
-} from '../../constants/ConfigManagementPage';
+import { selectors as configManagementSelectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
 
 const entitiesKey = 'controls';
@@ -72,24 +69,18 @@ describe('Configuration Management Controls', () => {
     });
 
     it('should show no failing nodes in the control findings section of a passing control', () => {
-        visitConfigurationManagementEntities(entitiesKey);
+        visitConfigurationManagementEntitiesWithSearch(entitiesKey, '?s[Compliance%20State]=Pass');
 
-        cy.get(configManagementSelectors.tableNextPage).click();
-        cy.get(configManagementSelectors.tableCells)
-            .contains(controlStatus.pass)
-            .eq(0)
-            .click({ force: true });
+        // Click first row which has pass in Control Status column to open control in side panel.
+        cy.get(`.rt-td:nth-child(4):contains("pass"):nth(0)`).click();
         cy.get(configManagementSelectors.failingNodes).should('have.length', 0);
     });
 
-    // ROX-13028: skip pending investigation why sometimes table has 0 failing nodes.
-    it.skip('should show failing nodes in the control findings section of a failing control', () => {
-        visitConfigurationManagementEntities(entitiesKey);
+    it('should show failing nodes in the control findings section of a failing control', () => {
+        visitConfigurationManagementEntitiesWithSearch(entitiesKey, '?s[Compliance%20State]=Fail');
 
-        cy.get(configManagementSelectors.tableCells)
-            .contains(controlStatus.fail)
-            .eq(0)
-            .click({ force: true });
+        // Click first row which has fail in Control Status column to open control in side panel.
+        cy.get(`.rt-td:nth-child(4):contains("fail"):nth(0)`).click();
         cy.get(configManagementSelectors.failingNodes).should('not.have.length', 0);
     });
 });

@@ -175,6 +175,12 @@ export function visitConfigurationManagementEntities(entitiesKey) {
     cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
 }
 
+export function visitConfigurationManagementEntitiesWithSearch(entitiesKey, search) {
+    visit(`${getEntitiesPath(entitiesKey)}${search}`, getRequestConfigForEntities(entitiesKey));
+
+    cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
+}
+
 export function interactAndWaitForConfigurationManagementEntities(
     interactionCallback,
     entitiesKey
