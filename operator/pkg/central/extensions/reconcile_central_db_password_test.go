@@ -210,29 +210,6 @@ func TestReconcileDBPassword(t *testing.T) {
 			Existing:      []*v1.Secret{canonicalPWSecretWithNoPassword},
 			ExpectedError: "secret must contain a non-empty",
 		},
-		"If password generation is explicitly disabled, but no password secret is given, an error should be raised": {
-			Spec: v1alpha1.CentralSpec{
-				Central: &v1alpha1.CentralComponentSpec{
-					DB: &v1alpha1.CentralDBSpec{
-						PasswordGenerationDisabled: pointers.Bool(true),
-					},
-				},
-			},
-			ExpectedError: "when explicitly disabling password generation, a password secret must be specified",
-		},
-		"If password generation is explicitly enabled, but a password secret is given, an error should be raised": {
-			Spec: v1alpha1.CentralSpec{
-				Central: &v1alpha1.CentralComponentSpec{
-					DB: &v1alpha1.CentralDBSpec{
-						PasswordGenerationDisabled: pointers.Bool(false),
-						PasswordSecret: &v1alpha1.LocalSecretReference{
-							Name: canonicalCentralDBPasswordSecretName,
-						},
-					},
-				},
-			},
-			ExpectedError: "when explicitly enabling password generation, a password secret must not be specified",
-		},
 		"When using an external DB, and no password secret is specified, an error should be raised": {
 			Spec: v1alpha1.CentralSpec{
 				Central: &v1alpha1.CentralComponentSpec{
