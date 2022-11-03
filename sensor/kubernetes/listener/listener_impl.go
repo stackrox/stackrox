@@ -4,7 +4,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -28,7 +27,7 @@ type listenerImpl struct {
 	configHandler      config.Handler
 	resyncPeriod       time.Duration
 	traceWriter        io.Writer
-	outputQueue        component.OutputQueue
+	outputQueue        component.Resolver
 	storeProvider      *resources.InMemoryStoreProvider
 }
 
@@ -49,10 +48,6 @@ func (k *listenerImpl) Stop(_ error) {
 		k.credentialsManager.Stop()
 	}
 	k.stopSig.Signal()
-}
-
-func (k *listenerImpl) ResponsesC() <-chan *central.MsgFromSensor {
-	return nil
 }
 
 func clusterOperatorCRDExists(client client.Interface) (bool, error) {

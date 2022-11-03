@@ -254,7 +254,7 @@ func (k *listenerImpl) handleAllEvents() {
 func handle(
 	informer cache.SharedIndexInformer,
 	dispatcher resources.Dispatcher,
-	outputQueue component.OutputQueue,
+	resolver component.Resolver,
 	syncingResources *concurrency.Flag,
 	wg *concurrency.WaitGroup,
 	stopSignal *concurrency.Signal,
@@ -263,7 +263,7 @@ func handle(
 	handlerImpl := &resourceEventHandlerImpl{
 		eventLock:        eventLock,
 		dispatcher:       dispatcher,
-		outputQueue:      outputQueue,
+		resolver:         resolver,
 		syncingResources: syncingResources,
 
 		hasSeenAllInitialIDsSignal: concurrency.NewSignal(),

@@ -20,7 +20,7 @@ type resourceEventHandlerImpl struct {
 	eventLock  *sync.Mutex
 	dispatcher resources.Dispatcher
 
-	outputQueue      component.OutputQueue
+	resolver         component.Resolver
 	syncingResources *concurrency.Flag
 
 	syncLock                   sync.Mutex
@@ -106,7 +106,7 @@ func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, ac
 	}
 
 	message := h.dispatcher.ProcessEvent(obj, oldObj, action)
-	h.outputQueue.Send(message)
+	h.resolver.Send(message)
 }
 
 func getObjUID(newObj interface{}) types.UID {
