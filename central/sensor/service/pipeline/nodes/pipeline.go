@@ -62,7 +62,7 @@ func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 }
 
 func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
-	return msg.GetEvent().GetNode() != nil
+	return msg.GetEvent().GetNode() != nil && msg.GetEvent().GetNode().GetNodeInventory() == nil
 }
 
 func (p *pipelineImpl) processRemove(ctx context.Context, id string) error {
@@ -88,6 +88,13 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
 	if err == nil && ok {
 		node.ClusterName = clusterName
+	}
+
+	// kubectl logs deploy/central | less
+	if node.NodeInventory != nil {
+		log.Infof("Central received a Node with NodeInventory name=%s - Id=%s", node.GetClusterName(), node.GetId())
+	} else {
+		log.Infof("Central received a Node without NodeInventory name=%s - Id=%s", node.GetClusterName(), node.GetId())
 	}
 
 	err = p.enricher.EnrichNode(node)

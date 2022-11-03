@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	metricsPkg "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
@@ -55,6 +57,14 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorTailoredProfiles() Dispatcher
 }
 
+// NodeStore represents a collection of NodeWraps
+type NodeStore interface {
+	AddOrUpdateNode(node *store.NodeWrap) bool
+	RemoveNode(node *storage.Node)
+	GetNode(nodeName string) *store.NodeWrap
+	GetNodes() []*store.NodeWrap
+}
+
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
 func NewDispatcherRegistry(
 	clusterID string,
@@ -68,17 +78,18 @@ func NewDispatcherRegistry(
 	traceWriter io.Writer,
 	storeProvider *InMemoryStoreProvider,
 	k8sAPI kubernetes.Interface,
+	nodeStore NodeStore,
 ) DispatcherRegistry {
 	serviceStore := storeProvider.serviceStore
 	rbacUpdater := storeProvider.rbacStore
 	serviceAccountStore := ServiceAccountStoreSingleton()
 	deploymentStore := DeploymentStoreSingleton()
 	podStore := PodStoreSingleton()
-	nodeStore := newNodeStore()
 	nsStore := newNamespaceStore()
 	netPolicyStore := NetworkPolicySingleton()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, storeProvider.Services())
+
 	registryStore := registry.Singleton()
 
 	return &registryImpl{

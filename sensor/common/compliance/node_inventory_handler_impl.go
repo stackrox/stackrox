@@ -1,14 +1,13 @@
 package compliance
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/store"
 )
 
 var (
@@ -20,6 +19,7 @@ type nodeInventoryHandlerImpl struct {
 	inventories <-chan *storage.NodeInventory
 	toCentral   <-chan *central.MsgFromSensor
 
+	nodeMatcher NodeIDMatcher
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
 	stopper concurrency.Stopper
@@ -86,16 +86,30 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 	return toC
 }
 
-func (c *nodeInventoryHandlerImpl) handleNodeInventory(toC chan *central.MsgFromSensor, inventory *storage.NodeInventory) {
-	// TODO(ROX-12943): Replace fakeNode with proper solution for finding the node
-	node := c.fakeNode(inventory)
-	c.sendNode(toC, node)
-}
-
-func (c *nodeInventoryHandlerImpl) sendNode(toC chan *central.MsgFromSensor, node *storage.Node) {
-	if node == nil {
+func (c *nodeInventoryHandlerImpl) handleNodeInventory(toC chan<- *central.MsgFromSensor, inventory *storage.NodeInventory) {
+	nodeWrap := findNode(inventory, c.nodeMatcher)
+	if nodeWrap == nil {
 		return
 	}
+	nodeWrap.NodeInventory = inventory
+	c.sendNodeToCentral(toC, nodeWrap.Node)
+}
+
+func findNode(inventory *storage.NodeInventory, matcher NodeIDMatcher) *store.NodeWrap {
+	if inventory == nil {
+		return nil
+	}
+	nodeResource, _ := matcher.GetNodeResource(inventory.GetNodeName())
+
+	if nodeResource == nil {
+		log.Errorf("Node '%s' unknown to sensor - not sending node inventory to Central", inventory.GetNodeName())
+		return nil
+	}
+	log.Infof("Successfully connected a node with name=%s - Id=%s", inventory.GetNodeName(), nodeResource.GetId())
+	return nodeResource
+}
+
+func (c *nodeInventoryHandlerImpl) sendNodeToCentral(toC chan<- *central.MsgFromSensor, node *storage.Node) {
 	select {
 	case <-c.stopper.Flow().StopRequested():
 		return
@@ -110,32 +124,5 @@ func (c *nodeInventoryHandlerImpl) sendNode(toC chan *central.MsgFromSensor, nod
 			},
 		},
 	}:
-	}
-}
-
-func (c *nodeInventoryHandlerImpl) fakeNode(inventory *storage.NodeInventory) *storage.Node {
-	if inventory == nil {
-		return nil
-	}
-	creation := inventory.ScanTime
-	return &storage.Node{
-		// this is arbitrary selected UUID - we want to see only 1 fake node in the UI for each message from Compliance
-		Id:                      "bf5bf7d4-2d77-4194-9ab5-570848c55777",
-		Name:                    inventory.GetNodeName() + "-fake",
-		Taints:                  nil,
-		NodeInventory:           inventory,
-		Labels:                  map[string]string{"fakeLabelsK": "fakeLabelsV"},
-		Annotations:             map[string]string{"fakeAnnotationsK": "fakeAnnotationsV"},
-		JoinedAt:                &types.Timestamp{Seconds: creation.Seconds, Nanos: creation.Nanos},
-		InternalIpAddresses:     []string{"192.168.255.254"},
-		ExternalIpAddresses:     []string{"10.10.255.254"},
-		ContainerRuntime:        k8sutil.ParseContainerRuntimeVersion("docker://20.10.18"),
-		ContainerRuntimeVersion: "docker://20.10.18",
-		KernelVersion:           "99.19.16",
-		OperatingSystem:         "Alpine Linux v3.16",
-		OsImage:                 "RedHat CoreOS v99.66.33",
-		KubeletVersion:          "v1.25.0+k3s1",
-		KubeProxyVersion:        "v1.25.0+k3s1",
-		K8SUpdated:              types.TimestampNow(),
 	}
 }

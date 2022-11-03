@@ -17,9 +17,8 @@ type eventPipeline struct {
 	output   component.OutputQueue
 	resolver component.PipelineComponent
 	listener component.PipelineComponent
-
-	eventsC chan *central.MsgFromSensor
-	stopSig concurrency.Signal
+	eventsC  chan *central.MsgFromSensor
+	stopSig  concurrency.Signal
 }
 
 // Capabilities implements common.SensorComponent

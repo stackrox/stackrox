@@ -444,7 +444,7 @@ func (m *MockProvider) Services() store.ServiceStore {
 }
 
 // Services indicates an expected call of Services.
-func (mr *MockProviderMockRecorder) Services() *gomock.Call {
+func (mr *MockProviderMockRecorder) Services() *gomock.Call{
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Services", reflect.TypeOf((*MockProvider)(nil).Services))
 }

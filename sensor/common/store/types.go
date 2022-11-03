@@ -61,3 +61,9 @@ type Provider interface {
 	Services() ServiceStore
 	RBAC() RBACStore
 }
+
+// NodeStore provides functionality to get nodes
+//go:generate mockgen-wrapper
+type NodeStore interface {
+	GetNode(nodeName string) *NodeWrap
+}

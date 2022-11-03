@@ -310,7 +310,7 @@ func (m *Timing) Clone() *Timing {
 	return cloned
 }
 
-// Next tag: 26.
+// Next tag: 25.
 type SensorEvent struct {
 	// These fields may be duplicated in the individual events, but avoid the need to branch all the time
 	Id     string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`

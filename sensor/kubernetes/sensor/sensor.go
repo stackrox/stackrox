@@ -59,6 +59,8 @@ var (
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
 
+	nodeStore := resources.NewNodeStore()
+
 	var helmManagedConfig *central.HelmManagedConfigInit
 	if configFP := helmconfig.HelmConfigFingerprint.Setting(); configFP != "" {
 		var err error
@@ -101,12 +103,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		return nil, errors.Wrap(err, "creating enforcer")
 	}
 
-	// TODO(ROX-13603): Move other singleton stores into the store provider
+	// TODO(ROX-13603): Move other singleton stores into the nodeStore provider
 	storeProvider := resources.InitializeStore()
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), resources.ServiceAccountStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager, resources.NetworkPolicySingleton())
-	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter, storeProvider)
+	pipeline := eventpipeline.New(nodeStore, cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter, storeProvider)
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
 	imageService := image.NewService(imageCache, registry.Singleton())
@@ -135,7 +137,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
 	}
 	if features.RHCOSNodeScanning.Enabled() {
-		components = append(components, compliance.NewNodeInventoryHandler(complianceService.NodeInventories()))
+		// TODO(ROX-12943): Use the same nodeStore instance as in the DispatcherRegistry
+		matcher := compliance.NewNodeIDMatcher(nodeStore)
+		components = append(components, compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher))
 	}
 
 	if !cfg.localSensor {

@@ -85,6 +85,7 @@ func (k *listenerImpl) handleAllEvents() {
 		k.traceWriter,
 		k.storeProvider,
 		k.client.Kubernetes(),
+		k.nodeStore,
 	)
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
