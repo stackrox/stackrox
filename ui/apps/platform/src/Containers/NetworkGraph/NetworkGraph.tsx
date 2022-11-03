@@ -70,60 +70,65 @@ function setVisibleEdges(edges) {
     });
 }
 
+function setEdges(controller, detailId) {
+    controller
+        .getGraph()
+        .getEdges()
+        .forEach((edge) => {
+            edge.setVisible(false);
+        });
+
+    if (detailId) {
+        const selectedNode = controller.getNodeById(detailId);
+        if (selectedNode?.isGroup()) {
+            selectedNode.getAllNodeChildren().forEach((child) => {
+                // set visible edges
+                setVisibleEdges(getNodeEdges(child));
+            });
+        } else if (selectedNode) {
+            // set visible edges
+            setVisibleEdges(getNodeEdges(selectedNode));
+        }
+    }
+}
+
 const TopologyComponent = ({ model }: TopologyComponentProps) => {
     const history = useHistory();
     const { detailId } = useParams();
     const selectedEntity = detailId && findEntityById(model, detailId);
     const controller = useVisualizationController();
 
-    console.log('TopologyComponent');
-
-    if (detailId) {
-        const selectedNode = controller.getNodeById(detailId);
-        if (selectedNode?.isGroup()) {
-            const children = selectedNode.getAllNodeChildren();
-            children.forEach((child) => {
-                // set visible edges
-                const relatedEdges = getNodeEdges(child);
-                setVisibleEdges(relatedEdges);
-            });
-        } else if (selectedNode) {
-            // set visible edges
-            const relatedEdges = getNodeEdges(selectedNode);
-            setVisibleEdges(relatedEdges);
-        }
-    } else if (controller.hasGraph()) {
-        const edges = controller.getGraph().getEdges();
-        edges.forEach((edge) => {
-            edge.setVisible(false);
-        });
+    // to prevent error where graph hasn't initialized yet
+    if (controller.hasGraph()) {
+        setEdges(controller, detailId);
     }
 
     function closeSidebar() {
         history.push(`${networkBasePathPF}`);
     }
 
-    React.useEffect(() => {
-        function onSelect(ids: string[]) {
-            const newSelectedId = ids?.[0] || '';
-            const newSelectedEntity = findEntityById(model, newSelectedId);
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            if (newSelectedEntity) {
-                const [newDetailType, newDetailId] = getUrlParamsForEntity(newSelectedEntity);
-                // if found, and it's not the logical grouping of all external sources, then trigger URL update
-                if (newDetailId !== 'EXTERNAL') {
-                    history.push(`${networkBasePathPF}/${newDetailType}/${newDetailId}`);
-                } else {
-                    // otherwise, return to the graph-only state
-                    history.push(`${networkBasePathPF}`);
-                }
+    function onSelect(ids: string[]) {
+        const newSelectedId = ids?.[0] || '';
+        const newSelectedEntity = findEntityById(model, newSelectedId);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        if (newSelectedEntity) {
+            const [newDetailType, newDetailId] = getUrlParamsForEntity(newSelectedEntity);
+            // if found, and it's not the logical grouping of all external sources, then trigger URL update
+            if (newDetailId !== 'EXTERNAL') {
+                history.push(`${networkBasePathPF}/${newDetailType}/${newDetailId}`);
+            } else {
+                // otherwise, return to the graph-only state
+                history.push(`${networkBasePathPF}`);
             }
         }
+    }
 
+    React.useEffect(() => {
         controller.fromModel(model, false);
         controller.addEventListener(SELECTION_EVENT, onSelect);
 
+        setEdges(controller, detailId);
         return () => {
             controller.removeEventListener(SELECTION_EVENT, onSelect);
         };
@@ -185,7 +190,6 @@ const NetworkGraph = React.memo<NetworkGraphProps>(({ model }) => {
     controller.registerLayoutFactory(defaultLayoutFactory);
     controller.registerComponentFactory(defaultComponentFactory);
     controller.registerComponentFactory(stylesComponentFactory);
-    console.log('NetworkGraph');
 
     return (
         <div className="pf-ri__topology-demo">

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
+import { PageSection, Title, Flex, FlexItem, Bullseye, Spinner } from '@patternfly/react-core';
 import { Model } from '@patternfly/react-topology';
 
 import { fetchNetworkFlowGraph } from 'services/NetworkService';
@@ -11,10 +11,13 @@ import { transformData, graphModel } from './utils';
 
 import './NetworkGraphPage.css';
 
+const emptyModel = {
+    graph: graphModel,
+};
+
 function NetworkGraphPage() {
-    const [model, setModel] = useState<Model>({
-        graph: graphModel,
-    });
+    const [model, setModel] = useState<Model>(emptyModel);
+    const [isLoading, setIsLoading] = useState(false);
     const [clusters, setClusters] = useState<Cluster[]>([]);
 
     useEffect(() => {
@@ -29,6 +32,7 @@ function NetworkGraphPage() {
 
     useEffect(() => {
         if (clusters.length > 0) {
+            setIsLoading(true);
             fetchNetworkFlowGraph(clusters[0].id, [])
                 .then(({ response }) => {
                     const dataModel = transformData(response.nodes);
@@ -36,11 +40,10 @@ function NetworkGraphPage() {
                 })
                 .catch(() => {
                     // TODO
-                });
+                })
+                .finally(() => setIsLoading(false));
         }
     }, [clusters]);
-
-    console.log('NetworkGraphPage');
 
     return (
         <>
@@ -53,7 +56,12 @@ function NetworkGraphPage() {
                 </Flex>
             </PageSection>
             <PageSection className="network-graph no-padding">
-                <NetworkGraph model={model} />
+                {model.nodes && <NetworkGraph model={model} />}
+                {isLoading && (
+                    <Bullseye>
+                        <Spinner isSVG />
+                    </Bullseye>
+                )}
             </PageSection>
         </>
     );
