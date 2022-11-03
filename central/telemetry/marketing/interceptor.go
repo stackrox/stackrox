@@ -5,50 +5,39 @@ import (
 
 	mpkg "github.com/stackrox/rox/pkg/telemetry/marketing"
 
-	grpcErrox "github.com/stackrox/rox/pkg/errox/grpc"
-	grpcErr "github.com/stackrox/rox/pkg/grpc/errors"
+	erroxGRPC "github.com/stackrox/rox/pkg/errox/grpc"
+	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 )
 
-func interceptor(d *mpkg.Device, t mpkg.Telemeter) grpc.UnaryServerInterceptor {
+func track(ctx context.Context, t mpkg.Telemeter, err error, info *grpc.UnaryServerInfo, trackedPaths set.FrozenSet[string]) {
+	ri := requestinfo.FromContext(ctx)
 
-	trackedPaths := set.NewFrozenSet(d.ApiPaths...)
-	log.Info("API path telemetry enabled for: ", trackedPaths.AsSlice())
+	userAgent := "unknown"
+	if agents := ri.Metadata.Get("User-Agent"); len(agents) != 0 {
+		userAgent = agents[0]
+	}
 
-	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-		resp, err = handler(ctx, req)
+	// Track the user agent of every request:
+	t.Track(userAgent, "User-Agent")
 
-		ri := requestinfo.FromContext(ctx)
+	var code int
+	var path string
+	if ri.HTTPRequest != nil && ri.HTTPRequest.URL != nil {
+		path = ri.HTTPRequest.URL.Path
+		code = grpcError.ErrToHTTPStatus(err)
+	} else {
+		path = info.FullMethod
+		code = int(erroxGRPC.RoxErrorToGRPCCode(err))
+	}
 
-		uarr := ri.Metadata.Get("User-Agent")
-		var userAgent string
-		if len(uarr) == 0 {
-			userAgent = "unknown"
-		} else {
-			userAgent = uarr[0]
-		}
-		t.Track(userAgent, "User-Agent")
-
-		var code int
-		var path string
-		if ri.HTTPRequest != nil && ri.HTTPRequest.URL != nil {
-			path = ri.HTTPRequest.URL.Path
-			code = grpcErr.ErrToHTTPStatus(err)
-		} else {
-			path = info.FullMethod
-			code = int(grpcErrox.RoxErrorToGRPCCode(err))
-		}
-		log.Info("Telemetry intercepted ", path)
-
-		if trackedPaths.Contains(path) {
-			log.Info("Telemetry tracks ", path)
-			t.TrackProps(userAgent, "API Call", map[string]any{
-				"Path": path,
-				"Code": code,
-			})
-		}
-		return
+	// Track the API path and error code of some requests:
+	if trackedPaths.Contains(path) {
+		t.TrackProps(userAgent, "API Call", map[string]any{
+			"Path": path,
+			"Code": code,
+		})
 	}
 }

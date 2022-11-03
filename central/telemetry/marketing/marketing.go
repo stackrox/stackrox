@@ -1,17 +1,37 @@
 package marketing
 
 import (
+	"context"
+
+	"github.com/stackrox/rox/pkg/set"
 	mpkg "github.com/stackrox/rox/pkg/telemetry/marketing"
 	"github.com/stackrox/rox/pkg/telemetry/marketing/amplitude"
 	"google.golang.org/grpc"
 )
 
+// Init initializes the periodic telemetry data gatherer and returns an GRPC API
+// call inteceptor. Returns nil if telemetry data collection is disabled.
 func Init() grpc.UnaryServerInterceptor {
 	if mpkg.Enabled() {
-		device := mpkg.GetDeviceProperties()
-		telemeter := amplitude.Init(device)
-		NewGatherer(telemeter)
-		return interceptor(device, telemeter)
+		config, err := mpkg.GetDeviceConfig()
+		if err != nil {
+			log.Errorf("Failed to get device telemetry configuration: %v", err)
+			return nil
+		}
+
+		telemeter := amplitude.Init(config)
+
+		InitGatherer(telemeter)
+
+		trackedPaths := set.NewFrozenSet(config.APIPaths...)
+		log.Info("Telemetry device ID:", config.ID)
+		log.Info("API path telemetry enabled for: ", config.APIPaths)
+
+		return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+			resp, err = handler(ctx, req)
+			go track(ctx, telemeter, err, info, trackedPaths)
+			return
+		}
 	}
 	return nil
 }

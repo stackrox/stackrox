@@ -34,7 +34,8 @@ var (
 	once sync.Once
 )
 
-func NewGatherer(t mpkg.Telemeter) {
+// InitGatherer initializes the periodic telemetry data gatherer.
+func InitGatherer(t mpkg.Telemeter) {
 	once.Do(func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		m = &marketing{
@@ -47,6 +48,7 @@ func NewGatherer(t mpkg.Telemeter) {
 	})
 }
 
+// Singleton returns the previously initialized telemeter instance.
 func Singleton() *marketing {
 	return m
 }
@@ -55,7 +57,6 @@ func (m *marketing) loop() {
 	for !m.stopSig.IsDone() {
 		select {
 		case <-m.ticker.C:
-			log.Info("Tick.")
 			go m.gather()
 		case <-m.stopSig.Done():
 			return
@@ -91,8 +92,8 @@ func addTotal[T any](props map[string]any, key string, f func(context.Context) (
 }
 
 func (m *marketing) gather() {
-	log.Info("Starting marketing telemetry data collection.")
-	defer log.Info("Done with marketing telemetry data collection.")
+	log.Debug("Starting marketing telemetry data collection.")
+	defer log.Debug("Done with marketing telemetry data collection.")
 
 	totals := make(map[string]any)
 	rs := roles.Singleton()
@@ -113,10 +114,10 @@ func (m *marketing) gather() {
 		return
 	}
 
-	providerIdNames := make(map[string]string)
+	providerIDNames := make(map[string]string)
 	providerNames := make([]string, len(providers))
 	for _, provider := range providers {
-		providerIdNames[provider.GetId()] = provider.GetName()
+		providerIDNames[provider.GetId()] = provider.GetName()
 		providerNames = append(providerNames, provider.GetName())
 	}
 	totals["Auth Providers"] = providerNames
@@ -128,7 +129,7 @@ func (m *marketing) gather() {
 	}
 
 	for id, n := range providerGroups {
-		totals["Total Groups of "+providerIdNames[id]] = n
+		totals["Total Groups of "+providerIDNames[id]] = n
 	}
 	m.telemeter.Identify(totals)
 }
