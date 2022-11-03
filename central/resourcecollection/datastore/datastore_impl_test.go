@@ -299,6 +299,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	objBDup := objB.Clone()
 	updateTestCollection(objB, []string{objE.GetId()})
 	err = s.datastore.DryRunUpdateCollection(ctx, objB)
+	assert.NoError(s.T(), err)
 	obj, ok, err = s.datastore.Get(ctx, objB.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
