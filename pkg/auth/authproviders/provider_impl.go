@@ -135,7 +135,8 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 		// Calling reset on the default value of an ErrorSignal returns true
 		// so this works even in the default case
 		if p.backendCreationDone.Reset() {
-			go p.createBackendAsync(p.backendFactory, p.storedInfo.GetId(), AllUIEndpoints(&p.storedInfo), p.storedInfo.GetConfig())
+			go p.createBackendAsync(p.backendFactory, p.storedInfo.GetId(), AllUIEndpoints(&p.storedInfo), p.storedInfo.GetConfig(),
+				p.storedInfo.GetClaimMappings())
 
 			p.lastBackendCreationAttempt = time.Now()
 			doneErrSig = p.backendCreationDone.Snapshot()
@@ -161,11 +162,11 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 	return backend, nil
 }
 
-func (p *providerImpl) createBackendAsync(factory BackendFactory, id string, allUIEndpoints []string, config map[string]string) {
+func (p *providerImpl) createBackendAsync(factory BackendFactory, id string, allUIEndpoints []string, config map[string]string, mappings map[string]string) {
 	ctx, cancel := context.WithTimeout(context.Background(), asyncBackendCreationTimeout)
 	defer cancel()
 
-	backend, err := factory.CreateBackend(ctx, id, allUIEndpoints, config)
+	backend, err := factory.CreateBackend(ctx, id, allUIEndpoints, config, mappings)
 	if err != nil {
 		backend = nil
 	} else if backend == nil {

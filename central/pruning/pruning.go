@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -191,14 +192,18 @@ func (g *garbageCollectorImpl) removeExpiredVulnRequests() {
 func (g *garbageCollectorImpl) removeOrphanedPods(clusters set.FrozenStringSet) {
 	var podIDsToRemove []string
 	staleClusterIDsFound := set.NewStringSet()
-	err := g.pods.WalkAll(pruningCtx, func(pod *storage.Pod) error {
-		if !clusters.Contains(pod.GetClusterId()) {
-			podIDsToRemove = append(podIDsToRemove, pod.GetId())
-			staleClusterIDsFound.Add(pod.GetClusterId())
-		}
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		podIDsToRemove = podIDsToRemove[:0]
+		staleClusterIDsFound.Clear()
+		return g.pods.WalkAll(pruningCtx, func(pod *storage.Pod) error {
+			if !clusters.Contains(pod.GetClusterId()) {
+				podIDsToRemove = append(podIDsToRemove, pod.GetId())
+				staleClusterIDsFound.Add(pod.GetClusterId())
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		log.Errorf("Error walking pods to find orphaned pods: %v", err)
 		return
 	}
@@ -319,20 +324,23 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {
 	var processesToPrune []string
 	now := types.TimestampNow()
-	err := g.processes.WalkAll(pruningCtx, func(pi *storage.ProcessIndicator) error {
-		if pi.GetPodUid() != "" && podIDs.Contains(pi.GetPodUid()) {
+	walkFn := func() error {
+		processesToPrune = processesToPrune[:0]
+		return g.processes.WalkAll(pruningCtx, func(pi *storage.ProcessIndicator) error {
+			if pi.GetPodUid() != "" && podIDs.Contains(pi.GetPodUid()) {
+				return nil
+			}
+			if pi.GetPodUid() == "" && deploymentIDs.Contains(pi.GetDeploymentId()) {
+				return nil
+			}
+			if protoutils.Sub(now, pi.GetSignal().GetTime()) < orphanWindow {
+				return nil
+			}
+			processesToPrune = append(processesToPrune, pi.GetId())
 			return nil
-		}
-		if pi.GetPodUid() == "" && deploymentIDs.Contains(pi.GetDeploymentId()) {
-			return nil
-		}
-		if protoutils.Sub(now, pi.GetSignal().GetTime()) < orphanWindow {
-			return nil
-		}
-		processesToPrune = append(processesToPrune, pi.GetId())
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		log.Error(errors.Wrap(err, "unable to walk processes and mark for pruning"))
 		return
 	}
@@ -403,33 +411,34 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.FrozenStringSet) {
 	var alertsToResolve []string
 	now := types.TimestampNow()
-	err := g.alerts.WalkAll(pruningCtx, func(alert *storage.ListAlert) error {
-		// We should only remove orphaned deploy time alerts as they are not cleaned up by retention policies
-		// This will only happen when there is data inconsistency
-		if alert.GetLifecycleStage() != storage.LifecycleStage_DEPLOY {
+	walkFn := func() error {
+		alertsToResolve = alertsToResolve[:0]
+		return g.alerts.WalkAll(pruningCtx, func(alert *storage.ListAlert) error {
+			// We should only remove orphaned deploy time alerts as they are not cleaned up by retention policies
+			// This will only happen when there is data inconsistency
+			if alert.GetLifecycleStage() != storage.LifecycleStage_DEPLOY {
+				return nil
+			}
+			if alert.GetState() != storage.ViolationState_ACTIVE {
+				return nil
+			}
+			if deployments.Contains(alert.GetDeployment().GetId()) {
+				return nil
+			}
+			if protoutils.Sub(now, alert.GetTime()) < orphanWindow {
+				return nil
+			}
+			alertsToResolve = append(alertsToResolve, alert.GetId())
 			return nil
-		}
-		if alert.GetState() != storage.ViolationState_ACTIVE {
-			return nil
-		}
-		if deployments.Contains(alert.GetDeployment().GetId()) {
-			return nil
-		}
-		if protoutils.Sub(now, alert.GetTime()) < orphanWindow {
-			return nil
-		}
-		alertsToResolve = append(alertsToResolve, alert.GetId())
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		log.Error(errors.Wrap(err, "unable to walk alerts and mark for pruning"))
 		return
 	}
 	log.Infof("[Alert pruning] Found %d orphaned alerts", len(alertsToResolve))
-	for _, a := range alertsToResolve {
-		if err := g.alerts.MarkAlertStale(pruningCtx, a); err != nil {
-			log.Error(errors.Wrapf(err, "error marking alert %q as stale", a))
-		}
+	if _, err := g.alerts.MarkAlertStaleBatch(pruningCtx, alertsToResolve...); err != nil {
+		log.Error(errors.Wrap(err, "error marking alert as stale"))
 	}
 }
 

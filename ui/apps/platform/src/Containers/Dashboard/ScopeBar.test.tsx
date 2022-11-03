@@ -8,8 +8,6 @@ import renderWithRouter from 'test-utils/renderWithRouter';
 import ScopeBar, { namespacesQuery } from './ScopeBar';
 import { Cluster, Namespace } from './types';
 
-jest.setTimeout(10000);
-
 const clusterNamespaces = {
     production: ['backend', 'default', 'frontend', 'kube-system', 'medical', 'payments'],
     security: ['default', ' kube-system', 'stackrox'],

@@ -199,7 +199,3 @@ export const extensions = {
 export const permissions = {
     mypermissions: '/v1/mypermissions',
 };
-
-export const apiDocs = {
-    docs: '/api/docs/swagger',
-};

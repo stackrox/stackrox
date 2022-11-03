@@ -115,7 +115,9 @@ spec:
         displayName: Scanner Component
         path: scanner.scannerComponent
       - description: Specify a connection string that corresponds to an existing database.
-          If set, the operator will not manage Central DB.
+          If set, the operator will not manage Central DB. When using this option,
+          you must explicitly set a password secret; automatically generating a password
+          will not be supported.
         displayName: Connection String Override
         path: central.db.connectionString
       - description: The size of the persistent volume when created through the claim.
@@ -362,13 +364,6 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Disable database password generation. Do not use this for first-time
-          installations in which the operator is managing Central DB as Central will
-          have no way to connect to the database.
-        displayName: Password Generation Disabled
-        path: central.db.passwordGenerationDisabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the referenced secret.
         displayName: Name
         path: central.db.passwordSecret.name

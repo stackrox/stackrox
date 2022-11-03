@@ -37,9 +37,9 @@ import (
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -157,21 +157,20 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 }
 
 func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
-	var clusters []*storage.Cluster
-	err := ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
-		clusters = append(clusters, cluster)
-		return nil
-	})
+	clusters, err := ds.collectClusters(ctx)
 	if err != nil {
 		return err
 	}
 
 	clusterHealthStatuses := make(map[string]*storage.ClusterHealthStatus)
-	err = ds.clusterHealthStorage.Walk(ctx, func(healthInfo *storage.ClusterHealthStatus) error {
-		clusterHealthStatuses[healthInfo.Id] = healthInfo
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		clusterHealthStatuses = make(map[string]*storage.ClusterHealthStatus)
+		return ds.clusterHealthStorage.Walk(ctx, func(healthInfo *storage.ClusterHealthStatus) error {
+			clusterHealthStatuses[healthInfo.Id] = healthInfo
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 
@@ -189,14 +188,10 @@ func (ds *datastoreImpl) registerClusterForNetworkGraphExtSrcs() error {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Node, resources.NetworkGraph)))
 
-	var clusters []*storage.Cluster
-	if err := ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
-		clusters = append(clusters, cluster)
-		return nil
-	}); err != nil {
+	clusters, err := ds.collectClusters(ctx)
+	if err != nil {
 		return err
 	}
-
 	for _, cluster := range clusters {
 		ds.netEntityDataStore.RegisterCluster(ctx, cluster.GetId())
 	}
@@ -246,11 +241,7 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 	if err != nil {
 		return nil, err
 	} else if ok {
-		var clusters []*storage.Cluster
-		err := ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
-			clusters = append(clusters, cluster)
-			return nil
-		})
+		clusters, err := ds.collectClusters(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -727,16 +718,22 @@ func (ds *datastoreImpl) getAlerts(ctx context.Context, deploymentID string) ([]
 }
 
 func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.Alert) error {
-	errorList := errorhelpers.NewErrorList("unable to mark some alerts stale")
-	for _, alert := range alerts {
-		errorList.AddError(ds.alertDataStore.MarkAlertStale(ctx, alert.GetId()))
-		if errorList.ToError() == nil {
-			// run notifier for all the resolved alerts
-			alert.State = storage.ViolationState_RESOLVED
-			ds.notifier.ProcessAlert(ctx, alert)
-		}
+	if len(alerts) == 0 {
+		return nil
 	}
-	return errorList.ToError()
+
+	ids := make([]string, 0, len(alerts))
+	for _, alert := range alerts {
+		ids = append(ids, alert.GetId())
+	}
+	resolvedAlerts, err := ds.alertDataStore.MarkAlertStaleBatch(ctx, ids...)
+	if err != nil {
+		return err
+	}
+	for _, resolvedAlert := range resolvedAlerts {
+		ds.notifier.ProcessAlert(ctx, resolvedAlert)
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) cleanUpNodeStore(ctx context.Context) {
@@ -1041,4 +1038,19 @@ func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.Compl
 	cluster.AdmissionControllerEvents = staticConfig.GetAdmissionControllerEvents()
 	cluster.TolerationsConfig = staticConfig.GetTolerationsConfig().Clone()
 	cluster.SlimCollector = staticConfig.GetSlimCollector()
+}
+
+func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluster, error) {
+	var clusters []*storage.Cluster
+	walkFn := func() error {
+		clusters = clusters[:0]
+		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
+			clusters = append(clusters, cluster)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
+	return clusters, nil
 }

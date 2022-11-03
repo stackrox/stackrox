@@ -144,7 +144,11 @@ const DeploymentPage = ({
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-                                <ComplianceByStandards entityType={entityTypes.DEPLOYMENT} />
+                                <ComplianceByStandards
+                                    entityId={id}
+                                    entityName={name}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                />
                             </div>
                         </div>
                     );

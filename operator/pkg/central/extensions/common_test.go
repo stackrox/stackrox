@@ -22,10 +22,11 @@ type secretVerifyFunc func(t *testing.T, data types.SecretDataMap)
 type statusVerifyFunc func(t *testing.T, status *platform.CentralStatus)
 
 type secretReconciliationTestCase struct {
-	Spec     platform.CentralSpec
-	Deleted  bool
-	Existing []*v1.Secret
-	Other    []ctrlClient.Object
+	Spec            platform.CentralSpec
+	Deleted         bool
+	Existing        []*v1.Secret
+	ExistingManaged []*v1.Secret
+	Other           []ctrlClient.Object
 
 	ExpectedCreatedSecrets     map[string]secretVerifyFunc
 	ExpectedError              string
@@ -74,6 +75,11 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	for _, existingSecret := range c.Existing {
 		existingSecrets = append(existingSecrets, existingSecret.DeepCopy())
 	}
+	for _, existingManagedSecret := range c.ExistingManaged {
+		managedSecret := existingManagedSecret.DeepCopy()
+		managedSecret.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(central, central.GroupVersionKind())})
+		existingSecrets = append(existingSecrets, managedSecret)
+	}
 	var otherExisting []runtime.Object
 	for _, existingObj := range c.Other {
 		otherExisting = append(otherExisting, existingObj.DeepCopyObject())
@@ -114,10 +120,10 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 
 	for _, existingSecret := range c.Existing {
 		found, ok := secretsByName[existingSecret.Name]
-		if !assert.Truef(t, ok, "pre-existing secret %s is gone", existingSecret.Name) {
+		if !assert.Truef(t, ok, "pre-existing unmanaged secret %s is gone", existingSecret.Name) {
 			continue
 		}
-		assert.Equalf(t, existingSecret.Data, found.Data, "data of pre-existing secret %s has changed", existingSecret.Name)
+		assert.Equalf(t, existingSecret.Data, found.Data, "data of pre-existing unmanaged secret %s has changed", existingSecret.Name)
 		delete(secretsByName, existingSecret.Name)
 	}
 

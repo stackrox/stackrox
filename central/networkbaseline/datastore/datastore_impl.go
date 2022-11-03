@@ -179,7 +179,6 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, f func(baseline *storage.Netw
 	} else if !ok {
 		return nil
 	}
-
+	// Postgres retry in caller.
 	return ds.storage.Walk(ctx, f)
-
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -348,19 +349,22 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 
 func (c *sensorConnection) getNetworkBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	var networkBaselines []*storage.NetworkBaseline
-	err := c.networkBaselineMgr.Walk(ctx, func(baseline *storage.NetworkBaseline) error {
-		if !baseline.GetLocked() {
-			// Baseline not locked yet. No need to sync to sensor
+	walkFn := func() error {
+		networkBaselines = networkBaselines[:0]
+		return c.networkBaselineMgr.Walk(ctx, func(baseline *storage.NetworkBaseline) error {
+			if !baseline.GetLocked() {
+				// Baseline not locked yet. No need to sync to sensor
+				return nil
+			}
+			if baseline.GetClusterId() != c.clusterID {
+				// Not a baseline of the cluster we are talking to
+				return nil
+			}
+			networkBaselines = append(networkBaselines, baseline)
 			return nil
-		}
-		if baseline.GetClusterId() != c.clusterID {
-			// Not a baseline of the cluster we are talking to
-			return nil
-		}
-		networkBaselines = append(networkBaselines, baseline)
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, errors.Wrap(err, "could not list network baselines for Sensor connection")
 	}
 	return &central.MsgToSensor{
@@ -374,17 +378,20 @@ func (c *sensorConnection) getNetworkBaselineSyncMsg(ctx context.Context) (*cent
 
 func (c *sensorConnection) getBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	var baselines []*storage.ProcessBaseline
-	err := c.baselineMgr.WalkAll(ctx, func(pw *storage.ProcessBaseline) error {
-		if pw.GetUserLockedTimestamp() == nil {
+	walkFn := func() error {
+		baselines = baselines[:0]
+		return c.baselineMgr.WalkAll(ctx, func(pw *storage.ProcessBaseline) error {
+			if pw.GetUserLockedTimestamp() == nil {
+				return nil
+			}
+			if pw.GetKey().GetClusterId() != c.clusterID {
+				return nil
+			}
+			baselines = append(baselines, pw)
 			return nil
-		}
-		if pw.GetKey().GetClusterId() != c.clusterID {
-			return nil
-		}
-		baselines = append(baselines, pw)
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, errors.Wrap(err, "could not list process baselines for Sensor connection")
 	}
 	return &central.MsgToSensor{

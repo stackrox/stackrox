@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -698,38 +699,41 @@ func (m *manager) ProcessPostClusterDelete(deploymentIDs []string) error {
 }
 
 func (m *manager) initFromStore() error {
-	seenClusterAndNamespace := make(map[clusterNamespacePair]struct{})
-	m.baselinesByDeploymentID = make(map[string]*networkbaseline.BaselineInfo)
-	return m.ds.Walk(managerCtx, func(baseline *storage.NetworkBaseline) error {
-		baselineInfo, err := networkbaseline.ConvertBaselineInfoFromProto(baseline)
-		if err != nil {
-			return err
-		}
-
-		m.baselinesByDeploymentID[baseline.GetDeploymentId()] = baselineInfo
-
-		// Try loading all the network policies to build the seen network policies cache
-		curPair := clusterNamespacePair{ClusterID: baseline.GetClusterId(), Namespace: baseline.GetNamespace()}
-		if _, ok := seenClusterAndNamespace[curPair]; !ok {
-			// Mark seen
-			seenClusterAndNamespace[curPair] = struct{}{}
-
-			policies, err := m.networkPolicyDS.GetNetworkPolicies(managerCtx, baseline.ClusterId, baseline.Namespace)
+	walkFn := func() error {
+		seenClusterAndNamespace := make(map[clusterNamespacePair]struct{})
+		m.baselinesByDeploymentID = make(map[string]*networkbaseline.BaselineInfo)
+		return m.ds.Walk(managerCtx, func(baseline *storage.NetworkBaseline) error {
+			baselineInfo, err := networkbaseline.ConvertBaselineInfoFromProto(baseline)
 			if err != nil {
 				return err
 			}
-			for _, policy := range policies {
-				// On start treat all policies as have just been created.
-				hash, err := m.getHashOfNetworkPolicyWithResourceAction(central.ResourceAction_CREATE_RESOURCE, policy)
+
+			m.baselinesByDeploymentID[baseline.GetDeploymentId()] = baselineInfo
+
+			// Try loading all the network policies to build the seen network policies cache
+			curPair := clusterNamespacePair{ClusterID: baseline.GetClusterId(), Namespace: baseline.GetNamespace()}
+			if _, ok := seenClusterAndNamespace[curPair]; !ok {
+				// Mark seen
+				seenClusterAndNamespace[curPair] = struct{}{}
+
+				policies, err := m.networkPolicyDS.GetNetworkPolicies(managerCtx, baseline.ClusterId, baseline.Namespace)
 				if err != nil {
 					return err
 				}
-				m.seenNetworkPolicies.Add(hash)
+				for _, policy := range policies {
+					// On start treat all policies as have just been created.
+					hash, err := m.getHashOfNetworkPolicyWithResourceAction(central.ResourceAction_CREATE_RESOURCE, policy)
+					if err != nil {
+						return err
+					}
+					m.seenNetworkPolicies.Add(hash)
+				}
 			}
-		}
 
-		return nil
-	})
+			return nil
+		})
+	}
+	return pgutils.RetryIfPostgres(walkFn)
 }
 
 func (m *manager) flushBaselineQueue() {
@@ -906,6 +910,7 @@ func New(
 		seenNetworkPolicies:        set.NewSet[uint64](),
 		deploymentObservationQueue: queue.New(),
 		baselineFlushTicker:        time.NewTicker(baselineFlushTickerDuration),
+		baselinesByDeploymentID:    make(map[string]*networkbaseline.BaselineInfo),
 	}
 	if err := m.initFromStore(); err != nil {
 		return nil, err

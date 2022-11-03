@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -41,6 +42,7 @@ func (ds *datastoreImpl) GetNetworkPolicy(ctx context.Context, id string) (*stor
 }
 
 func (ds *datastoreImpl) doForMatching(ctx context.Context, clusterID, namespace string, fn func(np *storage.NetworkPolicy)) error {
+	// Postgres retry in caller.
 	return ds.storage.Walk(ctx, func(np *storage.NetworkPolicy) error {
 		if clusterID != "" && np.GetClusterId() != clusterID {
 			return nil
@@ -55,9 +57,14 @@ func (ds *datastoreImpl) doForMatching(ctx context.Context, clusterID, namespace
 
 func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, namespace string) ([]*storage.NetworkPolicy, error) {
 	var netPols []*storage.NetworkPolicy
-	err := ds.doForMatching(ctx, clusterID, namespace, func(np *storage.NetworkPolicy) {
-		netPols = append(netPols, np)
-	})
+	err := pgutils.RetryIfPostgres(
+		func() error {
+			netPols = netPols[:0]
+			return ds.doForMatching(ctx, clusterID, namespace, func(np *storage.NetworkPolicy) {
+				netPols = append(netPols, np)
+			})
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -87,9 +94,14 @@ func (ds *datastoreImpl) CountMatchingNetworkPolicies(ctx context.Context, clust
 		return 0, err
 	}
 	var count int
-	err := ds.doForMatching(ctx, clusterID, namespace, func(np *storage.NetworkPolicy) {
-		count++
-	})
+	err := pgutils.RetryIfPostgres(
+		func() error {
+			count = 0
+			return ds.doForMatching(ctx, clusterID, namespace, func(np *storage.NetworkPolicy) {
+				count++
+			})
+		},
+	)
 	if err != nil {
 		return 0, err
 	}

@@ -436,6 +436,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(baseline *storage.
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+	// Postgres retries in the caller.
 	return ds.storage.Walk(ctx, fn)
 }
 

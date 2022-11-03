@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginx-svc-load-balancer
+  name: nginx-svc-load-balancer-30011
 spec:
   type: LoadBalancer
   selector:
@@ -11,4 +11,4 @@ spec:
     name: port-1
     port: 80
     targetPort: 80
-    nodePort: 30007
+    nodePort: 30011

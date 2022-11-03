@@ -352,78 +352,6 @@ func (s *namespaceDatastoreSACSuite) TestUpdateNamespace() {
 	}
 }
 
-func (s *namespaceDatastoreSACSuite) runCountTest(testparams testutils.SACSearchTestCase) {
-	ctx := s.testContexts[testparams.ScopeKey]
-	resultCount, err := s.datastore.Count(ctx, nil)
-	s.NoError(err)
-	expectedResultCount := testutils.AggregateCounts(s.T(), testparams.Results)
-	s.Equal(expectedResultCount, resultCount)
-}
-
-func (s *namespaceDatastoreSACSuite) TestScopedCount() {
-	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
-		s.Run(name, func() {
-			s.runCountTest(c)
-		})
-	}
-}
-
-func (s *namespaceDatastoreSACSuite) TestUnrestrictedCount() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
-		s.Run(name, func() {
-			s.runCountTest(c)
-		})
-	}
-}
-
-func (s *namespaceDatastoreSACSuite) runSearchTest(testparams testutils.SACSearchTestCase) {
-	ctx := s.testContexts[testparams.ScopeKey]
-	results, err := s.datastore.Search(ctx, nil)
-	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
-	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.Results, resultCounts)
-}
-
-func (s *namespaceDatastoreSACSuite) TestScopedSearch() {
-	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
-		s.Run(name, func() {
-			s.runSearchTest(c)
-		})
-	}
-}
-
-func (s *namespaceDatastoreSACSuite) TestUnrestrictedSearch() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
-		s.Run(name, func() {
-			s.runSearchTest(c)
-		})
-	}
-}
-
-func (s *namespaceDatastoreSACSuite) runSearchResultsTest(testparams testutils.SACSearchTestCase) {
-	ctx := s.testContexts[testparams.ScopeKey]
-	results, err := s.datastore.SearchResults(ctx, nil)
-	s.Require().NoError(err)
-	resultCounts := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
-	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.Results, resultCounts)
-}
-
-func (s *namespaceDatastoreSACSuite) TestScopedSearchResults() {
-	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
-		s.Run(name, func() {
-			s.runSearchResultsTest(c)
-		})
-	}
-}
-
-func (s *namespaceDatastoreSACSuite) TestUnrestrictedSearchResults() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
-		s.Run(name, func() {
-			s.runSearchResultsTest(c)
-		})
-	}
-}
-
 func (s *namespaceDatastoreSACSuite) countSearchResultObjectsPerClusterAndNamespace(results []*storage.NamespaceMetadata) map[string]map[string]int {
 	resultDistribution := make(map[string]map[string]int, 0)
 	for _, result := range results {
@@ -442,6 +370,92 @@ func (s *namespaceDatastoreSACSuite) countSearchResultObjectsPerClusterAndNamesp
 	}
 	return resultDistribution
 
+}
+
+func (s *namespaceDatastoreSACSuite) runCountTest(testparams testutils.SACSearchTestCase) {
+	ctx := s.testContexts[testparams.ScopeKey]
+	resultCount, err := s.datastore.Count(ctx, nil)
+	s.NoError(err)
+	expectedResultCount := testutils.AggregateCounts(s.T(), testparams.Results)
+	s.Equal(expectedResultCount, resultCount)
+}
+
+func (s *namespaceDatastoreSACSuite) TestScopedCount() {
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runCountTest(c)
+		})
+	}
+}
+
+func (s *namespaceDatastoreSACSuite) TestUnrestrictedCount() {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runCountTest(c)
+		})
+	}
+}
+
+func (s *namespaceDatastoreSACSuite) runSearchTest(testparams testutils.SACSearchTestCase) {
+	ctx := s.testContexts[testparams.ScopeKey]
+	results, err := s.datastore.Search(ctx, nil)
+	s.Require().NoError(err)
+	resultObjects := make([]*storage.NamespaceMetadata, 0, len(results))
+	for _, r := range results {
+		obj, found, err := s.datastore.GetNamespace(s.testContexts[testutils.UnrestrictedReadCtx], r.ID)
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultCounts := s.countSearchResultObjectsPerClusterAndNamespace(resultObjects)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.Results, resultCounts)
+}
+
+func (s *namespaceDatastoreSACSuite) TestScopedSearch() {
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchTest(c)
+		})
+	}
+}
+
+func (s *namespaceDatastoreSACSuite) TestUnrestrictedSearch() {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchTest(c)
+		})
+	}
+}
+
+func (s *namespaceDatastoreSACSuite) runSearchResultsTest(testparams testutils.SACSearchTestCase) {
+	ctx := s.testContexts[testparams.ScopeKey]
+	results, err := s.datastore.SearchResults(ctx, nil)
+	s.Require().NoError(err)
+	resultObjects := make([]*storage.NamespaceMetadata, 0, len(results))
+	for _, r := range results {
+		obj, found, err := s.datastore.GetNamespace(s.testContexts[testutils.UnrestrictedReadCtx], r.GetId())
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultCounts := s.countSearchResultObjectsPerClusterAndNamespace(resultObjects)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.Results, resultCounts)
+}
+
+func (s *namespaceDatastoreSACSuite) TestScopedSearchResults() {
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchResultsTest(c)
+		})
+	}
+}
+
+func (s *namespaceDatastoreSACSuite) TestUnrestrictedSearchResults() {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchResultsTest(c)
+		})
+	}
 }
 
 func (s *namespaceDatastoreSACSuite) runSearchNamespacesTest(testparams testutils.SACSearchTestCase) {

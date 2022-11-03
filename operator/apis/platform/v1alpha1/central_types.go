@@ -164,12 +164,9 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
-	// Disable database password generation. Do not use this for first-time installations in which the operator
-	// is managing Central DB as Central will have no way to connect to the database.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	PasswordGenerationDisabled *bool `json:"passwordGenerationDisabled,omitempty"`
-
 	// Specify a connection string that corresponds to an existing database. If set, the operator will not manage Central DB.
+	// When using this option, you must explicitly set a password secret; automatically generating a password will not
+	// be supported.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ConnectionStringOverride *string `json:"connectionString,omitempty"`
 
@@ -180,6 +177,14 @@ type CentralDBSpec struct {
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
+}
+
+// GetPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
+func (c *CentralDBSpec) GetPasswordSecret() *LocalSecretReference {
+	if c == nil {
+		return nil
+	}
+	return c.PasswordSecret
 }
 
 // IsExternal specifies that the database should not be managed by the Operator
@@ -298,6 +303,8 @@ type DBPersistentVolumeClaim struct {
 	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
 	// created. Defaults to "central-db" if not set.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
+	//+kubebuilder:validation:Default=central-db
+	//+kubebuilder:default=central-db
 	ClaimName *string `json:"claimName,omitempty"`
 
 	// The size of the persistent volume when created through the claim. If a claim was automatically created,

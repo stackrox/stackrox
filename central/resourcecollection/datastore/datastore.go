@@ -26,12 +26,13 @@ type DataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
-	GetBatch(ctx context.Context, id []string) ([]*storage.ResourceCollection, error)
+	GetMany(ctx context.Context, id []string) ([]*storage.ResourceCollection, error)
 
+	// AddCollection adds the given collection object and populates the `Id` field on the object
 	AddCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	DeleteCollection(ctx context.Context, id string) error
 	DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error
-	// UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error TODO ROX-12614
+	UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	// autocomplete workflow, maybe SearchResults? TODO ROX-12616
 }
 

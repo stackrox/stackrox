@@ -153,6 +153,14 @@ func queryFromBaseQuery(baseQuery *v1.BaseQuery) *v1.Query {
 	}
 }
 
+// FilterQueryByQuery returns a new Query object where the baseQuery is filtered by the filterQuery.
+func FilterQueryByQuery(baseQuery, filterQuery *v1.Query) *v1.Query {
+	filteredQuery := ConjunctionQuery(baseQuery, filterQuery)
+	filteredQuery.Pagination = baseQuery.GetPagination()
+
+	return filteredQuery
+}
+
 // MatchFieldQuery returns a match field query.
 // It's a simple convenience wrapper around initializing the struct.
 func MatchFieldQuery(field, value string, highlight bool) *v1.Query {
