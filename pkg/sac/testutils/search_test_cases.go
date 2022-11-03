@@ -151,25 +151,6 @@ func GenericScopedSACSearchTestCases(_ *testing.T) map[string]SACSearchTestCase 
 	}
 }
 
-// GenericUnrestrictedSACSearchTestCases returns a generic set of SACSearchTestCase.
-// It is appropriate to use when the store contains 27 objects.
-func GenericUnrestrictedSACSearchTestCases(_ *testing.T) map[string]SACSearchTestCase {
-	return map[string]SACSearchTestCase{
-		"global read access should see all objects": {
-			ScopeKey: UnrestrictedReadCtx,
-			Results: map[string]map[string]int{
-				"": {"": 27},
-			},
-		},
-		"global read-write access should see all objects": {
-			ScopeKey: UnrestrictedReadWriteCtx,
-			Results: map[string]map[string]int{
-				"": {"": 27},
-			},
-		},
-	}
-}
-
 // GenericUnrestrictedRawSACSearchTestCases returns a generic set of SACSearchTestCase.
 // It is appropriate to use when the store contains:
 // 9 objects scoped to Cluster1, 3 to each Namespace A / B / C.

@@ -346,7 +346,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 
 	if err != nil {
 		return 0, err
@@ -365,7 +365,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return false, err
 	}
@@ -392,7 +392,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TestParent1, b
 	if err != nil {
 		return nil, false, err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, false, err
 	}
@@ -429,7 +429,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return err
 	}
@@ -452,7 +452,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	if err != nil {
 		return err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return err
 	}
@@ -475,7 +475,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, err
 	}
@@ -510,7 +510,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestP
 	if err != nil {
 		return nil, nil, err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -562,7 +562,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	if err != nil {
 		return nil, err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, err
 	}
@@ -592,7 +592,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	if err != nil {
 		return err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return err
 	}
