@@ -490,7 +490,7 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 
 			// currently we only support disjunction operations here
 			if selectorRule.GetOperator() != storage.BooleanOperator_OR {
-				return nil, errors.Wrapf(errox.InvalidArgs, "`and` boolean operator unsupported")
+				return nil, errors.Wrap(errox.InvalidArgs, "`and` boolean operator unsupported")
 			}
 
 			fieldLabel, present := supportedFieldNames[selectorRule.GetFieldName()]
@@ -507,7 +507,7 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 				case storage.BooleanOperator_AND:
 					selectorRuleQueries = append(selectorRuleQueries, pkgSearch.ConjunctionQuery(ruleValueQueries...))
 				default:
-					return nil, errors.Wrapf(errox.InvalidArgs, "unsupported boolean operator")
+					return nil, errors.Wrap(errox.InvalidArgs, "unsupported boolean operator")
 				}
 			}
 		}
@@ -559,7 +559,7 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 
 			// currently we only support disjunction (OR) operations
 			if selectorRule.GetOperator() != storage.BooleanOperator_OR {
-				return errors.Wrapf(errox.InvalidArgs, "`and` boolean operator unsupported")
+				return errors.Wrap(errox.InvalidArgs, "`and` boolean operator unsupported")
 			}
 
 			// we have a short list of supported field label values
