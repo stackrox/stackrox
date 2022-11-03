@@ -99,7 +99,7 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	var imageIntegrationIDs []string
 	for i := 0; i < 200; i++ {
 		imageIntegration := &storage.ImageIntegration{}
-		s.NoError(testutils.FullInit(imageIntegration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(imageIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		imageIntegrations = append(imageIntegrations, imageIntegration)
 		imageIntegrationIDs = append(imageIntegrationIDs, imageIntegration.GetId())
 	}

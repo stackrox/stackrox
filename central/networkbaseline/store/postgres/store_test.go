@@ -102,7 +102,7 @@ func (s *NetworkBaselinesStoreSuite) TestStore() {
 	var networkBaselineIDs []string
 	for i := 0; i < 200; i++ {
 		networkBaseline := &storage.NetworkBaseline{}
-		s.NoError(testutils.FullInit(networkBaseline, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(networkBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkBaselines = append(networkBaselines, networkBaseline)
 		networkBaselineIDs = append(networkBaselineIDs, networkBaseline.GetDeploymentId())
 	}
@@ -160,10 +160,10 @@ func (s *NetworkBaselinesStoreSuite) TestSACUpsertMany() {
 
 func (s *NetworkBaselinesStoreSuite) TestSACCount() {
 	objA := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -188,10 +188,10 @@ func (s *NetworkBaselinesStoreSuite) TestSACCount() {
 
 func (s *NetworkBaselinesStoreSuite) TestSACWalk() {
 	objA := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -221,10 +221,10 @@ func (s *NetworkBaselinesStoreSuite) TestSACWalk() {
 
 func (s *NetworkBaselinesStoreSuite) TestSACGetIDs() {
 	objA := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -249,7 +249,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACGetIDs() {
 
 func (s *NetworkBaselinesStoreSuite) TestSACExists() {
 	objA := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -273,7 +273,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACExists() {
 
 func (s *NetworkBaselinesStoreSuite) TestSACGet() {
 	objA := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -302,10 +302,10 @@ func (s *NetworkBaselinesStoreSuite) TestSACGet() {
 
 func (s *NetworkBaselinesStoreSuite) TestSACDelete() {
 	objA := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -335,10 +335,10 @@ func (s *NetworkBaselinesStoreSuite) TestSACDelete() {
 
 func (s *NetworkBaselinesStoreSuite) TestSACDeleteMany() {
 	objA := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -370,10 +370,10 @@ func (s *NetworkBaselinesStoreSuite) TestSACDeleteMany() {
 
 func (s *NetworkBaselinesStoreSuite) TestSACGetMany() {
 	objA := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NetworkBaseline{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)

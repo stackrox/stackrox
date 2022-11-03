@@ -99,7 +99,7 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 	var activeComponentIDs []string
 	for i := 0; i < 200; i++ {
 		activeComponent := &storage.ActiveComponent{}
-		s.NoError(testutils.FullInit(activeComponent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(activeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		activeComponents = append(activeComponents, activeComponent)
 		activeComponentIDs = append(activeComponentIDs, activeComponent.GetId())
 	}

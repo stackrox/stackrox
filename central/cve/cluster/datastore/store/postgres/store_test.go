@@ -99,7 +99,7 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	var clusterCVEIDs []string
 	for i := 0; i < 200; i++ {
 		clusterCVE := &storage.ClusterCVE{}
-		s.NoError(testutils.FullInit(clusterCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(clusterCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		clusterCVEs = append(clusterCVEs, clusterCVE)
 		clusterCVEIDs = append(clusterCVEIDs, clusterCVE.GetId())
 	}

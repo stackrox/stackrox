@@ -99,7 +99,7 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	var imageComponentIDs []string
 	for i := 0; i < 200; i++ {
 		imageComponent := &storage.ImageComponent{}
-		s.NoError(testutils.FullInit(imageComponent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(imageComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		imageComponents = append(imageComponents, imageComponent)
 		imageComponentIDs = append(imageComponentIDs, imageComponent.GetId())
 	}

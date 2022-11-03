@@ -102,7 +102,7 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	var processIndicatorIDs []string
 	for i := 0; i < 200; i++ {
 		processIndicator := &storage.ProcessIndicator{}
-		s.NoError(testutils.FullInit(processIndicator, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(processIndicator, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processIndicators = append(processIndicators, processIndicator)
 		processIndicatorIDs = append(processIndicatorIDs, processIndicator.GetId())
 	}
@@ -160,10 +160,10 @@ func (s *ProcessIndicatorsStoreSuite) TestSACUpsertMany() {
 
 func (s *ProcessIndicatorsStoreSuite) TestSACCount() {
 	objA := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -188,10 +188,10 @@ func (s *ProcessIndicatorsStoreSuite) TestSACCount() {
 
 func (s *ProcessIndicatorsStoreSuite) TestSACWalk() {
 	objA := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -221,10 +221,10 @@ func (s *ProcessIndicatorsStoreSuite) TestSACWalk() {
 
 func (s *ProcessIndicatorsStoreSuite) TestSACGetIDs() {
 	objA := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -249,7 +249,7 @@ func (s *ProcessIndicatorsStoreSuite) TestSACGetIDs() {
 
 func (s *ProcessIndicatorsStoreSuite) TestSACExists() {
 	objA := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -273,7 +273,7 @@ func (s *ProcessIndicatorsStoreSuite) TestSACExists() {
 
 func (s *ProcessIndicatorsStoreSuite) TestSACGet() {
 	objA := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -302,10 +302,10 @@ func (s *ProcessIndicatorsStoreSuite) TestSACGet() {
 
 func (s *ProcessIndicatorsStoreSuite) TestSACDelete() {
 	objA := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -335,10 +335,10 @@ func (s *ProcessIndicatorsStoreSuite) TestSACDelete() {
 
 func (s *ProcessIndicatorsStoreSuite) TestSACDeleteMany() {
 	objA := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -370,10 +370,10 @@ func (s *ProcessIndicatorsStoreSuite) TestSACDeleteMany() {
 
 func (s *ProcessIndicatorsStoreSuite) TestSACGetMany() {
 	objA := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ProcessIndicator{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)

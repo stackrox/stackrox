@@ -99,7 +99,7 @@ func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	var signatureIntegrationIDs []string
 	for i := 0; i < 200; i++ {
 		signatureIntegration := &storage.SignatureIntegration{}
-		s.NoError(testutils.FullInit(signatureIntegration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(signatureIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		signatureIntegrations = append(signatureIntegrations, signatureIntegration)
 		signatureIntegrationIDs = append(signatureIntegrationIDs, signatureIntegration.GetId())
 	}

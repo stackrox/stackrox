@@ -99,7 +99,7 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 	var testShortCircuitIDs []string
 	for i := 0; i < 200; i++ {
 		testShortCircuit := &storage.TestShortCircuit{}
-		s.NoError(testutils.FullInit(testShortCircuit, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(testShortCircuit, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testShortCircuits = append(testShortCircuits, testShortCircuit)
 		testShortCircuitIDs = append(testShortCircuitIDs, testShortCircuit.GetId())
 	}

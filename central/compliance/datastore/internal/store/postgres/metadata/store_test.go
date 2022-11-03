@@ -102,7 +102,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestStore() {
 	var complianceRunMetadataIDs []string
 	for i := 0; i < 200; i++ {
 		complianceRunMetadata := &storage.ComplianceRunMetadata{}
-		s.NoError(testutils.FullInit(complianceRunMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(complianceRunMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceRunMetadatas = append(complianceRunMetadatas, complianceRunMetadata)
 		complianceRunMetadataIDs = append(complianceRunMetadataIDs, complianceRunMetadata.GetRunId())
 	}
@@ -160,10 +160,10 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACUpsertMany() {
 
 func (s *ComplianceRunMetadataStoreSuite) TestSACCount() {
 	objA := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -188,10 +188,10 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACCount() {
 
 func (s *ComplianceRunMetadataStoreSuite) TestSACWalk() {
 	objA := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -221,10 +221,10 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACWalk() {
 
 func (s *ComplianceRunMetadataStoreSuite) TestSACGetIDs() {
 	objA := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -249,7 +249,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACGetIDs() {
 
 func (s *ComplianceRunMetadataStoreSuite) TestSACExists() {
 	objA := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -273,7 +273,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACExists() {
 
 func (s *ComplianceRunMetadataStoreSuite) TestSACGet() {
 	objA := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -302,10 +302,10 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACGet() {
 
 func (s *ComplianceRunMetadataStoreSuite) TestSACDelete() {
 	objA := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -335,10 +335,10 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACDelete() {
 
 func (s *ComplianceRunMetadataStoreSuite) TestSACDeleteMany() {
 	objA := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -370,10 +370,10 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACDeleteMany() {
 
 func (s *ComplianceRunMetadataStoreSuite) TestSACGetMany() {
 	objA := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)

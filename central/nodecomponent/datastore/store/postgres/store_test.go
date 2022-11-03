@@ -99,7 +99,7 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	var nodeComponentIDs []string
 	for i := 0; i < 200; i++ {
 		nodeComponent := &storage.NodeComponent{}
-		s.NoError(testutils.FullInit(nodeComponent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(nodeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		nodeComponents = append(nodeComponents, nodeComponent)
 		nodeComponentIDs = append(nodeComponentIDs, nodeComponent.GetId())
 	}

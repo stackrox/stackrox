@@ -99,7 +99,7 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	var externalBackupIDs []string
 	for i := 0; i < 200; i++ {
 		externalBackup := &storage.ExternalBackup{}
-		s.NoError(testutils.FullInit(externalBackup, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(externalBackup, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		externalBackups = append(externalBackups, externalBackup)
 		externalBackupIDs = append(externalBackupIDs, externalBackup.GetId())
 	}

@@ -99,7 +99,7 @@ func (s *GroupsStoreSuite) TestStore() {
 	var groupIDs []string
 	for i := 0; i < 200; i++ {
 		group := &storage.Group{}
-		s.NoError(testutils.FullInit(group, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(group, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		groups = append(groups, group)
 		groupIDs = append(groupIDs, group.GetProps().GetId())
 	}

@@ -99,7 +99,7 @@ func (s *ComplianceOperatorScansStoreSuite) TestStore() {
 	var complianceOperatorScanIDs []string
 	for i := 0; i < 200; i++ {
 		complianceOperatorScan := &storage.ComplianceOperatorScan{}
-		s.NoError(testutils.FullInit(complianceOperatorScan, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(complianceOperatorScan, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorScans = append(complianceOperatorScans, complianceOperatorScan)
 		complianceOperatorScanIDs = append(complianceOperatorScanIDs, complianceOperatorScan.GetId())
 	}

@@ -102,7 +102,7 @@ func (s *NamespacesStoreSuite) TestStore() {
 	var namespaceMetadataIDs []string
 	for i := 0; i < 200; i++ {
 		namespaceMetadata := &storage.NamespaceMetadata{}
-		s.NoError(testutils.FullInit(namespaceMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(namespaceMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		namespaceMetadatas = append(namespaceMetadatas, namespaceMetadata)
 		namespaceMetadataIDs = append(namespaceMetadataIDs, namespaceMetadata.GetId())
 	}
@@ -160,10 +160,10 @@ func (s *NamespacesStoreSuite) TestSACUpsertMany() {
 
 func (s *NamespacesStoreSuite) TestSACCount() {
 	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -188,10 +188,10 @@ func (s *NamespacesStoreSuite) TestSACCount() {
 
 func (s *NamespacesStoreSuite) TestSACWalk() {
 	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -221,10 +221,10 @@ func (s *NamespacesStoreSuite) TestSACWalk() {
 
 func (s *NamespacesStoreSuite) TestSACGetIDs() {
 	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -249,7 +249,7 @@ func (s *NamespacesStoreSuite) TestSACGetIDs() {
 
 func (s *NamespacesStoreSuite) TestSACExists() {
 	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -273,7 +273,7 @@ func (s *NamespacesStoreSuite) TestSACExists() {
 
 func (s *NamespacesStoreSuite) TestSACGet() {
 	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -302,10 +302,10 @@ func (s *NamespacesStoreSuite) TestSACGet() {
 
 func (s *NamespacesStoreSuite) TestSACDelete() {
 	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -335,10 +335,10 @@ func (s *NamespacesStoreSuite) TestSACDelete() {
 
 func (s *NamespacesStoreSuite) TestSACDeleteMany() {
 	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -370,10 +370,10 @@ func (s *NamespacesStoreSuite) TestSACDeleteMany() {
 
 func (s *NamespacesStoreSuite) TestSACGetMany() {
 	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)

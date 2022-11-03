@@ -99,7 +99,7 @@ func (s *TestGGrandChild1StoreSuite) TestStore() {
 	var testGGrandChild1IDs []string
 	for i := 0; i < 200; i++ {
 		testGGrandChild1 := &storage.TestGGrandChild1{}
-		s.NoError(testutils.FullInit(testGGrandChild1, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(testGGrandChild1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testGGrandChild1s = append(testGGrandChild1s, testGGrandChild1)
 		testGGrandChild1IDs = append(testGGrandChild1IDs, testGGrandChild1.GetId())
 	}

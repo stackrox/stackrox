@@ -99,7 +99,7 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 	var authProviderIDs []string
 	for i := 0; i < 200; i++ {
 		authProvider := &storage.AuthProvider{}
-		s.NoError(testutils.FullInit(authProvider, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(authProvider, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		authProviders = append(authProviders, authProvider)
 		authProviderIDs = append(authProviderIDs, authProvider.GetId())
 	}

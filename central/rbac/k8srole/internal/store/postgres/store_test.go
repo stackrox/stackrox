@@ -102,7 +102,7 @@ func (s *K8sRolesStoreSuite) TestStore() {
 	var k8SRoleIDs []string
 	for i := 0; i < 200; i++ {
 		k8SRole := &storage.K8SRole{}
-		s.NoError(testutils.FullInit(k8SRole, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(k8SRole, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		k8SRoles = append(k8SRoles, k8SRole)
 		k8SRoleIDs = append(k8SRoleIDs, k8SRole.GetId())
 	}
@@ -160,10 +160,10 @@ func (s *K8sRolesStoreSuite) TestSACUpsertMany() {
 
 func (s *K8sRolesStoreSuite) TestSACCount() {
 	objA := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -188,10 +188,10 @@ func (s *K8sRolesStoreSuite) TestSACCount() {
 
 func (s *K8sRolesStoreSuite) TestSACWalk() {
 	objA := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -221,10 +221,10 @@ func (s *K8sRolesStoreSuite) TestSACWalk() {
 
 func (s *K8sRolesStoreSuite) TestSACGetIDs() {
 	objA := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -249,7 +249,7 @@ func (s *K8sRolesStoreSuite) TestSACGetIDs() {
 
 func (s *K8sRolesStoreSuite) TestSACExists() {
 	objA := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -273,7 +273,7 @@ func (s *K8sRolesStoreSuite) TestSACExists() {
 
 func (s *K8sRolesStoreSuite) TestSACGet() {
 	objA := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -302,10 +302,10 @@ func (s *K8sRolesStoreSuite) TestSACGet() {
 
 func (s *K8sRolesStoreSuite) TestSACDelete() {
 	objA := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -335,10 +335,10 @@ func (s *K8sRolesStoreSuite) TestSACDelete() {
 
 func (s *K8sRolesStoreSuite) TestSACDeleteMany() {
 	objA := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -370,10 +370,10 @@ func (s *K8sRolesStoreSuite) TestSACDeleteMany() {
 
 func (s *K8sRolesStoreSuite) TestSACGetMany() {
 	objA := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)

@@ -99,7 +99,7 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	var initBundleMetaIDs []string
 	for i := 0; i < 200; i++ {
 		initBundleMeta := &storage.InitBundleMeta{}
-		s.NoError(testutils.FullInit(initBundleMeta, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		initBundleMetas = append(initBundleMetas, initBundleMeta)
 		initBundleMetaIDs = append(initBundleMetaIDs, initBundleMeta.GetId())
 	}

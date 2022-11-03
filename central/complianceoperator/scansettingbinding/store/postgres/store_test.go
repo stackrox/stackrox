@@ -99,7 +99,7 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	var complianceOperatorScanSettingBindingIDs []string
 	for i := 0; i < 200; i++ {
 		complianceOperatorScanSettingBinding := &storage.ComplianceOperatorScanSettingBinding{}
-		s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorScanSettingBindings = append(complianceOperatorScanSettingBindings, complianceOperatorScanSettingBinding)
 		complianceOperatorScanSettingBindingIDs = append(complianceOperatorScanSettingBindingIDs, complianceOperatorScanSettingBinding.GetId())
 	}

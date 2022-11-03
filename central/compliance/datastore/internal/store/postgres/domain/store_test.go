@@ -99,7 +99,7 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 	var complianceDomainIDs []string
 	for i := 0; i < 200; i++ {
 		complianceDomain := &storage.ComplianceDomain{}
-		s.NoError(testutils.FullInit(complianceDomain, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(complianceDomain, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceDomains = append(complianceDomains, complianceDomain)
 		complianceDomainIDs = append(complianceDomainIDs, complianceDomain.GetId())
 	}

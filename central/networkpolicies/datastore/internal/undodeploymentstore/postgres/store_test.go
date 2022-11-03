@@ -99,7 +99,7 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	var networkPolicyApplicationUndoDeploymentRecordIDs []string
 	for i := 0; i < 200; i++ {
 		networkPolicyApplicationUndoDeploymentRecord := &storage.NetworkPolicyApplicationUndoDeploymentRecord{}
-		s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkPolicyApplicationUndoDeploymentRecords = append(networkPolicyApplicationUndoDeploymentRecords, networkPolicyApplicationUndoDeploymentRecord)
 		networkPolicyApplicationUndoDeploymentRecordIDs = append(networkPolicyApplicationUndoDeploymentRecordIDs, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
 	}

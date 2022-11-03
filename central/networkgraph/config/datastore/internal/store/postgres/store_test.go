@@ -99,7 +99,7 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 	var networkGraphConfigIDs []string
 	for i := 0; i < 200; i++ {
 		networkGraphConfig := &storage.NetworkGraphConfig{}
-		s.NoError(testutils.FullInit(networkGraphConfig, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(networkGraphConfig, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkGraphConfigs = append(networkGraphConfigs, networkGraphConfig)
 		networkGraphConfigIDs = append(networkGraphConfigIDs, networkGraphConfig.GetId())
 	}

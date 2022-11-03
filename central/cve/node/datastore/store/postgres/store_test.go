@@ -99,7 +99,7 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	var nodeCVEIDs []string
 	for i := 0; i < 200; i++ {
 		nodeCVE := &storage.NodeCVE{}
-		s.NoError(testutils.FullInit(nodeCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(nodeCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		nodeCVEs = append(nodeCVEs, nodeCVE)
 		nodeCVEIDs = append(nodeCVEIDs, nodeCVE.GetId())
 	}

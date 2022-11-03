@@ -99,7 +99,7 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	var serviceIdentityIDs []string
 	for i := 0; i < 200; i++ {
 		serviceIdentity := &storage.ServiceIdentity{}
-		s.NoError(testutils.FullInit(serviceIdentity, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(serviceIdentity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		serviceIdentitys = append(serviceIdentitys, serviceIdentity)
 		serviceIdentityIDs = append(serviceIdentityIDs, serviceIdentity.GetSerialStr())
 	}
