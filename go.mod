@@ -73,7 +73,7 @@ require (
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/operator-framework/helm-operator-plugins v0.0.7
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.13.0
+	github.com/prometheus/client_golang v1.13.1
 	github.com/prometheus/client_model v0.3.0
 	github.com/prometheus/common v0.37.0
 	github.com/russellhaering/gosaml2 v0.8.1
