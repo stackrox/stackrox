@@ -10,6 +10,9 @@ from clusters import GKECluster
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
+# don't use postgres
+os.environ["ROX_POSTGRES_DATASTORE"] = "false"
+
 versions=["3.71.0", "3.70.0", "3.69.0"]
 
 gkecluster=GKECluster("qa-e2e-test")
