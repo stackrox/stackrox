@@ -448,6 +448,9 @@ func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection 
 
 	collections = append(collections, collection)
 
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
 	for len(collections) > 0 {
 
 		// get first index and remove from list
