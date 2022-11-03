@@ -1,35 +1,59 @@
 /*
+ * For pages which have GraphQL and REST requests.
+ *
+ * For example, given 'searchOptions' return:
+ * {
+ *     method: 'POST',
+ *     url: '/api/graphql?opname=searchOptions',
+ * }
+ */
+export function getRouteMatcherForGraphQL(opname) {
+    return {
+        method: 'POST',
+        url: `/api/graphql?opname=${opname}`,
+    };
+}
+
+/*
+ * For pages which have only GraphQL requests.
+ *
+ * For example, given ['searchOptions', 'getDeployments'] return:
+ * {
+ *     searchOptions: {
+ *         method: 'POST',
+ *         url: '/api/graphql?opname=searchOptions',
+ *     },
+ *     getDeployments: {
+ *         method: 'POST',
+ *         url: '/api/graphql?opname=getDeployments',
+ *     },
+ * }
+ */
+export function getRouteMatcherMapForGraphQL(opnames) {
+    const routeMatcherMap = {};
+
+    opnames.forEach((opname) => {
+        routeMatcherMap[opname] = getRouteMatcherForGraphQL(opname);
+    });
+
+    return routeMatcherMap;
+}
+
+/*
  * Intercept requests before initial page visit or subsequent interaction:
- * routeMatcherMap: { key: routeMatcher, … }
+ * routeMatcherMap: { alias: routeMatcher, … }
  *
  * Optionally replace responses with stub for routeMatcher alias key:
  * staticResponseMap: { alias: { body }, … }
  * staticResponseMap: { alias: { fixture }, … }
  *
- * Optionally assign aliases for multiple GraphQL requests with routeMatcher opname key:
- * opnameAliasesMap: { opname: { aliases, routeHandler }, … }
- *
- * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean> }} [requestConfig]
+ * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
-export function interceptRequests(requestConfig, staticResponseMap) {
-    if (requestConfig?.routeMatcherMap) {
-        const { opnameAliasesMap, routeMatcherMap } = requestConfig;
-
+export function interceptRequests(routeMatcherMap, staticResponseMap) {
+    if (routeMatcherMap) {
         Object.entries(routeMatcherMap).forEach(([key, routeMatcher]) => {
-            if (opnameAliasesMap?.[key]) {
-                const aliasesMap = opnameAliasesMap[key];
-                const routeHandler = (req) => {
-                    const aliasFound = Object.keys(aliasesMap).find((alias) => {
-                        const aliasReqPredicate = aliasesMap[alias];
-                        return aliasReqPredicate(req);
-                    });
-                    if (typeof aliasFound === 'string') {
-                        req.alias = aliasFound;
-                    }
-                };
-                cy.intercept(routeMatcher, routeHandler);
-            } else if (staticResponseMap?.[key]) {
+            if (staticResponseMap?.[key]) {
                 const staticResponse = staticResponseMap[key];
                 cy.intercept(routeMatcher, staticResponse).as(key);
             } else {
@@ -42,26 +66,13 @@ export function interceptRequests(requestConfig, staticResponseMap) {
 /*
  * Wait for responses after initial page visit or subsequent interaction.
  *
- * Optionally wait with waitOptions: { requestTimeout, responseTimeout }
- *
- * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
+ * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
  */
-export function waitForResponses(requestConfig) {
-    if (requestConfig?.routeMatcherMap) {
-        const { opnameAliasesMap, routeMatcherMap, waitOptions } = requestConfig;
+export function waitForResponses(routeMatcherMap) {
+    if (routeMatcherMap) {
+        const aliases = Object.keys(routeMatcherMap).map((alias) => `@${alias}`);
 
-        const aliases = Object.keys(routeMatcherMap)
-            .map((key) => {
-                const aliasesMap = opnameAliasesMap?.[key];
-                if (aliasesMap) {
-                    return Object.keys(aliasesMap);
-                }
-                return key;
-            })
-            .flat()
-            .map((alias) => `@${alias}`);
-
-        cy.wait(aliases, waitOptions);
+        cy.wait(aliases);
     }
 }
 
@@ -69,13 +80,17 @@ export function waitForResponses(requestConfig) {
  * Intercept requests before interaction and then wait for responses.
  *
  * @param {() => void} interactionCallback
- * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
+ * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
-export function interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap) {
-    interceptRequests(requestConfig, staticResponseMap);
+export function interactAndWaitForResponses(
+    interactionCallback,
+    routeMatcherMap,
+    staticResponseMap
+) {
+    interceptRequests(routeMatcherMap, staticResponseMap);
 
     interactionCallback();
 
-    waitForResponses(requestConfig);
+    waitForResponses(routeMatcherMap);
 }

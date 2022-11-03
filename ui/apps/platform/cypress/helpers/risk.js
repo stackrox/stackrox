@@ -2,6 +2,7 @@ import * as api from '../constants/apiEndpoints';
 import { selectors as riskPageSelectors, url as riskURL } from '../constants/RiskPage';
 import selectors from '../selectors/index';
 
+import { reachNetworkGraphWithDeploymentSelected } from './networkGraph';
 import { visit } from './visit';
 
 // visit
@@ -50,11 +51,7 @@ export function viewRiskDeploymentByName(deploymentName) {
 }
 
 export function viewRiskDeploymentInNetworkGraph() {
-    // Assume location is risk deployment panel.
-    cy.intercept('GET', api.network.networkGraph).as('networkgraph/cluster/id');
-    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkpolicies/cluster/id');
-
-    cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
-
-    cy.wait(['@networkgraph/cluster/id', '@networkpolicies/cluster/id']);
+    reachNetworkGraphWithDeploymentSelected(() => {
+        cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+    });
 }

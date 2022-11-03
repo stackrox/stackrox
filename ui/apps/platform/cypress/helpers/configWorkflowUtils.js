@@ -1,6 +1,5 @@
-import { graphql } from '../constants/apiEndpoints';
 import { selectors as configManagementSelectors } from '../constants/ConfigManagementPage';
-import { interactAndWaitForResponses } from './request';
+import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
 import { visit } from './visit';
 
 const basePath = '/main/configmanagement';
@@ -93,13 +92,9 @@ const widgetTitleForEntity = {
     namespaces: 'Namespace',
 };
 
-function getRequestConfigForEntities(entitiesKey) {
+function getRouteMatcherMapForEntities(entitiesKey) {
     const opname = entitiesKey;
-    return {
-        routeMatcherMap: {
-            [opname]: graphql(opname),
-        },
-    };
+    return getRouteMatcherMapForGraphQL([opname]);
 }
 
 const opnameForEntity = {
@@ -116,13 +111,9 @@ const opnameForEntity = {
     subjects: 'getSubject',
 };
 
-function getRequestConfigForEntity(entitiesKey) {
+function getRouteMatcherMapForEntity(entitiesKey) {
     const opname = opnameForEntity[entitiesKey];
-    return {
-        routeMatcherMap: {
-            [opname]: graphql(opname),
-        },
-    };
+    return getRouteMatcherMapForGraphQL([opname]);
 }
 
 const typeOfEntity = {
@@ -143,8 +134,7 @@ function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
     return `${opnameForEntity[entitiesKey1]}_${typeOfEntity[entitiesKey2]}`;
 }
 
-const routeMatcherMapForDashboard = {};
-[
+const routeMatcherMapForDashboard = getRouteMatcherMapForGraphQL([
     'numPolicies',
     'numCISControls',
     'policyViolationsBySeverity',
@@ -152,31 +142,22 @@ const routeMatcherMapForDashboard = {};
     'complianceByControls',
     'usersWithClusterAdminRoles',
     'secrets',
-].forEach((opname) => {
-    routeMatcherMapForDashboard[opname] = {
-        method: 'POST',
-        url: graphql(opname),
-    };
-});
-
-const requestConfigForDashboard = {
-    routeMatcherMap: routeMatcherMapForDashboard,
-};
+]);
 
 export function visitConfigurationManagementDashboard() {
-    visit(basePath, requestConfigForDashboard);
+    visit(basePath, routeMatcherMapForDashboard);
 
     cy.get('h1:contains("Configuration Management")');
 }
 
 export function visitConfigurationManagementEntities(entitiesKey) {
-    visit(getEntitiesPath(entitiesKey), getRequestConfigForEntities(entitiesKey));
+    visit(getEntitiesPath(entitiesKey), getRouteMatcherMapForEntities(entitiesKey));
 
     cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
 }
 
 export function visitConfigurationManagementEntitiesWithSearch(entitiesKey, search) {
-    visit(`${getEntitiesPath(entitiesKey)}${search}`, getRequestConfigForEntities(entitiesKey));
+    visit(`${getEntitiesPath(entitiesKey)}${search}`, getRouteMatcherMapForEntities(entitiesKey));
 
     cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
 }
@@ -185,7 +166,7 @@ export function interactAndWaitForConfigurationManagementEntities(
     interactionCallback,
     entitiesKey
 ) {
-    interactAndWaitForResponses(interactionCallback, getRequestConfigForEntities(entitiesKey));
+    interactAndWaitForResponses(interactionCallback, getRouteMatcherMapForEntities(entitiesKey));
 
     cy.location('pathname').should('eq', getEntitiesPath(entitiesKey));
     cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
@@ -195,7 +176,7 @@ export function interactAndWaitForConfigurationManagementEntityInSidePanel(
     interactionCallback,
     entitiesKey
 ) {
-    interactAndWaitForResponses(interactionCallback, getRequestConfigForEntity(entitiesKey));
+    interactAndWaitForResponses(interactionCallback, getRouteMatcherMapForEntity(entitiesKey));
 
     cy.location('pathname').should('contain', getEntitiesPath(entitiesKey)); // contains because it ends with id
     cy.get(
@@ -208,7 +189,7 @@ export function interactAndWaitForConfigurationManagementSecondaryEntityInSidePa
     entitiesKey1,
     entitiesKey2
 ) {
-    interactAndWaitForResponses(interactionCallback, getRequestConfigForEntity(entitiesKey2));
+    interactAndWaitForResponses(interactionCallback, getRouteMatcherMapForEntity(entitiesKey2));
 
     cy.location('pathname').should('contain', getEntitiesPath(entitiesKey1)); // contains because it has id
     cy.location('pathname').should('contain', segmentForEntity[entitiesKey2]); // contains because it has id
@@ -219,7 +200,7 @@ export function interactAndWaitForConfigurationManagementEntityPage(
     interactionCallback,
     entitiesKey
 ) {
-    interactAndWaitForResponses(interactionCallback, getRequestConfigForEntity(entitiesKey));
+    interactAndWaitForResponses(interactionCallback, getRouteMatcherMapForEntity(entitiesKey));
 
     cy.location('pathname').should('contain', getEntityPagePath(entitiesKey)); // contains because it ends with id
     cy.get(`h1 + div:contains("${headingForEntity[entitiesKey]}")`);
@@ -231,17 +212,13 @@ export function interactAndWaitForConfigurationManagementSecondaryEntities(
     entitiesKey2
 ) {
     const opname = opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2);
-    const requestConfig = {
-        routeMatcherMap: {
-            [opname]: graphql(opname),
-        },
-    };
+    const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
 
-    interactAndWaitForResponses(interactionCallback, requestConfig);
+    interactAndWaitForResponses(interactionCallback, routeMatcherMap);
 }
 
 export function interactAndWaitForConfigurationManagementScan(interactionCallback) {
-    interactAndWaitForResponses(interactionCallback, requestConfigForDashboard);
+    interactAndWaitForResponses(interactionCallback, routeMatcherMapForDashboard);
 }
 
 // specifying an "entityName" will try to select that row in the table
@@ -394,16 +371,9 @@ export function entityListCountMatchesTableLinkCount(entitiesKey1, entitiesKey2,
 
             // 2. Visit secondary entities side panel.
             const opname = opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2);
-            interactAndWaitForResponses(
-                () => {
-                    cy.wrap($a).click();
-                },
-                {
-                    routeMatcherMap: {
-                        [opname]: graphql(opname),
-                    },
-                }
-            );
+            interactAndWaitForResponses(() => {
+                cy.wrap($a).click();
+            }, getRouteMatcherMapForGraphQL([opname]));
 
             const heading = headingForEntities[entitiesKey2];
             cy.get(

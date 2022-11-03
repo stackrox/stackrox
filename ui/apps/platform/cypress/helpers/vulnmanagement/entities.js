@@ -1,9 +1,8 @@
-import * as api from '../../constants/apiEndpoints';
 import { selectors } from '../../constants/VulnManagementPage';
 import { hasFeatureFlag } from '../features';
 
 import { visitFromLeftNavExpandable } from '../nav';
-import { interactAndWaitForResponses } from '../request';
+import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../request';
 import { visit } from '../visit';
 
 let opnamesForDashboard = [
@@ -42,26 +41,7 @@ if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
     );
 }
 
-/*
- * For example, given ['searchOptions', 'getDeployments'] return:
- * {
- *     searchOptions: '/api/graphql?opname=searchOptions',
- *     getDeployments: '/api/graphql?opname=getDeployments',
- * }
- */
-function routeMatcherMapForOpnames(opnames) {
-    const routeMatcherMap = {};
-
-    opnames.forEach((opname) => {
-        routeMatcherMap[opname] = api.graphql(opname);
-    });
-
-    return routeMatcherMap;
-}
-
-const requestConfigForDashboard = {
-    routeMatcherMap: routeMatcherMapForOpnames(opnamesForDashboard),
-};
+const routeMatcherMapForDashboard = getRouteMatcherMapForGraphQL(opnamesForDashboard);
 
 /*
  * The following keys are path segments which correspond to entityKeys arguments of functions below.
@@ -152,7 +132,11 @@ function getEntityPath(entitiesKey, entityId) {
 }
 
 export function visitVulnerabilityManagementDashboardFromLeftNav() {
-    visitFromLeftNavExpandable('Vulnerability Management', 'Dashboard', requestConfigForDashboard);
+    visitFromLeftNavExpandable(
+        'Vulnerability Management',
+        'Dashboard',
+        routeMatcherMapForDashboard
+    );
 
     cy.location('pathname').should('eq', basePath);
     cy.location('search').should('eq', '');
@@ -160,7 +144,7 @@ export function visitVulnerabilityManagementDashboardFromLeftNav() {
 }
 
 export function visitVulnerabilityManagementDashboard() {
-    visit(basePath, requestConfigForDashboard);
+    visit(basePath, routeMatcherMapForDashboard);
 
     cy.get('h1:contains("Vulnerability Management")');
 }
@@ -170,27 +154,23 @@ export function visitVulnerabilityManagementDashboard() {
  * For example, visitVulnerabilityManagementEntities('policies', '?s[Policy]=Fixable Severity at least Important')
  */
 export function visitVulnerabilityManagementEntities(entitiesKey) {
-    const requestConfig = {
-        routeMatcherMap: routeMatcherMapForOpnames([
-            'searchOptions',
-            opnameForEntities[entitiesKey],
-        ]),
-    };
+    const routeMatcherMap = getRouteMatcherMapForGraphQL([
+        'searchOptions',
+        opnameForEntities[entitiesKey],
+    ]);
 
-    visit(getEntitiesPath(entitiesKey), requestConfig);
+    visit(getEntitiesPath(entitiesKey), routeMatcherMap);
 
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
 }
 
 export function visitVulnerabilityManagementEntitiesWithSearch(entitiesKey, search) {
-    const requestConfig = {
-        routeMatcherMap: routeMatcherMapForOpnames([
-            'searchOptions',
-            opnameForEntities[entitiesKey],
-        ]),
-    };
+    const routeMatcherMap = getRouteMatcherMapForGraphQL([
+        'searchOptions',
+        opnameForEntities[entitiesKey],
+    ]);
 
-    visit(getEntitiesPath(entitiesKey, search), requestConfig);
+    visit(getEntitiesPath(entitiesKey, search), routeMatcherMap);
 
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
 }
@@ -207,14 +187,10 @@ export function interactAndWaitForVulnerabilityManagementEntities(
      * to restore initial sorting, because the response has been cached.
      */
     const opname = opnameForEntities[entitiesKey];
-    const requestConfig = {
-        routeMatcherMap: {
-            [opname]: api.graphql(opname),
-        },
-    };
+    const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
     const staticResponseMap = staticResponseForEntities && { [opname]: staticResponseForEntities };
 
-    interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap);
+    interactAndWaitForResponses(interactionCallback, routeMatcherMap, staticResponseMap);
 
     cy.location('pathname').should('eq', getEntitiesPath(entitiesKey));
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
@@ -226,14 +202,10 @@ export function visitVulnerabilityManagementEntityInSidePanel(
     staticResponseForEntity
 ) {
     const opname = opnameForEntity[entitiesKey];
-    const requestConfig = {
-        routeMatcherMap: {
-            [opname]: api.graphql(opname),
-        },
-    };
+    const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
     const staticResponseMap = staticResponseForEntity && { [opname]: staticResponseForEntity };
 
-    visit(getEntityPath(entitiesKey, entityId), requestConfig, staticResponseMap);
+    visit(getEntityPath(entitiesKey, entityId), routeMatcherMap, staticResponseMap);
 }
 
 export function interactAndWaitForVulnerabilityManagementEntity(
@@ -242,14 +214,10 @@ export function interactAndWaitForVulnerabilityManagementEntity(
     staticResponseForEntity
 ) {
     const opname = opnameForEntity[entitiesKey];
-    const requestConfig = {
-        routeMatcherMap: {
-            [opname]: api.graphql(opname),
-        },
-    };
+    const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
     const staticResponseMap = staticResponseForEntity && { [opname]: staticResponseForEntity };
 
-    interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap);
+    interactAndWaitForResponses(interactionCallback, routeMatcherMap, staticResponseMap);
 }
 
 export function interactAndWaitForVulnerabilityManagementSecondaryEntities(
@@ -259,16 +227,12 @@ export function interactAndWaitForVulnerabilityManagementSecondaryEntities(
     staticResponseForSecondaryEntities
 ) {
     const opname = opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2);
-    const requestConfig = {
-        routeMatcherMap: {
-            [opname]: api.graphql(opname),
-        },
-    };
+    const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
     const staticResponseMap = staticResponseForSecondaryEntities && {
         [opname]: staticResponseForSecondaryEntities,
     };
 
-    interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap);
+    interactAndWaitForResponses(interactionCallback, routeMatcherMap, staticResponseMap);
 }
 
 /*
@@ -337,31 +301,16 @@ export function verifySecondaryEntities(
                 getCountAndNounFromLinkResults(/^(\d+) (\D+)$/.exec($a.text()));
 
             // 2. Visit secondary entities side panel.
-            interactAndWaitForResponses(
-                () => {
-                    cy.wrap($a).click();
-                },
-                {
-                    routeMatcherMap: routeMatcherMapForOpnames([
-                        opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2),
-                    ]),
-                }
-            );
+            interactAndWaitForResponses(() => {
+                cy.wrap($a).click();
+            }, getRouteMatcherMapForGraphQL([opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2)]));
 
             cy.get(`${selectors.entityRowHeader}:contains(${panelHeaderText})`);
 
             // 3. Visit primary entity side panel.
-            interactAndWaitForResponses(
-                () => {
-                    cy.get(selectors.parentEntityInfoHeader).click();
-                },
-                {
-                    // prettier-ignore
-                    routeMatcherMap: routeMatcherMapForOpnames([
-                        opnameForEntity[entitiesKey1]
-                    ]),
-                }
-            );
+            interactAndWaitForResponses(() => {
+                cy.get(selectors.parentEntityInfoHeader).click();
+            }, getRouteMatcherMapForGraphQL([opnameForEntity[entitiesKey1]]));
 
             // Tilde because link might be under either Contains or Matches.
             // Match data-testid attribute of link to distinguish 1 IMAGE from 114 IMAGE COMPONENTS.

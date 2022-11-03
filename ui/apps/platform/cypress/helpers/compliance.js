@@ -1,11 +1,9 @@
-import * as api from '../constants/apiEndpoints';
 import { headingPlural, selectors, url } from '../constants/CompliancePage';
 
-import { interceptRequests, waitForResponses } from './request';
+import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
 import { visit } from './visit';
 
-const routeMatcherMap = {};
-[
+const routeMatcherMapForDashboard = getRouteMatcherMapForGraphQL([
     'clustersCount',
     'namespacesCount',
     'nodesCount',
@@ -22,17 +20,10 @@ const routeMatcherMap = {};
     'complianceStandards_NIST_800_190',
     'complianceStandards_NIST_SP_800_53_Rev_4',
     'complianceStandards_PCI_DSS_3_2',
-].forEach((opname) => {
-    routeMatcherMap[opname] = {
-        method: 'POST',
-        url: api.graphql(opname),
-    };
-});
-
-const requestConfig = { routeMatcherMap };
+]);
 
 export function visitComplianceDashboard() {
-    visit(url.dashboard, requestConfig);
+    visit(url.dashboard, routeMatcherMapForDashboard);
 
     cy.get('h1:contains("Compliance")');
 }
@@ -41,15 +32,18 @@ export function visitComplianceDashboard() {
  * Assume location is compliance dashboard.
  */
 export function scanCompliance() {
-    cy.intercept('POST', api.graphql('triggerScan')).as('triggerScan');
-    interceptRequests(requestConfig);
+    const routeMatcherMapForTriggerScan = getRouteMatcherMapForGraphQL(['triggerScan']);
+    const routeMatcherMap = {
+        ...routeMatcherMapForTriggerScan,
+        ...routeMatcherMapForDashboard,
+    };
 
     cy.get(selectors.scanButton).should('not.have.attr', 'disabled');
-    cy.get(selectors.scanButton).click();
-    cy.get(selectors.scanButton).should('have.attr', 'disabled');
 
-    cy.wait('@triggerScan');
-    waitForResponses(requestConfig);
+    interactAndWaitForResponses(() => {
+        cy.get(selectors.scanButton).click();
+        cy.get(selectors.scanButton).should('have.attr', 'disabled');
+    }, routeMatcherMap);
 
     cy.get(selectors.scanButton).should('not.have.attr', 'disabled');
 }
@@ -65,16 +59,24 @@ export function triggerScan() {
     scanCompliance();
 }
 
+const opnameForEntities = {
+    clusters: 'clustersList', // just clusters would be even better, and so on
+    deployments: 'deploymentsList',
+    namespaces: 'namespaceList', // singular: too bad, so sad
+    nodes: 'nodesList',
+};
+
 /*
  * For example, visitComplianceEntities('clusters')
  */
 export function visitComplianceEntities(entitiesKey) {
-    cy.intercept('POST', api.graphql('searchOptions')).as('searchOptions');
-    cy.intercept('POST', api.compliance.graphqlEntities(entitiesKey)).as(entitiesKey);
+    const routeMatcherMap = getRouteMatcherMapForGraphQL([
+        'searchOptions',
+        opnameForEntities[entitiesKey],
+    ]);
 
-    visit(url.entities[entitiesKey]);
+    visit(url.entities[entitiesKey], routeMatcherMap);
 
-    cy.wait(['@searchOptions', `@${entitiesKey}`]);
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
 }
 
@@ -82,12 +84,13 @@ export function visitComplianceEntities(entitiesKey) {
  * For example, visitComplianceStandard('CIS Docker v1.2.0')
  */
 export function visitComplianceStandard(standardName) {
-    cy.intercept('POST', api.graphql('searchOptions')).as('searchOptions');
-    cy.intercept('POST', api.graphql('getComplianceStandards')).as('getComplianceStandards');
-    cy.intercept('POST', api.graphql('controls')).as('controls');
+    const routeMatcherMap = getRouteMatcherMapForGraphQL([
+        'searchOptions',
+        'getComplianceStandards',
+        'controls',
+    ]);
 
-    visit(`${url.controls}?s[standard]=${standardName}`);
+    visit(`${url.controls}?s[standard]=${standardName}`, routeMatcherMap);
 
-    cy.wait(['@searchOptions', '@getComplianceStandards', '@controls']);
     cy.get(`h1:contains("${standardName}")`);
 }

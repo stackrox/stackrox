@@ -5,14 +5,14 @@ import { interactAndWaitForResponses } from './request';
 /*
  * For example, visitFromLeftNav('Violations');
  */
-export function visitFromLeftNav(itemText, requestConfig, staticResponseMap) {
+export function visitFromLeftNav(itemText, routeMatcherMap, staticResponseMap) {
     visitMainDashboard();
 
     interactAndWaitForResponses(
         () => {
             cy.get(`${navSelectors.navLinks}:contains("${itemText}")`).click();
         },
-        requestConfig,
+        routeMatcherMap,
         staticResponseMap
     );
 }
@@ -24,7 +24,7 @@ export function visitFromLeftNav(itemText, requestConfig, staticResponseMap) {
 export function visitFromLeftNavExpandable(
     expandableTitle,
     itemText,
-    requestConfig,
+    routeMatcherMap,
     staticResponseMap
 ) {
     visitMainDashboard();
@@ -34,7 +34,7 @@ export function visitFromLeftNavExpandable(
             cy.get(`${navSelectors.navExpandable}:contains("${expandableTitle}")`).click();
             cy.get(`${navSelectors.nestedNavLinks}:contains("${itemText}")`).click();
         },
-        requestConfig,
+        routeMatcherMap,
         staticResponseMap
     );
 }

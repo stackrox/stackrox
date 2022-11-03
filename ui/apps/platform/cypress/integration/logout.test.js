@@ -1,4 +1,3 @@
-import * as api from '../constants/apiEndpoints';
 import { url as loginUrl } from '../constants/LoginPage';
 import { selectors as navSelectors } from '../constants/TopNavigation';
 import withAuth from '../helpers/basicAuth';
@@ -7,12 +6,10 @@ import { interactAndWaitForResponses } from '../helpers/request';
 
 const logoutAlias = 'logout';
 
-const requestConfigForLogout = {
-    routeMatcherMap: {
-        [logoutAlias]: {
-            method: 'POST',
-            url: api.auth.logout,
-        },
+const routeMatcherMapForLogout = {
+    [logoutAlias]: {
+        method: 'POST',
+        url: '/sso/session/logout',
     },
 };
 
@@ -33,7 +30,7 @@ describe('Logout', () => {
                 cy.get(navSelectors.menuButton).click();
                 cy.get(navSelectors.menuList.logoutButton).click();
             },
-            requestConfigForLogout,
+            routeMatcherMapForLogout,
             staticResponseMapForLogout
         );
 
