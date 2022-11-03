@@ -187,7 +187,7 @@ func scanNode(nodeName string, scanner nodescanv2.NodeScanner) (*sensor.MsgFromC
 	}
 	return &sensor.MsgFromCompliance{
 		Node: nodeName,
-		Msg:  &sensor.MsgFromCompliance_NodeScanV2{NodeScanV2: result},
+		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: result},
 	}, nil
 }
 

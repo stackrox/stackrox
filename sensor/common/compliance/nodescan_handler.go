@@ -7,19 +7,19 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 )
 
-// NodeScanHandler is responsible for handling the arriving NodeScanV2 messages, processing then, and sending them to central
-type NodeScanHandler interface {
+// NodeInventoryHandler is responsible for handling the arriving NodeInventory messages, processing then, and sending them to central
+type NodeInventoryHandler interface {
 	common.SensorComponent
 	Stopped() concurrency.ReadOnlyErrorSignal
 }
 
-// NewNodeScanHandler returns a new instance of a NodeScanHandler
-func NewNodeScanHandler(ch <-chan *storage.NodeScanV2) NodeScanHandler {
+// NewNodeInventoryHandler returns a new instance of a NodeInventoryHandler
+func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory) NodeInventoryHandler {
 	return &nodeScanHandlerImpl{
-		nodeScans: ch,
-		toCentral: nil,
-		stopC:     concurrency.NewErrorSignal(),
-		lock:      &sync.Mutex{},
-		stoppedC:  concurrency.NewErrorSignal(),
+		inventories: ch,
+		toCentral:   nil,
+		stopC:       concurrency.NewErrorSignal(),
+		lock:        &sync.Mutex{},
+		stoppedC:    concurrency.NewErrorSignal(),
 	}
 }

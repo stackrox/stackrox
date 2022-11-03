@@ -15,7 +15,7 @@ const (
 	Namespace
 	NetworkPolicy
 	Node
-	NodeScanV2
+	NodeInventory
 	ProviderMetadata
 	ComplianceReturn
 	ImageIntegration

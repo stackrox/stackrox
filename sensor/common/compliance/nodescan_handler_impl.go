@@ -15,8 +15,8 @@ var (
 )
 
 type nodeScanHandlerImpl struct {
-	nodeScans <-chan *storage.NodeScanV2
-	toCentral <-chan *central.MsgFromSensor
+	inventories <-chan *storage.NodeInventory
+	toCentral   <-chan *central.MsgFromSensor
 
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock *sync.Mutex
@@ -77,7 +77,7 @@ func (c *nodeScanHandlerImpl) run() <-chan *central.MsgFromSensor {
 			select {
 			case <-c.stopC.Done():
 				return
-			case scan, ok := <-c.nodeScans:
+			case scan, ok := <-c.inventories:
 				if !ok {
 					c.stopC.SignalWithError(errInputChanClosed)
 					return
@@ -90,7 +90,7 @@ func (c *nodeScanHandlerImpl) run() <-chan *central.MsgFromSensor {
 	return toC
 }
 
-func (c *nodeScanHandlerImpl) sendScan(toC chan *central.MsgFromSensor, scan *storage.NodeScanV2) {
+func (c *nodeScanHandlerImpl) sendScan(toC chan *central.MsgFromSensor, scan *storage.NodeInventory) {
 	if scan == nil {
 		return
 	}
@@ -99,8 +99,8 @@ func (c *nodeScanHandlerImpl) sendScan(toC chan *central.MsgFromSensor, scan *st
 	case toC <- &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_NodeScanV2{
-					NodeScanV2: scan,
+				Resource: &central.SensorEvent_NodeInventory{
+					NodeInventory: scan,
 				},
 			},
 		},

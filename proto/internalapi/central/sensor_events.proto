@@ -62,16 +62,16 @@ message SensorEvent {
     message ResourcesSynced {}
 
     oneof resource {
-        storage.NetworkPolicy     network_policy    = 4;
-        storage.Deployment        deployment        = 5;
-        storage.Pod               pod               = 19;
-        storage.NamespaceMetadata namespace         = 6;
-        storage.Secret            secret            = 7;
-        storage.Node              node              = 9;
-        storage.NodeScanV2        node_scan_v2      = 25;
-        storage.ServiceAccount    service_account   = 14;
-        storage.K8sRole           role              = 15;
-        storage.K8sRoleBinding    binding           = 16;
+        storage.NetworkPolicy          network_policy     = 4;
+        storage.Deployment             deployment         = 5;
+        storage.Pod                    pod                = 19;
+        storage.NamespaceMetadata      namespace          = 6;
+        storage.Secret                 secret             = 7;
+        storage.Node                   node               = 9;
+        storage.NodeInventory          node_inventory     = 25;
+        storage.ServiceAccount         service_account    = 14;
+        storage.K8sRole                role               = 15;
+        storage.K8sRoleBinding         binding            = 16;
 
         storage.ProcessIndicator        process_indicator       = 8;
         storage.ProviderMetadata        provider_metadata       = 10;
