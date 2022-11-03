@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
+	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
@@ -67,7 +68,13 @@ func (m *istioCVEManager) setCVEs(cves []*storage.EmbeddedVulnerability, nvdCVEs
 	m.embeddedCVEs = cves
 }
 
-func (m *istioCVEManager) updateCVEs(newCVEs []*schema.NVDCVEFeedJSON10DefCVEItem) error {
+func (m *istioCVEManager) updateCVEs(newCVEs []*schema.NVDCVEFeedJSON10DefCVEItem) (retErr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			retErr = errors.Errorf("caught panic in Istio updateCVEs: %v", r)
+		}
+	}()
+
 	cves, err := utils.NvdCVEsToEmbeddedCVEs(newCVEs, utils.Istio)
 	if err != nil {
 		return err
