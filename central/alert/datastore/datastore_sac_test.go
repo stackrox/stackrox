@@ -504,7 +504,6 @@ func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResu
 		}
 	}
 	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), results)
-	log.Infof("RESUTS => %v", resultCounts)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultCounts)
 }
 
