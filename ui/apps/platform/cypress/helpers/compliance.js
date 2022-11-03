@@ -3,7 +3,7 @@ import { headingPlural, selectors, url } from '../constants/CompliancePage';
 import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
 import { visit } from './visit';
 
-const routeMatcherMapForDashboard = getRouteMatcherMapForGraphQL([
+const routeMatcherMapForComplianceDashboard = getRouteMatcherMapForGraphQL([
     'clustersCount',
     'namespacesCount',
     'nodesCount',
@@ -23,7 +23,7 @@ const routeMatcherMapForDashboard = getRouteMatcherMapForGraphQL([
 ]);
 
 export function visitComplianceDashboard() {
-    visit(url.dashboard, routeMatcherMapForDashboard);
+    visit(url.dashboard, routeMatcherMapForComplianceDashboard);
 
     cy.get('h1:contains("Compliance")');
 }
@@ -35,7 +35,7 @@ export function scanCompliance() {
     const routeMatcherMapForTriggerScan = getRouteMatcherMapForGraphQL(['triggerScan']);
     const routeMatcherMap = {
         ...routeMatcherMapForTriggerScan,
-        ...routeMatcherMapForDashboard,
+        ...routeMatcherMapForComplianceDashboard,
     };
 
     cy.get(selectors.scanButton).should('not.have.attr', 'disabled');
