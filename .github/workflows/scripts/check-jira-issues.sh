@@ -36,10 +36,14 @@ AND issue.property[development].openprs > 0 \
 ORDER BY assignee"
 
 get_issues() {
+    local status=0
     curl --fail -sSL --get --data-urlencode "jql=$1" \
         -H "Authorization: Bearer $JIRA_TOKEN" \
         -H "Accept: application/json" \
-        "https://issues.redhat.com/rest/api/2/search"
+        "https://issues.redhat.com/rest/api/2/search" || status="$?"
+    if [[ "$status" == 22 ]]; then  # curl man page: "22     HTTP  page  not retrieved. .. HTTP error code being 400 or above."
+        echo "4XX http error code" >&2
+    fi
 }
 
 comment_issue() {
