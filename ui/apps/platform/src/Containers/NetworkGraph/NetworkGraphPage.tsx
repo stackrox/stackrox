@@ -7,7 +7,7 @@ import { fetchClustersAsArray, Cluster } from 'services/ClustersService';
 
 import PageTitle from 'Components/PageTitle';
 import NetworkGraph from './NetworkGraph';
-import { transformData, graphModel } from './utils';
+import { transformData, graphModel } from './utils/modelUtils';
 
 import './NetworkGraphPage.css';
 
