@@ -5,6 +5,7 @@ import (
 	"os/signal"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -46,6 +47,7 @@ func main() {
 	} else {
 		sharedClientInterface = client.MustCreateInterface()
 	}
+	clientconn.SetUserAgent("sensor-k8s")
 	centralConnFactory, err := centralclient.NewCentralConnectionFactory(env.CentralEndpoint.Setting())
 	if err != nil {
 		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing gRPC client to endpoint %s", env.CentralEndpoint.Setting()))
