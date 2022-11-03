@@ -14,7 +14,7 @@ func FilteredPreorder(inspector *inspector.Inspector, fileFilter FileFilter, nod
 	if !hadFile {
 		effTypes = append(effTypes, (*ast.File)(nil))
 	}
-	skip := false
+	var skip bool
 	inspector.Preorder(effTypes, func(n ast.Node) {
 		if f, ok := n.(*ast.File); ok {
 			skip = !fileFilter(f)
