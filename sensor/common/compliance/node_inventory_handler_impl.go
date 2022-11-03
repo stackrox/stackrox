@@ -1,12 +1,15 @@
 package compliance
 
 import (
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -82,25 +85,53 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 					c.stopC.SignalWithError(errInputChanClosed)
 					return
 				}
-				// TODO(ROX-12943): Do something with the inventory, e.g., attach NodeID
-				c.sendInventory(toC, inventory)
+				// TODO(ROX-12943): Merge with the Node and send to Central
+				c.handleNodeInventory(toC, inventory)
 			}
 		}
 	}()
 	return toC
 }
 
-func (c *nodeInventoryHandlerImpl) sendInventory(toC chan *central.MsgFromSensor, inventory *storage.NodeInventory) {
+func (c *nodeInventoryHandlerImpl) handleNodeInventory(toC chan *central.MsgFromSensor, inventory *storage.NodeInventory) {
+	c.fakeAndSendToCentral(toC, inventory)
+}
+
+func (c *nodeInventoryHandlerImpl) fakeAndSendToCentral(toC chan *central.MsgFromSensor, inventory *storage.NodeInventory) {
 	if inventory == nil {
 		return
 	}
+	creation := inventory.ScanTime
+	nodeResource := &storage.Node{
+		Id:                      uuid.NewV4().String(),
+		Name:                    inventory.GetNodeName(),
+		Taints:                  nil,
+		NodeInventory:           inventory,
+		Labels:                  map[string]string{"fakeLK": "fakeLV"},
+		Annotations:             map[string]string{"fakeAK": "fakeAV"},
+		JoinedAt:                &types.Timestamp{Seconds: creation.Seconds, Nanos: creation.Nanos},
+		InternalIpAddresses:     []string{"192.168.255.254"},
+		ExternalIpAddresses:     []string{"10.10.255.254"},
+		ContainerRuntime:        k8sutil.ParseContainerRuntimeVersion("v1.2.3-hardcoded"),
+		ContainerRuntimeVersion: "v1.2.3-hardcoded",
+		KernelVersion:           "v1.2.4-hardcoded",
+		OperatingSystem:         "RHCOS-hardcoded",
+		OsImage:                 "v1.2.5-hardcoded",
+		KubeletVersion:          "v1.2.6-hardcoded",
+		KubeProxyVersion:        "v1.2.7-hardcoded",
+		K8SUpdated:              types.TimestampNow(),
+	}
+
 	select {
 	case <-c.stopC.Done():
+		return
 	case toC <- &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_NodeInventory{
-					NodeInventory: inventory,
+				Id:     nodeResource.GetId(),
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_Node{
+					Node: nodeResource,
 				},
 			},
 		},

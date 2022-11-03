@@ -170,6 +170,210 @@
         }
       }
     },
+    "scannerV1Components": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "osComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1OSComponent"
+          }
+        },
+        "rhelComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1RHELComponent"
+          }
+        },
+        "languageComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1LanguageComponent"
+          }
+        }
+      }
+    },
+    "scannerV1Executable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "requiredFeatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1FeatureNameVersion"
+          }
+        }
+      }
+    },
+    "scannerV1FeatureNameVersion": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1JavaComponent": {
+      "type": "object",
+      "properties": {
+        "implementationVersion": {
+          "type": "string"
+        },
+        "mavenVersion": {
+          "type": "string"
+        },
+        "origins": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "specificationVersion": {
+          "type": "string"
+        },
+        "bundleName": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1LanguageComponent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/scannerV1SourceType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "java": {
+          "$ref": "#/definitions/scannerV1JavaComponent"
+        },
+        "python": {
+          "$ref": "#/definitions/scannerV1PythonComponent"
+        },
+        "addedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1Note": {
+      "type": "string",
+      "enum": [
+        "OS_CVES_UNAVAILABLE",
+        "OS_CVES_STALE",
+        "LANGUAGE_CVES_UNAVAILABLE",
+        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
+      ],
+      "default": "OS_CVES_UNAVAILABLE"
+    },
+    "scannerV1OSComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "addedBy": {
+          "type": "string"
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1Executable"
+          }
+        }
+      }
+    },
+    "scannerV1PythonComponent": {
+      "type": "object",
+      "properties": {
+        "homepage": {
+          "type": "string"
+        },
+        "authorEmail": {
+          "type": "string"
+        },
+        "downloadUrl": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1RHELComponent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "cpes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "addedBy": {
+          "type": "string"
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1Executable"
+          }
+        }
+      }
+    },
+    "scannerV1SourceType": {
+      "type": "string",
+      "enum": [
+        "UNSET_SOURCE_TYPE",
+        "JAVA",
+        "PYTHON",
+        "NPM",
+        "GEM",
+        "DOTNETCORERUNTIME"
+      ],
+      "default": "UNSET_SOURCE_TYPE"
+    },
     "storageCVEInfo": {
       "type": "object",
       "properties": {
@@ -618,6 +822,9 @@
           "format": "date-time",
           "description": "Time we received an update from Kubernetes."
         },
+        "nodeInventory": {
+          "$ref": "#/definitions/storageNodeInventory"
+        },
         "scan": {
           "$ref": "#/definitions/storageNodeScan"
         },
@@ -652,7 +859,31 @@
           }
         }
       },
-      "title": "Node represents information about a node in the cluster.\nnext available tag: 28"
+      "title": "Node represents information about a node in the cluster.\nnext available tag: 29"
+    },
+    "storageNodeInventory": {
+      "type": "object",
+      "properties": {
+        "nodeId": {
+          "type": "string"
+        },
+        "nodeName": {
+          "type": "string"
+        },
+        "scanTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "components": {
+          "$ref": "#/definitions/scannerV1Components"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1Note"
+          }
+        }
+      }
     },
     "storageNodeNote": {
       "type": "string",
