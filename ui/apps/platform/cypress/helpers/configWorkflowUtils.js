@@ -134,7 +134,7 @@ function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
     return `${opnameForEntity[entitiesKey1]}_${typeOfEntity[entitiesKey2]}`;
 }
 
-const routeMatcherMapForDashboard = getRouteMatcherMapForGraphQL([
+const routeMatcherMapForConfigurationManagementDashboard = getRouteMatcherMapForGraphQL([
     'numPolicies',
     'numCISControls',
     'policyViolationsBySeverity',
@@ -145,7 +145,7 @@ const routeMatcherMapForDashboard = getRouteMatcherMapForGraphQL([
 ]);
 
 export function visitConfigurationManagementDashboard() {
-    visit(basePath, routeMatcherMapForDashboard);
+    visit(basePath, routeMatcherMapForConfigurationManagementDashboard);
 
     cy.get('h1:contains("Configuration Management")');
 }
@@ -218,7 +218,7 @@ export function interactAndWaitForConfigurationManagementSecondaryEntities(
 }
 
 export function interactAndWaitForConfigurationManagementScan(interactionCallback) {
-    interactAndWaitForResponses(interactionCallback, routeMatcherMapForDashboard);
+    interactAndWaitForResponses(interactionCallback, routeMatcherMapForConfigurationManagementDashboard);
 }
 
 // specifying an "entityName" will try to select that row in the table
