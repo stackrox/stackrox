@@ -143,7 +143,9 @@ spec:
         displayName: Administrator Password
         path: central.db.passwordSecret
       - description: Specify a connection string that corresponds to an existing database.
-          If set, the operator will not manage Central DB.
+          If set, the operator will not manage Central DB. When using this option,
+          you must explicitly set a password secret; automatically generating a password
+          will not be supported.
         displayName: Connection String Override
         path: central.db.connectionString
       - description: Configures how Central DB should store its persistent data. You
@@ -168,13 +170,6 @@ spec:
         path: central.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: Disable database password generation. Do not use this for first-time
-          installations in which the operator is managing Central DB as Central will
-          have no way to connect to the database.
-        displayName: Password Generation Disabled
-        path: central.db.passwordGenerationDisabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the referenced secret.
         displayName: Name
         path: central.db.passwordSecret.name
