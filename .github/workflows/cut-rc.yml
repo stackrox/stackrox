@@ -119,7 +119,7 @@ jobs:
 
   wait-for-images:
     name: Wait for images on Quay.io
-    needs: [variables, cut-rc]
+    needs: [variables]
     runs-on: ubuntu-latest
     if: >- # Skip if no clusters are going to be created.
       github.event.inputs.create-k8s-cluster != 'false' ||
