@@ -10,7 +10,7 @@ RELEASE="$2"
 PATCH="$3"
 RELEASE_PATCH="$4"
 
-check_not_empty \
+echo check_not_empty \
     PROJECTS \
     RELEASE \
     PATCH \
@@ -24,14 +24,14 @@ check_not_empty \
 JQL_OPEN_ISSUES="project IN ($PROJECTS) \
 AND fixVersion = \"$RELEASE.$PATCH\" \
 AND statusCategory != done \
-AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Managed Service\")) \
+AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Cloud Service\")) \
 AND type NOT IN (Epic, \"Feature Request\") \
 ORDER BY assignee"
 
 JQL_CLOSED_WITH_PR="project IN ($PROJECTS) \
 AND fixVersion = \"$RELEASE.$PATCH\" \
 AND statusCategory = done \
-AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Managed Service\")) \
+AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Cloud Service\")) \
 AND issue.property[development].openprs > 0 \
 ORDER BY assignee"
 
