@@ -122,6 +122,20 @@
       ],
       "default": "UI_NONE"
     },
+    "ComponentsRHELComponentExecutable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "requiredFeatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RHELComponentExecutableFeatureNameVersion"
+          }
+        }
+      }
+    },
     "EmbeddedVulnerabilityVulnerabilityType": {
       "type": "string",
       "enum": [
@@ -133,6 +147,50 @@
         "OPENSHIFT_VULNERABILITY"
       ],
       "default": "UNKNOWN_VULNERABILITY"
+    },
+    "NodeInventoryComponentsRHELComponent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "addedBy": {
+          "type": "string"
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ComponentsRHELComponentExecutable"
+          }
+        }
+      }
+    },
+    "RHELComponentExecutableFeatureNameVersion": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
     },
     "protobufAny": {
       "type": "object",
@@ -618,6 +676,10 @@
           "format": "date-time",
           "description": "Time we received an update from Kubernetes."
         },
+        "nodeInventory": {
+          "$ref": "#/definitions/storageNodeInventory",
+          "description": "NodeInventory contains a list of components discovered on the node.\nIt will be in the DB in serialized form, but no dedicated field or table will be created thanks to \"sql:-\"."
+        },
         "scan": {
           "$ref": "#/definitions/storageNodeScan"
         },
@@ -652,7 +714,60 @@
           }
         }
       },
-      "title": "Node represents information about a node in the cluster.\nnext available tag: 28"
+      "title": "Node represents information about a node in the cluster.\nnext available tag: 29"
+    },
+    "storageNodeInventory": {
+      "type": "object",
+      "properties": {
+        "nodeName": {
+          "type": "string"
+        },
+        "scanTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "components": {
+          "$ref": "#/definitions/storageNodeInventoryComponents",
+          "title": "Components represents a subset of the scannerV1.Components proto message containing only fields required for RHCOS node scanning.\nKeep scanner Components and NodeInventory_Components in sync to the degree defined by fuctions:\nfunc convertAndDedupRHELComponents (in pkg 'nodeinventorizer'), and the respective reverse convertion in pkg 'clairify'.\nWe are not using scannerV1.Components here for the following reasons:\n- to avoid conflicts between v1 and scannerV1 APIs when generating the code in central/graphql/resolvers/generated.go\n- to not expose scanner v1 API over stackrox graphql API"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNodeInventoryNote"
+          },
+          "title": "Note represents scannerV1.Note"
+        }
+      }
+    },
+    "storageNodeInventoryComponents": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "rhelComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodeInventoryComponentsRHELComponent"
+          }
+        },
+        "rhelContentSets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "storageNodeInventoryNote": {
+      "type": "string",
+      "enum": [
+        "OS_CVES_UNAVAILABLE",
+        "OS_CVES_STALE",
+        "LANGUAGE_CVES_UNAVAILABLE",
+        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
+      ],
+      "default": "OS_CVES_UNAVAILABLE"
     },
     "storageNodeNote": {
       "type": "string",

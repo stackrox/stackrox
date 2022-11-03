@@ -14,7 +14,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 // Node represents information about a node in the cluster.
-// next available tag: 28
+// next available tag: 29
 message Node {
     // A unique ID identifying this node.
     string id                              = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk,type(uuid)"'];
@@ -47,6 +47,9 @@ message Node {
     // Time we received an update from Kubernetes.
     google.protobuf.Timestamp k8s_updated  = 26 [(gogoproto.moretags) = 'sensorhash:"ignore"'];
 
+    // NodeInventory contains a list of components discovered on the node.
+    // It will be in the DB in serialized form, but no dedicated field or table will be created thanks to "sql:-".
+    NodeInventory node_inventory           = 28 [(gogoproto.moretags) = 'sql:"-"'];
     NodeScan scan                          = 18 [(gogoproto.moretags) = 'policy:"Node Scan"'];
     oneof set_components {
         int32 components                   = 19 [(gogoproto.moretags) = 'search:"Component Count,store,hidden"'];

@@ -10039,6 +10039,17 @@
                 ]
               },
               {
+                "id": 28,
+                "name": "node_inventory",
+                "type": "NodeInventory",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"-\""
+                  }
+                ]
+              },
+              {
                 "id": 18,
                 "name": "scan",
                 "type": "NodeScan",
@@ -10286,6 +10297,95 @@
                       },
                       {
                         "id": 8,
+                        "name": "executables",
+                        "type": "Executable",
+                        "is_repeated": true
+                      }
+                    ],
+                    "messages": [
+                      {
+                        "name": "Executable",
+                        "fields": [
+                          {
+                            "id": 1,
+                            "name": "path",
+                            "type": "string"
+                          },
+                          {
+                            "id": 2,
+                            "name": "required_features",
+                            "type": "FeatureNameVersion",
+                            "is_repeated": true
+                          }
+                        ],
+                        "messages": [
+                          {
+                            "name": "FeatureNameVersion",
+                            "fields": [
+                              {
+                                "id": 1,
+                                "name": "name",
+                                "type": "string"
+                              },
+                              {
+                                "id": 2,
+                                "name": "version",
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "RHELComponent",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "id",
+                        "type": "int64"
+                      },
+                      {
+                        "id": 2,
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "id": 3,
+                        "name": "namespace",
+                        "type": "string"
+                      },
+                      {
+                        "id": 4,
+                        "name": "version",
+                        "type": "string"
+                      },
+                      {
+                        "id": 5,
+                        "name": "arch",
+                        "type": "string"
+                      },
+                      {
+                        "id": 6,
+                        "name": "module",
+                        "type": "string"
+                      },
+                      {
+                        "id": 7,
+                        "name": "cpes",
+                        "type": "string",
+                        "is_repeated": true
+                      },
+                      {
+                        "id": 8,
+                        "name": "added_by",
+                        "type": "string"
+                      },
+                      {
+                        "id": 9,
                         "name": "executables",
                         "type": "Executable",
                         "is_repeated": true
@@ -14124,6 +14224,11 @@
                     "value": "true"
                   }
                 ]
+              },
+              {
+                "id": 8,
+                "name": "traits",
+                "type": "Traits"
               }
             ],
             "maps": [
@@ -14175,6 +14280,11 @@
                 "id": 3,
                 "name": "description",
                 "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "traits",
+                "type": "Traits"
               }
             ],
             "maps": [
@@ -14222,6 +14332,11 @@
                 "id": 4,
                 "name": "rules",
                 "type": "Rules"
+              },
+              {
+                "id": 5,
+                "name": "traits",
+                "type": "Traits"
               }
             ],
             "messages": [
@@ -14356,6 +14471,9 @@
         "imports": [
           {
             "path": "storage/labels.proto"
+          },
+          {
+            "path": "storage/traits.proto"
           },
           {
             "path": "gogoproto/gogo.proto"
@@ -17078,6 +17196,22 @@
                 "integer": 1
               }
             ]
+          },
+          {
+            "name": "Traits.Origin",
+            "enum_fields": [
+              {
+                "name": "IMPERATIVE"
+              },
+              {
+                "name": "DEFAULT",
+                "integer": 1
+              },
+              {
+                "name": "DECLARATIVE",
+                "integer": 2
+              }
+            ]
           }
         ],
         "messages": [
@@ -17093,6 +17227,11 @@
                 "id": 2,
                 "name": "visibility",
                 "type": "Visibility"
+              },
+              {
+                "id": 3,
+                "name": "origin",
+                "type": "Origin"
               }
             ]
           }

@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkflowupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodes"
-	"github.com/stackrox/rox/central/sensor/service/pipeline/nodescansv2"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/podevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/processindicators"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reprocessing"
@@ -64,9 +63,6 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		reprocessing.GetPipeline(),
 		alerts.GetPipeline(),
 		auditlogstateupdate.GetPipeline(),
-	}
-	if features.RHCOSNodeScanning.Enabled() {
-		pipelines = append(pipelines, nodescansv2.GetPipeline())
 	}
 	if features.ComplianceOperatorCheckResults.Enabled() {
 		pipelines = append(pipelines,
