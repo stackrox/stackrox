@@ -16,7 +16,7 @@ message ResourceCollection {
     string id = 1 [(gogoproto.moretags) = 'search:"Embedded Collection ID,hidden" sql:"fk(ResourceCollection:id),restrict-delete"'];
   }
 
-  string id                                                = 1 [(gogoproto.moretags) = 'sql:"pk"']; // primary key
+  string id                                                = 1 [(gogoproto.moretags) = 'search:"Collection Id" sql:"pk"']; // primary key
   string name                                              = 2 [(gogoproto.moretags) = 'search:"Collection Name" sql:"unique"'];
   string description                                       = 3;
   google.protobuf.Timestamp created_at                     = 4;
