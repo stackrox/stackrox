@@ -1,14 +1,22 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Button, Flex, FormGroup, ValidatedOptions } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
 import { FormikErrors } from 'formik';
 import useIndexKey from 'hooks/useIndexKey';
+import { getCollectionAutoComplete } from 'services/CollectionsService';
 import { AutoCompleteSelect } from './AutoCompleteSelect';
-import { ByNameResourceSelector, ScopedResourceSelector, SelectorEntityType } from '../types';
+import {
+    ByNameResourceSelector,
+    Collection,
+    ScopedResourceSelector,
+    SelectorEntityType,
+} from '../types';
+import { generateRequest } from '../converter';
 
 export type ByNameSelectorProps = {
+    collection: Collection;
     entityType: SelectorEntityType;
     scopedResourceSelector: ByNameResourceSelector;
     handleChange: (
@@ -20,6 +28,7 @@ export type ByNameSelectorProps = {
 };
 
 function ByNameSelector({
+    collection,
     entityType,
     scopedResourceSelector,
     handleChange,
@@ -27,6 +36,13 @@ function ByNameSelector({
     isDisabled,
 }: ByNameSelectorProps) {
     const { keyFor, invalidateIndexKeys } = useIndexKey();
+    const onAutocomplete = useCallback(
+        (search: string) => {
+            const req = generateRequest(collection);
+            return getCollectionAutoComplete(req.resourceSelectors, entityType, search);
+        },
+        [collection, entityType]
+    );
 
     function onAddValue() {
         const selector = cloneDeep(scopedResourceSelector);
@@ -77,6 +93,7 @@ function ByNameSelector({
                                     : ValidatedOptions.default
                             }
                             isDisabled={isDisabled}
+                            autocompleteProvider={onAutocomplete}
                         />
                         {!isDisabled && (
                             <Button variant="plain" onClick={() => onDeleteValue(index)}>
