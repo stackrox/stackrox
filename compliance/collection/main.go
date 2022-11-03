@@ -184,6 +184,8 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
+	clientconn.SetUserAgent("compliance")
+
 	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), mtls.SensorSubject)
 	if err != nil {
 		log.Fatal(err)

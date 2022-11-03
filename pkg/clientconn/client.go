@@ -377,6 +377,7 @@ func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint strin
 		allDialOpts = append(allDialOpts, grpc.WithPerRPCCredentials(perRPCCreds))
 	}
 	allDialOpts = append(allDialOpts, dialOpts...)
+	allDialOpts = append(allDialOpts, grpc.WithUserAgent(GetUserAgent()))
 	return clientConnOpts.dialTLSFunc()(dialCtx, endpoint, tlsConf, allDialOpts...)
 }
 
