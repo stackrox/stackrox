@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-central-db-password
+data:
+  password: c2VjcmV0Cg== # "secret\n"
+---
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+spec:
+  central:
+    db:
+      connectionString: "foobar"
+      passwordSecret:
+        name: my-central-db-password
