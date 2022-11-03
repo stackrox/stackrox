@@ -11,3 +11,4 @@ export POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
 
 # shellcheck source=/dev/null
 "$DIR"/deploy.sh
+

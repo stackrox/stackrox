@@ -176,13 +176,16 @@ func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, e
 
 	pingServiceClient := clairGRPCV1.NewPingServiceClient(gRPCConnection)
 	scanServiceClient := clairGRPCV1.NewNodeScanServiceClient(gRPCConnection)
+	// required as RHCOS scanning uses ImageScan API
+	imageScanServiceClient := clairGRPCV1.NewImageScanServiceClient(gRPCConnection)
 
 	return &clairify{
-		NodeScanSemaphore:     scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
-		conf:                  conf,
-		pingServiceClient:     pingServiceClient,
-		nodeScanServiceClient: scanServiceClient,
-		protoNodeIntegration:  protoNodeIntegration,
+		NodeScanSemaphore:      scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
+		conf:                   conf,
+		pingServiceClient:      pingServiceClient,
+		nodeScanServiceClient:  scanServiceClient,
+		imageScanServiceClient: imageScanServiceClient,
+		protoNodeIntegration:   protoNodeIntegration,
 	}, nil
 }
 
@@ -400,6 +403,7 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRP
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
 	defer cancel()
+
 	resp, err := c.imageScanServiceClient.GetImageVulnerabilities(ctx, req)
 	if err != nil {
 		return nil, err
@@ -411,14 +415,18 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRP
 // GetNodeScan retrieves the most recent node scan
 func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
 	req := convertNodeToVulnRequest(node)
+	log.Infof("Request GetNodeVulnerabilities.NodeInventory for Node '%s': %+v", node.GetName(), req.GetNodeInventory())
 	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
 	defer cancel()
 	resp, err := c.nodeScanServiceClient.GetNodeVulnerabilities(ctx, req)
+	log.Infof("Reply GetNodeVulnerabilities.InventoryFeatures: %+v, ERROR: %v", resp.GetInventoryFeatures(), err)
+
 	if err != nil {
 		return nil, err
 	}
 
 	scan := convertVulnResponseToNodeScan(req, resp)
+	log.Infof("Converted NodeScan: %+v", scan)
 	if scan == nil {
 		return nil, errors.New("malformed vuln response from scanner")
 	}

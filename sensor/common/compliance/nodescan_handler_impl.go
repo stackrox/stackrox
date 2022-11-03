@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -103,7 +102,8 @@ func (c *nodeScanHandlerImpl) fakeAndSendToCentral(toC chan *central.MsgFromSens
 	}
 	creation := scan.ScanTime
 	nodeResource := &storage.Node{
-		Id:                      uuid.NewV4().String(),
+		// this is arbitrary selected UUID - we want to see only 1 fake node in the UI
+		Id:                      "bf5bf7d4-2d77-4194-9ab5-570848c55777",
 		Name:                    scan.GetNodeName(),
 		Taints:                  nil,
 		NodeInventory:           scan,
@@ -112,13 +112,13 @@ func (c *nodeScanHandlerImpl) fakeAndSendToCentral(toC chan *central.MsgFromSens
 		JoinedAt:                &types.Timestamp{Seconds: creation.Seconds, Nanos: creation.Nanos},
 		InternalIpAddresses:     []string{"192.168.255.254"},
 		ExternalIpAddresses:     []string{"10.10.255.254"},
-		ContainerRuntime:        k8sutil.ParseContainerRuntimeVersion("docker://20.10.0-hardcoded"),
-		ContainerRuntimeVersion: "docker://20.10.0-hardcoded-deprecated",
-		KernelVersion:           "v1.2.4-hardcoded",
-		OperatingSystem:         "RedHat-CoreOS-hardcoded",
-		OsImage:                 "RedHat CoreOS v6.6.6-hardcoded",
-		KubeletVersion:          "v1.2.6-hardcoded",
-		KubeProxyVersion:        "v1.2.7-hardcoded",
+		ContainerRuntime:        k8sutil.ParseContainerRuntimeVersion("docker://20.10.18"),
+		ContainerRuntimeVersion: "docker://20.10.18",
+		KernelVersion:           "99.19.16",
+		OperatingSystem:         "Alpine Linux v3.16",
+		OsImage:                 "RedHat CoreOS v99.66.33",
+		KubeletVersion:          "v1.25.0+k3s1",
+		KubeProxyVersion:        "v1.25.0+k3s1",
 		K8SUpdated:              types.TimestampNow(),
 	}
 

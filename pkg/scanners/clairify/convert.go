@@ -19,6 +19,7 @@ func convertNodeToVulnRequest(node *storage.Node) *v1.GetNodeVulnerabilitiesRequ
 		KubeletVersion:   node.GetKubeletVersion(),
 		KubeproxyVersion: node.GetKubeProxyVersion(),
 		Runtime:          convertContainerRuntime(node.GetContainerRuntime()),
+		NodeInventory:    node.GetNodeInventory().GetComponents(),
 	}
 }
 
@@ -69,6 +70,16 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 		},
 		Notes: convertNodeNotes(resp.GetNotes()),
 	}
+	if resp.InventoryFeatures != nil {
+		for _, feature := range resp.GetInventoryFeatures() {
+			scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
+				Name:    feature.GetName(),
+				Version: feature.GetVersion(),
+				Vulns:   convertNodeVulns(feature.GetVulnerabilities()),
+			})
+		}
+
+	}
 	if req.GetRuntime().GetName() != "" && req.GetRuntime().GetVersion() != "" {
 		scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
 			Name:    req.GetRuntime().GetName(),
@@ -77,6 +88,22 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 		})
 	}
 	return scan
+}
+
+func convertImageVulnResponseToNodeScan(resp *v1.GetImageVulnerabilitiesResponse) *storage.NodeScan {
+	c := make([]*storage.EmbeddedNodeScanComponent, len(resp.GetImage().GetFeatures()))
+	for i, feature := range resp.GetImage().GetFeatures() {
+		c[i] = &storage.EmbeddedNodeScanComponent{
+			Name:    feature.GetName(),
+			Version: feature.GetVersion(),
+			Vulns:   convertVulnerabilities(feature.GetVulnerabilities(), storage.EmbeddedVulnerability_NODE_VULNERABILITY),
+		}
+	}
+	return &storage.NodeScan{
+		ScanTime:        gogoProto.TimestampNow(),
+		OperatingSystem: "RHCOS-hardcoded-value",
+		Components:      c,
+	}
 }
 
 func convertNodeNotes(v1Notes []v1.NodeNote) []storage.NodeScan_Note {

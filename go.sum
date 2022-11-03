@@ -1224,8 +1224,8 @@ github.com/klauspost/compress v1.15.11/go.mod h1:QPwzmACJjUTFsnSHH934V6woptycfrD
 github.com/klauspost/cpuid v1.2.0/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgoMS4s3ek=
 github.com/klauspost/pgzip v1.2.5 h1:qnWYvvKqedOF2ulHpMG72XQol4ILEJ8k2wwRl/Km8oE=
 github.com/klauspost/pgzip v1.2.5/go.mod h1:Ch1tH69qFZu15pkjo5kYi6mth2Zzwzt50oCQKQE9RUs=
-github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936 h1:HDjRqotkViMNcGMGicb7cgxklx8OwnjtCBmyWEqrRvM=
-github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936/go.mod h1:i4sF0l1fFnY1aiw08QQSwVAFxHEm311Me3WsU/X7nL0=
+github.com/knqyf263/go-rpm-version v0.0.0-20220614171824-631e686d1075 h1:aC6MEAs3PE3lWD7lqrJfDxHd6hcced9R4JTZu85cJwU=
+github.com/knqyf263/go-rpm-version v0.0.0-20220614171824-631e686d1075/go.mod h1:i4sF0l1fFnY1aiw08QQSwVAFxHEm311Me3WsU/X7nL0=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
@@ -1345,8 +1345,9 @@ github.com/mattn/go-sqlite3 v1.14.15 h1:vfoHhTN1af61xCRSWzFIWzx2YskyMTwHLrExkBOj
 github.com/mattn/go-zglob v0.0.1/go.mod h1:9fxibJccNxU2cnpIKLRRFA7zX7qhkJIQWBb449FYHOo=
 github.com/mattn/goveralls v0.0.2/go.mod h1:8d1ZMHsd7fW6IRPKQh46F2WRpyib5/X4FOpevwGNQEw=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
-github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 h1:I0XW9+e1XWDxdcEniV4rQAIOPUGDq67JSCiRCgGCZLI=
 github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369/go.mod h1:BSXmuO+STAnVfrANrmjBb36TMTDstsz7MSK+HVaYKv4=
+github.com/matttproud/golang_protobuf_extensions v1.0.4 h1:mmDVorXM7PCGKw94cs5zkfA9PSy5pEvNWRP0ET0TIVo=
+github.com/matttproud/golang_protobuf_extensions v1.0.4/go.mod h1:BSXmuO+STAnVfrANrmjBb36TMTDstsz7MSK+HVaYKv4=
 github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5 h1:PnFl95tWh3j7c5DebZG/TGsBJvbnHvPjK4lzltouI4Y=
 github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5/go.mod h1:i2AazGGunAlAR5u0zXGYVmIT7nnwE6j9lwKSMx7N6ko=
 github.com/maxbrunsfeld/counterfeiter/v6 v6.2.2/go.mod h1:eD9eIE7cdwcMi9rYluz88Jz2VyhSmden33/aXg4oVIY=
@@ -1790,8 +1791,8 @@ github.com/stackrox/oauth2 v0.0.0-20220531064142-8b312376cb4c h1:lpB76HIH2VEIOgr
 github.com/stackrox/oauth2 v0.0.0-20220531064142-8b312376cb4c/go.mod h1:DAh4E804XQdzx2j+YRIaUnCqCV2RuMz24cGBJ5QYIrc=
 github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179 h1:5wzvROh+LGgeIeOpMuEpIkRIALDFU/ltFB8cY3916c4=
 github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179/go.mod h1:zwEXo3PEZZb6QQZBrBORMX0Hvnnwst3PduSaTQZMFYc=
-github.com/stackrox/scanner v0.0.0-20220929215850-334d4658d5e6 h1:wiG8lxf3zsSnWJKNY4i9J1+HkH4LvWj9+Jy/FSUceZs=
-github.com/stackrox/scanner v0.0.0-20220929215850-334d4658d5e6/go.mod h1:pfQ6NnURzcFAavhZIU6KhghbcVJfj3Dp5QBiWzHkeTE=
+github.com/stackrox/scanner v0.0.0-20221104142502-77014a95a164 h1:5frkUQdnNtnw9zO2FJU0t4p3XTFgifqVdCiFM3oDc9w=
+github.com/stackrox/scanner v0.0.0-20221104142502-77014a95a164/go.mod h1:d4dXqjvWEDDMxHNJZSqEQtuPmYu/ks09S2NQLp9ahZw=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/stackrox/yaml/v2 v2.4.1 h1:09ux+QFfvp+Lk73pwGlMTAHeZoS2pqs6CCngYaJ6EQo=
