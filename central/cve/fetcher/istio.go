@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
-	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
@@ -69,22 +69,18 @@ func (m *istioCVEManager) setCVEs(cves []*storage.EmbeddedVulnerability, nvdCVEs
 }
 
 func (m *istioCVEManager) updateCVEs(newCVEs []*schema.NVDCVEFeedJSON10DefCVEItem) (retErr error) {
-	defer func() {
-		if r := recover(); r != nil {
-			retErr = errors.Errorf("caught panic in Istio updateCVEs: %v", r)
+	return safe.RunE(func() error {
+		cves, err := utils.NvdCVEsToEmbeddedCVEs(newCVEs, utils.Istio)
+		if err != nil {
+			return err
 		}
-	}()
 
-	cves, err := utils.NvdCVEsToEmbeddedCVEs(newCVEs, utils.Istio)
-	if err != nil {
-		return err
-	}
-
-	m.setCVEs([]*storage.EmbeddedVulnerability{}, newCVEs)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return m.updateCVEsInPostgres(cves)
-	}
-	return m.updateCVEsInDB(cves)
+		m.setCVEs([]*storage.EmbeddedVulnerability{}, newCVEs)
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			return m.updateCVEsInPostgres(cves)
+		}
+		return m.updateCVEsInDB(cves)
+	})
 }
 
 func (m *istioCVEManager) updateCVEsInPostgres(embeddedCVEs []*storage.EmbeddedVulnerability) error {
