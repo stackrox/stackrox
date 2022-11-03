@@ -2,9 +2,9 @@ package marketing
 
 import (
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
+// Telemeter defines a common interface for telemetry gatherers.
 type Telemeter interface {
 	Start()
 	Stop()
@@ -14,27 +14,14 @@ type Telemeter interface {
 	TrackProps(userAgent, event string, props map[string]any)
 }
 
-var (
-	log = logging.LoggerForModule()
-)
-
+// Enabled tells whether telemetry data collection is enabled.
 func Enabled() bool {
-	return env.AmplitudeApiKey.Setting() != ""
+	return env.AmplitudeAPIKey.Setting() != ""
 }
 
-// Device represents the central instance properties.
-type Device struct {
+// Config represents the central instance telemetry configuration.
+type Config struct {
 	ID       string
 	Version  string
-	ApiPaths []string
-}
-
-// GetDeviceProperties collects the central instance properties.
-func GetDeviceProperties() *Device {
-	d, err := getK8SData()
-	if err != nil {
-		log.Errorf("Failed to get device data: %v", err)
-		return nil
-	}
-	return d
+	APIPaths []string
 }

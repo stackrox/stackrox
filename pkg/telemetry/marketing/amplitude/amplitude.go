@@ -13,21 +13,21 @@ import (
 )
 
 var (
-	log  = logging.LoggerForModule()
-	once sync.Once
-	a    *ampl
+	log      = logging.LoggerForModule()
+	once     sync.Once
+	instance *amplitudeTelemeter
 )
 
-type ampl struct {
+type amplitudeTelemeter struct {
 	client   amplitude.Client
 	opts     *types.EventOptions
 	identity amplitude.Identify
 }
 
 // Ensure Telemeter interface implementation.
-var _ = marketing.Telemeter((*ampl)(nil))
+var _ = marketing.Telemeter((*amplitudeTelemeter)(nil))
 
-func (t *ampl) Identify(props map[string]any) {
+func (t *amplitudeTelemeter) Identify(props map[string]any) {
 	t.identity = amplitude.Identify{}
 	for k, v := range props {
 		t.identity.Set(k, v)
@@ -35,53 +35,52 @@ func (t *ampl) Identify(props map[string]any) {
 	t.client.Identify(t.identity, amplitude.EventOptions{UserID: t.opts.DeviceID, DeviceID: t.opts.DeviceID})
 }
 
-func Init(device *marketing.Device) marketing.Telemeter {
+// Init creates and initializes an amplitude telemeter instance.
+func Init(config *marketing.Config) marketing.Telemeter {
 	once.Do(func() {
-		key := env.AmplitudeApiKey.Setting()
+		key := env.AmplitudeAPIKey.Setting()
 		server := ""
-		a = initAmplitude(device, key, server)
+		instance = initAmplitude(config, key, server)
 	})
-	return a
+	return instance
 }
 
-func initAmplitude(device *marketing.Device, key, server string) *ampl {
-	amplitude_config := amplitude.NewConfig(key)
+func initAmplitude(config *marketing.Config, key, server string) *amplitudeTelemeter {
+	amplitudeConfig := amplitude.NewConfig(key)
 	if server != "" {
-		amplitude_config.ServerURL = server
+		amplitudeConfig.ServerURL = server
 	}
-	amplitude_config.FlushInterval = 1 * time.Hour
-	amplitude_config.Logger = log
+	amplitudeConfig.FlushInterval = 1 * time.Hour
+	amplitudeConfig.Logger = log
 
-	log.Info("Telemetry device ID:", device.ID)
-
-	client := amplitude.NewClient(amplitude_config)
+	client := amplitude.NewClient(amplitudeConfig)
 
 	identify := amplitude.Identify{}
 	identify.SetOnce("Central version", version.GetMainVersion())
 	identify.SetOnce("Chart version", version.GetChartVersion())
 
-	return &ampl{
+	return &amplitudeTelemeter{
 		client:   client,
 		identity: identify,
 		opts: &amplitude.EventOptions{
-			DeviceID:  device.ID,
+			DeviceID:  config.ID,
 			ProductID: version.GetMainVersion(),
-			Platform:  device.Version,
+			Platform:  config.Version,
 		},
 	}
 }
 
-func (t *ampl) Start() {
+func (t *amplitudeTelemeter) Start() {
 }
 
-func (t *ampl) Stop() {
+func (t *amplitudeTelemeter) Stop() {
 	if t != nil {
 		t.client.Flush()
 		t.client.Shutdown()
 	}
 }
 
-func (t *ampl) TrackProps(userAgent, event string, props map[string]any) {
+func (t *amplitudeTelemeter) TrackProps(userAgent, event string, props map[string]any) {
 	if t == nil {
 		return
 	}
@@ -96,10 +95,10 @@ func (t *ampl) TrackProps(userAgent, event string, props map[string]any) {
 	})
 }
 
-func (t *ampl) TrackProp(userAgent, event string, key string, value any) {
+func (t *amplitudeTelemeter) TrackProp(userAgent, event string, key string, value any) {
 	t.TrackProps(userAgent, event, map[string]any{key: value})
 }
 
-func (t *ampl) Track(userAgent, event string) {
+func (t *amplitudeTelemeter) Track(userAgent, event string) {
 	t.TrackProps(userAgent, event, nil)
 }

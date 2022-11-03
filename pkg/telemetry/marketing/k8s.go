@@ -10,7 +10,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func getK8SData() (*Device, error) {
+const annotation = "stackrox.com/telemetry-apipaths"
+
+// GetDeviceConfig collects the central instance telemetry configuration.
+func GetDeviceConfig() (*Config, error) {
 	rc, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create k8s config")
@@ -29,11 +32,11 @@ func getK8SData() (*Device, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get central deployment")
 	}
-	paths := d.GetAnnotations()["stackrox.com/telemetry-apipaths"]
+	paths := d.GetAnnotations()[annotation]
 
-	return &Device{
+	return &Config{
 		ID:       string(d.GetUID()),
 		Version:  v.GitVersion,
-		ApiPaths: strings.Split(paths, ","),
+		APIPaths: strings.Split(paths, ","),
 	}, nil
 }
