@@ -42,7 +42,7 @@ get_issues() {
         -H "Accept: application/json" \
         "https://issues.redhat.com/rest/api/2/search" || status="$?"
     if [[ "$status" == 22 ]]; then  # curl man page: "22     HTTP  page  not retrieved. .. HTTP error code being 400 or above."
-        gh_log warning "4XX http error code"
+        gh_log warning "4XX http error code" >&2
     fi
 }
 
