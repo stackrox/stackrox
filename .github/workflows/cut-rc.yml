@@ -100,8 +100,7 @@ jobs:
             check-jira-issues \
             "${{needs.properties.outputs.jira-projects}}" \
             "${{needs.variables.outputs.release}}" \
-            "${{needs.variables.outputs.patch}}" \
-            "${{needs.variables.outputs.release-patch}}"
+            "${{needs.variables.outputs.patch}}"
 
   postpone-prs:
     name: Postpone open PRs
@@ -266,16 +265,9 @@ jobs:
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
-            draft-release-notes \
+            create-release \
             "${{ needs.variables.outputs.release-patch }}" \
-            "${{ needs.variables.outputs.branch }}" \
-            "RELEASE_NOTES_GENERATED.md"
-          URL=$(gh release create "${{needs.variables.outputs.milestone}}" \
-            --prerelease \
-            --notes-file RELEASE_NOTES_GENERATED.md \
-            --repo "${{ github.repository }}" \
-            --target "${{ needs.variables.outputs.branch }}")
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
+            "true"
 
       - run: |
           echo "Created GitHub pre-release [${{needs.variables.outputs.milestone}}](${{steps.pre-release.outputs.url}})" >> "$GITHUB_STEP_SUMMARY"
@@ -532,6 +524,7 @@ jobs:
       TAG: ${{needs.variables.outputs.milestone}}
       KUBECONFIG: artifacts/kubeconfig
       INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
+      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
     steps:
       - uses: stackrox/actions/infra/install-infractl@v1
       - name: Test readiness
@@ -540,8 +533,6 @@ jobs:
           if [ "$STATUS" != "READY" ]; then
             exit 1
           fi
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v2.0
       - name: Check out code
         uses: actions/checkout@v3
         with:
@@ -550,6 +541,10 @@ jobs:
       - uses: 'google-github-actions/auth@v0'
         with:
           credentials_json: '${{ secrets.GCP_RELEASE_AUTOMATION_SA }}'
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0'
+        with:
+          install_components: "gke-gcloud-auth-plugin"
       - name: Download artifacts
         id: artifacts
         run: |

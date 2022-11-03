@@ -16,7 +16,7 @@ on:
 env:
   main_branch: ${{ github.event.repository.default_branch }}
   script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
-  DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != true] }}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
@@ -77,6 +77,7 @@ jobs:
         with:
           ref: ${{ needs.variables.outputs.branch }}
           token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          fetch-depth: 0
       - name: Initialize mandatory git config
         run: |
           git config user.name "${{ github.event.sender.login }}"
@@ -100,15 +101,9 @@ jobs:
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
-            draft-release-notes \
+            create-release \
             "${{ needs.variables.outputs.release-patch }}" \
-            "${{ needs.variables.outputs.branch }}" \
-            "RELEASE_NOTES_GENERATED.md"
-          URL=$(gh release create "${{ needs.variables.outputs.release-patch }}" \
-            --notes-file RELEASE_NOTES_GENERATED.md \
-            --repo "${{ github.repository }}" \
-            --target "${{ needs.variables.outputs.branch }}")
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
+            "false"
 
       - run: |
           echo "Created GitHub release [${{ needs.variables.outputs.release-patch }}](${{ steps.release.outputs.url }})" >> "$GITHUB_STEP_SUMMARY"
@@ -124,10 +119,10 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
-            *<${{ steps.release.outputs.url }} | ${{ inputs.version }}> has been published on GitHub.*" }},
+            *<${{ steps.release.outputs.url }} | ${{ inputs.version }}> of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":arrow_right: Look for a CI generated PR created in `stackrox/release-artifacts` repository
+            ":arrow_right: Look for a CI generated PR created in <https://github.com/stackrox/release-artifacts/pulls|stackrox/release-artifacts> repository
             and confirm that members of the @release-publishers Slack group got notified about
             it.\n\n:arrow_right: Let's trigger the downstream release!" }}
             ]}
