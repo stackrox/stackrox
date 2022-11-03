@@ -41,7 +41,8 @@ if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
     );
 }
 
-const routeMatcherMapForDashboard = getRouteMatcherMapForGraphQL(opnamesForDashboard);
+const routeMatcherMapForVulnerabilityManagementDashboard =
+    getRouteMatcherMapForGraphQL(opnamesForDashboard);
 
 /*
  * The following keys are path segments which correspond to entityKeys arguments of functions below.
@@ -135,7 +136,7 @@ export function visitVulnerabilityManagementDashboardFromLeftNav() {
     visitFromLeftNavExpandable(
         'Vulnerability Management',
         'Dashboard',
-        routeMatcherMapForDashboard
+        routeMatcherMapForVulnerabilityManagementDashboard
     );
 
     cy.location('pathname').should('eq', basePath);
@@ -144,7 +145,7 @@ export function visitVulnerabilityManagementDashboardFromLeftNav() {
 }
 
 export function visitVulnerabilityManagementDashboard() {
-    visit(basePath, routeMatcherMapForDashboard);
+    visit(basePath, routeMatcherMapForVulnerabilityManagementDashboard);
 
     cy.get('h1:contains("Vulnerability Management")');
 }
