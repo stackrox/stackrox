@@ -17,6 +17,7 @@ const (
 	Integer     DataType = "integer"
 	IntArray    DataType = "intarray"
 	BigInteger  DataType = "biginteger"
+	Uuid        DataType = "uuid"
 )
 
 // DataTypeToSQLType converts the internal representation to SQL

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
@@ -60,6 +61,18 @@ func NilOrTime(t *types.Timestamp) *time.Time {
 		return nil
 	}
 	return &ts
+}
+
+// NilOrUUID allows for a proto timestamp to be stored a timestamp type in Postgres
+func NilOrUUID(value string) *uuid.UUID {
+	if value == "" {
+		return nil
+	}
+	id, err := uuid.FromString(value)
+	if err != nil {
+		return nil
+	}
+	return &id
 }
 
 // CreateTableFromModel executes input create statement using the input connection.

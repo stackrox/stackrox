@@ -139,6 +139,14 @@ var (
 				return val.([]string)
 			},
 		},
+		walker.Uuid: {
+			alloc: func() interface{} {
+				return pointers.String("")
+			},
+			printer: func(val interface{}) []string {
+				return []string{*(val.(*string))}
+			},
+		},
 	}
 )
 
