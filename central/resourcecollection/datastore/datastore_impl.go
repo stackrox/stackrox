@@ -469,7 +469,7 @@ func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection 
 		disjunctions = append(disjunctions, queries...)
 
 		// add embedded values
-		embeddedList, _, err := ds.storage.GetMany(ctx, embeddedCollectionsToIdList(collection.GetEmbeddedCollections()))
+		embeddedList, _, err := ds.storage.GetMany(ctx, embeddedCollectionsToIDList(collection.GetEmbeddedCollections()))
 		if err != nil {
 			return nil, err
 		}
@@ -528,7 +528,7 @@ func ruleValuesToQueryList(fieldLabel pkgSearch.FieldLabel, ruleValues []*storag
 	return ret
 }
 
-func embeddedCollectionsToIdList(embeddedList []*storage.ResourceCollection_EmbeddedResourceCollection) []string {
+func embeddedCollectionsToIDList(embeddedList []*storage.ResourceCollection_EmbeddedResourceCollection) []string {
 	var ret []string
 	for _, embedded := range embeddedList {
 		ret = append(ret, embedded.GetId())
