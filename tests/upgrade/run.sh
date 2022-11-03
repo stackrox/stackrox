@@ -73,6 +73,8 @@ test_upgrade() {
     make -C qa-tests-backend multiarch-test || touch FAIL
     store_qa_test_results "multiarch-test"
 
+    # TODO(sbostick): DEBUGx
+    env > /tmp/dotenv
     touch /tmp/hold
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
