@@ -226,12 +226,12 @@ func (h *pgSearchHelper) enrichQueryWithSACFilter(effectiveAccessScope *effectiv
 	// Build SAC filter
 	switch h.resourceMD.GetScope() {
 	case permissions.NamespaceScope:
-		sacQueryFilter, err = BuildClusterNamespaceLevelSACQueryFilter(effectiveAccessScope)
+		sacQueryFilter, err = BuildNonVerboseClusterNamespaceLevelSACQueryFilter(effectiveAccessScope)
 		if err != nil {
 			return nil, err
 		}
 	case permissions.ClusterScope:
-		sacQueryFilter, err = BuildClusterLevelSACQueryFilter(effectiveAccessScope)
+		sacQueryFilter, err = BuildNonVerboseClusterLevelSACQueryFilter(effectiveAccessScope)
 		if err != nil {
 			return nil, err
 		}

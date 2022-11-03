@@ -567,7 +567,7 @@ func (s *deploymentDatastoreSACSuite) TestScopedCount() {
 
 func (s *deploymentDatastoreSACSuite) TestUnrestrictedCount() {
 	s.setupSearchTest()
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runTestCount(c)
 		})
@@ -593,7 +593,7 @@ func (s *deploymentDatastoreSACSuite) TestScopedCountDeployments() {
 
 func (s *deploymentDatastoreSACSuite) TestUnrestrictedCountDeployments() {
 	s.setupSearchTest()
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runTestCountDeployments(c)
 		})

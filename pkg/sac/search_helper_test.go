@@ -174,7 +174,7 @@ func TestSACQueryEnricherForClusterResource(t *testing.T) {
 			description:           "Cluster-level scope tree and nil query result in cluster match query enrichment",
 			scope:                 effectiveaccessscope.TestTreeOneClusterRootFullyIncluded(t),
 			query:                 nil,
-			expectedEnrichedQuery: search.ConjunctionQuery(nil, clusterVerboseMatch(t, clusterIDArrakis)),
+			expectedEnrichedQuery: search.ConjunctionQuery(nil, clusterNonVerboseMatch(t, clusterIDArrakis)),
 		},
 		{
 			description: "Cluster-level multi-cluster scope tree and nil query result in multi-cluster match query enrichment",
@@ -182,8 +182,8 @@ func TestSACQueryEnricherForClusterResource(t *testing.T) {
 			query:       nil,
 			expectedEnrichedQuery: search.ConjunctionQuery(nil,
 				search.DisjunctionQuery(
-					clusterVerboseMatch(t, clusterIDArrakis),
-					clusterVerboseMatch(t, clusterIDEarth),
+					clusterNonVerboseMatch(t, clusterIDArrakis),
+					clusterNonVerboseMatch(t, clusterIDEarth),
 				)),
 		},
 		{
@@ -348,8 +348,8 @@ func TestSACQueryEnricherForClusterResource(t *testing.T) {
 								Pagination: paginationWithOffsetLimitAndSort,
 							},
 							search.DisjunctionQuery(
-								clusterVerboseMatch(t, clusterIDArrakis),
-								clusterVerboseMatch(t, clusterIDEarth),
+								clusterNonVerboseMatch(t, clusterIDArrakis),
+								clusterNonVerboseMatch(t, clusterIDEarth),
 							),
 						},
 					},
@@ -397,10 +397,7 @@ func TestSACQueryEnricherForNamespaceResource(t *testing.T) {
 			scope:       effectiveaccessscope.TestTreeOneClusterRootFullyIncluded(t),
 			query:       nil,
 			expectedEnrichedQuery: search.ConjunctionQuery(nil,
-				search.ConjunctionQuery(
-					clusterVerboseMatch(t, clusterIDArrakis),
-					getAnyNamespaceMatchQuery(),
-				),
+				clusterNonVerboseMatch(t, clusterIDArrakis),
 			),
 		},
 		{
@@ -409,14 +406,8 @@ func TestSACQueryEnricherForNamespaceResource(t *testing.T) {
 			query:       nil,
 			expectedEnrichedQuery: search.ConjunctionQuery(nil,
 				search.DisjunctionQuery(
-					search.ConjunctionQuery(
-						clusterVerboseMatch(t, clusterIDArrakis),
-						getAnyNamespaceMatchQuery(),
-					),
-					search.ConjunctionQuery(
-						clusterVerboseMatch(t, clusterIDEarth),
-						getAnyNamespaceMatchQuery(),
-					),
+					clusterNonVerboseMatch(t, clusterIDArrakis),
+					clusterNonVerboseMatch(t, clusterIDEarth),
 				)),
 		},
 		{
@@ -426,8 +417,8 @@ func TestSACQueryEnricherForNamespaceResource(t *testing.T) {
 			expectedEnrichedQuery: search.ConjunctionQuery(
 				nil,
 				search.ConjunctionQuery(
-					clusterVerboseMatch(t, clusterIDArrakis),
-					namespaceVerboseMatch(t, namespaceAtreides),
+					clusterNonVerboseMatch(t, clusterIDArrakis),
+					namespaceNonVerboseMatch(t, namespaceAtreides),
 				),
 			),
 		},
@@ -587,14 +578,8 @@ func TestSACQueryEnricherForNamespaceResource(t *testing.T) {
 								Pagination: paginationWithOffsetLimitAndSort,
 							},
 							search.DisjunctionQuery(
-								search.ConjunctionQuery(
-									clusterVerboseMatch(t, clusterIDArrakis),
-									getAnyNamespaceMatchQuery(),
-								),
-								search.ConjunctionQuery(
-									clusterVerboseMatch(t, clusterIDEarth),
-									getAnyNamespaceMatchQuery(),
-								),
+								clusterNonVerboseMatch(t, clusterIDArrakis),
+								clusterNonVerboseMatch(t, clusterIDEarth),
 							),
 						},
 					},
@@ -639,8 +624,14 @@ func TestSACQueryEnricherForNamespaceResource(t *testing.T) {
 								Pagination: paginationWithOffsetLimitAndSort,
 							},
 							search.DisjunctionQuery(
-								search.ConjunctionQuery(clusterMatch(planetEarth), namespaceMatch(nsSkunkWorks)),
-								search.ConjunctionQuery(clusterMatch(planetArrakis), namespaceMatch(nsSpacingGuild)),
+								search.ConjunctionQuery(
+									clusterNonVerboseMatch(t, planetEarth),
+									namespaceNonVerboseMatch(t, nsSkunkWorks),
+								),
+								search.ConjunctionQuery(
+									clusterNonVerboseMatch(t, planetArrakis),
+									namespaceNonVerboseMatch(t, nsSpacingGuild),
+								),
 							),
 						},
 					},
