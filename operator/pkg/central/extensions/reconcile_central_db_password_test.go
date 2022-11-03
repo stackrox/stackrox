@@ -218,7 +218,7 @@ func TestReconcileDBPassword(t *testing.T) {
 					},
 				},
 			},
-			ExpectedError: "specifying a DB password secret is mandatory when using an external DB",
+			ExpectedError: "setting spec.central.db.passwordSecret is mandatory when using an external DB",
 		},
 	}
 
