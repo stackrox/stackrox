@@ -611,7 +611,7 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 		withLogImbue:      true,
 		withAccessControl: true,
 		withNotifiers:     true,
-		withCentral:       !env.DisableCentralDiagnostics.BooleanSetting(),
+		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
 		telemetryMode:     0,
 	}
 
@@ -656,7 +656,7 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		withCPUProfile:    false,
 		withLogImbue:      true,
 		withAccessControl: true,
-		withCentral:       !env.DisableCentralDiagnostics.BooleanSetting(),
+		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
 		withNotifiers:     true,
 	}
 
