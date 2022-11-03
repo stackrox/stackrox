@@ -70,6 +70,7 @@ test_upgrade() {
     # TODO(sbostick): run the groovy e2e tests
     export CLUSTER="K8S"
     export ORCHESTRATOR_FLAVOR="k8s"
+    export ROX_AFTERGLOW_PERIOD="15"
     make -C qa-tests-backend multiarch-test || touch FAIL
     store_qa_test_results "multiarch-test"
 
