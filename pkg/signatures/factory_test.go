@@ -68,11 +68,11 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 			},
 			results: []storage.ImageSignatureVerificationResult{
 				{
-					VerifierId: "successful",
-					Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+					VerifierId:              "successful",
+					Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+					VerifiedImageReferences: []string{imgString},
 				},
 			},
-			verifiedReferences: []string{imgString},
 		},
 		"failing verification": {
 			integration: &storage.SignatureIntegration{
@@ -91,14 +91,14 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			results, references := VerifyAgainstSignatureIntegration(context.Background(), c.integration, testImg)
+			results := VerifyAgainstSignatureIntegration(context.Background(), c.integration, testImg)
 			require.Len(t, results, len(c.results))
 			for i, res := range c.results {
 				assert.Equal(t, res.VerifierId, results[i].VerifierId)
 				assert.Equal(t, res.Status, results[i].Status)
 				assert.Contains(t, results[i].Description, res.Description)
+				assert.ElementsMatch(t, results[i].VerifiedImageReferences, res.VerifiedImageReferences)
 			}
-			assert.Equal(t, c.verifiedReferences, references)
 		})
 	}
 }

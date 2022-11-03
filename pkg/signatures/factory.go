@@ -46,7 +46,7 @@ func NewSignatureFetcher() SignatureFetcher {
 // failed. A log entry will be created for a failing creation, and the verification status can be must be checked within
 // the storage.ImageSignatureVerificationResult.
 func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration,
-	image *storage.Image) ([]*storage.ImageSignatureVerificationResult, []string) {
+	image *storage.Image) []*storage.ImageSignatureVerificationResult {
 	verifiers := createVerifiersFromIntegration(integration)
 	var results []*storage.ImageSignatureVerificationResult
 	for _, verifier := range verifiers {
@@ -61,9 +61,10 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 		// be successful. Hence, short-circuit on the first successfully verified signature within an image signature
 		// integration.
 		if res == storage.ImageSignatureVerificationResult_VERIFIED {
+			verificationResult.VerifiedImageReferences = verifiedImageReferences
 			return []*storage.ImageSignatureVerificationResult{
 				verificationResult,
-			}, verifiedImageReferences
+			}
 		}
 		// Right now, we will duplicate the verification result for each SignatureVerifier contained within an image
 		// signature, ensuring all errors are properly returned to the caller.
@@ -73,7 +74,7 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 
 		results = append(results, verificationResult)
 	}
-	return results, nil
+	return results
 }
 
 // VerifyAgainstSignatureIntegrations is a wrapper that will verify an image signature against a list of
@@ -82,18 +83,13 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 // failed. A log entry will be created for a failing creation, and the verification status can be must be checked within
 // the storage.ImageSignatureVerificationResult.
 func VerifyAgainstSignatureIntegrations(ctx context.Context, integrations []*storage.SignatureIntegration,
-	image *storage.Image) ([]*storage.ImageSignatureVerificationResult, map[string]*storage.ImageSignatureVerificationData_ImageReference) {
+	image *storage.Image) []*storage.ImageSignatureVerificationResult {
 	var results []*storage.ImageSignatureVerificationResult
-	verifiedRefsBySignatureIntegrations := make(map[string]*storage.ImageSignatureVerificationData_ImageReference,
-		len(integrations))
 	for _, integration := range integrations {
-		verificationResults, verifiedReferences := VerifyAgainstSignatureIntegration(ctx, integration, image)
+		verificationResults := VerifyAgainstSignatureIntegration(ctx, integration, image)
 		results = append(results, verificationResults...)
-		verifiedRefsBySignatureIntegrations[integration.GetId()] =
-			&storage.ImageSignatureVerificationData_ImageReference{Names: verifiedReferences}
-
 	}
-	return results, verifiedRefsBySignatureIntegrations
+	return results
 }
 
 func createVerifiersFromIntegration(integration *storage.SignatureIntegration) []SignatureVerifier {
