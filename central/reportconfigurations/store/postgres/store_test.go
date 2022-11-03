@@ -55,7 +55,7 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 	store := s.store
 
 	reportConfiguration := &storage.ReportConfiguration{}
-	s.NoError(testutils.FullInit(reportConfiguration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(reportConfiguration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundReportConfiguration, exists, err := store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 	var reportConfigurationIDs []string
 	for i := 0; i < 200; i++ {
 		reportConfiguration := &storage.ReportConfiguration{}
-		s.NoError(testutils.FullInit(reportConfiguration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(reportConfiguration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		reportConfigurations = append(reportConfigurations, reportConfiguration)
 		reportConfigurationIDs = append(reportConfigurationIDs, reportConfiguration.GetId())
 	}

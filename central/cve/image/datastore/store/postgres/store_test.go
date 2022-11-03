@@ -55,7 +55,7 @@ func (s *ImageCvesStoreSuite) TestStore() {
 	store := s.store
 
 	imageCVE := &storage.ImageCVE{}
-	s.NoError(testutils.FullInit(imageCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(imageCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundImageCVE, exists, err := store.Get(ctx, imageCVE.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ImageCvesStoreSuite) TestStore() {
 	var imageCVEIDs []string
 	for i := 0; i < 200; i++ {
 		imageCVE := &storage.ImageCVE{}
-		s.NoError(testutils.FullInit(imageCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(imageCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		imageCVEs = append(imageCVEs, imageCVE)
 		imageCVEIDs = append(imageCVEIDs, imageCVE.GetId())
 	}

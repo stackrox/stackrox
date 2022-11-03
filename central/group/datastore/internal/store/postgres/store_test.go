@@ -55,7 +55,7 @@ func (s *GroupsStoreSuite) TestStore() {
 	store := s.store
 
 	group := &storage.Group{}
-	s.NoError(testutils.FullInit(group, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(group, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundGroup, exists, err := store.Get(ctx, group.GetProps().GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *GroupsStoreSuite) TestStore() {
 	var groupIDs []string
 	for i := 0; i < 200; i++ {
 		group := &storage.Group{}
-		s.NoError(testutils.FullInit(group, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(group, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		groups = append(groups, group)
 		groupIDs = append(groupIDs, group.GetProps().GetId())
 	}

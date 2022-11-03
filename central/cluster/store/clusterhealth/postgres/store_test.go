@@ -55,7 +55,7 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 	store := s.store
 
 	clusterHealthStatus := &storage.ClusterHealthStatus{}
-	s.NoError(testutils.FullInit(clusterHealthStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(clusterHealthStatus, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundClusterHealthStatus, exists, err := store.Get(ctx, clusterHealthStatus.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ClusterHealthStatusesStoreSuite) TestStore() {
 	var clusterHealthStatusIDs []string
 	for i := 0; i < 200; i++ {
 		clusterHealthStatus := &storage.ClusterHealthStatus{}
-		s.NoError(testutils.FullInit(clusterHealthStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(clusterHealthStatus, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		clusterHealthStatuss = append(clusterHealthStatuss, clusterHealthStatus)
 		clusterHealthStatusIDs = append(clusterHealthStatusIDs, clusterHealthStatus.GetId())
 	}

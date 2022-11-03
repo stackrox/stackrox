@@ -55,7 +55,7 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	store := s.store
 
 	imageComponent := &storage.ImageComponent{}
-	s.NoError(testutils.FullInit(imageComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(imageComponent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundImageComponent, exists, err := store.Get(ctx, imageComponent.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	var imageComponentIDs []string
 	for i := 0; i < 200; i++ {
 		imageComponent := &storage.ImageComponent{}
-		s.NoError(testutils.FullInit(imageComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(imageComponent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		imageComponents = append(imageComponents, imageComponent)
 		imageComponentIDs = append(imageComponentIDs, imageComponent.GetId())
 	}

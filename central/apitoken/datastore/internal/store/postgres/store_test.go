@@ -55,7 +55,7 @@ func (s *ApiTokensStoreSuite) TestStore() {
 	store := s.store
 
 	tokenMetadata := &storage.TokenMetadata{}
-	s.NoError(testutils.FullInit(tokenMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(tokenMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundTokenMetadata, exists, err := store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ApiTokensStoreSuite) TestStore() {
 	var tokenMetadataIDs []string
 	for i := 0; i < 200; i++ {
 		tokenMetadata := &storage.TokenMetadata{}
-		s.NoError(testutils.FullInit(tokenMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(tokenMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		tokenMetadatas = append(tokenMetadatas, tokenMetadata)
 		tokenMetadataIDs = append(tokenMetadataIDs, tokenMetadata.GetId())
 	}

@@ -55,7 +55,7 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	store := s.store
 
 	externalBackup := &storage.ExternalBackup{}
-	s.NoError(testutils.FullInit(externalBackup, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(externalBackup, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundExternalBackup, exists, err := store.Get(ctx, externalBackup.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	var externalBackupIDs []string
 	for i := 0; i < 200; i++ {
 		externalBackup := &storage.ExternalBackup{}
-		s.NoError(testutils.FullInit(externalBackup, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(externalBackup, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		externalBackups = append(externalBackups, externalBackup)
 		externalBackupIDs = append(externalBackupIDs, externalBackup.GetId())
 	}

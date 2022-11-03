@@ -55,7 +55,7 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	store := s.store
 
 	networkEntity := &storage.NetworkEntity{}
-	s.NoError(testutils.FullInit(networkEntity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(networkEntity, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundNetworkEntity, exists, err := store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	var networkEntityIDs []string
 	for i := 0; i < 200; i++ {
 		networkEntity := &storage.NetworkEntity{}
-		s.NoError(testutils.FullInit(networkEntity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(networkEntity, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		networkEntitys = append(networkEntitys, networkEntity)
 		networkEntityIDs = append(networkEntityIDs, networkEntity.GetInfo().GetId())
 	}

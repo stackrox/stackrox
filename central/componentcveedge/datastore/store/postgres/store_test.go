@@ -55,7 +55,7 @@ func (s *ImageComponentCveEdgesStoreSuite) TestStore() {
 	store := s.store
 
 	componentCVEEdge := &storage.ComponentCVEEdge{}
-	s.NoError(testutils.FullInit(componentCVEEdge, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(componentCVEEdge, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundComponentCVEEdge, exists, err := store.Get(ctx, componentCVEEdge.GetId())
 	s.NoError(err)

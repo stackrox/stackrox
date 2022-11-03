@@ -55,7 +55,7 @@ func (s *NotifiersStoreSuite) TestStore() {
 	store := s.store
 
 	notifier := &storage.Notifier{}
-	s.NoError(testutils.FullInit(notifier, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(notifier, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundNotifier, exists, err := store.Get(ctx, notifier.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *NotifiersStoreSuite) TestStore() {
 	var notifierIDs []string
 	for i := 0; i < 200; i++ {
 		notifier := &storage.Notifier{}
-		s.NoError(testutils.FullInit(notifier, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(notifier, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		notifiers = append(notifiers, notifier)
 		notifierIDs = append(notifierIDs, notifier.GetId())
 	}

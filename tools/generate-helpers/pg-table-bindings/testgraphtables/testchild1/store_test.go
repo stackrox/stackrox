@@ -55,7 +55,7 @@ func (s *TestChild1StoreSuite) TestStore() {
 	store := s.store
 
 	testChild1 := &storage.TestChild1{}
-	s.NoError(testutils.FullInit(testChild1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(testChild1, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundTestChild1, exists, err := store.Get(ctx, testChild1.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *TestChild1StoreSuite) TestStore() {
 	var testChild1IDs []string
 	for i := 0; i < 200; i++ {
 		testChild1 := &storage.TestChild1{}
-		s.NoError(testutils.FullInit(testChild1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(testChild1, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		testChild1s = append(testChild1s, testChild1)
 		testChild1IDs = append(testChild1IDs, testChild1.GetId())
 	}

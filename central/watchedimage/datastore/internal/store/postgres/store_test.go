@@ -55,7 +55,7 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 	store := s.store
 
 	watchedImage := &storage.WatchedImage{}
-	s.NoError(testutils.FullInit(watchedImage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(watchedImage, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundWatchedImage, exists, err := store.Get(ctx, watchedImage.GetName())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 	var watchedImageIDs []string
 	for i := 0; i < 200; i++ {
 		watchedImage := &storage.WatchedImage{}
-		s.NoError(testutils.FullInit(watchedImage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(watchedImage, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		watchedImages = append(watchedImages, watchedImage)
 		watchedImageIDs = append(watchedImageIDs, watchedImage.GetName())
 	}

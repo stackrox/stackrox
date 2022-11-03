@@ -58,7 +58,7 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	store := s.store
 
 	serviceAccount := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(serviceAccount, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(serviceAccount, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundServiceAccount, exists, err := store.Get(ctx, serviceAccount.GetId())
 	s.NoError(err)
@@ -102,7 +102,7 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	var serviceAccountIDs []string
 	for i := 0; i < 200; i++ {
 		serviceAccount := &storage.ServiceAccount{}
-		s.NoError(testutils.FullInit(serviceAccount, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(serviceAccount, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		serviceAccounts = append(serviceAccounts, serviceAccount)
 		serviceAccountIDs = append(serviceAccountIDs, serviceAccount.GetId())
 	}
@@ -122,7 +122,7 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 
 func (s *ServiceAccountsStoreSuite) TestSACUpsert() {
 	obj := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -141,7 +141,7 @@ func (s *ServiceAccountsStoreSuite) TestSACUpsert() {
 
 func (s *ServiceAccountsStoreSuite) TestSACUpsertMany() {
 	obj := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -160,10 +160,10 @@ func (s *ServiceAccountsStoreSuite) TestSACUpsertMany() {
 
 func (s *ServiceAccountsStoreSuite) TestSACCount() {
 	objA := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -188,10 +188,10 @@ func (s *ServiceAccountsStoreSuite) TestSACCount() {
 
 func (s *ServiceAccountsStoreSuite) TestSACWalk() {
 	objA := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -221,10 +221,10 @@ func (s *ServiceAccountsStoreSuite) TestSACWalk() {
 
 func (s *ServiceAccountsStoreSuite) TestSACGetIDs() {
 	objA := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -249,7 +249,7 @@ func (s *ServiceAccountsStoreSuite) TestSACGetIDs() {
 
 func (s *ServiceAccountsStoreSuite) TestSACExists() {
 	objA := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -273,7 +273,7 @@ func (s *ServiceAccountsStoreSuite) TestSACExists() {
 
 func (s *ServiceAccountsStoreSuite) TestSACGet() {
 	objA := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -302,10 +302,10 @@ func (s *ServiceAccountsStoreSuite) TestSACGet() {
 
 func (s *ServiceAccountsStoreSuite) TestSACDelete() {
 	objA := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -335,10 +335,10 @@ func (s *ServiceAccountsStoreSuite) TestSACDelete() {
 
 func (s *ServiceAccountsStoreSuite) TestSACDeleteMany() {
 	objA := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -370,10 +370,10 @@ func (s *ServiceAccountsStoreSuite) TestSACDeleteMany() {
 
 func (s *ServiceAccountsStoreSuite) TestSACGetMany() {
 	objA := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)

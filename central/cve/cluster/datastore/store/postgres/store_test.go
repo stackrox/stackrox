@@ -55,7 +55,7 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	store := s.store
 
 	clusterCVE := &storage.ClusterCVE{}
-	s.NoError(testutils.FullInit(clusterCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(clusterCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundClusterCVE, exists, err := store.Get(ctx, clusterCVE.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	var clusterCVEIDs []string
 	for i := 0; i < 200; i++ {
 		clusterCVE := &storage.ClusterCVE{}
-		s.NoError(testutils.FullInit(clusterCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(clusterCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		clusterCVEs = append(clusterCVEs, clusterCVE)
 		clusterCVEIDs = append(clusterCVEIDs, clusterCVE.GetId())
 	}

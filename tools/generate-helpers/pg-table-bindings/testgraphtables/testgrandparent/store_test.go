@@ -55,7 +55,7 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	store := s.store
 
 	testGrandparent := &storage.TestGrandparent{}
-	s.NoError(testutils.FullInit(testGrandparent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(testGrandparent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundTestGrandparent, exists, err := store.Get(ctx, testGrandparent.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	var testGrandparentIDs []string
 	for i := 0; i < 200; i++ {
 		testGrandparent := &storage.TestGrandparent{}
-		s.NoError(testutils.FullInit(testGrandparent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(testGrandparent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		testGrandparents = append(testGrandparents, testGrandparent)
 		testGrandparentIDs = append(testGrandparentIDs, testGrandparent.GetId())
 	}

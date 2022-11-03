@@ -55,7 +55,7 @@ func (s *RolesStoreSuite) TestStore() {
 	store := s.store
 
 	role := &storage.Role{}
-	s.NoError(testutils.FullInit(role, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(role, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundRole, exists, err := store.Get(ctx, role.GetName())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *RolesStoreSuite) TestStore() {
 	var roleIDs []string
 	for i := 0; i < 200; i++ {
 		role := &storage.Role{}
-		s.NoError(testutils.FullInit(role, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(role, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		roles = append(roles, role)
 		roleIDs = append(roleIDs, role.GetName())
 	}

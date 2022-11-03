@@ -55,7 +55,7 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	store := s.store
 
 	complianceOperatorScanSettingBinding := &storage.ComplianceOperatorScanSettingBinding{}
-	s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundComplianceOperatorScanSettingBinding, exists, err := store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	var complianceOperatorScanSettingBindingIDs []string
 	for i := 0; i < 200; i++ {
 		complianceOperatorScanSettingBinding := &storage.ComplianceOperatorScanSettingBinding{}
-		s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorScanSettingBindings = append(complianceOperatorScanSettingBindings, complianceOperatorScanSettingBinding)
 		complianceOperatorScanSettingBindingIDs = append(complianceOperatorScanSettingBindingIDs, complianceOperatorScanSettingBinding.GetId())
 	}

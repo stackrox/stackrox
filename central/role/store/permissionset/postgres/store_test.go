@@ -55,7 +55,7 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 	store := s.store
 
 	permissionSet := &storage.PermissionSet{}
-	s.NoError(testutils.FullInit(permissionSet, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(permissionSet, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundPermissionSet, exists, err := store.Get(ctx, permissionSet.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 	var permissionSetIDs []string
 	for i := 0; i < 200; i++ {
 		permissionSet := &storage.PermissionSet{}
-		s.NoError(testutils.FullInit(permissionSet, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(permissionSet, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		permissionSets = append(permissionSets, permissionSet)
 		permissionSetIDs = append(permissionSetIDs, permissionSet.GetId())
 	}

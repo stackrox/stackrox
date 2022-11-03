@@ -55,7 +55,7 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	store := s.store
 
 	networkPolicyApplicationUndoDeploymentRecord := &storage.NetworkPolicyApplicationUndoDeploymentRecord{}
-	s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err := store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	var networkPolicyApplicationUndoDeploymentRecordIDs []string
 	for i := 0; i < 200; i++ {
 		networkPolicyApplicationUndoDeploymentRecord := &storage.NetworkPolicyApplicationUndoDeploymentRecord{}
-		s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		networkPolicyApplicationUndoDeploymentRecords = append(networkPolicyApplicationUndoDeploymentRecords, networkPolicyApplicationUndoDeploymentRecord)
 		networkPolicyApplicationUndoDeploymentRecordIDs = append(networkPolicyApplicationUndoDeploymentRecordIDs, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
 	}

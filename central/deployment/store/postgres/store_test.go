@@ -58,7 +58,7 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	store := s.store
 
 	deployment := &storage.Deployment{}
-	s.NoError(testutils.FullInit(deployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(deployment, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundDeployment, exists, err := store.Get(ctx, deployment.GetId())
 	s.NoError(err)
@@ -102,7 +102,7 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	var deploymentIDs []string
 	for i := 0; i < 200; i++ {
 		deployment := &storage.Deployment{}
-		s.NoError(testutils.FullInit(deployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(deployment, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		deployments = append(deployments, deployment)
 		deploymentIDs = append(deploymentIDs, deployment.GetId())
 	}
@@ -122,7 +122,7 @@ func (s *DeploymentsStoreSuite) TestStore() {
 
 func (s *DeploymentsStoreSuite) TestSACUpsert() {
 	obj := &storage.Deployment{}
-	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -141,7 +141,7 @@ func (s *DeploymentsStoreSuite) TestSACUpsert() {
 
 func (s *DeploymentsStoreSuite) TestSACUpsertMany() {
 	obj := &storage.Deployment{}
-	s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
@@ -160,10 +160,10 @@ func (s *DeploymentsStoreSuite) TestSACUpsertMany() {
 
 func (s *DeploymentsStoreSuite) TestSACCount() {
 	objA := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -188,10 +188,10 @@ func (s *DeploymentsStoreSuite) TestSACCount() {
 
 func (s *DeploymentsStoreSuite) TestSACWalk() {
 	objA := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -221,10 +221,10 @@ func (s *DeploymentsStoreSuite) TestSACWalk() {
 
 func (s *DeploymentsStoreSuite) TestSACGetIDs() {
 	objA := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -249,7 +249,7 @@ func (s *DeploymentsStoreSuite) TestSACGetIDs() {
 
 func (s *DeploymentsStoreSuite) TestSACExists() {
 	objA := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -273,7 +273,7 @@ func (s *DeploymentsStoreSuite) TestSACExists() {
 
 func (s *DeploymentsStoreSuite) TestSACGet() {
 	objA := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
@@ -302,10 +302,10 @@ func (s *DeploymentsStoreSuite) TestSACGet() {
 
 func (s *DeploymentsStoreSuite) TestSACDelete() {
 	objA := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -335,10 +335,10 @@ func (s *DeploymentsStoreSuite) TestSACDelete() {
 
 func (s *DeploymentsStoreSuite) TestSACDeleteMany() {
 	objA := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 
 	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
@@ -370,10 +370,10 @@ func (s *DeploymentsStoreSuite) TestSACDeleteMany() {
 
 func (s *DeploymentsStoreSuite) TestSACGetMany() {
 	objA := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.Deployment{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)

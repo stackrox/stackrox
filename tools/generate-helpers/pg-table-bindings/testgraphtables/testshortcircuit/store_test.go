@@ -55,7 +55,7 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 	store := s.store
 
 	testShortCircuit := &storage.TestShortCircuit{}
-	s.NoError(testutils.FullInit(testShortCircuit, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(testShortCircuit, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundTestShortCircuit, exists, err := store.Get(ctx, testShortCircuit.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 	var testShortCircuitIDs []string
 	for i := 0; i < 200; i++ {
 		testShortCircuit := &storage.TestShortCircuit{}
-		s.NoError(testutils.FullInit(testShortCircuit, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(testShortCircuit, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		testShortCircuits = append(testShortCircuits, testShortCircuit)
 		testShortCircuitIDs = append(testShortCircuitIDs, testShortCircuit.GetId())
 	}

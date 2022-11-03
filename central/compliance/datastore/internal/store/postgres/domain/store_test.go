@@ -55,7 +55,7 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 	store := s.store
 
 	complianceDomain := &storage.ComplianceDomain{}
-	s.NoError(testutils.FullInit(complianceDomain, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(complianceDomain, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundComplianceDomain, exists, err := store.Get(ctx, complianceDomain.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 	var complianceDomainIDs []string
 	for i := 0; i < 200; i++ {
 		complianceDomain := &storage.ComplianceDomain{}
-		s.NoError(testutils.FullInit(complianceDomain, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(complianceDomain, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		complianceDomains = append(complianceDomains, complianceDomain)
 		complianceDomainIDs = append(complianceDomainIDs, complianceDomain.GetId())
 	}

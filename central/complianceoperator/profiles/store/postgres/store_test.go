@@ -55,7 +55,7 @@ func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
 	store := s.store
 
 	complianceOperatorProfile := &storage.ComplianceOperatorProfile{}
-	s.NoError(testutils.FullInit(complianceOperatorProfile, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(complianceOperatorProfile, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundComplianceOperatorProfile, exists, err := store.Get(ctx, complianceOperatorProfile.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
 	var complianceOperatorProfileIDs []string
 	for i := 0; i < 200; i++ {
 		complianceOperatorProfile := &storage.ComplianceOperatorProfile{}
-		s.NoError(testutils.FullInit(complianceOperatorProfile, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(complianceOperatorProfile, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorProfiles = append(complianceOperatorProfiles, complianceOperatorProfile)
 		complianceOperatorProfileIDs = append(complianceOperatorProfileIDs, complianceOperatorProfile.GetId())
 	}

@@ -55,7 +55,7 @@ func (s *PoliciesStoreSuite) TestStore() {
 	store := s.store
 
 	policy := &storage.Policy{}
-	s.NoError(testutils.FullInit(policy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(policy, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundPolicy, exists, err := store.Get(ctx, policy.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *PoliciesStoreSuite) TestStore() {
 	var policyIDs []string
 	for i := 0; i < 200; i++ {
 		policy := &storage.Policy{}
-		s.NoError(testutils.FullInit(policy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(policy, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		policys = append(policys, policy)
 		policyIDs = append(policyIDs, policy.GetId())
 	}

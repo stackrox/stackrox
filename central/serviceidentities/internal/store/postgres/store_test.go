@@ -55,7 +55,7 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	store := s.store
 
 	serviceIdentity := &storage.ServiceIdentity{}
-	s.NoError(testutils.FullInit(serviceIdentity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(serviceIdentity, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundServiceIdentity, exists, err := store.Get(ctx, serviceIdentity.GetSerialStr())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	var serviceIdentityIDs []string
 	for i := 0; i < 200; i++ {
 		serviceIdentity := &storage.ServiceIdentity{}
-		s.NoError(testutils.FullInit(serviceIdentity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(serviceIdentity, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		serviceIdentitys = append(serviceIdentitys, serviceIdentity)
 		serviceIdentityIDs = append(serviceIdentityIDs, serviceIdentity.GetSerialStr())
 	}

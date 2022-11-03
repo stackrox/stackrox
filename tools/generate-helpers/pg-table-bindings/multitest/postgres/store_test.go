@@ -55,7 +55,7 @@ func (s *TestMultiKeyStructsStoreSuite) TestStore() {
 	store := s.store
 
 	testMultiKeyStruct := &storage.TestMultiKeyStruct{}
-	s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundTestMultiKeyStruct, exists, err := store.Get(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *TestMultiKeyStructsStoreSuite) TestStore() {
 	var testMultiKeyStructIDs []string
 	for i := 0; i < 200; i++ {
 		testMultiKeyStruct := &storage.TestMultiKeyStruct{}
-		s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		testMultiKeyStructs = append(testMultiKeyStructs, testMultiKeyStruct)
 		testMultiKeyStructIDs = append(testMultiKeyStructIDs, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	}

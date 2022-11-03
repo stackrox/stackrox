@@ -55,7 +55,7 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	store := s.store
 
 	initBundleMeta := &storage.InitBundleMeta{}
-	s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(initBundleMeta, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundInitBundleMeta, exists, err := store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	var initBundleMetaIDs []string
 	for i := 0; i < 200; i++ {
 		initBundleMeta := &storage.InitBundleMeta{}
-		s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(initBundleMeta, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		initBundleMetas = append(initBundleMetas, initBundleMeta)
 		initBundleMetaIDs = append(initBundleMetaIDs, initBundleMeta.GetId())
 	}

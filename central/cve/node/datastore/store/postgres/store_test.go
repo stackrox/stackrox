@@ -55,7 +55,7 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	store := s.store
 
 	nodeCVE := &storage.NodeCVE{}
-	s.NoError(testutils.FullInit(nodeCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(nodeCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundNodeCVE, exists, err := store.Get(ctx, nodeCVE.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	var nodeCVEIDs []string
 	for i := 0; i < 200; i++ {
 		nodeCVE := &storage.NodeCVE{}
-		s.NoError(testutils.FullInit(nodeCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(nodeCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		nodeCVEs = append(nodeCVEs, nodeCVE)
 		nodeCVEIDs = append(nodeCVEIDs, nodeCVE.GetId())
 	}

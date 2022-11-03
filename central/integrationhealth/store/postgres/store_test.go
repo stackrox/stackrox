@@ -55,7 +55,7 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 	store := s.store
 
 	integrationHealth := &storage.IntegrationHealth{}
-	s.NoError(testutils.FullInit(integrationHealth, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(integrationHealth, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundIntegrationHealth, exists, err := store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 	var integrationHealthIDs []string
 	for i := 0; i < 200; i++ {
 		integrationHealth := &storage.IntegrationHealth{}
-		s.NoError(testutils.FullInit(integrationHealth, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(integrationHealth, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		integrationHealths = append(integrationHealths, integrationHealth)
 		integrationHealthIDs = append(integrationHealthIDs, integrationHealth.GetId())
 	}

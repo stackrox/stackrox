@@ -55,7 +55,7 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	store := s.store
 
 	policyCategory := &storage.PolicyCategory{}
-	s.NoError(testutils.FullInit(policyCategory, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(policyCategory, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundPolicyCategory, exists, err := store.Get(ctx, policyCategory.GetId())
 	s.NoError(err)
@@ -99,7 +99,7 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	var policyCategoryIDs []string
 	for i := 0; i < 200; i++ {
 		policyCategory := &storage.PolicyCategory{}
-		s.NoError(testutils.FullInit(policyCategory, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.NoError(testutils.FullInit(policyCategory, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 		policyCategorys = append(policyCategorys, policyCategory)
 		policyCategoryIDs = append(policyCategoryIDs, policyCategory.GetId())
 	}
