@@ -50,7 +50,7 @@ func (n *NodeInventoryCollector) Scan(nodeName string) (*storage.NodeInventory, 
 	return m, nil
 }
 
-func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Components {
+func protoComponentsFromScanComponents(c *nodes.Components) *storage.NodeInventory_Components {
 	if c == nil {
 		return nil
 	}
@@ -66,11 +66,9 @@ func protoComponentsFromScanComponents(c *nodes.Components) *scannerV1.Component
 	// For now, we only care about RHEL components, but this must be extended once we support non-RHCOS
 	rhelComponents := convertAndDedupRHELComponents(c.CertifiedRHELComponents)
 
-	protoComponents := &scannerV1.Components{
-		Namespace:          namespace,
-		OsComponents:       nil,
-		RhelComponents:     rhelComponents,
-		LanguageComponents: nil,
+	protoComponents := &storage.NodeInventory_Components{
+		Namespace:      namespace,
+		RhelComponents: rhelComponents,
 	}
 	return protoComponents
 }

@@ -170,6 +170,80 @@
         }
       }
     },
+    "scannerV1Executable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "requiredFeatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1FeatureNameVersion"
+          }
+        }
+      }
+    },
+    "scannerV1FeatureNameVersion": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1Note": {
+      "type": "string",
+      "enum": [
+        "OS_CVES_UNAVAILABLE",
+        "OS_CVES_STALE",
+        "LANGUAGE_CVES_UNAVAILABLE",
+        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
+      ],
+      "default": "OS_CVES_UNAVAILABLE"
+    },
+    "scannerV1RHELComponent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "cpes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "addedBy": {
+          "type": "string"
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1Executable"
+          }
+        }
+      }
+    },
     "storageCVEInfo": {
       "type": "object",
       "properties": {
@@ -618,6 +692,10 @@
           "format": "date-time",
           "description": "Time we received an update from Kubernetes."
         },
+        "nodeInventory": {
+          "$ref": "#/definitions/storageNodeInventory",
+          "description": "NodeInventory contains a list of components discovered on the node.\nIt will be in the DB in serialized form, but no dedicated field or table will be created thanks to \"sql:-\"."
+        },
         "scan": {
           "$ref": "#/definitions/storageNodeScan"
         },
@@ -652,7 +730,43 @@
           }
         }
       },
-      "title": "Node represents information about a node in the cluster.\nnext available tag: 28"
+      "title": "Node represents information about a node in the cluster.\nnext available tag: 29"
+    },
+    "storageNodeInventory": {
+      "type": "object",
+      "properties": {
+        "nodeName": {
+          "type": "string"
+        },
+        "scanTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "components": {
+          "$ref": "#/definitions/storageNodeInventoryComponents"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1Note"
+          }
+        }
+      }
+    },
+    "storageNodeInventoryComponents": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "rhelComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1RHELComponent"
+          }
+        }
+      },
+      "title": "This represents subset of scannerV1.Components required for RHCOS Node scanning\nWe are not using scannerV1.Components to avoid conflicts when generating the code in central/graphql/resolvers/generated.go"
     },
     "storageNodeNote": {
       "type": "string",

@@ -19,10 +19,9 @@ func TestNodeInventoryHandler(t *testing.T) {
 
 func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 	msg := &storage.NodeInventory{
-		NodeId:   "",
 		NodeName: nodeName,
 		ScanTime: timestamp.TimestampNow(),
-		Components: &scannerV1.Components{
+		Components: &storage.NodeInventory_Components{
 			Namespace: "Testme OS",
 			RhelComponents: []*scannerV1.RHELComponent{
 				{
@@ -36,7 +35,6 @@ func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 					AddedBy:   "hardcoded",
 				},
 			},
-			LanguageComponents: nil,
 		},
 		Notes: nil,
 	}

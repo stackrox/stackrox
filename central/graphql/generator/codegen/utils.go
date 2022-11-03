@@ -41,6 +41,12 @@ func plural(s string) string {
 }
 
 func importedName(p reflect.Type) string {
+	// Handle collision of "v1":
+	// "github.com/stackrox/rox/generated/api/v1"
+	// "github.com/stackrox/scanner/generated/scanner/api/v1"
+	if strings.HasSuffix(p.PkgPath(), "scanner/generated/scanner/api/v1") {
+		return fmt.Sprintf("scannerV1.%s", p.Name())
+	}
 	split := strings.Split(p.PkgPath(), "/")
 	return fmt.Sprintf("%s.%s", split[len(split)-1], p.Name())
 }

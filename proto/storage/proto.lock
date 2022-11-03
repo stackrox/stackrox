@@ -10019,6 +10019,17 @@
                 ]
               },
               {
+                "id": 28,
+                "name": "node_inventory",
+                "type": "NodeInventory",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"-\""
+                  }
+                ]
+              },
+              {
                 "id": 18,
                 "name": "scan",
                 "type": "NodeScan",
@@ -10177,47 +10188,48 @@
             "fields": [
               {
                 "id": 1,
-                "name": "node_id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Node ID,store\"sql:\"pk,type(uuid)\""
-                  }
-                ]
+                "name": "node_name",
+                "type": "string"
               },
               {
                 "id": 2,
-                "name": "node_name",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Node,store\""
-                  }
-                ]
+                "name": "scan_time",
+                "type": "google.protobuf.Timestamp"
               },
               {
                 "id": 3,
-                "name": "scan_time",
-                "type": "google.protobuf.Timestamp",
+                "name": "components",
+                "type": "Components",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Node Scan Time,store\""
+                    "value": "sql:\"-\""
                   }
                 ]
               },
               {
                 "id": 4,
-                "name": "components",
-                "type": "scannerV1.Components"
-              },
-              {
-                "id": 5,
                 "name": "notes",
                 "type": "scannerV1.Note",
                 "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Components",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "namespace",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "rhel_components",
+                    "type": "scannerV1.RHELComponent",
+                    "is_repeated": true
+                  }
+                ]
               }
             ]
           },

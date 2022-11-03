@@ -9,7 +9,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage" // end range imports
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/scanner/generated/scanner/api/v1" // end range imports
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -597,12 +598,20 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Exclusion_Image", []string{
 		"name: String!",
 	}))
+	utils.Must(builder.AddType("Executable", []string{
+		"path: String!",
+		"requiredFeatures: [FeatureNameVersion]!",
+	}))
 	utils.Must(builder.AddType("FalsePositiveRequest", []string{
 	}))
 	utils.Must(builder.AddInput("FalsePositiveVulnRequest", []string{
 		"comment: String",
 		"cve: String",
 		"scope: VulnReqScope",
+	}))
+	utils.Must(builder.AddType("FeatureNameVersion", []string{
+		"name: String!",
+		"version: String!",
 	}))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
 		"metadata: TokenMetadata",
@@ -879,6 +888,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"labels: [Label!]!",
 		"lastUpdated: Time",
 		"name: String!",
+		"nodeInventory: NodeInventory",
 		"notes: [Node_Note!]!",
 		"operatingSystem: String!",
 		"osImage: String!",
@@ -905,6 +915,16 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"riskScore: Float!",
 		"version: String!",
 	}))
+	utils.Must(builder.AddType("NodeInventory", []string{
+		"components: NodeInventory_Components",
+		"nodeName: String!",
+		"notes: [Note!]!",
+		"scanTime: Time",
+	}))
+	utils.Must(builder.AddType("NodeInventory_Components", []string{
+		"namespace: String!",
+		"rhelComponents: [RHELComponent]!",
+	}))
 	utils.Must(builder.AddType("NodeScan", []string{
 		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
@@ -912,6 +932,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(scannerV1.Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
 		"cscc: CSCC",
@@ -1100,6 +1121,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"GoogleProviderMetadata",
 		"AWSProviderMetadata",
 		"AzureProviderMetadata",
+	}))
+	utils.Must(builder.AddType("RHELComponent", []string{
+		"addedBy: String!",
+		"arch: String!",
+		"cpes: [String!]!",
+		"executables: [Executable]!",
+		"id: Int!",
+		"module: String!",
+		"name: String!",
+		"namespace: String!",
+		"version: String!",
 	}))
 	utils.Must(builder.AddType("ReadinessProbe", []string{
 		"defined: Boolean!",
@@ -7269,6 +7301,58 @@ func (resolver *exclusion_ImageResolver) Name(ctx context.Context) string {
 	return value
 }
 
+type executableResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *scannerV1.Executable
+}
+
+func (resolver *Resolver) wrapExecutable(value *scannerV1.Executable, ok bool, err error) (*executableResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &executableResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapExecutables(values []*scannerV1.Executable, err error) ([]*executableResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*executableResolver, len(values))
+	for i, v := range values {
+		output[i] = &executableResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapExecutableWithContext(ctx context.Context, value *scannerV1.Executable, ok bool, err error) (*executableResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &executableResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapExecutablesWithContext(ctx context.Context, values []*scannerV1.Executable, err error) ([]*executableResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*executableResolver, len(values))
+	for i, v := range values {
+		output[i] = &executableResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *executableResolver) Path(ctx context.Context) string {
+	value := resolver.data.GetPath()
+	return value
+}
+
+func (resolver *executableResolver) RequiredFeatures(ctx context.Context) ([]*featureNameVersionResolver, error) {
+	value := resolver.data.GetRequiredFeatures()
+	return resolver.root.wrapFeatureNameVersions(value, nil)
+}
+
 type falsePositiveRequestResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -7309,6 +7393,58 @@ func (resolver *Resolver) wrapFalsePositiveRequestsWithContext(ctx context.Conte
 		output[i] = &falsePositiveRequestResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+type featureNameVersionResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *scannerV1.FeatureNameVersion
+}
+
+func (resolver *Resolver) wrapFeatureNameVersion(value *scannerV1.FeatureNameVersion, ok bool, err error) (*featureNameVersionResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &featureNameVersionResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapFeatureNameVersions(values []*scannerV1.FeatureNameVersion, err error) ([]*featureNameVersionResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*featureNameVersionResolver, len(values))
+	for i, v := range values {
+		output[i] = &featureNameVersionResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapFeatureNameVersionWithContext(ctx context.Context, value *scannerV1.FeatureNameVersion, ok bool, err error) (*featureNameVersionResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &featureNameVersionResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapFeatureNameVersionsWithContext(ctx context.Context, values []*scannerV1.FeatureNameVersion, err error) ([]*featureNameVersionResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*featureNameVersionResolver, len(values))
+	for i, v := range values {
+		output[i] = &featureNameVersionResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *featureNameVersionResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *featureNameVersionResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
+	return value
 }
 
 type generateTokenResponseResolver struct {
@@ -10172,6 +10308,11 @@ func (resolver *nodeResolver) Name(ctx context.Context) string {
 	return value
 }
 
+func (resolver *nodeResolver) NodeInventory(ctx context.Context) (*nodeInventoryResolver, error) {
+	value := resolver.data.GetNodeInventory()
+	return resolver.root.wrapNodeInventory(value, true, nil)
+}
+
 func (resolver *nodeResolver) Notes(ctx context.Context) []string {
 	value := resolver.data.GetNotes()
 	return stringSlice(value)
@@ -10361,6 +10502,120 @@ func (resolver *nodeComponentResolver) Version(ctx context.Context) string {
 	return value
 }
 
+type nodeInventoryResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeInventory
+}
+
+func (resolver *Resolver) wrapNodeInventory(value *storage.NodeInventory, ok bool, err error) (*nodeInventoryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventoryResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventories(values []*storage.NodeInventory, err error) ([]*nodeInventoryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventoryResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventoryResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapNodeInventoryWithContext(ctx context.Context, value *storage.NodeInventory, ok bool, err error) (*nodeInventoryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventoryResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventoriesWithContext(ctx context.Context, values []*storage.NodeInventory, err error) ([]*nodeInventoryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventoryResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventoryResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeInventoryResolver) Components(ctx context.Context) (*nodeInventory_ComponentsResolver, error) {
+	value := resolver.data.GetComponents()
+	return resolver.root.wrapNodeInventory_Components(value, true, nil)
+}
+
+func (resolver *nodeInventoryResolver) NodeName(ctx context.Context) string {
+	value := resolver.data.GetNodeName()
+	return value
+}
+
+func (resolver *nodeInventoryResolver) Notes(ctx context.Context) []string {
+	value := resolver.data.GetNotes()
+	return stringSlice(value)
+}
+
+func (resolver *nodeInventoryResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetScanTime()
+	return timestamp(value)
+}
+
+type nodeInventory_ComponentsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeInventory_Components
+}
+
+func (resolver *Resolver) wrapNodeInventory_Components(value *storage.NodeInventory_Components, ok bool, err error) (*nodeInventory_ComponentsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventory_ComponentsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_Componentses(values []*storage.NodeInventory_Components, err error) ([]*nodeInventory_ComponentsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventory_ComponentsResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventory_ComponentsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_ComponentsWithContext(ctx context.Context, value *storage.NodeInventory_Components, ok bool, err error) (*nodeInventory_ComponentsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeInventory_ComponentsResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeInventory_ComponentsesWithContext(ctx context.Context, values []*storage.NodeInventory_Components, err error) ([]*nodeInventory_ComponentsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeInventory_ComponentsResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeInventory_ComponentsResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeInventory_ComponentsResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *nodeInventory_ComponentsResolver) RhelComponents(ctx context.Context) ([]*rHELComponentResolver, error) {
+	value := resolver.data.GetRhelComponents()
+	return resolver.root.wrapRHELComponents(value, nil)
+}
+
 type nodeScanResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -10450,6 +10705,24 @@ func toNode_Notes(values *[]string) []storage.Node_Note {
 	output := make([]storage.Node_Note, len(*values))
 	for i, v := range *values {
 		output[i] = toNode_Note(&v)
+	}
+	return output
+}
+
+func toNote(value *string) scannerV1.Note {
+	if value != nil {
+		return scannerV1.Note(scannerV1.Note_value[*value])
+	}
+	return scannerV1.Note(0)
+}
+
+func toNotes(values *[]string) []scannerV1.Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]scannerV1.Note, len(*values))
+	for i, v := range *values {
+		output[i] = toNote(&v)
 	}
 	return output
 }
@@ -12054,6 +12327,93 @@ func (resolver *providerMetadataProviderResolver) ToAWSProviderMetadata() (*aWSP
 func (resolver *providerMetadataProviderResolver) ToAzureProviderMetadata() (*azureProviderMetadataResolver, bool) {
 	res, ok := resolver.resolver.(*azureProviderMetadataResolver)
 	return res, ok
+}
+
+type rHELComponentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *scannerV1.RHELComponent
+}
+
+func (resolver *Resolver) wrapRHELComponent(value *scannerV1.RHELComponent, ok bool, err error) (*rHELComponentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &rHELComponentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapRHELComponents(values []*scannerV1.RHELComponent, err error) ([]*rHELComponentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*rHELComponentResolver, len(values))
+	for i, v := range values {
+		output[i] = &rHELComponentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapRHELComponentWithContext(ctx context.Context, value *scannerV1.RHELComponent, ok bool, err error) (*rHELComponentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &rHELComponentResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapRHELComponentsWithContext(ctx context.Context, values []*scannerV1.RHELComponent, err error) ([]*rHELComponentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*rHELComponentResolver, len(values))
+	for i, v := range values {
+		output[i] = &rHELComponentResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *rHELComponentResolver) AddedBy(ctx context.Context) string {
+	value := resolver.data.GetAddedBy()
+	return value
+}
+
+func (resolver *rHELComponentResolver) Arch(ctx context.Context) string {
+	value := resolver.data.GetArch()
+	return value
+}
+
+func (resolver *rHELComponentResolver) Cpes(ctx context.Context) []string {
+	value := resolver.data.GetCpes()
+	return value
+}
+
+func (resolver *rHELComponentResolver) Executables(ctx context.Context) ([]*executableResolver, error) {
+	value := resolver.data.GetExecutables()
+	return resolver.root.wrapExecutables(value, nil)
+}
+
+func (resolver *rHELComponentResolver) Id(ctx context.Context) int32 {
+	value := resolver.data.GetId()
+	return int32(value)
+}
+
+func (resolver *rHELComponentResolver) Module(ctx context.Context) string {
+	value := resolver.data.GetModule()
+	return value
+}
+
+func (resolver *rHELComponentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *rHELComponentResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *rHELComponentResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
+	return value
 }
 
 type readinessProbeResolver struct {

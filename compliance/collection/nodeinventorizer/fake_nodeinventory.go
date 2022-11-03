@@ -19,10 +19,9 @@ type FakeNodeInventorizer struct {
 func (f *FakeNodeInventorizer) Scan(nodeName string) (*storage.NodeInventory, error) {
 	log.Infof("Generating fake scan result message...")
 	msg := &storage.NodeInventory{
-		NodeId:   "",
 		NodeName: nodeName,
 		ScanTime: timestamp.TimestampNow(),
-		Components: &scannerV1.Components{
+		Components: &storage.NodeInventory_Components{
 			Namespace: "Testme OS",
 			RhelComponents: []*scannerV1.RHELComponent{
 				{
@@ -43,7 +42,6 @@ func (f *FakeNodeInventorizer) Scan(nodeName string) (*storage.NodeInventory, er
 					AddedBy:   "FakeLayer",
 				},
 			},
-			LanguageComponents: nil,
 		},
 		Notes: []scannerV1.Note{scannerV1.Note_LANGUAGE_CVES_UNAVAILABLE},
 	}

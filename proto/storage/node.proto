@@ -16,7 +16,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 // Node represents information about a node in the cluster.
-// next available tag: 28
+// next available tag: 29
 message Node {
     // A unique ID identifying this node.
     string id                              = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk,type(uuid)"'];
@@ -49,6 +49,9 @@ message Node {
     // Time we received an update from Kubernetes.
     google.protobuf.Timestamp k8s_updated  = 26 [(gogoproto.moretags) = 'sensorhash:"ignore"'];
 
+    // NodeInventory contains a list of components discovered on the node.
+    // It will be in the DB in serialized form, but no dedicated field or table will be created thanks to "sql:-".
+    NodeInventory node_inventory           = 28 [(gogoproto.moretags) = 'sql:"-"'];
     NodeScan scan                          = 18 [(gogoproto.moretags) = 'policy:"Node Scan"'];
     oneof set_components {
         int32 components                   = 19 [(gogoproto.moretags) = 'search:"Component Count,store,hidden"'];
@@ -86,11 +89,17 @@ message NodeScan {
 }
 
 message NodeInventory {
-    string                         node_id    = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk,type(uuid)"'];
-    string                         node_name  = 2 [(gogoproto.moretags) = 'search:"Node,store"'];
-    google.protobuf.Timestamp      scan_time  = 3 [(gogoproto.moretags) = 'search:"Node Scan Time,store"'];
-    scannerV1.Components           components = 4;
-    repeated scannerV1.Note        notes      = 5;
+    string                         node_name  = 1;
+    google.protobuf.Timestamp      scan_time  = 2;
+
+    // This represents subset of scannerV1.Components required for RHCOS Node scanning
+    // We are not using scannerV1.Components to avoid conflicts when generating the code in central/graphql/resolvers/generated.go
+    message Components {
+        string                                     namespace     = 1;
+        repeated scannerV1.RHELComponent     rhel_components     = 2;
+    }
+    Components                     components = 3 [(gogoproto.moretags) = 'sql:"-"'];
+    repeated scannerV1.Note        notes      = 4;
 }
 
 message EmbeddedNodeScanComponent {
