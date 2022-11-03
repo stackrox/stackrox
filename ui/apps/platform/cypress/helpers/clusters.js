@@ -137,10 +137,13 @@ export function visitDashboardWithNoClusters() {
             },
         },
     }).as('summary_counts');
+    cy.intercept('GET', api.clusters.list, {
+        clusters: [],
+    }).as('clusters');
 
     // visitMainDashboard(); // with a count of 0 clusters, app should redirect to the clusters pages
     cy.visit('/main/dashboard'); // with a count of 0 clusters, app should redirect to the clusters pages
 
-    cy.wait(['@summary_counts']);
+    cy.wait(['@summary_counts', '@clusters']);
     cy.get(selectors.clustersListHeading);
 }

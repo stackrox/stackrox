@@ -56,6 +56,8 @@ describe('Clusters page', () => {
 
             cy.url().should('contain', `${clustersUrl}`);
 
+            cy.get(selectors.clustersListHeading);
+
             cy.get(
                 'p:contains("You have successfully deployed a Red Hat Advanced Cluster Security platform.")'
             );
