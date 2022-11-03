@@ -1,5 +1,6 @@
 import { selectors } from '../../constants/ViolationsPage';
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
     clickDeploymentTabWithFixture,
     sortViolationsTableByColumn,
@@ -21,6 +22,12 @@ describe('Violations page', () => {
         visitViolations();
 
         cy.get(selectors.navLink).should('have.class', 'pf-m-current');
+    });
+
+    it('should have title', () => {
+        visitViolations();
+
+        cy.title().should('match', getRegExpForTitleWithBranding('Violations'));
     });
 
     it('should have violations in table', () => {

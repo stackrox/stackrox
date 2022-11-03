@@ -5,6 +5,7 @@ import {
 } from '../../constants/apiEndpoints';
 
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 const h1 = 'Access Control';
 const h2 = 'Access scopes';
@@ -41,6 +42,9 @@ describe('Access Control Access scopes', () => {
     it('list has headings, link, button, and table head cells, and no breadcrumbs', () => {
         visitAccessScopes();
 
+        // Table has plural noun in title.
+        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - ${h2}`));
+
         cy.get(selectors.breadcrumbNav).should('not.exist');
 
         cy.get(selectors.h1).should('have.text', h1);
@@ -67,6 +71,9 @@ describe('Access Control Access scopes', () => {
 
         const name = 'Deny All';
         cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
+
+        // Form has singular noun in title.
+        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - Access scope`));
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${name}")`);

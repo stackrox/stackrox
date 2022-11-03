@@ -11,6 +11,7 @@ import {
     visitClusterByNameWithFixtureMetadataDatetime,
 } from '../../helpers/clusters';
 import { hasFeatureFlag } from '../../helpers/features';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 describe('Clusters page', () => {
     withAuth();
@@ -18,6 +19,12 @@ describe('Clusters page', () => {
     describe('smoke tests', () => {
         it('should be linked in the Platform Configuration menu', () => {
             visitClustersFromLeftNav();
+        });
+
+        it('should have title', () => {
+            visitClusters();
+
+            cy.title().should('match', getRegExpForTitleWithBranding('Clusters'));
         });
 
         it('should have a toggle control for the auto-upgrade setting', () => {

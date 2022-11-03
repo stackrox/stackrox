@@ -6,6 +6,7 @@ import {
 import * as api from '../../constants/apiEndpoints';
 import sampleCert from '../../helpers/sampleCert';
 import { generateNameWithDate, getInputByLabel } from '../../helpers/formHelpers';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import { visit, visitWithStaticResponseForPermissions } from '../../helpers/visit';
 import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAccessRole.json';
 
@@ -70,6 +71,9 @@ describe('Access Control Auth providers', () => {
         };
         visitAuthProviders(staticResponseMap);
 
+        // Table has plural noun in title.
+        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - ${h2}`));
+
         cy.get(`${selectors.list.th}:contains("Name")`);
         cy.get(`${selectors.list.th}:contains("Type")`);
         cy.get(`${selectors.list.th}:contains("Minimum access role")`);
@@ -83,6 +87,9 @@ describe('Access Control Auth providers', () => {
 
         cy.get(selectors.list.createButton).click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
+
+        // Form has singular noun in title.
+        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - Auth provider`));
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);

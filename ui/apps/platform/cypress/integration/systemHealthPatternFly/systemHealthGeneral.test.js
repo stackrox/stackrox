@@ -4,6 +4,7 @@ import {
     visitSystemHealth,
     visitSystemHealthFromLeftNav,
 } from '../../helpers/systemHealthPatternFly';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import navSelectors from '../../selectors/navigation';
 
 describe('System Health general', () => {
@@ -27,5 +28,11 @@ describe('System Health general', () => {
             'have.class',
             'pf-m-current'
         );
+    });
+
+    it('should have title', () => {
+        visitSystemHealth();
+
+        cy.title().should('match', getRegExpForTitleWithBranding('System Health'));
     });
 });
