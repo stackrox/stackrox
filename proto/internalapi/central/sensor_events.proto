@@ -68,7 +68,6 @@ message SensorEvent {
         storage.NamespaceMetadata      namespace          = 6;
         storage.Secret                 secret             = 7;
         storage.Node                   node               = 9;
-        storage.NodeInventory          node_inventory     = 25;
         storage.ServiceAccount         service_account    = 14;
         storage.K8sRole                role               = 15;
         storage.K8sRoleBinding         binding            = 16;
