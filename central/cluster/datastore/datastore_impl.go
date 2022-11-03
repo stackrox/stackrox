@@ -314,7 +314,7 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 	}
 	_, found := ds.nameToIDCache.Get(cluster.Name)
 	if found {
-		return "", errox.AlreadyExists.Newf("cannot add cluster %s, it already exists", cluster.GetName())
+		return "", errox.AlreadyExists.Newf("the cluster with name %s exists, cannot re-add it", cluster.GetName())
 	}
 
 	ds.lock.Lock()
