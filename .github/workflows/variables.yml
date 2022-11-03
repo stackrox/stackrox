@@ -65,6 +65,7 @@ jobs:
           EXPR = r'(?P<release>\d+\.\d+)\.(?P<patch>\d+)(-(?P<name>\w+(-\w+)*))?(-rc\.(?P<rc>\d+))?$'
 
           version = '${{ inputs.version }}'
+          version = '3.72.2-rc.1'
           m = re.match(EXPR, version)
           if not m:
               print(f'::error::Cannot parse "{version}": should be in a form of `X.X.X[-name][-rc.X]`, where `X` is a decimal number.')
