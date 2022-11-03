@@ -153,14 +153,14 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		// On removes, we may not get the owning deployment ID if the deployment was deleted before the pod.
 		// This is okay. We still want to send the remove event anyway.
 		if action == central.ResourceAction_REMOVE_RESOURCE || owningDeploymentID != "" {
-			events = component.MergeOutputMessages(events, d.processPodEvent(owningDeploymentID, objAsPod, action))
+			events = component.MergeResourceEvents(events, d.processPodEvent(owningDeploymentID, objAsPod, action))
 		}
 	}
 
 	if deploymentWrap == nil {
 		if objAsPod != nil {
 			// It's only a pod event and the pod belongs to another resource (e.g. deployment)
-			events = component.MergeOutputMessages(events, d.maybeUpdateParentsOfPod(objAsPod, oldObj, action))
+			events = component.MergeResourceEvents(events, d.maybeUpdateParentsOfPod(objAsPod, oldObj, action))
 		}
 		return events
 	}
@@ -183,14 +183,14 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	}
 
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
-	outputMessage := component.WrapOutputMessage([]*central.SensorEvent{deploymentWrap.toEvent(action)}, []component.CompatibilityDetectionMessage{
+	outputMessage := component.NewResourceEvent([]*central.SensorEvent{deploymentWrap.toEvent(action)}, []component.CompatibilityDetectionMessage{
 		{
 			Object: deploymentWrap.GetDeployment(),
 			Action: action,
 		},
 	}, nil)
 
-	events = component.MergeOutputMessages(events, outputMessage)
+	events = component.MergeResourceEvents(events, outputMessage)
 	return events
 }
 
@@ -213,7 +213,7 @@ func (d *deploymentHandler) appendIntegrationsOnCredentials(
 	for _, c := range containers {
 		if r := c.GetImage().GetName().GetRegistry(); registries.Add(r) {
 			if e := d.getImageIntegrationEvent(r); e != nil {
-				events = component.MergeOutputMessages(events, component.WrapOutputMessage([]*central.SensorEvent{e}, nil, nil))
+				events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{e}, nil, nil))
 			}
 		}
 	}
@@ -284,7 +284,7 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 	var events *component.ResourceEvent
 	for _, owner := range owners {
 		ev := d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)
-		events = component.MergeOutputMessages(events, ev)
+		events = component.MergeResourceEvents(events, ev)
 	}
 	return events
 }
@@ -314,7 +314,7 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 				},
 			},
 		}
-		return component.WrapOutputMessage([]*central.SensorEvent{event}, nil, nil)
+		return component.NewResourceEvent([]*central.SensorEvent{event}, nil, nil)
 	}
 
 	started, err := types.TimestampProto(k8sPod.GetCreationTimestamp().Time)
@@ -348,6 +348,6 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 			Pod: p,
 		},
 	}
-	return component.WrapOutputMessage([]*central.SensorEvent{event}, nil, nil)
+	return component.NewResourceEvent([]*central.SensorEvent{event}, nil, nil)
 
 }

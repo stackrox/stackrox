@@ -169,7 +169,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector2.Selector) *component.ResourceEvent {
 	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)
 	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
-	return component.WrapOutputMessage(events, nil, nil)
+	return component.NewResourceEvent(events, nil, nil)
 }
 
 func (sh *serviceDispatcher) processCreate(svc *v1.Service) *component.ResourceEvent {
@@ -180,5 +180,5 @@ func (sh *serviceDispatcher) processCreate(svc *v1.Service) *component.ResourceE
 		routes:      sh.serviceStore.getRoutesForService(svcWrap),
 	})
 	sh.endpointManager.OnServiceCreate(svcWrap)
-	return component.WrapOutputMessage(events, nil, nil)
+	return component.NewResourceEvent(events, nil, nil)
 }

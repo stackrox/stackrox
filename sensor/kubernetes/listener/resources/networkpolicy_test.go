@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	networkingV1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -397,6 +398,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			}
 			events := suite.dispatcher.ProcessEvent(c.netpol, c.oldNetpol, c.action)
 			deps := set.NewStringSet()
+			require.NotNil(t, events)
 			deps.AddAll(events.CompatibilityReprocessDeployments...)
 			for _, d := range c.expectedDeployments {
 				_, ok := deps[d.GetId()]

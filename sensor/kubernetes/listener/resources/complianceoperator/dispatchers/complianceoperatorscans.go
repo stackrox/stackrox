@@ -48,5 +48,5 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			},
 		},
 	}
-	return component.WrapOutputMessage(events, nil, nil)
+	return component.NewResourceEvent(events, nil, nil)
 }

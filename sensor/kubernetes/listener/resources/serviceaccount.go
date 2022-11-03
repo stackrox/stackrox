@@ -65,5 +65,5 @@ func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action centr
 			Resource: sa,
 		},
 	}
-	return component.WrapOutputMessage(events, nil, nil)
+	return component.NewResourceEvent(events, nil, nil)
 }

@@ -13,11 +13,11 @@ var (
 )
 
 type eventPipeline struct {
-	output     component.OutputQueue
-	components []component.PipelineComponent
+	output   component.OutputQueue
+	listener component.PipelineComponent
 
 	eventsC chan *central.MsgFromSensor
-	stopSig *concurrency.Signal
+	stopSig concurrency.Signal
 }
 
 // Capabilities implements common.SensorComponent
@@ -37,21 +37,23 @@ func (p *eventPipeline) ResponsesC() <-chan *central.MsgFromSensor {
 
 // Start implements common.SensorComponent
 func (p *eventPipeline) Start() error {
-	for _, c := range p.components {
-		if err := c.Start(); err != nil {
-			return err
-		}
+	if err := p.output.Start(); err != nil {
+		return err
 	}
+
+	if err := p.listener.Start(); err != nil {
+		return err
+	}
+
 	go p.forwardMessages()
 	return nil
 }
 
 // Stop implements common.SensorComponent
-func (p *eventPipeline) Stop(err error) {
+func (p *eventPipeline) Stop(_ error) {
 	defer close(p.eventsC)
-	for _, c := range p.components {
-		c.Stop(err)
-	}
+	p.listener.Stop(nil)
+	p.output.Stop(nil)
 	p.stopSig.Signal()
 }
 

@@ -14,7 +14,7 @@ var (
 
 type outputQueueImpl struct {
 	innerQueue   chan *component.ResourceEvent
-	stopSig      *concurrency.Signal
+	stopSig      concurrency.Signal
 	forwardQueue chan *central.MsgFromSensor
 	detector     detector.Detector
 }

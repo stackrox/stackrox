@@ -7,17 +7,13 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
-var (
-	boundedQueueSize = 100
-)
-
 // New Creates a new Queue component
-func New(stopSig *concurrency.Signal, detector detector.Detector) component.OutputQueue {
-	ch := make(chan *component.ResourceEvent, boundedQueueSize)
+func New(detector detector.Detector, queueSize int) component.OutputQueue {
+	ch := make(chan *component.ResourceEvent, queueSize)
 	forwardQueue := make(chan *central.MsgFromSensor)
 	outputQueue := &outputQueueImpl{
 		detector:     detector,
-		stopSig:      stopSig,
+		stopSig:      concurrency.NewSignal(),
 		innerQueue:   ch,
 		forwardQueue: forwardQueue,
 	}

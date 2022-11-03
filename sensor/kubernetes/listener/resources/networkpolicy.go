@@ -46,7 +46,7 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 		reprocessingIds = h.updateDeploymentsFromStore(roxNetpol, sel)
 	}
 
-	return component.WrapOutputMessage(
+	return component.NewResourceEvent(
 		[]*central.SensorEvent{
 			{
 				Id:     string(np.UID),

@@ -31,7 +31,7 @@ func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAct
 	events := []*central.SensorEvent{
 		evt,
 	}
-	return component.WrapOutputMessage(events, nil, nil)
+	return component.NewResourceEvent(events, nil, nil)
 }
 
 func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction) *central.SensorEvent {

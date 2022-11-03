@@ -28,8 +28,8 @@ type ResourceEvent struct {
 	CompatibilityReprocessDeployments []string
 }
 
-// WrapOutputMessage wraps the SensorEvents, CompatibilityDetectionMessages, and the CompatibilityReprocessDeployments into a ResourceEvent message
-func WrapOutputMessage(sensorMessages []*central.SensorEvent, detectionDeployment []CompatibilityDetectionMessage, reprocessDeploymentsIds []string) *ResourceEvent {
+// NewResourceEvent wraps the SensorEvents, CompatibilityDetectionMessages, and the CompatibilityReprocessDeployments into a ResourceEvent message
+func NewResourceEvent(sensorMessages []*central.SensorEvent, detectionDeployment []CompatibilityDetectionMessage, reprocessDeploymentsIds []string) *ResourceEvent {
 	return &ResourceEvent{
 		ForwardMessages:                   sensorMessages,
 		CompatibilityDetectionDeployment:  detectionDeployment,
@@ -37,8 +37,8 @@ func WrapOutputMessage(sensorMessages []*central.SensorEvent, detectionDeploymen
 	}
 }
 
-// MergeOutputMessages merges two ResourceEvents
-func MergeOutputMessages(dest, src *ResourceEvent) *ResourceEvent {
+// MergeResourceEvents merges two ResourceEvents
+func MergeResourceEvents(dest, src *ResourceEvent) *ResourceEvent {
 	if dest == nil {
 		dest = &ResourceEvent{}
 	}

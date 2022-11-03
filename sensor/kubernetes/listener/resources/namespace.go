@@ -47,7 +47,7 @@ func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.Re
 
 	h.nsStore.addNamespace(roxNamespace)
 
-	return component.WrapOutputMessage(
+	return component.NewResourceEvent(
 		[]*central.SensorEvent{{
 			Id:     string(ns.GetUID()),
 			Action: action,
