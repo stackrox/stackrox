@@ -218,7 +218,10 @@ export function interactAndWaitForConfigurationManagementSecondaryEntities(
 }
 
 export function interactAndWaitForConfigurationManagementScan(interactionCallback) {
-    interactAndWaitForResponses(interactionCallback, routeMatcherMapForConfigurationManagementDashboard);
+    interactAndWaitForResponses(
+        interactionCallback,
+        routeMatcherMapForConfigurationManagementDashboard
+    );
 }
 
 // specifying an "entityName" will try to select that row in the table
