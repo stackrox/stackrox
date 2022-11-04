@@ -27,7 +27,7 @@ func (q *outputQueueImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return q.forwardQueue
 }
 
-// Start starts the outputQueueImpl component
+// Start the outputQueueImpl component
 func (q *outputQueueImpl) Start() error {
 	go q.runOutputQueue()
 	return nil
