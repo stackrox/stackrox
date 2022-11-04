@@ -6,8 +6,8 @@ import (
 	"go/constant"
 	"go/types"
 	"regexp"
-	"strings"
 
+	"github.com/stackrox/rox/tools/roxvet/common"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
@@ -83,24 +83,15 @@ func visitCall(call *ast.CallExpr, pass *analysis.Pass, topLevelScope bool) {
 func run(pass *analysis.Pass) (interface{}, error) {
 	inspectResult := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	nodeFilter := []ast.Node{
-		(*ast.File)(nil),
 		(*ast.FuncDecl)(nil),
 		(*ast.CallExpr)(nil),
 	}
 
 	var topLevelFunc ast.Node
-	inspectResult.Nodes(nodeFilter, func(n ast.Node, push bool) bool {
+	common.FilteredNodes(inspectResult, common.Not(common.IsTestFile), nodeFilter, func(n ast.Node, push bool) bool {
 		if !push {
 			if topLevelFunc == n {
 				topLevelFunc = nil
-			}
-			return true
-		}
-
-		if astFile, ok := n.(*ast.File); ok {
-			file := pass.Fset.File(astFile.Pos())
-			if file != nil && strings.HasSuffix(file.Name(), "_test.go") {
-				return false
 			}
 			return true
 		}
