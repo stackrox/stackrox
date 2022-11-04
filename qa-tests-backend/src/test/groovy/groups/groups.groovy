@@ -2,6 +2,7 @@ package groups
 
 @interface RUNTIME { }
 @interface SMOKE { }
+@interface COMPATIBILITY { }
 @interface BAT { }
 @interface Integration { }
 @interface NetworkPolicySimulation { }
