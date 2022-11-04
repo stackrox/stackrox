@@ -100,7 +100,8 @@ jobs:
             check-jira-issues \
             "${{needs.properties.outputs.jira-projects}}" \
             "${{needs.variables.outputs.release}}" \
-            "${{needs.variables.outputs.patch}}"
+            "${{needs.variables.outputs.patch}}" \
+            "${{needs.variables.outputs.named-release-patch}}"
 
   postpone-prs:
     name: Postpone open PRs
@@ -184,7 +185,7 @@ jobs:
             cherry-pick \
             "${{needs.variables.outputs.milestone}}" \
             "${{needs.variables.outputs.branch}}" \
-            "${{needs.variables.outputs.release-patch}}"
+            "${{needs.variables.outputs.named-release-patch}}"
 
       - name: Post to Slack about picked cherries
         if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
@@ -266,7 +267,7 @@ jobs:
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             create-release \
-            "${{ needs.variables.outputs.release-patch }}" \
+            "${{ needs.variables.outputs.named-release-patch }}" \
             "true"
 
       - run: |
