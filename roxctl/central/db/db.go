@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/roxctl/central/db/backup"
 	"github.com/stackrox/rox/roxctl/central/db/generate"
 	"github.com/stackrox/rox/roxctl/central/db/restore"
@@ -18,7 +19,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 	c.AddCommand(backup.Command(cliEnvironment))
 	c.AddCommand(restore.V2Command(cliEnvironment))
-	c.AddCommand(generate.Command(cliEnvironment))
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		c.AddCommand(generate.Command(cliEnvironment))
+	}
 	flags.AddTimeoutWithDefault(c, 1*time.Hour)
 	return c
 }

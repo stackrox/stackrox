@@ -49,8 +49,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	cmd := &generateCommand{config: &cfg, env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use:   "generate",
-		Short: "generate Central DB bundle",
+		Use:    "generate",
+		Short:  "generate Central DB bundle",
+		Hidden: true,
 	}
 	c.PersistentFlags().Var(&flags.FileMapVar{
 		FileMap: &cmd.config.ConfigFileOverrides,
