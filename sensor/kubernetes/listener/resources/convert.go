@@ -275,7 +275,7 @@ func (w *deploymentWrap) getPods(hierarchy references.ParentHierarchy, labelSele
 	}
 	pods, err := lister.Pods(w.Namespace).List(compiledLabelSelector)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to list pods")
 	}
 	return filterOnOwners(hierarchy, w.Id, pods), nil
 }
