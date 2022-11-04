@@ -285,6 +285,7 @@ var (
 	ComplianceRunFinishedTimestamp = newFieldLabel("Compliance Run Finished Timestamp")
 
 	// Resource Collection fields
+	CollectionID         = newFieldLabel("Collection ID")
 	CollectionName       = newFieldLabel("Collection Name")
 	EmbeddedCollectionID = newFieldLabel("Embedded Collection ID")
 
