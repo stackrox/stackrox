@@ -55,8 +55,8 @@ func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string
 		if err != nil {
 			// Simply log the error, we do not want to fail reconciliation based on this (the check for
 			// len(proxyEnvVars) == 0) should catch a complete failure).
-			// While this log can be spammy (emitted on every reconciliation), an error here is extremely unlikely
-			// and thus we deem this acceptable.
+			// While this log can be spammy (emitted on every reconciliation), an error here is extremely unlikely,
+			// thus we deem this acceptable.
 			log.Error(err, "could not determine proxy environment variables", "gvk", obj.GroupVersionKind(), "namespace", obj.GetNamespace(), "name", obj.GetName())
 		}
 
