@@ -8,7 +8,7 @@ import (
 // CompatibilityDetectionMessage should be used by old handlers
 // it's here for retrocompatibility reasons.
 type CompatibilityDetectionMessage struct {
-	// Object The deployment object that needs to be processed by the detector
+	// Object references the object that needs to be processed by the detector
 	Object *storage.Deployment
 	// Action the event action (CREATE_RESOURCE, REMOVE_RESOURCE, UPDATE_RESOURCE, and SYNC_RESOURCE)
 	Action central.ResourceAction
