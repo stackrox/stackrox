@@ -672,16 +672,20 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/db/backup",
-			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: httputil.HandlerNotImplementedIfSettingDisabled(!env.ManagedCentral.BooleanSetting(), globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), false)),
-			Compression:   true,
+			Route:      "/db/backup",
+			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
+			ServerHandler: utils.IfThenElse[http.Handler](
+				env.ManagedCentral.BooleanSetting(), httputil.NotImplementedHandler("api is not supported in a managed central environment."),
+				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), false)),
+			Compression: true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/extensions/backup",
-			Authorizer:    user.WithRole(role.Admin),
-			ServerHandler: httputil.HandlerNotImplementedIfSettingDisabled(!env.ManagedCentral.BooleanSetting(), globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), true)),
-			Compression:   true,
+			Route:      "/api/extensions/backup",
+			Authorizer: user.WithRole(role.Admin),
+			ServerHandler: utils.IfThenElse[http.Handler](
+				env.ManagedCentral.BooleanSetting(), httputil.NotImplementedHandler("api is not supported in a managed central environment."),
+				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), true)),
+			Compression: true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/export/csv/node/cve",
@@ -703,16 +707,20 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		})
 	} else {
 		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/db/backup",
-			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: httputil.HandlerNotImplementedIfSettingDisabled(!env.ManagedCentral.BooleanSetting(), globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, false)),
-			Compression:   true,
+			Route:      "/db/backup",
+			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
+			ServerHandler: utils.IfThenElse[http.Handler](
+				env.ManagedCentral.BooleanSetting(), httputil.NotImplementedHandler("api is not supported in a managed central environment."),
+				globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, false)),
+			Compression: true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/extensions/backup",
-			Authorizer:    user.WithRole(role.Admin),
-			ServerHandler: httputil.HandlerNotImplementedIfSettingDisabled(!env.ManagedCentral.BooleanSetting(), globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, true)),
-			Compression:   true,
+			Route:      "/api/extensions/backup",
+			Authorizer: user.WithRole(role.Admin),
+			ServerHandler: utils.IfThenElse[http.Handler](
+				env.ManagedCentral.BooleanSetting(), httputil.NotImplementedHandler("api is not supported in a managed central environment."),
+				globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, true)),
+			Compression: true,
 		})
 	}
 

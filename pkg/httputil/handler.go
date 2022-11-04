@@ -16,14 +16,9 @@ func WrapHandlerFunc(handlerFn func(req *http.Request) error) http.HandlerFunc {
 	})
 }
 
-// HandlerNotImplementedIfSettingDisabled takes a handler func and returns a handler func that will error out if
-// specified boolean is disabled, otherwise it will return the given handler func
-func HandlerNotImplementedIfSettingDisabled(enabled bool, fn http.Handler) http.Handler {
-	if enabled {
-		return fn
-	}
+// NotImplementedHandler returns an HTTP Handler func that returns 501 Not Implemented with a custom error message.
+func NotImplementedHandler(errMsg string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		errMsg := "api is disabled due to central setting"
 		log.Error(errMsg)
 		http.Error(w, errMsg, http.StatusNotImplemented)
 	})

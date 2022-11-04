@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/probeupload"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -78,10 +79,12 @@ func (s *service) GetExistingProbes(ctx context.Context, req *v1.GetExistingProb
 func (s *service) CustomRoutes() []routes.CustomRoute {
 	return []routes.CustomRoute{
 		{
-			Route:         "/api/extensions/probeupload",
-			Authorizer:    user.With(permissions.Modify(resources.ProbeUpload)),
-			ServerHandler: httputil.HandlerNotImplementedIfSettingDisabled(!env.DisableKernelPackageUpload.BooleanSetting(), http.HandlerFunc(s.handleProbeUpload)),
-			Compression:   false,
+			Route:      "/api/extensions/probeupload",
+			Authorizer: user.With(permissions.Modify(resources.ProbeUpload)),
+			ServerHandler: utils.IfThenElse[http.Handler](
+				env.EnableKernelPackageUpload.BooleanSetting(), http.HandlerFunc(s.handleProbeUpload),
+				httputil.NotImplementedHandler("api is not supported because kernel package upload is disabled.")),
+			Compression: false,
 		},
 		{
 			Route:         "/kernel-objects/",
