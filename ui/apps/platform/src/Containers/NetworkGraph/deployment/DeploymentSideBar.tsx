@@ -15,6 +15,7 @@ import {
 import useTabs from 'hooks/patternfly/useTabs';
 import DeploymentDetails from './DeploymentDetails';
 import DeploymentNetworkPolicies from './DeploymentNetworkPolicies';
+import DeploymentFlows from './DeploymentFlows';
 
 function DeploymentSideBar() {
     const { activeKeyTab, onSelectTab } = useTabs({
@@ -51,9 +52,9 @@ function DeploymentSideBar() {
                         title={<TabTitleText>Details</TabTitleText>}
                     />
                     <Tab
-                        eventKey="Traffic"
-                        tabContentId="Traffic"
-                        title={<TabTitleText>Traffic</TabTitleText>}
+                        eventKey="Flows"
+                        tabContentId="Flows"
+                        title={<TabTitleText>Flows</TabTitleText>}
                     />
                     <Tab
                         eventKey="Baselines"
@@ -69,8 +70,8 @@ function DeploymentSideBar() {
                 <TabContent eventKey="Details" id="Details" hidden={activeKeyTab !== 'Details'}>
                     <DeploymentDetails />
                 </TabContent>
-                <TabContent eventKey="Traffic" id="Traffic" hidden={activeKeyTab !== 'Traffic'}>
-                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Traffic</div>
+                <TabContent eventKey="Flows" id="Flows" hidden={activeKeyTab !== 'Flows'}>
+                    <DeploymentFlows />
                 </TabContent>
                 <TabContent
                     eventKey="Baselines"
