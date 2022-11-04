@@ -1,6 +1,5 @@
 import com.google.protobuf.Timestamp
 
-import groups.COMPATIBILITY
 import groups.NetworkBaseline
 import io.stackrox.proto.storage.NetworkBaselineOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass
