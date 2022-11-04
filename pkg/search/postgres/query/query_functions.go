@@ -25,7 +25,7 @@ func qeWithSelectFieldIfNeeded(ctx *queryAndFieldContext, whereClause *WhereClau
 	qe := &QueryEntry{Where: *whereClause}
 	if ctx.highlight {
 		var cast string
-		if ctx.sqlDataType == walker.Uuid {
+		if ctx.sqlDataType == walker.UUID {
 			cast = "::text"
 		}
 		qe.SelectedFields = []SelectQueryField{{
@@ -51,7 +51,7 @@ var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 	walker.Numeric:     newNumericQuery,
 	walker.EnumArray:   queryOnArray(newEnumQuery, getEnumArrayPostTransformFunc),
 	walker.IntArray:    queryOnArray(newNumericQuery, getIntArrayPostTransformFunc),
-	walker.Uuid:        newUUIDQuery,
+	walker.UUID:        newUUIDQuery,
 	// Map is handled separately.
 }
 

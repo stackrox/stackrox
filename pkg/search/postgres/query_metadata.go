@@ -139,7 +139,7 @@ var (
 				return val.([]string)
 			},
 		},
-		walker.Uuid: {
+		walker.UUID: {
 			alloc: func() interface{} {
 				return pointers.String("")
 			},
