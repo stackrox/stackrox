@@ -10,7 +10,7 @@ import (
 type CompatibilityDetectionMessage struct {
 	// Object references the object that needs to be processed by the detector
 	Object *storage.Deployment
-	// Action the event action (CREATE_RESOURCE, REMOVE_RESOURCE, UPDATE_RESOURCE, and SYNC_RESOURCE)
+	// Action of an event (CREATE_RESOURCE, REMOVE_RESOURCE, UPDATE_RESOURCE, and SYNC_RESOURCE)
 	Action central.ResourceAction
 }
 
