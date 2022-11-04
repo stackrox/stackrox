@@ -48,18 +48,7 @@ def getLatestTags(current_version, tags, num_versions):
     return latestversions
 
 # getLastSensorVersionsFromGitTagsCLI gets the latest patches of the last num_versions major versions via Git CLI
-# preferably use this to avoid API calls if possible
 def getLastSensorVersionsFromGitTagsCLI(current_version, num_versions):
     rawtags = cliOutputToTags(subprocess.check_output(["git", "tag", "--list"]))
     tags = filterGitCLITags(rawtags)
     return getLatestTags(current_version, tags, num_versions)
-
-def main(argv):
-    latestversions = getLastSensorVersionsFromGitTagsCLI(argv[1], 4)
-    printversions = ""
-    for version in latestversions:
-        printversions += str(version) + " "
-    print(printversions)
-
-if (__name__ == "__main__"):
-    main(sys.argv)
