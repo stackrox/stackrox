@@ -17,7 +17,7 @@ import {
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
-import { InfoCircleIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 function DetailSection({ title, children }) {
     const [isExpanded, setIsExpanded] = useState(true);
@@ -61,7 +61,7 @@ function DeploymentDetails() {
                                             <Label
                                                 variant="outline"
                                                 color="red"
-                                                icon={<InfoCircleIcon />}
+                                                icon={<ExclamationCircleIcon />}
                                             >
                                                 2 external flows
                                             </Label>
@@ -70,7 +70,7 @@ function DeploymentDetails() {
                                             <Label
                                                 variant="outline"
                                                 color="gold"
-                                                icon={<InfoCircleIcon />}
+                                                icon={<ExclamationCircleIcon />}
                                             >
                                                 3 internal flows
                                             </Label>
@@ -89,7 +89,7 @@ function DeploymentDetails() {
                                             <Label
                                                 variant="outline"
                                                 color="gold"
-                                                icon={<InfoCircleIcon />}
+                                                icon={<ExclamationCircleIcon />}
                                             >
                                                 0 egress, allowing 325 flows
                                             </Label>
