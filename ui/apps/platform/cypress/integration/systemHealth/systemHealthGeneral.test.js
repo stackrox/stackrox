@@ -3,7 +3,7 @@ import { visitSystemHealth, visitSystemHealthFromLeftNav } from '../../helpers/s
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import navSelectors from '../../selectors/navigation';
 
-describe('System Health general', () => {
+describe('System Health', () => {
     withAuth();
 
     it('should visit from left nav', () => {

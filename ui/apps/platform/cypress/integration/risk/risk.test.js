@@ -26,14 +26,10 @@ describe('Risk page', () => {
             cy.get(RiskPageSelectors.risk).should('have.class', 'pf-m-current');
         });
 
-        it('should have title', () => {
+        it('should have title and table column headings', () => {
             visitRiskDeployments();
 
             cy.title().should('match', getRegExpForTitleWithBranding('Risk'));
-        });
-
-        it('should have table columns', () => {
-            visitRiskDeployments();
 
             cy.get('.rt-th:contains("Name")');
             cy.get('.rt-th:contains("Created")');

@@ -39,14 +39,10 @@ describe('Collections table', () => {
         visitCollections(staticResponseMap);
     });
 
-    it('should have title', () => {
-        visitCollections();
+    it('should have plural title and table column headings', () => {
+        visitCollections(staticResponseMap);
 
         cy.title().should('match', getRegExpForTitleWithBranding('Collections'));
-    });
-
-    it('should have table column headings', () => {
-        visitCollections(staticResponseMap);
 
         cy.get('th:contains("Collection")');
         cy.get('th:contains("Description")');

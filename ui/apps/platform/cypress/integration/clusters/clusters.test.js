@@ -21,20 +21,16 @@ describe('Clusters page', () => {
             visitClustersFromLeftNav();
         });
 
-        it('should have title', () => {
-            visitClusters();
-
-            cy.title().should('match', getRegExpForTitleWithBranding('Clusters'));
-        });
-
         it('should have a toggle control for the auto-upgrade setting', () => {
             visitClusters();
 
             cy.get(selectors.autoUpgradeInput);
         });
 
-        it('should display all the columns expected in clusters list page', () => {
+        it('should display title and columns expected in clusters list page', () => {
             visitClusters();
+
+            cy.title().should('match', getRegExpForTitleWithBranding('Clusters'));
 
             [
                 'Name',

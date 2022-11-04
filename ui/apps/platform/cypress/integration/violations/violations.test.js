@@ -24,12 +24,6 @@ describe('Violations page', () => {
         cy.get(selectors.navLink).should('have.class', 'pf-m-current');
     });
 
-    it('should have title', () => {
-        visitViolations();
-
-        cy.title().should('match', getRegExpForTitleWithBranding('Violations'));
-    });
-
     it('should have violations in table', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
@@ -38,8 +32,10 @@ describe('Violations page', () => {
         cy.get(selectors.table.rows).should('have.length', count);
     });
 
-    it('should have columns in table', () => {
+    it('should have title and table column headings', () => {
         visitViolationsWithFixture('alerts/alerts.json');
+
+        cy.title().should('match', getRegExpForTitleWithBranding('Violations'));
 
         cy.get('th[scope="col"]:contains("Policy")');
         cy.get('th[scope="col"]:contains("Entity")');
