@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOptions(t *testing.T) {
+func TestOptionsMapExist(t *testing.T) {
 	t.Parallel()
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
@@ -37,4 +37,9 @@ func TestOptions(t *testing.T) {
 			assert.ElementsMatch(t, options.GetOptions(categories), resp.GetOptions())
 		})
 	}
+}
+
+func TestOptionsMap(t *testing.T) {
+	optionsMap := options.GetOptions([]v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
+	assert.Contains(t, optionsMap, "Namespace")
 }
