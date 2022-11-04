@@ -13,7 +13,6 @@ import (
 type DeploymentStore interface {
 	GetAll() []*storage.Deployment
 	Get(id string) *storage.Deployment
-	GetDeploymentsWithServiceAccountAndNamespace(namespace, sa string) []string
 	BuildDeploymentWithDependencies(id string, dependencies deployment.Dependencies) (*storage.Deployment, error)
 }
 

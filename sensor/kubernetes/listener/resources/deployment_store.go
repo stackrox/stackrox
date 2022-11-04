@@ -143,23 +143,6 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	return wrap.GetDeployment()
 }
 
-// GetDeploymentsWithServiceAccountAndNamespace returns ids for deployments that match namespace and service account
-func (ds *DeploymentStore) GetDeploymentsWithServiceAccountAndNamespace(namespace, sa string) []string {
-	ds.lock.RLock()
-	defer ds.lock.RUnlock()
-
-	var matching []string
-	for id, deployment := range ds.deployments {
-		if namespace != "" && namespace != deployment.GetNamespace() {
-			continue
-		}
-		if deployment.GetServiceAccount() == sa {
-			matching = append(matching, id)
-		}
-	}
-	return matching
-}
-
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies
 func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependencies deployment.Dependencies) (*storage.Deployment, error) {
 	wrap := ds.getWrap(id)
