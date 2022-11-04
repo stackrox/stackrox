@@ -10,5 +10,17 @@ templates/*
 !templates/_*.tpl
 !templates/01-central-05-tls-secret.yaml
 templates/*
+[< else if eq .RenderMode "centralDBOnly" >]
+!templates/_*.tpl
+!templates/01-central-*-central-db.yaml
+!templates/01-central-*-db-serviceaccount.yaml
+!templates/01-central-*-db-psps.yaml
+!templates/01-central-*-db-security.yaml
+!templates/01-central-*-db-configmap.yaml
+!templates/01-central-*-external-db-configmap.yaml
+!templates/01-central-*-db-networkpolicy.yaml
+!templates/01-central-*-db-pvc.yaml
+!templates/01-central-*-db-tls-secret.yaml
+templates/*
 [< end >]
 templates/keep.yaml
