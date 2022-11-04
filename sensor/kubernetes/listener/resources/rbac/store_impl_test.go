@@ -730,27 +730,27 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 	}
 
 	testCases := []struct {
-		deployment storage.Deployment
+		deployment *storage.Deployment
 		expected   storage.PermissionLevel
 	}{
-		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject-2", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject-3"}},
-		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject-4"}},
-		{expected: storage.PermissionLevel_CLUSTER_ADMIN, deployment: storage.Deployment{ServiceAccount: "cluster-admin-2", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-namespace-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject"}},
-		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "cluster-admin-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_CLUSTER_ADMIN, deployment: storage.Deployment{ServiceAccount: "cluster-admin-subject"}},
-		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "cluster-none-subject"}},
-		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "cluster-none-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: storage.Deployment{ServiceAccount: "admin-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_DEFAULT, deployment: storage.Deployment{ServiceAccount: "default-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: storage.Deployment{ServiceAccount: "elevated-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: storage.Deployment{ServiceAccount: "elevated-subject-2", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "elevated-subject-2", Namespace: "n2"}},
-		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "default-subject"}},
-		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "admin-subject"}},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: &storage.Deployment{ServiceAccount: "cluster-elevated-subject", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: &storage.Deployment{ServiceAccount: "cluster-elevated-subject-2", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: &storage.Deployment{ServiceAccount: "cluster-elevated-subject-3"}},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: &storage.Deployment{ServiceAccount: "cluster-elevated-subject-4"}},
+		{expected: storage.PermissionLevel_CLUSTER_ADMIN, deployment: &storage.Deployment{ServiceAccount: "cluster-admin-2", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: &storage.Deployment{ServiceAccount: "cluster-namespace-subject", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "cluster-elevated-subject"}},
+		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "cluster-admin-subject", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_CLUSTER_ADMIN, deployment: &storage.Deployment{ServiceAccount: "cluster-admin-subject"}},
+		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "cluster-none-subject"}},
+		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "cluster-none-subject", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: &storage.Deployment{ServiceAccount: "admin-subject", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_DEFAULT, deployment: &storage.Deployment{ServiceAccount: "default-subject", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: &storage.Deployment{ServiceAccount: "elevated-subject", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: &storage.Deployment{ServiceAccount: "elevated-subject-2", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "elevated-subject-2", Namespace: "n2"}},
+		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "default-subject"}},
+		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "admin-subject"}},
 	}
 	store := setupStore(roles, clusterRoles, bindings, clusterBindings)
 	storeWithNoRoles := setupStore(roles, clusterRoles, bindings, clusterBindings)
@@ -774,21 +774,21 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 			tc.deployment.ServiceAccount, tc.deployment.Namespace, tc.expected)
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			assert.Equal(t, tc.expected.String(), store.GetPermissionLevelForDeployment(&tc.deployment).String())
+			assert.Equal(t, tc.expected.String(), store.GetPermissionLevelForDeployment(tc.deployment).String())
 		})
 
 		name = fmt.Sprintf("%q in namespace %q should have NO permisions after removing roles but keeping bindings",
 			tc.deployment.ServiceAccount, tc.deployment.Namespace)
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			assert.Equal(t, storage.PermissionLevel_NONE.String(), storeWithNoRoles.GetPermissionLevelForDeployment(&tc.deployment).String())
+			assert.Equal(t, storage.PermissionLevel_NONE.String(), storeWithNoRoles.GetPermissionLevelForDeployment(tc.deployment).String())
 		})
 
 		name = fmt.Sprintf("%q in namespace %q should have NO permisions after removing bindings but keeping roles",
 			tc.deployment.ServiceAccount, tc.deployment.Namespace)
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			assert.Equal(t, storage.PermissionLevel_NONE.String(), storeWithNoBindings.GetPermissionLevelForDeployment(&tc.deployment).String())
+			assert.Equal(t, storage.PermissionLevel_NONE.String(), storeWithNoBindings.GetPermissionLevelForDeployment(tc.deployment).String())
 		})
 	}
 }

@@ -18,7 +18,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 96,
-		VersionAfter:   storage.Version{SeqNum: 97},
+		VersionAfter:   &storage.Version{SeqNum: 97},
 		Run: func(databases *types.Databases) error {
 			if err := updateDefaultPermissionsForVulnCreatorRole(databases.RocksDB); err != nil {
 				return errors.Wrap(err,
