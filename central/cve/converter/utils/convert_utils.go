@@ -193,7 +193,7 @@ func NVDCVEsToEmbeddedCVEs(cves []*schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType
 	return ret, nil
 }
 
-// ProtoCVEToEmbeddedCVE coverts a *storage.CVE to *storage.EmbeddedVulnerability.
+// ProtoCVEToEmbeddedCVE converts a *storage.CVE to *storage.EmbeddedVulnerability.
 // It converts all the fields except FixedBy which gets set depending on the CVE.
 func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability {
 	embeddedCVE := &storage.EmbeddedVulnerability{
