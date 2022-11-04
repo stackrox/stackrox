@@ -19,8 +19,9 @@ var (
 )
 
 type amplitudeTelemeter struct {
-	client amplitude.Client
-	opts   *types.EventOptions
+	client         amplitude.Client
+	opts           *types.EventOptions
+	staticIdentity map[string]any
 }
 
 // Ensure Telemeter interface implementation.
@@ -28,8 +29,13 @@ var _ = marketing.Telemeter((*amplitudeTelemeter)(nil))
 
 func (t *amplitudeTelemeter) Identify(props map[string]any) {
 	identity := amplitude.Identify{}
-	identity.SetOnce("Central version", version.GetMainVersion())
-	identity.SetOnce("Chart version", version.GetChartVersion())
+	if t.staticIdentity != nil {
+		for k, v := range t.staticIdentity {
+			identity.SetOnce(k, v)
+		}
+		// Set the static properties only once:
+		t.staticIdentity = nil
+	}
 	for k, v := range props {
 		identity.Set(k, v)
 	}
@@ -61,10 +67,13 @@ func initAmplitude(config *marketing.Config, key, server string) *amplitudeTelem
 	return &amplitudeTelemeter{
 		client: client,
 		opts: &amplitude.EventOptions{
-			DeviceID:   config.ID,
-			AppVersion: version.GetMainVersion(),
-			Platform:   config.Orchestrator,
-			OSVersion:  config.Version,
+			DeviceID: config.ID,
+		},
+		staticIdentity: map[string]any{
+			"Central version":    version.GetMainVersion(),
+			"Chart version":      version.GetChartVersion(),
+			"Orchestrator":       config.Orchestrator,
+			"Kubernetes version": config.Version,
 		},
 	}
 }
