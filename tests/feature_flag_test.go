@@ -6,6 +6,7 @@ import (
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,10 @@ import (
 
 func TestFeatureFlagSettings(t *testing.T) {
 	t.Parallel()
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("ROX-13420")
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
