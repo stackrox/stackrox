@@ -2,21 +2,16 @@ import React from 'react';
 import { Select, SelectOption } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import { FormikErrors } from 'formik';
-import isEmpty from 'lodash/isEmpty';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import {
-    isByLabelSelector,
-    isByNameSelector,
+    RuleSelectorOption,
     ScopedResourceSelector,
     SelectorEntityType,
+    selectorOptions,
 } from '../types';
 import ByNameSelector from './ByNameSelector';
 import ByLabelSelector from './ByLabelSelector';
-
-const selectorOptions = ['All', 'ByName', 'ByLabel'] as const;
-
-type RuleSelectorOption = typeof selectorOptions[number];
 
 function isRuleSelectorOption(value: string): value is RuleSelectorOption {
     return selectorOptions.includes(value as RuleSelectorOption);
@@ -49,12 +44,14 @@ function RuleSelector({
         }
 
         const selectorMap: Record<RuleSelectorOption, ScopedResourceSelector> = {
-            All: {},
+            All: { type: 'All' },
             ByName: {
+                type: 'ByName',
                 field: entityType,
                 rule: { operator: 'OR', values: [''] },
             },
             ByLabel: {
+                type: 'ByLabel',
                 field: `${entityType} Label`,
                 rules: [{ operator: 'OR', key: '', values: [''] }],
             },
@@ -64,15 +61,7 @@ function RuleSelector({
         closeSelect();
     }
 
-    let selection: RuleSelectorOption = 'All';
-
-    if (isEmpty(scopedResourceSelector)) {
-        selection = 'All';
-    } else if (isByNameSelector(scopedResourceSelector)) {
-        selection = 'ByName';
-    } else if (isByLabelSelector(scopedResourceSelector)) {
-        selection = 'ByLabel';
-    }
+    const selection = scopedResourceSelector.type;
 
     return (
         <div
@@ -93,7 +82,7 @@ function RuleSelector({
                 <SelectOption value="ByLabel">{pluralEntity} with labels matching</SelectOption>
             </Select>
 
-            {isByNameSelector(scopedResourceSelector) && (
+            {scopedResourceSelector.type === 'ByName' && (
                 <ByNameSelector
                     entityType={entityType}
                     scopedResourceSelector={scopedResourceSelector}
@@ -103,7 +92,7 @@ function RuleSelector({
                 />
             )}
 
-            {isByLabelSelector(scopedResourceSelector) && (
+            {scopedResourceSelector.type === 'ByLabel' && (
                 <ByLabelSelector
                     entityType={entityType}
                     scopedResourceSelector={scopedResourceSelector}

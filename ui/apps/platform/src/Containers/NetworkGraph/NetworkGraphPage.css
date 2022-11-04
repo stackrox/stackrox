@@ -4,3 +4,9 @@
     --pf-c-page__main-section--PaddingLeft: 0;
     --pf-c-page__main-section--PaddingRight: 0;
 }
+
+.pf-topology-resizable-side-bar {
+    /* we use the page header min height twice to account for: page header + nav header */ 
+    /* @TODO: Consider a more future-proof way of doing this. See https://github.com/stackrox/stackrox/pull/3703#discussion_r1014292340 */
+    height: calc(100vh - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight));
+}

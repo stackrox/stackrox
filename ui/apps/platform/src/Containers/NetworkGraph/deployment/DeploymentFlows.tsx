@@ -13,7 +13,9 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 import {
+    ActionsColumn,
     ExpandableRowContent,
+    IAction,
     TableComposable,
     Tbody,
     Td,
@@ -202,7 +204,7 @@ function DeploymentFlow() {
                     <TableComposable aria-label="Deployment flow" variant="compact">
                         <Thead>
                             <Tr>
-                                <Th width={10} />
+                                <Th />
                                 <Th
                                     select={{
                                         onSelect: (_event, isSelecting) =>
@@ -211,12 +213,29 @@ function DeploymentFlow() {
                                     }}
                                 />
                                 <Th width={40}>{columnNames.entity}</Th>
-                                <Th width={20}>{columnNames.direction}</Th>
-                                <Th width={30}>{columnNames.portAndProtocol}</Th>
+                                <Th>{columnNames.direction}</Th>
+                                <Th>{columnNames.portAndProtocol}</Th>
+                                <Th />
                             </Tr>
                         </Thead>
                         {flows.map((row, rowIndex) => {
                             const isExpanded = isRowExpanded(row);
+                            const rowActions: IAction[] = !row.children.length
+                                ? [
+                                      row.isAnomalous
+                                          ? {
+                                                itemKey: 'add-flow-to-baseline',
+                                                title: 'Add to baseline',
+                                                onClick: () => {},
+                                            }
+                                          : {
+                                                itemKey: 'mark-flow-as-anomalous',
+                                                title: 'Mark as anomalous',
+                                                onClick: () => {},
+                                            },
+                                  ]
+                                : [];
+
                             return (
                                 <Tbody key={row.id} isExpanded={isExpanded}>
                                     <Tr>
@@ -271,9 +290,28 @@ function DeploymentFlow() {
                                         <Td dataLabel={columnNames.portAndProtocol}>
                                             {row.port} / {row.protocol}
                                         </Td>
+                                        <Td isActionCell>
+                                            {!row.children.length && (
+                                                <ActionsColumn items={rowActions} />
+                                            )}
+                                        </Td>
                                     </Tr>
                                     {isExpanded &&
                                         row.children.map((child) => {
+                                            const childActions: IAction[] = [
+                                                child.isAnomalous
+                                                    ? {
+                                                          itemKey: 'add-flow-to-baseline',
+                                                          title: 'Add to baseline',
+                                                          onClick: () => {},
+                                                      }
+                                                    : {
+                                                          itemKey: 'mark-flow-as-anomalous',
+                                                          title: 'Mark as anomalous',
+                                                          onClick: () => {},
+                                                      },
+                                            ];
+
                                             return (
                                                 <Tr key={child.id} isExpanded={isExpanded}>
                                                     <Td />
@@ -306,6 +344,9 @@ function DeploymentFlow() {
                                                         <ExpandableRowContent>
                                                             {child.port} / {child.protocol}
                                                         </ExpandableRowContent>
+                                                    </Td>
+                                                    <Td isActionCell>
+                                                        <ActionsColumn items={childActions} />
                                                     </Td>
                                                 </Tr>
                                             );

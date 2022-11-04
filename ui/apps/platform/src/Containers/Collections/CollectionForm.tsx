@@ -37,19 +37,24 @@ import { CaretDownIcon, CubesIcon } from '@patternfly/react-icons';
 import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-import isEmpty from 'lodash/isEmpty';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useToasts from 'hooks/patternfly/useToasts';
 import { collectionsBasePath } from 'routePaths';
-import { CollectionResponse, deleteCollection } from 'services/CollectionsService';
+import {
+    CollectionResponse,
+    createCollection,
+    deleteCollection,
+    updateCollection,
+} from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import CollectionResults from './CollectionResults';
 import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
+import { generateRequest } from './converter';
 
 function AttachedCollectionTable({ collections }: { collections: CollectionResponse[] }) {
     return collections.length > 0 ? (
@@ -97,7 +102,7 @@ export type CollectionFormProps = {
 
 function yupResourceSelectorObject() {
     return yup.lazy((ruleObject) => {
-        if (isEmpty(ruleObject)) {
+        if (ruleObject.type === 'All') {
             return yup.object().shape({});
         }
 
@@ -148,14 +153,24 @@ function CollectionForm({
     const [isDeleting, setIsDeleting] = useState(false);
     const { toasts, addToast, removeToast } = useToasts();
 
-    const { values, errors, handleChange, handleBlur, setFieldValue } = useFormik({
+    const {
+        values,
+        isValid,
+        errors,
+        handleChange,
+        handleBlur,
+        setFieldValue,
+        submitForm,
+        isSubmitting,
+        setSubmitting,
+    } = useFormik({
         initialValues: initialData,
-        onSubmit: () => {},
+        onSubmit: onSaveCollection,
         validationSchema: yup.object({
             name: yup.string().trim().required(),
             description: yup.string(),
-            embeddedCollections: yup.array(yup.string().trim().required()),
-            resourceSelectors: yup.object().shape({
+            embeddedCollectionIds: yup.array(yup.string().trim().required()),
+            resourceSelector: yup.object().shape({
                 Deployment: yupResourceSelectorObject(),
                 Namespace: yupResourceSelectorObject(),
                 Cluster: yupResourceSelectorObject(),
@@ -192,11 +207,7 @@ function CollectionForm({
         deleteCollection(deleteId)
             .request.then(history.goBack)
             .catch((err) => {
-                addToast(
-                    `Could not delete collection ${initialData.name ?? ''}`,
-                    'danger',
-                    err.message
-                );
+                addToast(`Could not delete collection ${initialData.name}`, 'danger', err.message);
             })
             .finally(() => {
                 setDeleteId(null);
@@ -208,14 +219,46 @@ function CollectionForm({
         setDeleteId(null);
     }
 
+    function onSaveCollection(collection: Collection) {
+        if (action.type === 'view') {
+            // Logically should not happen, but just in case
+            return;
+        }
+
+        const saveServiceCall =
+            action.type === 'edit'
+                ? (payload) => updateCollection(action.collectionId, payload)
+                : (payload) => createCollection(payload);
+
+        const requestPayload = generateRequest(collection);
+        const { request } = saveServiceCall(requestPayload);
+
+        request
+            .then(() => {
+                history.push({ pathname: `${collectionsBasePath}` });
+            })
+            .catch((err) => {
+                addToast(
+                    `There was an error saving collection '${values.name}'`,
+                    'danger',
+                    err.message
+                );
+                setSubmitting(false);
+            });
+    }
+
+    function onCancelSave() {
+        history.push({ pathname: `${collectionsBasePath}` });
+    }
+
     const onResourceSelectorChange = (
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector
-    ) => setFieldValue(`resourceSelectors.${entityType}`, scopedResourceSelector);
+    ) => setFieldValue(`resourceSelector.${entityType}`, scopedResourceSelector);
 
     const onEmbeddedCollectionsChange = (newCollections: CollectionResponse[]) =>
         setFieldValue(
-            'embeddedCollections',
+            'embeddedCollectionIds',
             newCollections.map(({ id }) => id)
         );
 
@@ -389,9 +432,9 @@ function CollectionForm({
                                     )}
                                     <RuleSelector
                                         entityType="Deployment"
-                                        scopedResourceSelector={values.resourceSelectors.Deployment}
+                                        scopedResourceSelector={values.resourceSelector.Deployment}
                                         handleChange={onResourceSelectorChange}
-                                        validationErrors={errors.resourceSelectors?.Deployment}
+                                        validationErrors={errors.resourceSelector?.Deployment}
                                         isDisabled={isReadOnly}
                                     />
                                     <Label
@@ -403,9 +446,9 @@ function CollectionForm({
                                     </Label>
                                     <RuleSelector
                                         entityType="Namespace"
-                                        scopedResourceSelector={values.resourceSelectors.Namespace}
+                                        scopedResourceSelector={values.resourceSelector.Namespace}
                                         handleChange={onResourceSelectorChange}
-                                        validationErrors={errors.resourceSelectors?.Namespace}
+                                        validationErrors={errors.resourceSelector?.Namespace}
                                         isDisabled={isReadOnly}
                                     />
                                     <Label
@@ -417,9 +460,9 @@ function CollectionForm({
                                     </Label>
                                     <RuleSelector
                                         entityType="Cluster"
-                                        scopedResourceSelector={values.resourceSelectors.Cluster}
+                                        scopedResourceSelector={values.resourceSelector.Cluster}
                                         handleChange={onResourceSelectorChange}
-                                        validationErrors={errors.resourceSelectors?.Cluster}
+                                        validationErrors={errors.resourceSelector?.Cluster}
                                         isDisabled={isReadOnly}
                                     />
                                 </Flex>
@@ -451,8 +494,21 @@ function CollectionForm({
                             </Flex>
                             {action.type !== 'view' && (
                                 <div className="pf-u-background-color-100 pf-u-p-lg pf-u-py-md">
-                                    <Button className="pf-u-mr-md">Save</Button>
-                                    <Button variant="secondary">Cancel</Button>
+                                    <Button
+                                        className="pf-u-mr-md"
+                                        onClick={submitForm}
+                                        isDisabled={isSubmitting || !isValid}
+                                        isLoading={isSubmitting}
+                                    >
+                                        Save
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        isDisabled={isSubmitting}
+                                        onClick={onCancelSave}
+                                    >
+                                        Cancel
+                                    </Button>
                                 </div>
                             )}
                         </Form>
