@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
-// New Creates a new Queue component
+// New instantiates a an output Queue component
 func New(detector detector.Detector, queueSize int) component.OutputQueue {
 	ch := make(chan *component.ResourceEvent, queueSize)
 	forwardQueue := make(chan *central.MsgFromSensor)
