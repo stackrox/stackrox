@@ -86,7 +86,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 
 	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), protoconv.ConvertTimeToTimestamp(t2))
@@ -95,7 +95,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 
 	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), protoconv.ConvertTimeToTimestamp(time.Now()))
@@ -104,7 +104,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 
 	updateTS += 1337
@@ -134,7 +134,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 
 	updateTS += 42
@@ -147,7 +147,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 
 	node1Flows, readUpdateTS, err := suite.tested.GetMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
@@ -164,7 +164,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 }
 

@@ -20,8 +20,8 @@ on:
       name:
         description: Release name (N)
         value: ${{jobs.parse.outputs.name}}
-      release-patch:
-        description: Release.patch numbers (A.B.C[-N])
+      named-release-patch:
+        description: Release.patch-name (A.B.C[-N])
         value: ${{format('{0}.{1}{2}', jobs.parse.outputs.release, jobs.parse.outputs.patch, jobs.parse.outputs.dash-name)}}
       branch:
         description: Release branch name (release-A.B[-N])

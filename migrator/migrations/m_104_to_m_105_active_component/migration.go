@@ -21,7 +21,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 104,
-		VersionAfter:   storage.Version{SeqNum: 105},
+		VersionAfter:   &storage.Version{SeqNum: 105},
 		Run: func(databases *types.Databases) error {
 			return updateActiveComponents(databases.RocksDB)
 		},

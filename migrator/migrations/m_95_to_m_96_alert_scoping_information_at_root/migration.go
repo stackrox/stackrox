@@ -19,7 +19,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 95,
-		VersionAfter:   storage.Version{SeqNum: 96},
+		VersionAfter:   &storage.Version{SeqNum: 96},
 		Run:            copyAlertScopingInformationToRoot,
 	}
 

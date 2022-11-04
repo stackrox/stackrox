@@ -8,6 +8,7 @@ import services.AlertService
 import services.ClusterService
 
 import groups.BAT
+import groups.COMPATIBILITY
 
 import io.stackrox.proto.storage.ProcessBaselineOuterClass
 import objects.Deployment
@@ -199,7 +200,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     */
 
     @Unroll
-    @Category(BAT)
+    @Category([BAT, COMPATIBILITY])
     def "Verify baseline process violation after resolve baseline on #deploymentName"() {
                /*
                     a)Lock the processes in the baseline for the key

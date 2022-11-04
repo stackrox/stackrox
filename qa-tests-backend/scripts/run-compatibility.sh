@@ -47,7 +47,6 @@ compatibility_test() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
-    # TODO(ROX-12320): Update the list of tests we want to run during "compatibility tests"
     make -C qa-tests-backend compatibility-test || touch FAIL
 
     store_qa_test_results "compatibility-test-sensor-$SENSOR_IMAGE_TAG"

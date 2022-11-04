@@ -269,14 +269,14 @@ func main() {
 	go manageReceiveStream(ctx, cli, &stoppedSig)
 
 	if features.RHCOSNodeScanning.Enabled() {
-		log.Infof("Node Rescan interval: %v", env.GetNodeRescanInterval())
+		log.Infof("Node Rescan interval: %v", env.NodeRescanInterval.DurationSetting())
 		sensorC := make(chan *sensor.MsgFromCompliance)
 		defer close(sensorC)
 		go manageSendingToSensor(ctx, cli, sensorC)
 
 		// TODO(ROX-12971): Replace with real scanner
 		scanner := nodescanv2.FakeNodeScanner{}
-		nodeScansC := manageNodeScanLoop(ctx, env.GetNodeRescanInterval(), &scanner)
+		nodeScansC := manageNodeScanLoop(ctx, env.NodeRescanInterval.DurationSetting(), &scanner)
 		// multiplex producers (nodeScansC) into the output channel (sensorC)
 		go func() {
 			for {

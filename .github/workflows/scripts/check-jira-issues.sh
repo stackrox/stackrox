@@ -8,13 +8,13 @@ set -euo pipefail
 PROJECTS="$1"
 RELEASE="$2"
 PATCH="$3"
-
-RELEASE_PATCH="${RELEASE}.${PATCH}"
+NAMED_RELEASE_PATCH="$4"
 
 check_not_empty \
     PROJECTS \
     RELEASE \
     PATCH \
+    NAMED_RELEASE_PATCH \
     \
     JIRA_TOKEN \
     DRY_RUN
@@ -22,14 +22,14 @@ check_not_empty \
 # TODO: Jira returns 400 if requested fixVersion does not exist. That means
 # the named release must exist on Jira, which is not given.
 JQL_OPEN_ISSUES="project IN ($PROJECTS) \
-AND fixVersion = \"$RELEASE_PATCH\" \
+AND fixVersion = \"$RELEASE.$PATCH\" \
 AND statusCategory != done \
 AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Cloud Service\")) \
 AND type NOT IN (Epic, \"Feature Request\") \
 ORDER BY assignee"
 
 JQL_CLOSED_WITH_PR="project IN ($PROJECTS) \
-AND fixVersion = \"$RELEASE_PATCH\" \
+AND fixVersion = \"$RELEASE.$PATCH\" \
 AND statusCategory = done \
 AND (Component IS EMPTY or Component NOT IN (Documentation, \"ACS Cloud Service\")) \
 AND issue.property[development].openprs > 0 \
@@ -58,7 +58,7 @@ comment_on_single_issue() {
         -H "Authorization: Bearer $JIRA_TOKEN" \
         -H "Content-Type: application/json" \
         --data "{\"body\": \
-\"Release $RELEASE_PATCH is ongoing. \
+\"Release $NAMED_RELEASE_PATCH is ongoing. \
 Please update the status of this issue and notify the release engineer.\"}" \
         "https://issues.redhat.com/rest/api/2/issue/$1/comment"
 }
@@ -90,19 +90,19 @@ fi
 OPEN_ISSUES=$(get_issues_summary "$JQL_OPEN_ISSUES")
 
 if [ -z "$OPEN_ISSUES" ]; then
-    gh_summary "All issues for Jira release $RELEASE_PATCH are closed."
+    gh_summary "All issues for Jira release $NAMED_RELEASE_PATCH are closed."
     exit 0
 fi
 
 gh_summary <<EOF
-:red_circle: The following Jira issues are still open for release $RELEASE_PATCH:
+:red_circle: The following Jira issues are still open for release $NAMED_RELEASE_PATCH:
 
 $OPEN_ISSUES
 
 :arrow_right: Contact the assignees to clarify the status.
 EOF
 
-gh_log error "There are non-closed Jira issues for version $RELEASE_PATCH."
+gh_log error "There are non-closed Jira issues for version $NAMED_RELEASE_PATCH."
 
 CLOSED_WITH_PR=$(get_open_issues "$JQL_CLOSED_WITH_PR")
 OPEN_ISSUES=$(get_open_issues "$JQL_OPEN_ISSUES")
@@ -114,7 +114,7 @@ echo "Open issues:"
 echo "$OPEN_ISSUES"
 
 if [ "$DRY_RUN" = "false" ]; then
-    if [ "$GITHUB_REPOSITORY" = "stackrox/stackrox" ] || { [ "$GITHUB_REPOSITORY" = "stackrox/test-gh-actions" ] && [ "$RELEASE_PATCH" == "0.0.0" ]; }; then
+    if [ "$GITHUB_REPOSITORY" = "stackrox/stackrox" ] || { [ "$GITHUB_REPOSITORY" = "stackrox/test-gh-actions" ] && [ "$NAMED_RELEASE_PATCH" == "0.0.0" ]; }; then
         comment_on_issues_list "$OPEN_ISSUES"
         comment_on_issues_list "$CLOSED_WITH_PR"
     fi

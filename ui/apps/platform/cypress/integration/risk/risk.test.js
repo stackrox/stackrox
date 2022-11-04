@@ -14,7 +14,6 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
-import { hasFeatureFlag } from '../../helpers/features';
 
 describe('Risk page', () => {
     withAuth();
@@ -161,10 +160,7 @@ describe('Risk page', () => {
             cy.get(RiskPageSelectors.search.searchLabels).should('not.exist');
         });
 
-        it('should have a single URL search param key/value pair in its search bar', function () {
-            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-                this.skip();
-            }
+        it('should have a single URL search param key/value pair in its search bar', () => {
             visitRiskDeployments();
 
             const nsOption = 'Namespace';
@@ -196,10 +192,7 @@ describe('Risk page', () => {
             });
         });
 
-        it('should have multiple URL search param key/value pairs in its search bar', function () {
-            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-                this.skip();
-            }
+        it('should have multiple URL search param key/value pairs in its search bar', () => {
             visitRiskDeployments();
 
             const nsOption = 'Namespace';
