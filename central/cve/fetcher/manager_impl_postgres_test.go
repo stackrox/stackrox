@@ -131,7 +131,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 		},
 	}
 
-	embeddedCVEs, err := utils.NvdCVEsToEmbeddedCVEs(nvdCVEs, utils.K8s)
+	embeddedCVEs, err := utils.NVDCVEsToEmbeddedCVEs(nvdCVEs, utils.K8s)
 	require.NoError(t, err)
 
 	embeddedCVEToClusters := map[string][]*storage.Cluster{
