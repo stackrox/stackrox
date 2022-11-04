@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 )
 
-// New Creates a new eventPipeline component
+// New instantiates the eventPipeline component
 func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer) common.SensorComponent {
 	// TODO(ROX-13413): Move this env.EventPipelineOutputQueueSize to CreateOptions
 	outputQueue := output.New(detector, env.EventPipelineOutputQueueSize.IntegerSetting())
