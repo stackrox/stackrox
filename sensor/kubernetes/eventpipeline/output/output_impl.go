@@ -17,7 +17,7 @@ type outputQueueImpl struct {
 	detector     detector.Detector
 }
 
-// Send sends a ResourceEvent message to the inner queue
+// Send a ResourceEvent message to the inner queue
 func (q *outputQueueImpl) Send(msg *component.ResourceEvent) {
 	q.innerQueue <- msg
 }
