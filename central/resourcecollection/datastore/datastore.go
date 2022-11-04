@@ -37,15 +37,14 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
 		searcher: searcher,
 		graph:    nil,
 	}
-
-	return ds
+	return ds, ds.initGraph()
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
@@ -57,5 +56,5 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 	dbstore := postgres.New(pool)
 	indexer := postgres.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher), nil
+	return New(dbstore, indexer, searcher)
 }

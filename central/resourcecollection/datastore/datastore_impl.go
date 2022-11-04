@@ -17,7 +17,6 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -46,15 +45,6 @@ type graphEntry struct {
 
 func (ge graphEntry) ID() string {
 	return ge.id
-}
-
-func (ds *datastoreImpl) initGraphOnce() {
-	once.Do(ds.initGraphCrashOnError)
-}
-
-func (ds *datastoreImpl) initGraphCrashOnError() {
-	err := ds.initGraph()
-	utils.CrashOnError(err)
 }
 
 func (ds *datastoreImpl) initGraph() error {
@@ -128,8 +118,6 @@ func (ds *datastoreImpl) initGraph() error {
 
 // addCollectionToGraphNoLock creates a copy of the existing DAG and returns that copy with the collection added, or an appropriate error
 func (ds *datastoreImpl) addCollectionToGraphNoLock(obj *storage.ResourceCollection) (*dag.DAG, error) {
-	ds.initGraphOnce()
-
 	var err error
 
 	// input validation
@@ -169,8 +157,6 @@ func (ds *datastoreImpl) addCollectionToGraphNoLock(obj *storage.ResourceCollect
 
 // updateCollectionInGraphNoLock creates a copy of the existing DAG and returns that copy with the collection updated, or an appropriate error
 func (ds *datastoreImpl) updateCollectionInGraphNoLock(obj *storage.ResourceCollection) (*dag.DAG, error) {
-	ds.initGraphOnce()
-
 	var err error
 
 	if err = verifyCollectionObjectNotEmpty(obj); err != nil {
@@ -229,8 +215,6 @@ func (ds *datastoreImpl) updateCollectionInGraphNoLock(obj *storage.ResourceColl
 
 // deleteCollectionFromGraphNoLock removes the collection from the DAG, or returns an appropriate error
 func (ds *datastoreImpl) deleteCollectionFromGraphNoLock(id string) error {
-	ds.initGraphOnce()
-
 	// this function covers removal of the vertex and any edges to or from other vertices, it is also threadsafe
 	return ds.graph.DeleteVertex(id)
 }
