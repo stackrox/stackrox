@@ -9,38 +9,29 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func getProxyConfigEnvVars(obj k8sutil.Object, proxyEnvVars map[string]string) (map[string]interface{}, error) {
+func getProxyConfigEnvVars(obj k8sutil.Object, proxyEnvVars map[string]string) map[string]interface{} {
 	if len(proxyEnvVars) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	secretName := getProxyEnvSecretName(obj)
 
 	envVarsMap := map[string]interface{}{}
 	for envVarName := range proxyEnvVars {
-		src := v1.EnvVarSource{
-			SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{
-					Name: secretName,
-				},
-				Key: envVarName,
-			},
-		}
-		uSrc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&src)
-		if err != nil {
-			return nil, err
-		}
 		envVarsMap[envVarName] = map[string]interface{}{
-			"valueFrom": uSrc,
+			"valueFrom": map[string]interface{}{
+				"secretKeyRef": map[string]interface{}{
+					"name": secretName,
+					"key":  envVarName,
+				},
+			},
 		}
 	}
 
-	return envVarsMap, nil
+	return envVarsMap
 }
 
 // InjectProxyEnvVars wraps a Translator to inject proxy configuration environment variables.
@@ -51,15 +42,7 @@ func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string
 			return nil, err
 		}
 
-		proxyEnvVars, err := getProxyConfigEnvVars(obj, proxyEnv)
-		if err != nil {
-			// Simply log the error, we do not want to fail reconciliation based on this (the check for
-			// len(proxyEnvVars) == 0) should catch a complete failure).
-			// While this log can be spammy (emitted on every reconciliation), an error here is extremely unlikely,
-			// thus we deem this acceptable.
-			log.Error(err, "could not determine proxy environment variables", "gvk", obj.GroupVersionKind(), "namespace", obj.GetNamespace(), "name", obj.GetName())
-		}
-
+		proxyEnvVars := getProxyConfigEnvVars(obj, proxyEnv)
 		if len(proxyEnvVars) == 0 {
 			return vals, nil
 		}

@@ -37,8 +37,7 @@ var (
 )
 
 func TestGetProxyConfigEnvVars_EmptyEnv(t *testing.T) {
-	vals, err := getProxyConfigEnvVars(testObj, nil)
-	assert.NoError(t, err)
+	vals := getProxyConfigEnvVars(testObj, nil)
 	assert.Empty(t, vals)
 }
 
@@ -48,8 +47,7 @@ func TestGetProxyConfigEnvVars_WithValues(t *testing.T) {
 		"NO_PROXY":   "127.0.0.1/8",
 	}
 
-	vals, err := getProxyConfigEnvVars(testObj, env)
-	assert.NoError(t, err)
+	vals := getProxyConfigEnvVars(testObj, env)
 
 	expectedVals, err := chartutil.ReadValues([]byte(`
 http_proxy:
