@@ -100,7 +100,7 @@ func (suite *centralDBTestSuite) verifyFiles(t *testing.T, files []*zip.File, pv
 
 func (suite *centralDBTestSuite) verifyFile(t *testing.T, fileMap map[string][]unstructured.Unstructured, fileName string, kind string, value string, fields ...string) {
 	objs, ok := fileMap[fileName]
-	require.True(t, ok)
+	require.True(t, ok, "%s not found", fileName)
 	require.GreaterOrEqual(t, len(objs), 1)
 	for _, obj := range objs {
 		val, ok, err := unstructured.NestedString(obj.UnstructuredContent(), "kind")
