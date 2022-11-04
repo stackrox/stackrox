@@ -5,14 +5,12 @@ import (
 	"io"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -21,16 +19,15 @@ var (
 )
 
 // New returns a new kubernetes listener.
-func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer) common.SensorComponent {
+func New(client client.Interface, configHandler config.Handler, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, queue component.OutputQueue) component.PipelineComponent {
 	k := &listenerImpl{
 		client:             client,
-		eventsC:            make(chan *central.MsgFromSensor, 10),
 		stopSig:            concurrency.NewSignal(),
 		configHandler:      configHandler,
-		detector:           detector,
 		credentialsManager: createCredentialsManager(client, nodeName),
 		resyncPeriod:       resyncPeriod,
 		traceWriter:        traceWriter,
+		outputQueue:        queue,
 	}
 	return k
 }

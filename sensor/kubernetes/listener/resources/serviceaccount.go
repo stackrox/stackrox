@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -20,7 +21,7 @@ func newServiceAccountDispatcher(serviceAccountStore *ServiceAccountStore) *serv
 }
 
 // ProcessEvent processes a service account resource event, and returns the sensor events to emit in response.
-func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	serviceAccount := obj.(*v1.ServiceAccount)
 
 	var serviceAccountSecrets []string
@@ -57,11 +58,12 @@ func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action centr
 		s.serviceAccountStore.Add(sa.ServiceAccount)
 	}
 
-	return []*central.SensorEvent{
+	events := []*central.SensorEvent{
 		{
 			Id:       string(serviceAccount.UID),
 			Action:   action,
 			Resource: sa,
 		},
 	}
+	return component.NewResourceEvent(events, nil, nil)
 }
