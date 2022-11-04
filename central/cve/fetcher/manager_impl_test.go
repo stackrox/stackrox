@@ -83,6 +83,17 @@ func TestReconcileCVEsInDB(t *testing.T) {
 					},
 				},
 			},
+			Impact: &schema.NVDCVEFeedJSON10DefImpact{
+				BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+					CVSSV3: &schema.CVSSV30{
+						BaseScore:    6.1,
+						VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						Version:      "3.0",
+					},
+					ExploitabilityScore: 1.8,
+					ImpactScore:         4.2,
+				},
+			},
 		},
 		{
 			CVE: &schema.CVEJSON40{
@@ -101,6 +112,17 @@ func TestReconcileCVEsInDB(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+			Impact: &schema.NVDCVEFeedJSON10DefImpact{
+				BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+					CVSSV3: &schema.CVSSV30{
+						BaseScore:    6.1,
+						VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						Version:      "3.0",
+					},
+					ExploitabilityScore: 1.8,
+					ImpactScore:         4.2,
 				},
 			},
 		},
@@ -125,6 +147,17 @@ func TestReconcileCVEsInDB(t *testing.T) {
 					},
 				},
 			},
+			Impact: &schema.NVDCVEFeedJSON10DefImpact{
+				BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+					CVSSV3: &schema.CVSSV30{
+						BaseScore:    6.1,
+						VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+						Version:      "3.0",
+					},
+					ExploitabilityScore: 1.8,
+					ImpactScore:         4.2,
+				},
+			},
 		},
 	}
 
@@ -146,9 +179,26 @@ func TestReconcileCVEsInDB(t *testing.T) {
 	cvesToUpsert := []converter.ClusterCVEParts{
 		{
 			CVE: &storage.CVE{
-				Id:   "CVE-1",
-				Link: "https://nvd.nist.gov/vuln/detail/CVE-1",
-				Type: storage.CVE_K8S_CVE,
+				Id:           "CVE-1",
+				Link:         "https://nvd.nist.gov/vuln/detail/CVE-1",
+				Type:         storage.CVE_K8S_CVE,
+				Cvss:         6.1,
+				ImpactScore:  4.2,
+				ScoreVersion: storage.CVE_V3,
+				CvssV3: &storage.CVSSV3{
+					Vector:              "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+					ExploitabilityScore: 1.8,
+					ImpactScore:         4.2,
+					AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
+					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+					UserInteraction:     storage.CVSSV3_UI_NONE,
+					Scope:               storage.CVSSV3_UNCHANGED,
+					Confidentiality:     storage.CVSSV3_IMPACT_NONE,
+					Integrity:           storage.CVSSV3_IMPACT_LOW,
+					Availability:        storage.CVSSV3_IMPACT_HIGH,
+					Score:               6.1,
+				},
 			},
 			Children: []converter.EdgeParts{
 				{
@@ -165,9 +215,26 @@ func TestReconcileCVEsInDB(t *testing.T) {
 		},
 		{
 			CVE: &storage.CVE{
-				Id:   "CVE-2",
-				Link: "https://nvd.nist.gov/vuln/detail/CVE-2",
-				Type: storage.CVE_K8S_CVE,
+				Id:           "CVE-2",
+				Link:         "https://nvd.nist.gov/vuln/detail/CVE-2",
+				Type:         storage.CVE_K8S_CVE,
+				Cvss:         6.1,
+				ImpactScore:  4.2,
+				ScoreVersion: storage.CVE_V3,
+				CvssV3: &storage.CVSSV3{
+					Vector:              "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+					ExploitabilityScore: 1.8,
+					ImpactScore:         4.2,
+					AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
+					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+					UserInteraction:     storage.CVSSV3_UI_NONE,
+					Scope:               storage.CVSSV3_UNCHANGED,
+					Confidentiality:     storage.CVSSV3_IMPACT_NONE,
+					Integrity:           storage.CVSSV3_IMPACT_LOW,
+					Availability:        storage.CVSSV3_IMPACT_HIGH,
+					Score:               6.1,
+				},
 			},
 			Children: []converter.EdgeParts{
 				{
@@ -181,9 +248,26 @@ func TestReconcileCVEsInDB(t *testing.T) {
 		},
 		{
 			CVE: &storage.CVE{
-				Id:   "CVE-3",
-				Link: "https://nvd.nist.gov/vuln/detail/CVE-3",
-				Type: storage.CVE_K8S_CVE,
+				Id:           "CVE-3",
+				Link:         "https://nvd.nist.gov/vuln/detail/CVE-3",
+				Type:         storage.CVE_K8S_CVE,
+				Cvss:         6.1,
+				ImpactScore:  4.2,
+				ScoreVersion: storage.CVE_V3,
+				CvssV3: &storage.CVSSV3{
+					Vector:              "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+					ExploitabilityScore: 1.8,
+					ImpactScore:         4.2,
+					AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
+					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+					UserInteraction:     storage.CVSSV3_UI_NONE,
+					Scope:               storage.CVSSV3_UNCHANGED,
+					Confidentiality:     storage.CVSSV3_IMPACT_NONE,
+					Integrity:           storage.CVSSV3_IMPACT_LOW,
+					Availability:        storage.CVSSV3_IMPACT_HIGH,
+					Score:               6.1,
+				},
 			},
 			Children: []converter.EdgeParts{
 				{
@@ -319,6 +403,17 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 						},
 					},
 				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
+					},
+				},
 			},
 			components: []string{
 				kubernetes.KubeControllerManager,
@@ -342,6 +437,17 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 								},
 							},
 						},
+					},
+				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
 					},
 				},
 			},
@@ -373,6 +479,17 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 						},
 					},
 				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
+					},
+				},
 			},
 			components: []string{
 				kubernetes.KubeAggregator,
@@ -400,6 +517,17 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 						},
 					},
 				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
+					},
+				},
 			},
 			components: []string{
 				"openshift",
@@ -425,6 +553,17 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 								},
 							},
 						},
+					},
+				},
+				Impact: &schema.NVDCVEFeedJSON10DefImpact{
+					BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+						CVSSV3: &schema.CVSSV30{
+							BaseScore:    6.1,
+							VectorString: "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+							Version:      "3.0",
+						},
+						ExploitabilityScore: 1.8,
+						ImpactScore:         4.2,
 					},
 				},
 			},
