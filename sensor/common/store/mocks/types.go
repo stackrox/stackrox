@@ -8,7 +8,11 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/openshift/api/route/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	deployment "github.com/stackrox/rox/sensor/common/store/deployment"
+	servicewrapper "github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
+	v10 "k8s.io/api/core/v1"
 )
 
 // MockDeploymentStore is a mock of DeploymentStore interface.
@@ -32,6 +36,21 @@ func NewMockDeploymentStore(ctrl *gomock.Controller) *MockDeploymentStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDeploymentStore) EXPECT() *MockDeploymentStoreMockRecorder {
 	return m.recorder
+}
+
+// BuildDeploymentWithDependencies mocks base method.
+func (m *MockDeploymentStore) BuildDeploymentWithDependencies(id string, dependencies deployment.Dependencies) (*storage.Deployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BuildDeploymentWithDependencies", id, dependencies)
+	ret0, _ := ret[0].(*storage.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BuildDeploymentWithDependencies indicates an expected call of BuildDeploymentWithDependencies.
+func (mr *MockDeploymentStoreMockRecorder) BuildDeploymentWithDependencies(id, dependencies interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDeploymentWithDependencies", reflect.TypeOf((*MockDeploymentStore)(nil).BuildDeploymentWithDependencies), id, dependencies)
 }
 
 // Get mocks base method.
@@ -275,4 +294,143 @@ func (m *MockServiceAccountStore) Remove(sa *storage.ServiceAccount) {
 func (mr *MockServiceAccountStoreMockRecorder) Remove(sa interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockServiceAccountStore)(nil).Remove), sa)
+}
+
+// MockServiceStore is a mock of ServiceStore interface.
+type MockServiceStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockServiceStoreMockRecorder
+}
+
+// MockServiceStoreMockRecorder is the mock recorder for MockServiceStore.
+type MockServiceStoreMockRecorder struct {
+	mock *MockServiceStore
+}
+
+// NewMockServiceStore creates a new mock instance.
+func NewMockServiceStore(ctrl *gomock.Controller) *MockServiceStore {
+	mock := &MockServiceStore{ctrl: ctrl}
+	mock.recorder = &MockServiceStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockServiceStore) EXPECT() *MockServiceStoreMockRecorder {
+	return m.recorder
+}
+
+// GetMatchingServicesWithRoutes mocks base method.
+func (m *MockServiceStore) GetMatchingServicesWithRoutes(namespace string, labels map[string]string) []servicewrapper.SelectorRouteWrap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMatchingServicesWithRoutes", namespace, labels)
+	ret0, _ := ret[0].([]servicewrapper.SelectorRouteWrap)
+	return ret0
+}
+
+// GetMatchingServicesWithRoutes indicates an expected call of GetMatchingServicesWithRoutes.
+func (mr *MockServiceStoreMockRecorder) GetMatchingServicesWithRoutes(namespace, labels interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchingServicesWithRoutes", reflect.TypeOf((*MockServiceStore)(nil).GetMatchingServicesWithRoutes), namespace, labels)
+}
+
+// GetRoutesForService mocks base method.
+func (m *MockServiceStore) GetRoutesForService(svc *servicewrapper.SelectorWrap) []*v1.Route {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRoutesForService", svc)
+	ret0, _ := ret[0].([]*v1.Route)
+	return ret0
+}
+
+// GetRoutesForService indicates an expected call of GetRoutesForService.
+func (mr *MockServiceStoreMockRecorder) GetRoutesForService(svc interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoutesForService", reflect.TypeOf((*MockServiceStore)(nil).GetRoutesForService), svc)
+}
+
+// GetService mocks base method.
+func (m *MockServiceStore) GetService(namespace, name string) *servicewrapper.SelectorWrap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetService", namespace, name)
+	ret0, _ := ret[0].(*servicewrapper.SelectorWrap)
+	return ret0
+}
+
+// GetService indicates an expected call of GetService.
+func (mr *MockServiceStoreMockRecorder) GetService(namespace, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetService", reflect.TypeOf((*MockServiceStore)(nil).GetService), namespace, name)
+}
+
+// NodePortServicesSnapshot mocks base method.
+func (m *MockServiceStore) NodePortServicesSnapshot() []*servicewrapper.SelectorWrap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NodePortServicesSnapshot")
+	ret0, _ := ret[0].([]*servicewrapper.SelectorWrap)
+	return ret0
+}
+
+// NodePortServicesSnapshot indicates an expected call of NodePortServicesSnapshot.
+func (mr *MockServiceStoreMockRecorder) NodePortServicesSnapshot() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NodePortServicesSnapshot", reflect.TypeOf((*MockServiceStore)(nil).NodePortServicesSnapshot))
+}
+
+// OnNamespaceDeleted mocks base method.
+func (m *MockServiceStore) OnNamespaceDeleted(ns string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnNamespaceDeleted", ns)
+}
+
+// OnNamespaceDeleted indicates an expected call of OnNamespaceDeleted.
+func (mr *MockServiceStoreMockRecorder) OnNamespaceDeleted(ns interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnNamespaceDeleted", reflect.TypeOf((*MockServiceStore)(nil).OnNamespaceDeleted), ns)
+}
+
+// RemoveRoute mocks base method.
+func (m *MockServiceStore) RemoveRoute(route *v1.Route) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveRoute", route)
+}
+
+// RemoveRoute indicates an expected call of RemoveRoute.
+func (mr *MockServiceStoreMockRecorder) RemoveRoute(route interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRoute", reflect.TypeOf((*MockServiceStore)(nil).RemoveRoute), route)
+}
+
+// RemoveService mocks base method.
+func (m *MockServiceStore) RemoveService(svc *v10.Service) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveService", svc)
+}
+
+// RemoveService indicates an expected call of RemoveService.
+func (mr *MockServiceStoreMockRecorder) RemoveService(svc interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveService", reflect.TypeOf((*MockServiceStore)(nil).RemoveService), svc)
+}
+
+// UpsertRoute mocks base method.
+func (m *MockServiceStore) UpsertRoute(route *v1.Route) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpsertRoute", route)
+}
+
+// UpsertRoute indicates an expected call of UpsertRoute.
+func (mr *MockServiceStoreMockRecorder) UpsertRoute(route interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRoute", reflect.TypeOf((*MockServiceStore)(nil).UpsertRoute), route)
+}
+
+// UpsertService mocks base method.
+func (m *MockServiceStore) UpsertService(svc *servicewrapper.SelectorWrap) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpsertService", svc)
+}
+
+// UpsertService indicates an expected call of UpsertService.
+func (mr *MockServiceStoreMockRecorder) UpsertService(svc interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertService", reflect.TypeOf((*MockServiceStore)(nil).UpsertService), svc)
 }
