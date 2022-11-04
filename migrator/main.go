@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -43,7 +44,7 @@ func startProfilingServer() {
 	for path, debugHandler := range routes.DebugRoutes {
 		handler.Handle(path, debugHandler)
 	}
-	srv := &http.Server{Addr: ":6060", Handler: handler}
+	srv := &http.Server{Addr: ":6060", Handler: handler, ReadTimeout: 500 * time.Millisecond}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
 			log.WriteToStderrf("Closing profiling server: %v", err)

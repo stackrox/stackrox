@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
@@ -173,9 +174,10 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 		}
 
 		httpSrv := &http.Server{
-			Handler:   actualHTTPHandler,
-			TLSConfig: tlsConf,
-			ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
+			Handler:     actualHTTPHandler,
+			ReadTimeout: 500 * time.Millisecond,
+			TLSConfig:   tlsConf,
+			ErrorLog:    golog.New(httpErrorLogger{}, "", golog.LstdFlags),
 		}
 		if !c.NoHTTP2 {
 			var h2Srv http2.Server

@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -52,8 +53,9 @@ func (s *HTTPServer) RunForever() {
 	mux := http.NewServeMux()
 	mux.Handle(metricsURLPath, promhttp.HandlerFor(s.Gatherer, s.HandlerOpts))
 	httpServer := &http.Server{
-		Addr:    s.Address,
-		Handler: mux,
+		Addr:        s.Address,
+		ReadTimeout: 500 * time.Millisecond,
+		Handler:     mux,
 	}
 	go runForever(httpServer)
 }
