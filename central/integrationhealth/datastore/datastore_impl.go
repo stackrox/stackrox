@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/integrationhealth/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -116,14 +117,16 @@ func readAllowed(ctx context.Context, typ storage.IntegrationHealth_Type) (bool,
 
 func (ds *datastoreImpl) getIntegrationsOfType(ctx context.Context, integrationType storage.IntegrationHealth_Type) ([]*storage.IntegrationHealth, error) {
 	var integrationHealth []*storage.IntegrationHealth
-	err := ds.store.Walk(ctx, func(obj *storage.IntegrationHealth) error {
-		if obj.GetType() == integrationType {
-			integrationHealth = append(integrationHealth, obj)
-		}
-		return nil
-	})
-
-	if err != nil {
+	walkFn := func() error {
+		integrationHealth = integrationHealth[:0]
+		return ds.store.Walk(ctx, func(obj *storage.IntegrationHealth) error {
+			if obj.GetType() == integrationType {
+				integrationHealth = append(integrationHealth, obj)
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 	return integrationHealth, nil

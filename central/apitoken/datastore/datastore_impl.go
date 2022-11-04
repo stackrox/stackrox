@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -65,14 +66,17 @@ func (b *datastoreImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensReque
 	defer b.Unlock()
 
 	var tokens []*storage.TokenMetadata
-	err := b.storage.Walk(ctx, func(token *storage.TokenMetadata) error {
-		if req.GetRevokedOneof() != nil && req.GetRevoked() != token.GetRevoked() {
+	walkFn := func() error {
+		tokens = tokens[:0]
+		return b.storage.Walk(ctx, func(token *storage.TokenMetadata) error {
+			if req.GetRevokedOneof() != nil && req.GetRevoked() != token.GetRevoked() {
+				return nil
+			}
+			tokens = append(tokens, token)
 			return nil
-		}
-		tokens = append(tokens, token)
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 	return tokens, nil

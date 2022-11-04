@@ -222,14 +222,8 @@ describe('Access Control Auth providers', () => {
         cy.intercept('PUT', '/v1/authProviders/auth-provider-1', {
             body: {},
         }).as('PutAuthProvider');
-        cy.intercept('POST', api.groups.batch, (req) => {
-            expect(req.body).to.deep.equal(
-                updateMinimumAccessRoleRequest,
-                `request: ${JSON.stringify(req.body)} expected: ${JSON.stringify(
-                    updateMinimumAccessRoleRequest
-                )}`
-            );
-            req.body = {};
+        cy.intercept('POST', api.groups.batch, {
+            body: {},
         }).as('PostGroupsBatch');
 
         const id = 'auth-provider-1';
@@ -245,7 +239,14 @@ describe('Access Control Auth providers', () => {
         cy.get(`${selectMinimumAccessRoleItem}:contains("Analyst")`).click();
 
         cy.get(selectors.form.saveButton).click();
-        cy.wait(['@PutAuthProvider', '@PostGroupsBatch']);
+        cy.wait(['@PutAuthProvider', '@PostGroupsBatch']).then(([, { request }]) => {
+            expect(request.body).to.deep.equal(
+                updateMinimumAccessRoleRequest,
+                `request: ${JSON.stringify(request.body)} expected: ${JSON.stringify(
+                    updateMinimumAccessRoleRequest
+                )}`
+            );
+        });
 
         cy.get(selectMinimumAccessRole).should('contain', 'Analyst');
     });

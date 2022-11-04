@@ -19,7 +19,6 @@ import (
 	nodeScorer "github.com/stackrox/rox/central/risk/scorer/node"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -104,7 +103,7 @@ func New(nodeStorage nodeDS.GlobalDataStore,
 // ReprocessDeploymentRisk will reprocess the passed deployment's risk and save the results
 func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Deployment")
-	debug.ROX12096(log.Infof, deployment.GetName(), "reprocess risk for deployment %q: %+v", deployment.GetName(), deployment)
+
 	oldRisk, exists, err := e.riskStorage.GetRiskForDeployment(allAccessCtx, deployment)
 	if err != nil {
 		log.Errorf("error getting risk for deployment %s: %v", deployment.GetName(), err)
@@ -120,10 +119,8 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 				continue
 			}
 			if !exists {
-				debug.ROX12096(log.Infof, deployment.GetName(), "no risk found for image %q of deployment %q", container.GetImage().GetName().GetFullName(), deployment.GetName())
 				continue
 			}
-			debug.ROX12096(log.Infof, deployment.GetName(), "risk found for image %q of deployment %q", container.GetImage().GetName().GetFullName(), deployment.GetName())
 			imageRisks = append(imageRisks, risk)
 		}
 	}
@@ -148,7 +145,6 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	}
 
 	if oldScore == risk.GetScore() {
-		debug.ROX12096(log.Infof, deployment.GetName(), "Old risk equals existing risk, meaning we do not upsert for deployment %q", deployment.GetName())
 		return
 	}
 

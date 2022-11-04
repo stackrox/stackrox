@@ -66,7 +66,8 @@ type backendImpl struct {
 	responseMode  string
 	responseTypes set.FrozenStringSet
 
-	config map[string]string
+	config   map[string]string
+	mappings map[string]string
 
 	httpClient *http.Client
 }
@@ -181,12 +182,11 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonc
 		return nil, errors.New("invalid token")
 	}
 
-	var userInfo userInfoType
-	if err := idToken.Claims(&userInfo); err != nil {
+	externalClaims, err := p.extractExternalClaims(idToken)
+	if err != nil {
 		return nil, err
 	}
 
-	externalClaims := userInfoToExternalClaims(&userInfo)
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: idToken.GetExpiry(),
@@ -201,12 +201,11 @@ func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) 
 		return nil, errors.Wrap(err, "fetching updated userinfo")
 	}
 
-	var userInfo userInfoType
-	if err := userInfoFromEndpoint.Claims(&userInfo); err != nil {
-		return nil, errors.Wrap(err, "parsing userinfo")
+	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "extracting external claims from userinfo endpoint response")
 	}
 
-	externalClaims := userInfoToExternalClaims(&userInfo)
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: time.Now().Add(userInfoExpiration),
@@ -219,8 +218,7 @@ var (
 	errQueryWithoutClientSecret  = errors.New("query response mode can only be used with a client secret")
 )
 
-func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string,
-	providerFactory providerFactoryFunc, exchange exchangeFunc, noncePool cryptoutils.NoncePool) (*backendImpl, error) {
+func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string, providerFactory providerFactoryFunc, exchange exchangeFunc, noncePool cryptoutils.NoncePool, mappings map[string]string) (*backendImpl, error) {
 	if len(uiEndpoints) == 0 {
 		return nil, errors.New("OIDC requires a default UI endpoint")
 	}
@@ -247,6 +245,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		provider:           provider,
 		httpClient:         issuerHelper.HTTPClient(),
 		oauthExchange:      exchange,
+		mappings:           mappings,
 	}
 
 	b.baseRedirectURL = url.URL{
@@ -577,6 +576,26 @@ func (p *backendImpl) Validate(context.Context, *tokens.Claims) error {
 // Helpers
 ///////////
 
+func (p *backendImpl) injectHTTPClient(ctx context.Context) context.Context {
+	if p.httpClient != nil {
+		return oidc.ClientContext(ctx, p.httpClient)
+	}
+	return ctx
+}
+
+func (p *backendImpl) extractExternalClaims(extractor claimExtractor) (*tokens.ExternalUserClaim, error) {
+	var userInfo userInfoType
+	if err := extractor.Claims(&userInfo); err != nil {
+		return nil, errors.Wrap(err, "failed to extract user info claims")
+	}
+
+	externalClaims := userInfoToExternalClaims(&userInfo)
+	if err := mapCustomClaims(externalClaims, p.mappings, extractor); err != nil {
+		return nil, errors.Wrap(err, "failed to add custom mapped claims")
+	}
+	return externalClaims, nil
+}
+
 // userInfoType is an internal helper struct to unmarshal OIDC token info into.
 type userInfoType struct {
 	Name   string   `json:"name"`
@@ -630,9 +649,67 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	return claim
 }
 
-func (p *backendImpl) injectHTTPClient(ctx context.Context) context.Context {
-	if p.httpClient != nil {
-		return oidc.ClientContext(ctx, p.httpClient)
+type claimExtractor interface {
+	Claims(v interface{}) error
+}
+
+func mapCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[string]string, claimExtractor claimExtractor) error {
+	claims := make(map[string]interface{}, 0)
+	if err := claimExtractor.Claims(&claims); err != nil {
+		return errors.Wrap(err, "failed to extract claims from IdP's token")
 	}
-	return ctx
+	for fromClaimPath, toClaimName := range mappings {
+		val, err := extractClaimFromPath(fromClaimPath, claims)
+		if err != nil {
+			log.Debugf("Failed to extract claim from path: %v", err)
+			continue
+		}
+		if err := addClaimToUserClaims(externalUserClaim, toClaimName, val); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attributeName string, claimValue interface{}) error {
+	switch v := claimValue.(type) {
+	case []interface{}:
+		for i, arrayVal := range v {
+			_, isArray := arrayVal.([]interface{})
+			_, isNestedStruct := arrayVal.(map[string]interface{})
+			if isArray || isNestedStruct {
+				return errors.Errorf("unsupported claim type %T with value %+v", arrayVal, arrayVal)
+			}
+			if err := addClaimToUserClaims(externalUserClaim, attributeName, arrayVal); err != nil {
+				return errors.Wrapf(err, "failed to add %d element of %+v", i, v)
+			}
+		}
+	case string:
+		externalUserClaim.Attributes[attributeName] = append(externalUserClaim.Attributes[attributeName], v)
+	case bool:
+		externalUserClaim.Attributes[attributeName] = append(externalUserClaim.Attributes[attributeName], strconv.FormatBool(v))
+	default:
+		return errors.Errorf("unsupported claim type %T with value %+v", claimValue, claimValue)
+	}
+	return nil
+}
+
+func extractClaimFromPath(fromClaimName string, claims map[string]interface{}) (interface{}, error) {
+	claimPath := strings.Split(fromClaimName, ".")
+	currentNode := claims
+	for i, next := range claimPath {
+		nextVal, ok := currentNode[next]
+		if !ok {
+			return nil, errors.Errorf("no value %q on the path %q", next, fromClaimName)
+		}
+		if i == len(claimPath)-1 {
+			return nextVal, nil
+		}
+		currentNode, ok = nextVal.(map[string]interface{})
+		if !ok {
+			return nil, errors.Errorf("expected next value to be of map type but got %T", nextVal)
+		}
+	}
+	log.Warnf("Suspicious loop exit while extracting claim from path %q", fromClaimName)
+	return nil, errors.Errorf("no value on path %q", fromClaimName)
 }

@@ -512,6 +512,9 @@ sensor-integration-test: build-prep test-prep
 		| tee -a $(GO_TEST_OUTPUT_PATH); \
 	done \
 
+sensor-pipeline-benchmark: build-prep test-prep
+	LOGLEVEL="panic" go test -bench=. -run=^# -benchtime=30s -count=5 ./sensor/tests/pipeline | tee $(CURDIR)/test-output/pipeline.results.txt
+
 .PHONY: go-postgres-unit-tests
 go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
@@ -721,6 +724,14 @@ ifdef COMMIT
 else
 	@echo $(TAG)
 endif
+endif
+
+.PHONY: shortcommit
+shortcommit:
+ifdef SHORTCOMMIT
+	@echo $(SHORTCOMMIT)
+else
+	@git rev-parse --short HEAD
 endif
 
 .PHONY: image-flavor

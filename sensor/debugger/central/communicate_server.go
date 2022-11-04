@@ -28,7 +28,8 @@ type FakeService struct {
 
 	receivedLock sync.RWMutex
 
-	messageCallback func(sensor *central.MsgFromSensor)
+	messageCallbackLock sync.RWMutex
+	messageCallback     func(sensor *central.MsgFromSensor)
 
 	t *testing.T
 }
@@ -55,12 +56,13 @@ func (s *FakeService) ClearReceivedBuffer() {
 // Once communicate is called and the gRPC stream is enabled, this instance will send all `initialMessages` in order.
 func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor) *FakeService {
 	return &FakeService{
-		ConnectionStarted: concurrency.NewSignal(),
-		KillSwitch:        concurrency.NewSignal(),
-		initialMessages:   initialMessages,
-		receivedMessages:  []*central.MsgFromSensor{},
-		receivedLock:      sync.RWMutex{},
-		messageCallback:   func(_ *central.MsgFromSensor) { /* noop */ },
+		ConnectionStarted:   concurrency.NewSignal(),
+		KillSwitch:          concurrency.NewSignal(),
+		initialMessages:     initialMessages,
+		receivedMessages:    []*central.MsgFromSensor{},
+		receivedLock:        sync.RWMutex{},
+		messageCallback:     func(_ *central.MsgFromSensor) { /* noop */ },
+		messageCallbackLock: sync.RWMutex{},
 	}
 }
 
@@ -68,7 +70,9 @@ func (s *FakeService) ingestMessageWithLock(msg *central.MsgFromSensor) {
 	s.receivedLock.Lock()
 	s.receivedMessages = append(s.receivedMessages, msg)
 	s.receivedLock.Unlock()
+	s.messageCallbackLock.RLock()
 	s.messageCallback(msg)
+	s.messageCallbackLock.RUnlock()
 }
 
 func (s *FakeService) startInputIngestion(stream central.SensorService_CommunicateServer) {
@@ -116,5 +120,7 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 // OnMessage is a utility test-only function that allows the caller (test or local-sensor) to register a callback
 // for each message received. This can be used to log in stdout the messages that sensor is sending to central.
 func (s *FakeService) OnMessage(callback func(sensor *central.MsgFromSensor)) {
+	s.messageCallbackLock.Lock()
 	s.messageCallback = callback
+	s.messageCallbackLock.Unlock()
 }

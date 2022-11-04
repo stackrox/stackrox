@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -39,11 +40,14 @@ func (d *dataStoreImpl) buildIndex(ctx context.Context) error {
 	log.Info("[STARTUP] Indexing report configurations")
 
 	var reportConfigs []*storage.ReportConfiguration
-	err := d.reportConfigStore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
-		reportConfigs = append(reportConfigs, reportConfig)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		reportConfigs = reportConfigs[:0]
+		return d.reportConfigStore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
+			reportConfigs = append(reportConfigs, reportConfig)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 	if err := d.indexer.AddReportConfigurations(reportConfigs); err != nil {

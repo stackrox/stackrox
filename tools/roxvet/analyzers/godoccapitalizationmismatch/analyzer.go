@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/stackrox/rox/tools/roxvet/common"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
@@ -25,44 +26,31 @@ var Analyzer = &analysis.Analyzer{
 func run(pass *analysis.Pass) (interface{}, error) {
 	inspectResult := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	nodeFilter := []ast.Node{
-		(*ast.File)(nil),
 		(*ast.FuncDecl)(nil),
 		(*ast.ValueSpec)(nil),
 		(*ast.GenDecl)(nil),
 	}
 
-	inspectResult.Nodes(nodeFilter, func(n ast.Node, push bool) bool {
-		if !push {
-			return true
-		}
-
-		if astFile, ok := n.(*ast.File); ok {
-			file := pass.Fset.File(astFile.Pos())
-			return file == nil || !strings.HasSuffix(file.Name(), "_test.go")
-		}
-
-		if astFunction, ok := n.(*ast.FuncDecl); ok {
-			if astFunction.Doc == nil {
-				return true
+	common.FilteredPreorder(inspectResult, common.Not(common.IsTestFile), nodeFilter, func(n ast.Node) {
+		switch t := n.(type) {
+		case *ast.FuncDecl:
+			if t.Doc == nil {
+				return
 			}
-			checkCommentCaseMatches(pass, astFunction.Doc, astFunction.Name.String(), "function", astFunction.Doc.Pos())
-			return true
-		}
+			checkCommentCaseMatches(pass, t.Doc, t.Name.String(), "function", t.Doc.Pos())
 
-		if astVar, ok := n.(*ast.ValueSpec); ok {
-			if astVar.Doc == nil {
-				return true
+		case *ast.ValueSpec:
+			if t.Doc == nil {
+				return
 			}
-			checkCommentCaseMatches(pass, astVar.Doc, astVar.Names[0].String(), "variable", astVar.Doc.Pos())
-			return true
-		}
+			checkCommentCaseMatches(pass, t.Doc, t.Names[0].String(), "variable", t.Doc.Pos())
 
-		if astGenDecl, ok := n.(*ast.GenDecl); ok {
-			documentation := astGenDecl.Doc
+		case *ast.GenDecl:
+			documentation := t.Doc
 			if documentation == nil {
-				return true
+				return
 			}
-			for _, spec := range astGenDecl.Specs {
+			for _, spec := range t.Specs {
 				if astType, ok2 := spec.(*ast.TypeSpec); ok2 {
 					switch astType.Type.(type) {
 					case *ast.ArrayType:
@@ -76,12 +64,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					case *ast.ChanType:
 						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "channel", documentation.Pos())
 					}
-					return true
+					return
 				}
 			}
 		}
-
-		return true
 	})
 	return nil, nil
 }

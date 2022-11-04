@@ -303,6 +303,6 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pod *storage.Pod) 
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-
+	// Postgres retry in caller.
 	return ds.podStore.Walk(ctx, fn)
 }

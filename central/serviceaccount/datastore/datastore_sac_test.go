@@ -179,7 +179,7 @@ func (s *serviceAccountSACSuite) TestSearchServiceAccount() {
 		})
 	}
 
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchServiceAccountTest(c)
 		})
@@ -190,7 +190,14 @@ func (s *serviceAccountSACSuite) runSearchServiceAccountTest(c testutils.SACSear
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.SearchServiceAccounts(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(results))
+	for _, r := range results {
+		obj, found, err := s.datastore.GetServiceAccount(s.testContexts[testutils.UnrestrictedReadCtx], r.GetId())
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 
 }
@@ -211,7 +218,14 @@ func (s *serviceAccountSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(results))
+	for _, r := range results {
+		obj, found, err := s.datastore.GetServiceAccount(s.testContexts[testutils.UnrestrictedReadCtx], r.ID)
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
@@ -224,7 +238,7 @@ func (s *serviceAccountSACSuite) TestScopedSearch() {
 }
 
 func (s *serviceAccountSACSuite) TestUnrestrictedSearch() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})

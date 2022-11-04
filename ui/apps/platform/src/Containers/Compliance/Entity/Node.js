@@ -201,7 +201,11 @@ const NodePage = ({
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-                                <ComplianceByStandards entityType={entityTypes.NODE} />
+                                <ComplianceByStandards
+                                    entityId={id}
+                                    entityName={name}
+                                    entityType={entityTypes.NODE}
+                                />
                             </div>
                         </div>
                     );

@@ -30,7 +30,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext, pagination 
     };
 
     const defaultQuery = gql`
-        query k8sRole($id: ID!${entityListType ? ', $query: String' : ''}) {
+        query getRole($id: ID!${entityListType ? ', $query: String' : ''}) {
             k8sRole(id: $id) {
                 id
                 name

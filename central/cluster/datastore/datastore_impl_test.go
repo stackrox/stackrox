@@ -38,6 +38,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -212,7 +213,7 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testDeployments, nil)
 	suite.podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testPods, nil)
 	suite.alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(testAlerts, nil)
-	suite.alertDataStore.EXPECT().MarkAlertStale(gomock.Any(), gomock.Any()).Return(nil)
+	suite.alertDataStore.EXPECT().MarkAlertStaleBatch(gomock.Any(), gomock.Any()).Return(testAlerts, nil)
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
 	suite.deploymentDataStore.EXPECT().RemoveDeployment(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	suite.podDataStore.EXPECT().RemovePod(gomock.Any(), "fakepod").Return(nil)
@@ -1352,6 +1353,23 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 		})
 	}
 
+}
+
+// Test that when adding an existing cluster, we return an expected error.
+func (suite *ClusterDataStoreTestSuite) TestAddClusterAlreadyExist() {
+	// Expect calls to add cluster for the first time
+	cluster := storage.Cluster{Name: "name"}
+	suite.clusters.EXPECT().Upsert(suite.hasWriteCtx, &cluster).Times(1).Return(nil)
+	suite.indexer.EXPECT().AddCluster(gomock.Any()).Times(1).Return(nil)
+	suite.flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Times(1).Return(netFlowsMocks.NewMockFlowDataStore(suite.mockCtrl), nil)
+
+	// run AddCluster twice and check an error
+	id, err := suite.clusterDataStore.AddCluster(suite.hasWriteCtx, &cluster)
+	suite.NoError(err)
+	suite.NotEmpty(id)
+	_, err = suite.clusterDataStore.AddCluster(suite.hasWriteCtx, &cluster)
+	suite.Error(err, "expect an error since the cluster exists")
+	suite.ErrorIs(err, errox.AlreadyExists)
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {

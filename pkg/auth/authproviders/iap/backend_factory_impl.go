@@ -24,7 +24,7 @@ type factory struct {
 	callbackURL string
 }
 
-func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, error) {
+func (f *factory) CreateBackend(_ context.Context, id string, _ []string, config map[string]string, _ map[string]string) (authproviders.Backend, error) {
 	audience := config[AudienceConfigKey]
 	if audience == "" {
 		return nil, errors.Errorf("parameter %q is required", audience)

@@ -3,7 +3,7 @@ module github.com/stackrox/rox
 go 1.18
 
 require (
-	cloud.google.com/go/compute/metadata v0.2.0
+	cloud.google.com/go/compute/metadata v0.2.1
 	cloud.google.com/go/containeranalysis v0.6.0
 	cloud.google.com/go/storage v1.27.0
 	github.com/BurntSushi/toml v1.2.1
@@ -64,7 +64,7 @@ require (
 	github.com/mailru/easyjson v0.7.7
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220905143132-4bca39e41111
+	github.com/np-guard/cluster-topology-analyzer v1.3.2
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
@@ -73,7 +73,7 @@ require (
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/operator-framework/helm-operator-plugins v0.0.7
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.13.0
+	github.com/prometheus/client_golang v1.13.1
 	github.com/prometheus/client_model v0.3.0
 	github.com/prometheus/common v0.37.0
 	github.com/russellhaering/gosaml2 v0.8.1
@@ -131,6 +131,7 @@ require (
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.104.0 // indirect
+	cloud.google.com/go/compute v1.12.1 // indirect
 	cloud.google.com/go/iam v0.5.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect

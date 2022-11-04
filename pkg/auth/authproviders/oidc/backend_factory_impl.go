@@ -49,8 +49,8 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	}
 }
 
-func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, error) {
-	return newBackend(ctx, id, uiEndpoints, f.callbackURLPath, config, f.providerFactoryFunc, f.oauthExchange, f.noncePool)
+func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string, mappings map[string]string) (authproviders.Backend, error) {
+	return newBackend(ctx, id, uiEndpoints, f.callbackURLPath, config, f.providerFactoryFunc, f.oauthExchange, f.noncePool, mappings)
 }
 
 func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (string, string, error) {

@@ -9,7 +9,7 @@ import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
-import { COMPLIANCE_STANDARDS as QUERY } from 'queries/standard';
+import { COMPLIANCE_STANDARDS } from 'queries/standard';
 import queryService from 'utils/queryService';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
@@ -196,7 +196,7 @@ const ComplianceByStandard = ({
     };
 
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={COMPLIANCE_STANDARDS(standardId)} variables={variables}>
             {({ loading, data }) => {
                 let contents = null;
                 let viewStandardLink = null;

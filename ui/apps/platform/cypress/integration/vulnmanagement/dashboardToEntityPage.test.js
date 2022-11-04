@@ -76,7 +76,7 @@ describe('Vulnerability Management Dashboard', () => {
     it('has link from Top Riskiest Node Components widget to node component page', () => {
         visitVulnerabilityManagementDashboard();
 
-        const entitiesKey = 'components'; // page makes singular request for components instead of node-components
+        const entitiesKey = 'node-components';
         const widgetHeading = 'Top Riskiest Node Components';
 
         selectTopRiskiestOption(widgetHeading);

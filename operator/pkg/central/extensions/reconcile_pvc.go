@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	utils "github.com/stackrox/rox/operator/pkg/utils"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -67,21 +68,37 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence) *platform.Pers
 	}
 }
 
-func getPersistenceByClaimName(central *platform.Central, claim string) *platform.Persistence {
-	switch claim {
-	case DefaultCentralPVCName:
-		return central.Spec.Central.GetPersistence()
-	case DefaultCentralDBPVCName:
-		return convertDBPersistenceToPersistence(central.Spec.Central.DB.GetPersistence())
+// getPersistenceByTarget retrieves the persistence configuration for the given PVC target (either PVCTargetCentral, the
+// embedded persistent volume on which RocksDB is stored, or PVCTargetCentralDB, the persistent volume that serves as
+// the backing store for the central-db PostgreSQL database).
+// A nil return value indicates that no persistent volume should be provisioned for the respective target.
+func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platform.Persistence {
+	switch target {
+	case PVCTargetCentral:
+		persistence := central.Spec.Central.GetPersistence()
+		if persistence == nil {
+			// Make sure we return a non-nil object, otherwise the caller would think there is no claim to reconcile.
+			persistence = &platform.Persistence{}
+		}
+		return persistence
+	case PVCTargetCentralDB:
+		if !central.Spec.Central.CentralDBEnabled() || central.Spec.Central.DB.IsExternal() {
+			return nil
+		}
+		dbPersistence := central.Spec.Central.DB.GetPersistence()
+		if dbPersistence == nil {
+			dbPersistence = &platform.DBPersistence{}
+		}
+		return convertDBPersistenceToPersistence(dbPersistence)
 	default:
-		panic("unknown default claim name")
+		panic(errors.Errorf("unknown pvc target %q", target))
 	}
 }
 
 // ReconcilePVCExtension reconciles PVCs created by the operator
 func ReconcilePVCExtension(client ctrlClient.Client, target PVCTarget, defaultClaimName string) extensions.ReconcileExtension {
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
-		persistence := getPersistenceByClaimName(central, defaultClaimName)
+		persistence := getPersistenceByTarget(central, target)
 		return reconcilePVC(ctx, central, persistence, target, defaultClaimName, client, log)
 	}
 	return wrapExtension(fn, client)
@@ -114,7 +131,7 @@ type reconcilePVCExtensionRun struct {
 }
 
 func (r *reconcilePVCExtensionRun) Execute() error {
-	if r.centralObj.DeletionTimestamp != nil {
+	if r.centralObj.DeletionTimestamp != nil || r.persistence == nil {
 		return r.handleDelete()
 	}
 
@@ -140,7 +157,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 		pvc = nil
 	}
 
-	ownedPVC, err := r.getUniqueOwnedPVCsForCurrentTarget()
+	ownedPVC, err := r.getUniqueOwnedPVCForCurrentTarget()
 	if err != nil {
 		return err
 	}
@@ -277,7 +294,7 @@ func (r *reconcilePVCExtensionRun) getOwnedPVC() ([]*corev1.PersistentVolumeClai
 	return ownedPVCs, nil
 }
 
-func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentTarget() (*corev1.PersistentVolumeClaim, error) {
+func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCForCurrentTarget() (*corev1.PersistentVolumeClaim, error) {
 	pvcList, err := r.getOwnedPVC()
 	if err != nil {
 		return nil, err
@@ -298,10 +315,7 @@ func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCsForCurrentTarget() (*corev1
 		return nil, nil
 	}
 	if len(filtered) > 1 {
-		var names []string
-		for _, item := range filtered {
-			names = append(names, item.GetName())
-		}
+		names := sliceutils.Map(filtered, (*corev1.PersistentVolumeClaim).GetName)
 		sort.Strings(names)
 
 		return nil, errors.Wrapf(errMultipleOwnedPVCs,

@@ -36,7 +36,7 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
         name: data.name,
         description: data.description,
         inUse: data.inUse,
-        embeddedCollectionIds: data.embeddedCollections.map(({ id }) => id),
+        embeddedCollections: data.embeddedCollections.map(({ id }) => id),
         resourceSelectors: {
             Deployment: {},
             Namespace: {},

@@ -147,7 +147,11 @@ const NamespacePage = ({
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-                                <ComplianceByStandards entityType={entityTypes.NAMESPACE} />
+                                <ComplianceByStandards
+                                    entityId={id}
+                                    entityName={name}
+                                    entityType={entityTypes.NAMESPACE}
+                                />
                                 {sidePanelMode && (
                                     <>
                                         <div

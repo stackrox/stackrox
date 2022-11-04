@@ -233,11 +233,6 @@ func (in *CentralDBSpec) DeepCopyInto(out *CentralDBSpec) {
 		*out = new(LocalSecretReference)
 		**out = **in
 	}
-	if in.PasswordGenerationDisabled != nil {
-		in, out := &in.PasswordGenerationDisabled, &out.PasswordGenerationDisabled
-		*out = new(bool)
-		**out = **in
-	}
 	if in.ConnectionStringOverride != nil {
 		in, out := &in.ConnectionStringOverride, &out.ConnectionStringOverride
 		*out = new(string)
