@@ -27,13 +27,13 @@ const routeMatcherMap = {
 };
 
 export function visitRiskDeployments() {
-    visit(riskURL, { routeMatcherMap });
+    visit(riskURL, routeMatcherMap);
 
     cy.get('h1:contains("Risk")');
 }
 
 export function visitRiskDeploymentsWithSearchQuery(search) {
-    visit(`${riskURL}${search}`, { routeMatcherMap });
+    visit(`${riskURL}${search}`, routeMatcherMap);
 
     cy.get('h1:contains("Risk")');
 }
