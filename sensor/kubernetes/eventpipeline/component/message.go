@@ -21,7 +21,7 @@ type ResourceEvent struct {
 	// CompatibilityDetectionDeployment should be used by old handlers
 	// and it's here for retrocompatibility reasons.
 	// This property should be removed in the future and only the
-	// DetectionObject should be sent
+	// deployment references should be sent
 	CompatibilityDetectionDeployment []CompatibilityDetectionMessage
 	// CompatibilityReprocessDeployments is also used for compatibility reasons with Network Policy handlers
 	// in the future this will not be needed as the dependencies are taken care by the resolvers
