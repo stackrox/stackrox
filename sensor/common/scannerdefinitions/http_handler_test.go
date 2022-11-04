@@ -7,8 +7,11 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ http.ResponseWriter = (*responseWriterMock)(nil)
 
 type responseWriterMock struct {
 	bytes.Buffer
@@ -30,14 +33,16 @@ func (m *responseWriterMock) WriteHeader(statusCode int) {
 	m.statusCode = statusCode
 }
 
-// transportMockFunc is a transport mock that call itself to implement http.Transport's RoundTrip.
-type transportMockFunc func(req *http.Request) (*http.Response, error)
-
-func (f transportMockFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return f(req)
+func TestServeHTTP_Client(t *testing.T) {
+	u := &url.URL{
+		Scheme: "https",
+		Host:   "wss://central.stackrox.svc:443",
+		Path:   "api/extensions/scannerdefinitions",
+	}
+	assert.NotEqual(t, "https://central.stackrox.svc:443/api/extensions/scannerdefinitions", u.String())
 }
 
-func Test_scannerDefinitionsHandler_ServeHTTP(t *testing.T) {
+func TestServeHTTP_Responses(t *testing.T) {
 	type args struct {
 		writer  *responseWriterMock
 		request *http.Request
@@ -109,7 +114,7 @@ func Test_scannerDefinitionsHandler_ServeHTTP(t *testing.T) {
 				}
 				h := &scannerDefinitionsHandler{
 					centralClient: &http.Client{
-						Transport: transportMockFunc(func(req *http.Request) (*http.Response, error) {
+						Transport: httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 							assert.Equal(t, tt.args.request.URL.RawQuery, req.URL.RawQuery)
 							for _, header := range headersToProxy.AsSlice() {
 								assert.Equal(t, tt.args.request.Header.Values(header), req.Header.Values(header))

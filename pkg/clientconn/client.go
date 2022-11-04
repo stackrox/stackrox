@@ -165,6 +165,7 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 
 type connectionOptions struct {
 	useServiceCertToken bool
+	useInsecureNoTLS    bool
 	dialTLSFunc         DialTLSFunc
 	rootCAs             *x509.CertPool
 }
@@ -198,10 +199,18 @@ func AddRootCAs(certs ...*x509.Certificate) ConnectionOption {
 	})
 }
 
-// UseServiceCertToken specifies whether or not a `ServiceCert` token should be used.
+// UseServiceCertToken specifies whether a `ServiceCert` token should be used.
 func UseServiceCertToken(use bool) ConnectionOption {
 	return connectOptFunc(func(opts *connectionOptions) error {
 		opts.useServiceCertToken = use
+		return nil
+	})
+}
+
+// UseInsecureNoTLS specifies whether to use insecure, non-TLS connections.
+func UseInsecureNoTLS(use bool) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		opts.useInsecureNoTLS = use
 		return nil
 	})
 }
@@ -229,6 +238,7 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 	}
 
 	clientConnOpts := Options{
+		InsecureNoTLS: connOpts.useInsecureNoTLS,
 		TLS: TLSConfigOptions{
 			UseClientCert: MustUseClientCert,
 			ServerName:    host,
@@ -382,6 +392,10 @@ func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint strin
 
 // NewHTTPClient creates an HTTP client for the given service using the client
 // certificate of the calling service.
+// When specifying the url.URL for the *http.Request for the returned *http.Client to complete,
+// there is no need to specify the Host nor Scheme; however,
+// if provided, they both must match the expected values.
+// See AuthenticatedHTTPTransport for more information.
 func NewHTTPClient(serviceIdentity mtls.Subject, serviceEndpoint string, timeout time.Duration) (*http.Client, error) {
 	transport, err := AuthenticatedHTTPTransport(
 		serviceEndpoint, serviceIdentity, nil, UseServiceCertToken(true))

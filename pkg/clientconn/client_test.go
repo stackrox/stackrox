@@ -2,10 +2,15 @@ package clientconn
 
 import (
 	"crypto/x509"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"path"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stretchr/testify/suite"
 )
@@ -47,4 +52,83 @@ func (t *ClientTestSuite) TestRootCA_WithNilCA_ShouldPanic() {
 	t.Panics(func() {
 		_, _ = OptionsForEndpoint(centralEndpoint, AddRootCAs(nil))
 	})
+}
+
+func (t *ClientTestSuite) TestAuthenticatedHTTPTransport_WebSocket() {
+	noopServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	baseTransport := httputil.DefaultTransport()
+
+	testcases := []struct {
+		name   string
+		scheme string
+		valid  bool
+	}{
+		{
+			name:   "valid wss",
+			scheme: "wss",
+			valid:  true,
+		},
+		{
+			name:   "invalid wss",
+			scheme: "wss",
+			valid:  false,
+		},
+		{
+			name:   "valid ws",
+			scheme: "ws",
+			valid:  true,
+		},
+		{
+			name:   "invalid ws",
+			scheme: "ws",
+			valid:  false,
+		},
+	}
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func() {
+			// Ensure the request's URL drops the WebSocket.
+			baseTransport.Proxy = func(r *http.Request) (*url.URL, error) {
+				if !testcase.valid {
+					t.FailNow("Should not make it this far")
+				}
+
+				// http because TLS is disabled.
+				t.Equal("http://central.stackrox.svc:443/hello", r.URL.String())
+
+				// Forward traffic to the NO-OP Server
+				return url.Parse(noopServer.URL)
+			}
+
+			host := testcase.scheme + "://central.stackrox.svc:443"
+
+			transport, err := AuthenticatedHTTPTransport(host, mtls.CentralSubject, baseTransport, UseInsecureNoTLS(true))
+			t.Require().NoError(err)
+			client := &http.Client{
+				Transport: transport,
+				Timeout:   0,
+			}
+
+			endpoint := (&url.URL{Path: "/hello"}).String()
+			if !testcase.valid {
+				endpoint = (&url.URL{
+					Scheme: "https",
+					Host:   host,
+					Path:   "/hello",
+				}).String()
+			}
+
+			req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+			if testcase.valid {
+				t.NoError(err)
+			} else {
+				errEndpoint := `"https://` + testcase.scheme + `:%2F%2Fcentral.stackrox.svc:443/hello"`
+				errString := `parse ` + errEndpoint + `: invalid URL escape "%2F"`
+				t.EqualError(err, errString)
+				return
+			}
+			resp, err := client.Do(req)
+			t.NoError(err)
+			t.Equal(http.StatusOK, resp.StatusCode)
+		})
+	}
 }
