@@ -86,7 +86,7 @@ function ByLabelSelector({
             handleChange(entityType, newSelector);
         } else {
             // This was the last value in the last rule, so drop the selector
-            handleChange(entityType, {});
+            handleChange(entityType, { type: 'All' });
         }
     }
 

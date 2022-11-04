@@ -11,7 +11,8 @@ import {
 } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import CollectionForm from './CollectionForm';
-import { parseCollection } from './parser';
+import { parseCollection } from './converter';
+import { Collection } from './types';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
@@ -23,15 +24,15 @@ const noopRequest = {
     cancel: () => {},
 };
 
-const defaultCollectionData = {
+const defaultCollectionData: Collection = {
     name: '',
     description: '',
     inUse: false,
-    embeddedCollections: [],
-    resourceSelectors: {
-        Deployment: {},
-        Namespace: {},
-        Cluster: {},
+    embeddedCollectionIds: [],
+    resourceSelector: {
+        Deployment: { type: 'All' },
+        Namespace: { type: 'All' },
+        Cluster: { type: 'All' },
     },
 };
 
@@ -84,6 +85,9 @@ function CollectionsFormPage({
     } else if (loading) {
         content = <>{/* TODO - Handle UI for loading state */}</>;
     } else if (initialData) {
+        if (pageAction.type === 'clone') {
+            initialData.name += ' (COPY)';
+        }
         content = (
             <CollectionForm
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
