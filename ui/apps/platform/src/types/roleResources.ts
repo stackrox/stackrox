@@ -49,4 +49,5 @@ export type ResourceName =
     | 'ScannerDefinitions'
     | 'SensorUpgradeConfig'
     | 'ServiceIdentity'
+    | 'ClusterCVE'
     ;
