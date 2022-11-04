@@ -34,6 +34,7 @@ export type ResourceName =
     | 'VulnerabilityManagementRequests'
     | 'VulnerabilityReports'
     | 'WatchedImage'
+    | 'WorkflowAdministration'
     // To-be-deprecated resources.
     | 'AllComments'
     | 'ComplianceRuns'
