@@ -32,14 +32,14 @@ function AddClusterPrompt() {
                     <img src={SecurityFullColorPink} alt="" style={{ height: '430px' }} />
                 </FlexItem>
                 <FlexItem className="pf-u-w-66">
-                    <TextContent className="pf-u-mb-xl">
-                        <Text component={TextVariants.h1} data-testid="congratulations">
+                    <TextContent className="pf-u-mb-md">
+                        <Text component={TextVariants.h2} className="pf-u-font-size-2xl">
                             Configure the clusters you want to secure.
                         </Text>
                         <Text component={TextVariants.p} className="pf-u-font-weight-normal">
                             Follow the instructions to add secured clusters for Central to monitor.
                             <br />
-                            Upon successful installation, new clusters will be listed here.
+                            Upon successful installation, secured clusters are listed here.
                         </Text>
                     </TextContent>
                 </FlexItem>

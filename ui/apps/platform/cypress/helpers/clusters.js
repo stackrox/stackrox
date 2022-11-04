@@ -145,5 +145,4 @@ export function visitDashboardWithNoClusters() {
     cy.visit('/main/dashboard'); // with a count of 0 clusters, app should redirect to the clusters pages
 
     cy.wait(['@summary_counts', '@clusters']);
-    cy.get(selectors.clustersListHeading);
 }

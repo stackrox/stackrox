@@ -66,9 +66,11 @@ function MainPage(): ReactElement {
     // Check for clusters under management
     // if none, and user can admin Clusters, redirect to clusters section
     // (only applicable in Cloud Services version)
+    const hasClusterWritePermission = hasReadWriteAccess('Cluster');
+
     useQuery<ClusterCountResponse>(CLUSTER_COUNT, {
         onCompleted: (data) => {
-            if (data?.clusterCount < 1) {
+            if (hasClusterWritePermission && data?.clusterCount < 1) {
                 history.push(clustersBasePath);
             }
         },
