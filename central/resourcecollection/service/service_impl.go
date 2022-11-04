@@ -107,7 +107,7 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 		return nil, errors.New("Support for resource collections is not enabled")
 	}
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "A non empty collection id must be specified to delete a collection")
+		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
 	}
 	if err := s.datastore.DeleteCollection(ctx, request.GetId()); err != nil {
 		return nil, err
