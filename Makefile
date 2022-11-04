@@ -111,47 +111,16 @@ all: deps style test image
 ###### Binaries we depend on (need to be defined on top) ############
 #####################################################################
 
-GOLANGCILINT_BIN := $(GOBIN)/golangci-lint
-$(GOLANGCILINT_BIN): deps
-	@echo "+ $@"
-	@cd tools/linters/ && go install github.com/golangci/golangci-lint/cmd/golangci-lint
+include make/gotools.mk
 
-EASYJSON_BIN := $(GOBIN)/easyjson
-$(EASYJSON_BIN): deps
-	$(SILENT)echo "+ $@"
-	go install github.com/mailru/easyjson/easyjson
-
-CONTROLLER_GEN_BIN := $(GOBIN)/controller-gen
-$(CONTROLLER_GEN_BIN): deps
-	$(SILENT)echo "+ $@"
-	@# We need to install a legacy version for compatibility reasons.
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
-
-ROXVET_BIN := $(GOBIN)/roxvet
-.PHONY: $(ROXVET_BIN)
-$(ROXVET_BIN): deps
-	@echo "+ $@"
-	go install ./tools/roxvet
-
-STRINGER_BIN := $(GOBIN)/stringer
-$(STRINGER_BIN): deps
-	@echo "+ $@"
-	go install golang.org/x/tools/cmd/stringer
-
-MOCKGEN_BIN := $(GOBIN)/mockgen
-$(MOCKGEN_BIN): deps
-	@echo "+ $@"
-	go install github.com/golang/mock/mockgen
-
-GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
-$(GO_JUNIT_REPORT_BIN): deps
-	@echo "+ $@"
-	$(SILENT)cd tools/test/ && go install github.com/jstemmer/go-junit-report/v2
-
-PROTOLOCK_BIN := $(GOBIN)/protolock
-$(PROTOLOCK_BIN): deps
-	@echo "+ $@"
-	$(SILENT)cd tools/linters/ && go install github.com/nilslice/protolock/cmd/protolock
+$(call go-tool, GOLANGCILINT_BIN, github.com/golangci/golangci-lint/cmd/golangci-lint, tools/linters)
+$(call go-tool, EASYJSON_BIN, github.com/mailru/easyjson/easyjson)
+$(call go-tool, CONTROLLER_GEN_BIN, sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
+$(call go-tool, ROXVET_BIN, ./tools/roxvet)
+$(call go-tool, STRINGER_BIN, golang.org/x/tools/cmd/stringer)
+$(call go-tool, MOCKGEN_BIN, github.com/golang/mock/mockgen)
+$(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, tools/test)
+$(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
 
 ###########
 ## Style ##
@@ -166,14 +135,14 @@ ifdef CI
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
 	@echo "Running with no tags..."
-	golangci-lint run
+	$(GOLANGCILINT_BIN) run
 	@echo "Running with release tags..."
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
-	golangci-lint run --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+	$(GOLANGCILINT_BIN) run --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 else
-	golangci-lint run --fix
-	golangci-lint run --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+	$(GOLANGCILINT_BIN) run --fix
+	$(GOLANGCILINT_BIN) run --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 endif
 
 .PHONY: qa-tests-style
@@ -254,7 +223,7 @@ no-large-files:
 .PHONY: storage-protos-compatible
 storage-protos-compatible: $(PROTOLOCK_BIN)
 	@echo "+ $@"
-	$(SILENT)protolock status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
+	$(SILENT)$(PROTOLOCK_BIN) status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
 
 .PHONY: blanks
 blanks:
@@ -294,10 +263,11 @@ include make/protogen.mk
 .PHONY: go-easyjson-srcs
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
-	$(SILENT)easyjson -pkg pkg/docker/types/types.go
-	$(SILENT)easyjson -pkg pkg/docker/types/container.go
-	$(SILENT)easyjson -pkg pkg/docker/types/image.go
-	$(SILENT)easyjson -pkg pkg/compliance/compress/compress.go
+	@# Files are ordered such that repeated runs of `make go-easyjson-srcs` don't create diffs.
+	$(SILENT)$(EASYJSON_BIN) pkg/docker/types/image.go
+	$(SILENT)$(EASYJSON_BIN) pkg/docker/types/container.go
+	$(SILENT)$(EASYJSON_BIN) pkg/docker/types/types.go
+	$(SILENT)$(EASYJSON_BIN) pkg/compliance/compress/compress.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:
@@ -313,7 +283,7 @@ pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go: $(CONTROLLER_GEN_B
 .PHONY: go-generated-srcs
 go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go
 	@echo "+ $@"
-	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate -v -x ./...
+	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x ./...
 
 proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"
@@ -551,8 +521,17 @@ integration-unit-tests: build-prep test-prep
 		$(shell go list ./... | grep  "registries\|scanners\|notifiers") \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
-generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
-	$(BASE_DIR)/scripts/generate-junit-reports.sh
+.PHONY: generate-junit-reports
+generate-junit-reports: junit-reports/report.xml
+
+$(GO_TEST_OUTPUT_PATH):
+	@echo "The test output log cannot be created via a direct Makefile rule. You must make the desired test targets"
+	@echo "first to ensure the file's existence."
+	@exit 1
+
+junit-reports/report.xml: $(GO_TEST_OUTPUT_PATH) $(GO_JUNIT_REPORT_BIN)
+	@mkdir -p junit-reports
+	$(SILENT)$(GO_JUNIT_REPORT_BIN) <"$<" >"$@"
 
 ###########
 ## Image ##
@@ -768,11 +747,9 @@ docs-tag:
 scanner-tag:
 	@cat SCANNER_VERSION
 
-GET_DEVTOOLS_CMD := $(MAKE) -qp | sed -e '/^\# Not a target:$$/{ N; d; }' | egrep -v '^(\s*(\#.*)?$$|\s|%|\(|\.)' | egrep '^[^[:space:]:]*:' | cut -d: -f1 | sort | uniq | grep '^$(GOBIN)/'
 .PHONY: clean-dev-tools
-clean-dev-tools:
+clean-dev-tools: gotools-clean
 	@echo "+ $@"
-	$(SILENT)$(GET_DEVTOOLS_CMD) | xargs rm -fv
 
 .PHONY: reinstall-dev-tools
 reinstall-dev-tools: clean-dev-tools
@@ -780,10 +757,8 @@ reinstall-dev-tools: clean-dev-tools
 	$(SILENT)$(MAKE) install-dev-tools
 
 .PHONY: install-dev-tools
-install-dev-tools:
+install-dev-tools: gotools-all
 	@echo "+ $@"
-	$(SILENT)test -n "$(GOPATH)" || { echo "Set GOPATH before installing dev tools"; exit 1; }
-	$(SILENT)$(GET_DEVTOOLS_CMD) | xargs $(MAKE)
 ifeq ($(UNAME_S),Darwin)
 	@echo "Please manually install RocksDB if you haven't already. See README for details"
 endif
