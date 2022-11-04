@@ -101,13 +101,6 @@ func (t *ClientTestSuite) TestAuthenticatedHTTPTransport_WebSocket() {
 
 			host := testcase.scheme + "://central.stackrox.svc:443"
 
-			transport, err := AuthenticatedHTTPTransport(host, mtls.CentralSubject, baseTransport, UseInsecureNoTLS(true))
-			t.Require().NoError(err)
-			client := &http.Client{
-				Transport: transport,
-				Timeout:   0,
-			}
-
 			endpoint := (&url.URL{Path: "/hello"}).String()
 			if !testcase.valid {
 				endpoint = (&url.URL{
@@ -126,6 +119,14 @@ func (t *ClientTestSuite) TestAuthenticatedHTTPTransport_WebSocket() {
 				t.EqualError(err, errString)
 				return
 			}
+
+			transport, err := AuthenticatedHTTPTransport(host, mtls.CentralSubject, baseTransport, UseInsecureNoTLS(true))
+			t.Require().NoError(err)
+			client := &http.Client{
+				Transport: transport,
+				Timeout:   0,
+			}
+
 			resp, err := client.Do(req)
 			t.NoError(err)
 			t.Equal(http.StatusOK, resp.StatusCode)

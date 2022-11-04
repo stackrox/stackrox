@@ -33,15 +33,6 @@ func (m *responseWriterMock) WriteHeader(statusCode int) {
 	m.statusCode = statusCode
 }
 
-func TestServeHTTP_Client(t *testing.T) {
-	u := &url.URL{
-		Scheme: "https",
-		Host:   "wss://central.stackrox.svc:443",
-		Path:   "api/extensions/scannerdefinitions",
-	}
-	assert.NotEqual(t, "https://central.stackrox.svc:443/api/extensions/scannerdefinitions", u.String())
-}
-
 func TestServeHTTP_Responses(t *testing.T) {
 	type args struct {
 		writer  *responseWriterMock
