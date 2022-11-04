@@ -67,6 +67,11 @@ multiarch-test: compile
 	@echo "+ $@"
 	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=MultiArch,NetworkBaseline,NetworkFlowVisualization
 
+.PHONY: multiarch-debug
+multiarch-debug: compile
+	@echo "+ $@"
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=NetworkBaseline,NetworkFlowVisualization
+
 .PHONY: compatibility-test
 compatibility-test: compile
 	@echo "+ $@"

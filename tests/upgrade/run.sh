@@ -67,12 +67,16 @@ test_upgrade() {
     ### remove_existing_stackrox_resources
     ### test_upgrade_paths "$log_output_dir"
 
-    # TODO(sbostick): run the groovy e2e tests
+    # TODO(sbostick): these must be set for manual debugging in test exec pod
+    # TODO(sbostick): note that timeout still applies
     export CLUSTER="K8S"
     export ORCHESTRATOR_FLAVOR="k8s"
     export ROX_AFTERGLOW_PERIOD="15"
-    make -C qa-tests-backend multiarch-test || touch FAIL
-    store_qa_test_results "multiarch-test"
+    export SENSOR_HELM_DEPLOY="true"
+    export ROX_POSTGRES_DATASTORE="false"
+
+    make -C qa-tests-backend multiarch-debug || touch FAIL
+    store_qa_test_results "multiarch-debug"
 
     # TODO(sbostick): DEBUGx
     env > /tmp/dotenv
@@ -82,7 +86,7 @@ test_upgrade() {
         sleep 60
     done
 
-    [[ ! -f FAIL ]] || die "multiarch-test failed"
+    [[ ! -f FAIL ]] || die "multiarch-debug failed"
 }
 
 preamble() {
