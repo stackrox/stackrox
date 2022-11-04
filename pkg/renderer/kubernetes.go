@@ -112,7 +112,7 @@ func Render(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
 
 // RenderScannerOnly renders the zip files for the scanner based on the given config.
 func RenderScannerOnly(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
-	return render(c, renderAll, imageFlavor)
+	return render(c, scannerOnly, imageFlavor)
 }
 
 // RenderCentralDBOnly renders the zip files for the Central DB
