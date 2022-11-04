@@ -54,7 +54,7 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 			return errors.Wrapf(err, "error running migration starting at %d", seqNum)
 		}
 
-		err = updateVersion(databases, &migration.VersionAfter)
+		err = updateVersion(databases, migration.VersionAfter)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update version after migration %d", seqNum)
 		}

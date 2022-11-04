@@ -24,7 +24,7 @@ import (
 var (
 	migration = types.Migration{
 		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 4,
-		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 5},
+		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 5},
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.New(rawDackbox.GetGlobalDackBox(), rawDackbox.GetKeyFence(), false)
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {

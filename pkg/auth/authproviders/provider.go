@@ -51,7 +51,9 @@ type Provider interface {
 
 // NewProvider creates a new provider with the input options.
 func NewProvider(options ...ProviderOption) (Provider, error) {
-	provider := &providerImpl{}
+	provider := &providerImpl{
+		storedInfo: &storage.AuthProvider{},
+	}
 	if err := applyOptions(provider, options...); err != nil {
 		return nil, err
 	}
@@ -73,10 +75,10 @@ func applyOptions(provider *providerImpl, options ...ProviderOption) error {
 
 // Input provider must be locked when run.
 func validateProvider(provider *providerImpl) error {
-	if provider.storedInfo.Id == "" {
+	if provider.storedInfo.GetId() == "" {
 		return errors.New("auth providers must have an id")
 	}
-	if provider.storedInfo.Name == "" {
+	if provider.storedInfo.GetName() == "" {
 		return errors.New("auth providers must have a name")
 	}
 	return nil

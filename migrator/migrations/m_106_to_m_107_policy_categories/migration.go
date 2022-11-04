@@ -22,7 +22,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 106,
-		VersionAfter:   storage.Version{SeqNum: 107},
+		VersionAfter:   &storage.Version{SeqNum: 107},
 		Run: func(databases *types.Databases) error {
 			return addUserDefinedCategories(databases.BoltDB, databases.RocksDB)
 		},

@@ -21,7 +21,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 89,
-		VersionAfter:   storage.Version{SeqNum: 90},
+		VersionAfter:   &storage.Version{SeqNum: 90},
 		Run:            updateImageCVEEdgesWithVulnState,
 	}
 
