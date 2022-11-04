@@ -144,7 +144,7 @@ class Helpers {
             FileWriter sout = new FileWriter(output)
             StringBuilder serr = new StringBuilder()
 
-            proc.consumeProcessOutput(sout, serr)
+            proc.waitForProcessOutput(sout, serr)
             proc.waitFor()
 
             if (proc.exitValue() != 0) {

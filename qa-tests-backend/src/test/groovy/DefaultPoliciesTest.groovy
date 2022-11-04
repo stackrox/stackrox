@@ -187,6 +187,13 @@ class DefaultPoliciesTest extends BaseSpecification {
             log.info "Temporarily enabled policy '${policyName}'"
             policyEnabled = true
         }
+        // debugging to see if the test fails due to incomplete scan
+        if (policyName == "Apache Struts: CVE-2017-5638") {
+            def image = ImageService.scanImage("library/nginx:1.10", true)
+            if (!hasApacheStrutsVuln(image)) {
+                log.warn("[Apache struts] CVE-2017-5638 is absent from image scan")
+            }
+        }
 
         then:
         "Verify Violation for #policyName is triggered"
@@ -226,6 +233,15 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933"
 
         "Curl in Image"                                 | STRUTS         | "C948"
+    }
+
+    def hasApacheStrutsVuln(image) {
+        def strutsComponent = image?.getScan()?.getComponentsList()?.find { it.name == "struts" }
+        if (strutsComponent == null) {
+            log.warn("[Apache struts]struts component is absent from image scan")
+            return false
+        }
+        return strutsComponent.getVulnsList().find { it.cve == "CVE-2017-5638" } != null
     }
 
     @Category([BAT, SMOKE, COMPATIBILITY])
