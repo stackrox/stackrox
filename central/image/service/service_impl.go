@@ -339,7 +339,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 func (s *serviceImpl) acquireScanSemaphore() error {
 	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
 		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
-		if pkgUtils.Should(err) == nil {
+		if pkgUtils.ShouldErr(err) == nil {
 			return s.Err()
 		}
 	}

@@ -191,7 +191,7 @@ func CSVHandler() http.HandlerFunc {
 			var podName, podUID, deploymentID, podStartTime, podContainerCount string
 
 			if podID, err := podUtils.ParsePodID(containerResolver.PodID()); err != nil {
-				log.Errorf("Unable to generate full CSV row for container %s: %v", containerName, utils.Should(err))
+				log.Errorf("Unable to generate full CSV row for container %s: %v", containerName, utils.ShouldErr(err))
 			} else {
 				podName = podID.Name
 				podUID = string(podID.UID)

@@ -45,7 +45,7 @@ func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*st
 		pathutil.FieldStep("Containers"), pathutil.IndexStep(matchingContainerIdx), pathutil.FieldStep(processAugmentKey),
 	)
 	if err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 	return obj, nil
 }
@@ -61,7 +61,7 @@ func ConstructKubeResourceWithEvent(kubeResource interface{}, event *storage.Kub
 	}
 
 	if err := obj.AddPlainObjAt(event, pathutil.FieldStep(kubeEventAugKey)); err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 	return obj, nil
 }
@@ -146,7 +146,7 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 
 	appliedPolicies := pathutil.NewAugmentedObj(applied)
 	if err := obj.AddAugmentedObjAt(appliedPolicies, pathutil.FieldStep(networkPoliciesAppliedKey)); err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 
 	for i, image := range images {
@@ -159,7 +159,7 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 			pathutil.FieldStep("Containers"), pathutil.IndexStep(i), pathutil.FieldStep(imageAugmentKey),
 		)
 		if err != nil {
-			return nil, utils.Should(err)
+			return nil, utils.ShouldErr(err)
 		}
 	}
 
@@ -173,7 +173,7 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 			)
 
 			if err != nil {
-				return nil, utils.Should(err)
+				return nil, utils.ShouldErr(err)
 			}
 		}
 	}
@@ -214,7 +214,7 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 			pathutil.IndexStep(i), pathutil.FieldStep(dockerfileLineAugmentKey),
 		)
 		if err != nil {
-			return nil, utils.Should(err)
+			return nil, utils.ShouldErr(err)
 		}
 	}
 
@@ -230,7 +230,7 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 			pathutil.FieldStep(componentAndVersionAugmentKey),
 		)
 		if err != nil {
-			return nil, utils.Should(err)
+			return nil, utils.ShouldErr(err)
 		}
 	}
 
@@ -247,7 +247,7 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 		},
 		pathutil.FieldStep("SignatureVerificationData"),
 		pathutil.FieldStep(imageSignatureVerifiedKey)); err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 
 	return obj, nil

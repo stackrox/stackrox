@@ -91,7 +91,7 @@ func writeAllowed(ctx context.Context, typ storage.IntegrationHealth_Type) (bool
 	if typ != storage.IntegrationHealth_IMAGE_INTEGRATION &&
 		typ != storage.IntegrationHealth_NOTIFIER &&
 		typ != storage.IntegrationHealth_BACKUP {
-		return false, utils.Should(errors.New("Unknown integration type"))
+		return false, utils.ShouldErr(errors.New("Unknown integration type"))
 	}
 	return integrationSAC.WriteAllowed(ctx)
 }
@@ -100,7 +100,7 @@ func readAllowed(ctx context.Context, typ storage.IntegrationHealth_Type) (bool,
 	if typ != storage.IntegrationHealth_IMAGE_INTEGRATION &&
 		typ != storage.IntegrationHealth_NOTIFIER &&
 		typ != storage.IntegrationHealth_BACKUP {
-		return false, utils.Should(errors.New("Unknown integration type"))
+		return false, utils.ShouldErr(errors.New("Unknown integration type"))
 	}
 	return integrationSAC.ReadAllowed(ctx)
 }

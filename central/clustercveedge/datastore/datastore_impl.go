@@ -103,7 +103,7 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 
 func (ds *datastoreImpl) Upsert(ctx context.Context, parts ...converter.ClusterCVEParts) error {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return utils.Should(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
+		return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
 	}
 	if len(parts) == 0 {
 		return nil
@@ -121,7 +121,7 @@ func (ds *datastoreImpl) Upsert(ctx context.Context, parts ...converter.ClusterC
 
 func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return utils.Should(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
+		return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
 	}
 	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
 		return err

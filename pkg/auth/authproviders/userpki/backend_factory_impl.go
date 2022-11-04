@@ -47,7 +47,7 @@ func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (pr
 
 	restURL := strings.TrimPrefix(r.URL.Path, f.callbackURLPath)
 	if len(restURL) == len(r.URL.Path) {
-		return "", "", utils.Should(httputil.Errorf(http.StatusNotFound, "invalid path %q, expected sub-path of %q", r.URL.Path, f.callbackURLPath))
+		return "", "", utils.ShouldErr(httputil.Errorf(http.StatusNotFound, "invalid path %q, expected sub-path of %q", r.URL.Path, f.callbackURLPath))
 	}
 
 	if restURL == "" {
