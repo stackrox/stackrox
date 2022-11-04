@@ -162,7 +162,7 @@ class NetworkBaselineTest extends BaseSpecification {
         }
     }
 
-    @Category([NetworkBaseline, COMPATIBILITY])
+    @Category(NetworkBaseline)
     @Timeout(1600)
     def "Verify network baseline functionality"() {
         when:
