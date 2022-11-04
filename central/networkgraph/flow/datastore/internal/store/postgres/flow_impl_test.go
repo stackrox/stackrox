@@ -12,15 +12,12 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestFlowStore(t *testing.T) {
 	ctx := context.Background()
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
+	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		t.Skip("Skip postgres store tests")
