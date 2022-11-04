@@ -434,14 +434,14 @@ func (ds *datastoreImpl) ResolveListDeployments(ctx context.Context, collection 
 		return nil, errors.New("only 1 resource selector is supported per collection")
 	}
 
-	query, err := ds.ResolveCollectionQuery(ctx, collection)
+	query, err := ds.resolveCollectionQuery(ctx, collection)
 	if err != nil {
 		return nil, err
 	}
 	return ds.deploymentDS.SearchListDeployments(ctx, query)
 }
 
-func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
+func (ds *datastoreImpl) resolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
 	var collections []*storage.ResourceCollection
 	var collectionSet set.Set[string]
 	var disjunctions []*v1.Query

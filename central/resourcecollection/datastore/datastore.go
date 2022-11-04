@@ -38,7 +38,7 @@ type DataStore interface {
 	// autocomplete workflow, maybe SearchResults? TODO ROX-12616
 
 	// ResolveCollectionQuery exported exclusively for testing purposes, should be hidden once e2e tests go in
-	ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error)
+	// ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error)
 }
 
 var (
