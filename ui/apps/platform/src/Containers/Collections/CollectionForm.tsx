@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
+    Alert,
     Button,
     EmptyState,
     EmptyStateIcon,
@@ -25,6 +26,7 @@ import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher, { CollectionAttacherProps } from './CollectionAttacher';
 import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
+import { CollectionSaveError } from './errorUtils';
 
 function AttachedCollectionTable({
     collections,
@@ -64,8 +66,12 @@ export type CollectionFormProps = {
     /* collection responses for the embedded collections of `initialData` */
     initialEmbeddedCollections: CollectionResponse[];
     onSubmit: (collection: Collection) => Promise<void>;
+    saveError?: CollectionSaveError | undefined;
+    clearSaveError?: () => void;
     /* Table cells to render for each collection in the CollectionAttacher component */
-    collectionTableCells: CollectionAttacherProps['collectionTableCells'];
+    getCollectionTableCells: (
+        collectionErrorId: string | undefined
+    ) => CollectionAttacherProps['collectionTableCells'];
     /* content to render before the main form */
     headerContent?: ReactElement;
 };
@@ -103,8 +109,10 @@ function CollectionForm({
     action,
     initialData,
     initialEmbeddedCollections,
+    saveError,
+    clearSaveError = () => {},
     onSubmit,
-    collectionTableCells,
+    getCollectionTableCells,
 }: CollectionFormProps) {
     const history = useHistory();
 
@@ -112,8 +120,7 @@ function CollectionForm({
 
     const {
         values,
-        isValid,
-        errors,
+        errors: formikErrors,
         handleChange,
         handleBlur,
         setFieldValue,
@@ -141,6 +148,19 @@ function CollectionForm({
         }),
     });
 
+    const errors = {
+        ...formikErrors,
+    };
+
+    // We can associate this type of server error to a specific field, so update the formik errors
+    if (saveError?.type === 'DuplicateName') {
+        errors.name = saveError.message;
+    }
+
+    const collectionTableCells = getCollectionTableCells(
+        saveError?.type === 'CollectionLoop' ? saveError.loopId : undefined
+    );
+
     function onCancelSave() {
         history.push({ pathname: `${collectionsBasePath}` });
     }
@@ -150,11 +170,18 @@ function CollectionForm({
         scopedResourceSelector: ScopedResourceSelector
     ) => setFieldValue(`resourceSelector.${entityType}`, scopedResourceSelector);
 
-    const onEmbeddedCollectionsChange = (newCollections: CollectionResponse[]) =>
-        setFieldValue(
+    const onEmbeddedCollectionsChange = (newCollections: CollectionResponse[]) => {
+        if (
+            saveError?.type === 'CollectionLoop' &&
+            !newCollections.find(({ id }) => id === saveError.loopId)
+        ) {
+            clearSaveError();
+        }
+        return setFieldValue(
             'embeddedCollectionIds',
             newCollections.map(({ id }) => id)
         );
+    };
 
     return (
         <Form className="pf-u-background-color-200">
@@ -171,13 +198,24 @@ function CollectionForm({
                     <Title headingLevel="h2">Collection details</Title>
                     <Flex direction={{ default: 'column', lg: 'row' }}>
                         <FlexItem flex={{ default: 'flex_1' }}>
-                            <FormGroup label="Name" fieldId="name" isRequired>
+                            <FormGroup
+                                label="Name"
+                                fieldId="name"
+                                isRequired
+                                helperTextInvalid={errors.name}
+                                validated={errors.name ? 'error' : 'default'}
+                            >
                                 <TextInput
                                     id="name"
                                     name="name"
                                     value={values.name}
                                     validated={errors.name ? 'error' : 'default'}
-                                    onChange={(_, e) => handleChange(e)}
+                                    onChange={(_, e) => {
+                                        if (saveError?.type === 'DuplicateName') {
+                                            clearSaveError();
+                                        }
+                                        handleChange(e);
+                                    }}
                                     onBlur={handleBlur}
                                     isDisabled={isReadOnly}
                                 />
@@ -213,6 +251,18 @@ function CollectionForm({
                                 syntax).
                             </p>
                         </>
+                    )}
+                    {saveError?.type === 'EmptyCollection' && (
+                        <Alert
+                            title="At least one rule must be configured or one collection must be attached from the section below"
+                            variant="danger"
+                            isInline
+                        />
+                    )}
+                    {saveError?.type === 'InvalidRule' && (
+                        <Alert title={saveError.message} variant="danger" isInline>
+                            {saveError.details}
+                        </Alert>
                     )}
                     <RuleSelector
                         collection={values}
@@ -262,6 +312,19 @@ function CollectionForm({
                     ) : (
                         <>
                             <p>Extend this collection by attaching other sets.</p>
+
+                            {saveError?.type === 'EmptyCollection' && (
+                                <Alert
+                                    title="At least one collection must be attached or one rule must be configured from the section above"
+                                    variant="danger"
+                                    isInline
+                                />
+                            )}
+                            {saveError?.type === 'CollectionLoop' && (
+                                <Alert title={saveError.message} variant="danger" isInline>
+                                    {saveError.details}
+                                </Alert>
+                            )}
                             <CollectionAttacher
                                 excludedCollectionId={
                                     action.type === 'edit' ? action.collectionId : null
@@ -279,7 +342,7 @@ function CollectionForm({
                     <Button
                         className="pf-u-mr-md"
                         onClick={submitForm}
-                        isDisabled={isSubmitting || !isValid}
+                        isDisabled={isSubmitting}
                         isLoading={isSubmitting}
                     >
                         Save
