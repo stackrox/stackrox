@@ -1,6 +1,3 @@
-//go:build sql_integration
-// +build sql_integration
-
 package resolvers
 
 import (
@@ -18,7 +15,7 @@ import (
 	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	nodeDackboxDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDS "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	nodeGlobalDataStore "github.com/stackrox/rox/central/node/datastore/dackbox/globaldatastore"
 	nodeSearch "github.com/stackrox/rox/central/node/datastore/search"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
@@ -58,10 +55,12 @@ Remaining TODO tasks:
 type GraphQLNodeVulnerabilityTestSuite struct {
 	suite.Suite
 
-	ctx      context.Context
-	db       *pgxpool.Pool
-	gormDB   *gorm.DB
-	resolver *Resolver
+	ctx           context.Context
+	db            *pgxpool.Pool
+	gormDB        *gorm.DB
+	resolver      *Resolver
+	nodeDatastore nodeDS.DataStore
+	riskMockDS    *mockRisks.MockDataStore
 }
 
 func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
@@ -102,12 +101,12 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 	s.resolver.NodeCVEDataStore = nodeCVEDatastore
 
 	// node datastore
-	riskMock := mockRisks.NewMockDataStore(gomock.NewController(s.T()))
+	s.riskMockDS = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
 	nodeStore := nodePostgres.CreateTableAndNewStore(s.ctx, s.T(), s.db, s.gormDB, false)
 	nodeIndexer := nodePostgres.NewIndexer(s.db)
 	nodeSearcher := nodeSearch.NewV2(nodeStore, nodeIndexer)
-	nodePostgresDataStore := nodeDackboxDataStore.NewWithPostgres(nodeStore, nodeIndexer, nodeSearcher, riskMock, ranking.NewRanker(), ranking.NewRanker())
-	nodeGlobalDatastore, err := nodeGlobalDataStore.New(nodePostgresDataStore)
+	s.nodeDatastore = nodeDS.NewWithPostgres(nodeStore, nodeIndexer, nodeSearcher, s.riskMockDS, ranking.NewRanker(), ranking.NewRanker())
+	nodeGlobalDatastore, err := nodeGlobalDataStore.New(s.nodeDatastore)
 	s.NoError(err, "Failed to create nodeGlobalDatastore")
 	s.resolver.NodeGlobalDataStore = nodeGlobalDatastore
 
@@ -115,7 +114,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 	nodeCompStore := nodeComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	nodeCompIndexer := nodeComponentPostgres.NewIndexer(s.db)
 	nodeCompSearcher := nodeComponentSearch.New(nodeCompStore, nodeCompIndexer)
-	s.resolver.NodeComponentDataStore = nodeComponentDataStore.New(nodeCompStore, nodeCompIndexer, nodeCompSearcher, riskMock, ranking.NewRanker())
+	s.resolver.NodeComponentDataStore = nodeComponentDataStore.New(nodeCompStore, nodeCompIndexer, nodeCompSearcher, s.riskMockDS, ranking.NewRanker())
 
 	// nodeComponentCVEEdge datastore
 	nodeComponentCveEdgeStore := nodeComponentCVEEdgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
@@ -139,7 +138,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 
 	// loaders used by graphql layer
 	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Node{}), func() interface{} {
-		return loaders.NewNodeLoader(nodePostgresDataStore)
+		return loaders.NewNodeLoader(s.nodeDatastore)
 	})
 	loaders.RegisterTypeFactory(reflect.TypeOf(storage.NodeComponent{}), func() interface{} {
 		return loaders.NewNodeComponentLoader(s.resolver.NodeComponentDataStore)
@@ -156,7 +155,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 		s.NoError(err)
 	}
 	for _, node := range testNodes {
-		err = nodePostgresDataStore.UpsertNode(s.ctx, node)
+		err = s.nodeDatastore.UpsertNode(s.ctx, node)
 		s.NoError(err)
 	}
 }
@@ -449,6 +448,33 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestTopNodeVulnerability() {
 	topVuln, err := node.TopNodeVulnerability(ctx, RawQuery{})
 	s.NoError(err)
 	s.Equal(expected, topVuln.Id(ctx))
+
+	// test no error on node without any cves
+	testNode := &storage.Node{
+		Id:   "nodeWithoutCves",
+		Name: "node-without-cves",
+		SetCves: &storage.Node_Cves{
+			Cves: 0,
+		},
+		Scan: &storage.NodeScan{
+			Components: []*storage.EmbeddedNodeScanComponent{
+				{
+					Name:    "comp-without-cves",
+					Version: "v",
+				},
+			},
+		},
+	}
+	err = s.nodeDatastore.UpsertNode(ctx, testNode)
+	s.NoError(err)
+
+	node = getNodeResolver(ctx, s.T(), s.resolver, testNode.GetId())
+	topVuln, err = node.TopNodeVulnerability(ctx, RawQuery{})
+	s.NoError(err)
+	s.Nil(topVuln)
+	s.riskMockDS.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	err = s.nodeDatastore.DeleteNodes(ctx, testNode.GetId())
+	s.NoError(err)
 }
 
 func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilityEnvImpact() {
