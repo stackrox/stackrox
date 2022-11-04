@@ -305,23 +305,21 @@ export const networkBaselinePeersAlias = 'networkbaseline/id/peers';
 
 export function interactAndWaitForChangeToNetworkFlows(interactionCallback) {
     interactAndWaitForResponses(interactionCallback, {
-        routeMatcherMap: {
-            [networkBaselinePeersAlias]: {
-                method: 'PATCH',
-                url: api.network.networkBaselinePeers,
-            },
-            [networkGraphClusterAlias]: {
-                method: 'GET',
-                url: api.network.networkGraph,
-            },
-            [networkPoliciesClusterAlias]: {
-                method: 'GET',
-                url: api.network.networkPoliciesGraph,
-            },
-            [networkBaselineStatusAlias]: {
-                method: 'POST',
-                url: '/v1/networkbaseline/*/status',
-            },
+        [networkBaselinePeersAlias]: {
+            method: 'PATCH',
+            url: api.network.networkBaselinePeers,
+        },
+        [networkGraphClusterAlias]: {
+            method: 'GET',
+            url: api.network.networkGraph,
+        },
+        [networkPoliciesClusterAlias]: {
+            method: 'GET',
+            url: api.network.networkPoliciesGraph,
+        },
+        [networkBaselineStatusAlias]: {
+            method: 'POST',
+            url: '/v1/networkbaseline/*/status',
         },
     });
 }
@@ -336,11 +334,9 @@ export function clickBaselineSettingsTab() {
             cy.get(`${tabSelectors.tabs}:contains('Baseline Settings')`).click();
         },
         {
-            routeMatcherMap: {
-                [networkBaselineAlias]: {
-                    method: 'GET',
-                    url: api.network.networkBaseline,
-                },
+            [networkBaselineAlias]: {
+                method: 'GET',
+                url: api.network.networkBaseline,
             },
         }
     );
