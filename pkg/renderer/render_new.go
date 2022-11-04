@@ -24,6 +24,11 @@ var (
 	kubectlScannerScriptMap = FileNameMap{
 		"common/setup-scanner.sh": "scanner/scripts/setup.sh",
 	}
+
+	centralDBScriptMap = FileNameMap{
+		"common/deploy-central-db.sh.tpl": "deploy-central-db.sh",
+		"common/setup-central.sh":         "scripts/setup.sh",
+	}
 )
 
 func renderHelmChart(chartFiles []*loader.BufferedFile, mode mode, valuesFiles []*zip.File) ([]*zip.File, error) {
@@ -144,7 +149,7 @@ func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) 
 }
 
 func renderAuxiliaryFiles(c Config, mode mode) ([]*zip.File, error) {
-	if mode != renderAll && mode != scannerOnly {
+	if mode != renderAll && mode != scannerOnly && mode != centralDBOnly {
 		return nil, nil
 	}
 
@@ -160,7 +165,11 @@ func renderAuxiliaryFiles(c Config, mode mode) ([]*zip.File, error) {
 		return nil, errors.Wrap(err, "loading asset files")
 	}
 	if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL {
-		auxFiles = append(auxFiles, withPrefix("scanner/scripts", assets)...)
+		if mode == centralDBOnly {
+			auxFiles = append(auxFiles, withPrefix("scripts", assets)...)
+		} else {
+			auxFiles = append(auxFiles, withPrefix("scanner/scripts", assets)...)
+		}
 		if mode == renderAll {
 			auxFiles = append(auxFiles, withPrefix("central/scripts", assets)...)
 		}
@@ -169,7 +178,13 @@ func renderAuxiliaryFiles(c Config, mode mode) ([]*zip.File, error) {
 	}
 
 	if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL {
-		scannerScriptFiles, err := RenderFiles(kubectlScannerScriptMap, &c)
+		var scriptMap *FileNameMap
+		if mode == centralDBOnly {
+			scriptMap = &centralDBScriptMap
+		} else {
+			scriptMap = &kubectlScannerScriptMap
+		}
+		scannerScriptFiles, err := RenderFiles(*scriptMap, &c)
 		if err != nil {
 			return nil, errors.Wrap(err, "rendering scanner script files")
 		}
