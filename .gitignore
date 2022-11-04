@@ -47,7 +47,6 @@ combined_coverage.dat
 # Miscellaneous
 *.g4
 *.tokens
-/vendor/
 /.gradle/
 /stackrox-central-services-chart/
 /stackrox-secured-cluster-services-chart/
