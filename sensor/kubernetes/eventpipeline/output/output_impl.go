@@ -33,7 +33,7 @@ func (q *outputQueueImpl) Start() error {
 	return nil
 }
 
-// Stop stops the outputQueueImpl component
+// Stop the outputQueueImpl component
 func (q *outputQueueImpl) Stop(_ error) {
 	defer close(q.innerQueue)
 	defer close(q.forwardQueue)
