@@ -22,6 +22,7 @@ var (
 
 type marketing struct {
 	telemeter mpkg.Telemeter
+	period    time.Duration
 	ticker    *time.Ticker
 	stopSig   concurrency.Signal
 	ctx       context.Context
@@ -35,11 +36,12 @@ var (
 )
 
 // InitGatherer initializes the periodic telemetry data gatherer.
-func InitGatherer(t mpkg.Telemeter) {
+func InitGatherer(t mpkg.Telemeter, p time.Duration) {
 	once.Do(func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		m = &marketing{
 			telemeter: t,
+			period:    p,
 			userAgent: "central/" + version.GetMainVersion(),
 			ctx:       sac.WithAllAccess(ctx),
 			cancel:    cancel,
@@ -62,15 +64,15 @@ func (m *marketing) loop() {
 			return
 		}
 	}
-	log.Info("Loop stopped.")
+	log.Debug("Loop stopped.")
 }
 
 func (m *marketing) Start() {
 	if mpkg.Enabled() {
 		m.telemeter.Start()
-		m.ticker = time.NewTicker(1 * time.Minute)
+		m.ticker = time.NewTicker(m.period)
 		go m.loop()
-		log.Info("Marketing telemetry data collection ticker enabled.")
+		log.Debug("Marketing telemetry data collection ticker enabled.")
 	}
 }
 

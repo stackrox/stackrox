@@ -19,20 +19,23 @@ var (
 )
 
 type amplitudeTelemeter struct {
-	client   amplitude.Client
-	opts     *types.EventOptions
-	identity amplitude.Identify
+	client amplitude.Client
+	opts   *types.EventOptions
 }
 
 // Ensure Telemeter interface implementation.
 var _ = marketing.Telemeter((*amplitudeTelemeter)(nil))
 
 func (t *amplitudeTelemeter) Identify(props map[string]any) {
-	t.identity = amplitude.Identify{}
+	identity := amplitude.Identify{}
+	identity.SetOnce("Central version", version.GetMainVersion())
+	identity.SetOnce("Chart version", version.GetChartVersion())
 	for k, v := range props {
-		t.identity.Set(k, v)
+		identity.Set(k, v)
 	}
-	t.client.Identify(t.identity, amplitude.EventOptions{UserID: t.opts.DeviceID, DeviceID: t.opts.DeviceID})
+	log.Info("Identifying with ", identity)
+
+	t.client.Identify(identity, amplitude.EventOptions{UserID: t.opts.DeviceID, DeviceID: t.opts.DeviceID})
 }
 
 // Init creates and initializes an amplitude telemeter instance.
@@ -55,17 +58,13 @@ func initAmplitude(config *marketing.Config, key, server string) *amplitudeTelem
 
 	client := amplitude.NewClient(amplitudeConfig)
 
-	identify := amplitude.Identify{}
-	identify.SetOnce("Central version", version.GetMainVersion())
-	identify.SetOnce("Chart version", version.GetChartVersion())
-
 	return &amplitudeTelemeter{
-		client:   client,
-		identity: identify,
+		client: client,
 		opts: &amplitude.EventOptions{
-			DeviceID:  config.ID,
-			ProductID: version.GetMainVersion(),
-			Platform:  config.Version,
+			DeviceID:   config.ID,
+			AppVersion: version.GetMainVersion(),
+			Platform:   config.Orchestrator,
+			OSVersion:  config.Version,
 		},
 	}
 }
@@ -80,25 +79,24 @@ func (t *amplitudeTelemeter) Stop() {
 	}
 }
 
-func (t *amplitudeTelemeter) TrackProps(userAgent, event string, props map[string]any) {
+func (t *amplitudeTelemeter) TrackProps(event string, props map[string]any) {
 	if t == nil {
 		return
 	}
-	opts := *t.opts
-	opts.AppVersion = userAgent
+	log.Info("Tracking event ", event, " with ", props)
 	t.client.Track(amplitude.Event{
 		UserID:          t.opts.DeviceID,
 		DeviceID:        t.opts.DeviceID,
 		EventType:       event,
 		EventProperties: props,
-		EventOptions:    opts,
+		EventOptions:    *t.opts,
 	})
 }
 
-func (t *amplitudeTelemeter) TrackProp(userAgent, event string, key string, value any) {
-	t.TrackProps(userAgent, event, map[string]any{key: value})
+func (t *amplitudeTelemeter) TrackProp(event string, key string, value any) {
+	t.TrackProps(event, map[string]any{key: value})
 }
 
-func (t *amplitudeTelemeter) Track(userAgent, event string) {
-	t.TrackProps(userAgent, event, nil)
+func (t *amplitudeTelemeter) Track(event string) {
+	t.TrackProps(event, nil)
 }

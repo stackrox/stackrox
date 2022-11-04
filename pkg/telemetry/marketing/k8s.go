@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -26,6 +28,11 @@ func GetDeviceConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
+	if env.OpenshiftAPI.BooleanSetting() {
+		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
+	}
+
 	di := clientset.AppsV1().Deployments("stackrox")
 	opts := v1.GetOptions{}
 	d, err := di.Get(context.Background(), "central", opts)
@@ -35,8 +42,9 @@ func GetDeviceConfig() (*Config, error) {
 	paths := d.GetAnnotations()[annotation]
 
 	return &Config{
-		ID:       string(d.GetUID()),
-		Version:  v.GitVersion,
-		APIPaths: strings.Split(paths, ","),
+		ID:           string(d.GetUID()),
+		Orchestrator: orchestrator,
+		Version:      v.GitVersion,
+		APIPaths:     strings.Split(paths, ","),
 	}, nil
 }

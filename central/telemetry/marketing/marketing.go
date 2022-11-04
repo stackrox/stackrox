@@ -2,6 +2,7 @@ package marketing
 
 import (
 	"context"
+	"time"
 
 	"github.com/stackrox/rox/pkg/set"
 	mpkg "github.com/stackrox/rox/pkg/telemetry/marketing"
@@ -21,7 +22,7 @@ func Init() grpc.UnaryServerInterceptor {
 
 		telemeter := amplitude.Init(config)
 
-		InitGatherer(telemeter)
+		InitGatherer(telemeter, 5*time.Minute)
 
 		trackedPaths := set.NewFrozenSet(config.APIPaths...)
 		log.Info("Telemetry device ID:", config.ID)
