@@ -1,10 +1,9 @@
 import { url as userUrl } from '../constants/UserPage';
-import selectors from '../constants/GeneralPage';
 import withAuth from '../helpers/basicAuth';
 import { visitComplianceDashboard, visitComplianceEntities } from '../helpers/compliance';
-import { visitMainDashboard, visitMainDashboardFromLeftNav } from '../helpers/main';
+import { visitMainDashboard } from '../helpers/main';
 import { visitNetworkGraph } from '../helpers/networkGraph';
-import { visitViolations, visitViolationsWithUncaughtException } from '../helpers/violations';
+import { visitViolations } from '../helpers/violations';
 import { visit } from '../helpers/visit';
 
 //
@@ -54,17 +53,5 @@ describe('General sanity checks', () => {
 
             cy.title().should('match', new RegExp(`User Profile | ${productNameRegExp}`));
         });
-    });
-
-    it('should allow to navigate to another page after exception happens on a page', () => {
-        // Test fails with uncaught exception in local deployment.
-        visitViolationsWithUncaughtException();
-
-        cy.get(selectors.errorBoundary).contains(
-            "We're sorry — something's gone wrong. The error has been logged."
-        );
-
-        visitMainDashboardFromLeftNav();
-        cy.get(selectors.errorBoundary).should('not.exist'); // error screen should be gone
     });
 });

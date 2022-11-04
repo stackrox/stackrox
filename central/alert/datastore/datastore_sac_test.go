@@ -431,27 +431,37 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 
 var alertUnrestrictedSACSearchTestCases = map[string]alertSACSearchResult{
 	"full read access should see all alerts": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
 		scopeKey: testutils.UnrestrictedReadCtx,
 		resultCounts: map[string]map[string]int{
-			"": {"": 19},
+			testconsts.Cluster1: {
+				testconsts.NamespaceA: 8,
+				testconsts.NamespaceB: 5,
+			},
+			testconsts.Cluster2: {
+				testconsts.NamespaceB: 3,
+				testconsts.NamespaceC: 2,
+			},
+			"prod cluster": {"stackrox": 1},
 		},
 	},
 	"full read-write access should see all alerts": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
 		scopeKey: testutils.UnrestrictedReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			"": {"": 19},
+			testconsts.Cluster1: {
+				testconsts.NamespaceA: 8,
+				testconsts.NamespaceB: 5,
+			},
+			testconsts.Cluster2: {
+				testconsts.NamespaceB: 3,
+				testconsts.NamespaceC: 2,
+			},
+			"prod cluster": {"stackrox": 1},
 		},
 	},
 }
 
 var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 	"full read access should see all alerts": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
 		scopeKey: testutils.UnrestrictedReadCtx,
 		resultCounts: map[string]map[string]int{
 			testconsts.Cluster1: {
@@ -466,8 +476,6 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 		},
 	},
 	"full read-write access should see all alerts": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
 		scopeKey: testutils.UnrestrictedReadWriteCtx,
 		resultCounts: map[string]map[string]int{
 			testconsts.Cluster1: {
@@ -487,7 +495,14 @@ func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResu
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.Search(ctx, nil)
 	s.NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), searchResults, s.optionsMap)
+	results := make([]sac.NamespaceScopedObject, 0, len(searchResults))
+	for _, r := range searchResults {
+		obj, found, err := s.datastore.GetAlert(s.testContexts[testutils.UnrestrictedReadCtx], r.ID)
+		if found && err == nil {
+			results = append(results, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), results)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultCounts)
 }
 
@@ -524,7 +539,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedCount() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCount() {
-	for name, c := range alertUnrestrictedSACSearchTestCases {
+	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runCountTest(c)
 		})
@@ -548,7 +563,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedCountAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCountAlerts() {
-	for name, c := range alertUnrestrictedSACSearchTestCases {
+	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runCountAlertsTest(c)
 		})
@@ -559,7 +574,14 @@ func (s *alertDatastoreSACTestSuite) runSearchAlertsTest(testparams alertSACSear
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchAlerts(ctx, nil)
 	s.NoError(err)
-	resultsDistribution := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), searchResults, s.optionsMap)
+	results := make([]sac.NamespaceScopedObject, 0, len(searchResults))
+	for _, r := range searchResults {
+		obj, found, err := s.datastore.GetAlert(s.testContexts[testutils.UnrestrictedReadCtx], r.GetId())
+		if found && err == nil {
+			results = append(results, obj)
+		}
+	}
+	resultsDistribution := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), results)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
 }
 

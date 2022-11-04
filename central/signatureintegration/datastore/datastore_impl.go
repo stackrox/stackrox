@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -48,11 +49,14 @@ func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*sto
 	}
 
 	var integrations []*storage.SignatureIntegration
-	err := d.storage.Walk(ctx, func(integration *storage.SignatureIntegration) error {
-		integrations = append(integrations, integration)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		integrations = integrations[:0]
+		return d.storage.Walk(ctx, func(integration *storage.SignatureIntegration) error {
+			integrations = append(integrations, integration)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 	return integrations, nil

@@ -17,7 +17,7 @@ const (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 107,
-		VersionAfter:   storage.Version{SeqNum: 108},
+		VersionAfter:   &storage.Version{SeqNum: 108},
 		Run: func(databases *types.Databases) error {
 			err := migratePS(databases.RocksDB)
 			if err != nil {

@@ -21,7 +21,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 105,
-		VersionAfter:   storage.Version{SeqNum: 106},
+		VersionAfter:   &storage.Version{SeqNum: 106},
 		Run: func(databases *types.Databases) error {
 			return migrateGroupsStoredByCompositeKey(databases.BoltDB)
 		},

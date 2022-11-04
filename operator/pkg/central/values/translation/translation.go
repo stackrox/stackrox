@@ -204,11 +204,20 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 	cv := translation.NewValuesBuilder()
 	cv.SetBoolValue("enabled", true)
 
-	if c.ConnectionStringOverride != nil && c.PasswordSecret == nil {
-		cv.SetError(errors.New("if connection string override is set, then a password secret must also be set"))
-	}
-
 	if c.ConnectionStringOverride != nil {
+		if c.GetPersistence() != nil {
+			cv.SetError(errors.New("if a connection string is provided, no persistence settings must be supplied"))
+		}
+
+		// TODO: there are other settings which are ignored in external mode - should we error if those are set, too?
+		// Persistence seems fundamental, so it makes sense to error here, but a node selector can be regarded as more
+		// accidental, that's why we tolerate it being specified. However, the reason we don't warn about it is mostly
+		// that there is no good/easy way to warn.
+		// Moreover, the behaviour of OpenShift console UI w.r.t. defaults is such that we cannot infer user intent
+		// based merely on the (non-)nil-ness of a struct.
+		// See https://github.com/stackrox/stackrox/pull/3322#discussion_r1005954280 for more details.
+
+		cv.SetBoolValue("external", true)
 		source := translation.NewValuesBuilder()
 		source.SetString("connectionString", c.ConnectionStringOverride)
 		cv.AddChild("source", &source)

@@ -115,7 +115,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":${{ fromJSON('["desert", "red_circle"]')[inputs.dry-run != 'true'] }}:
-            *Cannot proceed with upstream release ${{needs.variables.outputs.release-patch}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
+            *Cannot proceed with upstream release ${{needs.variables.outputs.named-release-patch}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             "There has been no documentation branch created in
@@ -131,7 +131,7 @@ jobs:
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ">
             Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
-            Release: ${{needs.variables.outputs.release-patch}}\n>
+            Release: ${{needs.variables.outputs.named-release-patch}}\n>
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}
 
@@ -346,7 +346,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
-            *Upstream release ${{needs.variables.outputs.release-patch}}
+            *Upstream release ${{needs.variables.outputs.named-release-patch}}
             has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}> by ${{ github.event.sender.login }}.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
@@ -362,7 +362,7 @@ jobs:
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ">
             Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
-            Release: ${{needs.variables.outputs.release-patch}}\n>
+            Release: ${{needs.variables.outputs.named-release-patch}}\n>
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}
       - name: Post to Slack (patch release)
@@ -375,7 +375,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
-            *Upstream patch release ${{needs.variables.outputs.release-patch}}
+            *Upstream patch release ${{needs.variables.outputs.named-release-patch}}
             has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}> by ${{ github.event.sender.login }}.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
@@ -390,6 +390,6 @@ jobs:
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ">
             Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
-            Release: ${{needs.variables.outputs.release-patch}}\n>
+            Release: ${{needs.variables.outputs.named-release-patch}}\n>
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}

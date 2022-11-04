@@ -13,7 +13,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 101,
-		VersionAfter:   storage.Version{SeqNum: 102},
+		VersionAfter:   &storage.Version{SeqNum: 102},
 		Run: func(databases *types.Databases) error {
 			if err := dropBuckets(databases.BoltDB); err != nil {
 				return errors.Wrap(err, "error dropping buckets from Bolt")

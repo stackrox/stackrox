@@ -43,19 +43,6 @@ export function visitViolationsWithFixture(fixturePath) {
     });
 }
 
-export function visitViolationsWithUncaughtException() {
-    const alerts = [{ id: 'broken one' }];
-    const count = alerts.length;
-    const staticResponseMap = {
-        alerts: { body: { alerts } },
-        alertscount: { body: { count } },
-    };
-
-    visit(url, { routeMatcherMap }, staticResponseMap);
-
-    // Do not get h1 because goal of this function is to render error boundary.
-}
-
 /*
  * Assume that current location is violations table with compatible fixture for alerts.
  */

@@ -11,17 +11,23 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
+)
+
+const (
+	graphInitBatchSize = 20
 )
 
 var (
-	log           = logging.LoggerForModule()
-	initBatchSize = 20
-	workflowSAC   = sac.ForResource(resources.WorkflowAdministration)
+	log         = logging.LoggerForModule()
+	workflowSAC = sac.ForResource(resources.WorkflowAdministration)
 )
 
 type datastoreImpl struct {
@@ -29,8 +35,17 @@ type datastoreImpl struct {
 	indexer  index.Indexer
 	searcher search.Searcher
 
-	graphLock sync.Mutex
-	graph     *dag.DAG
+	lock  sync.RWMutex
+	graph *dag.DAG
+	names set.Set[string]
+}
+
+type graphEntry struct {
+	id string
+}
+
+func (ge graphEntry) ID() string {
+	return ge.id
 }
 
 func (ds *datastoreImpl) initGraphOnce() {
@@ -47,10 +62,9 @@ func (ds *datastoreImpl) initGraph() error {
 		return nil
 	}
 
-	ds.graphLock.Lock()
-	defer ds.graphLock.Unlock()
+	// build graph object
+	graph := dag.NewDAG()
 
-	ds.graph = dag.NewDAG()
 	ctx := sac.WithAllAccess(context.Background())
 
 	// get ids first
@@ -60,10 +74,10 @@ func (ds *datastoreImpl) initGraph() error {
 	}
 
 	// add vertices by batches
-	for i := 0; i < len(ids); i += initBatchSize {
+	for i := 0; i < len(ids); i += graphInitBatchSize {
 		var objs []*storage.ResourceCollection
-		if i+initBatchSize < len(ids) {
-			objs, _, err = ds.storage.GetMany(ctx, ids[i:i+initBatchSize])
+		if i+graphInitBatchSize < len(ids) {
+			objs, _, err = ds.storage.GetMany(ctx, ids[i:i+graphInitBatchSize])
 		} else {
 			objs, _, err = ds.storage.GetMany(ctx, ids[i:])
 		}
@@ -71,7 +85,14 @@ func (ds *datastoreImpl) initGraph() error {
 			return errors.Wrap(err, "building collection graph")
 		}
 		for _, obj := range objs {
-			err = ds.graph.AddVertexByID(obj.GetId(), obj.GetName())
+
+			// track names, postgres guarantees uniqueness
+			ds.names.Add(obj.GetName())
+
+			// add object
+			_, err = graph.AddVertex(graphEntry{
+				id: obj.GetId(),
+			})
 			if err != nil {
 				return errors.Wrap(err, "building collection graph")
 			}
@@ -79,84 +100,139 @@ func (ds *datastoreImpl) initGraph() error {
 	}
 
 	// then add edges by batches
-	for i := 0; i < len(ids); i += initBatchSize {
-		var objs []*storage.ResourceCollection
-		if i+initBatchSize < len(ids) {
-			objs, _, err = ds.storage.GetMany(ctx, ids[i:i+initBatchSize])
+	for i := 0; i < len(ids); i += graphInitBatchSize {
+		var parents []*storage.ResourceCollection
+		if i+graphInitBatchSize < len(ids) {
+			parents, _, err = ds.storage.GetMany(ctx, ids[i:i+graphInitBatchSize])
 		} else {
-			objs, _, err = ds.storage.GetMany(ctx, ids[i:])
+			parents, _, err = ds.storage.GetMany(ctx, ids[i:])
 		}
 		if err != nil {
 			return errors.Wrap(err, "building collection graph")
 		}
-		for _, obj := range objs {
-			for _, peer := range obj.GetEmbeddedCollections() {
-				err = ds.graph.AddEdge(obj.GetId(), peer.GetId())
+		for _, parent := range parents {
+			for _, child := range parent.GetEmbeddedCollections() {
+				err = graph.AddEdge(parent.GetId(), child.GetId())
 				if err != nil {
 					return errors.Wrap(err, "building collection graph")
 				}
 			}
 		}
 	}
+
+	// set the graph object
+	ds.graph = graph
+
 	return nil
 }
 
-func (ds *datastoreImpl) addCollectionToGraph(obj *storage.ResourceCollection) error {
+// addCollectionToGraphNoLock creates a copy of the existing DAG and returns that copy with the collection added, or an appropriate error
+func (ds *datastoreImpl) addCollectionToGraphNoLock(obj *storage.ResourceCollection) (*dag.DAG, error) {
 	ds.initGraphOnce()
-	ds.graphLock.Lock()
-	defer ds.graphLock.Unlock()
 
-	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetName())
-	if err != nil {
-		return err
+	var err error
+
+	// input validation
+	if err = verifyCollectionObjectNotEmpty(obj); err != nil {
+		return nil, err
 	}
-	for _, peer := range obj.GetEmbeddedCollections() {
-		err = ds.graph.AddEdge(obj.GetId(), peer.GetId())
+	if obj.GetId() != "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "new collection must not have a pre-set `id`")
+	}
+
+	// create graph copy to do this operation on
+	graph, err := ds.graph.Copy()
+	if err != nil {
+		return nil, err
+	}
+
+	// add vertex
+	id, err := graph.AddVertex(graphEntry{
+		id: uuid.NewV4().String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// add edges
+	for _, child := range obj.GetEmbeddedCollections() {
+		err = graph.AddEdge(id, child.GetId())
 		if err != nil {
-			deleteErr := ds.graph.DeleteVertex(obj.GetId())
-			if deleteErr != nil {
-				log.Errorf("Failed to remove collection from internal state object (%v)", deleteErr)
-			}
-			return err
+			return nil, err
 		}
 	}
-	return nil
+
+	// set id for the object and return the new graph
+	obj.Id = id
+	return graph, nil
 }
 
-func (ds *datastoreImpl) deleteCollectionFromGraph(id string) error {
+// updateCollectionInGraphNoLock creates a copy of the existing DAG and returns that copy with the collection updated, or an appropriate error
+func (ds *datastoreImpl) updateCollectionInGraphNoLock(obj *storage.ResourceCollection) (*dag.DAG, error) {
 	ds.initGraphOnce()
-	ds.graphLock.Lock()
-	defer ds.graphLock.Unlock()
 
+	var err error
+
+	if err = verifyCollectionObjectNotEmpty(obj); err != nil {
+		return nil, err
+	}
+
+	addChildIDs := make([]string, 0)
+	removeChildIDs := make([]string, 0)
+
+	// create graph copy to use for operation
+	graph, err := ds.graph.Copy()
+	if err != nil {
+		return nil, err
+	}
+
+	// get current children edges for the object
+	curChildren, err := graph.GetChildren(obj.GetId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not update collection (%s)", obj.GetId())
+	}
+
+	// determine additions
+	for _, newChild := range obj.GetEmbeddedCollections() {
+		_, present := curChildren[newChild.GetId()]
+		if present {
+			// if present in both we remove from curChildren
+			delete(curChildren, newChild.GetId())
+		} else {
+			addChildIDs = append(addChildIDs, newChild.GetId())
+		}
+	}
+
+	// determine deletions, any remaining edge in curChildren should be removed
+	for key := range curChildren {
+		removeChildIDs = append(removeChildIDs, key)
+	}
+
+	// since adding can cause cycles but removing never can, we remove first
+	for _, childID := range removeChildIDs {
+		err = graph.DeleteEdge(obj.GetId(), childID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// add new edges
+	for _, childID := range addChildIDs {
+		err = graph.AddEdge(obj.GetId(), childID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return graph, nil
+}
+
+// deleteCollectionFromGraphNoLock removes the collection from the DAG, or returns an appropriate error
+func (ds *datastoreImpl) deleteCollectionFromGraphNoLock(id string) error {
+	ds.initGraphOnce()
+
+	// this function covers removal of the vertex and any edges to or from other vertices, it is also threadsafe
 	return ds.graph.DeleteVertex(id)
-}
-
-func (ds *datastoreImpl) dryRunAddCollectionInGraph(obj *storage.ResourceCollection) error {
-	ds.initGraphOnce()
-	ds.graphLock.Lock()
-	defer ds.graphLock.Unlock()
-
-	var ret error
-
-	// we essentially just add the obj to the graph and delete it before returning
-	err := ds.graph.AddVertexByID(obj.GetId(), obj.GetName())
-	if err != nil {
-		return err
-	}
-	for _, peer := range obj.GetEmbeddedCollections() {
-		err = ds.graph.AddEdge(obj.GetId(), peer.GetId())
-		if err != nil {
-			ret = err
-			break
-		}
-	}
-
-	err = ds.graph.DeleteVertex(obj.GetId())
-	if err != nil && ret == nil {
-		ret = err
-	}
-
-	return ret
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -193,7 +269,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return true, nil
 }
 
-func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ResourceCollection, error) {
+func (ds *datastoreImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ResourceCollection, error) {
 	collections, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
@@ -202,45 +278,152 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 	return collections, nil
 }
 
-func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+func (ds *datastoreImpl) addCollectionWorkflow(ctx context.Context, collection *storage.ResourceCollection, dryrun bool) error {
 
-	// add to graph first to detect any cycles
-	err := ds.addCollectionToGraph(collection)
-	if err != nil {
+	// sanity checks
+	if err := verifyCollectionObjectNotEmpty(collection); err != nil {
 		return err
 	}
-
-	err = ds.storage.Upsert(ctx, collection)
-	if err != nil {
-		// if we fail to upsert, update the graph
-		deleteErr := ds.deleteCollectionFromGraph(collection.GetId())
-		if deleteErr != nil {
-			log.Errorf("Failed to remove collection from internal state object (%v)", deleteErr)
-		}
-		return err
+	if collection.GetId() != "" {
+		return errors.New("new collections must not have a preset `id`")
 	}
-	return err
-}
 
-func (ds *datastoreImpl) DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
-	// check for access since dryrun flow doesn't actually hit the postgres layer
+	// check for access so we can fast fail before locking
 	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || !ok {
 		return err
 	}
 
-	return ds.dryRunAddCollectionInGraph(collection)
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	// verify that the name is not already in use
+	if collection.GetName() == "" || ds.names.Contains(collection.GetName()) {
+		return errors.Errorf("collections must have non-empty, unique `name` values (%s)", collection.GetName())
+	}
+
+	// add to graph to detect any cycles, this also sets the `id` field
+	graph, err := ds.addCollectionToGraphNoLock(collection)
+	if err != nil {
+		return err
+	}
+
+	// if this is a dryrun, we don't want to add to storage or make changes to objects
+	if dryrun {
+		collection.Id = ""
+		return nil
+	}
+
+	// add to storage
+	err = ds.storage.Upsert(ctx, collection)
+	if err != nil {
+		return err
+	}
+
+	// we've succeeded, now set all the values
+	ds.names.Add(collection.GetName())
+	ds.graph = graph
+	return nil
+}
+
+func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	return ds.addCollectionWorkflow(ctx, collection, false)
+}
+
+func (ds *datastoreImpl) DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	return ds.addCollectionWorkflow(ctx, collection, true)
+}
+
+func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collection *storage.ResourceCollection, dryrun bool) error {
+
+	// sanity checks
+	if err := verifyCollectionObjectNotEmpty(collection); err != nil {
+		return err
+	}
+	if collection.GetId() == "" {
+		return errors.New("update must be called on an existing collection")
+	}
+
+	// check for access so we can fast fail before locking
+	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || !ok {
+		return err
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	// resolve object to check if the name was changed
+	storedCollection, ok, err := ds.storage.Get(ctx, collection.GetId())
+	if err != nil || !ok {
+		return errors.Wrap(err, "failed to resolve collection being updated")
+	}
+	if storedCollection.GetName() != collection.GetName() && ds.names.Contains(collection.GetName()) {
+		return errors.Errorf("collection name already in use (%s)", collection.GetName())
+	}
+
+	// update graph first to detect cycles
+	graph, err := ds.updateCollectionInGraphNoLock(collection)
+	if err != nil {
+		return err
+	}
+
+	// if this is a dryrun we don't want to make changes to the datastore or tracking objects
+	if dryrun {
+		return nil
+	}
+
+	// update datastore
+	err = ds.storage.Upsert(ctx, collection)
+	if err != nil {
+		return err
+	}
+
+	// success, we now update objects
+	if ds.names.Add(collection.GetName()) {
+		ds.names.Remove(storedCollection.GetName())
+	}
+	ds.graph = graph
+	return nil
+}
+
+func (ds *datastoreImpl) UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	return ds.updateCollectionWorkflow(ctx, collection, false)
 }
 
 func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error {
 
+	// check for access so we can fast fail before locking
+	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || !ok {
+		return err
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	// resolve object so we can get the name
+	obj, ok, err := ds.storage.Get(ctx, id)
+	if err != nil || !ok {
+		return errors.Wrap(err, "failed to resolve collection for deletion")
+	}
+
 	// delete from storage first so postgres can tell if the collection is referenced by another
-	err := ds.storage.Delete(ctx, id)
+	err = ds.storage.Delete(ctx, id)
 	if err != nil {
 		return err
 	}
-	deleteErr := ds.deleteCollectionFromGraph(id)
-	if deleteErr != nil {
-		log.Errorf("Failed to remove collection from internal state object (%v)", deleteErr)
+
+	// update tracking collections
+	ds.names.Remove(obj.GetName())
+	err = ds.deleteCollectionFromGraphNoLock(id)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove collection from internal state object after removing from datastore")
 	}
+
 	return err
+}
+
+func verifyCollectionObjectNotEmpty(obj *storage.ResourceCollection) error {
+	if obj == nil {
+		return errors.New("passed collection must be non nil")
+	}
+	return nil
 }

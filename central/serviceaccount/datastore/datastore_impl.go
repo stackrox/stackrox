@@ -35,6 +35,7 @@ func (d *datastoreImpl) buildIndex(ctx context.Context) error {
 	log.Info("[STARTUP] Indexing service accounts")
 	var serviceAccounts []*storage.ServiceAccount
 	var count int
+	// Postgres op retries not required. This is related to bleve indexing which is not used in postgres.
 	err := d.storage.Walk(ctx, func(sa *storage.ServiceAccount) error {
 		serviceAccounts = append(serviceAccounts, sa)
 		if len(serviceAccounts) == batchSize {
