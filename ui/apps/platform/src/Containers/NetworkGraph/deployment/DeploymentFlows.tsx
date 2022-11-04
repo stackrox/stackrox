@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    DropdownItem,
     Flex,
     FlexItem,
     Stack,
@@ -23,8 +24,10 @@ import {
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import './DeploymentFlows.css';
+import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 
 interface FlowBase {
+    id: string;
     type: 'Deployment' | 'External';
     entity: string;
     namespace: string;
@@ -46,6 +49,7 @@ const columnNames = {
 
 const flows: Flow[] = [
     {
+        id: 'External Entities-Ingress-Many-TCP',
         type: 'External',
         entity: 'External Entities',
         namespace: '',
@@ -55,6 +59,7 @@ const flows: Flow[] = [
         isAnomalous: true,
         children: [
             {
+                id: 'External Entities-Ingress-443-TCP',
                 type: 'External',
                 entity: 'External Entities',
                 namespace: '',
@@ -64,6 +69,7 @@ const flows: Flow[] = [
                 isAnomalous: true,
             },
             {
+                id: 'External Entities-Ingress-9443-TCP',
                 type: 'External',
                 entity: 'External Entities',
                 namespace: '',
@@ -75,6 +81,7 @@ const flows: Flow[] = [
         ],
     },
     {
+        id: 'Deployment 1-naples-Ingress-Many-TCP',
         type: 'Deployment',
         entity: 'Deployment 1',
         namespace: 'naples',
@@ -85,6 +92,7 @@ const flows: Flow[] = [
         children: [],
     },
     {
+        id: 'Deployment 2-naples-Ingress-Many-UDP',
         type: 'Deployment',
         entity: 'Deployment 2',
         namespace: 'naples',
@@ -95,6 +103,7 @@ const flows: Flow[] = [
         children: [],
     },
     {
+        id: 'Deployment 3-naples-Egress-7777-UDP',
         type: 'Deployment',
         entity: 'Deployment 3',
         namespace: 'naples',
@@ -107,23 +116,53 @@ const flows: Flow[] = [
 ];
 
 function DeploymentFlow() {
-    const initialExpandedRows = flows
-        .filter((row) => !!row.children.length)
-        .map((row) => row.entity); // Default to all expanded
-    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
-
-    const setRowExpanded = (row: Flow, isExpanding = true) =>
-        setExpandedRows((prevExpanded) => {
-            const otherExpandedRows = prevExpanded.filter((r) => r !== row.entity);
-            return isExpanding ? [...otherExpandedRows, row.entity] : otherExpandedRows;
-        });
-
-    const isRowExpanded = (row: Flow) => expandedRows.includes(row.entity);
-
+    // derived values
     const totalFlows = flows.reduce((acc, curr) => {
         // if there are no children then it counts as 1 flow
         return acc + (curr.children.length ? curr.children.length : 1);
     }, 0);
+
+    // component state
+    const initialExpandedRows = flows.filter((row) => !!row.children.length).map((row) => row.id); // Default to all expanded
+    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
+    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
+
+    // getter functions
+    const isRowExpanded = (row: Flow) => expandedRows.includes(row.id);
+    const areAllRowsSelected = selectedRows.length === totalFlows;
+    const isRowSelected = (row: Flow | FlowBase) => selectedRows.includes(row.id);
+
+    // setter functions
+    const setRowExpanded = (row: Flow, isExpanding = true) =>
+        setExpandedRows((prevExpanded) => {
+            const otherExpandedRows = prevExpanded.filter((r) => r !== row.id);
+            return isExpanding ? [...otherExpandedRows, row.id] : otherExpandedRows;
+        });
+    const setRowSelected = (row: Flow | FlowBase, isSelecting = true) =>
+        setSelectedRows((prevSelected) => {
+            const otherSelectedRows = prevSelected.filter((r) => r !== row.id);
+            return isSelecting ? [...otherSelectedRows, row.id] : otherSelectedRows;
+        });
+    const selectAllRows = (isSelecting = true) => {
+        if (isSelecting) {
+            const newSelectedRows = flows.reduce((acc, curr) => {
+                if (curr.children.length !== 0) {
+                    return [...acc, ...curr.children.map((child) => child.id)];
+                }
+                return [...acc, curr.id];
+            }, [] as string[]);
+            return setSelectedRows(newSelectedRows);
+        }
+        return setSelectedRows([]);
+    };
+    const markSelectedAsAnomalous = () => {
+        // @TODO: Mark as anomalous
+        setSelectedRows([]);
+    };
+    const addSelectedToBaseline = () => {
+        // @TODO: Add to baseline
+        setSelectedRows([]);
+    };
 
     return (
         <div className="pf-u-h-100 pf-u-p-md">
@@ -138,7 +177,24 @@ function DeploymentFlow() {
                                     </Text>
                                 </TextContent>
                             </ToolbarItem>
-                            <ToolbarItem alignment={{ default: 'alignRight' }} />
+                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                <BulkActionsDropdown isDisabled={selectedRows.length === 0}>
+                                    <DropdownItem
+                                        key="mark_as_anomalous"
+                                        component="button"
+                                        onClick={markSelectedAsAnomalous}
+                                    >
+                                        Mark as anomalous
+                                    </DropdownItem>
+                                    <DropdownItem
+                                        key="add_to_baseline"
+                                        component="button"
+                                        onClick={addSelectedToBaseline}
+                                    >
+                                        Add to baseline
+                                    </DropdownItem>
+                                </BulkActionsDropdown>
+                            </ToolbarItem>
                         </ToolbarContent>
                     </Toolbar>
                 </StackItem>
@@ -147,6 +203,13 @@ function DeploymentFlow() {
                         <Thead>
                             <Tr>
                                 <Th width={10} />
+                                <Th
+                                    select={{
+                                        onSelect: (_event, isSelecting) =>
+                                            selectAllRows(isSelecting),
+                                        isSelected: areAllRowsSelected,
+                                    }}
+                                />
                                 <Th width={40}>{columnNames.entity}</Th>
                                 <Th width={20}>{columnNames.direction}</Th>
                                 <Th width={30}>{columnNames.portAndProtocol}</Th>
@@ -155,7 +218,7 @@ function DeploymentFlow() {
                         {flows.map((row, rowIndex) => {
                             const isExpanded = isRowExpanded(row);
                             return (
-                                <Tbody key={row.entity} isExpanded={isExpanded}>
+                                <Tbody key={row.id} isExpanded={isExpanded}>
                                     <Tr>
                                         <Td
                                             expand={
@@ -166,6 +229,19 @@ function DeploymentFlow() {
                                                           onToggle: () =>
                                                               setRowExpanded(row, !isExpanded),
                                                           expandId: 'flow-expandable',
+                                                      }
+                                                    : undefined
+                                            }
+                                        />
+                                        <Td
+                                            select={
+                                                row.children.length === 0
+                                                    ? {
+                                                          rowIndex,
+                                                          onSelect: (_event, isSelecting) =>
+                                                              setRowSelected(row, isSelecting),
+                                                          isSelected: isRowSelected(row),
+                                                          disable: !!row.children.length,
                                                       }
                                                     : undefined
                                             }
@@ -199,8 +275,16 @@ function DeploymentFlow() {
                                     {isExpanded &&
                                         row.children.map((child) => {
                                             return (
-                                                <Tr key={child.entity} isExpanded={isExpanded}>
+                                                <Tr key={child.id} isExpanded={isExpanded}>
                                                     <Td />
+                                                    <Td
+                                                        select={{
+                                                            rowIndex,
+                                                            onSelect: (_event, isSelecting) =>
+                                                                setRowSelected(child, isSelecting),
+                                                            isSelected: isRowSelected(child),
+                                                        }}
+                                                    />
                                                     <Td>
                                                         <ExpandableRowContent>
                                                             <Flex direction={{ default: 'row' }}>
