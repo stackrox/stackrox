@@ -3,6 +3,8 @@ import {
     Badge,
     Flex,
     FlexItem,
+    Stack,
+    StackItem,
     Tab,
     TabContent,
     Tabs,
@@ -22,28 +24,30 @@ function DeploymentSideBar() {
     });
 
     return (
-        <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }} className="pf-u-h-100">
-            <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
-                <FlexItem>
-                    <Badge style={{ backgroundColor: 'rgb(0,102,205)' }}>D</Badge>
-                </FlexItem>
-                <FlexItem>
-                    <TextContent>
-                        <Text component={TextVariants.h1} className="pf-u-font-size-xl">
-                            visa-processor
-                        </Text>
-                    </TextContent>
-                    <TextContent>
-                        <Text
-                            component={TextVariants.h2}
-                            className="pf-u-font-size-sm pf-u-color-200"
-                        >
-                            in &quot;production / naples&quot;
-                        </Text>
-                    </TextContent>
-                </FlexItem>
-            </Flex>
-            <FlexItem flex={{ default: 'flex_1' }}>
+        <Stack>
+            <StackItem>
+                <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
+                    <FlexItem>
+                        <Badge style={{ backgroundColor: 'rgb(0,102,205)' }}>D</Badge>
+                    </FlexItem>
+                    <FlexItem>
+                        <TextContent>
+                            <Text component={TextVariants.h1} className="pf-u-font-size-xl">
+                                visa-processor
+                            </Text>
+                        </TextContent>
+                        <TextContent>
+                            <Text
+                                component={TextVariants.h2}
+                                className="pf-u-font-size-sm pf-u-color-200"
+                            >
+                                in &quot;production / naples&quot;
+                            </Text>
+                        </TextContent>
+                    </FlexItem>
+                </Flex>
+            </StackItem>
+            <StackItem>
                 <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
                     <Tab
                         eventKey="Details"
@@ -66,6 +70,8 @@ function DeploymentSideBar() {
                         title={<TabTitleText>Network policies</TabTitleText>}
                     />
                 </Tabs>
+            </StackItem>
+            <StackItem isFilled style={{ overflow: 'auto' }}>
                 <TabContent eventKey="Details" id="Details" hidden={activeKeyTab !== 'Details'}>
                     <DeploymentDetails />
                 </TabContent>
@@ -86,8 +92,8 @@ function DeploymentSideBar() {
                 >
                     <DeploymentNetworkPolicies />
                 </TabContent>
-            </FlexItem>
-        </Flex>
+            </StackItem>
+        </Stack>
     );
 }
 
