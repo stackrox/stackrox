@@ -13,11 +13,13 @@ import (
 	"google.golang.org/grpc"
 )
 
+var ignoredPaths = set.NewFrozenSet("/v1/ping", "/v1/metadata")
+
 func track(ctx context.Context, t mpkg.Telemeter, err error, info *grpc.UnaryServerInfo, trackedPaths set.FrozenSet[string]) {
 	userAgent, path, code := getRequestDetails(ctx, err, info)
 
 	// Track the API path and error code of some requests:
-	if path != "/v1/ping" && (trackedPaths.Contains("*") || trackedPaths.Contains(path)) {
+	if !ignoredPaths.Contains(path) && (trackedPaths.Contains("*") || trackedPaths.Contains(path)) {
 		t.TrackProps("API Call", map[string]any{
 			"Path":       path,
 			"Code":       code,
