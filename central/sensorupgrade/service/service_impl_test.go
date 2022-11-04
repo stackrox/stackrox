@@ -14,14 +14,12 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type SensorUpgradeServiceTestSuite struct {
 	suite.Suite
 	mockCtrl  *gomock.Controller
-	isolator  *envisolator.EnvIsolator
 	dataStore *datastoreMocks.MockDataStore
 	manager   *managerMocks.MockManager
 }
@@ -30,18 +28,12 @@ func TestSensorUpgradeService(t *testing.T) {
 	suite.Run(t, new(SensorUpgradeServiceTestSuite))
 }
 
-var _ suite.TearDownTestSuite = (*SensorUpgradeServiceTestSuite)(nil)
 var _ suite.SetupTestSuite = (*SensorUpgradeServiceTestSuite)(nil)
 
 func (s *SensorUpgradeServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.dataStore = datastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
-	s.isolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *SensorUpgradeServiceTestSuite) TearDownTest() {
-	s.isolator.RestoreAll()
 }
 
 func configWith(v bool) *storage.SensorUpgradeConfig {
@@ -93,7 +85,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 
 	for caseName, testCase := range testCases {
 		s.Run(caseName, func() {
-			s.isolator.Setenv(env.ManagedCentral.EnvVar(), strconv.FormatBool(testCase.managedCentral))
+			s.T().Setenv(env.ManagedCentral.EnvVar(), strconv.FormatBool(testCase.managedCentral))
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
 			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), gomock.Any()).Times(1)
 			serviceInstance, err := New(s.dataStore, s.manager)
@@ -117,7 +109,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 }
 
 func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_WithValueAlreadyPersisted() {
-	s.isolator.Setenv(env.ManagedCentral.EnvVar(), "false")
+	s.T().Setenv(env.ManagedCentral.EnvVar(), "false")
 	for _, flag := range []bool{true, false} {
 		s.Run(fmt.Sprintf("GetSensorUpgradeConfig with value preset = %s", strconv.FormatBool(flag)), func() {
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).
@@ -155,7 +147,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_WithValueNot
 		s.Run(fmt.Sprintf("ROX_MANAGED_CENTRAL=%v", envValue), func() {
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
 			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), &UpgradeConfigMatcher{expectations.expectedAutoUpdate})
-			s.isolator.Setenv(env.ManagedCentral.EnvVar(), envValue)
+			s.T().Setenv(env.ManagedCentral.EnvVar(), envValue)
 
 			instance, err := New(s.dataStore, s.manager)
 			s.NoError(err)
