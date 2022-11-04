@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
+	pkgZip "github.com/stackrox/rox/pkg/zip"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/download"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -151,4 +152,50 @@ func GetZip(opts GetZipOptions, log logger.Logger) error {
 	}
 
 	return extractZipToFolder(contents, size, opts.BundleType, outputDir, log)
+}
+
+// GetZipFiles downloads a zip from the given endpoint and returns a slice of zip Files.
+func GetZipFiles(opts GetZipOptions, log logger.Logger) (map[string]*pkgZip.File, error) {
+	resp, err := common.DoHTTPRequestAndCheck200(opts.Path, opts.Timeout, opts.Method, bytes.NewBuffer(opts.Body), log)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not download zip")
+	}
+	defer utils.IgnoreError(resp.Body.Close)
+
+	buf := ioutils.NewRWBuf(ioutils.RWBufOptions{MemLimit: inMemFileSizeThreshold})
+	defer utils.IgnoreError(buf.Close)
+
+	if _, err := io.Copy(buf, resp.Body); err != nil {
+		return nil, errors.Wrap(err, "error downloading Zip file")
+	}
+
+	contents, size, err := buf.Contents()
+	if err != nil {
+		return nil, errors.Wrap(err, "accessing buffer contents")
+	}
+
+	zipReader, err := zip.NewReader(contents, size)
+	if err != nil {
+		return nil, errors.Wrap(err, "create reader from zip contents")
+	}
+	fileMap := make(map[string]*pkgZip.File, len(zipReader.File))
+	for _, f := range zipReader.File {
+		bytes, err := readContents(f)
+		if err != nil {
+			return nil, errors.Wrapf(err, "read from zip file %s", f.Name)
+		}
+		fileMap[f.Name] = pkgZip.NewFile(f.Name, bytes, pkgZip.Sensitive)
+		log.InfofLn("%s extracted", f.Name)
+	}
+	return fileMap, err
+}
+
+func readContents(file *zip.File) ([]byte, error) {
+	rd, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer utils.IgnoreError(rd.Close)
+
+	return io.ReadAll(rd)
 }
