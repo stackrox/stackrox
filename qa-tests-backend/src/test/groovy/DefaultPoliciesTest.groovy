@@ -7,6 +7,7 @@ import common.Constants
 import groups.BAT
 import groups.COMPATIBILITY
 import groups.SMOKE
+import groups.MultiArch
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
@@ -163,7 +164,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, SMOKE])
+    @Category([BAT, SMOKE, MultiArch])
     def "Verify policy #policyName is triggered" (String policyName, String deploymentName,
                                                   String testId) {
         when:
@@ -228,7 +229,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Curl in Image"                                 | STRUTS         | "C948"
     }
 
-    @Category([BAT, SMOKE, COMPATIBILITY])
+    @Category([BAT, SMOKE, COMPATIBILITY, MultiArch])
     def "Verify that Kubernetes Dashboard violation is generated"() {
         given:
         "Orchestrator is K8S"
