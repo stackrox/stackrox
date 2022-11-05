@@ -6,14 +6,9 @@ set -euo pipefail
 # Test utility functions
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-
-# State for e2e test progress
-STATE_CLUSTER_PROVISIONED="/tmp/state_cluster_provisioned"
-STATE_IMAGES_AVAILABLE="/tmp/state_images_available"
-STATE_DEPLOYED="/tmp/state_deployed"
-
 source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
+source "$TEST_ROOT/scripts/ci/test_state.sh"
 
 deploy_stackrox() {
     deploy_central

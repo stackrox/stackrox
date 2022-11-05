@@ -4,6 +4,7 @@
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$SCRIPTS_ROOT/scripts/lib.sh"
+source "$SCRIPTS_ROOT/scripts/ci/test_state.sh"
 
 set -euo pipefail
 
