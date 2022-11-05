@@ -544,6 +544,8 @@ poll_for_system_test_images() {
         fi
         sleep 60
     done
+
+    touch "${STATE_IMAGES_AVAILABLE}"
 }
 
 check_rhacs_eng_image_exists() {
@@ -1346,6 +1348,27 @@ __EOM__
         slack_error "Error posting to Slack"
         return 1
     }
+}
+
+save_junit_success() {
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: save_junit_success <class> <description>"
+    fi
+
+    if [[ -z "${ARTIFACT_DIR}" ]]; then
+        info "Warning: save_junit_success() requires an ARTIFACT_DIR"
+        return
+    fi
+
+    local class="$1"
+    local description="$2"
+
+    cat << EOF > "${ARTIFACT_DIR}/junit-${class}.xml"
+<testsuite name="${class}" tests="1" skipped="0" failures="0" errors="0">
+    <testcase name="${description}" classname="${class}">
+    </testcase>
+</testsuite>
+EOF
 }
 
 save_junit_failure() {

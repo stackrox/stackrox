@@ -7,7 +7,9 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-# State
+# State for e2e test progress
+# shellcheck disable=SC2034
+STATE_IMAGES_AVAILABLE="/tmp/state_images_available"
 STATE_DEPLOYED="/tmp/state_deployed"
 
 source "$TEST_ROOT/scripts/lib.sh"
@@ -413,8 +415,24 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for deployment failure"
 
-    if [[ ! -f "${STATE_DEPLOYED}" ]]; then
-        save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
+    local images_available=("Images_Available" "The required images are available")
+    local stackrox_deployed=("Stackrox_Deployment" "Stackrox was deployed to the cluster")
+
+    local check_deployment=false
+    if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
+        save_junit_success "${images_available[@]}" || true
+        check_deployment=true
+    else
+        save_junit_failure "${images_available[@]}" \
+            "Did the images build OK? If yes then the poll_for_system_test_images() timeout might need to be increased."
+    fi
+
+    if $check_deployment; then
+        if [[ -f "${STATE_DEPLOYED}" ]]; then
+            save_junit_success "${stackrox_deployed[@]}" || true
+        else
+            save_junit_failure "${stackrox_deployed[@]}" "Check the build log" || true
+        fi
     fi
 }
 
