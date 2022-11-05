@@ -4,6 +4,7 @@
 Common test run patterns
 """
 
+import os
 from datetime import datetime
 from clusters import NullCluster
 from pre_tests import NullPreTest
@@ -35,6 +36,7 @@ class ClusterTestSetsRunner:
             self.log_event("About to provision")
             self.cluster.provision()
             self.log_event("provisioned")
+            self.set_provisioned_state()
         except Exception as err:
             self.log_event("ERROR: provision failed")
             hold = err
@@ -101,8 +103,10 @@ class ClusterTestSetsRunner:
                 hold = err
             try:
                 self.log_event("About to run post test", test_set)
-                test_set["post_test"].run(test_outputs=test_set["test"].test_outputs,
-                                          test_results=test_set["test"].test_results)
+                test_set["post_test"].run(
+                    test_outputs=test_set["test"].test_outputs,
+                    test_results=test_set["test"].test_results,
+                )
                 self.log_event("post test completed", test_set)
             except Exception as err:
                 self.log_event("ERROR: post test failed", test_set)
@@ -121,6 +125,9 @@ class ClusterTestSetsRunner:
         print(marker)
         print(f"{marker} {time}: {msg}")
         print(marker)
+
+    def set_provisioned_state(self):
+        os.system("tests/e2e/lib.sh set_provisioned_state")
 
 
 # pylint: disable=too-many-arguments

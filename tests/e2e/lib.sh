@@ -8,7 +8,7 @@ set -euo pipefail
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
 # State for e2e test progress
-# shellcheck disable=SC2034
+STATE_CLUSTER_PROVISIONED="/tmp/state_cluster_provisioned"
 STATE_IMAGES_AVAILABLE="/tmp/state_images_available"
 STATE_DEPLOYED="/tmp/state_deployed"
 
@@ -415,16 +415,29 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for deployment failure"
 
+    local cluster_provisioned=("Cluster_Provisioned" "The cluster is available")
     local images_available=("Images_Available" "The required images are available")
     local stackrox_deployed=("Stackrox_Deployment" "Stackrox was deployed to the cluster")
 
+    local check_images=false
     local check_deployment=false
-    if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
-        save_junit_success "${images_available[@]}" || true
-        check_deployment=true
+
+    if [[ -f "${STATE_CLUSTER_PROVISIONED}" ]]; then
+        save_junit_success "${cluster_provisioned[@]}" || true
+        check_images=true
     else
-        save_junit_failure "${images_available[@]}" \
-            "Did the images build OK? If yes then the poll_for_system_test_images() timeout might need to be increased."
+        save_junit_failure "${cluster_provisioned[@]}" \
+            "It appears that there is no cluster to test against."
+    fi
+
+    if $check_images; then
+        if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
+            save_junit_success "${images_available[@]}" || true
+            check_deployment=true
+        else
+            save_junit_failure "${images_available[@]}" \
+                "Did the images build OK? If yes then the poll_for_system_test_images() timeout might need to be increased."
+        fi
     fi
 
     if $check_deployment; then
@@ -434,6 +447,10 @@ handle_e2e_progress_failures() {
             save_junit_failure "${stackrox_deployed[@]}" "Check the build log" || true
         fi
     fi
+}
+
+set_provisioned_state() {
+    touch "${STATE_CLUSTER_PROVISIONED}"
 }
 
 setup_automation_flavor_e2e_cluster() {
