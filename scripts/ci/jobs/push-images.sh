@@ -5,7 +5,7 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
-push_imageses() {
+push_images() {
     info "Will push images built in CI"
 
     if [[ "$#" -ne 1 ]]; then
