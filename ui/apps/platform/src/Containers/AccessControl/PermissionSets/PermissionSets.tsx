@@ -35,10 +35,14 @@ import { getNewPermissionSet, getCompletePermissionSet } from './permissionSets.
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
+import AccessControlNoPermission from '../AccessControlNoPermission';
+import usePermissions from '../../../hooks/usePermissions';
 
 const entityType = 'PERMISSION_SET';
 
 function PermissionSets(): ReactElement {
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForPermissionSets = hasReadAccess('Role');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -175,6 +179,14 @@ function PermissionSets(): ReactElement {
     const permissionSet = permissionSets.find(({ id }) => id === entityId);
     const hasAction = Boolean(action);
     const isList = typeof entityId !== 'string' && !hasAction;
+
+    if (!hasReadAccessForPermissionSets) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="Permission Sets" entityType={entityType} />
+            </>
+        );
+    }
 
     return (
         <>
