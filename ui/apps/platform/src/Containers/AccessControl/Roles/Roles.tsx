@@ -40,6 +40,8 @@ import RolesList from './RolesList';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlHeading from '../AccessControlHeading';
+import usePermissions from '../../../hooks/usePermissions';
+import AccessControlNoPermission from '../AccessControlNoPermission';
 
 const entityType = 'ROLE';
 
@@ -52,6 +54,8 @@ const roleNew: Role = {
 };
 
 function Roles(): ReactElement {
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForRoles = hasReadAccess('Role');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -223,6 +227,14 @@ function Roles(): ReactElement {
     const role = roles.find(({ name }) => name === entityName);
     const hasAction = Boolean(action);
     const isList = typeof entityName !== 'string' && !hasAction;
+
+    if (!hasReadAccessForRoles) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="Roles" entityType={entityType} />
+            </>
+        );
+    }
 
     return (
         <>

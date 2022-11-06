@@ -34,10 +34,14 @@ import './AccessScopes.css';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
+import AccessControlNoPermission from '../AccessControlNoPermission';
+import usePermissions from '../../../hooks/usePermissions';
 
 const entityType = 'ACCESS_SCOPE';
 
 function AccessScopes(): ReactElement {
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForAccessScopes = hasReadAccess('Role');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -148,6 +152,14 @@ function AccessScopes(): ReactElement {
     const accessScope = accessScopes.find(({ id }) => id === entityId);
     const hasAction = Boolean(action);
     const isList = typeof entityId !== 'string' && !hasAction;
+
+    if (!hasReadAccessForAccessScopes) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="Access Scopes" entityType={entityType} />
+            </>
+        );
+    }
 
     return (
         <>

@@ -39,6 +39,8 @@ import AuthProvidersList from './AuthProvidersList';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
+import usePermissions from '../../../hooks/usePermissions';
+import AccessControlNoPermission from '../AccessControlNoPermission';
 
 const entityType = 'AUTH_PROVIDER';
 
@@ -65,6 +67,9 @@ function getNewAuthProviderObj(type) {
 }
 
 function AuthProviders(): ReactElement {
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForAuthProviders = hasReadAccess('Access');
+    const hasReadAccessForRoles = hasReadAccess('Role');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -138,6 +143,14 @@ function AuthProviders(): ReactElement {
         </DropdownItem>
     ));
 
+    if (!hasReadAccessForAuthProviders) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="Auth providers" entityType={entityType} />
+            </>
+        );
+    }
+
     return (
         <>
             <AccessControlPageTitle entityType={entityType} isList={isList} />
@@ -184,7 +197,7 @@ function AuthProviders(): ReactElement {
                 />
             )}
             <PageSection variant={isList ? 'default' : 'light'}>
-                {isFetchingAuthProviders || isFetchingRoles ? (
+                {isFetchingAuthProviders || (isFetchingRoles && hasReadAccessForRoles) ? (
                     <Bullseye>
                         <Spinner isSVG />
                     </Bullseye>
