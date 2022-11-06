@@ -228,6 +228,7 @@ func runSafeMode() {
 }
 
 func main() {
+	log.Warn("DO NOT MERGE ME")
 	premain.StartMain()
 
 	conf := config.GetConfig()
