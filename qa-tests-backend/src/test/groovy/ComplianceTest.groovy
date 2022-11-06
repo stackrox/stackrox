@@ -1323,7 +1323,6 @@ class ComplianceTest extends BaseSpecification {
         String testRole = RoleService.createRoleWithScopeAndPermissionSet(
                 "Compliance Test Automation Role " + UUID.randomUUID(),
                 remoteStackroxAccessScope.id, [
-                "AllComments"          : READ_WRITE_ACCESS,
                 "Access"               : READ_WRITE_ACCESS,
                 // TODO: ROX-12750 Remove AllComments, ComplianceRuns, ComplianceRunSchedule, Config, DebugLogs,
                 // ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity permissions.
