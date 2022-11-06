@@ -410,9 +410,9 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for deployment failure"
 
-    local cluster_provisioned=("Cluster_Provisioned" "The cluster is available")
-    local images_available=("Images_Available" "The required images are available")
-    local stackrox_deployed=("Stackrox_Deployment" "Stackrox was deployed to the cluster")
+    local cluster_provisioned=("Cluster_Provision" "Is the cluster available?")
+    local images_available=("Image_Availability" "Are the required images are available?")
+    local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox was deployed to the cluster?")
 
     local check_images=false
     local check_deployment=false
