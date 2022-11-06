@@ -23,7 +23,7 @@ deploy_stackrox() {
     fi
     MAIN_IMAGE_TAG="$SENSOR_IMAGE_TAG" deploy_sensor
     echo "Sensor deployed. Waiting for sensor to be up"
-    sensor_wait
+    sensorious_wait
 
     # Bounce collectors to avoid restarts on initial module pull
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
