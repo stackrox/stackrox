@@ -42,7 +42,7 @@ const (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 110,
-		VersionAfter:   storage.Version{SeqNum: 111},
+		VersionAfter:   &storage.Version{SeqNum: 111},
 		Run: func(databases *types.Databases) error {
 			return migrateReplacedResourcesInPermissionSets(databases.RocksDB)
 		},
