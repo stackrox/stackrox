@@ -21,6 +21,11 @@ type mockScanner struct {
 	nvdCVEs    []*nvdCVEWithComponents
 }
 
+func (o *mockScanner) IstioScan(s string) ([]*storage.EmbeddedVulnerability, error) {
+	// TODO implement me
+	return nil, nil
+}
+
 func (o *mockScanner) Name() string {
 	return "mockOrchestratorScanner1"
 }

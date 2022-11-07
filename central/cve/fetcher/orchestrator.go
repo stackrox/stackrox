@@ -219,9 +219,13 @@ func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveT
 			versions, err := matcher.GetValidIstioVersions(allAccessCtx, cluster)
 			if err != nil || len(versions) < 1 {
 				continue
-
 			}
-			version = versions.GetArbitraryElem()
+			for _, v := range versions.AsSlice() {
+				if v != "" {
+					versionToClusters[v] = append(versionToClusters[v], cluster)
+				}
+			}
+			continue
 		}
 
 		if version == "" {
