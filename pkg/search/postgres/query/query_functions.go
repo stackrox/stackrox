@@ -24,8 +24,12 @@ type queryAndFieldContext struct {
 func qeWithSelectFieldIfNeeded(ctx *queryAndFieldContext, whereClause *WhereClause, postTransformFunc func(interface{}) interface{}) *QueryEntry {
 	qe := &QueryEntry{Where: *whereClause}
 	if ctx.highlight {
+		var cast string
+		if ctx.sqlDataType == walker.UUID {
+			cast = "::text"
+		}
 		qe.SelectedFields = []SelectQueryField{{
-			SelectPath:    ctx.qualifiedColumnName,
+			SelectPath:    ctx.qualifiedColumnName + cast,
 			FieldType:     ctx.sqlDataType,
 			FieldPath:     ctx.field.FieldPath,
 			PostTransform: postTransformFunc,
@@ -47,6 +51,7 @@ var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 	walker.Numeric:     newNumericQuery,
 	walker.EnumArray:   queryOnArray(newEnumQuery, getEnumArrayPostTransformFunc),
 	walker.IntArray:    queryOnArray(newNumericQuery, getIntArrayPostTransformFunc),
+	walker.UUID:        newUUIDQuery,
 	// Map is handled separately.
 }
 
