@@ -1,10 +1,14 @@
-import React, { ReactElement, useCallback, useMemo, useState } from 'react';
-import { debounce, Select, SelectOption, ValidatedOptions } from '@patternfly/react-core';
+import React, { ComponentType, ReactElement, useCallback, useMemo, useState } from 'react';
+import {
+    debounce,
+    Select,
+    SelectOption,
+    SelectOptionProps,
+    ValidatedOptions,
+} from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import { CancellableRequest } from 'services/cancellationUtils';
-import ResourceIcon from 'Components/PatternFly/ResourceIcon';
-import { SelectorEntityType } from '../types';
 
 export type AutoCompleteSelectProps = {
     id: string;
@@ -15,29 +19,18 @@ export type AutoCompleteSelectProps = {
     validated: ValidatedOptions;
     isDisabled: boolean;
     autocompleteProvider?: (search: string) => CancellableRequest<string[]>;
-    entityType: SelectorEntityType;
+    OptionComponent?: ComponentType<SelectOptionProps>;
 };
 
-function ResourceSelectOption({ option, entityType }) {
-    return (
-        <SelectOption
-            value={option}
-            component={(props) => (
-                <div {...props}>
-                    <ResourceIcon kind={entityType} />
-                    {option}
-                </div>
-            )}
-        />
-    );
-}
-
 function getOptions(
-    data: string[] | undefined,
-    entityType: SelectorEntityType
+    OptionComponent: ComponentType<SelectOptionProps>,
+    data: string[] | undefined
 ): ReactElement[] | undefined {
-    return data?.map((option) => (
-        <ResourceSelectOption key={option} option={option} entityType={entityType} />
+    return data?.map((value) => (
+        <SelectOption
+            value={value}
+            component={(props: SelectOptionProps) => <OptionComponent {...props} value={value} />}
+        />
     ));
 }
 
@@ -50,7 +43,7 @@ export function AutoCompleteSelect({
     validated,
     isDisabled,
     autocompleteProvider,
-    entityType,
+    OptionComponent = SelectOption,
 }: AutoCompleteSelectProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const [typeahead, setTypeahead] = useState(selectedOption);
@@ -89,14 +82,14 @@ export function AutoCompleteSelect({
                 variant="typeahead"
                 isCreatable
                 isOpen={isOpen}
-                onFilter={() => getOptions(data, entityType)}
+                onFilter={() => getOptions(OptionComponent, data)}
                 onToggle={onToggle}
                 onTypeaheadInputChanged={updateTypeahead}
                 selections={selectedOption}
                 onSelect={onSelect}
                 isDisabled={isDisabled}
             >
-                {getOptions(data, entityType)}
+                {getOptions(OptionComponent, data)}
             </Select>
         </>
     );

@@ -142,7 +142,6 @@ function ByLabelSelector({
                                         }
                                         validated={keyValidation}
                                         isDisabled={isDisabled}
-                                        entityType={entityType}
                                     />
                                 </FormGroup>
                                 <FlexItem
@@ -193,7 +192,6 @@ function ByLabelSelector({
                                                     }
                                                     validated={valueValidation}
                                                     isDisabled={isDisabled}
-                                                    entityType={entityType}
                                                 />
                                                 {!isDisabled && (
                                                     <Button

@@ -1,9 +1,10 @@
-import React from 'react';
-import { Select, SelectOption } from '@patternfly/react-core';
+import React, { useCallback } from 'react';
+import { Select, SelectOption, SelectOptionProps } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import { FormikErrors } from 'formik';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import {
     Collection,
     RuleSelectorOption,
@@ -40,6 +41,13 @@ function RuleSelector({
 }: RuleSelectorProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const pluralEntity = pluralize(entityType);
+
+    const OptionComponent = (props: SelectOptionProps) => (
+        <div {...props}>
+            <ResourceIcon kind={entityType} />
+            {props.value}
+        </div>
+    );
 
     function onRuleOptionSelect(_, value) {
         if (!isRuleSelectorOption(value)) {
@@ -93,6 +101,7 @@ function RuleSelector({
                     handleChange={handleChange}
                     validationErrors={validationErrors}
                     isDisabled={isDisabled}
+                    OptionComponent={OptionComponent}
                 />
             )}
 

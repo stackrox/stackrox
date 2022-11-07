@@ -1,5 +1,11 @@
-import React, { useCallback } from 'react';
-import { Button, Flex, FormGroup, ValidatedOptions } from '@patternfly/react-core';
+import React, { ComponentType, useCallback } from 'react';
+import {
+    Button,
+    Flex,
+    FormGroup,
+    SelectOptionProps,
+    ValidatedOptions,
+} from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
@@ -25,6 +31,7 @@ export type ByNameSelectorProps = {
     ) => void;
     validationErrors: FormikErrors<ByNameResourceSelector> | undefined;
     isDisabled: boolean;
+    OptionComponent: ComponentType<SelectOptionProps>;
 };
 
 function ByNameSelector({
@@ -34,6 +41,7 @@ function ByNameSelector({
     handleChange,
     validationErrors,
     isDisabled,
+    OptionComponent,
 }: ByNameSelectorProps) {
     const { keyFor, invalidateIndexKeys } = useIndexKey();
     const onAutocomplete = useCallback(
@@ -94,7 +102,7 @@ function ByNameSelector({
                             }
                             isDisabled={isDisabled}
                             autocompleteProvider={onAutocomplete}
-                            entityType={entityType}
+                            OptionComponent={OptionComponent}
                         />
                         {!isDisabled && (
                             <Button variant="plain" onClick={() => onDeleteValue(index)}>
