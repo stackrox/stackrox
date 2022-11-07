@@ -44,7 +44,7 @@ func newUUIDQueryWhereClause(columnName string, value string, queryModifiers ...
 			Query:  fmt.Sprintf("%s = $$", columnName),
 			Values: []interface{}{uuidVal},
 			equivalentGoFunc: func(foundValue interface{}) bool {
-				return strings.HasPrefix(foundValue.(string), value)
+				return strings.EqualFold(foundValue.(string), value)
 			},
 		}, nil
 	}
@@ -64,8 +64,7 @@ func newUUIDQueryWhereClause(columnName string, value string, queryModifiers ...
 				Query:  fmt.Sprintf("%s != $$", columnName),
 				Values: []interface{}{uuidVal},
 				equivalentGoFunc: func(foundValue interface{}) bool {
-					foundVal := strings.ToLower(foundValue.(string))
-					return !strings.HasPrefix(foundVal, value)
+					return strings.EqualFold(foundValue.(string), value) != negated
 				},
 			}, nil
 		}
