@@ -2,7 +2,6 @@ import qs from 'qs';
 
 import { ListDeployment } from 'types/deployment.proto';
 import { SearchFilter, ApiSortOption } from 'types/search';
-import { SelectorField } from 'Containers/Collections/types';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import axios from './instance';
@@ -95,10 +94,6 @@ export function getCollection(
             .then((response) => response.data)
     );
 }
-
-export type GetCollectionSelectorsResponse = {
-    selectors: SelectorField[];
-};
 
 /**
  * Create a new collection
@@ -213,7 +208,7 @@ export function dryRunCollection(
  */
 export function getCollectionAutoComplete(
     resourceSelectors: ResourceSelector[],
-    searchCategory: SelectorField,
+    searchCategory: string,
     searchLabel: string
 ): CancellableRequest<string[]> {
     const params = qs.stringify(
