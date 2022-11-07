@@ -44,7 +44,7 @@ function ByNameSelector({
     OptionComponent,
 }: ByNameSelectorProps) {
     const { keyFor, invalidateIndexKeys } = useIndexKey();
-    const onAutocomplete = useCallback(
+    const autocompleteProvider = useCallback(
         (search: string) => {
             const req = generateRequest(collection);
             return getCollectionAutoComplete(req.resourceSelectors, entityType, search);
@@ -101,7 +101,7 @@ function ByNameSelector({
                                     : ValidatedOptions.default
                             }
                             isDisabled={isDisabled}
-                            autocompleteProvider={onAutocomplete}
+                            autocompleteProvider={autocompleteProvider}
                             OptionComponent={OptionComponent}
                         />
                         {!isDisabled && (

@@ -214,7 +214,7 @@ export function getCollectionAutoComplete(
     return makeCancellableAxiosRequest((signal) =>
         axios
             .post<{ values: string[] }>(
-                `${collectionsAutocompleteUrl}`,
+                collectionsAutocompleteUrl,
                 { resourceSelectors, searchCategory, searchLabel },
                 { signal }
             )
