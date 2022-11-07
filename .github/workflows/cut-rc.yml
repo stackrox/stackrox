@@ -525,7 +525,7 @@ jobs:
       github.event.inputs.create-long-cluster != 'false'
     runs-on: ubuntu-latest
     env:
-      NAME: gke-long-running-${{ needs.variables.outputs.milestone }}
+      NAME: gke-long-running-${{ needs.variables.outputs.named-release-patch }}-rc-1
       TAG: ${{needs.variables.outputs.milestone}}
       KUBECONFIG: artifacts/kubeconfig
       INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
