@@ -7,6 +7,7 @@ import (
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
@@ -72,6 +73,9 @@ type ComponentsAndVulnsWithActiveState struct {
 }
 
 func TestActiveVulnerability(t *testing.T) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("ROX-13420")
+	}
 	waitForImageScanned(t)
 	for idx, tc := range nginxImages {
 		t.Run(tc.version, func(t *testing.T) {
@@ -91,6 +95,9 @@ func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
 }
 
 func TestActiveVulnerability_SetImage(t *testing.T) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("ROX-13420")
+	}
 	waitForImageScanned(t)
 	setupDeploymentWithReplicas(t, nginxImages[0].getImage(), avmDeploymentName, 3)
 	defer teardownDeployment(t, avmDeploymentName)

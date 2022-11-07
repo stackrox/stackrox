@@ -131,6 +131,34 @@
         "tags": [
           "CollectionService"
         ]
+      },
+      "delete": {
+        "operationId": "CollectionService_DeleteCollection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CollectionService"
+        ]
       }
     }
   },
@@ -343,6 +371,9 @@
           "$ref": "#/definitions/storageResourceCollection"
         }
       }
+    },
+    "v1Empty": {
+      "type": "object"
     },
     "v1GetCollectionRequestOptions": {
       "type": "object",

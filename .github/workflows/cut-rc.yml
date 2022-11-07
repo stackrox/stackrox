@@ -562,8 +562,8 @@ jobs:
           LOAD_BALANCER: lb
           ROX_ADMIN_USERNAME: admin
           PAGERDUTY_INTEGRATION_KEY: ${{ secrets.RELEASE_MANAGEMENT_PAGERDUTY_INTEGRATION_KEY }}
-          REGISTRY_USERNAME: ${{ secrets.QUAY_REGISTRY_USERNAME_RO }}
-          REGISTRY_PASSWORD: ${{ secrets.QUAY_REGISTRY_PASSWORD_RO }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
           set -uo pipefail
           ./deploy/k8s/central.sh

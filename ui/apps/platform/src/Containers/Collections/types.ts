@@ -47,30 +47,27 @@ export function isSupportedSelectorField(field: SelectorField): field is Support
     return isByNameField(field) || isByLabelField(field);
 }
 
+export const selectorOptions = ['All', 'ByName', 'ByLabel'] as const;
+
+export type RuleSelectorOption = typeof selectorOptions[number];
+
+export type AllResourceSelector = {
+    type: 'All';
+};
 export type ByNameResourceSelector = {
+    type: 'ByName';
     field: ByNameSelectorField;
     rule: NameSelectorRule;
 };
 export type ByLabelResourceSelector = {
+    type: 'ByLabel';
     field: ByLabelSelectorField;
     rules: LabelSelectorRule[];
 };
 export type ScopedResourceSelector =
+    | AllResourceSelector
     | ByNameResourceSelector
-    | ByLabelResourceSelector
-    | Record<string, never>;
-
-export function isByNameSelector(
-    selector: ScopedResourceSelector
-): selector is ByNameResourceSelector {
-    return isByNameField(selector.field);
-}
-
-export function isByLabelSelector(
-    selector: ScopedResourceSelector
-): selector is ByLabelResourceSelector {
-    return isByLabelField(selector.field);
-}
+    | ByLabelResourceSelector;
 
 /**
  * `Collection` is the front end representation of a valid collection, which is more
@@ -81,6 +78,6 @@ export type Collection = {
     name: string;
     description: string;
     inUse: boolean;
-    resourceSelectors: Record<SelectorEntityType, ScopedResourceSelector>;
-    embeddedCollections: string[];
+    resourceSelector: Record<SelectorEntityType, ScopedResourceSelector>;
+    embeddedCollectionIds: string[];
 };

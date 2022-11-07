@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
 import { Page } from '@patternfly/react-core';
+import { gql, useQuery } from '@apollo/client';
 
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
@@ -15,6 +16,7 @@ import AppWrapper from 'Containers/AppWrapper';
 import Body from 'Containers/MainPage/Body';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+import { clustersBasePath } from 'routePaths';
 
 import CredentialExpiryBanner from './CredentialExpiryBanner';
 import VersionOutOfDate from './VersionOutOfDate';
@@ -27,6 +29,16 @@ const mainPageSelector = createStructuredSelector({
     publicConfig: selectors.getPublicConfig,
     serverState: selectors.getServerState,
 });
+
+type ClusterCountResponse = {
+    clusterCount: number;
+};
+
+const CLUSTER_COUNT = gql`
+    query summary_counts {
+        clusterCount
+    }
+`;
 
 function MainPage(): ReactElement {
     const {
@@ -50,6 +62,19 @@ function MainPage(): ReactElement {
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
+
+    // Check for clusters under management
+    // if none, and user can admin Clusters, redirect to clusters section
+    // (only applicable in Cloud Services version)
+    const hasClusterWritePermission = hasReadWriteAccess('Cluster');
+
+    useQuery<ClusterCountResponse>(CLUSTER_COUNT, {
+        onCompleted: (data) => {
+            if (hasClusterWritePermission && data?.clusterCount < 1) {
+                history.push(clustersBasePath);
+            }
+        },
+    });
 
     // Render Body and NavigationSideBar only when feature flags and permissions are available.
     if (isLoadingFeatureFlags || isLoadingPermissions) {

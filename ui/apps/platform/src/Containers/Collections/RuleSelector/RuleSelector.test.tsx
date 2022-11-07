@@ -27,7 +27,7 @@ function DeploymentRuleSelector({ defaultSelector, onChange }) {
 
 describe('Collection RuleSelector component', () => {
     it('Should render "All entities" option when selector is null', async () => {
-        let resourceSelector: ScopedResourceSelector = {};
+        let resourceSelector: ScopedResourceSelector = { type: 'All' };
 
         function onChange(newSelector) {
             resourceSelector = newSelector;
@@ -40,6 +40,7 @@ describe('Collection RuleSelector component', () => {
 
     it('Should allow users to add name selectors', async () => {
         let resourceSelector: ByNameResourceSelector = {
+            type: 'ByName',
             field: 'Deployment',
             rule: { operator: 'OR', values: [] },
         };
@@ -50,7 +51,7 @@ describe('Collection RuleSelector component', () => {
             resourceSelector = newSelector;
         }
 
-        render(<DeploymentRuleSelector defaultSelector={{}} onChange={onChange} />);
+        render(<DeploymentRuleSelector defaultSelector={{ type: 'All' }} onChange={onChange} />);
 
         await user.click(screen.getByLabelText('Select deployments by name or label'));
         await user.click(screen.getByText('Deployments with names matching'));
@@ -98,12 +99,13 @@ describe('Collection RuleSelector component', () => {
         await user.click(screen.getByLabelText('Delete visa-processor'));
         await user.click(screen.getByLabelText('Delete discover-processor'));
 
-        expect(resourceSelector).toEqual({});
+        expect(resourceSelector).toEqual({ type: 'All' });
         expect(screen.getByText('All deployments')).toBeInTheDocument();
     });
 
     it('Should allow users to add label key/value selectors', async () => {
         let resourceSelector: ByLabelResourceSelector = {
+            type: 'ByLabel',
             field: 'Deployment Label',
             rules: [{ operator: 'OR', key: '', values: [''] }],
         };
@@ -114,7 +116,7 @@ describe('Collection RuleSelector component', () => {
             resourceSelector = newSelector;
         }
 
-        render(<DeploymentRuleSelector defaultSelector={{}} onChange={onChange} />);
+        render(<DeploymentRuleSelector defaultSelector={{ type: 'All' }} onChange={onChange} />);
 
         await user.click(screen.getByLabelText('Select deployments by name or label'));
         await user.click(screen.getByText('Deployments with labels matching'));
@@ -181,6 +183,7 @@ describe('Collection RuleSelector component', () => {
         );
 
         expect(resourceSelector).toEqual({
+            type: 'ByLabel',
             field: 'Deployment Label',
             rules: [
                 {
