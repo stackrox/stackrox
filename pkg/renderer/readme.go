@@ -49,6 +49,12 @@ the login page, and log in with username "admin" and the password found in the
      - Run scanner/scripts/setup.sh
      - Run {{.K8sConfig.Command}} create -R -f scanner
 `
+	kubectlCentralDBTemplate = `
+  - Deploy Central DB
+     To deploy Postgres Central DB and prepare for Central upgrade:
+     - Run scripts/setup.sh
+     - Run ./deploy-central-db.sh
+`
 	recommendHelmInstallationTemplate = `
 PLEASE NOTE: The recommended way to deploy StackRox is by using Helm. If you have
 Helm 3.1+ installed, please consider choosing this deployment route instead. For your
@@ -100,6 +106,8 @@ func instructions(c Config, mode mode) (string, error) {
 	} else if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL {
 		if mode == scannerOnly {
 			template = kubectlScannerTemplate
+		} else if mode == centralDBOnly {
+			template = kubectlCentralDBTemplate
 		} else {
 			template = kubectlInstructionTemplate + kubectlScannerTemplate + recommendHelmInstallationTemplate
 		}

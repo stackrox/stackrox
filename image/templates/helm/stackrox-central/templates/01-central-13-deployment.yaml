@@ -146,8 +146,6 @@ spec:
           mountPath: /var/lib/stackrox
         - name: central-config-volume
           mountPath: /etc/stackrox
-        - name: central-external-db-volume
-          mountPath: /etc/ext-db
         - name: proxy-config-volume
           mountPath: /run/secrets/stackrox.io/proxy-config/
           readOnly: true
@@ -157,6 +155,8 @@ spec:
         {{- if ._rox.central.db.enabled }}
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/db-password
+        - name: central-external-db-volume
+          mountPath: /etc/ext-db
         {{- end }}
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
         - name: {{ $extraMount.name }}
@@ -201,10 +201,6 @@ spec:
         configMap:
           name: central-config
           optional: true
-      - name: central-external-db-volume
-        configMap:
-          name: central-external-db
-          optional: true
       - name: proxy-config-volume
         secret:
           secretName: proxy-config
@@ -216,6 +212,10 @@ spec:
       - name: central-db-password
         secret:
           secretName: central-db-password
+      - name: central-external-db-volume
+        configMap:
+          name: central-external-db
+          optional: true
       {{- end }}
       - name: stackrox-db
         {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}
