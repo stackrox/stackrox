@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -484,6 +485,7 @@ type debugDumpOptions struct {
 	withLogImbue      bool
 	withAccessControl bool
 	withNotifiers     bool
+	withCentral       bool
 	clusters          []string
 	since             time.Time
 }
@@ -499,33 +501,35 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		return
 	}
 
-	if err := zipPrometheusMetrics(zipWriter, "metrics-1"); err != nil {
-		log.Error(err)
-	}
-
-	if err := getMemory(zipWriter); err != nil {
-		log.Error(err)
-	}
-
-	if err := getGoroutines(zipWriter); err != nil {
-		log.Error(err)
-	}
-
-	if err := getBlock(zipWriter); err != nil {
-		log.Error(err)
-	}
-
-	if err := getMutex(zipWriter); err != nil {
-		log.Error(err)
-	}
-
-	if opts.withCPUProfile {
-		if err := getCPU(ctx, zipWriter, cpuProfileDuration); err != nil {
+	if opts.withCentral {
+		if err := zipPrometheusMetrics(zipWriter, "metrics-1"); err != nil {
 			log.Error(err)
 		}
 
-		if err := zipPrometheusMetrics(zipWriter, "metrics-2"); err != nil {
+		if err := getMemory(zipWriter); err != nil {
 			log.Error(err)
+		}
+
+		if err := getGoroutines(zipWriter); err != nil {
+			log.Error(err)
+		}
+
+		if err := getBlock(zipWriter); err != nil {
+			log.Error(err)
+		}
+
+		if err := getMutex(zipWriter); err != nil {
+			log.Error(err)
+		}
+
+		if opts.withCPUProfile {
+			if err := getCPU(ctx, zipWriter, cpuProfileDuration); err != nil {
+				log.Error(err)
+			}
+
+			if err := zipPrometheusMetrics(zipWriter, "metrics-2"); err != nil {
+				log.Error(err)
+			}
 		}
 	}
 
@@ -540,7 +544,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	}
 
 	if s.telemetryGatherer != nil && opts.telemetryMode > 0 {
-		telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= 2)
+		telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= 2, opts.withCentral)
 		if err := writeTelemetryData(zipWriter, telemetryData); err != nil {
 			log.Error(err)
 		}
@@ -559,13 +563,13 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	fetchAndAddJSONToZip(ctx, zipWriter, "system-configuration.json", s.getConfig)
 
 	// Get logs last to also catch logs made during creation of diag bundle.
-	if opts.logs == localLogs {
+	if opts.withCentral && opts.logs == localLogs {
 		if err := getLogs(zipWriter); err != nil {
 			log.Error(err)
 		}
 	}
 
-	if opts.withLogImbue {
+	if opts.withCentral && opts.withLogImbue {
 		if err := s.getLogImbue(ctx, zipWriter); err != nil {
 			log.Error(err)
 		}
@@ -607,6 +611,7 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 		withLogImbue:      true,
 		withAccessControl: true,
 		withNotifiers:     true,
+		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
 		telemetryMode:     0,
 	}
 
@@ -651,6 +656,7 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		withCPUProfile:    false,
 		withLogImbue:      true,
 		withAccessControl: true,
+		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
 		withNotifiers:     true,
 	}
 

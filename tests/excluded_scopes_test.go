@@ -9,12 +9,16 @@ import (
 	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/require"
 )
 
 func TestExcludedScopes(t *testing.T) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("ROX-13420")
+	}
 	defer teardownTestExcludedScopes(t)
 	setupNginxLatestTagDeployment(t)
 	verifyNoAlertForExcludedScopes(t)

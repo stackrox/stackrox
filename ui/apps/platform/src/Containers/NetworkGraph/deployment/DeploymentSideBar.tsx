@@ -3,6 +3,8 @@ import {
     Badge,
     Flex,
     FlexItem,
+    Stack,
+    StackItem,
     Tab,
     TabContent,
     Tabs,
@@ -15,6 +17,7 @@ import {
 import useTabs from 'hooks/patternfly/useTabs';
 import DeploymentDetails from './DeploymentDetails';
 import DeploymentNetworkPolicies from './DeploymentNetworkPolicies';
+import DeploymentFlows from './DeploymentFlows';
 
 function DeploymentSideBar() {
     const { activeKeyTab, onSelectTab } = useTabs({
@@ -22,28 +25,30 @@ function DeploymentSideBar() {
     });
 
     return (
-        <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }} className="pf-u-h-100">
-            <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
-                <FlexItem>
-                    <Badge style={{ backgroundColor: 'rgb(0,102,205)' }}>D</Badge>
-                </FlexItem>
-                <FlexItem>
-                    <TextContent>
-                        <Text component={TextVariants.h1} className="pf-u-font-size-xl">
-                            visa-processor
-                        </Text>
-                    </TextContent>
-                    <TextContent>
-                        <Text
-                            component={TextVariants.h2}
-                            className="pf-u-font-size-sm pf-u-color-200"
-                        >
-                            in &quot;production / naples&quot;
-                        </Text>
-                    </TextContent>
-                </FlexItem>
-            </Flex>
-            <FlexItem flex={{ default: 'flex_1' }}>
+        <Stack>
+            <StackItem>
+                <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
+                    <FlexItem>
+                        <Badge style={{ backgroundColor: 'rgb(0,102,205)' }}>D</Badge>
+                    </FlexItem>
+                    <FlexItem>
+                        <TextContent>
+                            <Text component={TextVariants.h1} className="pf-u-font-size-xl">
+                                visa-processor
+                            </Text>
+                        </TextContent>
+                        <TextContent>
+                            <Text
+                                component={TextVariants.h2}
+                                className="pf-u-font-size-sm pf-u-color-200"
+                            >
+                                in &quot;production / naples&quot;
+                            </Text>
+                        </TextContent>
+                    </FlexItem>
+                </Flex>
+            </StackItem>
+            <StackItem>
                 <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
                     <Tab
                         eventKey="Details"
@@ -51,9 +56,9 @@ function DeploymentSideBar() {
                         title={<TabTitleText>Details</TabTitleText>}
                     />
                     <Tab
-                        eventKey="Traffic"
-                        tabContentId="Traffic"
-                        title={<TabTitleText>Traffic</TabTitleText>}
+                        eventKey="Flows"
+                        tabContentId="Flows"
+                        title={<TabTitleText>Flows</TabTitleText>}
                     />
                     <Tab
                         eventKey="Baselines"
@@ -66,11 +71,13 @@ function DeploymentSideBar() {
                         title={<TabTitleText>Network policies</TabTitleText>}
                     />
                 </Tabs>
+            </StackItem>
+            <StackItem isFilled style={{ overflow: 'auto' }}>
                 <TabContent eventKey="Details" id="Details" hidden={activeKeyTab !== 'Details'}>
                     <DeploymentDetails />
                 </TabContent>
-                <TabContent eventKey="Traffic" id="Traffic" hidden={activeKeyTab !== 'Traffic'}>
-                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Traffic</div>
+                <TabContent eventKey="Flows" id="Flows" hidden={activeKeyTab !== 'Flows'}>
+                    <DeploymentFlows />
                 </TabContent>
                 <TabContent
                     eventKey="Baselines"
@@ -86,8 +93,8 @@ function DeploymentSideBar() {
                 >
                     <DeploymentNetworkPolicies />
                 </TabContent>
-            </FlexItem>
-        </Flex>
+            </StackItem>
+        </Stack>
     );
 }
 
