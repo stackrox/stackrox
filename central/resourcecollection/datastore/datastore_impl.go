@@ -48,9 +48,6 @@ func (ge graphEntry) ID() string {
 }
 
 func (ds *datastoreImpl) initGraph() error {
-	if ds.graph != nil {
-		return nil
-	}
 
 	// build graph object
 	graph := dag.NewDAG()

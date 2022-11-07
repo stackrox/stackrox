@@ -42,9 +42,12 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 		storage:  storage,
 		indexer:  indexer,
 		searcher: searcher,
-		graph:    nil,
 	}
-	return ds, ds.initGraph()
+
+	if err := ds.initGraph(); err != nil {
+		return nil, err
+	}
+	return ds, nil
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
