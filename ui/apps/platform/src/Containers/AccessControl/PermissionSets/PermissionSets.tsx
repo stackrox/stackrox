@@ -183,7 +183,7 @@ function PermissionSets(): ReactElement {
     if (!hasReadAccessForPermissionSets) {
         return (
             <>
-                <AccessControlNoPermission subPage="Permission Sets" entityType={entityType} />
+                <AccessControlNoPermission subPage="permission sets" entityType={entityType} />
             </>
         );
     }

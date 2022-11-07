@@ -156,7 +156,7 @@ function AccessScopes(): ReactElement {
     if (!hasReadAccessForAccessScopes) {
         return (
             <>
-                <AccessControlNoPermission subPage="Access Scopes" entityType={entityType} />
+                <AccessControlNoPermission subPage="access scopes" entityType={entityType} />
             </>
         );
     }

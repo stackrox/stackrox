@@ -146,7 +146,7 @@ function AuthProviders(): ReactElement {
     if (!hasReadAccessForAuthProviders) {
         return (
             <>
-                <AccessControlNoPermission subPage="Auth providers" entityType={entityType} />
+                <AccessControlNoPermission subPage="auth providers" entityType={entityType} />
             </>
         );
     }
