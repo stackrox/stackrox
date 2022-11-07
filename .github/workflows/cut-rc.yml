@@ -529,7 +529,6 @@ jobs:
       TAG: ${{needs.variables.outputs.milestone}}
       KUBECONFIG: artifacts/kubeconfig
       INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
-      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
     steps:
       - uses: stackrox/actions/infra/install-infractl@v1
       - name: Test readiness
