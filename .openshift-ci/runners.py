@@ -4,7 +4,7 @@
 Common test run patterns
 """
 
-import os
+import subprocess
 from datetime import datetime
 from clusters import NullCluster
 from pre_tests import NullPreTest
@@ -127,7 +127,7 @@ class ClusterTestSetsRunner:
         print(marker)
 
     def set_provisioned_state(self):
-        os.system("tests/e2e/lib.sh set_provisioned_state")
+        subprocess.check_call("tests/e2e/lib.sh set_provisioned_state", shell=True)
 
 
 # pylint: disable=too-many-arguments
