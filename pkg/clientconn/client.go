@@ -355,7 +355,7 @@ func AuthenticatedHTTPTransport(endpoint string, server mtls.Subject, baseTransp
 
 // GRPCConnection establishes a gRPC connection to the given server, using the given connection options.
 func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint string, clientConnOpts Options, dialOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+2)
+	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+3)
 
 	clientConnOpts.TLS.GRPCOnly = true
 
