@@ -263,14 +263,6 @@ func (qb *QueryBuilder) AddExactMatches(k FieldLabel, values ...string) *QueryBu
 	return qb
 }
 
-// AddExactMatchesUUID adds a key value pair to the query
-func (qb *QueryBuilder) AddExactMatchesUUID(k FieldLabel, values ...string) *QueryBuilder {
-	for _, v := range values {
-		qb.fieldsToValues[k] = append(qb.fieldsToValues[k], ExactMatchString(v))
-	}
-	return qb
-}
-
 // AddMapQuery adds a query for a key and a value in a map field.
 func (qb *QueryBuilder) AddMapQuery(k FieldLabel, mapKey, mapValue string) *QueryBuilder {
 	qb.AddStrings(k, fmt.Sprintf("%s=%s", mapKey, mapValue))
