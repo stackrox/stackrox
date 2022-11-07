@@ -63,7 +63,7 @@ func NilOrTime(t *types.Timestamp) *time.Time {
 	return &ts
 }
 
-// NilOrUUID allows for a proto timestamp to be stored a timestamp type in Postgres
+// NilOrUUID allows for a proto string to be stored as a UUID type in Postgres
 func NilOrUUID(value string) *uuid.UUID {
 	if value == "" {
 		return nil
