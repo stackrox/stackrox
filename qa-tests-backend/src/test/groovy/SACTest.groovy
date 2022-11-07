@@ -123,7 +123,7 @@ class SACTest extends BaseSpecification {
                 (NOACCESSTOKEN)                   : [noaccess],
                 (ALLACCESSTOKEN)                  : [createRole(UNRESTRICTED_SCOPE_ID, allResourcesAccess)],
                 "deployments-access-token"        : [createRole(remoteQaTest2.id,
-                        ["Deployment": READ_ACCESS, "Risk": READ_ACCESS])],
+                        ["Deployment": READ_ACCESS, "DeploymentExtension": READ_ACCESS])],
                 "getSummaryCountsToken"           : [createRole(remoteQaTest1.id, allResourcesAccess)],
                 "listSecretsToken"                : [createRole(UNRESTRICTED_SCOPE_ID, ["Secret": READ_ACCESS])],
                 "searchAlertsToken"               : [createRole(remoteQaTest1.id, ["Alert": READ_ACCESS]), noaccess],
