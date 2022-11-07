@@ -429,11 +429,6 @@ func (ds *datastoreImpl) ResolveListDeployments(ctx context.Context, collection 
 		return nil, err
 	}
 
-	// currently we only support one resource selector per collection from UX
-	if collection.GetResourceSelectors() != nil && len(collection.GetResourceSelectors()) > 1 {
-		return nil, errors.New("only 1 resource selector is supported per collection")
-	}
-
 	query, err := ds.resolveCollectionQuery(ctx, collection)
 	if err != nil {
 		return nil, err
@@ -490,12 +485,12 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 
 			// currently we only support disjunction operations here
 			if selectorRule.GetOperator() != storage.BooleanOperator_OR {
-				return nil, errors.Wrap(errox.InvalidArgs, "`and` boolean operator unsupported")
+				return nil, errors.Wrapf(errox.InvalidArgs, "%q boolean operator unsupported", selectorRule.GetOperator().String())
 			}
 
 			fieldLabel, present := supportedFieldNames[selectorRule.GetFieldName()]
 			if !present {
-				return nil, errors.Wrapf(errox.InvalidArgs, "unsupported field label (%s)", selectorRule.GetFieldName())
+				return nil, errors.Wrapf(errox.InvalidArgs, "unsupported field label %q", selectorRule.GetFieldName())
 			}
 
 			ruleValueQueries := ruleValuesToQueryList(fieldLabel, selectorRule.GetValues())
@@ -521,7 +516,7 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 }
 
 func ruleValuesToQueryList(fieldLabel pkgSearch.FieldLabel, ruleValues []*storage.RuleValue) []*v1.Query {
-	var ret []*v1.Query
+	ret := make([]*v1.Query, 0, len(ruleValues))
 	for _, ruleValue := range ruleValues {
 		ret = append(ret, pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, ruleValue.GetValue()).ProtoQuery())
 	}
@@ -529,7 +524,7 @@ func ruleValuesToQueryList(fieldLabel pkgSearch.FieldLabel, ruleValues []*storag
 }
 
 func embeddedCollectionsToIDList(embeddedList []*storage.ResourceCollection_EmbeddedResourceCollection) []string {
-	var ret []string
+	ret := make([]string, 0, len(embeddedList))
 	for _, embedded := range embeddedList {
 		ret = append(ret, embedded.GetId())
 	}
