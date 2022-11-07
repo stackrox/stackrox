@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -53,10 +52,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Short:  "generate Central DB bundle",
 		Hidden: true,
 	}
-	c.PersistentFlags().Var(&flags.FileMapVar{
-		FileMap: &cmd.config.ConfigFileOverrides,
-	}, "with-config-file", "Use the given local file(s) to override default config files")
-	utils.Must(c.PersistentFlags().MarkHidden("with-config-file"))
 
 	if !buildinfo.ReleaseBuild {
 		flags.AddHelmChartDebugSetting(c)
