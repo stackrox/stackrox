@@ -1,17 +1,16 @@
 import React, { ReactElement } from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
 
-import usePermissions from 'hooks/usePermissions';
-
 import { Alert, List, ListItem } from '@patternfly/react-core';
 import { accessControlBasePath, accessControlPath, getEntityPath } from './accessControlPaths';
 
-import AccessControlNoPermission from './AccessControlNoPermission';
 import AccessControlRouteNotFound from './AccessControlRouteNotFound';
 import AccessScopes from './AccessScopes/AccessScopes';
 import AuthProviders from './AuthProviders/AuthProviders';
 import PermissionSets from './PermissionSets/PermissionSets';
 import Roles from './Roles/Roles';
+import usePermissions from '../../hooks/usePermissions';
+import AccessControlNoPermission from './AccessControlNoPermission';
 
 const paramId = ':entityId?';
 
@@ -19,7 +18,6 @@ function AccessControl(): ReactElement {
     // TODO is read access required for all routes in improved Access Control?
     // TODO Is write access required anywhere in classic Access Control?
     const { hasReadAccess } = usePermissions();
-    const hasReadAccessForAccessControlPages = hasReadAccess('Access');
 
     return (
         <>
@@ -73,7 +71,7 @@ function AccessControl(): ReactElement {
                     </>
                 }
             />
-            {hasReadAccessForAccessControlPages ? (
+            {hasReadAccess('Access') || hasReadAccess('Role') ? (
                 <Switch>
                     <Route exact path={accessControlBasePath}>
                         <Redirect to={getEntityPath('AUTH_PROVIDER')} />
@@ -99,7 +97,7 @@ function AccessControl(): ReactElement {
                     </Route>
                 </Switch>
             ) : (
-                <AccessControlNoPermission />
+                <AccessControlNoPermission subPage="Access Control" isNavHidden />
             )}
         </>
     );

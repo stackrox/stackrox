@@ -6,16 +6,18 @@ import { AccessControlEntityType } from '../../constants/entityTypes';
 
 type AccessControlNoPermissionProps = {
     subPage: string;
-    entityType: AccessControlEntityType;
+    entityType?: AccessControlEntityType;
+    isNavHidden?: boolean;
 };
 
 function AccessControlNoPermission({
     subPage,
     entityType,
+    isNavHidden = false,
 }: AccessControlNoPermissionProps): ReactElement {
     return (
         <>
-            <AccessControlHeading entityType={entityType} />
+            <AccessControlHeading isNavHidden={isNavHidden} entityType={entityType} />
             <PageSection variant={PageSectionVariants.light}>
                 <Alert
                     className="pf-u-mt-md"
