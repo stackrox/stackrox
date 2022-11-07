@@ -1357,7 +1357,7 @@ save_junit_success() {
     fi
 
     if [[ -z "${ARTIFACT_DIR}" ]]; then
-        info "Warning: save_junit_success() requires an ARTIFACT_DIR"
+        info "Warning: save_junit_success() requires the \$ARTIFACT_DIR variable to be set"
         return
     fi
 
