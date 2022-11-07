@@ -49,6 +49,7 @@ class UpgradeTest(BaseTest):
             post_start_hook=set_dirs_after_start,
         )
 
+
 class PostgresUpgradeTest(BaseTest):
     TEST_TIMEOUT = 60 * 60
     TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
@@ -65,6 +66,7 @@ class PostgresUpgradeTest(BaseTest):
             PostgresUpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
+
 
 class OperatorE2eTest(BaseTest):
     # TODO(ROX-12348): adjust these timeouts once we know average run times
@@ -93,7 +95,7 @@ class OperatorE2eTest(BaseTest):
         print("Executing operator upgrade test")
         self.run_with_graceful_kill(
             ["make", "-C", "operator", "test-upgrade"],
-            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC
+            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
         )
 
         print("Executing operator e2e tests")
