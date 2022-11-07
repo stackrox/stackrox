@@ -220,6 +220,7 @@
 [<- end >]
 {{ end }}
 {{ $_ = set $env "_proxyConfig" $proxyCfg }}
+{{ $_ = set $._rox "_renderMode" "[< .RenderMode >]" }}
 
 {{/*
     Central setup.
