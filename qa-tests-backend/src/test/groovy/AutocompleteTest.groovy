@@ -1,5 +1,4 @@
 import groups.BAT
-import groups.COMPATIBILITY
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawSearchRequest
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.SearchCategory
