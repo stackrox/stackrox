@@ -3,7 +3,7 @@ import { Redirect, Route, Switch } from 'react-router-dom';
 
 import usePermissions from 'hooks/usePermissions';
 
-import { Alert } from '@patternfly/react-core';
+import { Alert, List, ListItem } from '@patternfly/react-core';
 import { accessControlBasePath, accessControlPath, getEntityPath } from './accessControlPaths';
 
 import AccessControlNoPermission from './AccessControlNoPermission';
@@ -29,46 +29,46 @@ function AccessControl(): ReactElement {
                 title={
                     <>
                         <p>The following permission resources have been replaced:</p>
-                        <ul>
-                            <li>
+                        <List>
+                            <ListItem>
                                 <b>Access</b> replaces{' '}
                                 <b>AuthProvider, Group, Licenses, and User</b>
-                            </li>
-                            <li>
+                            </ListItem>
+                            <ListItem>
                                 <b>DeploymentExtension</b> replaces{' '}
                                 <b>Indicator, NetworkBaseline, ProcessWhitelist, and Risk</b>
-                            </li>
-                            <li>
+                            </ListItem>
+                            <ListItem>
                                 <b>Integration</b> replaces{' '}
                                 <b>
                                     APIToken, BackupPlugins, ImageIntegration, Notifier, and
                                     SignatureIntegration
                                 </b>
-                            </li>
-                            <li>
+                            </ListItem>
+                            <ListItem>
                                 <b>Image</b> now also covers <b>ImageComponent</b>
-                            </li>
-                        </ul>
+                            </ListItem>
+                        </List>
 
                         <p>
                             The following permission resources will be replaced in the upcoming
                             versions:
                         </p>
-                        <ul>
-                            <li>
+                        <List>
+                            <ListItem>
                                 <b>Administration</b> will replace{' '}
                                 <b>
                                     AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload,
                                     ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity
                                 </b>
-                            </li>
-                            <li>
+                            </ListItem>
+                            <ListItem>
                                 <b>Compliance</b> will replace <b>ComplianceRuns</b>
-                            </li>
-                            <li>
+                            </ListItem>
+                            <ListItem>
                                 <b>Cluster</b> will replace <b>ClusterCVE</b>
-                            </li>
-                        </ul>
+                            </ListItem>
+                        </List>
                     </>
                 }
             />
