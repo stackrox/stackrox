@@ -518,7 +518,11 @@ jobs:
 
   patch-long-running-cluster:
     name: Patch long-running cluster
-    needs: [variables, properties, create-long-running-cluster]
+    needs: [variables, properties]
+    if: >-
+      github.event.inputs.dry-run != 'true' &&
+      needs.variables.outputs.rc != '1' &&
+      github.event.inputs.create-long-cluster != 'false'
     runs-on: ubuntu-latest
     env:
       NAME: gke-long-running-${{ needs.variables.outputs.milestone }}
