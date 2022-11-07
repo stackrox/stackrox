@@ -35,7 +35,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v1.2.3
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/gofrs/uuid v4.3.0+incompatible
+	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang/mock v1.7.0-rc.1
