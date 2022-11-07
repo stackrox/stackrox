@@ -2,7 +2,6 @@ import qs from 'qs';
 
 import { ListDeployment } from 'types/deployment.proto';
 import { SearchFilter, ApiSortOption } from 'types/search';
-import { SelectorField } from 'Containers/Collections/types';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import axios from './instance';
@@ -14,7 +13,7 @@ export const collectionsDryRunUrl = '/v1/collections/dryrun';
 export const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
 
 export type SelectorRule = {
-    fieldName: SelectorField;
+    fieldName: string;
     values: { value: string }[];
     operator: 'AND' | 'OR';
 };
@@ -95,10 +94,6 @@ export function getCollection(
             .then((response) => response.data)
     );
 }
-
-export type GetCollectionSelectorsResponse = {
-    selectors: SelectorField[];
-};
 
 /**
  * Create a new collection
@@ -213,7 +208,7 @@ export function dryRunCollection(
  */
 export function getCollectionAutoComplete(
     resourceSelectors: ResourceSelector[],
-    searchCategory: SelectorField,
+    searchCategory: string,
     searchLabel: string
 ): CancellableRequest<string[]> {
     const params = qs.stringify(

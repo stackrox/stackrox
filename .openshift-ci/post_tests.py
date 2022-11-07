@@ -36,7 +36,7 @@ class NullPostTest:
 
 class RunWithBestEffortMixin:
     def __init__(
-            self,
+        self,
     ):
         self.exitstatus = 0
         self.failed_commands: List[List[str]] = []
@@ -68,8 +68,8 @@ class StoreArtifacts(RunWithBestEffortMixin):
     """For tests that only need to store artifacts"""
 
     def __init__(
-            self,
-            artifact_destination_prefix=None,
+        self,
+        artifact_destination_prefix=None,
     ):
         super().__init__()
         self.artifact_destination_prefix = artifact_destination_prefix
@@ -86,8 +86,12 @@ class StoreArtifacts(RunWithBestEffortMixin):
         print("Storing test results in JUnit format")
         for to_dir, from_dir in test_results.items():
             self.run_with_best_effort(
-                ["scripts/ci/store-artifacts.sh", "store_test_results",
-                 from_dir, to_dir],
+                [
+                    "scripts/ci/store-artifacts.sh",
+                    "store_test_results",
+                    from_dir,
+                    to_dir,
+                ],
                 timeout=PostTestsConstants.ARTIFACTS_TIMEOUT,
             )
 
@@ -113,10 +117,10 @@ class PostClusterTest(StoreArtifacts):
     """The standard cluster test suite of debug gathering and analysis"""
 
     def __init__(
-            self,
-            collect_central_artifacts=True,
-            check_stackrox_logs=False,
-            artifact_destination_prefix=None,
+        self,
+        collect_central_artifacts=True,
+        check_stackrox_logs=False,
+        artifact_destination_prefix=None,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_stackrox_logs = check_stackrox_logs
@@ -222,10 +226,10 @@ class CheckStackroxLogs(StoreArtifacts):
     """When only stackrox logs and checks are required"""
 
     def __init__(
-            self,
-            check_for_stackrox_restarts=False,
-            check_for_errors_in_stackrox_logs=False,
-            artifact_destination_prefix=None,
+        self,
+        check_for_stackrox_restarts=False,
+        check_for_errors_in_stackrox_logs=False,
+        artifact_destination_prefix=None,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_for_stackrox_restarts = check_for_stackrox_restarts
@@ -286,11 +290,11 @@ class FinalPost(StoreArtifacts):
     """Collect logs that accumulate over multiple tests and other final steps"""
 
     def __init__(
-            self,
-            store_qa_test_debug_logs=False,
-            store_qa_spock_results=False,
-            artifact_destination_prefix="final",
-            handle_e2e_progress_failures=True,
+        self,
+        store_qa_test_debug_logs=False,
+        store_qa_spock_results=False,
+        artifact_destination_prefix="final",
+        handle_e2e_progress_failures=True,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._store_qa_test_debug_logs = store_qa_test_debug_logs
