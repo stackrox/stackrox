@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
@@ -118,6 +119,9 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	if buildinfo.ReleaseBuild || !CheckIfCentralHasFeatureFlag(t, conn) {
 		t.Skip("Feature flag disabled")
+	}
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("ROX-13420")
 	}
 
 	testCases := map[string]struct {
