@@ -247,10 +247,15 @@ func withNodeCveTypeFiltering(q string) string {
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_NODE_CVE.String()).Query())
 }
 
-func (resolver *nodeCVEResolver) nodeVulnerabilityScopeContext() context.Context {
+func (resolver *nodeCVEResolver) nodeVulnerabilityScopeContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		err := utils.Should(errors.New("argument 'ctx' is nil"))
+		if err != nil {
+			log.Error(err)
+		}
+	}
 	if resolver.ctx == nil {
-		log.Errorf("attempted to scope context on nil")
-		return nil
+		resolver.ctx = ctx
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
@@ -392,37 +397,25 @@ func (resolver *nodeCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver
 // NodeComponentCount is the number of node components that contain the node CVE.
 func (resolver *nodeCVEResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "NodeComponentCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.NodeComponentCount(resolver.nodeVulnerabilityScopeContext(), args)
+	return resolver.root.NodeComponentCount(resolver.nodeVulnerabilityScopeContext(ctx), args)
 }
 
 // NodeComponents are the node components that contain the node CVE.
 func (resolver *nodeCVEResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "NodeComponents")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.NodeComponents(resolver.nodeVulnerabilityScopeContext(), args)
+	return resolver.root.NodeComponents(resolver.nodeVulnerabilityScopeContext(ctx), args)
 }
 
 // NodeCount is the number of nodes that contain the node CVE
 func (resolver *nodeCVEResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "NodeCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.NodeCount(resolver.nodeVulnerabilityScopeContext(), args)
+	return resolver.root.NodeCount(resolver.nodeVulnerabilityScopeContext(ctx), args)
 }
 
 // Nodes are the nodes that contain the node CVE
 func (resolver *nodeCVEResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "Nodes")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Nodes(resolver.nodeVulnerabilityScopeContext(), args)
+	return resolver.root.Nodes(resolver.nodeVulnerabilityScopeContext(ctx), args)
 }
 
 // ID of the node CVE
