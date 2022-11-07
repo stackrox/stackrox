@@ -11,6 +11,10 @@ const byNameRegExp = new RegExp(`^(${selectorEntityTypes.join('|')})$`);
 const byLabelRegExp = new RegExp(`^(${selectorEntityTypes.join('|')}) Label$`);
 const byAnnotationRegExp = new RegExp(`^(${selectorEntityTypes.join('|')}) Annotation$`);
 
+export function isSelectorField(field: string): field is SelectorField {
+    return byNameRegExp.test(field) || byLabelRegExp.test(field) || byAnnotationRegExp.test(field);
+}
+
 export function isByNameField(field: SelectorField): field is ByNameSelectorField {
     return byNameRegExp.test(field);
 }
