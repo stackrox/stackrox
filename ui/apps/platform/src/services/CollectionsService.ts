@@ -14,7 +14,7 @@ export const collectionsDryRunUrl = '/v1/collections/dryrun';
 export const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
 
 export type SelectorRule = {
-    fieldName: SelectorField;
+    fieldName: string;
     values: { value: string }[];
     operator: 'AND' | 'OR';
 };
