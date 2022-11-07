@@ -59,7 +59,8 @@ function AccessControl(): ReactElement {
                                 <b>Administration</b> will replace{' '}
                                 <b>
                                     AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload,
-                                    ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity
+                                    ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and
+                                    ServiceIdentity
                                 </b>
                             </ListItem>
                             <ListItem>

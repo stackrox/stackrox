@@ -253,7 +253,7 @@ func main() {
 		"	Integration replaces APIToken, BackupPlugins, ImageIntegration, Notifier, and SignatureIntegration\n" +
 		"	Image now also covers ImageComponent\n" +
 		"The following permission resources will be replaced in the upcoming versions:\n" +
-		"	Administration will replace AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +
+		"	Administration will replace AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +
 		"	Compliance will replace ComplianceRuns\n" +
 		"	Cluster will replace ClusterCVE.")
 	ensureDB(ctx)
