@@ -6,12 +6,9 @@ set -euo pipefail
 # Test utility functions
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-
-# State
-STATE_DEPLOYED="/tmp/state_deployed"
-
 source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
+source "$TEST_ROOT/scripts/ci/test_state.sh"
 
 deploy_stackrox() {
     deploy_central
@@ -56,7 +53,6 @@ export_test_environment() {
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
     ci_export ROX_SEARCH_PAGE_UI "${ROX_SEARCH_PAGE_UI:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
-    ci_export ROX_OBJECT_COLLECTIONS "${ROX_OBJECT_COLLECTIONS:-true}"
 }
 
 deploy_central() {
@@ -413,9 +409,42 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for deployment failure"
 
-    if [[ ! -f "${STATE_DEPLOYED}" ]]; then
-        save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
+    local cluster_provisioned=("Cluster_Provision" "Is the cluster available?")
+    local images_available=("Image_Availability" "Are the required images are available?")
+    local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox was deployed to the cluster?")
+
+    local check_images=false
+    local check_deployment=false
+
+    if [[ -f "${STATE_CLUSTER_PROVISIONED}" ]]; then
+        save_junit_success "${cluster_provisioned[@]}" || true
+        check_images=true
+    else
+        save_junit_failure "${cluster_provisioned[@]}" \
+            "It appears that there is no cluster to test against."
     fi
+
+    if $check_images; then
+        if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
+            save_junit_success "${images_available[@]}" || true
+            check_deployment=true
+        else
+            save_junit_failure "${images_available[@]}" \
+                "Did the images build OK? If yes then the poll_for_system_test_images() timeout might need to be increased."
+        fi
+    fi
+
+    if $check_deployment; then
+        if [[ -f "${STATE_DEPLOYED}" ]]; then
+            save_junit_success "${stackrox_deployed[@]}" || true
+        else
+            save_junit_failure "${stackrox_deployed[@]}" "Check the build log" || true
+        fi
+    fi
+}
+
+set_provisioned_state() {
+    touch "${STATE_CLUSTER_PROVISIONED}"
 }
 
 setup_automation_flavor_e2e_cluster() {
@@ -437,6 +466,45 @@ setup_automation_flavor_e2e_cluster() {
                 --password "$CLUSTER_PASSWORD" \
                 --insecure-skip-tls-verify=true
     fi
+}
+
+# When working as expected it takes less than one minute for the API server to
+# reach ready. Often times out on OSD. If this call fails in CI we need to
+# identify the source of pull/scheduling latency, request throttling, etc.
+# I tried increasing the timeout from 5m to 20m for OSD but it did not help.
+wait_for_central_db() {
+    info "Waiting for Central DB to start"
+
+    start_time="$(date '+%s')"
+    max_seconds=300
+
+    while true; do
+        central_db_json="$(kubectl -n stackrox get deploy/central-db -o json)"
+        replicas="$(jq '.status.replicas' <<<"$central_db_json")"
+        ready_replicas="$(jq '.status.readyReplicas' <<<"$central_db_json")"
+        curr_time="$(date '+%s')"
+        elapsed_seconds=$(( curr_time - start_time ))
+
+        # Ready case
+        if [[ "$replicas" == 1 && "$ready_replicas" == 1 ]]; then
+            sleep 30
+            break
+        fi
+
+        # Timeout case
+        if (( elapsed_seconds > max_seconds )); then
+            kubectl -n stackrox get pod -o wide
+            kubectl -n stackrox get deploy -o wide
+            echo >&2 "wait_for_central_db() timeout after $max_seconds seconds."
+            exit 1
+        fi
+
+        # Otherwise report and retry
+        echo "waiting ($elapsed_seconds/$max_seconds)"
+        sleep 5
+    done
+
+    info "Central DB deployment is ready."
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
