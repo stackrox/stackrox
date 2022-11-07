@@ -508,14 +508,14 @@ func (suite *psMigrationTestSuite) TestMigration() {
 		suite.NoError(err)
 
 		key := rocksdbmigration.GetPrefixedKey(prefix, []byte(initial.GetId()))
-		suite.NoError(suite.db.Put(writeOpts, key, data))
+		suite.Require().NoError(suite.db.Put(writeOpts, key, data))
 	}
 
 	dbs := &types.Databases{
 		RocksDB: suite.db.DB,
 	}
 
-	suite.NoError(migration.Run(dbs))
+	suite.Require().NoError(migration.Run(dbs))
 
 	var allPSsAfterMigration []*storage.PermissionSet
 
@@ -527,8 +527,7 @@ func (suite *psMigrationTestSuite) TestMigration() {
 		allPSsAfterMigration = append(allPSsAfterMigration, msg.(*storage.PermissionSet))
 	}
 
-	var expectedPSsAfterMigration []*storage.PermissionSet
-	expectedPSsAfterMigration = append(expectedPSsAfterMigration, MigratedPermissionSets...)
+	expectedPSsAfterMigration := MigratedPermissionSets
 
 	suite.ElementsMatch(expectedPSsAfterMigration, allPSsAfterMigration)
 }

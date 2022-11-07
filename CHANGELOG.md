@@ -31,6 +31,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Permission `Integration` replaces the deprecated permissions `APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration`.
   - Permission `Image` replaces the deprecated permission `ImageComponent`.
   - Note: the `Role` permission, previously announced as being grouped under `Access` remains a standalone permission.
+  - Important: As stated above, the access level granted to the replacing permission will be the lowest among all access levels of the replaced permissions. This can impact the ability of some created roles to perform their intended duty.
 - ROX-13034: Central reaches out to scanner `scanner.<namespace>.svc` now to respect OpenShift's `NO_PROXY` configuration.
 
 ### Deprecated Features
