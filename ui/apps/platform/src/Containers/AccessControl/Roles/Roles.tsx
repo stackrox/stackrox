@@ -231,7 +231,7 @@ function Roles(): ReactElement {
     if (!hasReadAccessForRoles) {
         return (
             <>
-                <AccessControlNoPermission subPage="Roles" entityType={entityType} />
+                <AccessControlNoPermission subPage="roles" entityType={entityType} />
             </>
         );
     }
