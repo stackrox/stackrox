@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "storage/process_listening_on_port.proto";
+
+package v1;
+
+message GetProcessesListeningOnPortsByNamespaceRequest {
+    string namespace = 1;
+}
+
+message GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest {
+    string namespace = 1;
+    string deployment_id = 2;
+}
+
+message ProcessListeningOnPortWithDeploymentId {
+    string deployment_id = 1;
+    repeated storage.ProcessListeningOnPort processes_listening_on_ports = 2;
+}
+
+message GetProcessesListeningOnPortsResponse {
+    repeated storage.ProcessListeningOnPort processes_listening_on_ports = 1;
+}
+
+message GetProcessesListeningOnPortsWithDeploymentResponse {
+    repeated ProcessListeningOnPortWithDeploymentId processes_listening_on_ports_with_deployment = 1;
+}
+
+service ProcessesListeningOnPortsService {
+
+    rpc GetProcessesListeningOnPortsByNamespace (GetProcessesListeningOnPortsByNamespaceRequest) returns (GetProcessesListeningOnPortsWithDeploymentResponse) {
+        option (google.api.http) = {
+            get: "/v1/processes_listening_on_ports/namespace/{namespace}"
+        };
+    }
+
+    rpc GetProcessesListeningOnPortsByNamespaceAndDeployment (GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest) returns (GetProcessesListeningOnPortsResponse) {
+        option (google.api.http) = {
+            get: "/v1/processes_listening_on_ports/namespace/{namespace}/deployment/{deployment_id}"
+        };
+    }
+
+}
