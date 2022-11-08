@@ -58,11 +58,13 @@ describe('Network Graph Search', () => {
         visitNetworkGraphWithNamespaceFilter('stackrox');
         selectDeploymentFilter('sensor');
 
-        cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
-            const deployments = cytoscape.nodes().filter(filterDeployments);
+        const deploymentsExpected = ['admission-control', 'central', 'collector'];
 
-            const deploymentsExpected = ['admission-control', 'central', 'collector'];
-            const deploymentsReceived = deployments.map((deployment) => deployment.data().name);
+        cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
+            const deploymentsReceived = cytoscape
+                .nodes()
+                .filter(filterDeployments)
+                .map((deployment) => deployment.data().name);
             expect(deploymentsReceived).to.include.members(deploymentsExpected);
         });
     });
