@@ -25,8 +25,12 @@ func (c *nodeScanHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 }
 
 func (c *nodeScanHandlerImpl) Start() error {
-	go c.run()
-	return nil
+	// c.run closes chan toCentral on exit, so we do not want to close twice in case of a restart
+	if !c.stopC.IsDone() {
+		go c.run()
+		return nil
+	}
+	return errors.New("stopped handlers cannot be restarted")
 }
 
 func (c *nodeScanHandlerImpl) Stop(err error) {
@@ -45,7 +49,9 @@ func (c *nodeScanHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (c *nodeScanHandlerImpl) run() {
 	defer c.stoppedC.SignalWithError(c.stopC.Err())
-	for {
+	defer close(c.toCentral)
+
+	for !c.stopC.IsDone() {
 		select {
 		case <-c.stopC.Done():
 			return

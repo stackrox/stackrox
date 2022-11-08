@@ -133,3 +133,21 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 		return true
 	}, 2*time.Second, 500*time.Millisecond, "central did not receive any message within a given deadline")
 }
+
+func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
+	defer s.cancel()
+	nodeScans := make(chan *storage.NodeScanV2)
+	defer close(nodeScans)
+	h := NewNodeScanHandler(nodeScans)
+
+	assert.NoError(s.T(), h.Start())
+	h.Stop(nil)
+	<-h.Stopped().Done()
+	assert.True(s.T(), h.Stopped().IsDone())
+
+	// try to start & stop the stopped handler again
+	assert.Error(s.T(), h.Start())
+	h.Stop(nil)
+	<-h.Stopped().Done()
+	assert.True(s.T(), h.Stopped().IsDone())
+}
