@@ -163,7 +163,7 @@ func (resolver *nodeComponentResolver) nodeComponentScopeContext(ctx context.Con
 		resolver.ctx = ctx
 	}
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return scoped.Context(ctx, scoped.Scope{
+		return scoped.Context(resolver.ctx, scoped.Scope{
 			Level: v1.SearchCategory_IMAGE_COMPONENTS,
 			ID:    resolver.data.GetId(),
 		})
