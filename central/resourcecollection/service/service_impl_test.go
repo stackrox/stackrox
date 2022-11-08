@@ -204,10 +204,42 @@ func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
 	suite.NotNil(err)
 	suite.Nil(resp)
 
+	// test error when collection name is empty
+	request = &v1.UpdateCollectionRequest{
+		Id:   "id1",
+		Name: "",
+	}
+	resp, err = suite.collectionService.UpdateCollection(allAccessCtx, request)
+	suite.NotNil(err)
+	suite.Nil(resp)
+
+	// test error on context without identity
+	request = &v1.UpdateCollectionRequest{
+		Id:   "id2",
+		Name: "b",
+	}
+	resp, err = suite.collectionService.UpdateCollection(allAccessCtx, request)
+	suite.NotNil(err)
+	suite.Nil(resp)
+
+	// test error on empty/nil resource selectors
+	request = &v1.UpdateCollectionRequest{
+		Id:   "id3",
+		Name: "c",
+	}
+	mockID := mockIdentity.NewMockIdentity(suite.mockCtrl)
+	mockID.EXPECT().UID().Return("uid").Times(1)
+	mockID.EXPECT().FullName().Return("name").Times(1)
+	mockID.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx := authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
+	resp, err = suite.collectionService.UpdateCollection(ctx, request)
+	suite.NotNil(err)
+	suite.Nil(resp)
+
 	// test successful update
 	request = &v1.UpdateCollectionRequest{
-		Id:          "id",
-		Name:        "a",
+		Id:          "id4",
+		Name:        "d",
 		Description: "description",
 		ResourceSelectors: []*storage.ResourceSelector{
 			{
@@ -227,11 +259,10 @@ func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
 		EmbeddedCollectionIds: []string{"id1", "id2"},
 	}
 
-	mockID := mockIdentity.NewMockIdentity(suite.mockCtrl)
 	mockID.EXPECT().UID().Return("uid").Times(1)
 	mockID.EXPECT().FullName().Return("name").Times(1)
 	mockID.EXPECT().FriendlyName().Return("name").Times(1)
-	ctx := authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
+	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
 
 	suite.dataStore.EXPECT().UpdateCollection(ctx, gomock.Any()).Times(1).Return(nil)
 	resp, err = suite.collectionService.UpdateCollection(ctx, request)
