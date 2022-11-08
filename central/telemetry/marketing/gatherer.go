@@ -2,7 +2,6 @@ package marketing
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	apDataStore "github.com/stackrox/rox/central/authprovider/datastore"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 	mpkg "github.com/stackrox/rox/pkg/telemetry/marketing"
 	"github.com/stackrox/rox/pkg/version"
 )
