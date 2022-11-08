@@ -14,7 +14,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 # don't use postgres
 os.environ["ROX_POSTGRES_DATASTORE"] = "false"
 
-versions=getLastSensorVersionsFromGitTagsCLI(os.environ["MAIN_IMAGE_TAG"], 4)
+versions=getLastSensorVersionsFromGitTagsCLI(4)
 
 gkecluster=GKECluster("qa-e2e-test")
 

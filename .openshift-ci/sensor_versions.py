@@ -32,9 +32,9 @@ def splitVersion(version):
     digits = re.search(r"(\d+)\.(\d+)\.\D*(\d+)", version)
     return int(digits.group(1)), int(digits.group(2)), int(digits.group(3))
 
-def getLatestTags(current_version, tags, num_versions):
+def getLatestTags(tags, num_versions):
     numericaltags = transformTagsToNumbers(tags)
-    _,y,_ = splitVersion(current_version)
+    _,y,_ = splitVersion(makeImageTag())
     latestversions = []
     ycurr = y
     for tags in numericaltags[::-1]:
@@ -47,8 +47,11 @@ def getLatestTags(current_version, tags, num_versions):
             ycurr-=1
     return latestversions
 
+def makeImageTag():
+    return subprocess.check_output(["make", "tag"]).decode(encoding="utf-8")
+
 # getLastSensorVersionsFromGitTagsCLI gets the latest patches of the last num_versions major versions via Git CLI
-def getLastSensorVersionsFromGitTagsCLI(current_version, num_versions):
+def getLastSensorVersionsFromGitTagsCLI(num_versions):
     rawtags = cliOutputToTags(subprocess.check_output(["git", "tag", "--list"]))
     tags = filterGitCLITags(rawtags)
-    return getLatestTags(current_version, tags, num_versions)
+    return getLatestTags(tags, num_versions)
