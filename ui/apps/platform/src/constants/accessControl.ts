@@ -120,6 +120,8 @@ export const resourceRemovalReleaseVersions = new Map<ResourceName, string>([
 
 // TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
 export const replacedResourceMapping = new Map<ResourceName, string>([
+    // TODO: ROX-12750 Remove AllComments, ComplianceRunSchedule, ComplianceRuns, Config, DebugLogs,
+    // NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity.
     ['AllComments', 'Administration'],
     ['ComplianceRuns', 'Compliance'],
     ['Config', 'Administration'],
