@@ -35,7 +35,7 @@ var (
 	QuayRobotAccounts = registerFeature("Enable Robot accounts in Quay Image Integration", "ROX_QUAY_ROBOT_ACCOUNTS", true)
 
 	// RoxctlNetpolGenerate enables 'roxctl netpol generate' command which integrates with NP-Guard
-	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl netpol generate' command", "ROX_ROXCTL_NETPOL_GENERATE", true)
+	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl generate netpol' command", "ROX_ROXCTL_NETPOL_GENERATE", true)
 
 	// ObjectCollections enables 'collection' entity APIs and Frontend collection pages
 	ObjectCollections = registerFeature("Enable object collection entities", "ROX_OBJECT_COLLECTIONS", false)
