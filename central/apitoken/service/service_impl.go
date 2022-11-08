@@ -24,11 +24,11 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.APIToken)): {
+		user.With(permissions.View(resources.Integration)): {
 			"/v1.APITokenService/GetAPIToken",
 			"/v1.APITokenService/GetAPITokens",
 		},
-		user.With(permissions.Modify(resources.APIToken)): {
+		user.With(permissions.Modify(resources.Integration)): {
 			"/v1.APITokenService/GenerateToken",
 			"/v1.APITokenService/RevokeToken",
 		},

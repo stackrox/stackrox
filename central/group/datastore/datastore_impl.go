@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	groupSAC = sac.ForResource(resources.Group)
+	accessSAC = sac.ForResource(resources.Access)
 )
 
 type dataStoreImpl struct {
@@ -25,7 +25,7 @@ type dataStoreImpl struct {
 }
 
 func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
-	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -40,7 +40,7 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 }
 
 func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
-	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -50,7 +50,7 @@ func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
 }
 
 func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.GroupProperties) bool) ([]*storage.Group, error) {
-	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -75,7 +75,7 @@ func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.G
 // Walk is an optimization that allows to search through the datastore and find
 // groups that apply to a user within a single transaction.
 func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attributes map[string][]string) ([]*storage.Group, error) {
-	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -102,7 +102,7 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attrib
 }
 
 func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -120,7 +120,7 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 }
 
 func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force bool) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -137,7 +137,7 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force
 }
 
 func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group, force bool) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -190,7 +190,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 }
 
 func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupProperties, force bool) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

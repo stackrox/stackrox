@@ -266,6 +266,8 @@ func (c *UpgradeContext) DoCentralHTTPRequest(req *http.Request) (*http.Response
 		return nil, errors.New("no HTTP client configured")
 	}
 
+	req.Header.Set("User-Agent", clientconn.GetUserAgent())
+
 	return c.centralHTTPClient.Do(req)
 }
 

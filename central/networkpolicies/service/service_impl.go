@@ -66,13 +66,13 @@ var (
 			"/v1.NetworkPolicyService/ApplyNetworkPolicy",
 			"/v1.NetworkPolicyService/ApplyNetworkPolicyYamlForDeployment",
 		},
-		user.With(permissions.Modify(resources.Notifier)): {
+		user.With(permissions.Modify(resources.Integration)): {
 			"/v1.NetworkPolicyService/SendNetworkPolicyYAML",
 		},
 		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.NetworkGraph)): {
 			"/v1.NetworkPolicyService/GenerateNetworkPolicies",
 		},
-		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.NetworkBaseline)): {
+		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.DeploymentExtension)): {
 			"/v1.NetworkPolicyService/GetBaselineGeneratedNetworkPolicyForDeployment",
 		},
 	})
@@ -954,6 +954,7 @@ func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, rawQ string
 func (s *serviceImpl) getNetworkTree(clusterID string) (tree.ReadOnlyNetworkTree, error) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-12750 Replace NetworkGraphConfig with Administration.
 			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
 
 	cfg, err := s.graphConfig.GetNetworkGraphConfig(ctx)

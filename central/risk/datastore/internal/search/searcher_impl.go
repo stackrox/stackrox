@@ -22,8 +22,8 @@ var (
 		Reversed: true,
 	}
 
-	riskSACSearchHelper         = sac.ForResource(resources.Risk).MustCreateSearchHelper(mappings.OptionsMap)
-	riskSACPostgresSearchHelper = sac.ForResource(resources.Risk).MustCreatePgSearchHelper()
+	deploymentExtensionSACSearchHelper         = sac.ForResource(resources.DeploymentExtension).MustCreateSearchHelper(mappings.OptionsMap)
+	deploymentExtensionSACPostgresSearchHelper = sac.ForResource(resources.DeploymentExtension).MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides an intermediary implementation layer for RiskStorage.
@@ -61,9 +61,9 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	var filteredSearcher search.Searcher
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		filteredSearcher = riskSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+		filteredSearcher = deploymentExtensionSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
 	} else {
-		filteredSearcher = riskSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+		filteredSearcher = deploymentExtensionSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
 	}
 	paginatedSearcher := paginated.Paginated(filteredSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)

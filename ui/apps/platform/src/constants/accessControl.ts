@@ -60,6 +60,7 @@ export const oidcCallbackValues = {
 export const defaultMinimalReadAccessResources = [
     'Alert',
     'Cluster',
+    // TODO: ROX-12750 Replace Config with Administration
     'Config',
     'Deployment',
     'Image',

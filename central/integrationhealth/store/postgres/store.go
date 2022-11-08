@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -39,8 +40,9 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.IntegrationHealthsSchema
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.IntegrationHealthsSchema
+	targetResource = resources.Integration
 )
 
 type Store interface {
@@ -208,9 +210,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.IntegrationHeal
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.IntegrationHealth) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "IntegrationHealth")
 
-	if ok, err := permissionCheckerSingleton().UpsertAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -222,9 +223,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.IntegrationHealth) 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.IntegrationHealth) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "IntegrationHealth")
 
-	if ok, err := permissionCheckerSingleton().UpsertManyAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -249,8 +249,9 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 
-	if ok, err := permissionCheckerSingleton().CountAllowed(ctx); err != nil || !ok {
-		return 0, err
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
+		return 0, nil
 	}
 
 	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
@@ -261,8 +262,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "IntegrationHealth")
 
 	var sacQueryFilter *v1.Query
-	if ok, err := permissionCheckerSingleton().ExistsAllowed(ctx); err != nil || !ok {
-		return false, err
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
+		return false, nil
 	}
 
 	q := search.ConjunctionQuery(
@@ -281,8 +283,10 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.IntegrationHea
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "IntegrationHealth")
 
 	var sacQueryFilter *v1.Query
-	if ok, err := permissionCheckerSingleton().GetAllowed(ctx); err != nil || !ok {
-		return nil, false, err
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
+		return nil, false, nil
 	}
 
 	q := search.ConjunctionQuery(
@@ -312,9 +316,8 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "IntegrationHealth")
 
 	var sacQueryFilter *v1.Query
-	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -331,9 +334,8 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "IntegrationHealth")
 
 	var sacQueryFilter *v1.Query
-	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -349,8 +351,10 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.IntegrationHealthIDs")
 	var sacQueryFilter *v1.Query
-	if ok, err := permissionCheckerSingleton().GetIDsAllowed(ctx); err != nil || !ok {
-		return nil, err
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
+		return nil, nil
 	}
 	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
@@ -374,9 +378,9 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Integ
 	}
 
 	var sacQueryFilter *v1.Query
-	if ok, err := permissionCheckerSingleton().GetManyAllowed(ctx); err != nil {
-		return nil, nil, err
-	} else if !ok {
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
 		return nil, nil, nil
 	}
 	q := search.ConjunctionQuery(
@@ -418,9 +422,9 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "IntegrationHealth")
 
 	var sacQueryFilter *v1.Query
-	if ok, err := permissionCheckerSingleton().DeleteManyAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -458,8 +462,9 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.IntegrationHealth) error) error {
 	var sacQueryFilter *v1.Query
-	if ok, err := permissionCheckerSingleton().WalkAllowed(ctx); err != nil || !ok {
-		return err
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
+		return nil
 	}
 	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.IntegrationHealth](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {

@@ -58,11 +58,11 @@ func (suite *RiskDataStoreTestSuite) SetupSuite() {
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk)))
+			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk)))
+			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 }
 
 func (suite *RiskDataStoreTestSuite) TearDownSuite() {
@@ -109,14 +109,14 @@ func (suite *RiskDataStoreTestSuite) TestRiskDataStore() {
 	scopedAccess := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk),
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
 			sac.ClusterScopeKeys("FakeClusterID"),
 			sac.NamespaceScopeKeys("FakeNS")))
 
 	scopedAccessForDifferentNamespace := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk),
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
 			sac.ClusterScopeKeys("FakeClusterID"),
 			sac.NamespaceScopeKeys("DifferentNS")))
 

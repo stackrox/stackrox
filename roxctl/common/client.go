@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -138,7 +139,7 @@ func (client *roxctlClientImpl) NewReq(method string, path string, body io.Reade
 		return nil, errors.Wrap(err, "could not inject authentication information")
 	}
 
-	req.Header.Set("User-Agent", GetUserAgent())
+	req.Header.Set("User-Agent", clientconn.GetUserAgent())
 
 	return req, nil
 }

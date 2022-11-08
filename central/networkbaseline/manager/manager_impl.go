@@ -48,7 +48,7 @@ const (
 var (
 	managerCtx = sac.WithAllAccess(context.Background())
 
-	networkBaselineSAC = sac.ForResource(resources.NetworkBaseline)
+	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 
 	log = logging.LoggerForModule()
 
@@ -421,7 +421,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 	// It's not ideal to have to duplicate this check, but we do the permission check here upfront so that we know for sure
 	// what the end state of the in-memory data structures should be. Otherwise, if there is a permission denied error,
 	// we will need to come back and undo the in-memory changes, which is more complex.
-	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -607,7 +607,7 @@ func (m *manager) processBaselineLockUpdate(ctx context.Context, deploymentID st
 		return errors.Wrap(errox.InvalidArgs, "no baseline with given deployment ID found")
 	}
 	// Permission check before modifying in-memory data structures
-	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

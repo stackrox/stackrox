@@ -22,7 +22,7 @@ func init() {
 func (resolver *Resolver) Groups(ctx context.Context) ([]*groupResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Groups")
 
-	err := readGroups(ctx)
+	err := readAccess(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (resolver *Resolver) Groups(ctx context.Context) ([]*groupResolver, error) 
 func (resolver *Resolver) Group(ctx context.Context, args struct{ AuthProviderID, Key, Value, ID *string }) (*groupResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Group")
 
-	err := readGroups(ctx)
+	err := readAccess(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -56,17 +56,16 @@ describe('Network Graph Search', () => {
 
     it('should filter to show only a specific deployment and deployments connected to it', () => {
         visitNetworkGraphWithNamespaceFilter('stackrox');
-        selectDeploymentFilter('central');
+        selectDeploymentFilter('sensor');
+
+        const deploymentsExpected = ['admission-control', 'central', 'collector'];
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
-            const deployments = cytoscape.nodes().filter(filterDeployments);
-            expect(deployments.size()).to.be.at.least(3); // central, scanner, sensor
-
-            const minDeps = [];
-            deployments.forEach((deployment) => {
-                minDeps.push(deployment.data().name);
-            });
-            expect(minDeps).to.include.members(['central', 'scanner', 'sensor']);
+            const deploymentsReceived = cytoscape
+                .nodes()
+                .filter(filterDeployments)
+                .map((deployment) => deployment.data().name);
+            expect(deploymentsReceived).to.include.members(deploymentsExpected);
         });
     });
 

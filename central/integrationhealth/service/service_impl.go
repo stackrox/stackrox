@@ -18,22 +18,18 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ImageIntegration)): {
+		user.With(permissions.View(resources.Integration)): {
+			"/v1.IntegrationHealthService/GetBackupPlugins",
 			"/v1.IntegrationHealthService/GetImageIntegrations",
-		},
-		user.With(permissions.View(resources.Notifier)): {
 			"/v1.IntegrationHealthService/GetNotifiers",
 		},
-		user.With(permissions.View(resources.BackupPlugins)): {
-			"/v1.IntegrationHealthService/GetBackupPlugins",
-		},
+		// TODO: ROX-12750 Replace ScannerDefinitions with Administration
 		user.With(permissions.View(resources.ScannerDefinitions)): {
 			"/v1.IntegrationHealthService/GetVulnDefinitionsInfo",
 		},
 	})
 )
 
-// ImageIntegrationService is the struct that manages the ImageIntegration API
 type serviceImpl struct {
 	v1.UnimplementedIntegrationHealthServiceServer
 
@@ -78,7 +74,7 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, empty *v1.Empty) (*v1.Ge
 	}, nil
 }
 
-// GetBackups returns the health status for all configured external backup integrations.
+// GetBackupPlugins returns the health status for all configured external backup integrations.
 func (s *serviceImpl) GetBackupPlugins(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
 	healthData, err := s.datastore.GetBackupPlugins(ctx)
 	if err != nil {

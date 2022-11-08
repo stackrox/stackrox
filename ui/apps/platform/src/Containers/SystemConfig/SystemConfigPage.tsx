@@ -27,6 +27,7 @@ const SystemConfigPage = (): ReactElement => {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     */
     const { hasReadWriteAccess } = usePermissions();
+    // TODO: ROX-12750 Replace Config with Administration
     const hasReadWriteAccessForConfig = hasReadWriteAccess('Config');
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isDecommissionedClusterRetentionEnabled = isFeatureFlagEnabled(

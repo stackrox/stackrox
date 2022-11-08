@@ -12,6 +12,7 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_107_to_m_108_remove_auth_plugin"
 	_ "github.com/stackrox/rox/migrator/migrations/m_108_to_m_109_compliance_run_schedules"
 	_ "github.com/stackrox/rox/migrator/migrations/m_109_to_m_110_networkpolicy_guidance_2"
+	_ "github.com/stackrox/rox/migrator/migrations/m_110_to_m_111_replace_deprecated_resources"
 	_ "github.com/stackrox/rox/migrator/migrations/m_55_to_m_56_node_scanning_empty"
 	_ "github.com/stackrox/rox/migrator/migrations/m_56_to_m_57_compliance_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/m_57_to_m_58_update_run_secrets_volume_policy_regex"

@@ -73,6 +73,7 @@ func (fds *flowDataStoreImpl) GetFlowsForDeployment(ctx context.Context, deploym
 func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(ctx context.Context, flows []*storage.NetworkFlow) ([]*storage.NetworkFlow, error) {
 	graphConfigReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-12750 Replace NetworkGraphConfig with Administration.
 			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
 
 	config, err := fds.graphConfig.GetNetworkGraphConfig(graphConfigReadCtx)

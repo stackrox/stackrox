@@ -22,7 +22,7 @@ func init() {
 // but in practice nobody uses them and they're not implemented in the store.
 func (resolver *Resolver) Notifiers(ctx context.Context) ([]*notifierResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Notifiers")
-	if err := readNotifiers(ctx); err != nil {
+	if err := readIntegrations(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapNotifiers(
@@ -32,7 +32,7 @@ func (resolver *Resolver) Notifiers(ctx context.Context) ([]*notifierResolver, e
 // Notifier gets a single notifier by ID
 func (resolver *Resolver) Notifier(ctx context.Context, args struct{ graphql.ID }) (*notifierResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Notifier")
-	if err := readNotifiers(ctx); err != nil {
+	if err := readIntegrations(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapNotifier(
