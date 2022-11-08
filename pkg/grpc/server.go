@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
@@ -228,7 +229,8 @@ func (a *apiImpl) connectToLocalEndpoint(dialCtxFunc pipeconn.DialContextFunc) (
 		grpc.WithContextDialer(func(ctx context.Context, endpoint string) (net.Conn, error) {
 			return dialCtxFunc(ctx)
 		}),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxResponseMsgSize())))
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxResponseMsgSize())),
+		grpc.WithUserAgent(clientconn.GetUserAgent()))
 }
 
 func allowPrettyQueryParameter(h http.Handler) http.Handler {

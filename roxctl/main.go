@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/roxctl/maincommand"
 	"github.com/stackrox/rox/roxctl/properties"
 
@@ -29,6 +30,8 @@ func main() {
 	AddMissingDefaultsToFlagUsage(c)
 
 	PatchPersistentPreRunHooks(c)
+
+	clientconn.SetUserAgent("roxctl")
 
 	if err := c.Execute(); err != nil {
 		os.Exit(1)
