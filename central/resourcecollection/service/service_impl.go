@@ -101,10 +101,29 @@ func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetColl
 	}, nil
 }
 
+// GetCollectionCount returns count of collections matching the query in the request
+func (s *serviceImpl) GetCollectionCount(ctx context.Context, request *v1.GetCollectionCountRequest) (*v1.GetCollectionCountResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.New("Resource collections is not enabled")
+	}
+
+	// parse query
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	count, err := s.datastore.Count(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.GetCollectionCountResponse{Count: int32(count)}, nil
+}
+
 // DeleteCollection deletes the collection with the given ID
 func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, errors.New("Support for resource collections is not enabled")
+		return nil, errors.New("Resource collections is not enabled")
 	}
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
@@ -118,7 +137,7 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 // CreateCollection creates a new collection from the given request
 func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCollectionRequest) (*v1.CreateCollectionResponse, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, errors.New("Support for resource collections is not enabled")
+		return nil, errors.New("Resource collections is not enabled")
 	}
 
 	collection, err := collectionRequestToCollection(ctx, request, true)
@@ -134,9 +153,32 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 	return &v1.CreateCollectionResponse{Collection: collection}, nil
 }
 
+func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCollectionRequest) (*v1.UpdateCollectionResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.New("Resource collections is not enabled")
+	}
+
+	if request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
+	}
+
+	collection, err := collectionRequestToCollection(ctx, request, false)
+	if err != nil {
+		return nil, err
+	}
+	collection.Id = request.GetId()
+
+	err = s.datastore.UpdateCollection(ctx, collection)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.UpdateCollectionResponse{Collection: collection}, nil
+}
+
 func collectionRequestToCollection(ctx context.Context, request collectionRequest, isCreate bool) (*storage.ResourceCollection, error) {
 	if request.GetName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
+		return nil, errors.Wrap(errox.InvalidArgs, "Collection Id should not be empty")
 	}
 
 	slimUser := utils.UserFromContext(ctx)
