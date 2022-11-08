@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.SignatureIntegrationsSchema
-	targetResource = resources.SignatureIntegration
+	targetResource = resources.Integration
 )
 
 type Store interface {

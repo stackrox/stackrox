@@ -26,11 +26,11 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.BackupPlugins)): {
+		user.With(permissions.View(resources.Integration)): {
 			"/v1.ExternalBackupService/GetExternalBackup",
 			"/v1.ExternalBackupService/GetExternalBackups",
 		},
-		user.With(permissions.Modify(resources.BackupPlugins)): {
+		user.With(permissions.Modify(resources.Integration)): {
 			"/v1.ExternalBackupService/PutExternalBackup",
 			"/v1.ExternalBackupService/PostExternalBackup",
 			"/v1.ExternalBackupService/TestExternalBackup",

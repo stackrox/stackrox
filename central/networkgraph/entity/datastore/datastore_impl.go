@@ -39,6 +39,7 @@ var (
 	networkGraphSAC    = sac.ForResource(resources.NetworkGraph)
 	graphConfigReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-12750 Replace NetworkGraphConfig with Administration.
 			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
 )
 

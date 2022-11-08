@@ -129,7 +129,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys("a-wrong-cluster")))
 
 	ctxWithReadAccess :=
@@ -137,7 +137,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(expectedBaseline.GetClusterId()),
 				sac.NamespaceScopeKeys(expectedBaseline.GetNamespace())))
 
@@ -146,7 +146,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys("a-wrong-cluster")))
 
 	ctxWithWriteAccess :=
@@ -154,7 +154,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(expectedBaseline.GetClusterId()),
 				sac.NamespaceScopeKeys(expectedBaseline.GetNamespace())))
 
@@ -162,7 +162,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 		sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline)))
+				sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	// Test Update
 	{

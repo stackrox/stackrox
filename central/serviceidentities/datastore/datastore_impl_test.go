@@ -24,6 +24,7 @@ type serviceIdentityDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
+	// TODO: ROX-12750 Remove hasReadAdministrationCtx and hasWriteAdministrationCtx variables.
 	hasReadAdministrationCtx  context.Context
 	hasWriteAdministrationCtx context.Context
 
@@ -38,7 +39,9 @@ func (s *serviceIdentityDataStoreTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX_12750 Replace ServiceIdentity with Administration.
 			sac.ResourceScopeKeys(resources.ServiceIdentity)))
+	// TODO: ROX-12750 Remove hasReadAdministrationCtx and hasWriteAdministrationCtx variables.
 	s.hasReadAdministrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -46,7 +49,9 @@ func (s *serviceIdentityDataStoreTestSuite) SetupTest() {
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			// TODO: ROX_12750 Replace ServiceIdentity with Administration.
 			sac.ResourceScopeKeys(resources.ServiceIdentity)))
+	// TODO: ROX-12750 Remove hasReadAdministrationCtx and hasWriteAdministrationCtx variables.
 	s.hasWriteAdministrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -66,12 +71,15 @@ func (s *serviceIdentityDataStoreTestSuite) TestAddSrvId() {
 	}
 	allSrvIDs := []*storage.ServiceIdentity{srvID}
 
+	// TODO: ROX-12750 Adapt expected call count.
 	s.storage.EXPECT().GetAll(gomock.Any()).Return(allSrvIDs, nil).Times(2)
+	// TODO: ROX-12750 Adapt expected call count.
 	s.storage.EXPECT().Upsert(gomock.Any(), srvID).Return(nil).Times(2)
 
 	err := s.dataStore.AddServiceIdentity(s.hasWriteCtx, srvID)
 	s.NoError(err)
 
+	// TODO: ROX-12750 Remove test with hasWriteAdministrationCtx variable.
 	err = s.dataStore.AddServiceIdentity(s.hasWriteAdministrationCtx, srvID)
 	s.NoError(err)
 
@@ -79,6 +87,7 @@ func (s *serviceIdentityDataStoreTestSuite) TestAddSrvId() {
 	s.Equal(allSrvIDs, result)
 	s.NoError(err)
 
+	// TODO: ROX-12750 Remove test with hasReadAdministrationCtx variable.
 	result, err = s.dataStore.GetServiceIdentities(s.hasReadAdministrationCtx)
 	s.Equal(allSrvIDs, result)
 	s.NoError(err)
@@ -93,11 +102,13 @@ func (s *serviceIdentityDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestAllowsGet() {
+	// TODO: ROX-12750 Adapt expected call count.
 	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil).Times(2)
 
 	_, err := s.dataStore.GetServiceIdentities(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 
+	// TODO: ROX-12750 Remove test with hasReadAdministrationCtx variable.
 	_, err = s.dataStore.GetServiceIdentities(s.hasReadAdministrationCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
@@ -111,16 +122,19 @@ func (s *serviceIdentityDataStoreTestSuite) TestEnforcesAdd() {
 	err = s.dataStore.AddServiceIdentity(s.hasReadCtx, &storage.ServiceIdentity{})
 	s.Error(err, "expected an error trying to write without permissions")
 
+	// TODO: ROX-12750 Remove test with hasReadAdministrationCtx variable.
 	err = s.dataStore.AddServiceIdentity(s.hasReadAdministrationCtx, &storage.ServiceIdentity{})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestAllowsAdd() {
+	// TODO: ROX-12750 Adapt expected call count.
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.AddServiceIdentity(s.hasWriteCtx, &storage.ServiceIdentity{})
 	s.NoError(err, "expected no error trying to write with permissions")
 
+	// TODO: ROX-12750 Remove test with hasWriteAdministrationCtx variable.
 	err = s.dataStore.AddServiceIdentity(s.hasWriteAdministrationCtx, &storage.ServiceIdentity{})
 	s.NoError(err, "expected no error trying to write with Administration permissions")
 }

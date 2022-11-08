@@ -41,6 +41,8 @@ var (
 
 	scrapeDataDeps = []string{"HostScraped"}
 
+	// TODO: ROX-12750 Replace ComplianceRuns with Compliance and ComplianceRunSchedule with Administration.
+	// Rename the SAC objects to match the replacement permission name too
 	complianceRunSAC = sac.ForResource(resources.ComplianceRuns)
 )
 

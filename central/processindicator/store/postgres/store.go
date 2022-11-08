@@ -44,7 +44,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ProcessIndicatorsSchema
-	targetResource = resources.Indicator
+	targetResource = resources.DeploymentExtension
 )
 
 type Store interface {

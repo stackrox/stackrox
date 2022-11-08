@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	notifierSAC = sac.ForResource(resources.Notifier)
+	integrationSAC = sac.ForResource(resources.Integration)
 )
 
 type datastoreImpl struct {
@@ -23,7 +23,7 @@ type datastoreImpl struct {
 }
 
 func (b *datastoreImpl) GetNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error) {
-	if ok, err := notifierSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, false, err
 	} else if !ok {
 		return nil, false, nil
@@ -44,7 +44,7 @@ func (b *datastoreImpl) GetScrubbedNotifier(ctx context.Context, id string) (*st
 }
 
 func (b *datastoreImpl) GetNotifiers(ctx context.Context) ([]*storage.Notifier, error) {
-	if ok, err := notifierSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -67,7 +67,7 @@ func (b *datastoreImpl) GetScrubbedNotifiers(ctx context.Context) ([]*storage.No
 }
 
 func (b *datastoreImpl) AddNotifier(ctx context.Context, notifier *storage.Notifier) (string, error) {
-	if ok, err := notifierSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return "", err
 	} else if !ok {
 		return "", sac.ErrResourceAccessDenied
@@ -88,7 +88,7 @@ func (b *datastoreImpl) AddNotifier(ctx context.Context, notifier *storage.Notif
 }
 
 func (b *datastoreImpl) UpdateNotifier(ctx context.Context, notifier *storage.Notifier) error {
-	if ok, err := notifierSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -108,7 +108,7 @@ func (b *datastoreImpl) UpdateNotifier(ctx context.Context, notifier *storage.No
 }
 
 func (b *datastoreImpl) RemoveNotifier(ctx context.Context, id string) error {
-	if ok, err := notifierSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

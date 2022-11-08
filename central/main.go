@@ -194,7 +194,7 @@ var (
 	imageIntegrationContext = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.ImageIntegration),
+			sac.ResourceScopeKeys(resources.Integration),
 		))
 )
 
@@ -427,7 +427,7 @@ func startGRPCServer() {
 	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.AuthProvider)))
+			sac.ResourceScopeKeys(resources.Access)))
 
 	// Create the registry of applied auth providers.
 	registry, err := authproviders.NewStoreBackedRegistry(
@@ -583,13 +583,15 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
 		uiRoute(),
 		{
-			Route:         "/api/extensions/clusters/zip",
+			Route: "/api/extensions/clusters/zip",
+			// TODO: ROX-12750 Replace ServiceIdentity with Administration.
 			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity))),
 			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},
 		{
-			Route:         "/api/extensions/scanner/zip",
+			Route: "/api/extensions/scanner/zip",
+			// TODO: ROX-12750 Replace ScannerBundle with Administration.
 			Authorizer:    user.With(permissions.View(resources.ScannerBundle)),
 			ServerHandler: scanner.Handler(),
 			Compression:   false,
@@ -607,7 +609,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/docs/swagger",
-			Authorizer:    user.With(permissions.View(resources.APIToken)),
+			Authorizer:    user.With(permissions.View(resources.Integration)),
 			ServerHandler: docs.Swagger(),
 			Compression:   true,
 		},
@@ -625,7 +627,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/risk/timeline/export/csv",
-			Authorizer:    user.With(permissions.View(resources.Deployment), permissions.View(resources.Indicator), permissions.View(resources.ProcessWhitelist)),
+			Authorizer:    user.With(permissions.View(resources.Deployment), permissions.View(resources.DeploymentExtension)),
 			ServerHandler: timeline.CSVHandler(),
 			Compression:   true,
 		},
@@ -740,9 +742,11 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
 				or.SensorOrAuthorizer(
 					or.ScannerOr(
+						// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
 						user.With(permissions.View(resources.ScannerDefinitions)))): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
 				},
+				// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
 				user.With(permissions.Modify(resources.ScannerDefinitions)): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodPost),
 				},

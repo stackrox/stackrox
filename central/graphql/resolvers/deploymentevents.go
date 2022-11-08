@@ -210,7 +210,7 @@ func (resolver *ProcessActivityEventResolver) InBaseline() bool {
 }
 
 func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v1.Query) ([]*ProcessActivityEventResolver, error) {
-	if err := readIndicators(ctx); err != nil {
+	if err := readDeploymentExtensions(ctx); err != nil {
 		return nil, err
 	}
 
@@ -223,7 +223,7 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 	baselines := make(map[string]*set.StringSet)
 	// This determines if we should read baseline information.
 	// nil means we can.
-	canReadBaseline := readBaselines(ctx) == nil
+	canReadBaseline := readDeploymentExtensions(ctx) == nil
 	for _, indicator := range indicators {
 		var keyStr, procName string
 		if canReadBaseline {
