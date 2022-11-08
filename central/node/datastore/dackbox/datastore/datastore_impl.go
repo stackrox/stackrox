@@ -209,7 +209,7 @@ func (ds *datastoreImpl) DeleteNodes(ctx context.Context, ids ...string) error {
 
 	errorList := errorhelpers.NewErrorList("deleting nodes")
 	deleteRiskCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resources.Risk)))
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	for _, id := range ids {
 		if err := ds.storage.Delete(ctx, id); err != nil {

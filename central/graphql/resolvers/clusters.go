@@ -1075,7 +1075,7 @@ func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context, q *v
 
 func (resolver *clusterResolver) Risk(ctx context.Context) (*riskResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Risk")
-	if err := readRisks(ctx); err != nil {
+	if err := readDeploymentExtensions(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.root.wrapRisk(resolver.getClusterRisk(ctx))

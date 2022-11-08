@@ -126,10 +126,12 @@ func (s *managerTestSuite) SetupTest() {
 	s.testCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			// TODO: ROX-12750 Replace ComplianceRuns with Compliance
 			sac.ResourceScopeKeys(resources.ComplianceRuns)))
 	s.readOnlyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-12750 Replace ComplianceRuns with Compliance
 			sac.ResourceScopeKeys(resources.ComplianceRuns)))
 	s.mockCtrl = gomock.NewController(s.T())
 	var err error

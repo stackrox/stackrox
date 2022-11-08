@@ -21,7 +21,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.VulnerabilityReports), permissions.View(resources.Notifier), permissions.View(resources.Role), permissions.View(resources.Image)): {
+		user.With(permissions.View(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Role), permissions.View(resources.Image)): {
 			"/v1.ReportService/RunReport",
 		},
 	})

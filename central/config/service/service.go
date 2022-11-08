@@ -26,12 +26,12 @@ var (
 		allow.Anonymous(): {
 			"/v1.ConfigService/GetPublicConfig",
 		},
-		user.With(permissions.View(resources.Config)): {
-			"/v1.ConfigService/GetPrivateConfig",
-		},
+		// TODO: ROX-12750 Replace Config with Administration
 		user.With(permissions.View(resources.Config)): {
 			"/v1.ConfigService/GetConfig",
+			"/v1.ConfigService/GetPrivateConfig",
 		},
+		// TODO: ROX-12750 Replace Config with Administration
 		user.With(permissions.Modify(resources.Config)): {
 			"/v1.ConfigService/PutConfig",
 		},

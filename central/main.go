@@ -145,6 +145,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	authProviderUserpki "github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/devbuild"
@@ -164,6 +165,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -193,7 +195,7 @@ var (
 	imageIntegrationContext = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.ImageIntegration),
+			sac.ResourceScopeKeys(resources.Integration),
 		))
 )
 
@@ -238,6 +240,8 @@ func main() {
 		runSafeMode()
 		return
 	}
+
+	clientconn.SetUserAgent("central")
 
 	ctx := context.Background()
 	proxy.WatchProxyConfig(ctx, proxyConfigPath, proxyConfigFile, true)
@@ -375,12 +379,13 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
+
+		if features.ObjectCollections.Enabled() {
+			servicesToRegister = append(servicesToRegister, collectionService.Singleton())
+		}
+
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
-	}
-
-	if features.ObjectCollections.Enabled() {
-		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
 	}
 
 	if features.NewPolicyCategories.Enabled() {
@@ -425,7 +430,7 @@ func startGRPCServer() {
 	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.AuthProvider)))
+			sac.ResourceScopeKeys(resources.Access)))
 
 	// Create the registry of applied auth providers.
 	registry, err := authproviders.NewStoreBackedRegistry(
@@ -581,13 +586,15 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
 		uiRoute(),
 		{
-			Route:         "/api/extensions/clusters/zip",
+			Route: "/api/extensions/clusters/zip",
+			// TODO: ROX-12750 Replace ServiceIdentity with Administration.
 			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity))),
 			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},
 		{
-			Route:         "/api/extensions/scanner/zip",
+			Route: "/api/extensions/scanner/zip",
+			// TODO: ROX-12750 Replace ScannerBundle with Administration.
 			Authorizer:    user.With(permissions.View(resources.ScannerBundle)),
 			ServerHandler: scanner.Handler(),
 			Compression:   false,
@@ -605,7 +612,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/docs/swagger",
-			Authorizer:    user.With(permissions.View(resources.APIToken)),
+			Authorizer:    user.With(permissions.View(resources.Integration)),
 			ServerHandler: docs.Swagger(),
 			Compression:   true,
 		},
@@ -623,7 +630,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/risk/timeline/export/csv",
-			Authorizer:    user.With(permissions.View(resources.Deployment), permissions.View(resources.Indicator), permissions.View(resources.ProcessWhitelist)),
+			Authorizer:    user.With(permissions.View(resources.Deployment), permissions.View(resources.DeploymentExtension)),
 			ServerHandler: timeline.CSVHandler(),
 			Compression:   true,
 		},
@@ -738,9 +745,11 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
 				or.SensorOrAuthorizer(
 					or.ScannerOr(
+						// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
 						user.With(permissions.View(resources.ScannerDefinitions)))): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
 				},
+				// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
 				user.With(permissions.Modify(resources.ScannerDefinitions)): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodPost),
 				},
@@ -754,14 +763,9 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 }
 
 func notImplementedOnManagedServices(fn http.Handler) http.Handler {
-	if !env.ManagedCentral.BooleanSetting() {
-		return fn
-	}
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		errMsg := "api is not supported in a managed central environment."
-		log.Error(errMsg)
-		http.Error(w, errMsg, http.StatusNotImplemented)
-	})
+	return utils.IfThenElse[http.Handler](
+		env.ManagedCentral.BooleanSetting(), httputil.NotImplementedHandler("api is not supported in a managed central environment."),
+		fn)
 }
 
 func debugRoutes() []routes.CustomRoute {

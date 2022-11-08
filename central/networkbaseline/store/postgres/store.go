@@ -44,7 +44,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NetworkBaselinesSchema
-	targetResource = resources.NetworkBaseline
+	targetResource = resources.DeploymentExtension
 )
 
 type Store interface {

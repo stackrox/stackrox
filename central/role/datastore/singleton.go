@@ -98,14 +98,11 @@ var defaultRoles = map[string]roleAttributes{
 		idSuffix:    "scopemanager",
 		description: "For users: use it to create and modify scopes for the purpose of access control or vulnerability reporting",
 		resourceWithAccess: []permissions.ResourceWithAccess{
-			permissions.View(resources.AuthProvider),
+			permissions.View(resources.Access),
 			permissions.View(resources.Cluster),
 			permissions.View(resources.Namespace),
 			permissions.View(resources.Role),
 			permissions.Modify(resources.Role),
-			permissions.View(resources.AuthProvider),
-			permissions.View(resources.Cluster),
-			permissions.View(resources.Namespace),
 		},
 	},
 	rolePkg.SensorCreator: {
@@ -114,6 +111,7 @@ var defaultRoles = map[string]roleAttributes{
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Cluster),
 			permissions.Modify(resources.Cluster),
+			// TODO: ROX-12750 Replace ServiceIdentity with Administration.
 			permissions.Modify(resources.ServiceIdentity),
 		},
 	},
@@ -144,7 +142,7 @@ var vulnReportingDefaultRoles = map[string]roleAttributes{
 			permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
 			permissions.View(resources.Role),                   // required for scopes
 			permissions.View(resources.Image),                  // required to gather CVE data for the report
-			permissions.View(resources.Notifier),               // required for vuln report configurations
+			permissions.View(resources.Integration),            // required for vuln report configurations
 		},
 	},
 }

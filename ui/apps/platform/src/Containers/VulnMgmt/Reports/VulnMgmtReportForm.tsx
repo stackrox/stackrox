@@ -104,7 +104,7 @@ function VulnMgmtReportForm({
     const [message, setMessage] = useState<FormResponseMessage>(null);
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
-    const hasRoleWriteAccess = hasReadWriteAccess('Access');
+    const hasRoleWriteAccess = hasReadWriteAccess('Role');
     const hasClusterReadAccess = hasReadAccess('Cluster');
     const hasNamespaceReadAccess = hasReadAccess('Namespace');
     const hasNotifierWriteAccess = hasReadWriteAccess('Integration');

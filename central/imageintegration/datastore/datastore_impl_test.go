@@ -38,9 +38,6 @@ type ImageIntegrationDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	hasReadIntegrationsCtx  context.Context
-	hasWriteIntegrationsCtx context.Context
-
 	db *bolt.DB
 
 	store     store.Store
@@ -60,16 +57,8 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.ImageIntegration)))
-	suite.hasReadIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.ImageIntegration)))
-	suite.hasWriteIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
@@ -148,7 +137,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
 func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage DataStore) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.ImageIntegration)))
+		sac.ResourceScopeKeys(resources.Integration)))
 	integrations := []*storage.ImageIntegration{
 		{
 			Id:   uuid.NewV4().String(),
@@ -244,18 +233,8 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGet() {
 	suite.Equal(integration, gotInt)
 	suite.True(exists)
 
-	gotInt, exists, err = suite.datastore.GetImageIntegration(suite.hasReadIntegrationsCtx, integration.GetId())
-	suite.NoError(err, "expected no error trying to read with permissions")
-	suite.Equal(integration, gotInt)
-	suite.True(exists)
-
 	gotInt, exists, err = suite.datastore.GetImageIntegration(suite.hasWriteCtx, integration.GetId())
 	suite.NoError(err, "expected no error trying to read with permissions")
-	suite.Equal(integration, gotInt)
-	suite.True(exists)
-
-	gotInt, exists, err = suite.datastore.GetImageIntegration(suite.hasWriteIntegrationsCtx, integration.GetId())
-	suite.NoError(err, "expected no error trying to read with Integration permissions")
 	suite.Equal(integration, gotInt)
 	suite.True(exists)
 }
@@ -276,16 +255,8 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGetBatch() {
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.ElementsMatch(integrationList, gotImages)
 
-	gotImages, err = suite.datastore.GetImageIntegrations(suite.hasReadIntegrationsCtx, getRequest)
-	suite.NoError(err, "expected no error trying to read with permissions")
-	suite.ElementsMatch(integrationList, gotImages)
-
 	gotImages, err = suite.datastore.GetImageIntegrations(suite.hasWriteCtx, getRequest)
 	suite.NoError(err, "expected no error trying to read with permissions")
-	suite.ElementsMatch(integrationList, gotImages)
-
-	gotImages, err = suite.datastore.GetImageIntegrations(suite.hasWriteIntegrationsCtx, getRequest)
-	suite.NoError(err, "expected no error trying to read with Integration permissions")
 	suite.ElementsMatch(integrationList, gotImages)
 }
 
@@ -299,20 +270,11 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesAdd() {
 	id, err = suite.datastore.AddImageIntegration(suite.hasReadCtx, integrationTwo)
 	suite.Error(err, "expected an error trying to write without permissions")
 	suite.Empty(id)
-
-	id, err = suite.datastore.AddImageIntegration(suite.hasReadIntegrationsCtx, integrationTwo)
-	suite.Error(err, "expected an error trying to write without permissions")
-	suite.Empty(id)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsAdd() {
 	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
 	id, err := suite.datastore.AddImageIntegration(suite.hasWriteCtx, getIntegration("namenamenamename"))
-	suite.NoError(err, "expected no error trying to write with permissions")
-	suite.NotEmpty(id)
-
-	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
-	id, err = suite.datastore.AddImageIntegration(suite.hasWriteIntegrationsCtx, getIntegration("namenamenamename2"))
 	suite.NoError(err, "expected no error trying to write with permissions")
 	suite.NotEmpty(id)
 }
@@ -325,9 +287,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesUpdate() {
 
 	err = suite.datastore.UpdateImageIntegration(suite.hasReadCtx, integration)
 	suite.Error(err, "expected an error trying to write without permissions")
-
-	err = suite.datastore.UpdateImageIntegration(suite.hasReadIntegrationsCtx, integration)
-	suite.Error(err, "expected an error trying to write without permissions")
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsUpdate() {
@@ -335,12 +294,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsUpdate() {
 	integration := suite.storeIntegration("joseph is the best")
 
 	err := suite.datastore.UpdateImageIntegration(suite.hasWriteCtx, integration)
-	suite.NoError(err, "expected no error trying to write with permissions")
-
-	integration = suite.storeIntegration("joseph is the best again")
-	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
-
-	err = suite.datastore.UpdateImageIntegration(suite.hasWriteIntegrationsCtx, integration)
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 
@@ -350,9 +303,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesRemove() {
 
 	err = suite.datastore.RemoveImageIntegration(suite.hasReadCtx, "hkddsfk")
 	suite.Error(err, "expected an error trying to write without permissions")
-
-	err = suite.datastore.RemoveImageIntegration(suite.hasReadIntegrationsCtx, "hkddsfk2")
-	suite.Error(err, "expected an error trying to write without permissions")
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsRemove() {
@@ -360,12 +310,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsRemove() {
 	integration := suite.storeIntegration("jdgbfdkjh")
 
 	err := suite.datastore.RemoveImageIntegration(suite.hasWriteCtx, integration.GetId())
-	suite.NoError(err, "expected no error trying to write with permissions")
-
-	suite.indexer.EXPECT().DeleteImageIntegration(gomock.Any()).Return(nil)
-	integration = suite.storeIntegration("jdgbfdkjh2")
-
-	err = suite.datastore.RemoveImageIntegration(suite.hasWriteIntegrationsCtx, integration.GetId())
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 

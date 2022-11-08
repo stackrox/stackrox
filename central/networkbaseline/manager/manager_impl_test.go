@@ -808,7 +808,7 @@ func expectOneTimeCallToConnectionManagerWithBaseline(suite *ManagerTestSuite, b
 func ctxWithAccessToWrite(id int) context.Context {
 	return sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.NetworkBaseline),
+		sac.ResourceScopeKeys(resources.DeploymentExtension),
 		sac.ClusterScopeKeys(clusterID(id)),
 		sac.NamespaceScopeKeys(ns(id)),
 	))
