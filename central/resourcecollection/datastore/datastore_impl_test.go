@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/heimdalr/dag"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -270,10 +272,28 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	assert.True(s.T(), ok)
 	assert.Equal(s.T(), objB, obj)
 
+	// successful updates preserve createdAt and createdBy
+	objC := getTestCollection("c", nil)
+	objC.CreatedAt = protoconv.ConvertTimeToTimestamp(time.Now())
+	objC.CreatedBy = &storage.SlimUser{
+		Id:   "uid",
+		Name: "uname",
+	}
+	err = s.datastore.AddCollection(ctx, objC)
+	assert.NoError(s.T(), err)
+	objC.Name = "C"
+	err = s.datastore.UpdateCollection(ctx, objC)
+	assert.NoError(s.T(), err)
+	obj, ok, err = s.datastore.Get(ctx, objC.GetId())
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), ok)
+	assert.Equal(s.T(), objC, obj)
+
 	// clean up testing data and verify the datastore is empty
 	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objB.GetId()))
 	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objE.GetId()))
 	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objA.GetId()))
+	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objC.GetId()))
 	count, err = s.datastore.Count(ctx, nil)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, count)
