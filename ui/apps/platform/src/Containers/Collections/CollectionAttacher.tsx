@@ -5,27 +5,13 @@ import BacklogListSelector from 'Components/PatternFly/BacklogListSelector';
 import { CollectionResponse } from 'services/CollectionsService';
 import useEmbeddedCollections from './hooks/useEmbeddedCollections';
 
-const selectorListCells = [
-    {
-        name: 'Name',
-        render: ({ name }) => (
-            <Button variant="link" className="pf-u-pl-0" isInline>
-                {name}
-            </Button>
-        ),
-    },
-    {
-        name: 'Description',
-        render: ({ description }) => <Truncate content={description} />,
-    },
-];
-
 export type CollectionAttacherProps = {
     // A collection ID that should not be visible in the collection attacher component. This is
     // used when editing a collection to prevent reference cycles.
     excludedCollectionId: string | null;
     initialEmbeddedCollections: CollectionResponse[];
     onSelectionChange: (collections: CollectionResponse[]) => void;
+    onItemClick: (collectionId: string) => void;
 };
 
 function compareNameLowercase(search: string): (item: { name: string }) => boolean {
@@ -36,6 +22,7 @@ function CollectionAttacher({
     excludedCollectionId,
     initialEmbeddedCollections,
     onSelectionChange,
+    onItemClick,
 }: CollectionAttacherProps) {
     const [search, setSearch] = useState('');
     const embedded = useEmbeddedCollections(excludedCollectionId, initialEmbeddedCollections);
@@ -50,6 +37,26 @@ function CollectionAttacher({
             }, 800),
         [onSearch]
     );
+
+    const selectorListCells = [
+        {
+            name: 'Name',
+            render: ({ id, name }) => (
+                <Button
+                    variant="link"
+                    className="pf-u-pl-0"
+                    isInline
+                    onClick={() => onItemClick(id)}
+                >
+                    {name}
+                </Button>
+            ),
+        },
+        {
+            name: 'Description',
+            render: ({ description }) => <Truncate content={description} />,
+        },
+    ];
 
     const selectedOptions = attached.filter(compareNameLowercase(search));
     const deselectedOptions = detached.filter(compareNameLowercase(search));

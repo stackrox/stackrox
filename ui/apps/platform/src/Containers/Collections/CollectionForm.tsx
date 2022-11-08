@@ -27,14 +27,25 @@ import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
 import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
 
-function AttachedCollectionTable({ collections }: { collections: CollectionResponse[] }) {
+function AttachedCollectionTable({
+    collections,
+    onItemClick,
+}: {
+    collections: CollectionResponse[];
+    onItemClick: (id: string) => void;
+}) {
     return collections.length > 0 ? (
         <TableComposable aria-label="Attached collections" variant={TableVariant.compact}>
             <Tbody>
-                {collections.map(({ name, description }) => (
+                {collections.map(({ id, name, description }) => (
                     <Tr key={name}>
                         <Td dataLabel="Name">
-                            <Button variant="link" className="pf-u-pl-0" isInline>
+                            <Button
+                                variant="link"
+                                className="pf-u-pl-0"
+                                isInline
+                                onClick={() => onItemClick(id)}
+                            >
                                 {name}
                             </Button>
                         </Td>
@@ -62,9 +73,8 @@ export type CollectionFormProps = {
     /* collection responses for the embedded collections of `initialData` */
     initialEmbeddedCollections: CollectionResponse[];
     onSubmit: (collection: Collection) => Promise<void>;
-    /* Callback used when clicking on a collection name in the CollectionAttacher section. If
-    left undefined, collection names will not be linked. */
-    appendTableLinkAction?: (collectionId: string) => void;
+    /* Callback used when clicking on a collection name in the CollectionAttacher section. */
+    appendTableLinkAction: (collectionId: string) => void;
     /* content to render before the main form */
     headerContent?: ReactElement;
 };
@@ -103,6 +113,7 @@ function CollectionForm({
     initialData,
     initialEmbeddedCollections,
     onSubmit,
+    appendTableLinkAction,
 }: CollectionFormProps) {
     const history = useHistory();
 
@@ -253,7 +264,10 @@ function CollectionForm({
                         Attached collections
                     </Title>
                     {isReadOnly ? (
-                        <AttachedCollectionTable collections={initialEmbeddedCollections} />
+                        <AttachedCollectionTable
+                            collections={initialEmbeddedCollections}
+                            onItemClick={appendTableLinkAction}
+                        />
                     ) : (
                         <>
                             <p>Extend this collection by attaching other sets.</p>
@@ -263,6 +277,7 @@ function CollectionForm({
                                 }
                                 initialEmbeddedCollections={initialEmbeddedCollections}
                                 onSelectionChange={onEmbeddedCollectionsChange}
+                                onItemClick={appendTableLinkAction}
                             />
                         </>
                     )}
