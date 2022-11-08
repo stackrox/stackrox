@@ -37,7 +37,7 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts from 'hooks/patternfly/useToasts';
 import { values } from 'lodash';
 import { CollectionPageAction } from './collections.utils';
-import CollectionForm from './CollectionForm';
+import CollectionFormDrawer from './CollectionFormDrawer';
 import { generateRequest } from './converter';
 import { Collection } from './types';
 
@@ -188,7 +188,7 @@ function CollectionsFormPage({
     } else if (data) {
         const pageTitle = pageAction.type === 'create' ? 'Create collection' : data.collection.name;
         content = (
-            <CollectionForm
+            <CollectionFormDrawer
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
                 action={pageAction}
                 collectionData={data}
