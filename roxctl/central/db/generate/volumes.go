@@ -10,10 +10,9 @@ import (
 
 func volumeCommand(name string) *cobra.Command {
 	return &cobra.Command{
-		Use:     name,
-		Short:   fmt.Sprintf("adds a %s", name),
-		Long:    fmt.Sprintf(`adds a %s external volume to Central DB`, name),
-		Example: "Enter Central volume type",
+		Use:   name,
+		Short: fmt.Sprintf("adds a %s", name),
+		Long:  fmt.Sprintf(`adds a %s external volume to Central DB`, name),
 	}
 }
 
