@@ -145,6 +145,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	authProviderUserpki "github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/devbuild"
@@ -239,6 +240,8 @@ func main() {
 		runSafeMode()
 		return
 	}
+
+	clientconn.SetUserAgent("central")
 
 	ctx := context.Background()
 	proxy.WatchProxyConfig(ctx, proxyConfigPath, proxyConfigFile, true)
