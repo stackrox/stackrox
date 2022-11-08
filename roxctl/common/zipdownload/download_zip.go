@@ -187,15 +187,18 @@ func GetZipFiles(opts GetZipOptions, log logger.Logger) (map[string]*pkgZip.File
 		fileMap[f.Name] = pkgZip.NewFile(f.Name, bytes, pkgZip.Sensitive)
 		log.InfofLn("%s extracted", f.Name)
 	}
-	return fileMap, err
+	return fileMap, nil
 }
 
 func readContents(file *zip.File) ([]byte, error) {
 	rd, err := file.Open()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to open zipped file %q", file.Name)
 	}
 	defer utils.IgnoreError(rd.Close)
-
-	return io.ReadAll(rd)
+	bytes, err := io.ReadAll(rd)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read content from zip file %q", file.Name)
+	}
+	return bytes, nil
 }

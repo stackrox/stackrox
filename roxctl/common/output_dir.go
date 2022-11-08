@@ -3,6 +3,7 @@ package common
 import (
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
@@ -29,7 +30,7 @@ func (o *outputDirWrapper) Set(input string) error {
 		input = o.defaultDir
 	}
 	if _, err := os.Stat(input); err != nil && !os.IsNotExist(err) {
-		return err
+		return errors.Wrapf(err, "failed to check status of directory %q", input)
 	} else if err == nil {
 		return errox.InvalidArgs.Newf("directory %q already exists. Please specify and new path to ensure expected results", input)
 	}

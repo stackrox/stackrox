@@ -110,7 +110,7 @@ func generateBundleWrapper(config renderer.Config) (*zip.Wrapper, error) {
 	return wrapper, errors.Wrap(err, "could not get scanner bundle")
 }
 
-func OutputZip(logger logger.Logger, config renderer.Config) error {
+func outputZip(logger logger.Logger, config renderer.Config) error {
 	logger.InfofLn("Generating Central DB bundle...")
 	common.LogInfoPsp(logger, config.EnablePodSecurityPolicies)
 	wrapper, err := generateBundleWrapper(config)
