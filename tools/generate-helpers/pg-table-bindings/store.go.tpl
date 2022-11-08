@@ -44,6 +44,7 @@ import (
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
+    "github.com/stackrox/rox/pkg/utils"
     "github.com/stackrox/rox/pkg/uuid"
     "gorm.io/gorm"
 )
@@ -152,7 +153,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx
         {{- range $field := $schema.PrimaryKeys -}}
             {{- if eq $field.SQLType "uuid" }}
             if pgutils.NilOrUUID({{$field.Getter "obj"}}) == nil {
-                log.Infof("{{$field.Name}} is not a valid uuid -- %v", obj)
+                utils.Should(errors.Wrapf("{{$field.Name}} is not a valid uuid -- %v", obj))
                 return nil
             }
             {{- end }}
@@ -237,7 +238,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         {{- range $field := $schema.PrimaryKeys -}}
             {{- if eq $field.SQLType "uuid" }}
             if pgutils.NilOrUUID({{$field.Getter "obj"}}) == nil {
-                log.Infof("{{$field.Name}} is not a valid uuid -- %v", obj)
+                utils.Should(errors.Wrapf("{{$field.Name}} is not a valid uuid -- %v", obj))
                 continue
             }
             {{- end }}
