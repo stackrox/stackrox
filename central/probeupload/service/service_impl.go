@@ -80,7 +80,7 @@ func (s *service) GetExistingProbes(ctx context.Context, req *v1.GetExistingProb
 func (s *service) CustomRoutes() []routes.CustomRoute {
 	return []routes.CustomRoute{
 		{
-			Route:      "/api/extensions/probeupload",
+			Route: "/api/extensions/probeupload",
 			// TODO: ROX-12750 Replace ProbeUpload with Administration.
 			Authorizer: user.With(permissions.Modify(resources.ProbeUpload)),
 			ServerHandler: utils.IfThenElse[http.Handler](
