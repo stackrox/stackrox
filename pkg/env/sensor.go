@@ -5,6 +5,7 @@ package env
 var (
 	// CentralEndpoint is used to provide Central's reachable endpoint to a sensor.
 	CentralEndpoint = RegisterSetting("ROX_CENTRAL_ENDPOINT", WithDefault("central.stackrox.svc:443"))
+
 	// AdvertisedEndpoint is used to provide the Sensor with the endpoint it
 	// should advertise to services that need to contact it, within its own cluster.
 	AdvertisedEndpoint = RegisterSetting("ROX_ADVERTISED_ENDPOINT", WithDefault("sensor.stackrox.svc:443"))
@@ -18,4 +19,7 @@ var (
 
 	// LocalImageScanningEnabled is used to specify if Sensor should attempt to scan images via a local Scanner.
 	LocalImageScanningEnabled = RegisterBooleanSetting("ROX_LOCAL_IMAGE_SCANNING_ENABLED", false)
+
+	// EventPipelineOutputQueueSize is used to specify the size of the eventPipeline's output queue
+	EventPipelineOutputQueueSize = RegisterIntegerSetting("ROX_EVENT_PIPELINE_OUTPUT_QUEUE_SIZE", 100)
 )

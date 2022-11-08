@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
+import usePermissions from 'hooks/usePermissions';
 import useURLParameter from 'hooks/useURLParameter';
 
 import CollectionsTablePage from './CollectionsTablePage';
@@ -8,9 +9,8 @@ import CollectionsFormPage from './CollectionsFormPage';
 import { parsePageActionProp } from './collections.utils';
 
 function CollectionsPage() {
-    // TODO Implement permissions once https://issues.redhat.com/browse/ROX-12619 is merged
-    // const { hasWriteAccess } = usePermissions();
-    const hasWriteAccessForCollections = true; // hasWriteAccess('TODO');
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForCollections = hasReadWriteAccess('WorkflowAdministration');
 
     const [pageAction, setPageAction] = useURLParameter('action', undefined);
     const { collectionId } = useParams();

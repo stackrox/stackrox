@@ -25,6 +25,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-11592: Support to Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field
   being set in the `/v1/groups` endpoint have been removed.
 - The unused "ComplianceRunSchedule" resource has been removed.
+- ROX-13034: Central reaches out to scanner `scanner.<namespace>.svc` now to respect OpenShift's `NO_PROXY` configuration.
 
 ### Deprecated Features
 

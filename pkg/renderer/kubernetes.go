@@ -34,6 +34,8 @@ const (
 	centralTLSOnly
 	// scannerTLSOnly renders only the scanner tls secret
 	scannerTLSOnly
+	// centralDBOnly renders only the central db
+	centralDBOnly
 )
 
 func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) error {
@@ -70,10 +72,14 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		c.K8sConfig.Command = "oc"
 	}
 
+	if mode == centralDBOnly {
+		c.K8sConfig.EnableCentralDB = true
+	}
+
 	configureImageOverrides(c, imageFlavor)
 
 	var err error
-	if mode == renderAll {
+	if mode == renderAll || mode == centralDBOnly {
 		c.K8sConfig.Registry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.MainImage)
 		if err != nil {
 			return err
@@ -107,6 +113,11 @@ func Render(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
 // RenderScannerOnly renders the zip files for the scanner based on the given config.
 func RenderScannerOnly(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
 	return render(c, scannerOnly, imageFlavor)
+}
+
+// RenderCentralDBOnly renders the zip files for the Central DB
+func RenderCentralDBOnly(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
+	return render(c, centralDBOnly, imageFlavor)
 }
 
 func renderAndExtractSingleFileContents(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]byte, error) {

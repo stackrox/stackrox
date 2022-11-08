@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	mocks2 "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/mocks"
 	"github.com/stretchr/testify/suite"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,7 +21,8 @@ func TestResourceEventHandlerImpl(t *testing.T) {
 type ResourceEventHandlerImplTestSuite struct {
 	suite.Suite
 
-	dispatcher *mocks.MockDispatcher
+	dispatcher  *mocks.MockDispatcher
+	outputQueue *mocks2.MockOutputQueue
 
 	mockCtrl *gomock.Controller
 }
@@ -36,6 +38,7 @@ func (h *hasAnID) GetUID() types.UID {
 func (suite *ResourceEventHandlerImplTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dispatcher = mocks.NewMockDispatcher(suite.mockCtrl)
+	suite.outputQueue = mocks2.NewMockOutputQueue(suite.mockCtrl)
 }
 
 func (suite *ResourceEventHandlerImplTestSuite) TearDownTest() {
@@ -56,6 +59,7 @@ func makeExpectedMap(expectedIDs ...*hasAnID) *map[types.UID]struct{} {
 
 func (suite *ResourceEventHandlerImplTestSuite) addObj(handler *resourceEventHandlerImpl, obj *hasAnID, expectedMap *map[types.UID]struct{}) {
 	suite.dispatcher.EXPECT().ProcessEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE)
+	suite.outputQueue.EXPECT().Send(gomock.Any())
 	handler.OnAdd(obj)
 	suite.Equal(*expectedMap, handler.seenIDs)
 }
@@ -73,7 +77,7 @@ func (suite *ResourceEventHandlerImplTestSuite) newHandlerImpl() *resourceEventH
 	return &resourceEventHandlerImpl{
 		eventLock:        &eventLock,
 		dispatcher:       suite.dispatcher,
-		output:           make(chan *central.MsgFromSensor),
+		outputQueue:      suite.outputQueue,
 		syncingResources: &treatCreatesAsUpdates,
 
 		hasSeenAllInitialIDsSignal: concurrency.NewSignal(),
@@ -166,6 +170,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestCompleteSync() {
 	suite.Equal(*expectedMap, handler.missingInitialIDs)
 
 	suite.dispatcher.EXPECT().ProcessEvent(testMsgTwo, nil, central.ResourceAction_SYNC_RESOURCE)
+	suite.outputQueue.EXPECT().Send(gomock.Any())
 	handler.OnAdd(testMsgTwo)
 	suite.assertFinished(handler)
 }
