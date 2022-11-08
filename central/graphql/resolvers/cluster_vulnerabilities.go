@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -312,10 +313,15 @@ func withOpenShiftTypeFiltering(q string) string {
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_OPENSHIFT_CVE.String()).Query())
 }
 
-func (resolver *clusterCVEResolver) clusterVulnerabilityScopeContext() context.Context {
+func (resolver *clusterCVEResolver) clusterVulnerabilityScopeContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		err := utils.Should(errors.New("argument 'ctx' is nil"))
+		if err != nil {
+			log.Error(err)
+		}
+	}
 	if resolver.ctx == nil {
-		log.Errorf("attempted to scope context on nil")
-		return nil
+		resolver.ctx = ctx
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
@@ -342,19 +348,13 @@ Sub Resolver Functions
 // Clusters returns resolvers for clusters affected by cluster vulnerability.
 func (resolver *clusterCVEResolver) Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "Clusters")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Clusters(resolver.clusterVulnerabilityScopeContext(), args)
+	return resolver.root.Clusters(resolver.clusterVulnerabilityScopeContext(ctx), args)
 }
 
 // ClusterCount returns a number of clusters affected by cluster vulnerability.
 func (resolver *clusterCVEResolver) ClusterCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "ClusterCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ClusterCount(resolver.clusterVulnerabilityScopeContext(), args)
+	return resolver.root.ClusterCount(resolver.clusterVulnerabilityScopeContext(ctx), args)
 }
 
 func (resolver *clusterCVEResolver) VulnerabilityType() string {

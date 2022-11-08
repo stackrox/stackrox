@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
@@ -39,6 +40,9 @@ type Event struct {
 }
 
 func TestPod(testT *testing.T) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		testT.Skip("ROX-13420")
+	}
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {

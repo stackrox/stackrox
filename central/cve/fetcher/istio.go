@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
@@ -67,17 +68,19 @@ func (m *istioCVEManager) setCVEs(cves []*storage.EmbeddedVulnerability, nvdCVEs
 	m.embeddedCVEs = cves
 }
 
-func (m *istioCVEManager) updateCVEs(newCVEs []*schema.NVDCVEFeedJSON10DefCVEItem) error {
-	cves, err := utils.NVDCVEsToEmbeddedCVEs(newCVEs, utils.Istio)
-	if err != nil {
-		return err
-	}
+func (m *istioCVEManager) updateCVEs(newCVEs []*schema.NVDCVEFeedJSON10DefCVEItem) (retErr error) {
+	return safe.RunE(func() error {
+		cves, err := utils.NVDCVEsToEmbeddedCVEs(newCVEs, utils.Istio)
+		if err != nil {
+			return err
+		}
 
-	m.setCVEs([]*storage.EmbeddedVulnerability{}, newCVEs)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return m.updateCVEsInPostgres(cves)
-	}
-	return m.updateCVEsInDB(cves)
+		m.setCVEs([]*storage.EmbeddedVulnerability{}, newCVEs)
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			return m.updateCVEsInPostgres(cves)
+		}
+		return m.updateCVEsInDB(cves)
+	})
 }
 
 func (m *istioCVEManager) updateCVEsInPostgres(embeddedCVEs []*storage.EmbeddedVulnerability) error {

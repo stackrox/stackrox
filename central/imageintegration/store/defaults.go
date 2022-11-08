@@ -4,13 +4,8 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
-)
-
-var (
-	scannerEndpoint = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())
 )
 
 // DefaultImageIntegrations are the default public registries
@@ -126,7 +121,7 @@ var (
 		},
 		IntegrationConfig: &storage.ImageIntegration_Clairify{
 			Clairify: &storage.ClairifyConfig{
-				Endpoint: fmt.Sprintf("https://%s:8080", scannerEndpoint),
+				Endpoint: fmt.Sprintf("https://%s:8080", clairify.GetScannerEndpoint()),
 			},
 		},
 	}

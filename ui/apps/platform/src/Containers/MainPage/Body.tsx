@@ -103,8 +103,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
-    // TODO Implement permissions once https://issues.redhat.com/browse/ROX-12619 is merged
-    const hasCollectionsPermission = true; // hasReadAccess('TODO');
+    const hasCollectionsPermission = hasReadAccess('WorkflowAdministration');
 
     return (
         <div

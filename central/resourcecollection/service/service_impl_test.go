@@ -157,10 +157,31 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	suite.Equal(request.GetDescription(), resp.GetCollection().GetDescription())
 	suite.Equal(request.GetResourceSelectors(), resp.GetCollection().GetResourceSelectors())
 	suite.NotNil(resp.GetCollection().GetEmbeddedCollections())
-	suite.Equal(request.GetEmbeddedCollectionIds(), suite.embeddedCollectionToIds(resp.GetCollection().GetEmbeddedCollections()))
+	suite.Equal(request.GetEmbeddedCollectionIds(), suite.embeddedCollectionsToIds(resp.GetCollection().GetEmbeddedCollections()))
+	suite.NotNil(resp.GetCollection().GetCreatedBy())
+	suite.NotNil(resp.GetCollection().GetUpdatedBy())
+	suite.NotNil(resp.GetCollection().GetCreatedAt())
+	suite.NotNil(resp.GetCollection().GetLastUpdated())
 }
 
-func (suite *CollectionServiceTestSuite) embeddedCollectionToIds(embeddedCollections []*storage.ResourceCollection_EmbeddedResourceCollection) []string {
+func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
+	if !features.ObjectCollections.Enabled() {
+		suite.T().Skip("skipping because env var is not set")
+	}
+	allAccessCtx := sac.WithAllAccess(context.Background())
+
+	// test error when ID is empty
+	_, err := suite.collectionService.DeleteCollection(allAccessCtx, &v1.ResourceByID{})
+	suite.Error(err)
+
+	// test successful deletion
+	idRequest := &v1.ResourceByID{Id: "a"}
+	suite.dataStore.EXPECT().DeleteCollection(allAccessCtx, idRequest.GetId()).Times(1).Return(nil)
+	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
+	suite.NoError(err)
+}
+
+func (suite *CollectionServiceTestSuite) embeddedCollectionsToIds(embeddedCollections []*storage.ResourceCollection_EmbeddedResourceCollection) []string {
 	if len(embeddedCollections) == 0 {
 		return nil
 	}

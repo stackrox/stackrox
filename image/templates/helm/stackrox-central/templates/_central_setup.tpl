@@ -94,7 +94,7 @@
      or no other persistence backend has been configured yet. */}}
 {{ if or (not (deepEqual $._rox._configShape.central.db.persistence.persistentVolumeClaim $centralDBCfg.persistence.persistentVolumeClaim)) (not $dbVolumeCfg) }}
   {{ $dbPVCCfg := $centralDBCfg.persistence.persistentVolumeClaim }}
-  {{ $_ := include "srox.mergeInto" (list $dbPVCCfg $._rox._defaults.dbPVCDefaults (dict "createClaim" $.Release.IsInstall)) }}
+  {{ $_ := include "srox.mergeInto" (list $dbPVCCfg $._rox._defaults.dbPVCDefaults (dict "createClaim" (or .Release.IsInstall (eq $._rox._renderMode "centralDBOnly")))) }}
   {{ $_ = set $dbVolumeCfg "persistentVolumeClaim" (dict "claimName" $dbPVCCfg.claimName) }}
   {{ if $dbPVCCfg.createClaim }}
     {{ $_ = set $centralDBCfg.persistence "_pvcCfg" $dbPVCCfg }}
