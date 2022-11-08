@@ -140,6 +140,15 @@ class QaE2eTestPart2(BaseTest):
             ["qa-tests-backend/scripts/run-part-2.sh"], QaE2eTestPart2.TEST_TIMEOUT
         )
 
+class QaE2eTestCompatibility(BaseTest):
+    TEST_TIMEOUT = 240 * 60
+
+    def run(self):
+        print("Executing qa-tests-compatibility tests")
+
+        self.run_with_graceful_kill(
+            ["qa-tests-backend/scripts/run-compatibility.sh"], QaE2eTestCompatibility.TEST_TIMEOUT
+        )
 
 class QaE2eDBBackupRestoreTest(BaseTest):
     TEST_TIMEOUT = 30 * 60
