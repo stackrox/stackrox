@@ -4,6 +4,7 @@
 Run version compatibility tests
 """
 import os
+from sensor_versions import getLastSensorVersionsFromGitTagsCLI
 from compatibility_test import make_compatibility_test_runner
 from clusters import GKECluster
 
@@ -13,7 +14,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 # don't use postgres
 os.environ["ROX_POSTGRES_DATASTORE"] = "false"
 
-versions=["3.71.0", "3.70.0", "3.69.0"]
+versions=getLastSensorVersionsFromGitTagsCLI(os.environ["MAIN_IMAGE_TAG"], 4)
 
 gkecluster=GKECluster("qa-e2e-test")
 
