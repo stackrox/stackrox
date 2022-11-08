@@ -49,8 +49,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:    "generate",
-		Short:  "generate a Central DB bundle",
-		Long:   "generate a Central DB bundle which contains all required YAML files and scripts to deploy the central DB",
 		Hidden: true,
 	}
 
