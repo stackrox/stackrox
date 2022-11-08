@@ -8,6 +8,7 @@ import {
     isByNameField,
     isByLabelField,
     selectorEntityTypes,
+    isSelectorField,
 } from './types';
 
 const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
@@ -51,8 +52,12 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
     }
 
     data.resourceSelectors[0]?.rules.forEach((rule) => {
-        const entity = fieldToEntityMap[rule.fieldName];
         const field = rule.fieldName;
+        if (!isSelectorField(field)) {
+            errors.push(`An invalid field name was detected. Found field name [${field}].`);
+            return;
+        }
+        const entity = fieldToEntityMap[field];
         const selectorScope = collection.resourceSelector[entity];
         const existingEntityField = selectorScope.type === 'All' ? undefined : selectorScope.field;
         const hasMultipleFieldsForEntity = existingEntityField && existingEntityField !== field;

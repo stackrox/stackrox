@@ -153,8 +153,9 @@ test_upgrade_paths() {
     verifyNoPostgresAccessScopes
 
     # Now go back up to Postgres
+    CURRENT_TAG="$(make --quiet tag)"
     kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=true
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$CURRENT_TAG"
     wait_for_api
     wait_for_scanner_to_be_ready
 
@@ -182,12 +183,19 @@ test_upgrade_paths() {
     wait_for_api
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central-db -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
+    wait_for_central_db
 
     checkForRocksAccessScopes
     checkForPostgresAccessScopes
 
-    validate_upgrade "01-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-    collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce-db"
+    validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+
+    # Since we bounced the DB we may see some errors.  Those need to be allowed in the case of this test ONLY.
+    echo "# postgres was bounced, may see some connection errors" >> scripts/ci/logcheck/allowlist-patterns
+    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> scripts/ci/logcheck/allowlist-patterns
+    echo >> scripts/ci/logcheck/allowlist-patterns
+
+    collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce-db"
 
     info "Fetching a sensor bundle for cluster 'remote'"
     rm -rf sensor-remote
@@ -196,10 +204,10 @@ test_upgrade_paths() {
 
     info "Installing sensor"
     ./sensor-remote/sensor.sh
-    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$(make --quiet tag)"
-    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$(make --quiet tag)"
-    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
-        "compliance=$REGISTRY/main:$(make --quiet tag)"
+    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
+    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
+    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$CURRENT_TAG" \
+        "compliance=$REGISTRY/main:$CURRENT_TAG"
 
     sensor_wait
 

@@ -3,7 +3,6 @@ package renderer
 import (
 	"strings"
 
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -87,7 +86,7 @@ func configureImageOverrides(c *Config, imageFlavor defaults.ImageFlavor) {
 		delete(mainOverrides, "Registry")
 	}
 	imageOverrides["Main"] = mainOverrides
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
+	if c.K8sConfig.EnableCentralDB {
 		imageOverrides["CentralDB"] = ComputeImageOverrides(c.K8sConfig.CentralDBImage, registry, imageFlavor.CentralDBImageName,
 			imageFlavor.CentralDBImageTag)
 	}
