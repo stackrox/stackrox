@@ -83,7 +83,17 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Id field should be set when requesting a collection")
 	}
-	return s.getCollection(ctx, request.Id)
+
+	resp, err := s.getCollection(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	if request.GetOptions().GetWithMatches() {
+		// TODO match deployments for response
+	}
+
+	return resp, err
 }
 
 func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetCollectionResponse, error) {
@@ -238,5 +248,35 @@ func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListColle
 
 	return &v1.ListCollectionsResponse{
 		Collections: collections,
+	}, nil
+}
+
+func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCollectionRequest) (*v1.DryRunCollectionResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.New("Resource collections is not enabled")
+	}
+
+	isCreate := request.GetId() == ""
+
+	collection, err := collectionRequestToCollection(ctx, request, isCreate)
+	if err != nil {
+		return nil, err
+	}
+
+	if isCreate {
+		err = s.datastore.DryRunAddCollection(ctx, collection)
+	} else {
+		err = s.datastore.DryRunUpdateCollection(ctx, collection)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if !request.GetOptions().GetSkipDeploymentMatching() {
+		// TODO match deployments for response
+	}
+
+	return &v1.DryRunCollectionResponse{
+		Deployments: nil,
 	}, nil
 }
