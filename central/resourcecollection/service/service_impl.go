@@ -178,7 +178,7 @@ func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCo
 
 func collectionRequestToCollection(ctx context.Context, request collectionRequest, isCreate bool) (*storage.ResourceCollection, error) {
 	if request.GetName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Collection Id should not be empty")
+		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
 	}
 
 	slimUser := utils.UserFromContext(ctx)
