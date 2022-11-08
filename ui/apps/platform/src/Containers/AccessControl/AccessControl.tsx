@@ -67,7 +67,7 @@ function AccessControl(): ReactElement {
                                 <b>Compliance</b> will replace <b>ComplianceRuns</b>
                             </ListItem>
                             <ListItem>
-                                <b>Cluster</b> will replace <b>ClusterCVE</b>
+                                <b>Cluster</b> will cover <b>ClusterCVE</b>
                             </ListItem>
                         </List>
                     </>

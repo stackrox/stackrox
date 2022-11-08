@@ -255,7 +255,7 @@ func main() {
 		"The following permission resources will be replaced in the upcoming versions:\n" +
 		"	Administration will replace AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +
 		"	Compliance will replace ComplianceRuns\n" +
-		"	Cluster will replace ClusterCVE.")
+		"	Cluster will cover ClusterCVE.")
 	ensureDB(ctx)
 
 	// Need to remove the backup clone and set the current version
