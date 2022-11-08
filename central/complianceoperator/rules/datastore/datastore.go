@@ -59,6 +59,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(rule *storage.Complian
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator rules read")
 	}
+	// Postgres retry in caller.
 	return d.store.Walk(ctx, fn)
 }
 
