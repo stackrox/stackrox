@@ -164,6 +164,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -755,14 +756,9 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 }
 
 func notImplementedOnManagedServices(fn http.Handler) http.Handler {
-	if !env.ManagedCentral.BooleanSetting() {
-		return fn
-	}
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		errMsg := "api is not supported in a managed central environment."
-		log.Error(errMsg)
-		http.Error(w, errMsg, http.StatusNotImplemented)
-	})
+	return utils.IfThenElse[http.Handler](
+		env.ManagedCentral.BooleanSetting(), httputil.NotImplementedHandler("api is not supported in a managed central environment."),
+		fn)
 }
 
 func debugRoutes() []routes.CustomRoute {

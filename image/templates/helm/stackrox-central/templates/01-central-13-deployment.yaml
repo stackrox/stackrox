@@ -109,6 +109,8 @@ spec:
           value: "true"
         - name: ROX_ENABLE_CENTRAL_DIAGNOSTICS
           value: "false"
+        - name: ROX_ENABLE_KERNEL_PACKAGE_UPLOAD
+          value: "false"
         {{- end }}
         {{- if ._rox.central.db.enabled }}
         - name: ROX_POSTGRES_DATASTORE
