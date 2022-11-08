@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	noteOpenShift3xCompatibilityMode = `NOTE: Deployment files are generated in OpenShift 3.x compatibility mode. Set the --openshift-version flag to 3 to suppress this note, or to 4 take advantage of OpenShift 4.x features.`
+	noteOpenShift3xCompatibilityMode = `NOTE: Deployment files are generated in OpenShift 3.x compatibility mode. Set the --openshift-version flag to 3 to suppress this note, or to 4 to take advantage of OpenShift 4.x features.`
 	defaultCentralDBBundle           = "central-db-bundle"
 )
 

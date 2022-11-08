@@ -21,7 +21,7 @@ func validateHostPathInstance(instance *renderer.HostPathPersistenceInstance) er
 		return nil
 	}
 	if instance.HostPath == "" {
-		return errox.InvalidArgs.New("Non-empty HostPath must be specified")
+		return errox.InvalidArgs.New("non-empty HostPath must be specified")
 	}
 	if (instance.NodeSelectorKey == "") != (instance.NodeSelectorValue == "") {
 		return errox.InvalidArgs.New("Both node selector key and node selector value must be specified when using a hostpath")

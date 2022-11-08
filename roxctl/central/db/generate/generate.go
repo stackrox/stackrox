@@ -28,7 +28,7 @@ const (
 )
 
 var (
-	errCreateCentralDBBundleSupported = errox.InvariantViolation.New("server does not support central db bundle functionality")
+	errCreateCentralDBBundleSupported = errox.InvariantViolation.New("central does not support central db bundle functionality")
 	centralDBCertBundle               = set.NewFrozenStringSet(mtls.CACertFileName, mtls.CentralDBCertFileName, mtls.CentralDBKeyFileName)
 )
 
