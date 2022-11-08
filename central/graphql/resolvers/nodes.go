@@ -539,9 +539,6 @@ func (resolver *nodeResolver) nodeScopeContext(ctx context.Context) context.Cont
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		resolver.ctx = ctx
-	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODES,
 		ID:    resolver.data.GetId(),
