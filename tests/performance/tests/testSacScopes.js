@@ -13,24 +13,24 @@ const sacOptions = [
         numClusters: 1,
         numNamespaces: 1,
     },
-    // {
-    //     name: 'TestFiveClustersFiveNamespaces',
-    //     tag: 'c5-n5',
-    //     numClusters: 5,
-    //     numNamespaces: 5
-    // },
-    // {
-    //     name: 'TestTenClustersTenNamespaces',
-    //     tag: 'c10-n10',
-    //     numClusters: 10,
-    //     numNamespaces: 10
-    // },
-    // {
-    //     name: 'TestTenClustersHundredNamespaces',
-    //     tag: 'c10-n100',
-    //     numClusters: 10,
-    //     numNamespaces: 100
-    // }
+    {
+        name: 'TestFiveClustersFiveNamespaces',
+        tag: 'c5-n5',
+        numClusters: 5,
+        numNamespaces: 5,
+    },
+    {
+        name: 'TestTenClustersTenNamespaces',
+        tag: 'c10-n10',
+        numClusters: 10,
+        numNamespaces: 10,
+    },
+    {
+        name: 'TestTenClustersHundredNamespaces',
+        tag: 'c10-n100',
+        numClusters: 10,
+        numNamespaces: 100,
+    },
 ];
 
 // k6 options.
