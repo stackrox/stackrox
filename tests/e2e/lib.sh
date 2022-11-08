@@ -84,6 +84,8 @@ export_test_environment() {
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
     ci_export ROX_SEARCH_PAGE_UI "${ROX_SEARCH_PAGE_UI:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
+    ci_export ROX_OBJECT_COLLECTIONS "${ROX_OBJECT_COLLECTIONS:-true}"
+    ci_export ROX_PROCESSES_LISTENING_ON_PORT "${ROX_PROCESSES_LISTENING_ON_PORT:-true}"
 }
 
 deploy_central() {
