@@ -1,13 +1,13 @@
 package amplitude
 
 import (
-	"sync"
 	"time"
 
 	"github.com/amplitude/analytics-go/amplitude"
 	"github.com/amplitude/analytics-go/amplitude/types"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/marketing"
 	"github.com/stackrox/rox/pkg/version"
 )
