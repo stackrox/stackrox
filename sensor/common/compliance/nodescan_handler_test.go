@@ -2,14 +2,12 @@ package compliance
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sync"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -28,9 +26,10 @@ func fakeNodeScanV2(nodeName string) *storage.NodeScanV2 {
 			Namespace: "Testme OS",
 			RhelComponents: []*scannerV1.RHELComponent{
 				{
+					Id:        int64(1),
 					Name:      "vim-minimal",
 					Namespace: "rhel:8",
-					Version:   "2:7.4.629-6.el8.x86_64",
+					Version:   "2:7.4.629-6.el8",
 					Arch:      "x86_64",
 					Module:    "FakeMod",
 					Cpes:      []string{"cpe:/a:redhat:enterprise_linux:8::baseos"},
@@ -44,54 +43,20 @@ func fakeNodeScanV2(nodeName string) *storage.NodeScanV2 {
 	return msg
 }
 
-type nodeScansProducerThatStops struct {
-	numMsgs   int
-	nodeScans chan *storage.NodeScanV2
-}
-
-type stoppable interface {
-	Stop(error)
-}
-
-func newNodeScansProducerThatStops(num int) *nodeScansProducerThatStops {
-	return &nodeScansProducerThatStops{
-		numMsgs:   num,
-		nodeScans: make(chan *storage.NodeScanV2),
-	}
-}
-
-func (nsp *nodeScansProducerThatStops) generator() <-chan *storage.NodeScanV2 {
-	return nsp.nodeScans
-}
-
-func (nsp *nodeScansProducerThatStops) start(s stoppable) {
-	go func(numMsgs int) {
-		defer close(nsp.nodeScans)
-		for i := 0; i < numMsgs; i++ {
-			nsp.nodeScans <- fakeNodeScanV2(fmt.Sprintf("Bobby_%d", i))
-			if i == 0 {
-				s.Stop(nil)
-			}
-		}
-	}(nsp.numMsgs)
-}
-
 type NodeScanHandlerTestSuite struct {
 	suite.Suite
-	mu                   *sync.Mutex
-	numReceivedAtCentral int
-	cancel               context.CancelFunc
-	ctx                  context.Context
-	toCentral            chan *central.MsgFromSensor
+	cancel    context.CancelFunc
+	ctx       context.Context
+	toCentral chan *central.MsgFromSensor
+	// arrivalAtCentral generates a message when MsgFromSensor arrives to central
+	// we need it to avoid using "<-time.After(50 * time.Millisecond)" to wait for the first message to arrive
+	arrivalAtCentral chan struct{}
 }
 
 func (s *NodeScanHandlerTestSuite) SetupTest() {
-	s.mu = &sync.Mutex{}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.numReceivedAtCentral = 0
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.toCentral = make(chan *central.MsgFromSensor)
+	s.arrivalAtCentral = make(chan struct{})
 }
 
 func (s *NodeScanHandlerTestSuite) TearDownTest() {
@@ -123,9 +88,9 @@ func (s *NodeScanHandlerTestSuite) startFakeCentral() {
 			case <-ctx.Done():
 				return
 			case <-s.toCentral:
-				s.mu.Lock()
-				s.numReceivedAtCentral++
-				s.mu.Unlock()
+				go func() {
+					s.arrivalAtCentral <- struct{}{}
+				}()
 			}
 		}
 	}(s.ctx)
@@ -137,25 +102,34 @@ func (s *NodeScanHandlerTestSuite) startFakeCentral() {
 // Exec with: go test -race -count=1 -v -run ^TestNodeScanHandler$ ./sensor/common/compliance
 func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 	defer s.cancel()
-	numScans := 1000
-	// nodeScansProducerThatStops stops the handler after producing the first message.
-	p := newNodeScansProducerThatStops(numScans)
-	h := NewNodeScanHandler(p.generator())
-	p.start(h)
+
+	nodeScans := make(chan *storage.NodeScanV2)
+	h := NewNodeScanHandler(nodeScans)
 	s.startFakeCentral()
 	s.startForwardingToCentral(h.ResponsesC())
+	// this is a producer that stops the handler after producing the first message and then sends 3 more messages
+	go func(ctx context.Context) {
+		defer close(nodeScans)
+		for i := 0; i < 4; i++ {
+			select {
+			case <-ctx.Done():
+				return
+			case nodeScans <- fakeNodeScanV2("Node"):
+				if i == 0 {
+					h.Stop(nil)
+				}
+			}
+		}
+	}(s.ctx)
 
 	err := h.Start()
 	assert.NoError(s.T(), err)
 	<-h.Stopped().Done()
 	assert.True(s.T(), h.Stopped().IsDone())
 
-	// give central a chance to receive something before we lock s.mu
-	<-time.After(50 * time.Millisecond)
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	assert.LessOrEqual(s.T(), s.numReceivedAtCentral, numScans)
-	assert.GreaterOrEqual(s.T(), s.numReceivedAtCentral, 1, "Handler should handle at least 1 msg")
-	s.T().Logf("Handler managed to process %d msgs ouf of %d", s.numReceivedAtCentral, numScans)
+	// expect the first message to arrive to Central within 2s, poll every 0.5s
+	assert.Eventuallyf(s.T(), func() bool {
+		<-s.arrivalAtCentral
+		return true
+	}, 2*time.Second, 500*time.Millisecond, "central did not receive any message within a given deadline")
 }
