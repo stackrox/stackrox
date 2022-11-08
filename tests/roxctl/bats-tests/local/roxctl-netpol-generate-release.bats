@@ -24,14 +24,6 @@ teardown() {
   rm -f "$ofile"
 }
 
-@test "roxctl-release generate netpol should respect ROX_ROXCTL_NETPOL_GENERATE feature-flag at runtime" {
-  export ROX_ROXCTL_NETPOL_GENERATE=false
-  run roxctl-release generate netpol "$out_dir"
-  assert_failure
-  assert_line --partial 'unknown command "generate"'
-}
-
-
 @test "roxctl-release generate netpol should return error on empty or non-existing directory" {
   run roxctl-release generate netpol "$out_dir"
   assert_failure
