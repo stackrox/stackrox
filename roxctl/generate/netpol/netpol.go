@@ -35,6 +35,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Use:  "netpol <folder-path>",
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
+			generateNetpolCmd.env.Logger().WarnfLn("This is a Technology Preview feature. Red Hat does not recommend using them in production.")
 			synth, err := generateNetpolCmd.construct(args, c)
 			if err != nil {
 				return err
