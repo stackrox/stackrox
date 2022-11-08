@@ -43,7 +43,7 @@ assert_number_of_resources() {
         expected=$((${expected} + 1))
     fi
 
-    [[ "${resources_count}" = "${expected}" ]] || fail "Unexpected number of k8s resources, expected ${expected} actual ${resources_count}"
+    [[ "${resources_count}" = "${expected}" ]] || fail "Unexpected number of resources, expected ${expected} actual ${resources_count}"
 }
 
 assert_essential_files() {
