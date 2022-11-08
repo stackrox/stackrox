@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1091
+
 set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -9,4 +9,5 @@ export COLLECTION_METHOD="${COLLECTION_METHOD:-ebpf}"
 export MONITORING_SUPPORT="${MONITORING_SUPPORT:-false}"
 export POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
 
+# shellcheck source=/dev/null
 "$DIR"/deploy.sh
