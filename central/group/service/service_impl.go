@@ -21,11 +21,11 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Group)): {
+		user.With(permissions.View(resources.Access)): {
 			"/v1.GroupService/GetGroups",
 			"/v1.GroupService/GetGroup",
 		},
-		user.With(permissions.Modify(resources.Group)): {
+		user.With(permissions.Modify(resources.Access)): {
 			"/v1.GroupService/BatchUpdate",
 			"/v1.GroupService/CreateGroup",
 			"/v1.GroupService/UpdateGroup",

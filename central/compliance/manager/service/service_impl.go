@@ -20,10 +20,12 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		// TODO: ROX-12750 Replace ComplianceRuns with Compliance
 		user.With(permissions.View(resources.ComplianceRuns)): {
 			"/v1.ComplianceManagementService/GetRecentRuns",
 			"/v1.ComplianceManagementService/GetRunStatuses",
 		},
+		// TODO: ROX-12750 Replace ComplianceRuns with Compliance
 		user.With(permissions.Modify(resources.ComplianceRuns)): {
 			"/v1.ComplianceManagementService/TriggerRun",
 			"/v1.ComplianceManagementService/TriggerRuns",

@@ -30,7 +30,7 @@ import (
 
 var (
 	deploymentsSAC = sac.ForResource(resources.Deployment)
-	indicatorSAC   = sac.ForResource(resources.Indicator)
+	extensionSAC   = sac.ForResource(resources.DeploymentExtension)
 )
 
 type datastoreImpl struct {
@@ -269,7 +269,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph, resources.ProcessWhitelist, resources.Risk),
+			sac.ResourceScopeKeys(resources.NetworkGraph, resources.DeploymentExtension),
 		))
 
 	if err := ds.risks.RemoveRisk(deleteRelatedCtx, id, storage.RiskSubjectType_DEPLOYMENT); err != nil {

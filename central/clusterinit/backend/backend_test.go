@@ -390,26 +390,30 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 		shouldFail  bool
 		expectedErr error
 	}{
-		"read access to both ServiceIdentity and APIToken should allow read access": {
+		// TODO: ROX-12750 replace ServiceIdentity with Administration
+		"read access to both ServiceIdentity and Integration should allow read access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.APIToken))),
+				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.Integration))),
 			access: storage.Access_READ_ACCESS,
 		},
-		"read access to both ServiceIdentity and APIToken should not allow write access": {
+		// TODO: ROX-12750 replace ServiceIdentity with Administration
+		"read access to both ServiceIdentity and Integration should not allow write access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.APIToken))),
+				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.Integration))),
 			access:      storage.Access_READ_WRITE_ACCESS,
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,
 		},
+		// TODO: ROX-12750 remove this test (duplicate after migration)
 		"read access to both Administration and Integration should allow read access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
 			access: storage.Access_READ_ACCESS,
 		},
+		// TODO: ROX-12750 remove this test (duplicate after migration)
 		"read access to both Administration and Integration should not allow write access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -418,6 +422,7 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,
 		},
+		// TODO: ROX-12750 replace ServiceIdentity with Administration
 		"read access to only ServiceIdentity should not allow read access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -426,20 +431,22 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,
 		},
-		"read access to only APIToken should not allow read access": {
+		"read access to only Integration should not allow read access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.APIToken))),
+				sac.ResourceScopeKeys(resources.Integration))),
 			access:      storage.Access_READ_ACCESS,
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,
 		},
+		// TODO: ROX-12750 replace ServiceIdentity with Administration
 		"write access to both should allow write access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.APIToken))),
+				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.Integration))),
 			access: storage.Access_READ_WRITE_ACCESS,
 		},
+		// TODO: ROX-12750 remove this test (duplicate after migration)
 		"write access to both replacing resources should allow write access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
@@ -447,6 +454,7 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 					sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
 			access: storage.Access_READ_WRITE_ACCESS,
 		},
+		// TODO: ROX-12750 replace ServiceIdentity with Administration
 		"write access to only ServiceIdentity should not allow write access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
@@ -455,10 +463,10 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,
 		},
-		"write access to only APIToken should not allow write access": {
+		"write access to only Integration should not allow write access": {
 			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.APIToken))),
+				sac.ResourceScopeKeys(resources.Integration))),
 			access:      storage.Access_READ_WRITE_ACCESS,
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,

@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ExternalBackupsSchema
-	targetResource = resources.BackupPlugins
+	targetResource = resources.Integration
 )
 
 type Store interface {

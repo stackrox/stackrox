@@ -699,7 +699,7 @@ func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, args 
 
 func (resolver *namespaceResolver) Risk(ctx context.Context) (*riskResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Risk")
-	if err := readRisks(ctx); err != nil {
+	if err := readDeploymentExtensions(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.root.wrapRisk(resolver.getNamespaceRisk(ctx))
