@@ -3,6 +3,7 @@
 load "../helpers.bash"
 
 out_dir=""
+templated_fragment='"{{ printf "%s" ._thing.image }}"'
 
 setup_file() {
     command -v yq >/dev/null || skip "Tests in this file require yq"
