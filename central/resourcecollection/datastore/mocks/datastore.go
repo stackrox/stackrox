@@ -94,6 +94,20 @@ func (mr *MockDataStoreMockRecorder) DryRunAddCollection(ctx, collection interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DryRunAddCollection", reflect.TypeOf((*MockDataStore)(nil).DryRunAddCollection), ctx, collection)
 }
 
+// DryRunUpdateCollection mocks base method.
+func (m *MockDataStore) DryRunUpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DryRunUpdateCollection", ctx, collection)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DryRunUpdateCollection indicates an expected call of DryRunUpdateCollection.
+func (mr *MockDataStoreMockRecorder) DryRunUpdateCollection(ctx, collection interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DryRunUpdateCollection", reflect.TypeOf((*MockDataStore)(nil).DryRunUpdateCollection), ctx, collection)
+}
+
 // Exists mocks base method.
 func (m *MockDataStore) Exists(ctx context.Context, id string) (bool, error) {
 	m.ctrl.T.Helper()
