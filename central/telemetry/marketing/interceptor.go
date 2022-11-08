@@ -4,12 +4,11 @@ import (
 	"context"
 	"strings"
 
-	mpkg "github.com/stackrox/rox/pkg/telemetry/marketing"
-
 	erroxGRPC "github.com/stackrox/rox/pkg/errox/grpc"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/set"
+	mpkg "github.com/stackrox/rox/pkg/telemetry/marketing"
 	"google.golang.org/grpc"
 )
 

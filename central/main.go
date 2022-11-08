@@ -9,8 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/stackrox/rox/central/telemetry/marketing"
-
 	"github.com/NYTimes/gziphandler"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
@@ -130,6 +128,7 @@ import (
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
+	"github.com/stackrox/rox/central/telemetry/marketing"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/central/ui"
