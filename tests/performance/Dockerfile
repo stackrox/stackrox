@@ -6,7 +6,7 @@ ENV ITERATIONS="10"
 ENV DURATION="2h"
 
 # Test specific EVN variables
-ENV HOST=central.stackrox:443
+ENV HOST=https://central.stackrox:443
 ENV ROX_ADMIN_PASSWORD=pass
 
 WORKDIR /performance
