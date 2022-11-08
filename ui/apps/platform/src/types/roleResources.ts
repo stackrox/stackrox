@@ -28,6 +28,7 @@ export type ResourceName =
     | 'NetworkPolicy'
     | 'Node'
     | 'Policy'
+    | 'Role'
     | 'Secret'
     | 'ServiceAccount'
     | 'VulnerabilityManagementApprovals'
@@ -36,6 +37,8 @@ export type ResourceName =
     | 'WatchedImage'
     | 'WorkflowAdministration'
     // To-be-deprecated resources.
+    // TODO: ROX-12750 Remove AllComments, ComplianceRunSchedule, ComplianceRuns, Config, DebugLogs,
+    // NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity.
     | 'AllComments'
     | 'ComplianceRuns'
     | 'Config'

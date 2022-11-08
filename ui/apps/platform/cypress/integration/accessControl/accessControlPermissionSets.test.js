@@ -135,6 +135,7 @@ describe('Access Control Permission sets', () => {
         });
     });
 
+    // TODO: ROX-12750 Rename DebugLogs to Administration
     it('direct link to default Analyst has all (but DebugLogs) read and no write access', () => {
         visitPermissionSet('io.stackrox.authz.permissionset.analyst');
 
@@ -155,6 +156,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
+                // TODO: ROX-12750 Rename DebugLogs to Administration
                 if (resource === 'DebugLogs') {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
@@ -301,6 +303,7 @@ describe('Access Control Permission sets', () => {
             getAccessLevelSelectForResource,
         } = selectors.form.permissionSet;
 
+        // TODO: ROX-12750 Rename ServiceIdentity to Administration
         const resourcesLimited = ['Cluster', 'ServiceIdentity'];
 
         cy.get(selectors.form.permissionSet.tdResource).then(($tds) => {
@@ -346,16 +349,19 @@ describe('Access Control Permission sets', () => {
             'Read and Write Access'
         );
 
+        // TODO: ROX-12750 Rename ServiceIdentity to Administration
         cy.get(getReadAccessIconForResource('ServiceIdentity')).should(
             'have.attr',
             'aria-label',
             'permitted'
         );
+        // TODO: ROX-12750 Rename ServiceIdentity to Administration
         cy.get(getWriteAccessIconForResource('ServiceIdentity')).should(
             'have.attr',
             'aria-label',
             'permitted'
         );
+        // TODO: ROX-12750 Rename ServiceIdentity to Administration
         cy.get(getAccessLevelSelectForResource('ServiceIdentity')).should(
             'contain',
             'Read and Write Access'
