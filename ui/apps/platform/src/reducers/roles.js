@@ -106,6 +106,8 @@ const getIsLoadingUserRolePermissions = (state) => state.isLoading;
 
 // TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
 const replacedResourceMapping = new Map([
+    // TODO: ROX-12750 Remove AllComments, ComplianceRunSchedule, ComplianceRuns, Config, DebugLogs,
+    // NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity.
     ['AllComments', 'Administration'],
     ['ComplianceRuns', 'Compliance'],
     ['Config', 'Administration'],

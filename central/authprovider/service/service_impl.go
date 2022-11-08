@@ -32,11 +32,11 @@ var (
 			"/v1.AuthProviderService/GetLoginAuthProviders",
 			"/v1.AuthProviderService/ExchangeToken",
 		},
-		user.With(permissions.View(resources.AuthProvider)): {
+		user.With(permissions.View(resources.Access)): {
 			"/v1.AuthProviderService/GetAuthProvider",
 			"/v1.AuthProviderService/GetAuthProviders",
 		},
-		user.With(permissions.Modify(resources.AuthProvider)): {
+		user.With(permissions.Modify(resources.Access)): {
 			"/v1.AuthProviderService/PostAuthProvider",
 			"/v1.AuthProviderService/UpdateAuthProvider",
 			"/v1.AuthProviderService/PutAuthProvider",

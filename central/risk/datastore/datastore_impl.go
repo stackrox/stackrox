@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	riskSAC = sac.ForResource(resources.Risk)
+	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 type datastoreImpl struct {
@@ -66,14 +66,14 @@ func (d *datastoreImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*sto
 
 // TODO: if subject is namespace or cluster, compute risk based on all visible child subjects
 func (d *datastoreImpl) GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, bool, error) {
-	if allowed, err := riskSAC.ReadAllowed(ctx); err != nil || !allowed {
+	if allowed, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil || !allowed {
 		return nil, false, err
 	}
 	return d.getRiskForSubject(ctx, subjectID, subjectType)
 }
 
 func (d *datastoreImpl) GetRiskForDeployment(ctx context.Context, deployment *storage.Deployment) (*storage.Risk, bool, error) {
-	if allowed, err := riskSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...); err != nil || !allowed {
+	if allowed, err := deploymentExtensionSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...); err != nil || !allowed {
 		return nil, false, err
 	}
 	return d.getRiskForSubject(ctx, deployment.GetId(), storage.RiskSubjectType_DEPLOYMENT)
@@ -94,7 +94,7 @@ func (d *datastoreImpl) getRiskForSubject(ctx context.Context, subjectID string,
 }
 
 func (d *datastoreImpl) GetRiskByIndicators(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType, _ []string) (*storage.Risk, error) {
-	if allowed, err := riskSAC.ReadAllowed(ctx); err != nil || !allowed {
+	if allowed, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil || !allowed {
 		return nil, err
 	}
 	risk, found, err := d.GetRisk(ctx, subjectID, subjectType)
@@ -118,7 +118,7 @@ func (d *datastoreImpl) GetRiskByIndicators(ctx context.Context, subjectID strin
 }
 
 func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) error {
-	if allowed, err := riskSAC.WriteAllowed(ctx); err != nil {
+	if allowed, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !allowed {
 		return sac.ErrResourceAccessDenied
@@ -138,7 +138,7 @@ func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) erro
 }
 
 func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) error {
-	if allowed, err := riskSAC.WriteAllowed(ctx); err != nil {
+	if allowed, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !allowed {
 		return sac.ErrResourceAccessDenied

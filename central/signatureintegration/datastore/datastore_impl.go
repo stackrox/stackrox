@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	signatureSAC = sac.ForResource(resources.SignatureIntegration)
+	integrationSAC = sac.ForResource(resources.Integration)
 )
 
 const (
@@ -36,7 +36,7 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) GetSignatureIntegration(ctx context.Context, id string) (*storage.SignatureIntegration, bool, error) {
-	if ok, err := signatureSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, false, err
 	}
 
@@ -44,7 +44,7 @@ func (d *datastoreImpl) GetSignatureIntegration(ctx context.Context, id string) 
 }
 
 func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*storage.SignatureIntegration, error) {
-	if ok, err := signatureSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
 
@@ -63,7 +63,7 @@ func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*sto
 }
 
 func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {
-	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
 	}
 	if integration.GetId() != "" {
@@ -93,7 +93,7 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 }
 
 func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (bool, error) {
-	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
 		return false, err
 	}
 	if err := ValidateSignatureIntegration(integration); err != nil {
@@ -113,7 +113,7 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 }
 
 func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id string) error {
-	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 

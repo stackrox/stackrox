@@ -27,6 +27,7 @@ func New(store store.Store) DataStore {
 }
 
 var (
+	// TODO: ROX-12750 Replace Config with Administration and rename SAC variable accordingly.
 	configSAC = sac.ForResource(resources.Config)
 )
 

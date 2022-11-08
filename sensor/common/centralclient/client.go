@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -237,6 +238,8 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating tls-challenge request")
 	}
+
+	req.Header.Set("User-Agent", clientconn.GetUserAgent())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

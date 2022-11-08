@@ -81,6 +81,7 @@ function MainPage(): ReactElement {
         return <LoadingSection message="Loading..." />;
     }
 
+    // TODO: ROX-12750 Replace ServiceIdentity with Administration
     const hasServiceIdentityWritePermission = hasReadWriteAccess('ServiceIdentity');
 
     return (

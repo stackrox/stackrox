@@ -88,7 +88,7 @@ type deploymentDatastoreSACSuite struct {
 	testContexts                    map[string]context.Context
 	testContextsWithImageAccess     map[string]context.Context
 	testContextsWithImageOnlyAccess map[string]context.Context
-	processIndicatorTestContexts    map[string]context.Context
+	deploymentExtensionTestContexts map[string]context.Context
 
 	testDeploymentIDs []deploymentIDs
 	testNamespaceIDs  []string
@@ -146,7 +146,7 @@ func (s *deploymentDatastoreSACSuite) SetupSuite() {
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Deployment)
 	s.testContextsWithImageAccess = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Deployment, resources.Image)
 	s.testContextsWithImageOnlyAccess = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
-	s.processIndicatorTestContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Indicator)
+	s.deploymentExtensionTestContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.DeploymentExtension)
 }
 
 func (s *deploymentDatastoreSACSuite) TearDownSuite() {

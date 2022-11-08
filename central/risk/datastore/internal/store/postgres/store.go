@@ -44,7 +44,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.RisksSchema
-	targetResource = resources.Risk
+	targetResource = resources.DeploymentExtension
 )
 
 type Store interface {

@@ -25,9 +25,19 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-11592: Support to Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field
   being set in the `/v1/groups` endpoint have been removed.
 - The unused "ComplianceRunSchedule" resource has been removed.
+- ROX-11101: As announced in 3.71.0 (ROX-8520), some permissions for permission sets are being grouped for simplification. The deprecation process will remove and replace the deprecated permissions with the replacing permission as listed below. The access level granted to the replacing permission will be the lowest among all access levels of the replaced permissions.
+  - Permission `Access` replaces the deprecated permissions `AuthProvider, Group, Licenses, User`.
+  - Permission `DeploymentExtension` replaces the deprecated permissions `Indicator, NetworkBaseline, ProcessWhitelist, Risk`.
+  - Permission `Integration` replaces the deprecated permissions `APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration`.
+  - Permission `Image` replaces the deprecated permission `ImageComponent`.
+  - Note: the `Role` permission, previously announced as being grouped under `Access` remains a standalone permission.
+  - Important: As stated above, the access level granted to the replacing permission will be the lowest among all access levels of the replaced permissions. This can impact the ability of some created roles to perform their intended duty. Consolidation of the mapping from replaced resources to new ones can help assess the desired access level, should any issue be experienced.
 - ROX-13034: Central reaches out to scanner `scanner.<namespace>.svc` now to respect OpenShift's `NO_PROXY` configuration.
 
 ### Deprecated Features
+- ROX-11101: As first announced in 3.71.0 for ROX-8250, we continue to simplify access control management by grouping some permissions in permission sets. As a result:
+  - New permission `Administration` will deprecate the permissions `AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity`.
+  - The permission `Compliance` will deprecate the permission `ComplianceRuns`.
 
 ### Technical Changes
 - ROX-11937: The Splunk integration now processes all additional standards of the compliance operator (ocp4-cis & ocp4-cis-node) correctly.

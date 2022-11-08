@@ -171,7 +171,7 @@ func (resolver *deploymentResolver) ServiceAccountObject(ctx context.Context) (*
 func (resolver *deploymentResolver) GroupedProcesses(ctx context.Context) ([]*processNameGroupResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "GroupedProcesses")
 
-	if err := readIndicators(ctx); err != nil {
+	if err := readDeploymentExtensions(ctx); err != nil {
 		return nil, err
 	}
 	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
@@ -683,7 +683,7 @@ func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args RawQu
 func (resolver *deploymentResolver) ProcessActivityCount(ctx context.Context) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ProcessActivityCount")
 
-	if err := readIndicators(ctx); err != nil {
+	if err := readDeploymentExtensions(ctx); err != nil {
 		return 0, err
 	}
 	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()

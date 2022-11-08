@@ -23,6 +23,7 @@ func CreateIdentity(clusterID string, serviceType storage.ServiceType, identityS
 		return nil, err
 	}
 	if identityStore != nil {
+		// TODO: ROX-12750 replace ServiceIdentity with Administration
 		srvIDAllAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),

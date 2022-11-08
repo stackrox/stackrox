@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ImageIntegrationsSchema
-	targetResource = resources.ImageIntegration
+	targetResource = resources.Integration
 )
 
 type Store interface {

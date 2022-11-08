@@ -21,11 +21,11 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.NetworkBaseline)): {
+		user.With(permissions.View(resources.DeploymentExtension)): {
 			"/v1.NetworkBaselineService/GetNetworkBaseline",
 			"/v1.NetworkBaselineService/GetNetworkBaselineStatusForFlows",
 		},
-		user.With(permissions.Modify(resources.NetworkBaseline)): {
+		user.With(permissions.Modify(resources.DeploymentExtension)): {
 			"/v1.NetworkBaselineService/ModifyBaselineStatusForPeers",
 			"/v1.NetworkBaselineService/LockNetworkBaseline",
 			"/v1.NetworkBaselineService/UnlockNetworkBaseline",

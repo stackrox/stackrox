@@ -37,6 +37,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
+	// TODO: ROX-12750 Replace ProbeUpload with Administration and rename the variable.
 	probeUploadSAC = sac.ForResource(resources.ProbeUpload)
 )
 
