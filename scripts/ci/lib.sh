@@ -1319,15 +1319,15 @@ __EOM__
 '
     if [[ -n "${ARTIFACT_DIR}" ]]; then
         if ! command -v junit-parse >/dev/null 2>&1; then
-            get_junit_parse_cli || exitstatus="$?"
+            get_junit_parse_cli || true
+        fi
+        if command -v junit-parse >/dev/null 2>&1; then
+            local junit_file_names
+            junit_file_names=($(find "${ARTIFACT_DIR}" -type f -name '*.xml' | xargs)) || true
+            local check_slack_attachments
+            check_slack_attachments=$(junit-parse "$junit_file_names") || exitstatus="$?"
             if [[ "$exitstatus" == "0" ]]; then
-                local junit_file_names
-                junit_file_names=($(find "${ARTIFACT_DIR}" -type f -name '*.xml' | xargs)) || true
-                local check_slack_attachments
-                check_slack_attachments=$(junit-parse "$junit_file_names") || exitstatus="$?"
-                if [[ "$exitstatus" == "0" ]]; then
-                    slack_attachments="$check_slack_attachments"
-                fi
+                slack_attachments="$check_slack_attachments"
             fi
         fi
     fi
