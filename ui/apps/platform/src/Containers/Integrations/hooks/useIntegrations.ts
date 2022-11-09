@@ -6,7 +6,6 @@ import { selectors } from 'reducers';
 import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 const selectIntegrations = createStructuredSelector({
-    authProviders: selectors.getAuthProviders,
     apiTokens: selectors.getAPITokens,
     clusterInitBundles: selectors.getClusterInitBundles,
     notifiers: selectors.getNotifiers,
@@ -26,7 +25,6 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
     const {
         apiTokens,
         clusterInitBundles,
-        authProviders,
         notifiers,
         backups,
         imageIntegrations,
@@ -39,13 +37,14 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
 
         switch (source) {
             case 'authProviders': {
+                // Integrations Authentication Tokens differ from Access Control Auth providers.
                 if (type === 'apitoken') {
                     return apiTokens;
                 }
                 if (type === 'clusterInitBundle') {
                     return clusterInitBundles;
                 }
-                return authProviders.filter(typeLowerMatches);
+                return [];
             }
             case 'notifiers': {
                 return notifiers.filter(typeLowerMatches);
