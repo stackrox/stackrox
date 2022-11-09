@@ -140,7 +140,7 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 
-	collection, err := collectionRequestToCollection(ctx, request, true)
+	collection, err := collectionRequestToCollection(ctx, request, "")
 	if err != nil {
 		return nil, err
 	}
@@ -159,14 +159,13 @@ func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCo
 	}
 
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
+		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to update a collection")
 	}
 
-	collection, err := collectionRequestToCollection(ctx, request, false)
+	collection, err := collectionRequestToCollection(ctx, request, request.GetId())
 	if err != nil {
 		return nil, err
 	}
-	collection.Id = request.GetId()
 
 	err = s.datastore.UpdateCollection(ctx, collection)
 	if err != nil {
@@ -176,7 +175,7 @@ func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCo
 	return &v1.UpdateCollectionResponse{Collection: collection}, nil
 }
 
-func collectionRequestToCollection(ctx context.Context, request collectionRequest, isCreate bool) (*storage.ResourceCollection, error) {
+func collectionRequestToCollection(ctx context.Context, request collectionRequest, id string) (*storage.ResourceCollection, error) {
 	if request.GetName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
 	}
@@ -193,6 +192,7 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
 
 	collection := &storage.ResourceCollection{
+		Id:                id,
 		Name:              request.GetName(),
 		Description:       request.GetDescription(),
 		LastUpdated:       timeNow,
@@ -200,7 +200,8 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 		ResourceSelectors: request.GetResourceSelectors(),
 	}
 
-	if isCreate {
+	if id == "" {
+		// new  collection
 		collection.CreatedBy = slimUser
 		collection.CreatedAt = timeNow
 	}
