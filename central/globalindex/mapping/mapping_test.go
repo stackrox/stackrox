@@ -94,11 +94,50 @@ func getImageCVEEdgePrefix() string {
 	return "image_c_v_e_edge"
 }
 
+func getImageIntegrationPrefix() string {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return "imageintegration"
+	}
+	return "image_integration"
+}
+
 func getNamespacePrefix() string {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return "namespacemetadata"
 	}
 	return "namespace_metadata"
+}
+
+func getNodePrefix() string {
+	return "node"
+}
+
+func getNodeComponentPrefix() string {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return "nodecomponent"
+	}
+	return "image_component"
+}
+
+func getNodeComponentEdgePrefix() string {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return "nodecomponentedge"
+	}
+	return "imagecomponentedge"
+}
+
+func getNodeComponentVulnEdgePrefix() string {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return "nodecomponentcveedge"
+	}
+	return "component_c_v_e_edge"
+}
+
+func getNodeCVEPrefix() string {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return "nodecve"
+	}
+	return "c_v_e"
 }
 
 func getProcessIndicatorPrefix() string {
@@ -111,6 +150,27 @@ func getProcessIndicatorPrefix() string {
 func getImageCVESearchCategory() v1.SearchCategory {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return v1.SearchCategory_IMAGE_VULNERABILITIES
+	}
+	return v1.SearchCategory_VULNERABILITIES
+}
+
+func getNodeComponentSearchCategory() v1.SearchCategory {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return v1.SearchCategory_NODE_COMPONENTS
+	}
+	return v1.SearchCategory_IMAGE_COMPONENTS
+}
+
+func getNodeComponentCVEEdgeSearchCategory() v1.SearchCategory {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return v1.SearchCategory_NODE_COMPONENT_CVE_EDGE
+	}
+	return v1.SearchCategory_COMPONENT_VULN_EDGE
+}
+
+func getNodeCVESearchCategory() v1.SearchCategory {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return v1.SearchCategory_NODE_VULNERABILITIES
 	}
 	return v1.SearchCategory_VULNERABILITIES
 }
@@ -588,6 +648,54 @@ var (
 		Category:  v1.SearchCategory_VULNERABILITIES,
 		Analyzer:  "",
 	}
+	cveLegacyObjCVSSField = &search.Field{
+		FieldPath: "c_v_e.cvss",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_VULNERABILITIES,
+		Analyzer:  "",
+	}
+	cveLegacyObjIDField = &search.Field{
+		FieldPath: "c_v_e.id",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_VULNERABILITIES,
+		Analyzer:  "",
+	}
+	cveLegacyObjImpactScoreField = &search.Field{
+		FieldPath: "c_v_e.impact_score",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_VULNERABILITIES,
+		Analyzer:  "",
+	}
+	cveLegacyObjPublishedOnField = &search.Field{
+		FieldPath: "c_v_e.published_on.seconds",
+		Type:      v1.SearchDataType_SEARCH_DATETIME,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_VULNERABILITIES,
+		Analyzer:  "",
+	}
+	cveLegacyObjSeverityField = &search.Field{
+		FieldPath: "c_v_e.severity",
+		Type:      v1.SearchDataType_SEARCH_ENUM,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_VULNERABILITIES,
+		Analyzer:  "",
+	}
+	cveLegacyObjSnoozedField = &search.Field{
+		FieldPath: "c_v_e.suppressed",
+		Type:      v1.SearchDataType_SEARCH_BOOL,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_VULNERABILITIES,
+		Analyzer:  "",
+	}
 	cveLegacyObjSnoozeExpiryField = &search.Field{
 		FieldPath: "c_v_e.suppress_expiry.seconds",
 		Type:      v1.SearchDataType_SEARCH_DATETIME,
@@ -604,6 +712,24 @@ var (
 		Category:  v1.SearchCategory_VULNERABILITIES,
 		Analyzer:  "",
 	}
+
+	cveLegacyObjCVEField = &search.Field{
+		FieldPath: getImageCVEPrefix() + ".cve_base_info.cve",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  getImageCVESearchCategory(),
+		Analyzer:  "",
+	}
+	cveLegacyObjOperatingSystemField = &search.Field{
+		FieldPath: getImageCVEPrefix() + ".operating_system",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     false,
+		Hidden:    false,
+		Category:  getImageCVESearchCategory(),
+		Analyzer:  "",
+	}
+
 	// Field Values - Deployment
 	deploymentAddCapabilitiesField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.security_context.add_capabilities",
@@ -1451,10 +1577,43 @@ var (
 		Category:  v1.SearchCategory_IMAGE_VULN_EDGE,
 		Analyzer:  "",
 	}
+	// Field Values - ImageIntegration
+	imageIntegrationObjClusterIDField = &search.Field{
+		FieldPath: getImageIntegrationPrefix() + ".cluster_id",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    true,
+		Category:  v1.SearchCategory_IMAGE_INTEGRATIONS,
+		Analyzer:  "",
+	}
 	// Field Values - Namespace
 	namespaceAnnotationsField = &search.Field{
 		FieldPath: getNamespacePrefix() + ".annotations",
 		Type:      v1.SearchDataType_SEARCH_MAP,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NAMESPACES,
+		Analyzer:  "",
+	}
+	namespaceClusterField = &search.Field{
+		FieldPath: getNamespacePrefix() + ".cluster_name",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NAMESPACES,
+		Analyzer:  "",
+	}
+	namespaceClusterIDField = &search.Field{
+		FieldPath: getNamespacePrefix() + ".cluster_id",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    true,
+		Category:  v1.SearchCategory_NAMESPACES,
+		Analyzer:  "",
+	}
+	namespaceIDField = &search.Field{
+		FieldPath: getNamespacePrefix() + ".id",
+		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
 		Hidden:    false,
 		Category:  v1.SearchCategory_NAMESPACES,
@@ -1466,6 +1625,419 @@ var (
 		Store:     false,
 		Hidden:    false,
 		Category:  v1.SearchCategory_NAMESPACES,
+		Analyzer:  "",
+	}
+	namespaceNameField = &search.Field{
+		FieldPath: getNamespacePrefix() + ".name",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NAMESPACES,
+		Analyzer:  "",
+	}
+	// Field Values - Node
+	nodeObjAnnotationField = &search.Field{
+		FieldPath: getNodePrefix() + ".annotations",
+		Type:      v1.SearchDataType_SEARCH_MAP,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjClusterIDField = &search.Field{
+		FieldPath: getNodePrefix() + ".cluster_id",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjClusterNameField = &search.Field{
+		FieldPath: getNodePrefix() + ".cluster_name",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjComponentField = &search.Field{
+		FieldPath: getNodePrefix() + ".scan.components.name",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjComponentCountField = &search.Field{
+		FieldPath: getNodePrefix() + ".SetComponents.components",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     true,
+		Hidden:    true,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjComponentVersionField = &search.Field{
+		FieldPath: getNodePrefix() + ".scan.components.version",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjContainerRuntimeVersionField = &search.Field{
+		FieldPath: getNodePrefix() + ".container_runtime.version",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjCVEField = &search.Field{
+		FieldPath: getNodePrefix() + ".scan.components.vulnerabilities.cve_base_info.cve",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjCVECountField = &search.Field{
+		FieldPath: getNodePrefix() + ".SetCves.cves",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     true,
+		Hidden:    true,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjCVECreatedTimeField = &search.Field{
+		FieldPath: getNodePrefix() + ".scan.components.vulnerabilities.cve_base_info.created_at.seconds",
+		Type:      v1.SearchDataType_SEARCH_DATETIME,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjCVEPublishedOnField = &search.Field{
+		FieldPath: getNodePrefix() + ".scan.components.vulnerabilities.cve_base_info.published_on.seconds",
+		Type:      v1.SearchDataType_SEARCH_DATETIME,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjCVESnoozedField = &search.Field{
+		FieldPath: getNodePrefix() + ".scan.components.vulns.suppressed",
+		Type:      v1.SearchDataType_SEARCH_BOOL,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjCVSSField = &search.Field{
+		FieldPath: getNodePrefix() + ".scan.components.vulns.cvss",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjFixableCVECountField = &search.Field{
+		FieldPath: getNodePrefix() + ".SetFixable.fixable_cves",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     true,
+		Hidden:    true,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjFixedByField = &search.Field{
+		FieldPath: getNodePrefix() + ".scan.components.vulns.SetFixedBy.fixed_by",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    true,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjIDField = &search.Field{
+		FieldPath: getNodePrefix() + ".id",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjJoinTimeField = &search.Field{
+		FieldPath: getNodePrefix() + ".joined_at.seconds",
+		Type:      v1.SearchDataType_SEARCH_DATETIME,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjLabelField = &search.Field{
+		FieldPath: getNodePrefix() + ".labels",
+		Type:      v1.SearchDataType_SEARCH_MAP,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjLastUpdatedField = &search.Field{
+		FieldPath: getNodePrefix() + ".last_updated.seconds",
+		Type:      v1.SearchDataType_SEARCH_DATETIME,
+		Store:     false,
+		Hidden:    true,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjNameField = &search.Field{
+		FieldPath: getNodePrefix() + ".name",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjNodeRiskPriorityField = &search.Field{
+		FieldPath: getNodePrefix() + ".priority",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     false,
+		Hidden:    true,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjOperatingSystemField = &search.Field{
+		FieldPath: getNodePrefix() + ".os_image",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjRiskScoreField = &search.Field{
+		FieldPath: getNodePrefix() + ".risk_score",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     false,
+		Hidden:    true,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjNodeScanTimeField = &search.Field{
+		FieldPath: getNodePrefix() + ".scan.scan_time.seconds",
+		Type:      v1.SearchDataType_SEARCH_DATETIME,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjTaintEffectField = &search.Field{
+		FieldPath: getNodePrefix() + ".taints.taint_effect",
+		Type:      v1.SearchDataType_SEARCH_ENUM,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjTaintKeyField = &search.Field{
+		FieldPath: getNodePrefix() + ".taints.key",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjTaintValueField = &search.Field{
+		FieldPath: getNodePrefix() + ".taints.value",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjTopCVSSField = &search.Field{
+		FieldPath: getNodePrefix() + ".SetTopCvss.top_cvss",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     true,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	nodeObjVulnerabilityStateField = &search.Field{
+		FieldPath: getNodePrefix() + ".scan.components.vulns.state",
+		Type:      v1.SearchDataType_SEARCH_ENUM,
+		Store:     false,
+		Hidden:    false,
+		Category:  v1.SearchCategory_NODES,
+		Analyzer:  "",
+	}
+	// Field Values - NodeComponent
+	nodeComponentObjIDField = &search.Field{
+		FieldPath: getNodeComponentPrefix() + ".id",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    true,
+		Category:  getNodeComponentSearchCategory(),
+		Analyzer:  "",
+	}
+	nodeComponentObjNameField = &search.Field{
+		FieldPath: getNodeComponentPrefix() + ".name",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  getNodeComponentSearchCategory(),
+		Analyzer:  "",
+	}
+	nodeComponentObjOperatingSystemField = &search.Field{
+		FieldPath: getNodeComponentPrefix() + ".operating_system",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     false,
+		Hidden:    false,
+		Category:  getNodeComponentSearchCategory(),
+		Analyzer:  "",
+	}
+	nodeComponentObjPriorityField = &search.Field{
+		FieldPath: getNodeComponentPrefix() + ".priority",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     false,
+		Hidden:    true,
+		Category:  getNodeComponentSearchCategory(),
+		Analyzer:  "",
+	}
+	nodeComponentObjRiskScoreField = &search.Field{
+		FieldPath: getNodeComponentPrefix() + ".risk_score",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     false,
+		Hidden:    true,
+		Category:  getNodeComponentSearchCategory(),
+		Analyzer:  "",
+	}
+	nodeComponentObjSourceField = &search.Field{
+		FieldPath: getNodeComponentPrefix() + ".source",
+		Type:      v1.SearchDataType_SEARCH_ENUM,
+		Store:     true,
+		Hidden:    false,
+		Category:  getNodeComponentSearchCategory(),
+		Analyzer:  "",
+	}
+	nodeComponentObjTopCVSSField = &search.Field{
+		FieldPath: getNodeComponentPrefix() + ".SetTopCvss.top_cvss",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     true,
+		Hidden:    false,
+		Category:  getNodeComponentSearchCategory(),
+		Analyzer:  "",
+	}
+	nodeComponentObjVersionField = &search.Field{
+		FieldPath: getNodeComponentPrefix() + ".version",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  getNodeComponentSearchCategory(),
+		Analyzer:  "",
+	}
+	// Field Values - NodeComponentCVEEdge
+	nodeComponentCVEEdgeFixableField = &search.Field{
+		FieldPath: getNodeComponentVulnEdgePrefix() + ".is_fixable",
+		Type:      v1.SearchDataType_SEARCH_BOOL,
+		Store:     true,
+		Hidden:    false,
+		Category:  getNodeComponentCVEEdgeSearchCategory(),
+		Analyzer:  "",
+	}
+	nodeComponentCVEEdgeFixedByField = &search.Field{
+		FieldPath: getNodeComponentVulnEdgePrefix() + ".HasFixedBy.fixed_by",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    true,
+		Category:  getNodeComponentCVEEdgeSearchCategory(),
+		Analyzer:  "",
+	}
+	// Field Values - NodeComponentEdge
+	nodeComponentEdgeLocationField = &search.Field{
+		FieldPath: getNodeComponentEdgePrefix() + ".location",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    true,
+		Category:  v1.SearchCategory_NODE_COMPONENT_EDGE,
+		Analyzer:  "",
+	}
+	// Field Values - NodeCVE
+	nodeCVECreatedTimeField = &search.Field{
+		FieldPath: getNodeCVEPrefix() + ".cve_base_info.created_at.seconds",
+		Type:      v1.SearchDataType_SEARCH_DATETIME,
+		Store:     false,
+		Hidden:    false,
+		Category:  getNodeCVESearchCategory(),
+		Analyzer:  "",
+	}
+	nodeCVECVEField = &search.Field{
+		FieldPath: getNodeCVEPrefix() + ".cve_base_info.cve",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     true,
+		Hidden:    false,
+		Category:  getNodeCVESearchCategory(),
+		Analyzer:  "",
+	}
+	nodeCVECVSSField = &search.Field{
+		FieldPath: getNodeCVEPrefix() + ".cvss",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     true,
+		Hidden:    false,
+		Category:  getNodeCVESearchCategory(),
+		Analyzer:  "",
+	}
+	nodeCVEIDField = &search.Field{
+		FieldPath: getNodeCVEPrefix() + ".id",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     false,
+		Hidden:    true,
+		Category:  getNodeCVESearchCategory(),
+		Analyzer:  "",
+	}
+	nodeCVEImpactScoreField = &search.Field{
+		FieldPath: getNodeCVEPrefix() + ".impact_score",
+		Type:      v1.SearchDataType_SEARCH_NUMERIC,
+		Store:     false,
+		Hidden:    false,
+		Category:  getNodeCVESearchCategory(),
+		Analyzer:  "",
+	}
+	nodeCVEOperatingSystemField = &search.Field{
+		FieldPath: getNodeCVEPrefix() + ".operating_system",
+		Type:      v1.SearchDataType_SEARCH_STRING,
+		Store:     false,
+		Hidden:    false,
+		Category:  getNodeCVESearchCategory(),
+		Analyzer:  "",
+	}
+	nodeCVEPublishedOnField = &search.Field{
+		FieldPath: getNodeCVEPrefix() + ".cve_base_info.published_on.seconds",
+		Type:      v1.SearchDataType_SEARCH_DATETIME,
+		Store:     false,
+		Hidden:    false,
+		Category:  getNodeCVESearchCategory(),
+		Analyzer:  "",
+	}
+	nodeCVESeverityField = &search.Field{
+		FieldPath: getNodeCVEPrefix() + ".severity",
+		Type:      v1.SearchDataType_SEARCH_ENUM,
+		Store:     false,
+		Hidden:    false,
+		Category:  getNodeCVESearchCategory(),
+		Analyzer:  "",
+	}
+	nodeCVESnoozedField = &search.Field{
+		FieldPath: getNodeCVEPrefix() + ".snoozed",
+		Type:      v1.SearchDataType_SEARCH_BOOL,
+		Store:     false,
+		Hidden:    false,
+		Category:  getNodeCVESearchCategory(),
+		Analyzer:  "",
+	}
+	nodeCVESnoozeExpiryField = &search.Field{
+		FieldPath: getNodeCVEPrefix() + ".snooze_expiry.seconds",
+		Type:      v1.SearchDataType_SEARCH_DATETIME,
+		Store:     false,
+		Hidden:    true,
+		Category:  getNodeCVESearchCategory(),
 		Analyzer:  "",
 	}
 	// Field Values - ProcessIndicator
@@ -1650,6 +2222,53 @@ var (
 		search.VolumeSource:                  deploymentVolumeSourceField,
 		search.VolumeType:                    deploymentVolumeTypeField,
 		search.VulnerabilityState:            imageObjCVEStateField,
+	}
+	postgresNodeToVulnFieldMap = map[search.FieldLabel]*search.Field{
+		search.AdmissionControlStatus: clusterAdmissionControlStatusField,
+		search.Cluster:                nodeObjClusterNameField,
+		search.ClusterID:              nodeObjClusterIDField,
+		search.ClusterLabel:           clusterLabelsField,
+		search.ClusterStatus:          clusterClusterStatusField,
+		search.CollectorStatus:        clusterCollectorStatusField,
+		search.Component:              nodeObjComponentField,
+		search.ComponentCount:         nodeObjComponentCountField,
+		search.ComponentRiskScore:     nodeComponentObjRiskScoreField,
+		search.ComponentTopCVSS:       nodeComponentObjTopCVSSField,
+		search.ContainerRuntime:       nodeObjContainerRuntimeVersionField,
+		search.ComponentID:            nodeComponentObjIDField,
+		search.ComponentPriority:      nodeComponentObjPriorityField,
+		search.ComponentVersion:       nodeObjComponentVersionField,
+		search.CVE:                    nodeObjCVEField,
+		search.CVECount:               nodeObjCVECountField,
+		search.CVECreatedTime:         nodeObjCVECreatedTimeField,
+		search.CVEID:                  nodeCVEIDField,
+		search.CVEPublishedOn:         nodeObjCVEPublishedOnField,
+		search.CVESuppressed:          nodeObjCVESnoozedField,
+		search.CVESuppressExpiry:      nodeCVESnoozeExpiryField,
+		search.CVSS:                   nodeObjCVSSField,
+		search.Fixable:                nodeComponentCVEEdgeFixableField,
+		search.FixableCVECount:        nodeObjFixableCVECountField,
+		search.FixedBy:                nodeObjFixedByField,
+		search.ImpactScore:            nodeCVEImpactScoreField,
+		search.LastContactTime:        clusterLastContactField,
+		search.LastUpdatedTime:        nodeObjLastUpdatedField,
+		search.Node:                   nodeObjNameField,
+		search.NodeAnnotation:         nodeObjAnnotationField,
+		search.NodeID:                 nodeObjIDField,
+		search.NodeJoinTime:           nodeObjJoinTimeField,
+		search.NodeLabel:              nodeObjLabelField,
+		search.NodePriority:           nodeObjNodeRiskPriorityField,
+		search.NodeRiskScore:          nodeObjRiskScoreField,
+		search.NodeScanTime:           nodeObjNodeScanTimeField,
+		search.NodeTopCVSS:            nodeObjTopCVSSField,
+		search.OperatingSystem:        nodeObjOperatingSystemField,
+		search.ScannerStatus:          clusterScannerStatusField,
+		search.SensorStatus:           clusterSensorStatusField,
+		search.Severity:               nodeCVESeverityField,
+		search.TaintKey:               nodeObjTaintKeyField,
+		search.TaintValue:             nodeObjTaintValueField,
+		search.TolerationEffect:       nodeObjTaintEffectField,
+		search.VulnerabilityState:     nodeObjVulnerabilityStateField,
 	}
 
 	// Field Values - WIP
@@ -1942,11 +2561,62 @@ func TestDeploymentMapping(t *testing.T) {
 		expectedPostgresSearchFieldMap)
 }
 
-func TestImageComponentEdgeMapping(t *testing.T) {
+func TestImageMapping(t *testing.T) {
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
-		search.ComponentLocation: imageComponentEdgeLocationField,
+		search.Cluster:                      deploymentClusterNameField,
+		search.ClusterID:                    deploymentClusterIDField,
+		search.Component:                    imageObjComponentNameField,
+		search.ComponentCount:               imageObjComponentCountField,
+		search.ComponentID:                  imageComponentObjIDField,
+		search.ComponentLocation:            imageComponentEdgeLocationField,
+		search.ComponentPriority:            imageComponentObjPriorityField,
+		search.ComponentRiskScore:           imageObjComponentRiskScoreField,
+		search.ComponentSource:              imageComponentObjSourceField,
+		search.ComponentTopCVSS:             imageComponentObjTopCVSSField,
+		search.ComponentVersion:             imageObjComponentVersionField,
+		search.CVE:                          imageObjCVEField,
+		search.CVECount:                     imageObjCVECountField,
+		search.CVEPublishedOn:               imageObjCVEPublishedOnField,
+		search.CVESuppressed:                imageObjCVESuppressedField,
+		search.CVSS:                         imageObjCVSSField,
+		search.DeploymentID:                 deploymentIDField,
+		search.DeploymentLabel:              deploymentLabelsField,
+		search.DeploymentName:               deploymentNameField,
+		search.DockerfileInstructionKeyword: imageObjDockerfileInstructionField,
+		search.DockerfileInstructionValue:   imageObjDockerfileInstructionValueField,
+		search.Fixable:                      imageComponentCVEEdgeFixableField,
+		search.FixableCVECount:              imageObjFixableCVEsField,
+		search.FixedBy:                      imageObjFixedByField,
+		search.ImageCommand:                 imageObjCommandField,
+		search.ImageCreatedTime:             imageObjCreatedTimeField,
+		search.ImageEntrypoint:              imageObjEntrypointField,
+		search.ImageLabel:                   imageObjLabelField,
+		search.ImageName:                    imageObjNameField,
+		search.ImageOS:                      imageObjOperatingSystemField,
+		search.ImagePriority:                imageObjPriorityField,
+		search.ImageRegistry:                imageObjRegistryField,
+		search.ImageRemote:                  imageObjRemoteField,
+		search.ImageRiskScore:               imageObjRiskScoreField,
+		search.ImageScanTime:                imageObjScanTimeField,
+		search.ImageSHA:                     imageObjIDField,
+		search.ImageSignatureFetchedTime:    imageObjSignatureFetchTimeField,
+		search.ImageTag:                     imageObjTagField,
+		search.ImageTopCVSS:                 imageObjTopCVSSField,
+		search.ImageUser:                    imageObjUserField,
+		search.ImageVolumes:                 imageObjVolumesField,
+		search.LastUpdatedTime:              imageObjLastUpdatedField,
+		search.Namespace:                    deploymentNamespaceField,
+		search.NamespaceID:                  deploymentNamespaceIDField,
+		search.OperatingSystem:              imageComponentObjOperatingSystemField,
+		search.VulnerabilityState:           imageObjCVEStateField,
 	}
-	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
+	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{
+		search.CVECreatedTime:    cveLegacyObjCreatedTimeField,
+		search.CVESuppressExpiry: cveLegacyObjSnoozeExpiryField,
+		search.CVEType:           cveLegacyObjTypeField,
+		search.ImpactScore:       cveLegacyObjImpactScoreField,
+		search.Severity:          cveLegacyObjSeverityField,
+	}
 	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
 	for k, v := range postgresImageToVulnFieldMap {
 		if _, found := expectedSearchFieldMap[k]; !found {
@@ -1954,18 +2624,13 @@ func TestImageComponentEdgeMapping(t *testing.T) {
 		}
 	}
 	validateOptionsMap(t,
-		v1.SearchCategory_IMAGE_COMPONENT_EDGE,
+		v1.SearchCategory_IMAGES,
 		expectedSearchFieldMap,
 		expectedLegacySearchFieldMap,
 		expectedPostgresSearchFieldMap)
 }
 
 func TestImageComponentMapping(t *testing.T) {
-	targetMap := GetEntityOptionsMap()[v1.SearchCategory_IMAGE_COMPONENTS]
-	for k, v := range targetMap.Original() {
-		fmt.Println(k)
-		fmt.Println(v)
-	}
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
 		search.Cluster:                      deploymentClusterNameField,
 		search.ClusterID:                    deploymentClusterIDField,
@@ -2031,6 +2696,316 @@ func TestImageComponentMapping(t *testing.T) {
 	expectedPostgresSearchFieldMap[search.CVESuppressExpiry] = imageCVESnoozeExpiryField
 	validateOptionsMap(t,
 		v1.SearchCategory_IMAGE_COMPONENTS,
+		expectedSearchFieldMap,
+		expectedLegacySearchFieldMap,
+		expectedPostgresSearchFieldMap)
+}
+
+func TestImageComponentEdgeMapping(t *testing.T) {
+	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
+		search.ComponentLocation: imageComponentEdgeLocationField,
+	}
+	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
+	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
+	for k, v := range postgresImageToVulnFieldMap {
+		if _, found := expectedSearchFieldMap[k]; !found {
+			expectedPostgresSearchFieldMap[k] = v
+		}
+	}
+	validateOptionsMap(t,
+		v1.SearchCategory_IMAGE_COMPONENT_EDGE,
+		expectedSearchFieldMap,
+		expectedLegacySearchFieldMap,
+		expectedPostgresSearchFieldMap)
+}
+
+func TestImageCVEMapping(t *testing.T) {
+	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
+		search.AddCapabilities:               deploymentAddCapabilitiesField,
+		search.Cluster:                       deploymentClusterNameField,
+		search.ClusterID:                     deploymentClusterIDField,
+		search.Component:                     imageComponentObjNameField,
+		search.ComponentCount:                imageObjComponentCountField,
+		search.ComponentID:                   imageComponentObjIDField,
+		search.ComponentLocation:             imageComponentEdgeLocationField,
+		search.ComponentPriority:             imageComponentObjPriorityField,
+		search.ComponentRiskScore:            imageComponentObjRiskScoreField,
+		search.ComponentSource:               imageComponentObjSourceField,
+		search.ComponentTopCVSS:              imageComponentObjTopCVSSField,
+		search.ComponentVersion:              imageComponentObjVersionField,
+		search.ContainerID:                   processIndicatorObjContainerIDField,
+		search.ContainerName:                 processIndicatorObjContainerNameField,
+		search.CPUCoresLimit:                 deploymentCPUCoresLimitField,
+		search.CPUCoresRequest:               deploymentCPUCoresRequestField,
+		search.Created:                       deploymentCreatedField,
+		search.CVECount:                      imageObjCVECountField,
+		search.DeploymentAnnotation:          deploymentAnnotationsField,
+		search.DeploymentID:                  deploymentIDField,
+		search.DeploymentLabel:               deploymentLabelsField,
+		search.DeploymentName:                deploymentNameField,
+		search.DeploymentPriority:            deploymentPriorityField,
+		search.DeploymentRiskScore:           deploymentRiskScoreField,
+		search.DeploymentType:                deploymentTypeField,
+		search.DockerfileInstructionKeyword:  imageObjDockerfileInstructionField,
+		search.DockerfileInstructionValue:    imageObjDockerfileInstructionValueField,
+		search.DropCapabilities:              deploymentDropCapabilitiesField,
+		search.EnvironmentKey:                deploymentEnvKeyField,
+		search.EnvironmentValue:              deploymentEnvValueField,
+		search.EnvironmentVarSrc:             deploymentEnvVarSourceField,
+		search.ExposedNodePort:               deploymentExposedNodePortField,
+		search.ExposingService:               deploymentExposingServiceField,
+		search.ExposingServicePort:           deploymentExposingServicePortField,
+		search.ExposureLevel:                 deploymentExposureLevelField,
+		search.ExternalHostname:              deploymentExternalHostnameField,
+		search.ExternalIP:                    deploymentExternalIPField,
+		search.Fixable:                       imageComponentCVEEdgeFixableField,
+		search.FixableCVECount:               imageObjFixableCVEsField,
+		search.FixedBy:                       imageComponentCVEEdgeFixedByField,
+		search.ImageCommand:                  imageObjCommandField,
+		search.ImageCreatedTime:              imageObjCreatedTimeField,
+		search.ImageEntrypoint:               imageObjEntrypointField,
+		search.ImageLabel:                    imageObjLabelField,
+		search.ImageName:                     imageObjNameField,
+		search.ImageOS:                       imageObjOperatingSystemField,
+		search.ImagePriority:                 imageObjPriorityField,
+		search.ImagePullSecret:               deploymentImagePullSecretsField,
+		search.ImageRegistry:                 imageObjRegistryField,
+		search.ImageRemote:                   imageObjRemoteField,
+		search.ImageRiskScore:                imageObjRiskScoreField,
+		search.ImageScanTime:                 imageObjScanTimeField,
+		search.ImageSHA:                      imageObjIDField,
+		search.ImageSignatureFetchedTime:     imageObjSignatureFetchTimeField,
+		search.ImageTag:                      imageObjTagField,
+		search.ImageTopCVSS:                  imageObjTopCVSSField,
+		search.ImageUser:                     imageObjUserField,
+		search.ImageVolumes:                  imageObjVolumesField,
+		search.LastUpdatedTime:               imageObjLastUpdatedField,
+		search.MaxExposureLevel:              deploymentMaxExposureField,
+		search.MemoryLimit:                   deploymentMemoryLimitField,
+		search.MemoryRequest:                 deploymentMemoryRequestField,
+		search.Namespace:                     deploymentNamespaceField,
+		search.NamespaceID:                   deploymentNamespaceIDField,
+		search.OrchestratorComponent:         deploymentOrchestratorComponentField,
+		search.PodLabel:                      deploymentPodLabelField,
+		search.PodID:                         processIndicatorObjPodIDField,
+		search.PodUID:                        processIndicatorObjPodUIDField,
+		search.Port:                          deploymentPortField,
+		search.PortProtocol:                  deploymentPortProtocolField,
+		search.Privileged:                    deploymentPrivilegedField,
+		search.ProcessArguments:              processIndicatorObjProcessArgumentsField,
+		search.ProcessExecPath:               processIndicatorObjProcessExecPathField,
+		search.ProcessID:                     processIndicatorObjProcessIDField,
+		search.ProcessName:                   processIndicatorObjProcessNameField,
+		search.ProcessUID:                    processIndicatorObjProcessUIDField,
+		search.ReadOnlyRootFilesystem:        deploymentReadOnlyRootFilesystemField,
+		search.SecretName:                    deploymentSecretNameField,
+		search.SecretPath:                    deploymentSecretPathField,
+		search.ServiceAccountName:            deploymentServiceAccountNameField,
+		search.ServiceAccountPermissionLevel: deploymentServiceAccountPermissionLevelField,
+		search.VolumeDestination:             deploymentVolumeDestinationField,
+		search.VolumeName:                    deploymentVolumeNameField,
+		search.VolumeReadonly:                deploymentVolumeReadOnlyField,
+		search.VolumeSource:                  deploymentVolumeSourceField,
+		search.VolumeType:                    deploymentVolumeTypeField,
+		search.VulnerabilityState:            imageObjCVEStateField,
+	}
+	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{
+		search.CVE:               cveLegacyObjIDField,
+		search.CVECreatedTime:    cveLegacyObjCreatedTimeField,
+		search.CVEPublishedOn:    cveLegacyObjPublishedOnField,
+		search.CVESuppressed:     cveLegacyObjSnoozedField,
+		search.CVESuppressExpiry: cveLegacyObjSnoozeExpiryField,
+		search.CVEType:           cveLegacyObjTypeField,
+		search.CVSS:              cveLegacyObjCVSSField,
+		search.ImpactScore:       cveLegacyObjImpactScoreField,
+		search.OperatingSystem:   imageComponentObjOperatingSystemField,
+		search.Severity:          cveLegacyObjSeverityField,
+	}
+	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{
+		search.AdmissionControlStatus:        clusterAdmissionControlStatusField,
+		search.ClusterLabel:                  clusterLabelsField,
+		search.ClusterStatus:                 clusterClusterStatusField,
+		search.CollectorStatus:               clusterCollectorStatusField,
+		search.CVE:                           imageCVECVEField,
+		search.CVECreatedTime:                imageCVECreatedTimeField,
+		search.CVEID:                         imageCVEIDField,
+		search.CVEPublishedOn:                imageCVEPublishedOnField,
+		search.CVESuppressed:                 imageCVESnoozedField,
+		search.CVESuppressExpiry:             imageCVESnoozeExpiryField,
+		search.CVSS:                          imageCVECVSSField,
+		search.FirstImageOccurrenceTimestamp: imageCVEEdgeFirstOccurrenceField,
+		search.ImpactScore:                   imageCVEImpactScoreField,
+		search.LastContactTime:               clusterLastContactField,
+		search.NamespaceAnnotation:           namespaceAnnotationsField,
+		search.NamespaceLabel:                namespaceLabelField,
+		search.OperatingSystem:               imageCVEOperatingSystemField,
+		search.ScannerStatus:                 clusterScannerStatusField,
+		search.SensorStatus:                  clusterSensorStatusField,
+		search.Severity:                      imageCVESeverityField,
+	}
+	validateOptionsMap(t,
+		getImageCVESearchCategory(),
+		expectedSearchFieldMap,
+		expectedLegacySearchFieldMap,
+		expectedPostgresSearchFieldMap)
+}
+
+func TestImageCVEEdgeMapping(t *testing.T) {
+	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
+		search.FirstImageOccurrenceTimestamp: imageCVEEdgeFirstOccurrenceField,
+		search.VulnerabilityState:            imageCVEEdgeStateField,
+	}
+	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
+	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
+	validateOptionsMap(t,
+		v1.SearchCategory_IMAGE_VULN_EDGE,
+		expectedSearchFieldMap,
+		expectedLegacySearchFieldMap,
+		expectedPostgresSearchFieldMap)
+}
+
+func TestImageIntegrationsMapping(t *testing.T) {
+	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
+		search.ClusterID: imageIntegrationObjClusterIDField,
+	}
+	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
+	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
+	validateOptionsMap(t,
+		v1.SearchCategory_IMAGE_INTEGRATIONS,
+		expectedSearchFieldMap,
+		expectedLegacySearchFieldMap,
+		expectedPostgresSearchFieldMap)
+}
+
+func TestNamespaceMapping(t *testing.T) {
+	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
+		search.Cluster:             namespaceClusterField,
+		search.ClusterID:           namespaceClusterIDField,
+		search.Namespace:           namespaceNameField,
+		search.NamespaceAnnotation: namespaceAnnotationsField,
+		search.NamespaceID:         namespaceIDField,
+		search.NamespaceLabel:      namespaceLabelField,
+	}
+	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
+	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
+	validateOptionsMap(t,
+		v1.SearchCategory_NAMESPACES,
+		expectedSearchFieldMap,
+		expectedLegacySearchFieldMap,
+		expectedPostgresSearchFieldMap)
+}
+
+func TestNodeMapping(t *testing.T) {
+	targetMap := GetEntityOptionsMap()[v1.SearchCategory_NODES]
+	for k, v := range targetMap.Original() {
+		fmt.Println(k)
+		fmt.Println(v)
+	}
+	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
+		search.Cluster:            nodeObjClusterNameField,
+		search.ClusterID:          nodeObjClusterIDField,
+		search.Component:          nodeObjComponentField,
+		search.ComponentCount:     nodeObjComponentCountField,
+		search.ComponentID:        nodeComponentObjIDField,
+		search.ComponentPriority:  nodeComponentObjPriorityField,
+		search.ComponentRiskScore: nodeComponentObjRiskScoreField,
+		search.ComponentTopCVSS:   nodeComponentObjTopCVSSField,
+		search.ComponentVersion:   nodeObjComponentVersionField,
+		search.ContainerRuntime:   nodeObjContainerRuntimeVersionField,
+		search.CVE:                nodeObjCVEField,
+		search.CVECount:           nodeObjCVECountField,
+		search.CVECreatedTime:     nodeObjCVECreatedTimeField,
+		search.CVEPublishedOn:     nodeObjCVEPublishedOnField,
+		search.CVESuppressed:      nodeObjCVESnoozedField,
+		search.CVSS:               nodeObjCVSSField,
+		search.Fixable:            nodeComponentCVEEdgeFixableField,
+		search.FixableCVECount:    nodeObjFixableCVECountField,
+		search.FixedBy:            nodeObjFixedByField,
+		search.LastUpdatedTime:    nodeObjLastUpdatedField,
+		search.Node:               nodeObjNameField,
+		search.NodeAnnotation:     nodeObjAnnotationField,
+		search.NodeID:             nodeObjIDField,
+		search.NodeJoinTime:       nodeObjJoinTimeField,
+		search.NodeLabel:          nodeObjLabelField,
+		search.NodePriority:       nodeObjNodeRiskPriorityField,
+		search.NodeRiskScore:      nodeObjRiskScoreField,
+		search.NodeScanTime:       nodeObjNodeScanTimeField,
+		search.NodeTopCVSS:        nodeObjTopCVSSField,
+		search.OperatingSystem:    nodeObjOperatingSystemField,
+		search.TaintKey:           nodeObjTaintKeyField,
+		search.TaintValue:         nodeObjTaintValueField,
+		search.TolerationEffect:   nodeObjTaintEffectField,
+		search.VulnerabilityState: nodeObjVulnerabilityStateField,
+	}
+	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{
+		search.ComponentSource:   nodeComponentObjSourceField,
+		search.CVESuppressExpiry: cveLegacyObjSnoozeExpiryField,
+		search.CVEType:           cveLegacyObjTypeField,
+		search.ImpactScore:       cveLegacyObjImpactScoreField,
+		search.Severity:          cveLegacyObjSeverityField,
+	}
+	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
+	for k, v := range postgresNodeToVulnFieldMap {
+		if _, found := expectedSearchFieldMap[k]; !found {
+			expectedPostgresSearchFieldMap[k] = v
+		}
+	}
+	validateOptionsMap(t,
+		v1.SearchCategory_NODES,
+		expectedSearchFieldMap,
+		expectedLegacySearchFieldMap,
+		expectedPostgresSearchFieldMap)
+}
+
+func TestNodeComponentMapping(t *testing.T) {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return
+	}
+	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{}
+	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
+	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
+	for k, v := range postgresNodeToVulnFieldMap {
+		if _, found := expectedSearchFieldMap[k]; !found {
+			expectedPostgresSearchFieldMap[k] = v
+		}
+	}
+	validateOptionsMap(t,
+		v1.SearchCategory_NODE_COMPONENTS,
+		expectedSearchFieldMap,
+		expectedLegacySearchFieldMap,
+		expectedPostgresSearchFieldMap)
+}
+
+func TestNodeComponentEdgeMapping(t *testing.T) {
+	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{}
+	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
+	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
+	for k, v := range postgresNodeToVulnFieldMap {
+		if _, found := expectedSearchFieldMap[k]; !found {
+			expectedPostgresSearchFieldMap[k] = v
+		}
+	}
+	validateOptionsMap(t,
+		v1.SearchCategory_NODE_COMPONENT_EDGE,
+		expectedSearchFieldMap,
+		expectedLegacySearchFieldMap,
+		expectedPostgresSearchFieldMap)
+}
+
+func TestNodeCVEMapping(t *testing.T) {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		return
+	}
+	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{}
+	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
+	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
+	for k, v := range postgresNodeToVulnFieldMap {
+		if _, found := expectedSearchFieldMap[k]; !found {
+			expectedPostgresSearchFieldMap[k] = v
+		}
+	}
+	validateOptionsMap(t,
+		v1.SearchCategory_NODE_VULNERABILITIES,
 		expectedSearchFieldMap,
 		expectedLegacySearchFieldMap,
 		expectedPostgresSearchFieldMap)

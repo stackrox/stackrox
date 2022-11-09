@@ -135,12 +135,26 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.ClustersSchema.OptionsMap,
 	)
 
+	imageVulnerabilitySearchOptions := search.CombineOptionsMaps(
+		schema.ImageCvesSchema.OptionsMap,
+		schema.ImageComponentCveEdgesSchema.OptionsMap,
+		schema.ImageComponentsSchema.OptionsMap,
+		schema.ImageComponentEdgesSchema.OptionsMap,
+		schema.ImagesSchema.OptionsMap,
+		schema.DeploymentsSchema.OptionsMap,
+		schema.ProcessIndicatorsSchema.OptionsMap,
+		schema.NamespacesSchema.OptionsMap,
+		schema.ClustersSchema.OptionsMap,
+		schema.ImageCveEdgesSchema.OptionsMap,
+	)
+
 	nodeToVulnerabilitySearchOptions := search.CombineOptionsMaps(
-		schema.NodeCvesSchema.OptionsMap,
-		schema.NodeComponentsCvesEdgesSchema.OptionsMap,
-		schema.NodeComponentsSchema.OptionsMap,
-		schema.NodeComponentEdgesSchema.OptionsMap,
 		schema.NodesSchema.OptionsMap,
+		schema.NodeComponentEdgesSchema.OptionsMap,
+		schema.NodeComponentsSchema.OptionsMap,
+		schema.NodeComponentsCvesEdgesSchema.OptionsMap,
+		schema.NodeCvesSchema.OptionsMap,
+		schema.ClustersSchema.OptionsMap,
 	)
 
 	// alerts has a reconciliation mechanism implemented in postgres mode in order to keep only search fields
@@ -155,15 +169,15 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_CLUSTER_VULN_EDGE:       clusterToVulnerabilitySearchOptions,
 		v1.SearchCategory_CLUSTER_VULNERABILITIES: clusterToVulnerabilitySearchOptions,
 		v1.SearchCategory_CLUSTERS:                schema.ClustersSchema.OptionsMap,
-		v1.SearchCategory_COMPLIANCE_STANDARD:     index.StandardOptions,
 		v1.SearchCategory_COMPLIANCE_CONTROL:      index.ControlOptions,
+		v1.SearchCategory_COMPLIANCE_STANDARD:     index.StandardOptions,
 		v1.SearchCategory_COMPONENT_VULN_EDGE:     schema.ImageComponentCveEdgesSchema.OptionsMap,
 		v1.SearchCategory_DEPLOYMENTS:             deploymentsCustomSearchOptions,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE:    imageToVulnerabilitySearchOptions,
 		v1.SearchCategory_IMAGE_COMPONENTS:        imageComponentToVulnerabilitySearchOptions,
 		v1.SearchCategory_IMAGE_INTEGRATIONS:      schema.ImageIntegrationsSchema.OptionsMap,
-		v1.SearchCategory_IMAGE_VULN_EDGE:         imageToVulnerabilitySearchOptions,
-		v1.SearchCategory_IMAGE_VULNERABILITIES:   imageToVulnerabilitySearchOptions,
+		v1.SearchCategory_IMAGE_VULN_EDGE:         schema.ImageCveEdgesSchema.OptionsMap,
+		v1.SearchCategory_IMAGE_VULNERABILITIES:   imageVulnerabilitySearchOptions,
 		v1.SearchCategory_IMAGES:                  imageToVulnerabilitySearchOptions,
 		v1.SearchCategory_NAMESPACES:              schema.NamespacesSchema.OptionsMap,
 		v1.SearchCategory_NODE_COMPONENT_EDGE:     nodeToVulnerabilitySearchOptions,
