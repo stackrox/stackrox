@@ -25,6 +25,10 @@ const (
 	indexStatePath = "index_state"
 )
 
+var (
+	errNoMetadata = errors.New("Unable to complete scan because the image is missing metadata")
+)
+
 // Creator provides the type a scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
 	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
@@ -84,8 +88,11 @@ func validate(clairv4 *storage.ClairV4Config) error {
 }
 
 func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
-	//TODO implement me
-	panic("implement me")
+	if image.GetMetadata() == nil {
+		return nil, errNoMetadata
+	}
+
+	return nil, nil
 }
 
 func (c *clairv4) Match(_ *storage.ImageName) bool {
