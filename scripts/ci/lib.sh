@@ -1323,9 +1323,9 @@ __EOM__
         fi
         if command -v junit-parse >/dev/null 2>&1; then
             local junit_file_names
-            junit_file_names=($(find "${ARTIFACT_DIR}" -type f -name '*.xml' | xargs)) || true
+            junit_file_names=( "$(find "${ARTIFACT_DIR}" -type f -name '*.xml' -print0 | xargs -0)" ) || true
             local check_slack_attachments
-            check_slack_attachments=$(junit-parse "$junit_file_names") || exitstatus="$?"
+            check_slack_attachments=$(junit-parse "${junit_file_names[@]}") || exitstatus="$?"
             if [[ "$exitstatus" == "0" ]]; then
                 slack_attachments="$check_slack_attachments"
             fi
