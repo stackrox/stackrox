@@ -2,13 +2,14 @@ package fixtures
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // GetNetworkBaseline returns a mock network baseline.
 func GetNetworkBaseline() *storage.NetworkBaseline {
-	return GetScopedNetworkBaseline(GetDeployment().GetId(), "prod cluster", "stackrox")
+	return GetScopedNetworkBaseline(GetDeployment().GetId(), fixtureconsts.Cluster1, "stackrox")
 }
 
 // GetScopedNetworkBaseline returns a mock network baseline belonging to the input scope.
