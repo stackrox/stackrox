@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -118,7 +119,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		admCtrlMsgForwarder,
 		enforcer,
 		networkFlowManager,
-		compliance.NewNodeScanHandler(complianceService.NodeScans()),
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
@@ -130,6 +130,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
 		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
+	}
+	if features.RHCOSNodeScanning.Enabled() {
+		components = append(components, compliance.NewNodeScanHandler(complianceService.NodeScans()))
 	}
 
 	if !cfg.localSensor {
