@@ -157,7 +157,7 @@ describe('Access Control Permission sets', () => {
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
                 // TODO: ROX-12750 Rename DebugLogs to Administration
-                if (resource === 'DebugLogs') {
+                if (resource.includes('DebugLogs')) {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
@@ -209,7 +209,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (!resourcesLimited.includes(resource)) {
+                if (!resourcesLimited.some((v) => resource.includes(v))) {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
@@ -315,7 +315,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (!resourcesLimited.includes(resource)) {
+                if (!resourcesLimited.some((v) => resource.includes(v))) {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',

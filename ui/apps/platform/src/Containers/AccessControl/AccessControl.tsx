@@ -3,6 +3,7 @@ import { Redirect, Route, Switch } from 'react-router-dom';
 
 import usePermissions from 'hooks/usePermissions';
 
+import { Alert, List, ListItem } from '@patternfly/react-core';
 import { accessControlBasePath, accessControlPath, getEntityPath } from './accessControlPaths';
 
 import AccessControlNoPermission from './AccessControlNoPermission';
@@ -18,11 +19,61 @@ function AccessControl(): ReactElement {
     // TODO is read access required for all routes in improved Access Control?
     // TODO Is write access required anywhere in classic Access Control?
     const { hasReadAccess } = usePermissions();
-    const hasReadAccessForAuthProvider = hasReadAccess('Access');
+    const hasReadAccessForAccessControlPages = hasReadAccess('Access');
 
     return (
         <>
-            {hasReadAccessForAuthProvider ? (
+            <Alert
+                isInline
+                variant="warning"
+                title={
+                    <>
+                        <p>The following permission resources have been replaced:</p>
+                        <List>
+                            <ListItem>
+                                <b>Access</b> replaces{' '}
+                                <b>AuthProvider, Group, Licenses, and User</b>
+                            </ListItem>
+                            <ListItem>
+                                <b>DeploymentExtension</b> replaces{' '}
+                                <b>Indicator, NetworkBaseline, ProcessWhitelist, and Risk</b>
+                            </ListItem>
+                            <ListItem>
+                                <b>Integration</b> replaces{' '}
+                                <b>
+                                    APIToken, BackupPlugins, ImageIntegration, Notifier, and
+                                    SignatureIntegration
+                                </b>
+                            </ListItem>
+                            <ListItem>
+                                <b>Image</b> now also covers <b>ImageComponent</b>
+                            </ListItem>
+                        </List>
+
+                        <p>
+                            The following permission resources will be replaced in the upcoming
+                            versions:
+                        </p>
+                        <List>
+                            <ListItem>
+                                <b>Administration</b> will replace{' '}
+                                <b>
+                                    AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload,
+                                    ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and
+                                    ServiceIdentity
+                                </b>
+                            </ListItem>
+                            <ListItem>
+                                <b>Compliance</b> will replace <b>ComplianceRuns</b>
+                            </ListItem>
+                            <ListItem>
+                                <b>Cluster</b> will cover <b>ClusterCVE</b>
+                            </ListItem>
+                        </List>
+                    </>
+                }
+            />
+            {hasReadAccessForAccessControlPages ? (
                 <Switch>
                     <Route exact path={accessControlBasePath}>
                         <Redirect to={getEntityPath('AUTH_PROVIDER')} />
