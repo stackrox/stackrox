@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -96,7 +95,7 @@ func insertIntoProcessIndicators(ctx context.Context, batch *pgx.Batch, obj *sto
 		serialized,
 	}
 	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		log.Warnf("Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -183,7 +182,7 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 			serialized,
 		})
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			log.Warnf("Id is not a valid uuid -- %v", obj)
 			continue
 		}
 

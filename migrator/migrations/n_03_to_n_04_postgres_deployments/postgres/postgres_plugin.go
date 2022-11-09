@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -101,7 +100,7 @@ func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.D
 		serialized,
 	}
 	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		log.Warnf("Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -150,7 +149,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 		obj.GetResources().GetMemoryMbLimit(),
 	}
 	if pgutils.NilOrUUID(deployments_Id) == nil {
-		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -198,7 +197,7 @@ func insertIntoDeploymentsContainersEnvs(ctx context.Context, batch *pgx.Batch, 
 		obj.GetEnvVarSource(),
 	}
 	if pgutils.NilOrUUID(deployments_Id) == nil {
-		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -222,7 +221,7 @@ func insertIntoDeploymentsContainersVolumes(ctx context.Context, batch *pgx.Batc
 		obj.GetType(),
 	}
 	if pgutils.NilOrUUID(deployments_Id) == nil {
-		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -243,7 +242,7 @@ func insertIntoDeploymentsContainersSecrets(ctx context.Context, batch *pgx.Batc
 		obj.GetPath(),
 	}
 	if pgutils.NilOrUUID(deployments_Id) == nil {
-		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -264,7 +263,7 @@ func insertIntoDeploymentsPorts(ctx context.Context, batch *pgx.Batch, obj *stor
 		obj.GetExposure(),
 	}
 	if pgutils.NilOrUUID(deployments_Id) == nil {
-		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -299,7 +298,7 @@ func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, batch *pgx.Bat
 		obj.GetExternalHostnames(),
 	}
 	if pgutils.NilOrUUID(deployments_Id) == nil {
-		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -406,7 +405,7 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...
 			serialized,
 		})
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			log.Warnf("Id is not a valid uuid -- %v", obj)
 			continue
 		}
 
@@ -525,7 +524,7 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx
 			obj.GetResources().GetMemoryMbLimit(),
 		})
 		if pgutils.NilOrUUID(deployments_Id) == nil {
-			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 			continue
 		}
 
@@ -602,7 +601,7 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx pg
 			obj.GetEnvVarSource(),
 		})
 		if pgutils.NilOrUUID(deployments_Id) == nil {
-			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 			continue
 		}
 
@@ -673,7 +672,7 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 			obj.GetType(),
 		})
 		if pgutils.NilOrUUID(deployments_Id) == nil {
-			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 			continue
 		}
 
@@ -732,7 +731,7 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 			obj.GetPath(),
 		})
 		if pgutils.NilOrUUID(deployments_Id) == nil {
-			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 			continue
 		}
 
@@ -791,7 +790,7 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx pgx.Tx, dep
 			obj.GetExposure(),
 		})
 		if pgutils.NilOrUUID(deployments_Id) == nil {
-			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 			continue
 		}
 
@@ -874,7 +873,7 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 			obj.GetExternalHostnames(),
 		})
 		if pgutils.NilOrUUID(deployments_Id) == nil {
-			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			log.Warnf("deployments_Id is not a valid uuid -- %v", obj)
 			continue
 		}
 

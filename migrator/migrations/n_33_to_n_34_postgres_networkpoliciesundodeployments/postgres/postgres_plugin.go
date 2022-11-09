@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -84,7 +83,7 @@ func insertIntoNetworkpoliciesundodeployments(ctx context.Context, batch *pgx.Ba
 		serialized,
 	}
 	if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
-		utils.Should(errors.Errorf("DeploymentId is not a valid uuid -- %v", obj))
+		log.Warnf("DeploymentId is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -127,7 +126,7 @@ func (s *storeImpl) copyFromNetworkpoliciesundodeployments(ctx context.Context, 
 			serialized,
 		})
 		if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
-			utils.Should(errors.Errorf("DeploymentId is not a valid uuid -- %v", obj))
+			log.Warnf("DeploymentId is not a valid uuid -- %v", obj)
 			continue
 		}
 

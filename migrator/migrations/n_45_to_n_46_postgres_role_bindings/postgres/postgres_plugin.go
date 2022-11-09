@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -93,7 +92,7 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 		serialized,
 	}
 	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		log.Warnf("Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -123,7 +122,7 @@ func insertIntoRoleBindingsSubjects(ctx context.Context, batch *pgx.Batch, obj *
 		obj.GetName(),
 	}
 	if pgutils.NilOrUUID(role_bindings_Id) == nil {
-		utils.Should(errors.Errorf("role_bindings_Id is not a valid uuid -- %v", obj))
+		log.Warnf("role_bindings_Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -198,7 +197,7 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx pgx.Tx, objs ..
 			serialized,
 		})
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			log.Warnf("Id is not a valid uuid -- %v", obj)
 			continue
 		}
 
@@ -270,7 +269,7 @@ func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx pgx.Tx,
 			obj.GetName(),
 		})
 		if pgutils.NilOrUUID(role_bindings_Id) == nil {
-			utils.Should(errors.Errorf("role_bindings_Id is not a valid uuid -- %v", obj))
+			log.Warnf("role_bindings_Id is not a valid uuid -- %v", obj)
 			continue
 		}
 

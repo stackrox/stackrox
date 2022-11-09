@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -86,7 +85,7 @@ func insertIntoPolicyCategories(ctx context.Context, batch *pgx.Batch, obj *stor
 		serialized,
 	}
 	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		log.Warnf("Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -133,7 +132,7 @@ func (s *storeImpl) copyFromPolicyCategories(ctx context.Context, tx pgx.Tx, obj
 			serialized,
 		})
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			log.Warnf("Id is not a valid uuid -- %v", obj)
 			continue
 		}
 

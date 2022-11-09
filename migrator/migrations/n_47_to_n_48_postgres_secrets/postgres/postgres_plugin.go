@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -90,7 +89,7 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 		serialized,
 	}
 	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		log.Warnf("Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -120,7 +119,7 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 		pgutils.NilOrTime(obj.GetCert().GetEndDate()),
 	}
 	if pgutils.NilOrUUID(secrets_Id) == nil {
-		utils.Should(errors.Errorf("secrets_Id is not a valid uuid -- %v", obj))
+		log.Warnf("secrets_Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -150,7 +149,7 @@ func insertIntoSecretsFilesRegistries(ctx context.Context, batch *pgx.Batch, obj
 		obj.GetName(),
 	}
 	if pgutils.NilOrUUID(secrets_Id) == nil {
-		utils.Should(errors.Errorf("secrets_Id is not a valid uuid -- %v", obj))
+		log.Warnf("secrets_Id is not a valid uuid -- %v", obj)
 		return nil
 	}
 
@@ -213,7 +212,7 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 			serialized,
 		})
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			log.Warnf("Id is not a valid uuid -- %v", obj)
 			continue
 		}
 
@@ -285,7 +284,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 			pgutils.NilOrTime(obj.GetCert().GetEndDate()),
 		})
 		if pgutils.NilOrUUID(secrets_Id) == nil {
-			utils.Should(errors.Errorf("secrets_Id is not a valid uuid -- %v", obj))
+			log.Warnf("secrets_Id is not a valid uuid -- %v", obj)
 			continue
 		}
 
@@ -348,7 +347,7 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 			obj.GetName(),
 		})
 		if pgutils.NilOrUUID(secrets_Id) == nil {
-			utils.Should(errors.Errorf("secrets_Id is not a valid uuid -- %v", obj))
+			log.Warnf("secrets_Id is not a valid uuid -- %v", obj)
 			continue
 		}
 
