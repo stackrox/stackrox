@@ -71,7 +71,9 @@ func (m *orchestratorCVEManager) Reconcile() {
 	}
 	err = m.reconcileCVEs(clusters, utils.Istio)
 	if err != nil {
-		log.Errorf("failed to reconcile orchestrator Istio CVEs: %v", err)
+		log.Errorf("failed to reconcile Istio CVEs: %v", err)
+	} else {
+		log.Info("successfully reconcile Istio CVEs")
 	}
 }
 
