@@ -9,7 +9,6 @@ import (
 
 // NodeScanHandler is responsible for handling the arriving NodeScanV2 messages, processing then, and sending them to central
 type NodeScanHandler interface {
-	Stopped() concurrency.ReadOnlyErrorSignal
 	common.SensorComponent
 }
 

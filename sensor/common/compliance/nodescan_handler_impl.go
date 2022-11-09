@@ -37,10 +37,6 @@ func (c *nodeScanHandlerImpl) Stop(err error) {
 	c.stopC.SignalWithError(err)
 }
 
-func (c *nodeScanHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
-	return &c.stoppedC
-}
-
 func (c *nodeScanHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	// This component doesn't actually process or handle any messages sent from Central to Sensor (yet).
 	// It uses the sensor component so that the lifecycle (start, stop) can be handled when Sensor starts up.
@@ -68,7 +64,10 @@ func (c *nodeScanHandlerImpl) run() {
 
 func (c *nodeScanHandlerImpl) sendScan(scan *storage.NodeScanV2) {
 	if scan != nil {
-		c.toCentral <- &central.MsgFromSensor{
+		select {
+		case <-c.stopC.Done():
+			return
+		case c.toCentral <- &central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_Event{
 				Event: &central.SensorEvent{
 					Resource: &central.SensorEvent_NodeScanV2{
@@ -76,6 +75,8 @@ func (c *nodeScanHandlerImpl) sendScan(scan *storage.NodeScanV2) {
 					},
 				},
 			},
+		}:
+			return
 		}
 	}
 }
