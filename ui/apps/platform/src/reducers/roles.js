@@ -2,6 +2,7 @@ import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
+import { replacedResourceMapping } from '../constants/accessControl';
 
 export const ACCESS_LEVEL = Object.freeze({
     READ_WRITE_ACCESS: 'READ_WRITE_ACCESS',
@@ -103,22 +104,6 @@ const getSelectedRole = (state) => state.selectedRole;
 const getUserRolePermissions = (state) => state.userRolePermissions;
 const getUserRolePermissionsError = (state) => state.error;
 const getIsLoadingUserRolePermissions = (state) => state.isLoading;
-
-// TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
-const replacedResourceMapping = new Map([
-    // TODO: ROX-12750 Remove AllComments, ComplianceRunSchedule, ComplianceRuns, Config, DebugLogs,
-    // NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity.
-    ['AllComments', 'Administration'],
-    ['ComplianceRuns', 'Compliance'],
-    ['Config', 'Administration'],
-    ['DebugLogs', 'Administration'],
-    ['NetworkGraphConfig', 'Administration'],
-    ['ProbeUpload', 'Administration'],
-    ['ScannerBundle', 'Administration'],
-    ['ScannerDefinitions', 'Administration'],
-    ['SensorUpgradeConfig', 'Administration'],
-    ['ServiceIdentity', 'Administration'],
-]);
 
 /*
  * Given resource string (for example, "Integration") and role or permissionSet object,
