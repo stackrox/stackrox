@@ -210,7 +210,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 	s.mockProcessIndicatorDataStore.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
 		func(ctx context.Context, query *v1.Query) ([]*storage.ProcessIndicator, error) {
 			queries := query.GetConjunction().GetQueries()
-			s.Assert().Len(queries, 3)
+			s.Assert().Len(queries, 2)
 			var containerName, deploymentID string
 			for _, q := range queries {
 				mf := q.GetBaseQuery().GetMatchFieldQuery()
@@ -281,7 +281,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 				}
 			}
 			s.assertHasContainer(ac.GetActiveContextsSlice(), expectedContainer)
-			s.Assert().False(strings.HasSuffix(imageComponent, expectedComponent.GetName()))
+			s.Assert().True(strings.HasSuffix(imageComponent, expectedComponent.GetName()))
 			s.Assert().Equal(ac.GetComponentId(), scancomponent.ComponentID(expectedComponent.GetName(), expectedComponent.GetVersion(), ""))
 		}
 	})

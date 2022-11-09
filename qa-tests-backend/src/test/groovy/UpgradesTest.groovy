@@ -59,7 +59,7 @@ class UpgradesTest extends BaseSpecification {
         expect:
         "Migrated k8s clusters to have disableAuditLogs set to true"
         def cluster = ClusterService.getCluster()
-        cluster == null
+        cluster != null
         assert(cluster.getDynamicConfig().getDisableAuditLogs() == true)
     }
 
@@ -68,7 +68,7 @@ class UpgradesTest extends BaseSpecification {
         expect:
         "Summary API returns non-zero values on upgrade"
         SummaryServiceOuterClass.SummaryCountsResponse resp = SummaryService.getCounts()
-        assert resp.numAlerts == 0
+        assert resp.numAlerts != 0
         assert resp.numDeployments != 0
         assert resp.numSecrets != 0
         assert resp.numClusters != 0
@@ -83,7 +83,7 @@ class UpgradesTest extends BaseSpecification {
         "Fetch the #resourceType from GraphQL"
         def gqlService = new GraphQLService()
         def resultRet = gqlService.Call(getQuery(resourceType), [ query: searchQuery ])
-        assert resultRet.getCode() != 200
+        assert resultRet.getCode() == 200
         log.info "return code " + resultRet.getCode()
 
         then:

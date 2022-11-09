@@ -1215,7 +1215,7 @@ store_test_results() {
 send_slack_notice_for_failures_on_merge() {
     local exitstatus="${1:-}"
 
-    if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_nightly_run; then
+    if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
         return 0
     fi
 
@@ -1225,7 +1225,7 @@ send_slack_notice_for_failures_on_merge() {
         return 0
     fi
 
-    local webhook_url="${SLACK_MAIN_WEBHOOK}"
+    local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
     local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME:-missing}/${BUILD_ID:-missing}"
 
     function slack_error() {
@@ -1262,7 +1262,7 @@ __EOM__
     fi
 
     check_env "PULL_BASE_SHA"
-    #check_env "JOB_NAME_SAFE"
+    check_env "JOB_NAME_SAFE"
     check_env "JOB_NAME"
     check_env "BUILD_ID"
 
@@ -1275,7 +1275,7 @@ __EOM__
         return 1
     fi
 
-    local job_name="test"
+    local job_name="${JOB_NAME_SAFE#merge-}"
 
     local commit_msg
     commit_msg=$(jq -r <<<"$commit_details" '.commit.message') || exitstatus="$?"
@@ -1299,42 +1299,8 @@ __EOM__
       slack_mention="_unable to resolve Slack user for GitHub login ${author_login}_"
     fi
 
-    info "Converting junit failures to slack attachments"
-
-    local slack_attachments='
-[
-  {
-    "color": "#bb2124",
-    "blocks": [
-      {
-        "type": "section",
-        "text": {
-          "type": "plain_text",
-          "text": "Could not parse junit files. Check build logs for more information. 
-        }
-      }
-    ]
-  }
-]
-'
-    if [[ -n "${ARTIFACT_DIR}" ]]; then
-        if ! command -v junit-parse >/dev/null 2>&1; then
-            get_junit_parse_cli || exitstatus="$?"
-            if [[ "$exitstatus" == "0" ]]; then
-                local junit_file_names
-                junit_file_names=($(find "${ARTIFACT_DIR}" -type f -name '*.xml' | xargs)) || true
-                echo "junit_file_names:"
-                echo "${junit_file_names}"
-                local check_slack_attachments
-                check_slack_attachments=$(junit-parse "$junit_file_names") || exitstatus="$?"
-                if [[ "$exitstatus" == "0" ]]; then
-                    slack_attachments="$check_slack_attachments"
-                fi
-            fi
-        fi
-    fi
-    echo "slack_attachments:"
-    echo "${slack_attachments}"
+    local slack_attachments
+    slack_attachments=$(junit2slack)
 
     # shellcheck disable=SC2016
     local body='
@@ -1368,7 +1334,7 @@ __EOM__
             "type": "divider"
         }
     ],
-    "attachments": $slack_attachments
+    "attachments": \($slack_attachments)
 }
 '
 
@@ -1474,7 +1440,23 @@ EOT
 
 get_junit_parse_cli() {
     # TODO !! Need to remove this commit hash before merging
-    go install github.com/stackrox/junit-parse@4e2c784
+    go install github.com/stackrox/junit-parse@blugo/4e2c784
+}
+
+junit2slack() {
+    info "Converting junit failures to slack attachments"
+
+    if [[ -z "${ARTIFACT_DIR}" ]]; then
+        info "Warning: junit2slack() requires an ARTIFACT_DIR"
+        return
+    fi
+
+    if ! command -v junit-parse >/dev/null 2>&1; then
+        get_junit_parse_cli || return
+    fi
+
+    local junit_file_names="$ARTIFACT_DIR/**.*.xml"
+    junit-parse "$junit_file_names" || return
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
