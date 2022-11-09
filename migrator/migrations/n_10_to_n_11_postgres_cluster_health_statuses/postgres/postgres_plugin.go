@@ -41,6 +41,7 @@ var (
 	schema = pkgSchema.ClusterHealthStatusesSchema
 )
 
+// Store for migration
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
@@ -260,9 +261,9 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ClusterHealt
 
 		if len(objs) < batchAfter {
 			return s.upsert(ctx, objs...)
-		} else {
-			return s.copyFrom(ctx, objs...)
 		}
+
+		return s.copyFrom(ctx, objs...)
 	})
 }
 
@@ -487,6 +488,7 @@ func dropTableClusterHealthStatuses(ctx context.Context, db *pgxpool.Pool) {
 
 }
 
+// Destroy drops the cluster health status table
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableClusterHealthStatuses(ctx, db)
 }
