@@ -168,8 +168,15 @@ const integrationsList: IntegrationDescriptorMap = {
             image: quay,
         },
         {
-            label: 'CoreOS Clair',
+            label: 'CoreOS Clair (Clair v2)',
             type: 'clair',
+            categories: 'Scanner',
+            source: 'imageIntegrations',
+            image: clair,
+        },
+        {
+            label: 'Clair v4',
+            type: 'clairv4',
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: clair,
