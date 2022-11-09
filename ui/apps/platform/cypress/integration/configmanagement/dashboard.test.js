@@ -6,6 +6,7 @@ import {
     interactAndWaitForConfigurationManagementScan,
     visitConfigurationManagementDashboard,
 } from '../../helpers/configWorkflowUtils';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 // This function is more generic than its name implies.
 const policyViolationsBySeverityLinkShouldMatchList = (linkSelector, linkRegExp, keyPlural) => {
@@ -24,6 +25,12 @@ const policyViolationsBySeverityLinkShouldMatchList = (linkSelector, linkRegExp,
 
 describe('Configuration Management Dashboard', () => {
     withAuth();
+
+    it('should have title', () => {
+        visitConfigurationManagementDashboard();
+
+        cy.title().should('match', getRegExpForTitleWithBranding('Configuration Management'));
+    });
 
     it('should show same number of policies between the tile and the policies list', () => {
         const entitiesKey = 'policies';
