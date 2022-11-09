@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/group/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -737,4 +738,70 @@ func (s *groupDataStoreTestSuite) TestMutateGroupForce() {
 	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{mutableGroup.GetProps().GetId()}).Return(nil).Times(1)
 	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{mutableGroup}, []*storage.Group{immutableGroup}, nil, true)
 	s.NoError(err)
+}
+
+func (s *groupDataStoreTestSuite) TestRemoveAllWithEmptyProperties() {
+	// 1. Try and remove groups without properties without running into any issues.
+	groupsWithoutProperties := []*storage.Group{
+		{
+			Props: &storage.GroupProperties{
+				Id: "id1",
+			},
+			RoleName: "i don't",
+		},
+
+		{
+			Props: &storage.GroupProperties{
+				Id: "id2",
+			},
+			RoleName: "know anything",
+		},
+	}
+	gomock.InOrder(
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(groupsWithoutProperties)),
+		s.storage.EXPECT().Get(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil, true, nil),
+		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil),
+		s.storage.EXPECT().Get(gomock.Any(), groupsWithoutProperties[1].GetProps().GetId()).Return(nil, true, nil),
+		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[1].GetProps().GetId()).Return(nil),
+	)
+
+	err := s.dataStore.RemoveAllWithEmptyProperties(s.hasWriteCtx)
+	s.NoError(err)
+
+	// 2. Try and remove groups without properties with some groups not having an ID.
+	groupsWithoutProperties = []*storage.Group{
+		{
+			Props: &storage.GroupProperties{
+				Id: "id1",
+			},
+			RoleName: "i don't",
+		},
+		{
+			Props:    &storage.GroupProperties{},
+			RoleName: "this is",
+		},
+		{
+			Props: &storage.GroupProperties{
+				Id: "id2",
+			},
+			RoleName: "know anything",
+		},
+		{
+			RoleName: "not supposed to happen",
+		},
+	}
+	gomock.InOrder(
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(groupsWithoutProperties)),
+		s.storage.EXPECT().Get(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil, true, nil),
+		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil),
+		s.storage.EXPECT().Get(gomock.Any(), groupsWithoutProperties[2].GetProps().GetId()).Return(nil, true, nil),
+		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[2].GetProps().GetId()).Return(nil),
+	)
+
+	err = s.dataStore.RemoveAllWithEmptyProperties(s.hasWriteCtx)
+	s.Error(err)
+	// For better or worse, check via string whether the error contains both groups that do not have an ID
+	// associated with them.
+	s.Contains(err.Error(), proto.MarshalTextString(groupsWithoutProperties[1]))
+	s.Contains(err.Error(), proto.MarshalTextString(groupsWithoutProperties[3]))
 }
