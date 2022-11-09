@@ -87,9 +87,9 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetNamespace(),
 		pgutils.NilOrTime(obj.GetCreatedAt()),
@@ -108,7 +108,7 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 	}
 
 	query = "delete from secrets_files where secrets_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetFiles()))
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetFiles()))
 	return nil
 }
 
@@ -116,7 +116,7 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 
 	values := []interface{}{
 		// parent primary keys start
-		secrets_Id,
+		pgutils.NilOrUUID(secrets_Id),
 		idx,
 		obj.GetType(),
 		pgutils.NilOrTime(obj.GetCert().GetEndDate()),
@@ -134,7 +134,7 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 	}
 
 	query = "delete from secrets_files_registries where secrets_Id = $1 AND secrets_files_idx = $2 AND idx >= $3"
-	batch.Queue(query, secrets_Id, idx, len(obj.GetImagePullSecret().GetRegistries()))
+	batch.Queue(query, pgutils.NilOrUUID(secrets_Id), idx, len(obj.GetImagePullSecret().GetRegistries()))
 	return nil
 }
 
@@ -142,7 +142,7 @@ func insertIntoSecretsFilesRegistries(ctx context.Context, batch *pgx.Batch, obj
 
 	values := []interface{}{
 		// parent primary keys start
-		secrets_Id,
+		pgutils.NilOrUUID(secrets_Id),
 		secrets_files_idx,
 		idx,
 		obj.GetName(),
@@ -192,11 +192,11 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetClusterName(),
 
@@ -266,7 +266,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 
 		inputRows = append(inputRows, []interface{}{
 
-			secrets_Id,
+			pgutils.NilOrUUID(secrets_Id),
 
 			idx,
 
@@ -325,7 +325,7 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 
 		inputRows = append(inputRows, []interface{}{
 
-			secrets_Id,
+			pgutils.NilOrUUID(secrets_Id),
 
 			secrets_files_idx,
 

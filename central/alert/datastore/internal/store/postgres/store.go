@@ -87,8 +87,8 @@ func insertIntoAlerts(ctx context.Context, batch *pgx.Batch, obj *storage.Alert)
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
-		obj.GetPolicy().GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
+		pgutils.NilOrUUID(obj.GetPolicy().GetId()),
 		obj.GetPolicy().GetName(),
 		obj.GetPolicy().GetDescription(),
 		obj.GetPolicy().GetDisabled(),
@@ -100,11 +100,11 @@ func insertIntoAlerts(ctx context.Context, batch *pgx.Batch, obj *storage.Alert)
 		obj.GetPolicy().GetSORTLifecycleStage(),
 		obj.GetPolicy().GetSORTEnforcement(),
 		obj.GetLifecycleStage(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetNamespace(),
-		obj.GetNamespaceId(),
-		obj.GetDeployment().GetId(),
+		pgutils.NilOrUUID(obj.GetNamespaceId()),
+		pgutils.NilOrUUID(obj.GetDeployment().GetId()),
 		obj.GetDeployment().GetName(),
 		obj.GetDeployment().GetInactive(),
 		obj.GetImage().GetId(),
@@ -212,9 +212,9 @@ func (s *storeImpl) copyFromAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
-			obj.GetPolicy().GetId(),
+			pgutils.NilOrUUID(obj.GetPolicy().GetId()),
 
 			obj.GetPolicy().GetName(),
 
@@ -238,15 +238,15 @@ func (s *storeImpl) copyFromAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 
 			obj.GetLifecycleStage(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetClusterName(),
 
 			obj.GetNamespace(),
 
-			obj.GetNamespaceId(),
+			pgutils.NilOrUUID(obj.GetNamespaceId()),
 
-			obj.GetDeployment().GetId(),
+			pgutils.NilOrUUID(obj.GetDeployment().GetId()),
 
 			obj.GetDeployment().GetName(),
 
