@@ -43,14 +43,17 @@ type datastoreImpl struct {
 	names set.Set[string]
 }
 
+// graphEntry is the stored object in the dag.DAG
 type graphEntry struct {
 	id string
 }
 
+// ID returns the id of the object
 func (ge graphEntry) ID() string {
 	return ge.id
 }
 
+// initGraph initializes the dag.DAG for a given datastore instance, should be invoked during init time
 func (ds *datastoreImpl) initGraph() error {
 
 	// build graph object
@@ -333,7 +336,7 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 		return err
 	}
 
-	// if this a dryrun we don't ever end up calling upsert so we only need to get a read lock
+	// if this a dryrun we don't ever end up calling upsert, so we only need to get a read lock
 	if dryrun {
 		ds.lock.RLock()
 		defer ds.lock.RUnlock()
@@ -482,11 +485,6 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 	for _, resourceSelector := range collection.GetResourceSelectors() {
 		var selectorRuleQueries []*v1.Query
 		for _, selectorRule := range resourceSelector.GetRules() {
-
-			// currently we only support disjunction operations here
-			if selectorRule.GetOperator() != storage.BooleanOperator_OR {
-				return nil, errors.Wrapf(errox.InvalidArgs, "%q boolean operator unsupported", selectorRule.GetOperator().String())
-			}
 
 			fieldLabel, present := supportedFieldNames[selectorRule.GetFieldName()]
 			if !present {
