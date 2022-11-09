@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
@@ -28,8 +27,7 @@ const (
 )
 
 var (
-	errCreateCentralDBBundleSupported = errox.InvariantViolation.New("central does not support central db bundle functionality")
-	centralDBCertBundle               = set.NewFrozenStringSet(mtls.CACertFileName, mtls.CentralDBCertFileName, mtls.CentralDBKeyFileName)
+	centralDBCertBundle = set.NewFrozenStringSet(mtls.CACertFileName, mtls.CentralDBCertFileName, mtls.CentralDBKeyFileName)
 )
 
 type generateCommand struct {
@@ -68,15 +66,15 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 }
 
 func (cmd *generateCommand) populateMTLS() error {
-	logger := cmd.env.Logger()
-	logger.InfofLn("Populating Central DB Certificate from bundle...")
+	envLogger := cmd.env.Logger()
+	envLogger.InfofLn("Populating Central DB Certificate from bundle...")
 	fileMap, err := zipdownload.GetZipFiles(zipdownload.GetZipOptions{
 		Path:       centralDBCertGeneratePath,
 		Method:     http.MethodPost,
 		Timeout:    cmd.timeout,
 		BundleType: "central-db",
 		ExpandZip:  true,
-	}, logger)
+	}, envLogger)
 	if err != nil {
 		return err
 	}
@@ -108,9 +106,9 @@ func generateBundleWrapper(config renderer.Config) (*zip.Wrapper, error) {
 	return wrapper, errors.Wrap(err, "could not get scanner bundle")
 }
 
-func outputZip(logger logger.Logger, config renderer.Config) error {
-	logger.InfofLn("Generating Central DB bundle...")
-	common.LogInfoPsp(logger, config.EnablePodSecurityPolicies)
+func outputZip(envLogger logger.Logger, config renderer.Config) error {
+	envLogger.InfofLn("Generating Central DB bundle...")
+	common.LogInfoPsp(envLogger, config.EnablePodSecurityPolicies)
 	wrapper, err := generateBundleWrapper(config)
 	if err != nil {
 		return err
@@ -130,7 +128,7 @@ func outputZip(logger logger.Logger, config renderer.Config) error {
 	if err != nil {
 		return errors.Wrap(err, "error generating directory for Central output")
 	}
-	logger.InfofLn("Wrote central bundle to %q", outputPath)
+	envLogger.InfofLn("Wrote central bundle to %q", outputPath)
 	return nil
 }
 
@@ -148,7 +146,7 @@ func verifyCentralDBBundleFiles(fm map[string]*zip.File) error {
 
 	checkList := centralDBCertBundle.Unfreeze()
 	for k, v := range fm {
-		if 0 == len(v.Content) {
+		if len(v.Content) == 0 {
 			errs.AddError(errors.Errorf("empty file in Central DB certificate bundle: %s", v.Name))
 		}
 		if !centralDBCertBundle.Contains(k) {

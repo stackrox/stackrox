@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	noteOpenShift3xCompatibilityMode = `NOTE: Deployment files are generated in OpenShift 3.x compatibility mode. Set the --openshift-version flag to 3 to suppress this note, or to 4 to take advantage of OpenShift 4.x features.`
-	defaultCentralDBBundle           = "central-db-bundle"
+	defaultCentralDBBundle = "central-db-bundle"
 )
 
 func orchestratorCommand(shortName, longName string) *cobra.Command {
@@ -76,9 +75,6 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 	var openshiftVersion int
 	c := k8sBasedOrchestrator(cliEnvironment, k8sConfig, "openshift", "Openshift", func() (storage.ClusterType, error) {
 		switch openshiftVersion {
-		case 0:
-			cliEnvironment.Logger().InfofLn("%s", noteOpenShift3xCompatibilityMode)
-			return storage.ClusterType_OPENSHIFT_CLUSTER, nil
 		case 3:
 			return storage.ClusterType_OPENSHIFT_CLUSTER, nil
 		case 4:
@@ -88,6 +84,6 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 		}
 	})
 
-	c.PersistentFlags().IntVar(&openshiftVersion, "openshift-version", 0, "the OpenShift major version (3 or 4) to deploy on")
+	c.PersistentFlags().IntVar(&openshiftVersion, "openshift-version", 3, "the OpenShift major version (3 or 4) to deploy on")
 	return c
 }
