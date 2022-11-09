@@ -53,7 +53,7 @@ function fetchDetachedCollections(
     const searchOption = { 'Collection Name': searchValue };
     const { request } = listCollections(
         searchOption,
-        { field: 'name', reversed: false },
+        { field: 'Collection Name', reversed: false },
         pageNumber - 1,
         pageSize
     );

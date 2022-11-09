@@ -33,7 +33,10 @@ function getEmbeddedCollections({ collection }: ResolvedCollectionResponse): Pro
     }
     const idSearchString = collection.embeddedCollections.map(({ id }) => id).join(',');
     const searchFilter = { 'Collection ID': idSearchString };
-    const { request } = listCollections(searchFilter, { field: 'name', reversed: false });
+    const { request } = listCollections(searchFilter, {
+        field: 'Collection Name',
+        reversed: false,
+    });
     return request.then((embeddedCollections) => ({ collection, embeddedCollections }));
 }
 
