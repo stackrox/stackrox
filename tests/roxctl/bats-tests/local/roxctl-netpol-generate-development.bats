@@ -16,7 +16,6 @@ setup_file() {
 setup() {
   out_dir="$(mktemp -d -u)"
   ofile="$(mktemp)"
-  export ROX_ROXCTL_NETPOL_GENERATE='true'
 }
 
 teardown() {
