@@ -41,7 +41,7 @@ const (
 // Alerts holds the Gorm model for Postgres table `alerts`.
 type Alerts struct {
 	Id                       string                              `gorm:"column:id;type:uuid;primaryKey"`
-	PolicyId                 string                              `gorm:"column:policy_id;type:uuid"`
+	PolicyId                 string                              `gorm:"column:policy_id;type:varchar"`
 	PolicyName               string                              `gorm:"column:policy_name;type:varchar"`
 	PolicyDescription        string                              `gorm:"column:policy_description;type:varchar"`
 	PolicyDisabled           bool                                `gorm:"column:policy_disabled;type:bool"`

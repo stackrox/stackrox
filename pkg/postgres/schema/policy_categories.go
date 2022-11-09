@@ -38,7 +38,7 @@ const (
 
 // PolicyCategories holds the Gorm model for Postgres table `policy_categories`.
 type PolicyCategories struct {
-	Id         string `gorm:"column:id;type:uuid;primaryKey"`
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

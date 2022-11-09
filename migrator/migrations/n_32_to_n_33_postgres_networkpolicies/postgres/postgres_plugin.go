@@ -80,14 +80,10 @@ func insertIntoNetworkpolicies(ctx context.Context, batch *pgx.Batch, obj *stora
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(obj.GetId()),
+		obj.GetId(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		log.Warnf("Id is not a valid uuid -- %v", obj)
-		return nil
 	}
 
 	finalStr := "INSERT INTO networkpolicies (Id, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
@@ -128,7 +124,7 @@ func (s *storeImpl) copyFromNetworkpolicies(ctx context.Context, tx pgx.Tx, objs
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(obj.GetId()),
+			obj.GetId(),
 
 			pgutils.NilOrUUID(obj.GetClusterId()),
 
@@ -136,10 +132,6 @@ func (s *storeImpl) copyFromNetworkpolicies(ctx context.Context, tx pgx.Tx, objs
 
 			serialized,
 		})
-		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid -- %v", obj)
-			continue
-		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())

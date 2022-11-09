@@ -88,7 +88,7 @@ func insertIntoAlerts(ctx context.Context, batch *pgx.Batch, obj *storage.Alert)
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
-		pgutils.NilOrUUID(obj.GetPolicy().GetId()),
+		obj.GetPolicy().GetId(),
 		obj.GetPolicy().GetName(),
 		obj.GetPolicy().GetDescription(),
 		obj.GetPolicy().GetDisabled(),
@@ -214,7 +214,7 @@ func (s *storeImpl) copyFromAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 
 			pgutils.NilOrUUID(obj.GetId()),
 
-			pgutils.NilOrUUID(obj.GetPolicy().GetId()),
+			obj.GetPolicy().GetId(),
 
 			obj.GetPolicy().GetName(),
 

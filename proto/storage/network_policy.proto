@@ -11,7 +11,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message NetworkPolicy {
-    string                    id            = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    string                    id            = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string                    name          = 2;
     string                    cluster_id    = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"type(uuid)"'];
     string                    cluster_name  = 4;

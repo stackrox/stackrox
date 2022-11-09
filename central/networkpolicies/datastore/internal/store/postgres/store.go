@@ -87,7 +87,7 @@ func insertIntoNetworkpolicies(ctx context.Context, batch *pgx.Batch, obj *stora
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(obj.GetId()),
+		obj.GetId(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		serialized,
@@ -131,7 +131,7 @@ func (s *storeImpl) copyFromNetworkpolicies(ctx context.Context, tx pgx.Tx, objs
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(obj.GetId()),
+			obj.GetId(),
 
 			pgutils.NilOrUUID(obj.GetClusterId()),
 

@@ -40,7 +40,7 @@ const (
 
 // Policies holds the Gorm model for Postgres table `policies`.
 type Policies struct {
-	Id                 string           `gorm:"column:id;type:uuid;primaryKey"`
+	Id                 string           `gorm:"column:id;type:varchar;primaryKey"`
 	Name               string           `gorm:"column:name;type:varchar;unique"`
 	Description        string           `gorm:"column:description;type:varchar"`
 	Disabled           bool             `gorm:"column:disabled;type:bool"`

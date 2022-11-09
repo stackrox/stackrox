@@ -81,7 +81,7 @@ func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Poli
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(obj.GetId()),
+		obj.GetId(),
 		obj.GetName(),
 		obj.GetDescription(),
 		obj.GetDisabled(),
@@ -94,10 +94,6 @@ func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Poli
 		obj.GetSORTLifecycleStage(),
 		obj.GetSORTEnforcement(),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		log.Warnf("Id is not a valid uuid -- %v", obj)
-		return nil
 	}
 
 	finalStr := "INSERT INTO policies (Id, Name, Description, Disabled, Categories, LifecycleStages, Severity, EnforcementActions, LastUpdated, SORTName, SORTLifecycleStage, SORTEnforcement, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Disabled = EXCLUDED.Disabled, Categories = EXCLUDED.Categories, LifecycleStages = EXCLUDED.LifecycleStages, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, LastUpdated = EXCLUDED.LastUpdated, SORTName = EXCLUDED.SORTName, SORTLifecycleStage = EXCLUDED.SORTLifecycleStage, SORTEnforcement = EXCLUDED.SORTEnforcement, serialized = EXCLUDED.serialized"
@@ -156,7 +152,7 @@ func (s *storeImpl) copyFromPolicies(ctx context.Context, tx pgx.Tx, objs ...*st
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(obj.GetId()),
+			obj.GetId(),
 
 			obj.GetName(),
 
@@ -182,10 +178,6 @@ func (s *storeImpl) copyFromPolicies(ctx context.Context, tx pgx.Tx, objs ...*st
 
 			serialized,
 		})
-		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid -- %v", obj)
-			continue
-		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
