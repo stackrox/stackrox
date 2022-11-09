@@ -1,5 +1,6 @@
 import { selectors } from '../../constants/ViolationsPage';
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
     clickDeploymentTabWithFixture,
     sortViolationsTableByColumn,
@@ -31,8 +32,10 @@ describe('Violations page', () => {
         cy.get(selectors.table.rows).should('have.length', count);
     });
 
-    it('should have columns in table', () => {
+    it('should have title and table column headings', () => {
         visitViolationsWithFixture('alerts/alerts.json');
+
+        cy.title().should('match', getRegExpForTitleWithBranding('Violations'));
 
         cy.get('th[scope="col"]:contains("Policy")');
         cy.get('th[scope="col"]:contains("Entity")');

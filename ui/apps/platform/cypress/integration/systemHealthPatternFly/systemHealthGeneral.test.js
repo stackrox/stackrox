@@ -28,4 +28,13 @@ describe('System Health general', () => {
             'pf-m-current'
         );
     });
+
+    // TODO Component needs to render PageTitle element.
+    /*
+    it('should have title', () => {
+        visitSystemHealth();
+
+        cy.title().should('match', getRegExpForTitleWithBranding('System Health'));
+    });
+    */
 });

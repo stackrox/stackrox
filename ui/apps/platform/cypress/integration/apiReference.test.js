@@ -1,6 +1,7 @@
 import withAuth from '../helpers/basicAuth';
 import { visitMainDashboard } from '../helpers/main';
 import { interactAndWaitForResponses } from '../helpers/request';
+import { getRegExpForTitleWithBranding } from '../helpers/title';
 import { visit } from '../helpers/visit';
 
 const apiReferencePath = '/main/apidocs';
@@ -34,5 +35,8 @@ describe('API Reference', () => {
         visit(apiReferencePath, requestConfig);
 
         cy.get(`h1:contains("${title}")`);
+
+        // Exception to pattern of separate test for title, because API Reference loads so slowly.
+        cy.title().should('match', getRegExpForTitleWithBranding(title));
     });
 });
