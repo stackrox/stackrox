@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/test/testuuidkey"
+	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testuuidkey/postgres"
 	"github.com/stretchr/testify/suite"
 )
 
