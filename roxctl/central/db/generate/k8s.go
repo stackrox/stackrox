@@ -75,17 +75,17 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 
 	var openshiftVersion int
 	c := k8sBasedOrchestrator(cliEnvironment, k8sConfig, "openshift", "Openshift", func() (storage.ClusterType, error) {
-		clusterType := storage.ClusterType_OPENSHIFT_CLUSTER
 		switch openshiftVersion {
 		case 0:
 			cliEnvironment.Logger().InfofLn("%s", noteOpenShift3xCompatibilityMode)
+			return storage.ClusterType_OPENSHIFT_CLUSTER, nil
 		case 3:
+			return storage.ClusterType_OPENSHIFT_CLUSTER, nil
 		case 4:
-			clusterType = storage.ClusterType_OPENSHIFT4_CLUSTER
+			return storage.ClusterType_OPENSHIFT4_CLUSTER, nil
 		default:
 			return 0, errors.Errorf("invalid OpenShift version %d, supported values are '3' and '4'", openshiftVersion)
 		}
-		return clusterType, nil
 	})
 
 	c.PersistentFlags().IntVar(&openshiftVersion, "openshift-version", 0, "the OpenShift major version (3 or 4) to deploy on")
