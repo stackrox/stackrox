@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	baseTable = "test_parent2"
+	baseTable = "test_single_uuid_key_structs"
 
 	batchAfter = 100
 
@@ -42,24 +42,25 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.TestParent2Schema
+	schema         = pkgSchema.TestSingleUuidKeyStructsSchema
 	targetResource = resources.Namespace
 )
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
-	Get(ctx context.Context, id string) (*storage.TestParent2, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TestParent2, error)
-	Upsert(ctx context.Context, obj *storage.TestParent2) error
-	UpsertMany(ctx context.Context, objs []*storage.TestParent2) error
-	Delete(ctx context.Context, id string) error
+	Exists(ctx context.Context, key string) (bool, error)
+	Get(ctx context.Context, key string) (*storage.TestSingleUUIDKeyStruct, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TestSingleUUIDKeyStruct, error)
+	GetAll(ctx context.Context) ([]*storage.TestSingleUUIDKeyStruct, error)
+	Upsert(ctx context.Context, obj *storage.TestSingleUUIDKeyStruct) error
+	UpsertMany(ctx context.Context, objs []*storage.TestSingleUUIDKeyStruct) error
+	Delete(ctx context.Context, key string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.TestParent2, []int, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.TestSingleUUIDKeyStruct, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(ctx context.Context, fn func(obj *storage.TestParent2) error) error
+	Walk(ctx context.Context, fn func(obj *storage.TestSingleUUIDKeyStruct) error) error
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
@@ -77,7 +78,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoTestParent2(ctx context.Context, batch *pgx.Batch, obj *storage.TestParent2) error {
+func insertIntoTestSingleUuidKeyStructs(ctx context.Context, batch *pgx.Batch, obj *storage.TestSingleUUIDKeyStruct) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -86,19 +87,27 @@ func insertIntoTestParent2(ctx context.Context, batch *pgx.Batch, obj *storage.T
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(obj.GetId()),
-		obj.GetParentId(),
-		obj.GetVal(),
+		pgutils.NilOrUUID(obj.GetKey()),
+		obj.GetName(),
+		obj.GetStringSlice(),
+		obj.GetBool(),
+		obj.GetUint64(),
+		obj.GetInt64(),
+		obj.GetFloat(),
+		obj.GetLabels(),
+		pgutils.NilOrTime(obj.GetTimestamp()),
+		obj.GetEnum(),
+		obj.GetEnums(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO test_parent2 (Id, ParentId, Val, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_single_uuid_key_structs (Key, Name, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Key) DO UPDATE SET Key = EXCLUDED.Key, Name = EXCLUDED.Name, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromTestParent2(ctx context.Context, tx pgx.Tx, objs ...*storage.TestParent2) error {
+func (s *storeImpl) copyFromTestSingleUuidKeyStructs(ctx context.Context, tx pgx.Tx, objs ...*storage.TestSingleUUIDKeyStruct) error {
 
 	inputRows := [][]interface{}{}
 
@@ -110,11 +119,27 @@ func (s *storeImpl) copyFromTestParent2(ctx context.Context, tx pgx.Tx, objs ...
 
 	copyCols := []string{
 
-		"id",
+		"key",
 
-		"parentid",
+		"name",
 
-		"val",
+		"stringslice",
+
+		"bool",
+
+		"uint64",
+
+		"int64",
+
+		"float",
+
+		"labels",
+
+		"timestamp",
+
+		"enum",
+
+		"enums",
 
 		"serialized",
 	}
@@ -130,17 +155,33 @@ func (s *storeImpl) copyFromTestParent2(ctx context.Context, tx pgx.Tx, objs ...
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(obj.GetId()),
+			pgutils.NilOrUUID(obj.GetKey()),
 
-			obj.GetParentId(),
+			obj.GetName(),
 
-			obj.GetVal(),
+			obj.GetStringSlice(),
+
+			obj.GetBool(),
+
+			obj.GetUint64(),
+
+			obj.GetInt64(),
+
+			obj.GetFloat(),
+
+			obj.GetLabels(),
+
+			pgutils.NilOrTime(obj.GetTimestamp()),
+
+			obj.GetEnum(),
+
+			obj.GetEnums(),
 
 			serialized,
 		})
 
 		// Add the id to be deleted.
-		deletes = append(deletes, obj.GetId())
+		deletes = append(deletes, obj.GetKey())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -153,7 +194,7 @@ func (s *storeImpl) copyFromTestParent2(ctx context.Context, tx pgx.Tx, objs ...
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_parent2"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_single_uuid_key_structs"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -167,8 +208,8 @@ func (s *storeImpl) copyFromTestParent2(ctx context.Context, tx pgx.Tx, objs ...
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestParent2) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "TestParent2")
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestSingleUUIDKeyStruct) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "TestSingleUUIDKeyStruct")
 	if err != nil {
 		return err
 	}
@@ -179,7 +220,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestParent2) 
 		return err
 	}
 
-	if err := s.copyFromTestParent2(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTestSingleUuidKeyStructs(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -191,8 +232,8 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestParent2) 
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestParent2) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "TestParent2")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestSingleUUIDKeyStruct) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "TestSingleUUIDKeyStruct")
 	if err != nil {
 		return err
 	}
@@ -200,7 +241,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestParent2) er
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
-		if err := insertIntoTestParent2(ctx, batch, obj); err != nil {
+		if err := insertIntoTestSingleUuidKeyStructs(ctx, batch, obj); err != nil {
 			return err
 		}
 		batchResults := conn.SendBatch(ctx, batch)
@@ -219,8 +260,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestParent2) er
 	return nil
 }
 
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestParent2) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "TestParent2")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestSingleUUIDKeyStruct) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "TestSingleUUIDKeyStruct")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {
@@ -232,8 +273,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestParent2) error 
 	})
 }
 
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestParent2) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TestParent2")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestSingleUUIDKeyStruct) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TestSingleUUIDKeyStruct")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {
@@ -257,7 +298,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestParent2)
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "TestParent2")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "TestSingleUUIDKeyStruct")
 
 	var sacQueryFilter *v1.Query
 
@@ -276,8 +317,8 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestParent2")
+func (s *storeImpl) Exists(ctx context.Context, key string) (bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestSingleUUIDKeyStruct")
 
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
@@ -292,7 +333,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(key).ProtoQuery(),
 	)
 
 	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
@@ -302,8 +343,8 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TestParent2, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TestParent2")
+func (s *storeImpl) Get(ctx context.Context, key string) (*storage.TestSingleUUIDKeyStruct, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TestSingleUUIDKeyStruct")
 
 	var sacQueryFilter *v1.Query
 
@@ -319,15 +360,25 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TestParent2, b
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(key).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema[storage.TestParent2](ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.TestSingleUUIDKeyStruct](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
 	return data, true, nil
+}
+func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.TestSingleUUIDKeyStruct, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "TestSingleUUIDKeyStruct")
+
+	var objs []*storage.TestSingleUUIDKeyStruct
+	err := s.Walk(ctx, func(obj *storage.TestSingleUUIDKeyStruct) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
@@ -340,8 +391,8 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TestParent2")
+func (s *storeImpl) Delete(ctx context.Context, key string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TestSingleUUIDKeyStruct")
 
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
@@ -356,7 +407,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(key).ProtoQuery(),
 	)
 
 	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
@@ -364,7 +415,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 
 // DeleteByQuery removes the objects based on the passed query
 func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TestParent2")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TestSingleUUIDKeyStruct")
 
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
@@ -387,7 +438,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.TestParent2IDs")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.TestSingleUUIDKeyStructIDs")
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
@@ -413,8 +464,8 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestParent2, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TestParent2")
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestSingleUUIDKeyStruct, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TestSingleUUIDKeyStruct")
 
 	if len(ids) == 0 {
 		return nil, nil, nil
@@ -439,7 +490,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestP
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema[storage.TestParent2](ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.TestSingleUUIDKeyStruct](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -450,14 +501,14 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestP
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.TestParent2, len(rows))
+	resultsByID := make(map[string]*storage.TestSingleUUIDKeyStruct, len(rows))
 	for _, msg := range rows {
-		resultsByID[msg.GetId()] = msg
+		resultsByID[msg.GetKey()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
 	// It is important that the elems are populated in the same order as the input ids
 	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.TestParent2, 0, len(resultsByID))
+	elems := make([]*storage.TestSingleUUIDKeyStruct, 0, len(resultsByID))
 	for i, id := range ids {
 		if result, ok := resultsByID[id]; !ok {
 			missingIndices = append(missingIndices, i)
@@ -469,8 +520,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestP
 }
 
 // GetByQuery returns the objects matching the query
-func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TestParent2, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "TestParent2")
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TestSingleUUIDKeyStruct, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "TestSingleUUIDKeyStruct")
 
 	var sacQueryFilter *v1.Query
 
@@ -491,7 +542,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 		query,
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema[storage.TestParent2](ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.TestSingleUUIDKeyStruct](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -503,7 +554,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "TestParent2")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "TestSingleUUIDKeyStruct")
 
 	var sacQueryFilter *v1.Query
 
@@ -549,9 +600,9 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestParent2) error) error {
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestSingleUUIDKeyStruct) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.TestParent2](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.TestSingleUUIDKeyStruct](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -575,13 +626,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestParent2) 
 
 //// Used for testing
 
-func dropTableTestParent2(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_parent2 CASCADE")
+func dropTableTestSingleUuidKeyStructs(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_single_uuid_key_structs CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableTestParent2(ctx, db)
+	dropTableTestSingleUuidKeyStructs(ctx, db)
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing

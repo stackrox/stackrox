@@ -86,7 +86,7 @@ func insertIntoTestChild2(ctx context.Context, batch *pgx.Batch, obj *storage.Te
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetParentId(),
 		obj.GetGrandparentId(),
 		obj.GetVal(),
@@ -133,7 +133,7 @@ func (s *storeImpl) copyFromTestChild2(ctx context.Context, tx pgx.Tx, objs ...*
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetParentId(),
 
