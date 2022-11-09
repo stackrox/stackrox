@@ -3,6 +3,7 @@ package fixtures
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	types2 "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -56,8 +57,8 @@ func DeploymentImages() []*storage.Image {
 func LightweightDeployment() *storage.Deployment {
 	return &storage.Deployment{
 		Name:        "nginx_server",
-		Id:          "s79mdvmb6dsl",
-		ClusterId:   "prod cluster",
+		Id:          fixtureconsts.Deployment1,
+		ClusterId:   fixtureconsts.Cluster1,
 		ClusterName: "prod cluster",
 		Namespace:   "stackrox",
 		Annotations: map[string]string{

@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -103,14 +104,15 @@ func (suite *ServiceAccountDataStoreTestSuite) TestServiceAccountsDataStore() {
 	suite.True(found)
 	suite.Equal(sa, foundSA)
 
-	_, found, err = suite.datastore.GetServiceAccount(suite.ctx, "NONEXISTENT")
+	nonexistentID := uuid.Nil.String()
+	_, found, err = suite.datastore.GetServiceAccount(suite.ctx, nonexistentID)
 	suite.Require().NoError(err)
 	suite.False(found)
 
 	validQ := search.NewQueryBuilder().AddStrings(search.Cluster, sa.GetClusterName()).ProtoQuery()
 	suite.assertSearchResults(validQ, sa)
 
-	invalidQ := search.NewQueryBuilder().AddStrings(search.Cluster, "NONEXISTENT").ProtoQuery()
+	invalidQ := search.NewQueryBuilder().AddStrings(search.Cluster, nonexistentID).ProtoQuery()
 	suite.assertSearchResults(invalidQ, nil)
 
 	err = suite.datastore.RemoveServiceAccount(suite.ctx, sa.GetId())

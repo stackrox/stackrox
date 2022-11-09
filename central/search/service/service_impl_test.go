@@ -45,6 +45,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -148,17 +149,17 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentNameOneOff))
 
 	deploymentName1 := fixtures.GetDeployment()
-	deploymentName1.Id = "name1"
+	deploymentName1.Id = fixtureconsts.Deployment2
 	deploymentName1.Name = "name1"
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1))
 
 	deploymentName1Duplicate := fixtures.GetDeployment()
-	deploymentName1Duplicate.Id = "name1Dup"
+	deploymentName1Duplicate.Id = fixtureconsts.Deployment3
 	deploymentName1Duplicate.Name = "name1"
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1Duplicate))
 
 	deploymentName2 := fixtures.GetDeployment()
-	deploymentName2.Id = "name12"
+	deploymentName2.Id = fixtureconsts.Deployment4
 	deploymentName2.Name = "name12"
 	deploymentName2.Labels = map[string]string{"hello": "hi", "hey": "ho"}
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName2))
@@ -205,6 +206,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		{
 			query:           fmt.Sprintf("%s:", search.DeploymentName),
 			expectedResults: []string{"name12", "nginx_server", "name1"},
+			ignoreOrder:     true,
 		},
 		{
 			query:           fmt.Sprintf("%s:name12,", search.DeploymentName),

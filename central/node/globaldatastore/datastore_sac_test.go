@@ -306,7 +306,7 @@ func getWriteSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, va
 func (s *nodeDatastoreSACSuite) TestGetAllClusterNodeStores() {
 	clusterID := testconsts.Cluster2
 
-	cases := getReadSACMultiNodeTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
+	cases := getReadSACMultiNodeTestCases(context.Background(), s.T(), clusterID, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -326,7 +326,7 @@ func (s *nodeDatastoreSACSuite) TestGetAllClusterNodeStores() {
 func (s *nodeDatastoreSACSuite) TestGetAllClusterNodeStoresWriteAccess() {
 	clusterID := testconsts.Cluster2
 
-	cases := getWriteSACMultiNodeTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
+	cases := getWriteSACMultiNodeTestCases(context.Background(), s.T(), clusterID, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -346,7 +346,7 @@ func (s *nodeDatastoreSACSuite) TestGetAllClusterNodeStoresWriteAccess() {
 func (s *nodeDatastoreSACSuite) TestGetClusterNodeStore() {
 	clusterID := testconsts.Cluster2
 
-	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
+	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -365,7 +365,7 @@ func (s *nodeDatastoreSACSuite) TestGetClusterNodeStore() {
 func (s *nodeDatastoreSACSuite) TestGetClusterNodeStoreWriteAccess() {
 	clusterID := testconsts.Cluster2
 
-	cases := testutils.GenericClusterSACWriteTestCases(context.Background(), s.T(), "write", clusterID, "not-"+clusterID, resources.Node)
+	cases := testutils.GenericClusterSACWriteTestCases(context.Background(), s.T(), "write", clusterID, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -482,7 +482,7 @@ func (s *nodeDatastoreSACSuite) TestRemoveClusterNodeStoresMulti() {
 func (s *nodeDatastoreSACSuite) TestSearchResults() {
 	clusterID := testconsts.Cluster2
 
-	cases := getReadSACMultiNodeTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
+	cases := getReadSACMultiNodeTestCases(context.Background(), s.T(), clusterID, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -507,7 +507,7 @@ func (s *nodeDatastoreSACSuite) TestSearchResults() {
 func (s *nodeDatastoreSACSuite) TestSearchRawNodes() {
 	clusterID := testconsts.Cluster2
 
-	cases := getReadSACMultiNodeTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
+	cases := getReadSACMultiNodeTestCases(context.Background(), s.T(), clusterID, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
