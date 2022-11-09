@@ -374,7 +374,6 @@ func (s *SingleUUIDIndexSuite) TestMatches() {
 	s.NoError(s.store.Upsert(ctx, testStruct1))
 	s.NoError(s.store.Upsert(ctx, testStruct2))
 
-	//optionsMap := schema.TestSingleUuidKeyStructsSchema.OptionsMap
 	for _, testCase := range []struct {
 		desc            string
 		q               *v1.Query
@@ -423,7 +422,7 @@ func (s *SingleUUIDIndexSuite) TestMatches() {
 			expectedResults: []*storage.TestSingleUUIDKeyStruct{testStruct1},
 		},
 	} {
-		s.Run(fmt.Sprintf("%s", testCase.desc), func() {
+		s.Run(testCase.desc, func() {
 			results, err := s.indexer.Search(ctx, testCase.q)
 			if testCase.expectErr {
 				s.Error(err)
