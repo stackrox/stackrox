@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -90,7 +91,7 @@ func insertIntoServiceAccounts(ctx context.Context, batch *pgx.Batch, obj *stora
 		serialized,
 	}
 	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		log.Warnf("Id is not a valid uuid -- %v", obj)
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
 		return nil
 	}
 
@@ -157,7 +158,7 @@ func (s *storeImpl) copyFromServiceAccounts(ctx context.Context, tx pgx.Tx, objs
 			serialized,
 		})
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid -- %v", obj)
+			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
 			continue
 		}
 

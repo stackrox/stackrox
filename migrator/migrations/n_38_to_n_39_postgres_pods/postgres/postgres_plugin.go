@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -88,7 +89,7 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 		serialized,
 	}
 	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		log.Warnf("Id is not a valid uuid -- %v", obj)
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
 		return nil
 	}
 
@@ -117,7 +118,7 @@ func insertIntoPodsLiveInstances(ctx context.Context, batch *pgx.Batch, obj *sto
 		obj.GetImageDigest(),
 	}
 	if pgutils.NilOrUUID(pods_Id) == nil {
-		log.Warnf("pods_Id is not a valid uuid -- %v", obj)
+		utils.Should(errors.Errorf("pods_Id is not a valid uuid -- %v", obj))
 		return nil
 	}
 
@@ -176,7 +177,7 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 			serialized,
 		})
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid -- %v", obj)
+			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
 			continue
 		}
 
@@ -244,7 +245,7 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 			obj.GetImageDigest(),
 		})
 		if pgutils.NilOrUUID(pods_Id) == nil {
-			log.Warnf("pods_Id is not a valid uuid -- %v", obj)
+			utils.Should(errors.Errorf("pods_Id is not a valid uuid -- %v", obj))
 			continue
 		}
 
