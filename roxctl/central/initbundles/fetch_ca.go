@@ -2,6 +2,7 @@ package initbundles
 
 import (
 	"context"
+	"io"
 	"os"
 
 	"github.com/pkg/errors"
@@ -24,20 +25,31 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string) er
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
 
-	bundleOutput := os.Stdout
-	if outputFile != "" {
-		bundleOutput, err = os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
-		if err != nil {
-			return errors.Wrap(err, "opening output file for writing CA config")
-		}
-		defer func() {
-			if bundleOutput != nil {
-				_ = bundleOutput.Close()
-				utils.Should(os.Remove(outputFile))
-			}
-		}()
+	if outputFile == "" {
+		return writeCA(ctx, svc, cliEnvironment.InputOutput().Out())
 	}
 
+	bundleOutput, err := os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		return errors.Wrap(err, "opening output file for writing CA config")
+	}
+	defer func() {
+		if bundleOutput != nil {
+			_ = bundleOutput.Close()
+			utils.Should(os.Remove(outputFile))
+		}
+	}()
+	if err := writeCA(ctx, svc, bundleOutput); err != nil {
+		return err
+	}
+	cliEnvironment.Logger().InfofLn("The CA configuration has been written to file %q.", outputFile)
+	if err := bundleOutput.Close(); err != nil {
+		return errors.Wrap(err, "closing output file for CA config")
+	}
+	return nil
+}
+
+func writeCA(ctx context.Context, svc v1.ClusterInitServiceClient, bundleOutput io.Writer) error {
 	resp, err := svc.GetCAConfig(ctx, &v1.Empty{})
 	if err != nil {
 		return errors.Wrap(err, "fetching CA config")
@@ -47,14 +59,6 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string) er
 	if err != nil {
 		return errors.Wrap(err, "writing init bundle")
 	}
-	if bundleOutput != os.Stdout {
-		cliEnvironment.Logger().InfofLn("The CA configuration has been written to file %q.", outputFile)
-		if err := bundleOutput.Close(); err != nil {
-			return errors.Wrap(err, "closing output file for CA config")
-		}
-		bundleOutput = nil
-	}
-
 	return nil
 }
 

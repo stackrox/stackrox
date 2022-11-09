@@ -90,7 +90,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 			// Note: This test is not for parallel run.
 			config.OutputDir = filepath.Join(tmpDir, testCase.testDir)
 			config.BackupBundle = testCase.backupBundle
-			require.NoError(t, OutputZip(logger, config))
+			require.NoError(t, OutputZip(logger, io, config))
 
 			// Load values-private.yaml file
 			values, err := chartutil.ReadValuesFile(filepath.Join(config.OutputDir, "values-private.yaml"))

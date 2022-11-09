@@ -118,7 +118,7 @@ func outputZip(envLogger logger.Logger, config renderer.Config) error {
 		if err != nil {
 			return errors.Wrap(err, "error generating zip file")
 		}
-		_, err = os.Stdout.Write(bytes)
+		_, err = os.Stdout.Write(bytes) //nolint:forbidigo // TODO(ROX-13473)
 		if err != nil {
 			return errors.Wrap(err, "couldn't write zip file")
 		}

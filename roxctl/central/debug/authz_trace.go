@@ -40,7 +40,7 @@ func authzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
 func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration) error {
 	// Write traces directly to stdout without buffering. Sync iff supported,
 	// e.g., stdout is redirected to a file and not attached to the console.
-	traceOutput := os.Stdout
+	traceOutput := os.Stdout //nolint:forbidigo // TODO(ROX-13473)
 	toSync := false
 	if traceOutput.Sync() == nil {
 		toSync = true
