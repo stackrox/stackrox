@@ -115,7 +115,6 @@ func outputZip(logger logger.Logger, config renderer.Config) error {
 	if err != nil {
 		return err
 	}
-	var outputPath string
 	if roxctl.InMainImage() {
 		bytes, err := wrapper.Zip()
 		if err != nil {
@@ -125,20 +124,13 @@ func outputZip(logger logger.Logger, config renderer.Config) error {
 		if err != nil {
 			return errors.Wrap(err, "couldn't write zip file")
 		}
-	} else {
-		var err error
-		outputPath, err = wrapper.Directory(config.OutputDir)
-		if err != nil {
-			return errors.Wrap(err, "error generating directory for Central output")
-		}
+		return nil
 	}
-
-	logger.InfofLn("Done!")
-
-	if outputPath != "" {
-		logger.InfofLn("Wrote central bundle to %q", outputPath)
+	outputPath, err := wrapper.Directory(config.OutputDir)
+	if err != nil {
+		return errors.Wrap(err, "error generating directory for Central output")
 	}
-
+	logger.InfofLn("Wrote central bundle to %q", outputPath)
 	return nil
 }
 
