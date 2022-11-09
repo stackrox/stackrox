@@ -1,7 +1,6 @@
 package mapping
 
 import (
-	"fmt"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -2896,11 +2895,6 @@ func TestNamespaceMapping(t *testing.T) {
 }
 
 func TestNodeMapping(t *testing.T) {
-	targetMap := GetEntityOptionsMap()[v1.SearchCategory_NODES]
-	for k, v := range targetMap.Original() {
-		fmt.Println(k)
-		fmt.Println(v)
-	}
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
 		search.Cluster:            nodeObjClusterNameField,
 		search.ClusterID:          nodeObjClusterIDField,
