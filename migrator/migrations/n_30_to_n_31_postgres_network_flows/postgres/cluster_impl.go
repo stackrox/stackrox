@@ -27,10 +27,7 @@ type clusterStoreImpl struct {
 
 // GetFlowStore returns the FlowStore for the cluster ID, or nil if none exists.
 func (s *clusterStoreImpl) GetFlowStore(clusterID string) store.FlowStore {
-	return &flowStoreImpl{
-		db:        s.db,
-		clusterID: clusterID,
-	}
+	return New(s.db, clusterID)
 }
 
 // CreateFlowStore returns the FlowStore for the cluster ID, or creates one if none exists.

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -80,19 +81,23 @@ func insertIntoProcessIndicators(ctx context.Context, batch *pgx.Batch, obj *sto
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
-		obj.GetDeploymentId(),
+		pgutils.NilOrUUID(obj.GetId()),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		obj.GetContainerName(),
 		obj.GetPodId(),
-		obj.GetPodUid(),
+		pgutils.NilOrUUID(obj.GetPodUid()),
 		obj.GetSignal().GetContainerId(),
 		obj.GetSignal().GetName(),
 		obj.GetSignal().GetArgs(),
 		obj.GetSignal().GetExecFilePath(),
 		obj.GetSignal().GetUid(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
@@ -151,15 +156,15 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
-			obj.GetDeploymentId(),
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
 
 			obj.GetContainerName(),
 
 			obj.GetPodId(),
 
-			obj.GetPodUid(),
+			pgutils.NilOrUUID(obj.GetPodUid()),
 
 			obj.GetSignal().GetContainerId(),
 
@@ -171,12 +176,16 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 
 			obj.GetSignal().GetUid(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetNamespace(),
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())

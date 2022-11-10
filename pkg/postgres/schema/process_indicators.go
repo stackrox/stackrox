@@ -46,17 +46,17 @@ const (
 
 // ProcessIndicators holds the Gorm model for Postgres table `process_indicators`.
 type ProcessIndicators struct {
-	Id                 string `gorm:"column:id;type:varchar;primaryKey"`
-	DeploymentId       string `gorm:"column:deploymentid;type:varchar;index:processindicators_deploymentid,type:hash"`
+	Id                 string `gorm:"column:id;type:uuid;primaryKey"`
+	DeploymentId       string `gorm:"column:deploymentid;type:uuid;index:processindicators_deploymentid,type:hash"`
 	ContainerName      string `gorm:"column:containername;type:varchar"`
 	PodId              string `gorm:"column:podid;type:varchar"`
-	PodUid             string `gorm:"column:poduid;type:varchar;index:processindicators_poduid,type:hash"`
+	PodUid             string `gorm:"column:poduid;type:uuid;index:processindicators_poduid,type:hash"`
 	SignalContainerId  string `gorm:"column:signal_containerid;type:varchar"`
 	SignalName         string `gorm:"column:signal_name;type:varchar"`
 	SignalArgs         string `gorm:"column:signal_args;type:varchar"`
 	SignalExecFilePath string `gorm:"column:signal_execfilepath;type:varchar"`
 	SignalUid          uint32 `gorm:"column:signal_uid;type:bigint"`
-	ClusterId          string `gorm:"column:clusterid;type:varchar;index:processindicators_sac_filter,type:btree"`
+	ClusterId          string `gorm:"column:clusterid;type:uuid;index:processindicators_sac_filter,type:btree"`
 	Namespace          string `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:btree"`
 	Serialized         []byte `gorm:"column:serialized;type:bytea"`
 }

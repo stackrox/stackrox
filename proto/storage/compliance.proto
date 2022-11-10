@@ -99,7 +99,7 @@ message ComplianceDomain {
 message ComplianceRunMetadata {
     string run_id      = 1 [(gogoproto.moretags) = 'sql:"pk" search:"Compliance Run ID,hidden"'];
     string standard_id = 2 [(gogoproto.moretags) = 'search:"Standard ID,hidden,store"'];
-    string cluster_id  = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store"'];
+    string cluster_id  = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"type(uuid)"'];
 
     google.protobuf.Timestamp start_timestamp  = 4;
     google.protobuf.Timestamp finish_timestamp = 5 [(gogoproto.moretags) = 'search:"Compliance Run Finished Timestamp,hidden,store"'];
