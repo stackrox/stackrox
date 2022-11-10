@@ -100,6 +100,15 @@ function AuthProviders(): ReactElement {
         }
     }, [dispatch, hasReadAccessForAuthProviders, hasReadAccessForRoles]);
 
+    // Return "no access" page immediately if user doesn't have enough permissions.
+    if (!hasReadAccessForAuthProviders) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="auth providers" entityType={entityType} />
+            </>
+        );
+    }
+
     function onToggleCreateMenu(isOpen) {
         setIsCreateMenuOpen(isOpen);
     }
@@ -146,14 +155,6 @@ function AuthProviders(): ReactElement {
             {label}
         </DropdownItem>
     ));
-
-    if (!hasReadAccessForAuthProviders) {
-        return (
-            <>
-                <AccessControlNoPermission subPage="auth providers" entityType={entityType} />
-            </>
-        );
-    }
 
     return (
         <>

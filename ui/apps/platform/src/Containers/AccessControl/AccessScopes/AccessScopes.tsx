@@ -105,6 +105,15 @@ function AccessScopes(): ReactElement {
             });
     }, []);
 
+    // Return "no access" page immediately if user doesn't have enough permissions.
+    if (!hasReadAccessForAccessScopes) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="access scopes" entityType={entityType} />
+            </>
+        );
+    }
+
     function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
@@ -152,14 +161,6 @@ function AccessScopes(): ReactElement {
     const accessScope = accessScopes.find(({ id }) => id === entityId);
     const hasAction = Boolean(action);
     const isList = typeof entityId !== 'string' && !hasAction;
-
-    if (!hasReadAccessForAccessScopes) {
-        return (
-            <>
-                <AccessControlNoPermission subPage="access scopes" entityType={entityType} />
-            </>
-        );
-    }
 
     return (
         <>

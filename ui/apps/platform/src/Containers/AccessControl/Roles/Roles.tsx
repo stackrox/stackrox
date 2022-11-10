@@ -182,6 +182,15 @@ function Roles(): ReactElement {
             });
     }, []);
 
+    // Return "no access" page immediately if user doesn't have enough permissions.
+    if (!hasReadAccessForRoles) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="roles" entityType={entityType} />
+            </>
+        );
+    }
+
     function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
@@ -227,14 +236,6 @@ function Roles(): ReactElement {
     const role = roles.find(({ name }) => name === entityName);
     const hasAction = Boolean(action);
     const isList = typeof entityName !== 'string' && !hasAction;
-
-    if (!hasReadAccessForRoles) {
-        return (
-            <>
-                <AccessControlNoPermission subPage="roles" entityType={entityType} />
-            </>
-        );
-    }
 
     return (
         <>

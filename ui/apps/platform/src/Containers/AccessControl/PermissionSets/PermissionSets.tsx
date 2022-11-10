@@ -132,6 +132,15 @@ function PermissionSets(): ReactElement {
             });
     }, []);
 
+    // Return "no access" page immediately if user doesn't have enough permissions.
+    if (!hasReadAccessForPermissionSets) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="permission sets" entityType={entityType} />
+            </>
+        );
+    }
+
     function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
@@ -179,14 +188,6 @@ function PermissionSets(): ReactElement {
     const permissionSet = permissionSets.find(({ id }) => id === entityId);
     const hasAction = Boolean(action);
     const isList = typeof entityId !== 'string' && !hasAction;
-
-    if (!hasReadAccessForPermissionSets) {
-        return (
-            <>
-                <AccessControlNoPermission subPage="permission sets" entityType={entityType} />
-            </>
-        );
-    }
 
     return (
         <>
