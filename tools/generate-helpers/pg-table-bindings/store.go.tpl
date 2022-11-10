@@ -39,7 +39,11 @@ import (
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
+    {{- if not $inMigration}}
     pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+    {{- else }}
+    pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+    {{- end}}
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
@@ -1002,11 +1006,13 @@ func Destroy(ctx context.Context, db *pgxpool.Pool) {
     {{template "dropTableFunctionName" .Schema}}(ctx, db)
 }
 
+{{ if not $inMigration }}
 // CreateTableAndNewStore returns a new Store instance for testing
 func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
+{{- end}}
 
 //// Stubs for satisfying legacy interfaces
 

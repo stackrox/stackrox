@@ -8,12 +8,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_14_to_n_15_postgres_compliance_operator_profiles/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_14_to_n_15_postgres_compliance_operator_profiles/postgres"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
@@ -42,7 +43,7 @@ var (
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableComplianceOperatorProfilesStmt)
 	var complianceOperatorProfiles []*storage.ComplianceOperatorProfile
 	err := walk(ctx, legacyStore, func(obj *storage.ComplianceOperatorProfile) error {
 		complianceOperatorProfiles = append(complianceOperatorProfiles, obj)

@@ -16,8 +16,3 @@ package schema
 //go:generate pg-schema-migration-helper --type=storage.TestG3GrandChild1 --search-category 67
 //go:generate pg-schema-migration-helper --type=storage.TestShortCircuit --search-category 71 --references storage.TestChild1,storage.TestG2GrandChild1
 //go:generate pg-schema-migration-helper --type=storage.Image --search-category IMAGES --search-scope IMAGE_VULNERABILITIES,COMPONENT_VULN_EDGE,IMAGE_COMPONENTS,IMAGE_COMPONENT_EDGE,IMAGE_VULN_EDGE,IMAGES,DEPLOYMENTS,NAMESPACES,CLUSTERS
-
-// We only need conversion tool in migrator for version.
-// We do not need to migrate version table, use the pkg schema for versions.
-//go:generate pg-schema-migration-helper --type=storage.Version --singleton
-//go:generate rm ./versions.go

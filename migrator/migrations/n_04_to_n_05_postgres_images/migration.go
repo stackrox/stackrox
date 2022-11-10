@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/postgres"
@@ -16,7 +17,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
@@ -42,12 +43,12 @@ var (
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore store.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB, true)
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.ImageComponentsSchema.Table)
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.ImageCvesSchema.Table)
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.ImageCveEdgesSchema.Table)
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.ImageComponentEdgesSchema.Table)
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.ImageComponentCveEdgesSchema.Table)
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableImageComponentsStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableImageCvesStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableImageCveEdgesStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableImageComponentEdgesStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableImageComponentCveEdgesStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableImagesStmt)
 	return walk(ctx, legacyStore, func(obj *storage.Image) error {
 		if err := store.Upsert(ctx, obj); err != nil {
 			log.WriteToStderrf("failed to persist images to store %v", err)
