@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useState } from 'react';
+import React, { ReactElement, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Alert,
@@ -19,16 +19,7 @@ import {
 } from '@patternfly/react-core';
 import { useMediaQuery } from 'react-responsive';
 
-import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
-import {
-    CollectionResponse,
-    createCollection,
-    deleteCollection,
-    getCollection,
-    listCollections,
-    ResolvedCollectionResponse,
-    updateCollection,
-} from 'services/CollectionsService';
+import { createCollection, deleteCollection, updateCollection } from 'services/CollectionsService';
 import { CaretDownIcon } from '@patternfly/react-icons';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { collectionsBasePath } from 'routePaths';
@@ -37,43 +28,15 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts from 'hooks/patternfly/useToasts';
 import { values } from 'lodash';
 import { CollectionPageAction } from './collections.utils';
-import CollectionForm from './CollectionForm';
+import CollectionFormDrawer from './CollectionFormDrawer';
 import { generateRequest } from './converter';
 import { Collection } from './types';
+import useCollection from './hooks/useCollection';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
     pageAction: CollectionPageAction;
 };
-
-const defaultCollectionData: Omit<CollectionResponse, 'id'> = {
-    name: '',
-    description: '',
-    inUse: false,
-    embeddedCollections: [],
-    resourceSelectors: [],
-};
-
-const noopRequest = {
-    request: Promise.resolve<{
-        collection: Omit<CollectionResponse, 'id'>;
-        embeddedCollections: CollectionResponse[];
-    }>({ collection: defaultCollectionData, embeddedCollections: [] }),
-    cancel: () => {},
-};
-
-function getEmbeddedCollections({ collection }: ResolvedCollectionResponse): Promise<{
-    collection: CollectionResponse;
-    embeddedCollections: CollectionResponse[];
-}> {
-    if (collection.embeddedCollections.length === 0) {
-        return Promise.resolve({ collection, embeddedCollections: [] });
-    }
-    const idSearchString = collection.embeddedCollections.map(({ id }) => id).join(',');
-    const searchFilter = { 'Collection ID': idSearchString };
-    const { request } = listCollections(searchFilter, { field: 'name', reversed: false });
-    return request.then((embeddedCollections) => ({ collection, embeddedCollections }));
-}
 
 function CollectionsFormPage({
     hasWriteAccessForCollections,
@@ -82,14 +45,8 @@ function CollectionsFormPage({
     const history = useHistory();
     const isLargeScreen = useMediaQuery({ query: '(min-width: 992px)' }); // --pf-global--breakpoint--lg
     const collectionId = pageAction.type !== 'create' ? pageAction.collectionId : undefined;
-    const collectionFetcher = useCallback(() => {
-        if (!collectionId) {
-            return noopRequest;
-        }
-        const { request, cancel } = getCollection(collectionId);
-        return { request: request.then(getEmbeddedCollections), cancel };
-    }, [collectionId]);
-    const { data, loading, error } = useRestQuery(collectionFetcher);
+
+    const { data, loading, error } = useCollection(collectionId);
 
     const { toasts, addToast, removeToast } = useToasts();
 
@@ -188,11 +145,11 @@ function CollectionsFormPage({
     } else if (data) {
         const pageTitle = pageAction.type === 'create' ? 'Create collection' : data.collection.name;
         content = (
-            <CollectionForm
+            <CollectionFormDrawer
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
                 action={pageAction}
                 collectionData={data}
-                useInlineDrawer={isLargeScreen}
+                isInlineDrawer={isLargeScreen}
                 isDrawerOpen={isDrawerOpen}
                 toggleDrawer={toggleDrawer}
                 onSubmit={onSubmit}
