@@ -192,7 +192,7 @@ function CollectionsFormPage({
                 hasWriteAccessForCollections={hasWriteAccessForCollections}
                 action={pageAction}
                 collectionData={data}
-                useInlineDrawer={isLargeScreen}
+                isInlineDrawer={isLargeScreen}
                 isDrawerOpen={isDrawerOpen}
                 toggleDrawer={toggleDrawer}
                 onSubmit={onSubmit}

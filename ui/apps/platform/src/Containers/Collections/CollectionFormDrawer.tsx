@@ -29,7 +29,7 @@ export type CollectionFormDrawerProps = {
     };
     /* Whether or not to display the collection results in an inline drawer. If false, will
     display collection results in an overlay drawer. */
-    useInlineDrawer: boolean;
+    isInlineDrawer: boolean;
     isDrawerOpen: boolean;
     toggleDrawer: (isOpen: boolean) => void;
     headerContent?: ReactElement;
@@ -44,7 +44,7 @@ function CollectionFormDrawer({
     action,
     collectionData,
     headerContent,
-    useInlineDrawer,
+    isInlineDrawer,
     isDrawerOpen,
     toggleDrawer,
     onSubmit,
@@ -53,12 +53,12 @@ function CollectionFormDrawer({
     const initialEmbeddedCollections = collectionData.embeddedCollections;
 
     useEffect(() => {
-        toggleDrawer(useInlineDrawer);
-    }, [toggleDrawer, useInlineDrawer]);
+        toggleDrawer(isInlineDrawer);
+    }, [toggleDrawer, isInlineDrawer]);
 
     return (
         <>
-            <Drawer isExpanded={isDrawerOpen} isInline={useInlineDrawer}>
+            <Drawer isExpanded={isDrawerOpen} isInline={isInlineDrawer}>
                 <DrawerContent
                     panelContent={
                         <DrawerPanelContent
@@ -68,7 +68,7 @@ function CollectionFormDrawer({
                         >
                             <DrawerHead>
                                 <Title headingLevel="h2">Collection results</Title>
-                                <Text>See a live preview of current matches.</Text>
+                                <Text>See a preview of current matches.</Text>
                                 <DrawerActions>
                                     <DrawerCloseButton onClick={() => toggleDrawer(false)} />
                                 </DrawerActions>
