@@ -93,20 +93,25 @@ func (t *ClientTestSuite) TestAuthenticatedHTTPTransport_WebSocket() {
 				}
 
 				// http because TLS is disabled.
-				t.Equal("http://central.stackrox.svc:443/hello", r.URL.String())
+				t.Equal("http://central.stackrox.svc:443/hello/howdy?file=rhelv2%2Frepository-to-cpe.json&uuid=f81dbc6b-5899-433b-bc86-9127219a9d89", r.URL.String())
 
 				// Forward traffic to the NO-OP Server
 				return url.Parse(noopServer.URL)
 			}
 
 			host := testcase.scheme + "://central.stackrox.svc:443"
-
-			endpoint := (&url.URL{Path: "/hello"}).String()
+			// This is sorted by key.
+			rawQuery := url.Values{
+				"uuid": []string{"f81dbc6b-5899-433b-bc86-9127219a9d89"},
+				"file": []string{"rhelv2/repository-to-cpe.json"},
+			}.Encode()
+			endpoint := (&url.URL{Path: "/hello/howdy", RawQuery: rawQuery}).String()
 			if !testcase.valid {
 				endpoint = (&url.URL{
 					Scheme: "https",
 					Host:   host,
-					Path:   "/hello",
+					Path:   "hello/howdy",
+					RawQuery: rawQuery,
 				}).String()
 			}
 
@@ -114,7 +119,7 @@ func (t *ClientTestSuite) TestAuthenticatedHTTPTransport_WebSocket() {
 			if testcase.valid {
 				t.NoError(err)
 			} else {
-				errEndpoint := `"https://` + testcase.scheme + `:%2F%2Fcentral.stackrox.svc:443/hello"`
+				errEndpoint := `"https://` + testcase.scheme + `:%2F%2Fcentral.stackrox.svc:443/hello/howdy?file=rhelv2%2Frepository-to-cpe.json&uuid=f81dbc6b-5899-433b-bc86-9127219a9d89"`
 				errString := `parse ` + errEndpoint + `: invalid URL escape "%2F"`
 				t.EqualError(err, errString)
 				return
