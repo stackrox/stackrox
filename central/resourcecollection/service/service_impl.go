@@ -40,8 +40,8 @@ var (
 			// "/v1.CollectionService/AutoCompleteCollection", TODO ROX-12616
 			"/v1.CollectionService/CreateCollection",
 			"/v1.CollectionService/DeleteCollection",
-			// "/v1.CollectionService/DryRunCollection", TODO ROX-13031
 			"/v1.CollectionService/UpdateCollection",
+			"/v1.CollectionService/DryRunCollection",
 		},
 	}))
 )
@@ -89,9 +89,9 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 		return nil, err
 	}
 
-	if request.GetOptions().GetWithMatches() {
-		// TODO match deployments for response
-	}
+	// if request.GetOptions().GetWithMatches() {
+	// 	 TODO match deployments for response
+	// }
 
 	return resp, err
 }
@@ -272,9 +272,9 @@ func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCo
 		return nil, err
 	}
 
-	if !request.GetOptions().GetSkipDeploymentMatching() {
-		// TODO match deployments for response
-	}
+	// if !request.GetOptions().GetSkipDeploymentMatching() {
+	// 	TODO match deployments for response
+	// }
 
 	return &v1.DryRunCollectionResponse{
 		Deployments: nil,
