@@ -1,21 +1,23 @@
-package generate
+package common
 
 import (
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
-const defaultPath = "central-bundle"
-
 type outputDirWrapper struct {
-	OutputDir *string
+	OutputDir  *string
+	defaultDir string
 }
 
-func newOutputDir(s *string) *outputDirWrapper {
-	*s = defaultPath
+// NewOutputDir generates an output directory wrapper with a default for cobra
+func NewOutputDir(s *string, defaultDir string) *outputDirWrapper {
+	*s = defaultDir
 	return &outputDirWrapper{
-		OutputDir: s,
+		OutputDir:  s,
+		defaultDir: defaultDir,
 	}
 }
 
@@ -25,10 +27,10 @@ func (o *outputDirWrapper) String() string {
 
 func (o *outputDirWrapper) Set(input string) error {
 	if input == "" {
-		input = defaultPath
+		input = o.defaultDir
 	}
 	if _, err := os.Stat(input); err != nil && !os.IsNotExist(err) {
-		return err
+		return errors.Wrapf(err, "failed to check status of directory %q", input)
 	} else if err == nil {
 		return errox.InvalidArgs.Newf("directory %q already exists. Please specify and new path to ensure expected results", input)
 	}
