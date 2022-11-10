@@ -30,7 +30,7 @@ const LABEL_SEPARATOR = '=';
  * of a `Collection` that can be supported by the current UI controls. If any incompatibilities are detected
  * it will return a list of validation errors to the caller.
  */
-export function parseCollection(data: CollectionResponse): Collection | AggregateError {
+export function parseCollection(data: Omit<CollectionResponse, 'id'>): Collection | AggregateError {
     const collection: Collection = {
         name: data.name,
         description: data.description,
