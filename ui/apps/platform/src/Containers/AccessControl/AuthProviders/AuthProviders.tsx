@@ -91,10 +91,14 @@ function AuthProviders(): ReactElement {
     const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
 
     useEffect(() => {
-        dispatch(authActions.fetchAuthProviders.request());
-        dispatch(roleActions.fetchRoles.request());
-        dispatch(groupActions.fetchGroups.request());
-    }, [dispatch]);
+        if (hasReadAccessForAuthProviders) {
+            dispatch(authActions.fetchAuthProviders.request());
+        }
+        if (hasReadAccessForRoles) {
+            dispatch(roleActions.fetchRoles.request());
+            dispatch(groupActions.fetchGroups.request());
+        }
+    }, [dispatch, hasReadAccessForAuthProviders, hasReadAccessForRoles]);
 
     function onToggleCreateMenu(isOpen) {
         setIsCreateMenuOpen(isOpen);
