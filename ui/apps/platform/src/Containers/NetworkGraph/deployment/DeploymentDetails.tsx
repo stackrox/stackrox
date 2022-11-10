@@ -18,6 +18,18 @@ import {
     TextVariants,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import pluralize from 'pluralize';
+
+import { Deployment } from 'types/deployment.proto';
+import { ListenPort } from 'types/networkFlow.proto';
+import { getDateTime } from 'utils/dateUtils';
+
+type DeploymentDetailsProps = {
+    deployment: Deployment;
+    numExternalFlows: number;
+    numInternalFlows: number;
+    listenPorts: ListenPort[];
+};
 
 function DetailSection({ title, children }) {
     const [isExpanded, setIsExpanded] = useState(true);
@@ -43,7 +55,12 @@ function DetailSection({ title, children }) {
     );
 }
 
-function DeploymentDetails() {
+function DeploymentDetails({
+    deployment,
+    numExternalFlows,
+    numInternalFlows,
+    listenPorts,
+}: DeploymentDetailsProps) {
     return (
         <div className="pf-u-h-100 pf-u-p-md">
             <ul>
@@ -63,7 +80,8 @@ function DeploymentDetails() {
                                                 color="red"
                                                 icon={<ExclamationCircleIcon />}
                                             >
-                                                2 external flows
+                                                {numExternalFlows} external{' '}
+                                                {pluralize('flow', numExternalFlows)}
                                             </Label>
                                         </FlexItem>
                                         <FlexItem>
@@ -72,7 +90,8 @@ function DeploymentDetails() {
                                                 color="gold"
                                                 icon={<ExclamationCircleIcon />}
                                             >
-                                                3 internal flows
+                                                {numInternalFlows} internal{' '}
+                                                {pluralize('flow', numInternalFlows)}
                                             </Label>
                                         </FlexItem>
                                     </Flex>
@@ -110,7 +129,19 @@ function DeploymentDetails() {
                                         alignItems={{ default: 'alignItemsCenter' }}
                                     >
                                         <FlexItem>
-                                            <Label variant="outline">TCP: 2020, 2021</Label>
+                                            <LabelGroup>
+                                                {listenPorts.map(({ port, l4protocol }) => {
+                                                    const protocol = l4protocol.replace(
+                                                        'L4_PROTOCOL_',
+                                                        ''
+                                                    );
+                                                    return (
+                                                        <Label variant="outline">
+                                                            {protocol}: {port}
+                                                        </Label>
+                                                    );
+                                                })}
+                                            </LabelGroup>
                                         </FlexItem>
                                     </Flex>
                                 </DescriptionListDescription>
@@ -128,21 +159,21 @@ function DeploymentDetails() {
                                         <DescriptionListTerm>Name</DescriptionListTerm>
                                         <DescriptionListDescription>
                                             <Button variant="link" isInline>
-                                                visa-processor
+                                                {deployment.name}
                                             </Button>
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Created</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            12/09/21 | 6:03:23 PM
+                                            {getDateTime(deployment.created)}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Cluster</DescriptionListTerm>
                                         <DescriptionListDescription>
                                             <Button variant="link" isInline>
-                                                Production
+                                                {deployment.clusterName}
                                             </Button>
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
@@ -150,7 +181,7 @@ function DeploymentDetails() {
                                         <DescriptionListTerm>Namespace</DescriptionListTerm>
                                         <DescriptionListDescription>
                                             <Button variant="link" isInline>
-                                                Naples
+                                                {deployment.namespace}
                                             </Button>
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
@@ -158,7 +189,7 @@ function DeploymentDetails() {
                                         <DescriptionListTerm>Replicas</DescriptionListTerm>
                                         <DescriptionListDescription>
                                             <Button variant="link" isInline>
-                                                2 pods
+                                                {deployment.replicas}
                                             </Button>
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
@@ -166,7 +197,7 @@ function DeploymentDetails() {
                                         <DescriptionListTerm>Service account</DescriptionListTerm>
                                         <DescriptionListDescription>
                                             <Button variant="link" isInline>
-                                                visa-processor
+                                                {deployment.serviceAccount}
                                             </Button>
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
@@ -178,10 +209,15 @@ function DeploymentDetails() {
                                         <DescriptionListTerm>Labels</DescriptionListTerm>
                                         <DescriptionListDescription>
                                             <LabelGroup>
-                                                <Label color="blue">app:visa-processor</Label>
-                                                <Label color="blue">
-                                                    helm.sh/release-namespace:naples
-                                                </Label>
+                                                {Object.keys(deployment.labels).map((labelKey) => {
+                                                    const labelValue = deployment.labels[labelKey];
+                                                    const label = `${labelKey}:${labelValue}`;
+                                                    return (
+                                                        <Label key={label} color="blue">
+                                                            {label}
+                                                        </Label>
+                                                    );
+                                                })}
                                             </LabelGroup>
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
@@ -189,29 +225,19 @@ function DeploymentDetails() {
                                         <DescriptionListTerm>Annotations</DescriptionListTerm>
                                         <DescriptionListDescription>
                                             <LabelGroup>
-                                                <Label color="blue">
-                                                    deprecated.daemonset.template.generation:15
-                                                </Label>
-                                                <Label color="blue">
-                                                    email:support@stackrox.com
-                                                </Label>
+                                                {Object.keys(deployment.annotations).map(
+                                                    (annotationKey) => {
+                                                        const annotationValue =
+                                                            deployment.annotations[annotationKey];
+                                                        const annotation = `${annotationKey}:${annotationValue}`;
+                                                        return (
+                                                            <Label key={annotationKey} color="blue">
+                                                                {annotation}
+                                                            </Label>
+                                                        );
+                                                    }
+                                                )}
                                             </LabelGroup>
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                </DescriptionList>
-                            </StackItem>
-                            <StackItem>
-                                <DescriptionList columnModifier={{ default: '2Col' }}>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>AddCapabilities</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            SYS_ADMIN
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Privileged</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            true
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                 </DescriptionList>
