@@ -6,7 +6,6 @@ import {
     observer,
     ScaleDetailsLevel,
     ShapeProps,
-    WithContextMenuProps,
     WithDragNodeProps,
     WithSelectionProps,
 } from '@patternfly/react-topology';
@@ -29,14 +28,11 @@ type StyleGroupProps = {
     onCollapseChange?: (group: Node, collapsed: boolean) => void;
     getCollapsedShape?: (node: Node) => React.FunctionComponent<ShapeProps>;
     collapsedShadowOffset?: number; // defaults to 10
-} & WithContextMenuProps &
-    WithDragNodeProps &
+} & WithDragNodeProps &
     WithSelectionProps;
 
 const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
     element,
-    onContextMenu,
-    contextMenuOpen,
     collapsedWidth = 75,
     collapsedHeight = 75,
     ...rest
@@ -80,8 +76,6 @@ const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
 
     return (
         <DefaultGroup
-            onContextMenu={data.showContextMenu ? onContextMenu : undefined}
-            contextMenuOpen={contextMenuOpen}
             element={element}
             collapsedWidth={collapsedWidth}
             collapsedHeight={collapsedHeight}
