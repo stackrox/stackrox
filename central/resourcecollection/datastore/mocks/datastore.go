@@ -154,6 +154,21 @@ func (mr *MockDataStoreMockRecorder) GetMany(ctx, id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockDataStore)(nil).GetMany), ctx, id)
 }
 
+// ResolveListDeployments mocks base method.
+func (m *MockDataStore) ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection) ([]*storage.ListDeployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveListDeployments", ctx, collection)
+	ret0, _ := ret[0].([]*storage.ListDeployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResolveListDeployments indicates an expected call of ResolveListDeployments.
+func (mr *MockDataStoreMockRecorder) ResolveListDeployments(ctx, collection interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveListDeployments", reflect.TypeOf((*MockDataStore)(nil).ResolveListDeployments), ctx, collection)
+}
+
 // Search mocks base method.
 func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
