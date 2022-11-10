@@ -14,17 +14,20 @@ import {
     AlertActionCloseButton,
     AlertGroup,
 } from '@patternfly/react-core';
-import pluralize from 'pluralize';
 
 import PageTitle from 'Components/PageTitle';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { collectionsBasePath } from 'routePaths';
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
-import { deleteCollection, getCollectionCount, listCollections } from 'services/CollectionsService';
+import {
+    CollectionResponse,
+    deleteCollection,
+    getCollectionCount,
+    listCollections,
+} from 'services/CollectionsService';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { Empty } from 'services/types';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import CollectionsTable from './CollectionsTable';
 
@@ -66,41 +69,18 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
     const isLoading = !isDataAvailable && (listLoading || countLoading);
     const loadError = listError || countError;
 
-    /**
-     * Deletes an array of collections by ids. Will alert individually for any deletion
-     * requests that fail.
-     */
-    function onCollectionDelete(ids: string[]) {
-        const promises: Promise<Empty>[] = [];
-        ids.forEach((id) => {
-            const deletionPromise = deleteCollection(id).request.catch((err) => {
-                addToast(`Could not delete collection ${id}`, 'danger', err.message);
-                return Promise.reject(err);
+    function onCollectionDelete({ id, name }: CollectionResponse) {
+        const { request } = deleteCollection(id);
+
+        return request
+            .then(() => {
+                addToast(`Successfully deleted '${name}'`, 'success');
+                listRefetch();
+                countRefetch();
+            })
+            .catch((err) => {
+                addToast(`Could not delete collection '${name}'`, 'danger', err.message);
             });
-            promises.push(deletionPromise);
-        });
-
-        return Promise.allSettled(promises).then((promiseResults) => {
-            const totalDeleted = promiseResults.filter((res) => res.status === 'fulfilled').length;
-            const collectionText = pluralize('collection', ids.length);
-
-            if (totalDeleted > 0 && totalDeleted === ids.length) {
-                // All collections deleted successfully
-                addToast(
-                    `Successfully deleted ${totalDeleted} selected ${collectionText}`,
-                    'success'
-                );
-                // Some, but not all, deletion requests failed
-            } else if (totalDeleted > 0) {
-                addToast(
-                    `Deleted ${totalDeleted} of ${ids.length} selected ${collectionText}`,
-                    'warning'
-                );
-            }
-
-            listRefetch();
-            countRefetch();
-        });
     }
 
     let pageContent = (
