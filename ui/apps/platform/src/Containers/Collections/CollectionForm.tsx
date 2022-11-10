@@ -258,6 +258,9 @@ function CollectionForm({
                         <>
                             <p>Extend this collection by attaching other sets.</p>
                             <CollectionAttacher
+                                excludedCollectionId={
+                                    action.type === 'edit' ? action.collectionId : null
+                                }
                                 initialEmbeddedCollections={initialEmbeddedCollections}
                                 onSelectionChange={onEmbeddedCollectionsChange}
                             />
