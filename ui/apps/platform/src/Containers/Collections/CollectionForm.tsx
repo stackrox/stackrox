@@ -16,7 +16,7 @@ import {
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
-import { Formik, FormikHelpers } from 'formik';
+import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import { collectionsBasePath } from 'routePaths';
@@ -107,190 +107,176 @@ function CollectionForm({
 
     const isReadOnly = action.type === 'view' || !hasWriteAccessForCollections;
 
+    const {
+        values,
+        isValid,
+        errors,
+        handleChange,
+        handleBlur,
+        setFieldValue,
+        submitForm,
+        isSubmitting,
+    } = useFormik({
+        initialValues:
+            action.type === 'clone'
+                ? { ...initialData, name: `${initialData.name} (COPY)` }
+                : initialData,
+        onSubmit: (collection, { setSubmitting }) => {
+            onSubmit(collection).catch(() => {
+                setSubmitting(false);
+            });
+        },
+        validationSchema: yup.object({
+            name: yup.string().trim().required(),
+            description: yup.string(),
+            embeddedCollectionIds: yup.array(yup.string().trim().required()),
+            resourceSelector: yup.object().shape({
+                Deployment: yupResourceSelectorObject(),
+                Namespace: yupResourceSelectorObject(),
+                Cluster: yupResourceSelectorObject(),
+            }),
+        }),
+    });
+
     function onCancelSave() {
         history.push({ pathname: `${collectionsBasePath}` });
     }
 
-    const onResourceSelectorChange =
-        (setFieldValue: FormikHelpers<Collection>['setFieldValue']) =>
-        (entityType: SelectorEntityType, scopedResourceSelector: ScopedResourceSelector) =>
-            setFieldValue(`resourceSelector.${entityType}`, scopedResourceSelector);
+    const onResourceSelectorChange = (
+        entityType: SelectorEntityType,
+        scopedResourceSelector: ScopedResourceSelector
+    ) => setFieldValue(`resourceSelector.${entityType}`, scopedResourceSelector);
 
-    const onEmbeddedCollectionsChange =
-        (setFieldValue: FormikHelpers<Collection>['setFieldValue']) =>
-        (newCollections: CollectionResponse[]) =>
-            setFieldValue(
-                'embeddedCollectionIds',
-                newCollections.map(({ id }) => id)
-            );
+    const onEmbeddedCollectionsChange = (newCollections: CollectionResponse[]) =>
+        setFieldValue(
+            'embeddedCollectionIds',
+            newCollections.map(({ id }) => id)
+        );
 
     return (
-        <Formik
-            initialValues={
-                action.type === 'clone'
-                    ? { ...initialData, name: `${initialData.name} (COPY)` }
-                    : initialData
-            }
-            onSubmit={(collection, { setSubmitting }) => {
-                onSubmit(collection).catch(() => {
-                    setSubmitting(false);
-                });
-            }}
-            validationSchema={yup.object({
-                name: yup.string().trim().required(),
-                description: yup.string(),
-                embeddedCollectionIds: yup.array(yup.string().trim().required()),
-                resourceSelector: yup.object().shape({
-                    Deployment: yupResourceSelectorObject(),
-                    Namespace: yupResourceSelectorObject(),
-                    Cluster: yupResourceSelectorObject(),
-                }),
-            })}
-        >
-            {({
-                values,
-                isValid,
-                errors,
-                handleChange,
-                handleBlur,
-                setFieldValue,
-                submitForm,
-                isSubmitting,
-            }) => (
-                <Form className="pf-u-background-color-200">
-                    <Flex
-                        className="pf-u-p-lg"
-                        spaceItems={{ default: 'spaceItemsMd' }}
-                        direction={{ default: 'column' }}
-                    >
-                        <Flex
-                            className="pf-u-background-color-100 pf-u-p-lg"
-                            direction={{ default: 'column' }}
-                            spaceItems={{ default: 'spaceItemsMd' }}
-                        >
-                            <Title headingLevel="h2">Collection details</Title>
-                            <Flex direction={{ default: 'column', lg: 'row' }}>
-                                <FlexItem flex={{ default: 'flex_1' }}>
-                                    <FormGroup label="Name" fieldId="name" isRequired>
-                                        <TextInput
-                                            id="name"
-                                            name="name"
-                                            value={values.name}
-                                            validated={errors.name ? 'error' : 'default'}
-                                            onChange={(_, e) => handleChange(e)}
-                                            onBlur={handleBlur}
-                                            isDisabled={isReadOnly}
-                                        />
-                                    </FormGroup>
-                                </FlexItem>
-                                <FlexItem flex={{ default: 'flex_2' }}>
-                                    <FormGroup label="Description" fieldId="description">
-                                        <TextInput
-                                            id="description"
-                                            name="description"
-                                            value={values.description}
-                                            onChange={(_, e) => handleChange(e)}
-                                            onBlur={handleBlur}
-                                            isDisabled={isReadOnly}
-                                        />
-                                    </FormGroup>
-                                </FlexItem>
-                            </Flex>
-                        </Flex>
-
-                        <Flex
-                            className="pf-u-background-color-100 pf-u-p-lg"
-                            direction={{ default: 'column' }}
-                            spaceItems={{ default: 'spaceItemsMd' }}
-                        >
-                            <Title
-                                className={isReadOnly ? 'pf-u-mb-md' : 'pf-u-mb-xs'}
-                                headingLevel="h2"
-                            >
-                                Collection rules
-                            </Title>
-                            {!isReadOnly && (
-                                <>
-                                    <p>
-                                        Select deployments via rules. You can use regular
-                                        expressions (RE2 syntax).
-                                    </p>
-                                </>
-                            )}
-                            <RuleSelector
-                                entityType="Deployment"
-                                scopedResourceSelector={values.resourceSelector.Deployment}
-                                handleChange={onResourceSelectorChange(setFieldValue)}
-                                validationErrors={errors.resourceSelector?.Deployment}
-                                isDisabled={isReadOnly}
-                            />
-                            <Label variant="outline" isCompact className="pf-u-align-self-center">
-                                in
-                            </Label>
-                            <RuleSelector
-                                entityType="Namespace"
-                                scopedResourceSelector={values.resourceSelector.Namespace}
-                                handleChange={onResourceSelectorChange(setFieldValue)}
-                                validationErrors={errors.resourceSelector?.Namespace}
-                                isDisabled={isReadOnly}
-                            />
-                            <Label variant="outline" isCompact className="pf-u-align-self-center">
-                                in
-                            </Label>
-                            <RuleSelector
-                                entityType="Cluster"
-                                scopedResourceSelector={values.resourceSelector.Cluster}
-                                handleChange={onResourceSelectorChange(setFieldValue)}
-                                validationErrors={errors.resourceSelector?.Cluster}
-                                isDisabled={isReadOnly}
-                            />
-                        </Flex>
-
-                        <Flex
-                            className="pf-u-background-color-100 pf-u-p-lg"
-                            direction={{ default: 'column' }}
-                            spaceItems={{ default: 'spaceItemsMd' }}
-                        >
-                            <Title className="pf-u-mb-xs" headingLevel="h2">
-                                Attached collections
-                            </Title>
-                            {isReadOnly ? (
-                                <AttachedCollectionTable collections={initialEmbeddedCollections} />
-                            ) : (
-                                <>
-                                    <p>Extend this collection by attaching other sets.</p>
-                                    <CollectionAttacher
-                                        initialEmbeddedCollections={initialEmbeddedCollections}
-                                        onSelectionChange={onEmbeddedCollectionsChange(
-                                            setFieldValue
-                                        )}
-                                    />
-                                </>
-                            )}
-                        </Flex>
+        <Form className="pf-u-background-color-200">
+            <Flex
+                className="pf-u-p-lg"
+                spaceItems={{ default: 'spaceItemsMd' }}
+                direction={{ default: 'column' }}
+            >
+                <Flex
+                    className="pf-u-background-color-100 pf-u-p-lg"
+                    direction={{ default: 'column' }}
+                    spaceItems={{ default: 'spaceItemsMd' }}
+                >
+                    <Title headingLevel="h2">Collection details</Title>
+                    <Flex direction={{ default: 'column', lg: 'row' }}>
+                        <FlexItem flex={{ default: 'flex_1' }}>
+                            <FormGroup label="Name" fieldId="name" isRequired>
+                                <TextInput
+                                    id="name"
+                                    name="name"
+                                    value={values.name}
+                                    validated={errors.name ? 'error' : 'default'}
+                                    onChange={(_, e) => handleChange(e)}
+                                    onBlur={handleBlur}
+                                    isDisabled={isReadOnly}
+                                />
+                            </FormGroup>
+                        </FlexItem>
+                        <FlexItem flex={{ default: 'flex_2' }}>
+                            <FormGroup label="Description" fieldId="description">
+                                <TextInput
+                                    id="description"
+                                    name="description"
+                                    value={values.description}
+                                    onChange={(_, e) => handleChange(e)}
+                                    onBlur={handleBlur}
+                                    isDisabled={isReadOnly}
+                                />
+                            </FormGroup>
+                        </FlexItem>
                     </Flex>
-                    {action.type !== 'view' && (
-                        <div className="pf-u-background-color-100 pf-u-p-lg pf-u-py-md">
-                            <Button
-                                className="pf-u-mr-md"
-                                onClick={submitForm}
-                                isDisabled={isSubmitting || !isValid}
-                                isLoading={isSubmitting}
-                            >
-                                Save
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                isDisabled={isSubmitting}
-                                onClick={onCancelSave}
-                            >
-                                Cancel
-                            </Button>
-                        </div>
+                </Flex>
+
+                <Flex
+                    className="pf-u-background-color-100 pf-u-p-lg"
+                    direction={{ default: 'column' }}
+                    spaceItems={{ default: 'spaceItemsMd' }}
+                >
+                    <Title className={isReadOnly ? 'pf-u-mb-md' : 'pf-u-mb-xs'} headingLevel="h2">
+                        Collection rules
+                    </Title>
+                    {!isReadOnly && (
+                        <>
+                            <p>
+                                Select deployments via rules. You can use regular expressions (RE2
+                                syntax).
+                            </p>
+                        </>
                     )}
-                </Form>
+                    <RuleSelector
+                        entityType="Deployment"
+                        scopedResourceSelector={values.resourceSelector.Deployment}
+                        handleChange={onResourceSelectorChange}
+                        validationErrors={errors.resourceSelector?.Deployment}
+                        isDisabled={isReadOnly}
+                    />
+                    <Label variant="outline" isCompact className="pf-u-align-self-center">
+                        in
+                    </Label>
+                    <RuleSelector
+                        entityType="Namespace"
+                        scopedResourceSelector={values.resourceSelector.Namespace}
+                        handleChange={onResourceSelectorChange}
+                        validationErrors={errors.resourceSelector?.Namespace}
+                        isDisabled={isReadOnly}
+                    />
+                    <Label variant="outline" isCompact className="pf-u-align-self-center">
+                        in
+                    </Label>
+                    <RuleSelector
+                        entityType="Cluster"
+                        scopedResourceSelector={values.resourceSelector.Cluster}
+                        handleChange={onResourceSelectorChange}
+                        validationErrors={errors.resourceSelector?.Cluster}
+                        isDisabled={isReadOnly}
+                    />
+                </Flex>
+
+                <Flex
+                    className="pf-u-background-color-100 pf-u-p-lg"
+                    direction={{ default: 'column' }}
+                    spaceItems={{ default: 'spaceItemsMd' }}
+                >
+                    <Title className="pf-u-mb-xs" headingLevel="h2">
+                        Attached collections
+                    </Title>
+                    {isReadOnly ? (
+                        <AttachedCollectionTable collections={initialEmbeddedCollections} />
+                    ) : (
+                        <>
+                            <p>Extend this collection by attaching other sets.</p>
+                            <CollectionAttacher
+                                initialEmbeddedCollections={initialEmbeddedCollections}
+                                onSelectionChange={onEmbeddedCollectionsChange}
+                            />
+                        </>
+                    )}
+                </Flex>
+            </Flex>
+            {action.type !== 'view' && (
+                <div className="pf-u-background-color-100 pf-u-p-lg pf-u-py-md">
+                    <Button
+                        className="pf-u-mr-md"
+                        onClick={submitForm}
+                        isDisabled={isSubmitting || !isValid}
+                        isLoading={isSubmitting}
+                    >
+                        Save
+                    </Button>
+                    <Button variant="secondary" isDisabled={isSubmitting} onClick={onCancelSave}>
+                        Cancel
+                    </Button>
+                </div>
             )}
-        </Formik>
+        </Form>
     );
 }
 
