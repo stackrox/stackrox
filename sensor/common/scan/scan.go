@@ -85,13 +85,10 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 			imgName, matchingRegistry.Name())
 	}
 
-	// Retrieve the image ID with best-effort from image and metadata.
-	imgID := utils.GetSHAFromIDAndMetadata(image.GetId(), metadata)
-
 	// Send local enriched data to central to receive a fully enrich image. This includes image vulnerabilities and
 	// signature verification results.
 	centralResp, err := centralClient.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{
-		ImageId:        imgID,
+		ImageId:        utils.GetSHA(image),
 		ImageName:      image.GetName(),
 		Metadata:       metadata,
 		Components:     scannerResp.GetComponents(),

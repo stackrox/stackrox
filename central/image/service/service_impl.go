@@ -276,7 +276,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	}
 
 	// Save the image
-	img.Id = utils.GetImageID(img)
+	img.Id = utils.GetSHA(img)
 	if img.GetId() != "" {
 		if err := s.saveImage(img); err != nil {
 			return nil, err
@@ -505,7 +505,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 	}
 
 	// Save the image
-	img.Id = utils.GetImageID(img)
+	img.Id = utils.GetSHA(img)
 	if img.GetId() == "" {
 		return &v1.WatchImageResponse{
 			ErrorType:    v1.WatchImageResponse_SCAN_FAILED,

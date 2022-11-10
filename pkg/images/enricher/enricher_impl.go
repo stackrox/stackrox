@@ -368,7 +368,7 @@ func (e *enricherImpl) fetchFromDatabase(ctx context.Context, img *storage.Image
 		return img, false
 	}
 	// See if the image exists in the DB with a scan, if it does, then use that instead of fetching
-	id := utils.GetImageID(img)
+	id := utils.GetSHA(img)
 	if id == "" {
 		return img, false
 	}
