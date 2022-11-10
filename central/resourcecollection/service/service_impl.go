@@ -256,14 +256,12 @@ func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCo
 		return nil, errors.New("Resource collections is not enabled")
 	}
 
-	isCreate := request.GetId() == ""
-
-	collection, err := collectionRequestToCollection(ctx, request, isCreate)
+	collection, err := collectionRequestToCollection(ctx, request, request.GetId())
 	if err != nil {
 		return nil, err
 	}
 
-	if isCreate {
+	if request.GetId() == "" {
 		err = s.datastore.DryRunAddCollection(ctx, collection)
 	} else {
 		err = s.datastore.DryRunUpdateCollection(ctx, collection)
