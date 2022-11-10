@@ -17,28 +17,6 @@ const createStateSelectors = (authProviders = [], authStatus = AUTH_STATUS.LOADI
 ];
 
 describe('Auth Sagas', () => {
-    it('should get and put auth providers when on access page', () => {
-        const authProviders = [{ name: 'ap1', validated: true }];
-        const fetchMock = jest
-            .fn()
-            .mockReturnValueOnce({ response: [] })
-            .mockReturnValueOnce({ response: authProviders });
-
-        return expectSaga(saga)
-            .provide([
-                ...createStateSelectors(),
-                [call(AuthService.fetchAuthProviders), dynamic(fetchMock)],
-                [call(AuthService.fetchLoginAuthProviders), dynamic(fetchMock)],
-                [call(AuthService.logout), null],
-                [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
-            ])
-            .put(actions.fetchAuthProviders.success(authProviders))
-            .dispatch(createLocationChange('/'))
-            .dispatch(createLocationChange('/main/access'))
-            .silentRun();
-    });
-
     it('should not do a service call to get auth providers when location changes to violations, policies, etc.', () => {
         const fetchMock = jest.fn().mockReturnValue({ response: [] });
         return expectSaga(saga)
