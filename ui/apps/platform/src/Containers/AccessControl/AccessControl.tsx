@@ -14,7 +14,7 @@ import AccessControlNoPermission from './AccessControlNoPermission';
 
 const paramId = ':entityId?';
 
-function AccessControl(): ReactElement {
+export function AccessControl(): ReactElement {
     // TODO is read access required for all routes in improved Access Control?
     // TODO Is write access required anywhere in classic Access Control?
     const { hasReadAccess } = usePermissions();
@@ -102,5 +102,3 @@ function AccessControl(): ReactElement {
         </>
     );
 }
-
-export default AccessControl;
