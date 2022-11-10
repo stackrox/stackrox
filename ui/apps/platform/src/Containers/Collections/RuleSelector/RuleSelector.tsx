@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Select, SelectOption, SelectOptionProps } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import { FormikErrors } from 'formik';

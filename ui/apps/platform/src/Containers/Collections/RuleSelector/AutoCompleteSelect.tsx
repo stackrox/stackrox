@@ -28,8 +28,11 @@ function getOptions(
 ): ReactElement[] | undefined {
     return data?.map((value) => (
         <SelectOption
+            key={value}
             value={value}
-            component={(props: SelectOptionProps) => <OptionComponent {...props} value={value} />}
+            component={(props: SelectOptionProps) => (
+                <OptionComponent className={props.className} value={value} />
+            )}
         />
     ));
 }
