@@ -53,6 +53,34 @@ func (TestSingleKeyStruct_Enum) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{0, 0}
 }
 
+type TestSingleUUIDKeyStruct_Enum int32
+
+const (
+	TestSingleUUIDKeyStruct_ENUM0 TestSingleUUIDKeyStruct_Enum = 0
+	TestSingleUUIDKeyStruct_ENUM1 TestSingleUUIDKeyStruct_Enum = 1
+	TestSingleUUIDKeyStruct_ENUM2 TestSingleUUIDKeyStruct_Enum = 2
+)
+
+var TestSingleUUIDKeyStruct_Enum_name = map[int32]string{
+	0: "ENUM0",
+	1: "ENUM1",
+	2: "ENUM2",
+}
+
+var TestSingleUUIDKeyStruct_Enum_value = map[string]int32{
+	"ENUM0": 0,
+	"ENUM1": 1,
+	"ENUM2": 2,
+}
+
+func (x TestSingleUUIDKeyStruct_Enum) String() string {
+	return proto.EnumName(TestSingleUUIDKeyStruct_Enum_name, int32(x))
+}
+
+func (TestSingleUUIDKeyStruct_Enum) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_f80f1f1db1167453, []int{1, 0}
+}
+
 type TestMultiKeyStruct_Enum int32
 
 const (
@@ -78,7 +106,7 @@ func (x TestMultiKeyStruct_Enum) String() string {
 }
 
 func (TestMultiKeyStruct_Enum) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{1, 0}
+	return fileDescriptor_f80f1f1db1167453, []int{2, 0}
 }
 
 type TestSingleKeyStruct struct {
@@ -728,6 +756,659 @@ func (m *TestSingleKeyStruct_OneOfNested_Nested2) Clone() *TestSingleKeyStruct_O
 	return cloned
 }
 
+type TestSingleUUIDKeyStruct struct {
+	Key         string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" sql:"pk,index=hash,type(uuid)" search:"Test Key"`
+	Name        string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Test Name"`
+	StringSlice []string `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty" search:"Test String Slice"`
+	Bool        bool     `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"`
+	// When using this ensure your precision needs are met and accounted for.  This will use a
+	// BigInt which may require you to convert from uint64 to int64 OR update
+	// the handling to use numerics.
+	Uint64    uint64                            `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"`
+	Int64     int64                             `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`
+	Float     float32                           `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`
+	Labels    map[string]string                 `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" search:"Test Labels" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Timestamp *types.Timestamp                  `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`
+	Enum      TestSingleUUIDKeyStruct_Enum      `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestSingleUUIDKeyStruct_Enum" json:"enum,omitempty" search:"Test Enum"`
+	Enums     []TestSingleUUIDKeyStruct_Enum    `protobuf:"varint,11,rep,packed,name=enums,proto3,enum=storage.TestSingleUUIDKeyStruct_Enum" json:"enums,omitempty" search:"Test Enum Slice"`
+	Embedded  *TestSingleUUIDKeyStruct_Embedded `protobuf:"bytes,12,opt,name=embedded,proto3" json:"embedded,omitempty"`
+	Nested    []*TestSingleUUIDKeyStruct_Nested `protobuf:"bytes,13,rep,name=nested,proto3" json:"nested,omitempty"`
+	// Types that are valid to be assigned to Oneof:
+	//	*TestSingleUUIDKeyStruct_Oneofstring
+	//	*TestSingleUUIDKeyStruct_Oneofnested
+	Oneof                isTestSingleUUIDKeyStruct_Oneof `protobuf_oneof:"oneof"`
+	Bytess               []byte                          `protobuf:"bytes,16,opt,name=bytess,proto3" json:"bytess,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
+	XXX_unrecognized     []byte                          `json:"-"`
+	XXX_sizecache        int32                           `json:"-"`
+}
+
+func (m *TestSingleUUIDKeyStruct) Reset()         { *m = TestSingleUUIDKeyStruct{} }
+func (m *TestSingleUUIDKeyStruct) String() string { return proto.CompactTextString(m) }
+func (*TestSingleUUIDKeyStruct) ProtoMessage()    {}
+func (*TestSingleUUIDKeyStruct) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f80f1f1db1167453, []int{1}
+}
+func (m *TestSingleUUIDKeyStruct) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TestSingleUUIDKeyStruct) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TestSingleUUIDKeyStruct.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TestSingleUUIDKeyStruct) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TestSingleUUIDKeyStruct.Merge(m, src)
+}
+func (m *TestSingleUUIDKeyStruct) XXX_Size() int {
+	return m.Size()
+}
+func (m *TestSingleUUIDKeyStruct) XXX_DiscardUnknown() {
+	xxx_messageInfo_TestSingleUUIDKeyStruct.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TestSingleUUIDKeyStruct proto.InternalMessageInfo
+
+type isTestSingleUUIDKeyStruct_Oneof interface {
+	isTestSingleUUIDKeyStruct_Oneof()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isTestSingleUUIDKeyStruct_Oneof
+}
+
+type TestSingleUUIDKeyStruct_Oneofstring struct {
+	Oneofstring string `protobuf:"bytes,14,opt,name=oneofstring,proto3,oneof" json:"oneofstring,omitempty"`
+}
+type TestSingleUUIDKeyStruct_Oneofnested struct {
+	Oneofnested *TestSingleUUIDKeyStruct_OneOfNested `protobuf:"bytes,15,opt,name=oneofnested,proto3,oneof" json:"oneofnested,omitempty"`
+}
+
+func (*TestSingleUUIDKeyStruct_Oneofstring) isTestSingleUUIDKeyStruct_Oneof() {}
+func (m *TestSingleUUIDKeyStruct_Oneofstring) Clone() isTestSingleUUIDKeyStruct_Oneof {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TestSingleUUIDKeyStruct_Oneofstring)
+	*cloned = *m
+
+	return cloned
+}
+func (*TestSingleUUIDKeyStruct_Oneofnested) isTestSingleUUIDKeyStruct_Oneof() {}
+func (m *TestSingleUUIDKeyStruct_Oneofnested) Clone() isTestSingleUUIDKeyStruct_Oneof {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TestSingleUUIDKeyStruct_Oneofnested)
+	*cloned = *m
+
+	cloned.Oneofnested = m.Oneofnested.Clone()
+	return cloned
+}
+
+func (m *TestSingleUUIDKeyStruct) GetOneof() isTestSingleUUIDKeyStruct_Oneof {
+	if m != nil {
+		return m.Oneof
+	}
+	return nil
+}
+
+func (m *TestSingleUUIDKeyStruct) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+func (m *TestSingleUUIDKeyStruct) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *TestSingleUUIDKeyStruct) GetStringSlice() []string {
+	if m != nil {
+		return m.StringSlice
+	}
+	return nil
+}
+
+func (m *TestSingleUUIDKeyStruct) GetBool() bool {
+	if m != nil {
+		return m.Bool
+	}
+	return false
+}
+
+func (m *TestSingleUUIDKeyStruct) GetUint64() uint64 {
+	if m != nil {
+		return m.Uint64
+	}
+	return 0
+}
+
+func (m *TestSingleUUIDKeyStruct) GetInt64() int64 {
+	if m != nil {
+		return m.Int64
+	}
+	return 0
+}
+
+func (m *TestSingleUUIDKeyStruct) GetFloat() float32 {
+	if m != nil {
+		return m.Float
+	}
+	return 0
+}
+
+func (m *TestSingleUUIDKeyStruct) GetLabels() map[string]string {
+	if m != nil {
+		return m.Labels
+	}
+	return nil
+}
+
+func (m *TestSingleUUIDKeyStruct) GetTimestamp() *types.Timestamp {
+	if m != nil {
+		return m.Timestamp
+	}
+	return nil
+}
+
+func (m *TestSingleUUIDKeyStruct) GetEnum() TestSingleUUIDKeyStruct_Enum {
+	if m != nil {
+		return m.Enum
+	}
+	return TestSingleUUIDKeyStruct_ENUM0
+}
+
+func (m *TestSingleUUIDKeyStruct) GetEnums() []TestSingleUUIDKeyStruct_Enum {
+	if m != nil {
+		return m.Enums
+	}
+	return nil
+}
+
+func (m *TestSingleUUIDKeyStruct) GetEmbedded() *TestSingleUUIDKeyStruct_Embedded {
+	if m != nil {
+		return m.Embedded
+	}
+	return nil
+}
+
+func (m *TestSingleUUIDKeyStruct) GetNested() []*TestSingleUUIDKeyStruct_Nested {
+	if m != nil {
+		return m.Nested
+	}
+	return nil
+}
+
+func (m *TestSingleUUIDKeyStruct) GetOneofstring() string {
+	if x, ok := m.GetOneof().(*TestSingleUUIDKeyStruct_Oneofstring); ok {
+		return x.Oneofstring
+	}
+	return ""
+}
+
+func (m *TestSingleUUIDKeyStruct) GetOneofnested() *TestSingleUUIDKeyStruct_OneOfNested {
+	if x, ok := m.GetOneof().(*TestSingleUUIDKeyStruct_Oneofnested); ok {
+		return x.Oneofnested
+	}
+	return nil
+}
+
+func (m *TestSingleUUIDKeyStruct) GetBytess() []byte {
+	if m != nil {
+		return m.Bytess
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*TestSingleUUIDKeyStruct) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*TestSingleUUIDKeyStruct_Oneofstring)(nil),
+		(*TestSingleUUIDKeyStruct_Oneofnested)(nil),
+	}
+}
+
+func (m *TestSingleUUIDKeyStruct) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TestSingleUUIDKeyStruct) Clone() *TestSingleUUIDKeyStruct {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TestSingleUUIDKeyStruct)
+	*cloned = *m
+
+	if m.StringSlice != nil {
+		cloned.StringSlice = make([]string, len(m.StringSlice))
+		copy(cloned.StringSlice, m.StringSlice)
+	}
+	if m.Labels != nil {
+		cloned.Labels = make(map[string]string, len(m.Labels))
+		for k, v := range m.Labels {
+			cloned.Labels[k] = v
+		}
+	}
+	cloned.Timestamp = m.Timestamp.Clone()
+	if m.Enums != nil {
+		cloned.Enums = make([]TestSingleUUIDKeyStruct_Enum, len(m.Enums))
+		copy(cloned.Enums, m.Enums)
+	}
+	cloned.Embedded = m.Embedded.Clone()
+	if m.Nested != nil {
+		cloned.Nested = make([]*TestSingleUUIDKeyStruct_Nested, len(m.Nested))
+		for idx, v := range m.Nested {
+			cloned.Nested[idx] = v.Clone()
+		}
+	}
+	if m.Oneof != nil {
+		cloned.Oneof = m.Oneof.Clone()
+	}
+	if m.Bytess != nil {
+		cloned.Bytess = make([]byte, len(m.Bytess))
+		copy(cloned.Bytess, m.Bytess)
+	}
+	return cloned
+}
+
+type TestSingleUUIDKeyStruct_Embedded struct {
+	Embedded             string   `protobuf:"bytes,1,opt,name=embedded,proto3" json:"embedded,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TestSingleUUIDKeyStruct_Embedded) Reset()         { *m = TestSingleUUIDKeyStruct_Embedded{} }
+func (m *TestSingleUUIDKeyStruct_Embedded) String() string { return proto.CompactTextString(m) }
+func (*TestSingleUUIDKeyStruct_Embedded) ProtoMessage()    {}
+func (*TestSingleUUIDKeyStruct_Embedded) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f80f1f1db1167453, []int{1, 1}
+}
+func (m *TestSingleUUIDKeyStruct_Embedded) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TestSingleUUIDKeyStruct_Embedded) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TestSingleUUIDKeyStruct_Embedded.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TestSingleUUIDKeyStruct_Embedded) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_Embedded.Merge(m, src)
+}
+func (m *TestSingleUUIDKeyStruct_Embedded) XXX_Size() int {
+	return m.Size()
+}
+func (m *TestSingleUUIDKeyStruct_Embedded) XXX_DiscardUnknown() {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_Embedded.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TestSingleUUIDKeyStruct_Embedded proto.InternalMessageInfo
+
+func (m *TestSingleUUIDKeyStruct_Embedded) GetEmbedded() string {
+	if m != nil {
+		return m.Embedded
+	}
+	return ""
+}
+
+func (m *TestSingleUUIDKeyStruct_Embedded) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TestSingleUUIDKeyStruct_Embedded) Clone() *TestSingleUUIDKeyStruct_Embedded {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TestSingleUUIDKeyStruct_Embedded)
+	*cloned = *m
+
+	return cloned
+}
+
+type TestSingleUUIDKeyStruct_Embedded_Embedded2 struct {
+	Embedded             string   `protobuf:"bytes,2,opt,name=embedded,proto3" json:"embedded,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) Reset() {
+	*m = TestSingleUUIDKeyStruct_Embedded_Embedded2{}
+}
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) String() string {
+	return proto.CompactTextString(m)
+}
+func (*TestSingleUUIDKeyStruct_Embedded_Embedded2) ProtoMessage() {}
+func (*TestSingleUUIDKeyStruct_Embedded_Embedded2) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f80f1f1db1167453, []int{1, 1, 0}
+}
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TestSingleUUIDKeyStruct_Embedded_Embedded2.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_Embedded_Embedded2.Merge(m, src)
+}
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) XXX_Size() int {
+	return m.Size()
+}
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) XXX_DiscardUnknown() {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_Embedded_Embedded2.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TestSingleUUIDKeyStruct_Embedded_Embedded2 proto.InternalMessageInfo
+
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) GetEmbedded() string {
+	if m != nil {
+		return m.Embedded
+	}
+	return ""
+}
+
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) Clone() *TestSingleUUIDKeyStruct_Embedded_Embedded2 {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TestSingleUUIDKeyStruct_Embedded_Embedded2)
+	*cloned = *m
+
+	return cloned
+}
+
+type TestSingleUUIDKeyStruct_Nested struct {
+	Nested               string                                  `protobuf:"bytes,1,opt,name=nested,proto3" json:"nested,omitempty"`
+	Nested2              *TestSingleUUIDKeyStruct_Nested_Nested2 `protobuf:"bytes,2,opt,name=nested2,proto3" json:"nested2,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                `json:"-"`
+	XXX_unrecognized     []byte                                  `json:"-"`
+	XXX_sizecache        int32                                   `json:"-"`
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested) Reset()         { *m = TestSingleUUIDKeyStruct_Nested{} }
+func (m *TestSingleUUIDKeyStruct_Nested) String() string { return proto.CompactTextString(m) }
+func (*TestSingleUUIDKeyStruct_Nested) ProtoMessage()    {}
+func (*TestSingleUUIDKeyStruct_Nested) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f80f1f1db1167453, []int{1, 2}
+}
+func (m *TestSingleUUIDKeyStruct_Nested) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TestSingleUUIDKeyStruct_Nested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TestSingleUUIDKeyStruct_Nested.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TestSingleUUIDKeyStruct_Nested) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_Nested.Merge(m, src)
+}
+func (m *TestSingleUUIDKeyStruct_Nested) XXX_Size() int {
+	return m.Size()
+}
+func (m *TestSingleUUIDKeyStruct_Nested) XXX_DiscardUnknown() {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_Nested.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TestSingleUUIDKeyStruct_Nested proto.InternalMessageInfo
+
+func (m *TestSingleUUIDKeyStruct_Nested) GetNested() string {
+	if m != nil {
+		return m.Nested
+	}
+	return ""
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested) GetNested2() *TestSingleUUIDKeyStruct_Nested_Nested2 {
+	if m != nil {
+		return m.Nested2
+	}
+	return nil
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TestSingleUUIDKeyStruct_Nested) Clone() *TestSingleUUIDKeyStruct_Nested {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TestSingleUUIDKeyStruct_Nested)
+	*cloned = *m
+
+	cloned.Nested2 = m.Nested2.Clone()
+	return cloned
+}
+
+type TestSingleUUIDKeyStruct_Nested_Nested2 struct {
+	Nested2              string   `protobuf:"bytes,2,opt,name=nested2,proto3" json:"nested2,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) Reset() {
+	*m = TestSingleUUIDKeyStruct_Nested_Nested2{}
+}
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) String() string { return proto.CompactTextString(m) }
+func (*TestSingleUUIDKeyStruct_Nested_Nested2) ProtoMessage()    {}
+func (*TestSingleUUIDKeyStruct_Nested_Nested2) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f80f1f1db1167453, []int{1, 2, 0}
+}
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TestSingleUUIDKeyStruct_Nested_Nested2.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_Nested_Nested2.Merge(m, src)
+}
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) XXX_Size() int {
+	return m.Size()
+}
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) XXX_DiscardUnknown() {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_Nested_Nested2.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TestSingleUUIDKeyStruct_Nested_Nested2 proto.InternalMessageInfo
+
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) GetNested2() string {
+	if m != nil {
+		return m.Nested2
+	}
+	return ""
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) Clone() *TestSingleUUIDKeyStruct_Nested_Nested2 {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TestSingleUUIDKeyStruct_Nested_Nested2)
+	*cloned = *m
+
+	return cloned
+}
+
+type TestSingleUUIDKeyStruct_OneOfNested struct {
+	Nested               string                                       `protobuf:"bytes,1,opt,name=nested,proto3" json:"nested,omitempty"`
+	Nested2              *TestSingleUUIDKeyStruct_OneOfNested_Nested2 `protobuf:"bytes,2,opt,name=nested2,proto3" json:"nested2,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                     `json:"-"`
+	XXX_unrecognized     []byte                                       `json:"-"`
+	XXX_sizecache        int32                                        `json:"-"`
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested) Reset()         { *m = TestSingleUUIDKeyStruct_OneOfNested{} }
+func (m *TestSingleUUIDKeyStruct_OneOfNested) String() string { return proto.CompactTextString(m) }
+func (*TestSingleUUIDKeyStruct_OneOfNested) ProtoMessage()    {}
+func (*TestSingleUUIDKeyStruct_OneOfNested) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f80f1f1db1167453, []int{1, 3}
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TestSingleUUIDKeyStruct_OneOfNested.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_OneOfNested.Merge(m, src)
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested) XXX_Size() int {
+	return m.Size()
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested) XXX_DiscardUnknown() {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_OneOfNested.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TestSingleUUIDKeyStruct_OneOfNested proto.InternalMessageInfo
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested) GetNested() string {
+	if m != nil {
+		return m.Nested
+	}
+	return ""
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested) GetNested2() *TestSingleUUIDKeyStruct_OneOfNested_Nested2 {
+	if m != nil {
+		return m.Nested2
+	}
+	return nil
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested) Clone() *TestSingleUUIDKeyStruct_OneOfNested {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TestSingleUUIDKeyStruct_OneOfNested)
+	*cloned = *m
+
+	cloned.Nested2 = m.Nested2.Clone()
+	return cloned
+}
+
+type TestSingleUUIDKeyStruct_OneOfNested_Nested2 struct {
+	Nested2              string   `protobuf:"bytes,2,opt,name=nested2,proto3" json:"nested2,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) Reset() {
+	*m = TestSingleUUIDKeyStruct_OneOfNested_Nested2{}
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) String() string {
+	return proto.CompactTextString(m)
+}
+func (*TestSingleUUIDKeyStruct_OneOfNested_Nested2) ProtoMessage() {}
+func (*TestSingleUUIDKeyStruct_OneOfNested_Nested2) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f80f1f1db1167453, []int{1, 3, 0}
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TestSingleUUIDKeyStruct_OneOfNested_Nested2.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_OneOfNested_Nested2.Merge(m, src)
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) XXX_Size() int {
+	return m.Size()
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) XXX_DiscardUnknown() {
+	xxx_messageInfo_TestSingleUUIDKeyStruct_OneOfNested_Nested2.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TestSingleUUIDKeyStruct_OneOfNested_Nested2 proto.InternalMessageInfo
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) GetNested2() string {
+	if m != nil {
+		return m.Nested2
+	}
+	return ""
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) Clone() *TestSingleUUIDKeyStruct_OneOfNested_Nested2 {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TestSingleUUIDKeyStruct_OneOfNested_Nested2)
+	*cloned = *m
+
+	return cloned
+}
+
 type TestMultiKeyStruct struct {
 	Key1        string                    `protobuf:"bytes,1,opt,name=key1,proto3" json:"key1,omitempty" sql:"pk,id" search:"Test Key"`
 	Key2        string                    `protobuf:"bytes,2,opt,name=key2,proto3" json:"key2,omitempty" sql:"pk" search:"Test Key 2,store,hidden"`
@@ -759,7 +1440,7 @@ func (m *TestMultiKeyStruct) Reset()         { *m = TestMultiKeyStruct{} }
 func (m *TestMultiKeyStruct) String() string { return proto.CompactTextString(m) }
 func (*TestMultiKeyStruct) ProtoMessage()    {}
 func (*TestMultiKeyStruct) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{1}
+	return fileDescriptor_f80f1f1db1167453, []int{2}
 }
 func (m *TestMultiKeyStruct) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1023,7 +1704,7 @@ func (m *TestMultiKeyStruct_Embedded) Reset()         { *m = TestMultiKeyStruct_
 func (m *TestMultiKeyStruct_Embedded) String() string { return proto.CompactTextString(m) }
 func (*TestMultiKeyStruct_Embedded) ProtoMessage()    {}
 func (*TestMultiKeyStruct_Embedded) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{1, 1}
+	return fileDescriptor_f80f1f1db1167453, []int{2, 1}
 }
 func (m *TestMultiKeyStruct_Embedded) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1083,7 +1764,7 @@ func (m *TestMultiKeyStruct_Embedded_Embedded2) Reset()         { *m = TestMulti
 func (m *TestMultiKeyStruct_Embedded_Embedded2) String() string { return proto.CompactTextString(m) }
 func (*TestMultiKeyStruct_Embedded_Embedded2) ProtoMessage()    {}
 func (*TestMultiKeyStruct_Embedded_Embedded2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{1, 1, 0}
+	return fileDescriptor_f80f1f1db1167453, []int{2, 1, 0}
 }
 func (m *TestMultiKeyStruct_Embedded_Embedded2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1146,7 +1827,7 @@ func (m *TestMultiKeyStruct_Nested) Reset()         { *m = TestMultiKeyStruct_Ne
 func (m *TestMultiKeyStruct_Nested) String() string { return proto.CompactTextString(m) }
 func (*TestMultiKeyStruct_Nested) ProtoMessage()    {}
 func (*TestMultiKeyStruct_Nested) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{1, 2}
+	return fileDescriptor_f80f1f1db1167453, []int{2, 2}
 }
 func (m *TestMultiKeyStruct_Nested) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1230,7 +1911,7 @@ func (m *TestMultiKeyStruct_Nested_Nested2) Reset()         { *m = TestMultiKeyS
 func (m *TestMultiKeyStruct_Nested_Nested2) String() string { return proto.CompactTextString(m) }
 func (*TestMultiKeyStruct_Nested_Nested2) ProtoMessage()    {}
 func (*TestMultiKeyStruct_Nested_Nested2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{1, 2, 0}
+	return fileDescriptor_f80f1f1db1167453, []int{2, 2, 0}
 }
 func (m *TestMultiKeyStruct_Nested_Nested2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1304,7 +1985,7 @@ func (m *TestMultiKeyStruct_OneOfNested) Reset()         { *m = TestMultiKeyStru
 func (m *TestMultiKeyStruct_OneOfNested) String() string { return proto.CompactTextString(m) }
 func (*TestMultiKeyStruct_OneOfNested) ProtoMessage()    {}
 func (*TestMultiKeyStruct_OneOfNested) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{1, 3}
+	return fileDescriptor_f80f1f1db1167453, []int{2, 3}
 }
 func (m *TestMultiKeyStruct_OneOfNested) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1366,7 +2047,7 @@ func (m *TestMultiKeyStruct_OneOfNested_Nested2) Reset() {
 func (m *TestMultiKeyStruct_OneOfNested_Nested2) String() string { return proto.CompactTextString(m) }
 func (*TestMultiKeyStruct_OneOfNested_Nested2) ProtoMessage()    {}
 func (*TestMultiKeyStruct_OneOfNested_Nested2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{1, 3, 0}
+	return fileDescriptor_f80f1f1db1167453, []int{2, 3, 0}
 }
 func (m *TestMultiKeyStruct_OneOfNested_Nested2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1446,7 +2127,7 @@ func (m *TestGrandparent) Reset()         { *m = TestGrandparent{} }
 func (m *TestGrandparent) String() string { return proto.CompactTextString(m) }
 func (*TestGrandparent) ProtoMessage()    {}
 func (*TestGrandparent) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{2}
+	return fileDescriptor_f80f1f1db1167453, []int{3}
 }
 func (m *TestGrandparent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1541,7 +2222,7 @@ func (m *TestGrandparent_Embedded) Reset()         { *m = TestGrandparent_Embedd
 func (m *TestGrandparent_Embedded) String() string { return proto.CompactTextString(m) }
 func (*TestGrandparent_Embedded) ProtoMessage()    {}
 func (*TestGrandparent_Embedded) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{2, 0}
+	return fileDescriptor_f80f1f1db1167453, []int{3, 0}
 }
 func (m *TestGrandparent_Embedded) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1614,7 +2295,7 @@ func (m *TestGrandparent_Embedded_Embedded2) Reset()         { *m = TestGrandpar
 func (m *TestGrandparent_Embedded_Embedded2) String() string { return proto.CompactTextString(m) }
 func (*TestGrandparent_Embedded_Embedded2) ProtoMessage()    {}
 func (*TestGrandparent_Embedded_Embedded2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{2, 0, 0}
+	return fileDescriptor_f80f1f1db1167453, []int{3, 0, 0}
 }
 func (m *TestGrandparent_Embedded_Embedded2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1677,7 +2358,7 @@ func (m *TestParent1) Reset()         { *m = TestParent1{} }
 func (m *TestParent1) String() string { return proto.CompactTextString(m) }
 func (*TestParent1) ProtoMessage()    {}
 func (*TestParent1) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{3}
+	return fileDescriptor_f80f1f1db1167453, []int{4}
 }
 func (m *TestParent1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1764,7 +2445,7 @@ func (m *TestParent1_Child1Ref) Reset()         { *m = TestParent1_Child1Ref{} }
 func (m *TestParent1_Child1Ref) String() string { return proto.CompactTextString(m) }
 func (*TestParent1_Child1Ref) ProtoMessage()    {}
 func (*TestParent1_Child1Ref) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{3, 0}
+	return fileDescriptor_f80f1f1db1167453, []int{4, 0}
 }
 func (m *TestParent1_Child1Ref) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1825,7 +2506,7 @@ func (m *TestChild1) Reset()         { *m = TestChild1{} }
 func (m *TestChild1) String() string { return proto.CompactTextString(m) }
 func (*TestChild1) ProtoMessage()    {}
 func (*TestChild1) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{4}
+	return fileDescriptor_f80f1f1db1167453, []int{5}
 }
 func (m *TestChild1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1895,7 +2576,7 @@ func (m *TestGrandChild1) Reset()         { *m = TestGrandChild1{} }
 func (m *TestGrandChild1) String() string { return proto.CompactTextString(m) }
 func (*TestGrandChild1) ProtoMessage()    {}
 func (*TestGrandChild1) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{5}
+	return fileDescriptor_f80f1f1db1167453, []int{6}
 }
 func (m *TestGrandChild1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1977,7 +2658,7 @@ func (m *TestGGrandChild1) Reset()         { *m = TestGGrandChild1{} }
 func (m *TestGGrandChild1) String() string { return proto.CompactTextString(m) }
 func (*TestGGrandChild1) ProtoMessage()    {}
 func (*TestGGrandChild1) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{6}
+	return fileDescriptor_f80f1f1db1167453, []int{7}
 }
 func (m *TestGGrandChild1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2047,7 +2728,7 @@ func (m *TestG2GrandChild1) Reset()         { *m = TestG2GrandChild1{} }
 func (m *TestG2GrandChild1) String() string { return proto.CompactTextString(m) }
 func (*TestG2GrandChild1) ProtoMessage()    {}
 func (*TestG2GrandChild1) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{7}
+	return fileDescriptor_f80f1f1db1167453, []int{8}
 }
 func (m *TestG2GrandChild1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2129,7 +2810,7 @@ func (m *TestG3GrandChild1) Reset()         { *m = TestG3GrandChild1{} }
 func (m *TestG3GrandChild1) String() string { return proto.CompactTextString(m) }
 func (*TestG3GrandChild1) ProtoMessage()    {}
 func (*TestG3GrandChild1) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{8}
+	return fileDescriptor_f80f1f1db1167453, []int{9}
 }
 func (m *TestG3GrandChild1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2186,7 +2867,7 @@ func (m *TestG3GrandChild1) Clone() *TestG3GrandChild1 {
 }
 
 type TestParent2 struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Parent2 ID" sql:"pk"`
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Parent2 ID" sql:"pk,type(uuid)"`
 	ParentId             string   `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestGrandparent:id)"`
 	Val                  string   `protobuf:"bytes,3,opt,name=val,proto3" json:"val,omitempty" search:"Test Parent2 Val"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -2198,7 +2879,7 @@ func (m *TestParent2) Reset()         { *m = TestParent2{} }
 func (m *TestParent2) String() string { return proto.CompactTextString(m) }
 func (*TestParent2) ProtoMessage()    {}
 func (*TestParent2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{9}
+	return fileDescriptor_f80f1f1db1167453, []int{10}
 }
 func (m *TestParent2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2262,7 +2943,7 @@ func (m *TestParent2) Clone() *TestParent2 {
 }
 
 type TestChild2 struct {
-	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Child2 ID" sql:"pk"`
+	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Child2 ID" sql:"pk,type(uuid)"`
 	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestParent2:id)"`
 	// For a potential optimization, insert a direct link from child to grandparent.
 	GrandparentId        string   `protobuf:"bytes,3,opt,name=grandparent_id,json=grandparentId,proto3" json:"grandparent_id,omitempty" sql:"fk(TestGrandparent:id),no-fk-constraint"`
@@ -2276,7 +2957,7 @@ func (m *TestChild2) Reset()         { *m = TestChild2{} }
 func (m *TestChild2) String() string { return proto.CompactTextString(m) }
 func (*TestChild2) ProtoMessage()    {}
 func (*TestChild2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{10}
+	return fileDescriptor_f80f1f1db1167453, []int{11}
 }
 func (m *TestChild2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2359,7 +3040,7 @@ func (m *TestParent3) Reset()         { *m = TestParent3{} }
 func (m *TestParent3) String() string { return proto.CompactTextString(m) }
 func (*TestParent3) ProtoMessage()    {}
 func (*TestParent3) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{11}
+	return fileDescriptor_f80f1f1db1167453, []int{12}
 }
 func (m *TestParent3) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2423,7 +3104,7 @@ func (m *TestParent3) Clone() *TestParent3 {
 }
 
 type TestParent4 struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Parent4 ID" sql:"pk"`
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Parent4 ID" sql:"pk,type(uuid)"`
 	ParentId             string   `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestGrandparent:id)"`
 	Val                  string   `protobuf:"bytes,3,opt,name=val,proto3" json:"val,omitempty" search:"Test Parent4 Val"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -2435,7 +3116,7 @@ func (m *TestParent4) Reset()         { *m = TestParent4{} }
 func (m *TestParent4) String() string { return proto.CompactTextString(m) }
 func (*TestParent4) ProtoMessage()    {}
 func (*TestParent4) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{12}
+	return fileDescriptor_f80f1f1db1167453, []int{13}
 }
 func (m *TestParent4) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2500,7 +3181,7 @@ func (m *TestParent4) Clone() *TestParent4 {
 
 type TestChild1P4 struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Child1P4 ID" sql:"pk"`
-	ParentId             string   `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestParent4:id)"`
+	ParentId             string   `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestParent4:id),type(uuid)"`
 	Val                  string   `protobuf:"bytes,3,opt,name=val,proto3" json:"val,omitempty" search:"Test Child1P4 Val"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2511,7 +3192,7 @@ func (m *TestChild1P4) Reset()         { *m = TestChild1P4{} }
 func (m *TestChild1P4) String() string { return proto.CompactTextString(m) }
 func (*TestChild1P4) ProtoMessage()    {}
 func (*TestChild1P4) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{13}
+	return fileDescriptor_f80f1f1db1167453, []int{14}
 }
 func (m *TestChild1P4) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2587,7 +3268,7 @@ func (m *TestShortCircuit) Reset()         { *m = TestShortCircuit{} }
 func (m *TestShortCircuit) String() string { return proto.CompactTextString(m) }
 func (*TestShortCircuit) ProtoMessage()    {}
 func (*TestShortCircuit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f80f1f1db1167453, []int{14}
+	return fileDescriptor_f80f1f1db1167453, []int{15}
 }
 func (m *TestShortCircuit) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2652,6 +3333,7 @@ func (m *TestShortCircuit) Clone() *TestShortCircuit {
 
 func init() {
 	proto.RegisterEnum("storage.TestSingleKeyStruct_Enum", TestSingleKeyStruct_Enum_name, TestSingleKeyStruct_Enum_value)
+	proto.RegisterEnum("storage.TestSingleUUIDKeyStruct_Enum", TestSingleUUIDKeyStruct_Enum_name, TestSingleUUIDKeyStruct_Enum_value)
 	proto.RegisterEnum("storage.TestMultiKeyStruct_Enum", TestMultiKeyStruct_Enum_name, TestMultiKeyStruct_Enum_value)
 	proto.RegisterType((*TestSingleKeyStruct)(nil), "storage.TestSingleKeyStruct")
 	proto.RegisterMapType((map[string]string)(nil), "storage.TestSingleKeyStruct.LabelsEntry")
@@ -2661,6 +3343,14 @@ func init() {
 	proto.RegisterType((*TestSingleKeyStruct_Nested_Nested2)(nil), "storage.TestSingleKeyStruct.Nested.Nested2")
 	proto.RegisterType((*TestSingleKeyStruct_OneOfNested)(nil), "storage.TestSingleKeyStruct.OneOfNested")
 	proto.RegisterType((*TestSingleKeyStruct_OneOfNested_Nested2)(nil), "storage.TestSingleKeyStruct.OneOfNested.Nested2")
+	proto.RegisterType((*TestSingleUUIDKeyStruct)(nil), "storage.TestSingleUUIDKeyStruct")
+	proto.RegisterMapType((map[string]string)(nil), "storage.TestSingleUUIDKeyStruct.LabelsEntry")
+	proto.RegisterType((*TestSingleUUIDKeyStruct_Embedded)(nil), "storage.TestSingleUUIDKeyStruct.Embedded")
+	proto.RegisterType((*TestSingleUUIDKeyStruct_Embedded_Embedded2)(nil), "storage.TestSingleUUIDKeyStruct.Embedded.Embedded2")
+	proto.RegisterType((*TestSingleUUIDKeyStruct_Nested)(nil), "storage.TestSingleUUIDKeyStruct.Nested")
+	proto.RegisterType((*TestSingleUUIDKeyStruct_Nested_Nested2)(nil), "storage.TestSingleUUIDKeyStruct.Nested.Nested2")
+	proto.RegisterType((*TestSingleUUIDKeyStruct_OneOfNested)(nil), "storage.TestSingleUUIDKeyStruct.OneOfNested")
+	proto.RegisterType((*TestSingleUUIDKeyStruct_OneOfNested_Nested2)(nil), "storage.TestSingleUUIDKeyStruct.OneOfNested.Nested2")
 	proto.RegisterType((*TestMultiKeyStruct)(nil), "storage.TestMultiKeyStruct")
 	proto.RegisterMapType((map[string]string)(nil), "storage.TestMultiKeyStruct.LabelsEntry")
 	proto.RegisterType((*TestMultiKeyStruct_Embedded)(nil), "storage.TestMultiKeyStruct.Embedded")
@@ -2690,121 +3380,132 @@ func init() {
 func init() { proto.RegisterFile("storage/test.proto", fileDescriptor_f80f1f1db1167453) }
 
 var fileDescriptor_f80f1f1db1167453 = []byte{
-	// 1821 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x59, 0xcf, 0x73, 0xdb, 0xc6,
-	0x15, 0x36, 0x08, 0x92, 0x12, 0x97, 0xb6, 0xc2, 0x6c, 0x34, 0x09, 0xc2, 0x24, 0x02, 0x0c, 0xd9,
-	0x11, 0xec, 0x48, 0x94, 0x04, 0x52, 0xb6, 0x25, 0x55, 0x69, 0xcd, 0x58, 0x71, 0x55, 0xeb, 0xd7,
-	0x40, 0x52, 0xa7, 0xf5, 0xa1, 0x1a, 0x88, 0x58, 0x51, 0x18, 0x52, 0x80, 0x0c, 0x80, 0x99, 0xe8,
-	0xde, 0x99, 0x76, 0x3a, 0x3d, 0xb7, 0xfd, 0x0f, 0xfa, 0x07, 0xb4, 0x87, 0x1e, 0x7a, 0xce, 0xf4,
-	0xd8, 0x99, 0x1e, 0x7a, 0xc3, 0x74, 0xdc, 0xbf, 0xa0, 0x38, 0xf5, 0xd8, 0xc1, 0xee, 0x02, 0x58,
-	0x10, 0x24, 0xc4, 0xa4, 0xed, 0xc4, 0x33, 0x39, 0x19, 0x3f, 0xbe, 0xef, 0xed, 0xb7, 0xef, 0xbd,
-	0xfd, 0x1e, 0x28, 0x03, 0xe8, 0x7a, 0xb6, 0xa3, 0x77, 0xd1, 0xb2, 0x87, 0x5c, 0xaf, 0x71, 0xe5,
-	0xd8, 0x9e, 0x0d, 0xa7, 0xe8, 0xb3, 0xba, 0xd8, 0xb5, 0xed, 0x6e, 0x1f, 0x2d, 0xe3, 0xc7, 0x67,
-	0x83, 0xf3, 0x65, 0xcf, 0xbc, 0x44, 0xae, 0xa7, 0x5f, 0x5e, 0x11, 0x64, 0x7d, 0xb6, 0x6b, 0x77,
-	0x6d, 0x7c, 0xb9, 0x1c, 0x5e, 0x91, 0xa7, 0xf2, 0xdf, 0xaa, 0xe0, 0x9d, 0x63, 0xe4, 0x7a, 0x47,
-	0xa6, 0xd5, 0xed, 0xa3, 0x17, 0xe8, 0xfa, 0xc8, 0x73, 0x06, 0x1d, 0x0f, 0x6e, 0x02, 0xbe, 0x87,
-	0xae, 0x05, 0x4e, 0xe2, 0x94, 0x4a, 0xfb, 0x41, 0xe0, 0x8b, 0xf7, 0xdd, 0x57, 0xfd, 0x0d, 0xf9,
-	0xaa, 0xb7, 0x68, 0x5a, 0x06, 0xfa, 0x72, 0xeb, 0x42, 0x77, 0x2f, 0x64, 0xc9, 0x45, 0xba, 0xd3,
-	0xb9, 0xd8, 0x90, 0xc3, 0x08, 0xd2, 0x0b, 0x74, 0x2d, 0x6b, 0x21, 0x0b, 0x3e, 0x06, 0x45, 0x4b,
-	0xbf, 0x44, 0x42, 0x01, 0xb3, 0xe7, 0x03, 0x5f, 0x14, 0x31, 0x7b, 0x60, 0x99, 0xaf, 0x06, 0x68,
-	0x88, 0xb6, 0xaf, 0x5f, 0x22, 0x59, 0xc3, 0x04, 0xf8, 0x14, 0xdc, 0x76, 0x3d, 0xc7, 0xb4, 0xba,
-	0xa7, 0x6e, 0xdf, 0xec, 0x20, 0x81, 0x97, 0x78, 0xa5, 0xd2, 0x9e, 0x0b, 0x7c, 0xb1, 0x9e, 0xe2,
-	0x1c, 0x61, 0x90, 0x74, 0x14, 0x82, 0x64, 0xad, 0x4a, 0x38, 0xf8, 0x0e, 0x3e, 0x04, 0xc5, 0x33,
-	0xdb, 0xee, 0x0b, 0x45, 0x89, 0x53, 0xa6, 0xdb, 0xef, 0x06, 0xbe, 0x08, 0x53, 0xd4, 0xb6, 0x6d,
-	0xf7, 0x65, 0x0d, 0x63, 0xe0, 0x0a, 0x28, 0x0f, 0x4c, 0xcb, 0x7b, 0xd4, 0x12, 0x4a, 0x12, 0xa7,
-	0x14, 0xdb, 0x42, 0xe0, 0x8b, 0xb3, 0x29, 0xf4, 0x09, 0x7e, 0x2d, 0x6b, 0x14, 0x07, 0x97, 0x40,
-	0x89, 0x10, 0xca, 0x12, 0xa7, 0xf0, 0xed, 0xf7, 0x02, 0x5f, 0x7c, 0x27, 0x45, 0xd8, 0x21, 0xf8,
-	0x52, 0x0c, 0x3f, 0xef, 0xdb, 0xba, 0x27, 0x4c, 0x49, 0x9c, 0x52, 0x18, 0x01, 0xff, 0x3c, 0x7c,
-	0x2b, 0x6b, 0x04, 0x05, 0x5f, 0x82, 0x72, 0x5f, 0x3f, 0x43, 0x7d, 0x57, 0x98, 0x96, 0x78, 0xa5,
-	0xaa, 0x2a, 0x0d, 0x5a, 0xdd, 0xc6, 0x88, 0x12, 0x35, 0x76, 0x31, 0x74, 0xdb, 0xf2, 0x9c, 0xeb,
-	0x11, 0xca, 0xc9, 0x5b, 0x59, 0xa3, 0x11, 0xe1, 0x09, 0xa8, 0xc4, 0x1d, 0x21, 0x54, 0x24, 0x4e,
-	0xa9, 0xaa, 0xf5, 0x06, 0xe9, 0x99, 0x46, 0xd4, 0x33, 0x8d, 0xe3, 0x08, 0xd1, 0xfe, 0x20, 0xf0,
-	0xc5, 0xf7, 0x52, 0x01, 0xe3, 0x77, 0xb2, 0x96, 0x44, 0x82, 0x7b, 0xa0, 0x88, 0xac, 0xc1, 0xa5,
-	0x00, 0x24, 0x4e, 0x99, 0x51, 0xef, 0xe6, 0x0a, 0xde, 0xb6, 0x06, 0x97, 0x23, 0x2a, 0x12, 0x3e,
-	0x96, 0x35, 0x1c, 0x06, 0x9e, 0x80, 0x52, 0xf8, 0xaf, 0x2b, 0x54, 0x25, 0x7e, 0xb2, 0x78, 0x1f,
-	0x06, 0xbe, 0x28, 0x64, 0xe2, 0x45, 0xad, 0x41, 0xa2, 0xc1, 0xa7, 0x60, 0x1a, 0x5d, 0x9e, 0x21,
-	0xc3, 0x40, 0x86, 0x70, 0x1b, 0xef, 0xfd, 0x7e, 0x7e, 0x64, 0x0a, 0xd6, 0x62, 0x1a, 0xdc, 0x04,
-	0x65, 0x0b, 0xb9, 0x1e, 0x32, 0x84, 0x3b, 0xb8, 0x36, 0xf3, 0xb9, 0x01, 0xf6, 0x31, 0x54, 0xa3,
-	0x14, 0x28, 0x83, 0xaa, 0x6d, 0x21, 0xfb, 0x9c, 0x34, 0xaa, 0x30, 0x13, 0x9e, 0x8b, 0x1f, 0xde,
-	0xd2, 0xd8, 0x87, 0x70, 0x97, 0x62, 0xe8, 0x2a, 0x6f, 0x61, 0x99, 0xf9, 0x1d, 0x70, 0x60, 0xa1,
-	0x83, 0x73, 0xb2, 0x54, 0x1c, 0x8d, 0xae, 0xf8, 0x2e, 0x28, 0x9f, 0x5d, 0x7b, 0xc8, 0x75, 0x85,
-	0x9a, 0xc4, 0x29, 0xb7, 0x35, 0x7a, 0x57, 0x5f, 0x07, 0x55, 0xa6, 0x6f, 0x60, 0x8d, 0x39, 0xe6,
-	0xe4, 0xec, 0xce, 0x82, 0xd2, 0x17, 0x7a, 0x7f, 0x40, 0x0f, 0xaf, 0x46, 0x6e, 0x36, 0x0a, 0x4f,
-	0xb8, 0xfa, 0x01, 0x98, 0x8e, 0xf2, 0x02, 0xeb, 0x4c, 0x42, 0x09, 0x39, 0xbe, 0xaf, 0x2f, 0x80,
-	0x4a, 0x84, 0x53, 0x53, 0xc0, 0xc2, 0x10, 0xf0, 0xd7, 0x1c, 0x28, 0xef, 0xc7, 0x72, 0xe9, 0xbe,
-	0x49, 0xb4, 0x28, 0x71, 0xdb, 0x60, 0x8a, 0x5c, 0xa9, 0x98, 0x5d, 0x55, 0x3f, 0x99, 0x20, 0xed,
-	0xf4, 0x1f, 0x55, 0x8b, 0xb8, 0xf5, 0x79, 0x30, 0x45, 0x9f, 0x41, 0x21, 0x1d, 0xb1, 0x92, 0x80,
-	0x7e, 0xc3, 0x81, 0x2a, 0x93, 0xd1, 0xb1, 0x9a, 0x7e, 0x34, 0xac, 0x69, 0x65, 0xd2, 0x22, 0x7d,
-	0x33, 0x61, 0xf2, 0x02, 0x28, 0x86, 0x3d, 0x0d, 0x2b, 0xa0, 0xb4, 0xbd, 0x7f, 0xb2, 0xb7, 0x52,
-	0xbb, 0x15, 0x5d, 0xae, 0xd6, 0xb8, 0xe8, 0x52, 0xad, 0x15, 0xda, 0x53, 0xa0, 0x84, 0x7b, 0x40,
-	0xfe, 0xd7, 0x0c, 0x80, 0xa1, 0x96, 0xbd, 0x41, 0xdf, 0x33, 0x13, 0x53, 0x5f, 0x03, 0xc5, 0x1e,
-	0xba, 0x5e, 0xa5, 0xae, 0x7e, 0x37, 0xf0, 0xc5, 0x8f, 0x62, 0x57, 0x37, 0x46, 0xb9, 0x39, 0x86,
-	0xc3, 0xa7, 0x98, 0x46, 0x65, 0xb5, 0x97, 0x02, 0x5f, 0x7c, 0x40, 0x69, 0x59, 0x8e, 0xa4, 0x2e,
-	0x86, 0xc9, 0x40, 0x8b, 0x17, 0xa6, 0x61, 0x20, 0x8b, 0x84, 0x50, 0xbf, 0xeb, 0xc6, 0xfe, 0xd3,
-	0x21, 0x63, 0x5f, 0x48, 0x75, 0x4c, 0xba, 0x4a, 0x6f, 0x86, 0xaf, 0xef, 0xa6, 0x7c, 0x5d, 0xca,
-	0xd3, 0x3b, 0x81, 0xad, 0x1f, 0xa7, 0x6d, 0xfd, 0xe6, 0x70, 0x13, 0xb9, 0xfa, 0x0a, 0x28, 0x53,
-	0x43, 0xad, 0xe1, 0xce, 0xcc, 0x26, 0x8b, 0xb4, 0x93, 0xac, 0x51, 0x1c, 0xfc, 0x3e, 0x98, 0x35,
-	0x2d, 0x8f, 0xf4, 0xe0, 0xa9, 0x81, 0xae, 0x1c, 0xd4, 0xd1, 0xc3, 0x03, 0xfe, 0xb6, 0xc4, 0x2b,
-	0x7c, 0xfb, 0x4e, 0xe0, 0x8b, 0x53, 0xb8, 0xb3, 0x97, 0x64, 0x81, 0xd3, 0xa0, 0x69, 0x79, 0x78,
-	0xc1, 0x67, 0x31, 0x10, 0x7e, 0x0a, 0xaa, 0xa6, 0xe5, 0x35, 0x55, 0xda, 0xc6, 0x50, 0xe2, 0x95,
-	0x52, 0xfb, 0xa3, 0xc0, 0x17, 0xdf, 0x1f, 0x6e, 0x96, 0xa6, 0x1a, 0xa9, 0x05, 0x98, 0x41, 0x9a,
-	0xf8, 0x07, 0x99, 0x41, 0x74, 0x2f, 0x37, 0x17, 0xd9, 0x39, 0xb4, 0x31, 0x34, 0x87, 0xe4, 0x3c,
-	0xfe, 0x37, 0x18, 0x43, 0x2f, 0x46, 0x8d, 0xa1, 0xdc, 0x7e, 0x1d, 0x3f, 0x85, 0xde, 0xa8, 0x69,
-	0xf3, 0x27, 0x3e, 0x9e, 0x36, 0x8f, 0xd3, 0xce, 0xde, 0x16, 0x03, 0x5f, 0xfc, 0x20, 0xfd, 0x51,
-	0x8a, 0x5f, 0x27, 0xfd, 0x43, 0x13, 0xb8, 0x01, 0x2a, 0xa6, 0x7b, 0x4a, 0xb9, 0x3c, 0x36, 0xa2,
-	0x6c, 0xf1, 0x29, 0x97, 0xf8, 0xd1, 0xb4, 0xe9, 0xd2, 0x45, 0x5b, 0x91, 0xc3, 0x14, 0xb1, 0xc3,
-	0x64, 0xbd, 0x8f, 0xf2, 0xd2, 0x46, 0xf3, 0x6c, 0x78, 0xd8, 0x3c, 0xbc, 0xb9, 0xde, 0xd9, 0x31,
-	0xf3, 0x67, 0x2e, 0x99, 0x33, 0x9b, 0x43, 0x73, 0x86, 0xce, 0x81, 0xb1, 0xbb, 0x97, 0x54, 0x39,
-	0x0e, 0x04, 0xbf, 0x97, 0x4d, 0xc0, 0xd8, 0xe4, 0x85, 0x09, 0x08, 0xc9, 0x49, 0x0a, 0x1e, 0xa5,
-	0x53, 0x20, 0x05, 0xbe, 0xf8, 0xe1, 0xd8, 0x14, 0x84, 0x54, 0x02, 0xaf, 0xbf, 0x4a, 0x0f, 0xe6,
-	0xad, 0xa1, 0xf2, 0xdd, 0x0f, 0x7c, 0xf1, 0x6e, 0x2a, 0xce, 0x41, 0xd8, 0x83, 0x63, 0x8a, 0xf8,
-	0xff, 0x9a, 0xb9, 0xbf, 0x2f, 0x82, 0xb7, 0xc2, 0xc5, 0x9f, 0x3b, 0xba, 0x65, 0x5c, 0xe9, 0x0e,
-	0xb2, 0x3c, 0xb8, 0x0e, 0x0a, 0xa6, 0x91, 0xfa, 0x11, 0xc5, 0xaa, 0x64, 0x90, 0xd2, 0xce, 0x33,
-	0x59, 0x8a, 0x86, 0xaa, 0x56, 0x30, 0x0d, 0xd8, 0x04, 0xfc, 0x17, 0x7a, 0x7f, 0x6c, 0x89, 0x58,
-	0xee, 0x8f, 0xf5, 0xbe, 0xac, 0x85, 0x68, 0xb8, 0xc5, 0xf4, 0x3f, 0x8f, 0xed, 0x21, 0xfd, 0x05,
-	0xcd, 0xb0, 0x46, 0x79, 0x4b, 0x1b, 0x4c, 0x5f, 0x39, 0xa6, 0xed, 0x98, 0xde, 0x35, 0x2d, 0xd1,
-	0xc7, 0x81, 0x2f, 0xca, 0x63, 0x17, 0x3e, 0xa4, 0x60, 0x59, 0x8b, 0x79, 0xf0, 0x39, 0x00, 0x8e,
-	0xe9, 0xf6, 0x4e, 0xdd, 0x8e, 0xed, 0x20, 0x3c, 0x7e, 0x0b, 0x6d, 0x25, 0xf0, 0xc5, 0x7b, 0x63,
-	0xa3, 0x68, 0xa6, 0xdb, 0x93, 0x8e, 0x42, 0xb8, 0xac, 0x55, 0x42, 0x2e, 0xbe, 0xae, 0xff, 0x9d,
-	0x63, 0x1c, 0xe0, 0x09, 0xc9, 0x06, 0xc9, 0x64, 0xbe, 0xa8, 0x88, 0x43, 0x53, 0xb2, 0x03, 0x2a,
-	0xd1, 0xfe, 0xc2, 0x22, 0xf3, 0x99, 0x6f, 0xc8, 0x51, 0x39, 0x89, 0x2f, 0x54, 0x2d, 0x61, 0xd7,
-	0x3f, 0x67, 0xad, 0x66, 0x9d, 0x55, 0xb4, 0x10, 0xf8, 0xe2, 0xfc, 0x8d, 0x8a, 0x54, 0x22, 0x49,
-	0xfe, 0xaa, 0x00, 0xaa, 0x21, 0xe8, 0x10, 0xbf, 0x5e, 0x85, 0x6b, 0x4c, 0x97, 0x64, 0x7b, 0x99,
-	0xa2, 0xb2, 0x1d, 0xb2, 0x05, 0x2a, 0x64, 0x81, 0x53, 0x93, 0xba, 0x1d, 0x3d, 0x51, 0x21, 0xe8,
-	0xbc, 0xa7, 0x0c, 0x6d, 0x6e, 0xc3, 0x34, 0x1e, 0x84, 0x85, 0xc2, 0x37, 0x3b, 0xa1, 0x97, 0x4d,
-	0x77, 0x2e, 0xcc, 0xbe, 0xe1, 0x20, 0x8b, 0xf6, 0xca, 0x5c, 0x2a, 0x2f, 0x74, 0xdd, 0xc6, 0x67,
-	0x21, 0x68, 0x55, 0x43, 0xe7, 0x5a, 0x8c, 0x87, 0xcb, 0x64, 0xf3, 0x45, 0xbc, 0x68, 0xd6, 0x01,
-	0x23, 0xc9, 0x71, 0x63, 0xd6, 0x8f, 0x41, 0x25, 0x8e, 0x03, 0x9f, 0xd3, 0x95, 0x4f, 0xe3, 0x5d,
-	0x2f, 0x06, 0xbe, 0xa8, 0xb0, 0xba, 0x09, 0x38, 0x94, 0xbc, 0x68, 0xd9, 0x4b, 0xe7, 0xbd, 0xa5,
-	0x8e, 0x6d, 0xb9, 0x9e, 0xa3, 0x9b, 0x96, 0x27, 0x6b, 0x53, 0x98, 0xbd, 0x63, 0xc8, 0x0e, 0x00,
-	0x09, 0x18, 0xb6, 0x98, 0x34, 0xde, 0x0b, 0x7c, 0x31, 0xfd, 0x6d, 0x4a, 0x40, 0xd9, 0x2c, 0x36,
-	0xd8, 0x73, 0x96, 0xfd, 0xec, 0xa0, 0xb4, 0x78, 0x27, 0xf2, 0xaf, 0x0a, 0xcc, 0x31, 0xa7, 0x2b,
-	0x4f, 0x70, 0xcc, 0x3b, 0x63, 0x96, 0x7f, 0x92, 0x2d, 0x22, 0xf9, 0x44, 0x1b, 0x99, 0x0c, 0xb6,
-	0x7e, 0x7b, 0x4c, 0x16, 0x79, 0x4c, 0x54, 0x03, 0x5f, 0x6c, 0xa4, 0xaa, 0xcf, 0x88, 0xbc, 0x21,
-	0x97, 0x91, 0xdf, 0x14, 0xf3, 0xfc, 0xa6, 0x33, 0x9c, 0x8c, 0x9f, 0x73, 0xa0, 0x36, 0xbc, 0x10,
-	0xdc, 0x60, 0xb2, 0xf1, 0x30, 0xf0, 0xc5, 0x8f, 0xd3, 0x81, 0x72, 0xd3, 0xd1, 0x62, 0xab, 0x21,
-	0x07, 0xbe, 0x38, 0x37, 0x9e, 0x9c, 0xc8, 0xf8, 0x6d, 0x01, 0xbc, 0x8d, 0x65, 0xa8, 0xac, 0x8e,
-	0x4d, 0x46, 0xc7, 0x27, 0x81, 0x2f, 0x2e, 0xa4, 0x43, 0xa9, 0xb9, 0x42, 0x3e, 0xcd, 0xd6, 0x25,
-	0xf9, 0xbd, 0x34, 0x26, 0xbd, 0x6c, 0x75, 0xf6, 0x33, 0xd5, 0x69, 0x06, 0xbe, 0xb8, 0x9c, 0xa2,
-	0x37, 0xbf, 0x46, 0x79, 0xd6, 0xd8, 0xf2, 0x90, 0xbf, 0xa8, 0x8d, 0xdf, 0x4d, 0x92, 0x99, 0x5f,
-	0x70, 0x34, 0x33, 0xcd, 0xaf, 0x91, 0x99, 0x66, 0x6e, 0x66, 0xd6, 0xd8, 0x12, 0x8d, 0x50, 0xd2,
-	0x1c, 0xad, 0xe4, 0x8f, 0x1c, 0x6b, 0x7a, 0xea, 0x44, 0xa6, 0xa7, 0xfe, 0xcf, 0x4d, 0x8f, 0x1a,
-	0x17, 0x9f, 0x6b, 0x5c, 0x2a, 0x9b, 0xc0, 0x02, 0xe3, 0x31, 0xea, 0x24, 0x1e, 0x33, 0x42, 0xf4,
-	0x7a, 0x56, 0x34, 0x71, 0x1a, 0x46, 0x34, 0x5d, 0x7a, 0x58, 0xf0, 0x4f, 0xc0, 0x4c, 0x37, 0xd9,
-	0x4e, 0xd2, 0x4d, 0xab, 0x81, 0x2f, 0x2e, 0xe5, 0x6c, 0x7a, 0x44, 0x2f, 0xdd, 0x61, 0x02, 0xed,
-	0xc4, 0xc6, 0x57, 0xcc, 0x33, 0x3e, 0x75, 0x6c, 0x01, 0x9b, 0x13, 0x15, 0xb0, 0xf9, 0xed, 0x14,
-	0xb0, 0x39, 0x56, 0x76, 0x6b, 0x22, 0xd9, 0xad, 0x6f, 0x47, 0x76, 0x8b, 0x91, 0xfd, 0x07, 0x0e,
-	0xdc, 0x4e, 0xbc, 0xff, 0xb0, 0x05, 0x1f, 0x31, 0xba, 0xb3, 0x1f, 0x40, 0x11, 0xec, 0xbf, 0xe9,
-	0xbd, 0xd6, 0xb0, 0xe8, 0x15, 0x56, 0x74, 0xf6, 0xf7, 0x4a, 0xbc, 0x66, 0xa2, 0xfa, 0xab, 0x02,
-	0x99, 0x07, 0x47, 0x17, 0xb6, 0xe3, 0x7d, 0x66, 0x3a, 0x9d, 0x81, 0xe9, 0xdd, 0x30, 0x0f, 0x58,
-	0x68, 0x56, 0x7d, 0x8f, 0xb1, 0x51, 0x22, 0xfe, 0x30, 0xf0, 0xc5, 0xdd, 0xdc, 0xc9, 0x7e, 0xf3,
-	0x27, 0xc4, 0xa2, 0x61, 0x3a, 0xa8, 0xe3, 0x99, 0xb6, 0x15, 0x2a, 0x8f, 0x3d, 0xf6, 0x97, 0x1c,
-	0xa8, 0x75, 0xd5, 0xd3, 0x6e, 0xec, 0x5f, 0xc9, 0x71, 0xfb, 0x59, 0xe0, 0x8b, 0x2f, 0x27, 0x99,
-	0x1f, 0x51, 0x2b, 0xa8, 0x37, 0x79, 0x7b, 0x5a, 0xc3, 0x4c, 0x97, 0x09, 0xb7, 0x63, 0xb4, 0x1f,
-	0xff, 0xe5, 0xf5, 0x1c, 0xf7, 0xd7, 0xd7, 0x73, 0xdc, 0x3f, 0x5e, 0xcf, 0x71, 0xbf, 0xfb, 0xe7,
-	0xdc, 0x2d, 0xf0, 0xbe, 0x69, 0x37, 0x5c, 0x4f, 0xef, 0xf4, 0x1c, 0xfb, 0x4b, 0xf2, 0x87, 0x9d,
-	0xe8, 0x6b, 0xed, 0x65, 0xf4, 0x7f, 0x40, 0xff, 0xe6, 0xb8, 0xb3, 0x32, 0x7e, 0xd5, 0xfc, 0x4f,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x34, 0x77, 0x44, 0x4b, 0x2c, 0x1a, 0x00, 0x00,
+	// 1993 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x5a, 0x4d, 0x6f, 0xdb, 0xc8,
+	0x19, 0x0e, 0x25, 0xf9, 0x43, 0x23, 0xc7, 0xeb, 0x9d, 0x0d, 0x36, 0x5c, 0xed, 0xae, 0x87, 0x61,
+	0x92, 0xb5, 0x92, 0xc8, 0xb2, 0x4d, 0x29, 0x5f, 0x4e, 0xb3, 0xd9, 0x68, 0xed, 0xa4, 0x6a, 0x12,
+	0xc7, 0xa5, 0xe3, 0xa2, 0x9b, 0xc3, 0x1a, 0xb2, 0x38, 0x96, 0x09, 0xc9, 0xa4, 0x43, 0x52, 0x8b,
+	0xf5, 0xb5, 0x28, 0xd0, 0xa2, 0xe8, 0xa1, 0xe8, 0xa1, 0x2d, 0xfa, 0x07, 0xfa, 0x07, 0x7a, 0xe8,
+	0xa1, 0x68, 0x6f, 0x41, 0x8f, 0x05, 0x7a, 0xe8, 0x8d, 0x28, 0xd2, 0x5f, 0x50, 0x9e, 0x7a, 0x2c,
+	0x38, 0x33, 0x24, 0x87, 0xa4, 0x44, 0x29, 0x46, 0xda, 0xa6, 0xe8, 0x9e, 0xcc, 0x8f, 0xe7, 0x7d,
+	0xe7, 0x79, 0x3f, 0xe6, 0x79, 0x47, 0x84, 0x01, 0xb4, 0x1d, 0xd3, 0x6a, 0x77, 0xf1, 0x8a, 0x83,
+	0x6d, 0xa7, 0x76, 0x6c, 0x99, 0x8e, 0x09, 0x67, 0xd8, 0xb3, 0x32, 0xea, 0x9a, 0x66, 0xb7, 0x8f,
+	0x57, 0xc8, 0xe3, 0xfd, 0xc1, 0xc1, 0x8a, 0xa3, 0x1f, 0x61, 0xdb, 0x69, 0x1f, 0x1d, 0x53, 0x64,
+	0xf9, 0x5c, 0xd7, 0xec, 0x9a, 0xe4, 0x72, 0xc5, 0xbf, 0xa2, 0x4f, 0xe5, 0xbf, 0x94, 0xc0, 0x7b,
+	0xcf, 0xb0, 0xed, 0xec, 0xe8, 0x46, 0xb7, 0x8f, 0x1f, 0xe1, 0x93, 0x1d, 0xc7, 0x1a, 0x74, 0x1c,
+	0x78, 0x07, 0xe4, 0x7b, 0xf8, 0x44, 0x14, 0x24, 0xa1, 0x52, 0x6c, 0x5e, 0xf1, 0x5c, 0x74, 0xd9,
+	0x7e, 0xd1, 0x5f, 0x97, 0x8f, 0x7b, 0x55, 0xdd, 0xd0, 0xf0, 0xd7, 0x77, 0x0f, 0xdb, 0xf6, 0xa1,
+	0x2c, 0xd9, 0xb8, 0x6d, 0x75, 0x0e, 0xd7, 0x65, 0xdf, 0x83, 0xf4, 0x08, 0x9f, 0xc8, 0xaa, 0x6f,
+	0x05, 0x6f, 0x82, 0x82, 0xd1, 0x3e, 0xc2, 0x62, 0x8e, 0x58, 0x5f, 0xf4, 0x5c, 0x84, 0x88, 0xf5,
+	0xc0, 0xd0, 0x5f, 0x0c, 0x70, 0xc2, 0x6c, 0xab, 0x7d, 0x84, 0x65, 0x95, 0x18, 0xc0, 0xfb, 0x60,
+	0xce, 0x76, 0x2c, 0xdd, 0xe8, 0xee, 0xd9, 0x7d, 0xbd, 0x83, 0xc5, 0xbc, 0x94, 0xaf, 0x14, 0x9b,
+	0x8b, 0x9e, 0x8b, 0xca, 0x31, 0x9b, 0x1d, 0x02, 0x92, 0x76, 0x7c, 0x90, 0xac, 0x96, 0xa8, 0x0d,
+	0xb9, 0x83, 0x57, 0x41, 0x61, 0xdf, 0x34, 0xfb, 0x62, 0x41, 0x12, 0x2a, 0xb3, 0xcd, 0xf7, 0x3d,
+	0x17, 0xc1, 0x98, 0x69, 0xd3, 0x34, 0xfb, 0xb2, 0x4a, 0x30, 0x70, 0x15, 0x4c, 0x0f, 0x74, 0xc3,
+	0xb9, 0xd1, 0x10, 0xa7, 0x24, 0xa1, 0x52, 0x68, 0x8a, 0x9e, 0x8b, 0xce, 0xc5, 0xd0, 0xbb, 0xe4,
+	0xb5, 0xac, 0x32, 0x1c, 0x5c, 0x06, 0x53, 0xd4, 0x60, 0x5a, 0x12, 0x2a, 0xf9, 0xe6, 0x79, 0xcf,
+	0x45, 0xef, 0xc5, 0x0c, 0x5a, 0x14, 0x3f, 0x15, 0xc2, 0x0f, 0xfa, 0x66, 0xdb, 0x11, 0x67, 0x24,
+	0xa1, 0x92, 0x1b, 0x02, 0x7f, 0xe0, 0xbf, 0x95, 0x55, 0x8a, 0x82, 0xcf, 0xc1, 0x74, 0xbf, 0xbd,
+	0x8f, 0xfb, 0xb6, 0x38, 0x2b, 0xe5, 0x2b, 0x25, 0xa5, 0x52, 0x63, 0xd5, 0xad, 0x0d, 0x29, 0x51,
+	0xed, 0x31, 0x81, 0x6e, 0x1a, 0x8e, 0x75, 0x32, 0x84, 0x39, 0x7d, 0x2b, 0xab, 0xcc, 0x23, 0xdc,
+	0x05, 0xc5, 0xb0, 0x23, 0xc4, 0xa2, 0x24, 0x54, 0x4a, 0x4a, 0xb9, 0x46, 0x7b, 0xa6, 0x16, 0xf4,
+	0x4c, 0xed, 0x59, 0x80, 0x68, 0x7e, 0xe8, 0xb9, 0xe8, 0x7c, 0xcc, 0x61, 0xf8, 0x4e, 0x56, 0x23,
+	0x4f, 0xf0, 0x09, 0x28, 0x60, 0x63, 0x70, 0x24, 0x02, 0x49, 0xa8, 0xcc, 0x2b, 0x17, 0x32, 0x09,
+	0x6f, 0x1a, 0x83, 0xa3, 0x21, 0x15, 0xf1, 0x1f, 0xcb, 0x2a, 0x71, 0x03, 0x77, 0xc1, 0x94, 0xff,
+	0xd7, 0x16, 0x4b, 0x52, 0x7e, 0x32, 0x7f, 0x1f, 0x79, 0x2e, 0x12, 0x53, 0xfe, 0x82, 0xd6, 0xa0,
+	0xde, 0xe0, 0x7d, 0x30, 0x8b, 0x8f, 0xf6, 0xb1, 0xa6, 0x61, 0x4d, 0x9c, 0x23, 0xb1, 0x5f, 0xce,
+	0xf6, 0xcc, 0xc0, 0x6a, 0x68, 0x06, 0xef, 0x80, 0x69, 0x03, 0xdb, 0x0e, 0xd6, 0xc4, 0xb3, 0xa4,
+	0x36, 0x17, 0x33, 0x1d, 0x6c, 0x11, 0xa8, 0xca, 0x4c, 0xa0, 0x0c, 0x4a, 0xa6, 0x81, 0xcd, 0x03,
+	0xda, 0xa8, 0xe2, 0xbc, 0xbf, 0x2f, 0xbe, 0x7d, 0x46, 0xe5, 0x1f, 0xc2, 0xc7, 0x0c, 0xc3, 0x56,
+	0x79, 0x87, 0xd0, 0xcc, 0xee, 0x80, 0xa7, 0x06, 0x7e, 0x7a, 0x40, 0x97, 0x0a, 0xbd, 0xb1, 0x15,
+	0xdf, 0x07, 0xd3, 0xfb, 0x27, 0x0e, 0xb6, 0x6d, 0x71, 0x41, 0x12, 0x2a, 0x73, 0x2a, 0xbb, 0x2b,
+	0xdf, 0x06, 0x25, 0xae, 0x6f, 0xe0, 0x02, 0xb7, 0xcd, 0xe9, 0xde, 0x3d, 0x07, 0xa6, 0xbe, 0x6a,
+	0xf7, 0x07, 0x6c, 0xf3, 0xaa, 0xf4, 0x66, 0x3d, 0x77, 0x4b, 0x28, 0x3f, 0x05, 0xb3, 0x41, 0x5e,
+	0x60, 0x99, 0x4b, 0x28, 0x35, 0x0e, 0xef, 0xcb, 0x4b, 0xa0, 0x18, 0xe0, 0x94, 0x18, 0x30, 0x97,
+	0x00, 0xfe, 0x54, 0x00, 0xd3, 0x5b, 0x21, 0x5d, 0x16, 0x37, 0xf5, 0x16, 0x24, 0x6e, 0x13, 0xcc,
+	0xd0, 0x2b, 0x85, 0x58, 0x97, 0x94, 0x6b, 0x13, 0xa4, 0x9d, 0xfd, 0x51, 0xd4, 0xc0, 0xb6, 0x7c,
+	0x11, 0xcc, 0xb0, 0x67, 0x50, 0x8c, 0x7b, 0x2c, 0x46, 0xa0, 0x5f, 0x08, 0xa0, 0xc4, 0x65, 0x74,
+	0x24, 0xa7, 0xef, 0x24, 0x39, 0xad, 0x4e, 0x5a, 0xa4, 0xd3, 0x11, 0x93, 0x97, 0x40, 0xc1, 0xef,
+	0x69, 0x58, 0x04, 0x53, 0x9b, 0x5b, 0xbb, 0x4f, 0x56, 0x17, 0xce, 0x04, 0x97, 0x6b, 0x0b, 0x42,
+	0x70, 0xa9, 0x2c, 0xe4, 0x9a, 0x33, 0x60, 0x8a, 0xf4, 0x80, 0xfc, 0x83, 0x39, 0x70, 0x3e, 0xe2,
+	0xb2, 0xbb, 0xdb, 0xda, 0x88, 0x94, 0xfd, 0x01, 0xaf, 0xec, 0x0d, 0xcf, 0x45, 0xab, 0x69, 0x65,
+	0xaf, 0x3a, 0x27, 0xc7, 0xb8, 0x32, 0x18, 0xe8, 0xda, 0x95, 0x6f, 0x44, 0xfe, 0x0d, 0x8b, 0xfc,
+	0x97, 0x09, 0x91, 0xaf, 0x0e, 0xe9, 0x9e, 0x58, 0xc5, 0xde, 0x0e, 0xa1, 0xff, 0x6e, 0x4c, 0xe8,
+	0x2f, 0x8f, 0x25, 0x3d, 0x81, 0xd8, 0x7f, 0x11, 0x17, 0xfb, 0x09, 0x7d, 0x4e, 0x24, 0xf8, 0x9b,
+	0x29, 0xc1, 0xbf, 0x32, 0xde, 0x7b, 0x5a, 0xf4, 0xef, 0x25, 0x44, 0x7f, 0x69, 0xac, 0x93, 0x53,
+	0x08, 0xff, 0xf6, 0x30, 0xe1, 0x1f, 0xdf, 0x15, 0xff, 0xe3, 0xe2, 0xff, 0xb3, 0xf1, 0xe2, 0xdf,
+	0x4a, 0x0a, 0xed, 0xca, 0x84, 0xe9, 0x3f, 0xe5, 0x00, 0xf8, 0xf5, 0x84, 0x03, 0x60, 0x2b, 0xc9,
+	0xab, 0xf1, 0x3a, 0xc5, 0xfa, 0x8f, 0x0d, 0x81, 0x7f, 0xcc, 0x03, 0xe8, 0xf3, 0x79, 0x32, 0xe8,
+	0x3b, 0x7a, 0xa4, 0xff, 0xd7, 0x41, 0xa1, 0x87, 0x4f, 0xd6, 0xd8, 0x00, 0xb8, 0xe0, 0xb9, 0xe8,
+	0xe3, 0x70, 0x00, 0x68, 0xc3, 0xd4, 0x9e, 0xc0, 0xe1, 0x7d, 0x62, 0xc6, 0x68, 0x35, 0x97, 0x3d,
+	0x17, 0x5d, 0x61, 0x66, 0x69, 0x1b, 0x49, 0xa9, 0xfa, 0x09, 0xc1, 0xd5, 0x43, 0x5d, 0xd3, 0xb0,
+	0x41, 0x5d, 0x28, 0xff, 0xef, 0xc2, 0xff, 0x45, 0x42, 0xf8, 0xe3, 0x62, 0x12, 0xaf, 0xd2, 0xdb,
+	0xa1, 0xf9, 0x8f, 0x63, 0x9a, 0x2f, 0x65, 0xf1, 0x9d, 0x40, 0xee, 0x9f, 0xc5, 0xe5, 0x7e, 0xbc,
+	0xbb, 0x89, 0x94, 0x7e, 0x15, 0x4c, 0x33, 0x71, 0x5d, 0x20, 0x9d, 0x99, 0x4e, 0x16, 0x6d, 0x27,
+	0x59, 0x65, 0x38, 0x78, 0x0f, 0x9c, 0xd3, 0x0d, 0x87, 0xf6, 0xe0, 0x9e, 0x86, 0x8f, 0x2d, 0xdc,
+	0x69, 0xfb, 0x9b, 0xfc, 0x5d, 0x29, 0x5f, 0xc9, 0x37, 0xcf, 0x7a, 0x2e, 0x9a, 0x21, 0x9d, 0xbd,
+	0x2c, 0x8b, 0x82, 0x0a, 0x75, 0xc3, 0x21, 0x0b, 0x6e, 0x84, 0x40, 0xf8, 0x29, 0x28, 0xe9, 0x86,
+	0x53, 0x57, 0x58, 0x1b, 0x43, 0x29, 0x5f, 0x99, 0x6a, 0x7e, 0xec, 0xb9, 0xe8, 0x83, 0x64, 0xb3,
+	0xd4, 0x95, 0x80, 0x2d, 0x20, 0x16, 0xb4, 0x89, 0x3f, 0x4b, 0x0d, 0xa7, 0x4b, 0x99, 0xb9, 0x48,
+	0xcf, 0xa5, 0xf5, 0xc4, 0x5c, 0x92, 0xb3, 0xec, 0x4f, 0x31, 0x92, 0x1e, 0x0d, 0x1b, 0x49, 0x99,
+	0xfd, 0x3a, 0x7a, 0x1a, 0xbd, 0x55, 0x53, 0xe7, 0x77, 0xf9, 0x70, 0xea, 0xdc, 0x8c, 0xab, 0x7b,
+	0x13, 0x79, 0x2e, 0xfa, 0x30, 0x7e, 0x68, 0x25, 0xaf, 0xa3, 0xfe, 0x61, 0x09, 0x5c, 0x07, 0x45,
+	0xdd, 0xde, 0x63, 0xb6, 0x79, 0x22, 0x44, 0xe9, 0xe2, 0x33, 0x5b, 0xaa, 0x47, 0xb3, 0xba, 0xcd,
+	0x16, 0x6d, 0x04, 0x0a, 0x53, 0x20, 0x0a, 0x93, 0xd6, 0x3e, 0x66, 0x17, 0x17, 0x9a, 0x8d, 0xe4,
+	0xc0, 0xb9, 0x3a, 0xbe, 0xde, 0xe9, 0x31, 0xf3, 0x7b, 0x21, 0x9a, 0x33, 0x77, 0x12, 0x73, 0x86,
+	0xcd, 0x81, 0x91, 0xd1, 0x4b, 0x8a, 0x1c, 0x3a, 0x82, 0xdf, 0x4a, 0x27, 0x60, 0x64, 0xf2, 0xfc,
+	0x04, 0xf8, 0xc6, 0x51, 0x0a, 0x6e, 0xc4, 0x53, 0x20, 0x79, 0x2e, 0xfa, 0x68, 0x64, 0x0a, 0x7c,
+	0x53, 0x0a, 0x2f, 0xbf, 0x88, 0x0f, 0xe7, 0xbb, 0x89, 0xf2, 0x5d, 0xf6, 0x5c, 0x74, 0x21, 0xe6,
+	0xe7, 0xa9, 0xdf, 0x83, 0x23, 0x8a, 0xf8, 0xef, 0x9a, 0xb9, 0xbf, 0x29, 0x80, 0x77, 0xfc, 0xc5,
+	0x1f, 0x5a, 0x6d, 0x43, 0x3b, 0x6e, 0x5b, 0xd8, 0x70, 0xe0, 0x6d, 0x90, 0xd3, 0xb5, 0xd8, 0x97,
+	0x34, 0x9e, 0x25, 0x87, 0x94, 0x5a, 0x1b, 0xb2, 0x14, 0x0c, 0x55, 0x35, 0xa7, 0x6b, 0xb0, 0x0e,
+	0xf2, 0x5f, 0xb5, 0xfb, 0x23, 0x4b, 0xc4, 0xdb, 0x7e, 0xaf, 0xdd, 0x97, 0x55, 0x1f, 0x0d, 0xef,
+	0x72, 0xfd, 0x9f, 0x27, 0xf2, 0x10, 0xff, 0x8c, 0xc2, 0x59, 0x0d, 0xd3, 0x96, 0x26, 0x98, 0x3d,
+	0xb6, 0x74, 0xd3, 0xd2, 0x9d, 0x13, 0x56, 0xa2, 0x4f, 0x3c, 0x17, 0xc9, 0x23, 0x17, 0xde, 0x66,
+	0x60, 0x59, 0x0d, 0xed, 0xe0, 0x43, 0x00, 0x2c, 0xdd, 0xee, 0xed, 0xd9, 0x1d, 0xd3, 0xc2, 0x64,
+	0xfc, 0xe6, 0x9a, 0x15, 0xcf, 0x45, 0x97, 0x46, 0x7a, 0x51, 0x75, 0xbb, 0x27, 0xed, 0xf8, 0x70,
+	0x59, 0x2d, 0xfa, 0xb6, 0xe4, 0xba, 0xfc, 0x57, 0x81, 0x53, 0x80, 0x5b, 0x34, 0x1b, 0x34, 0x93,
+	0xd9, 0xa4, 0x02, 0x1b, 0x96, 0x92, 0x16, 0x28, 0x06, 0xf1, 0xf9, 0x45, 0xce, 0xa7, 0x3e, 0x24,
+	0x0c, 0xcb, 0x49, 0x78, 0xa1, 0xa8, 0x91, 0x75, 0xf9, 0x01, 0x2f, 0x35, 0xb7, 0x79, 0x46, 0x4b,
+	0x9e, 0x8b, 0x2e, 0x8e, 0x65, 0xa4, 0x50, 0x4a, 0xf2, 0xcb, 0x1c, 0x28, 0xf9, 0xa0, 0x6d, 0xf2,
+	0x7a, 0x0d, 0x5e, 0xe7, 0xba, 0x24, 0xdd, 0xcb, 0x0c, 0x95, 0xee, 0x90, 0xbb, 0xa0, 0x48, 0x17,
+	0xd8, 0xd3, 0x99, 0xda, 0xb1, 0x1d, 0xe5, 0x83, 0x0e, 0x7a, 0x95, 0x44, 0x70, 0xeb, 0xfe, 0x2f,
+	0x7a, 0x75, 0x96, 0xde, 0xb4, 0x7c, 0x2d, 0x9b, 0xed, 0x1c, 0xea, 0x7d, 0xcd, 0xc2, 0x06, 0xeb,
+	0x95, 0xc5, 0x58, 0x5e, 0xd8, 0xba, 0xb5, 0xcf, 0x7d, 0xd0, 0x9a, 0x8a, 0x0f, 0xd4, 0x10, 0x0f,
+	0x57, 0x68, 0xf0, 0x05, 0xb2, 0x68, 0x5a, 0x01, 0x03, 0xca, 0x61, 0x63, 0x96, 0x9f, 0x81, 0x62,
+	0xe8, 0x07, 0x3e, 0x64, 0x2b, 0xef, 0x85, 0x51, 0x57, 0x3d, 0x17, 0x55, 0x78, 0xde, 0x14, 0xec,
+	0x53, 0xae, 0x1a, 0xe6, 0xf2, 0x41, 0x6f, 0xb9, 0x63, 0x1a, 0xb6, 0x63, 0xb5, 0x75, 0xc3, 0x91,
+	0xd5, 0x19, 0x62, 0xdd, 0xd2, 0x64, 0x0b, 0x80, 0x08, 0x0c, 0x1b, 0x5c, 0x1a, 0x2f, 0x79, 0x2e,
+	0x8a, 0x9f, 0x4d, 0x29, 0x28, 0x9d, 0xc5, 0x1a, 0xbf, 0xcf, 0xd2, 0xc7, 0x0e, 0x66, 0x16, 0x46,
+	0x22, 0xff, 0x24, 0xc7, 0x6d, 0x73, 0xb6, 0xf2, 0x04, 0xdb, 0xbc, 0x33, 0x62, 0xf9, 0x5b, 0xe9,
+	0x22, 0xd2, 0x23, 0xda, 0xd0, 0x64, 0xf0, 0xf5, 0x7b, 0xc2, 0x65, 0x31, 0x4f, 0x0c, 0x15, 0xcf,
+	0x45, 0xb5, 0x58, 0xf5, 0x39, 0x92, 0x63, 0x72, 0x19, 0xe8, 0x4d, 0x21, 0x4b, 0x6f, 0x3a, 0xc9,
+	0x64, 0xfc, 0x50, 0x00, 0x0b, 0xc9, 0x85, 0xe0, 0x3a, 0x97, 0x8d, 0xab, 0x9e, 0x8b, 0x3e, 0x89,
+	0x3b, 0xca, 0x4c, 0x47, 0x83, 0xaf, 0x86, 0xec, 0xb9, 0x68, 0x71, 0xb4, 0x71, 0x44, 0xe3, 0x97,
+	0x39, 0xf0, 0x2e, 0xa1, 0xa1, 0xf0, 0x3c, 0xee, 0x70, 0x3c, 0xae, 0x79, 0x2e, 0x5a, 0x8a, 0xbb,
+	0x52, 0x32, 0x89, 0x7c, 0x9a, 0xae, 0x4b, 0xf4, 0x7b, 0x69, 0x44, 0x7a, 0xf9, 0xea, 0x6c, 0xa5,
+	0xaa, 0x53, 0xf7, 0x5c, 0xb4, 0x12, 0x33, 0xaf, 0xbf, 0x46, 0x79, 0xae, 0xf3, 0xe5, 0xa1, 0x5f,
+	0xdc, 0x46, 0x47, 0x13, 0x65, 0xe6, 0x47, 0x02, 0xcb, 0x4c, 0xfd, 0x35, 0x32, 0x53, 0xcf, 0xcc,
+	0xcc, 0x75, 0xbe, 0x44, 0x43, 0x98, 0xd4, 0x87, 0x33, 0xf9, 0xa3, 0xc0, 0x8b, 0x9e, 0x02, 0x3f,
+	0xe3, 0x38, 0xac, 0x7a, 0x2e, 0xaa, 0x0e, 0x51, 0x10, 0x85, 0x5f, 0x9d, 0xff, 0x30, 0xf9, 0x26,
+	0xf4, 0x8f, 0x69, 0x58, 0x3e, 0x53, 0xc3, 0x14, 0x2e, 0x82, 0x9f, 0xe7, 0x38, 0xb9, 0x51, 0xe0,
+	0x3d, 0x2e, 0x80, 0x15, 0xcf, 0x45, 0xd7, 0xd2, 0xba, 0x91, 0xcd, 0xff, 0x76, 0x9a, 0x3f, 0xd5,
+	0x1f, 0x8e, 0x3f, 0x63, 0x91, 0xe4, 0xfe, 0x7d, 0x30, 0xdf, 0x8d, 0x22, 0x8b, 0x7a, 0x6c, 0xcd,
+	0x73, 0xd1, 0x72, 0x46, 0xfc, 0x43, 0x3a, 0xec, 0x2c, 0xe7, 0xa8, 0x15, 0xca, 0x61, 0x21, 0x4b,
+	0x0e, 0xf9, 0xa4, 0xfc, 0x36, 0x56, 0xd6, 0xfa, 0x44, 0xb3, 0xac, 0xfe, 0xc6, 0x67, 0xd9, 0x44,
+	0xb5, 0xac, 0x8f, 0xec, 0xc6, 0xc6, 0x44, 0xdd, 0xd8, 0xf8, 0xaf, 0x77, 0x63, 0x83, 0x8b, 0xe0,
+	0x0f, 0x02, 0x98, 0x8b, 0x86, 0xc3, 0x76, 0x03, 0xde, 0xe0, 0x42, 0x48, 0x9f, 0x90, 0x02, 0x58,
+	0x3a, 0xf5, 0x1b, 0x69, 0xe2, 0xf4, 0x38, 0x93, 0x6a, 0xc3, 0x06, 0x69, 0x21, 0x3e, 0xf0, 0x88,
+	0xff, 0x2a, 0xcf, 0x3f, 0xfd, 0xdb, 0x26, 0x5c, 0x3e, 0x0a, 0xe0, 0x65, 0x8e, 0xce, 0x8e, 0x9d,
+	0x43, 0xd3, 0x72, 0x3e, 0xd7, 0xad, 0xce, 0x40, 0x77, 0xc6, 0xcc, 0x0e, 0x1e, 0x9a, 0x0e, 0xa4,
+	0xc7, 0x49, 0x2e, 0x8d, 0x63, 0xdb, 0x73, 0xd1, 0xe3, 0xcc, 0x53, 0xc0, 0xf8, 0xe3, 0x46, 0x55,
+	0xd3, 0x2d, 0xdc, 0x71, 0x74, 0xd3, 0xf0, 0x99, 0x87, 0x7a, 0xfc, 0x63, 0x01, 0x2c, 0x74, 0x95,
+	0xbd, 0x6e, 0xa8, 0x75, 0xd1, 0x26, 0xfc, 0xd2, 0x73, 0xd1, 0xf3, 0x49, 0x66, 0x4d, 0xd0, 0x15,
+	0xca, 0xb8, 0x39, 0x10, 0xe7, 0x30, 0xdf, 0xe5, 0xdc, 0xb5, 0xb4, 0xe6, 0xcd, 0x3f, 0xbd, 0x5a,
+	0x14, 0xfe, 0xfc, 0x6a, 0x51, 0xf8, 0xdb, 0xab, 0x45, 0xe1, 0x57, 0x7f, 0x5f, 0x3c, 0x03, 0x3e,
+	0xd0, 0xcd, 0x9a, 0xed, 0xb4, 0x3b, 0x3d, 0xcb, 0xfc, 0x9a, 0x7e, 0x04, 0x0a, 0x4e, 0x76, 0xcf,
+	0x83, 0x7f, 0x1a, 0xf8, 0xa7, 0x20, 0xec, 0x4f, 0x93, 0x57, 0xf5, 0x7f, 0x05, 0x00, 0x00, 0xff,
+	0xff, 0x76, 0x1a, 0x3d, 0x6b, 0x5d, 0x20, 0x00, 0x00,
 }
 
 func (m *TestSingleKeyStruct) Marshal() (dAtA []byte, err error) {
@@ -3244,6 +3945,443 @@ func (m *TestSingleKeyStruct_OneOfNested_Nested2) MarshalToSizedBuffer(dAtA []by
 	return len(dAtA) - i, nil
 }
 
+func (m *TestSingleUUIDKeyStruct) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TestSingleUUIDKeyStruct) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TestSingleUUIDKeyStruct) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Bytess) > 0 {
+		i -= len(m.Bytess)
+		copy(dAtA[i:], m.Bytess)
+		i = encodeVarintTest(dAtA, i, uint64(len(m.Bytess)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x82
+	}
+	if m.Oneof != nil {
+		{
+			size := m.Oneof.Size()
+			i -= size
+			if _, err := m.Oneof.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.Nested) > 0 {
+		for iNdEx := len(m.Nested) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Nested[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTest(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x6a
+		}
+	}
+	if m.Embedded != nil {
+		{
+			size, err := m.Embedded.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTest(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x62
+	}
+	if len(m.Enums) > 0 {
+		dAtA10 := make([]byte, len(m.Enums)*10)
+		var j9 int
+		for _, num := range m.Enums {
+			for num >= 1<<7 {
+				dAtA10[j9] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j9++
+			}
+			dAtA10[j9] = uint8(num)
+			j9++
+		}
+		i -= j9
+		copy(dAtA[i:], dAtA10[:j9])
+		i = encodeVarintTest(dAtA, i, uint64(j9))
+		i--
+		dAtA[i] = 0x5a
+	}
+	if m.Enum != 0 {
+		i = encodeVarintTest(dAtA, i, uint64(m.Enum))
+		i--
+		dAtA[i] = 0x50
+	}
+	if m.Timestamp != nil {
+		{
+			size, err := m.Timestamp.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTest(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.Labels) > 0 {
+		for k := range m.Labels {
+			v := m.Labels[k]
+			baseI := i
+			i -= len(v)
+			copy(dAtA[i:], v)
+			i = encodeVarintTest(dAtA, i, uint64(len(v)))
+			i--
+			dAtA[i] = 0x12
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintTest(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintTest(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x42
+		}
+	}
+	if m.Float != 0 {
+		i -= 4
+		encoding_binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.Float))))
+		i--
+		dAtA[i] = 0x3d
+	}
+	if m.Int64 != 0 {
+		i = encodeVarintTest(dAtA, i, uint64(m.Int64))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.Uint64 != 0 {
+		i = encodeVarintTest(dAtA, i, uint64(m.Uint64))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.Bool {
+		i--
+		if m.Bool {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.StringSlice) > 0 {
+		for iNdEx := len(m.StringSlice) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.StringSlice[iNdEx])
+			copy(dAtA[i:], m.StringSlice[iNdEx])
+			i = encodeVarintTest(dAtA, i, uint64(len(m.StringSlice[iNdEx])))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintTest(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Key) > 0 {
+		i -= len(m.Key)
+		copy(dAtA[i:], m.Key)
+		i = encodeVarintTest(dAtA, i, uint64(len(m.Key)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TestSingleUUIDKeyStruct_Oneofstring) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TestSingleUUIDKeyStruct_Oneofstring) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Oneofstring)
+	copy(dAtA[i:], m.Oneofstring)
+	i = encodeVarintTest(dAtA, i, uint64(len(m.Oneofstring)))
+	i--
+	dAtA[i] = 0x72
+	return len(dAtA) - i, nil
+}
+func (m *TestSingleUUIDKeyStruct_Oneofnested) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TestSingleUUIDKeyStruct_Oneofnested) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Oneofnested != nil {
+		{
+			size, err := m.Oneofnested.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTest(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x7a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *TestSingleUUIDKeyStruct_Embedded) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TestSingleUUIDKeyStruct_Embedded) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TestSingleUUIDKeyStruct_Embedded) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Embedded) > 0 {
+		i -= len(m.Embedded)
+		copy(dAtA[i:], m.Embedded)
+		i = encodeVarintTest(dAtA, i, uint64(len(m.Embedded)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Embedded) > 0 {
+		i -= len(m.Embedded)
+		copy(dAtA[i:], m.Embedded)
+		i = encodeVarintTest(dAtA, i, uint64(len(m.Embedded)))
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Nested2 != nil {
+		{
+			size, err := m.Nested2.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTest(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Nested) > 0 {
+		i -= len(m.Nested)
+		copy(dAtA[i:], m.Nested)
+		i = encodeVarintTest(dAtA, i, uint64(len(m.Nested)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Nested2) > 0 {
+		i -= len(m.Nested2)
+		copy(dAtA[i:], m.Nested2)
+		i = encodeVarintTest(dAtA, i, uint64(len(m.Nested2)))
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Nested2 != nil {
+		{
+			size, err := m.Nested2.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTest(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Nested) > 0 {
+		i -= len(m.Nested)
+		copy(dAtA[i:], m.Nested)
+		i = encodeVarintTest(dAtA, i, uint64(len(m.Nested)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Nested2) > 0 {
+		i -= len(m.Nested2)
+		copy(dAtA[i:], m.Nested2)
+		i = encodeVarintTest(dAtA, i, uint64(len(m.Nested2)))
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *TestMultiKeyStruct) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -3269,42 +4407,42 @@ func (m *TestMultiKeyStruct) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if len(m.Int32Slice) > 0 {
-		dAtA9 := make([]byte, len(m.Int32Slice)*10)
-		var j8 int
+		dAtA16 := make([]byte, len(m.Int32Slice)*10)
+		var j15 int
 		for _, num1 := range m.Int32Slice {
 			num := uint64(num1)
 			for num >= 1<<7 {
-				dAtA9[j8] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA16[j15] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j8++
+				j15++
 			}
-			dAtA9[j8] = uint8(num)
-			j8++
+			dAtA16[j15] = uint8(num)
+			j15++
 		}
-		i -= j8
-		copy(dAtA[i:], dAtA9[:j8])
-		i = encodeVarintTest(dAtA, i, uint64(j8))
+		i -= j15
+		copy(dAtA[i:], dAtA16[:j15])
+		i = encodeVarintTest(dAtA, i, uint64(j15))
 		i--
 		dAtA[i] = 0x1
 		i--
 		dAtA[i] = 0x92
 	}
 	if len(m.IntSliceDeprecated) > 0 {
-		dAtA11 := make([]byte, len(m.IntSliceDeprecated)*10)
-		var j10 int
+		dAtA18 := make([]byte, len(m.IntSliceDeprecated)*10)
+		var j17 int
 		for _, num1 := range m.IntSliceDeprecated {
 			num := uint64(num1)
 			for num >= 1<<7 {
-				dAtA11[j10] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA18[j17] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j10++
+				j17++
 			}
-			dAtA11[j10] = uint8(num)
-			j10++
+			dAtA18[j17] = uint8(num)
+			j17++
 		}
-		i -= j10
-		copy(dAtA[i:], dAtA11[:j10])
-		i = encodeVarintTest(dAtA, i, uint64(j10))
+		i -= j17
+		copy(dAtA[i:], dAtA18[:j17])
+		i = encodeVarintTest(dAtA, i, uint64(j17))
 		i--
 		dAtA[i] = 0x1
 		i--
@@ -3355,20 +4493,20 @@ func (m *TestMultiKeyStruct) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x62
 	}
 	if len(m.Enums) > 0 {
-		dAtA14 := make([]byte, len(m.Enums)*10)
-		var j13 int
+		dAtA21 := make([]byte, len(m.Enums)*10)
+		var j20 int
 		for _, num := range m.Enums {
 			for num >= 1<<7 {
-				dAtA14[j13] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA21[j20] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j13++
+				j20++
 			}
-			dAtA14[j13] = uint8(num)
-			j13++
+			dAtA21[j20] = uint8(num)
+			j20++
 		}
-		i -= j13
-		copy(dAtA[i:], dAtA14[:j13])
-		i = encodeVarintTest(dAtA, i, uint64(j13))
+		i -= j20
+		copy(dAtA[i:], dAtA21[:j20])
+		i = encodeVarintTest(dAtA, i, uint64(j20))
 		i--
 		dAtA[i] = 0x5a
 	}
@@ -4712,6 +5850,209 @@ func (m *TestSingleKeyStruct_OneOfNested) Size() (n int) {
 }
 
 func (m *TestSingleKeyStruct_OneOfNested_Nested2) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Nested2)
+	if l > 0 {
+		n += 1 + l + sovTest(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TestSingleUUIDKeyStruct) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Key)
+	if l > 0 {
+		n += 1 + l + sovTest(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovTest(uint64(l))
+	}
+	if len(m.StringSlice) > 0 {
+		for _, s := range m.StringSlice {
+			l = len(s)
+			n += 1 + l + sovTest(uint64(l))
+		}
+	}
+	if m.Bool {
+		n += 2
+	}
+	if m.Uint64 != 0 {
+		n += 1 + sovTest(uint64(m.Uint64))
+	}
+	if m.Int64 != 0 {
+		n += 1 + sovTest(uint64(m.Int64))
+	}
+	if m.Float != 0 {
+		n += 5
+	}
+	if len(m.Labels) > 0 {
+		for k, v := range m.Labels {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovTest(uint64(len(k))) + 1 + len(v) + sovTest(uint64(len(v)))
+			n += mapEntrySize + 1 + sovTest(uint64(mapEntrySize))
+		}
+	}
+	if m.Timestamp != nil {
+		l = m.Timestamp.Size()
+		n += 1 + l + sovTest(uint64(l))
+	}
+	if m.Enum != 0 {
+		n += 1 + sovTest(uint64(m.Enum))
+	}
+	if len(m.Enums) > 0 {
+		l = 0
+		for _, e := range m.Enums {
+			l += sovTest(uint64(e))
+		}
+		n += 1 + sovTest(uint64(l)) + l
+	}
+	if m.Embedded != nil {
+		l = m.Embedded.Size()
+		n += 1 + l + sovTest(uint64(l))
+	}
+	if len(m.Nested) > 0 {
+		for _, e := range m.Nested {
+			l = e.Size()
+			n += 1 + l + sovTest(uint64(l))
+		}
+	}
+	if m.Oneof != nil {
+		n += m.Oneof.Size()
+	}
+	l = len(m.Bytess)
+	if l > 0 {
+		n += 2 + l + sovTest(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TestSingleUUIDKeyStruct_Oneofstring) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Oneofstring)
+	n += 1 + l + sovTest(uint64(l))
+	return n
+}
+func (m *TestSingleUUIDKeyStruct_Oneofnested) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Oneofnested != nil {
+		l = m.Oneofnested.Size()
+		n += 1 + l + sovTest(uint64(l))
+	}
+	return n
+}
+func (m *TestSingleUUIDKeyStruct_Embedded) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Embedded)
+	if l > 0 {
+		n += 1 + l + sovTest(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Embedded)
+	if l > 0 {
+		n += 1 + l + sovTest(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Nested)
+	if l > 0 {
+		n += 1 + l + sovTest(uint64(l))
+	}
+	if m.Nested2 != nil {
+		l = m.Nested2.Size()
+		n += 1 + l + sovTest(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Nested2)
+	if l > 0 {
+		n += 1 + l + sovTest(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Nested)
+	if l > 0 {
+		n += 1 + l + sovTest(uint64(l))
+	}
+	if m.Nested2 != nil {
+		l = m.Nested2.Size()
+		n += 1 + l + sovTest(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -6464,6 +7805,1214 @@ func (m *TestSingleKeyStruct_OneOfNested) Unmarshal(dAtA []byte) error {
 	return nil
 }
 func (m *TestSingleKeyStruct_OneOfNested_Nested2) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTest
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Nested2: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Nested2: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nested2", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Nested2 = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTest(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTest
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TestSingleUUIDKeyStruct) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTest
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TestSingleUUIDKeyStruct: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TestSingleUUIDKeyStruct: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Key = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StringSlice", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StringSlice = append(m.StringSlice, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Bool", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Bool = bool(v != 0)
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Uint64", wireType)
+			}
+			m.Uint64 = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Uint64 |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Int64", wireType)
+			}
+			m.Int64 = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Int64 |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Float", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(encoding_binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.Float = float32(math.Float32frombits(v))
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Labels", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Labels == nil {
+				m.Labels = make(map[string]string)
+			}
+			var mapkey string
+			var mapvalue string
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowTest
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowTest
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthTest
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthTest
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var stringLenmapvalue uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowTest
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapvalue |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapvalue := int(stringLenmapvalue)
+					if intStringLenmapvalue < 0 {
+						return ErrInvalidLengthTest
+					}
+					postStringIndexmapvalue := iNdEx + intStringLenmapvalue
+					if postStringIndexmapvalue < 0 {
+						return ErrInvalidLengthTest
+					}
+					if postStringIndexmapvalue > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = string(dAtA[iNdEx:postStringIndexmapvalue])
+					iNdEx = postStringIndexmapvalue
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipTest(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthTest
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.Labels[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Timestamp == nil {
+				m.Timestamp = &types.Timestamp{}
+			}
+			if err := m.Timestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enum", wireType)
+			}
+			m.Enum = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Enum |= TestSingleUUIDKeyStruct_Enum(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType == 0 {
+				var v TestSingleUUIDKeyStruct_Enum
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowTest
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= TestSingleUUIDKeyStruct_Enum(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Enums = append(m.Enums, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowTest
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthTest
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthTest
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.Enums) == 0 {
+					m.Enums = make([]TestSingleUUIDKeyStruct_Enum, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v TestSingleUUIDKeyStruct_Enum
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowTest
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= TestSingleUUIDKeyStruct_Enum(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Enums = append(m.Enums, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enums", wireType)
+			}
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Embedded", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Embedded == nil {
+				m.Embedded = &TestSingleUUIDKeyStruct_Embedded{}
+			}
+			if err := m.Embedded.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nested", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Nested = append(m.Nested, &TestSingleUUIDKeyStruct_Nested{})
+			if err := m.Nested[len(m.Nested)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Oneofstring", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Oneof = &TestSingleUUIDKeyStruct_Oneofstring{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Oneofnested", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &TestSingleUUIDKeyStruct_OneOfNested{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Oneof = &TestSingleUUIDKeyStruct_Oneofnested{v}
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Bytess", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Bytess = append(m.Bytess[:0], dAtA[iNdEx:postIndex]...)
+			if m.Bytess == nil {
+				m.Bytess = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTest(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTest
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TestSingleUUIDKeyStruct_Embedded) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTest
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Embedded: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Embedded: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Embedded", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Embedded = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTest(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTest
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTest
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Embedded2: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Embedded2: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Embedded", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Embedded = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTest(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTest
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TestSingleUUIDKeyStruct_Nested) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTest
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Nested: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Nested: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nested", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Nested = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nested2", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Nested2 == nil {
+				m.Nested2 = &TestSingleUUIDKeyStruct_Nested_Nested2{}
+			}
+			if err := m.Nested2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTest(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTest
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTest
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Nested2: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Nested2: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nested2", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Nested2 = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTest(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTest
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTest
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: OneOfNested: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: OneOfNested: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nested", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Nested = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nested2", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Nested2 == nil {
+				m.Nested2 = &TestSingleUUIDKeyStruct_OneOfNested_Nested2{}
+			}
+			if err := m.Nested2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTest(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTest
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

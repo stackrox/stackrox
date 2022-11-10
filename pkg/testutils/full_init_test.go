@@ -3,6 +3,7 @@ package testutils
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,17 +42,17 @@ func TestFullInit(t *testing.T) {
 
 	expected := testStruct{
 		x: 1,
-		y: "a",
+		y: uuid.NewDummy().String(),
 		z: true,
 		v: &[]float32{1.0}[0],
 		w: []*nestedStruct{
 			{
 				x: [3]int{1, 1, 1},
 				y: []*string{
-					&[]string{"a"}[0],
+					&[]string{uuid.NewDummy().String()}[0],
 				},
 				z: map[string]int{
-					"a": 1,
+					uuid.NewDummy().String(): 1,
 				},
 				w: nil,
 			},

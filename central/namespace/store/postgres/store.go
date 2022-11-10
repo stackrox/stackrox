@@ -87,9 +87,9 @@ func insertIntoNamespaces(ctx context.Context, batch *pgx.Batch, obj *storage.Na
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
@@ -140,11 +140,11 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetClusterName(),
 

@@ -531,9 +531,6 @@ func (resolver *namespaceResolver) namespaceScopeContext(ctx context.Context) co
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		resolver.ctx = ctx
-	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NAMESPACES,
 		ID:    resolver.data.GetMetadata().GetId(),

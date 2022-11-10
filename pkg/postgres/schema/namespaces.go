@@ -57,9 +57,9 @@ const (
 
 // Namespaces holds the Gorm model for Postgres table `namespaces`.
 type Namespaces struct {
-	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
+	Id          string            `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar;index:namespaces_sac_filter,type:btree"`
-	ClusterId   string            `gorm:"column:clusterid;type:varchar;index:namespaces_sac_filter,type:btree"`
+	ClusterId   string            `gorm:"column:clusterid;type:uuid;index:namespaces_sac_filter,type:btree"`
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`

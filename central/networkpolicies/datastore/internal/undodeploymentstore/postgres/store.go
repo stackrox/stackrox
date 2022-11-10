@@ -85,7 +85,7 @@ func insertIntoNetworkpoliciesundodeployments(ctx context.Context, batch *pgx.Ba
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetDeploymentId(),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		serialized,
 	}
 
@@ -123,7 +123,7 @@ func (s *storeImpl) copyFromNetworkpoliciesundodeployments(ctx context.Context, 
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetDeploymentId(),
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
 
 			serialized,
 		})

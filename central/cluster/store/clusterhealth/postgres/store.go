@@ -86,7 +86,7 @@ func insertIntoClusterHealthStatuses(ctx context.Context, batch *pgx.Batch, obj 
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetSensorHealthStatus(),
 		obj.GetCollectorHealthStatus(),
 		obj.GetOverallHealthStatus(),
@@ -142,7 +142,7 @@ func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx pgx.Tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetSensorHealthStatus(),
 

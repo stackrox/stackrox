@@ -5,6 +5,7 @@ import {
     visitComplianceDashboard,
     visitComplianceEntities,
 } from '../../helpers/compliance';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 describe('Compliance dashboard page', () => {
     withAuth();
@@ -12,6 +13,12 @@ describe('Compliance dashboard page', () => {
     it('should scan for compliance data from the Dashboard page', () => {
         visitComplianceDashboard();
         scanCompliance(); // prerequisite for the following tests
+    });
+
+    it('should have title', () => {
+        visitComplianceDashboard();
+
+        cy.title().should('match', getRegExpForTitleWithBranding('Compliance'));
     });
 
     it('should show the same amount of clusters between the Dashboard and List Page', () => {
