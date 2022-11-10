@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: clairv4svc
+  labels:
+    app: clairv4
+spec:
+  type: NodePort
+  ports:
+  - port: 6060
+    protocol: TCP
+    nodePort: 30060
+    name: clairv4-port0
+  - port: 6061
+    protocol: TCP
+    nodePort: 30061
+    name: clairv4-port1
+  selector:
+    app: clair
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clair
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clairv4
+  template:
+    metadata:
+      labels:
+        app: clairv4
+    spec:
+      volumes:
+      - name: secret-volume
+        secret:
+          secretName: clairv4secret
+      containers:
+      - name: clair
+        image: us.gcr.io/stackrox-ci/clair:v2.1.4
+        args:
+        - "-config"
+        - "/config/config.yaml"
+        ports:
+        - containerPort: 6060
+        - containerPort: 6061
+        volumeMounts:
+        - mountPath: /config
+          name: secret-volume
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: postgres
+  name: clair-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - image: us.gcr.io/stackrox-ci/postgres:9.6.18
+        name: postgres
+        env:
+        - name: POSTGRES_PASSWORD
+          value: password
+        ports:
+        - containerPort: 5432
+          name: postgres-port
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: postgres
+  name: postgres
+spec:
+  ports:
+  - port: 5432
+  selector:
+    app: postgres
