@@ -24,7 +24,7 @@ func TestDigest_Digest(t *testing.T) {
 			expected: "",
 		},
 		{
-			sha: "sha512:267eebcd42de25e467db55ca95284244f95390c3c02da7b35c17ef3460aec60dc3a1a25e3ce00a9b18cf686ca4fef4429e88d1ac364e06cbd635381f489a9185",
+			sha:      "sha512:267eebcd42de25e467db55ca95284244f95390c3c02da7b35c17ef3460aec60dc3a1a25e3ce00a9b18cf686ca4fef4429e88d1ac364e06cbd635381f489a9185",
 			expected: "sha512:267eebcd42de25e467db55ca95284244f95390c3c02da7b35c17ef3460aec60dc3a1a25e3ce00a9b18cf686ca4fef4429e88d1ac364e06cbd635381f489a9185",
 		},
 	}
@@ -53,7 +53,7 @@ func TestDigest_Algorithm(t *testing.T) {
 			expected: "",
 		},
 		{
-			sha: "sha512:267eebcd42de25e467db55ca95284244f95390c3c02da7b35c17ef3460aec60dc3a1a25e3ce00a9b18cf686ca4fef4429e88d1ac364e06cbd635381f489a9185",
+			sha:      "sha512:267eebcd42de25e467db55ca95284244f95390c3c02da7b35c17ef3460aec60dc3a1a25e3ce00a9b18cf686ca4fef4429e88d1ac364e06cbd635381f489a9185",
 			expected: "sha512",
 		},
 	}
@@ -82,7 +82,7 @@ func TestDigest_Hash(t *testing.T) {
 			expected: "",
 		},
 		{
-			sha: "sha512:267eebcd42de25e467db55ca95284244f95390c3c02da7b35c17ef3460aec60dc3a1a25e3ce00a9b18cf686ca4fef4429e88d1ac364e06cbd635381f489a9185",
+			sha:      "sha512:267eebcd42de25e467db55ca95284244f95390c3c02da7b35c17ef3460aec60dc3a1a25e3ce00a9b18cf686ca4fef4429e88d1ac364e06cbd635381f489a9185",
 			expected: "267eebcd42de25e467db55ca95284244f95390c3c02da7b35c17ef3460aec60dc3a1a25e3ce00a9b18cf686ca4fef4429e88d1ac364e06cbd635381f489a9185",
 		},
 	}
