@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Select, SelectOption } from '@patternfly/react-core';
 
-export type FlowsState = 'active' | 'extraneous';
-type FlowsSelectProps = {
-    flowsState: FlowsState;
-    setFlowsState: (state) => void;
+export type EdgeState = 'active' | 'extraneous';
+type EdgeStateSelectProps = {
+    edgeState: EdgeState;
+    setEdgeState: (state) => void;
 };
 
-function FlowsSelect({ flowsState, setFlowsState }: FlowsSelectProps) {
+function EdgeStateSelect({ edgeState, setEdgeState }: EdgeStateSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     function onToggle() {
@@ -15,8 +15,8 @@ function FlowsSelect({ flowsState, setFlowsState }: FlowsSelectProps) {
     }
 
     function onSelect() {
-        const newFlowsState = flowsState === 'active' ? 'extraneous' : 'active';
-        setFlowsState(newFlowsState);
+        const newEdgeState = edgeState === 'active' ? 'extraneous' : 'active';
+        setEdgeState(newEdgeState);
     }
 
     return (
@@ -25,7 +25,7 @@ function FlowsSelect({ flowsState, setFlowsState }: FlowsSelectProps) {
             isOpen={isOpen}
             onToggle={onToggle}
             onSelect={onSelect}
-            selections={flowsState}
+            selections={edgeState}
         >
             <SelectOption
                 value="active"
@@ -43,4 +43,4 @@ function FlowsSelect({ flowsState, setFlowsState }: FlowsSelectProps) {
     );
 }
 
-export default FlowsSelect;
+export default EdgeStateSelect;
