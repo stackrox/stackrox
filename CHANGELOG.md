@@ -179,7 +179,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [69.0]
 
-- `collector` image with `-slim` >> image tag is no longer published (`collector-slim` with suffix in the image name will continue to be published).
+- `collector` image with `-slim` image tag is no longer published (`collector-slim` with suffix in the image name will continue to be published).
 - `collector-rhel`, `main-rhel`, `scanner-rhel`, and `scanner-db-rhel` images are not published any more. These images were identical to non-rhel ones since version 3.66.
 - Increased default Scanner memory limit from 3000 MiB to 4GiB.
 - API changes/deprecations:
