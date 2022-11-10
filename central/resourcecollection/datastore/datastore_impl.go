@@ -488,7 +488,7 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 
 			fieldLabel, present := supportedFieldNames[selectorRule.GetFieldName()]
 			if !present {
-				return nil, errors.Wrapf(errox.InvalidArgs, "unsupported field label %q", selectorRule.GetFieldName())
+				return nil, errors.Wrapf(errox.InvalidArgs, "unsupported field name %q", selectorRule.GetFieldName())
 			}
 
 			ruleValueQueries := ruleValuesToQueryList(fieldLabel, selectorRule.GetValues())
@@ -535,6 +535,7 @@ func embeddedCollectionsToIDList(embeddedList []*storage.ResourceCollection_Embe
 //   - only storage.BooleanOperator_OR is supported as an operator
 //   - all storage.SelectorRule "FieldName" values are valid
 //   - all storage.RuleValue fields compile as valid regex
+//   - storage.RuleValue fields supplied when "FieldName" values provided
 func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 
 	// object not nil
@@ -552,15 +553,19 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 
 			// currently we only support disjunction (OR) operations
 			if selectorRule.GetOperator() != storage.BooleanOperator_OR {
-				return errors.Wrap(errox.InvalidArgs, "`and` boolean operator unsupported")
+				return errors.Wrapf(errox.InvalidArgs, "%q boolean operator unsupported", selectorRule.GetOperator().String())
 			}
 
-			// we have a short list of supported field label values
+			// we have a short list of supported field name values
 			_, present := supportedFieldNames[selectorRule.GetFieldName()]
 			if !present {
-				return errors.Wrapf(errox.InvalidArgs, "unsupported field label (%s)", selectorRule.GetFieldName())
+				return errors.Wrapf(errox.InvalidArgs, "unsupported field name %q", selectorRule.GetFieldName())
 			}
 
+			// we require at least one value if a field name is set
+			if len(selectorRule.GetValues()) == 0 {
+				return errors.Wrap(errox.InvalidArgs, "rule values required with a set field name")
+			}
 			for _, ruleValue := range selectorRule.GetValues() {
 
 				// rule values must be valid regex

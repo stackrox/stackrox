@@ -325,6 +325,191 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	assert.Equal(s.T(), 0, count)
 }
 
+func (s *CollectionPostgresDataStoreTestSuite) TestVerifyCollectionConstraints() {
+
+	verifyCollectionTests := []struct {
+		name          string
+		collectionObj *storage.ResourceCollection
+		errExpected   bool
+	}{
+		{
+			"nil collection",
+			nil,
+			true,
+		},
+		{
+			"no selector rules",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{},
+				},
+			}),
+			false,
+		},
+		{
+			"1 selector rule",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			false,
+		},
+		{
+			"more than 1 selector rules",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			true,
+		},
+		{
+			"and operator",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_AND,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			true,
+		},
+		{
+			"unsupported field name",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.ClusterRole.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			true,
+		},
+		{
+			"unknown field name",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: "bad name",
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			true,
+		},
+		{
+			"no rule values with field name set",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values:    []*storage.RuleValue{},
+						},
+					},
+				},
+			}),
+			true,
+		},
+	}
+
+	// test all supported field names values
+	for _, label := range GetSupportedFieldLabels() {
+		verifyCollectionTests = append(verifyCollectionTests, struct {
+			name          string
+			collectionObj *storage.ResourceCollection
+			errExpected   bool
+		}{
+			fmt.Sprintf("supported label test %s", label.String()),
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: label.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			false,
+		})
+	}
+
+	for _, test := range verifyCollectionTests {
+		s.T().Run(test.name, func(t *testing.T) {
+			err := verifyCollectionConstraints(test.collectionObj)
+			if test.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func (s *CollectionPostgresDataStoreTestSuite) TestCollectionToQueries() {
 
 	var supportedLabelRules []*storage.SelectorRule
@@ -456,20 +641,6 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionToQueries() {
 			},
 			[]*v1.Query{},
 		},
-		{
-			"and selector rule operator",
-			[]*storage.ResourceSelector{
-				{
-					Rules: []*storage.SelectorRule{
-						{
-							FieldName: pkgSearch.Cluster.String(),
-							Operator:  storage.BooleanOperator_AND,
-						},
-					},
-				},
-			},
-			nil,
-		},
 	}
 
 	for _, test := range collectionToQueryTests {
@@ -597,6 +768,12 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionToQueries() {
 func (s *CollectionPostgresDataStoreTestSuite) TestFoo() {
 	// TODO e2e testing ROX-12626
 	// test regex doesn't compile
+}
+
+func getTestCollectionWithSelectors(name string, ids []string, selectors []*storage.ResourceSelector) *storage.ResourceCollection {
+	ret := getTestCollection(name, ids)
+	ret.ResourceSelectors = selectors
+	return ret
 }
 
 func getTestCollection(name string, ids []string) *storage.ResourceCollection {
