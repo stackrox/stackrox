@@ -32,6 +32,7 @@ type DataStore interface {
 	AddCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	DeleteCollection(ctx context.Context, id string) error
 	DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error
+	// UpdateCollection updates the given collection object, and preserves createdAt and createdBy fields from stored collection
 	UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	DryRunUpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	// autocomplete workflow, maybe SearchResults? TODO ROX-12616

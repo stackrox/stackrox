@@ -353,6 +353,9 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 		return err
 	}
 
+	collection.CreatedBy = storedCollection.GetCreatedBy()
+	collection.CreatedAt = storedCollection.GetCreatedAt()
+
 	// if this is a dryrun we don't want to make changes to the datastore or tracking objects
 	if dryrun {
 		return nil
