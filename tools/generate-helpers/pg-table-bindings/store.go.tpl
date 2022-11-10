@@ -32,6 +32,9 @@ import (
     {{- if not $inMigration}}
     "github.com/stackrox/rox/central/metrics"
     "github.com/stackrox/rox/central/role/resources"
+    pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+    {{- else }}
+    pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
     {{- end}}
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
@@ -39,11 +42,6 @@ import (
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
-    {{- if not $inMigration}}
-    pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-    {{- else }}
-    pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
-    {{- end}}
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
