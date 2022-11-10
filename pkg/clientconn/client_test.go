@@ -108,9 +108,9 @@ func (t *ClientTestSuite) TestAuthenticatedHTTPTransport_WebSocket() {
 			endpoint := (&url.URL{Path: "/hello/howdy", RawQuery: rawQuery}).String()
 			if !testcase.valid {
 				endpoint = (&url.URL{
-					Scheme: "https",
-					Host:   host,
-					Path:   "hello/howdy",
+					Scheme:   "https",
+					Host:     host,
+					Path:     "hello/howdy",
 					RawQuery: rawQuery,
 				}).String()
 			}
