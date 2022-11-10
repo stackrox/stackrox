@@ -2,9 +2,11 @@ package datastore
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/heimdalr/dag"
 	"github.com/pkg/errors"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
@@ -34,19 +36,24 @@ type datastoreImpl struct {
 	indexer  index.Indexer
 	searcher search.Searcher
 
+	deploymentDS deploymentDS.DataStore
+
 	lock  sync.RWMutex
 	graph *dag.DAG
 	names set.Set[string]
 }
 
+// graphEntry is the stored object in the dag.DAG
 type graphEntry struct {
 	id string
 }
 
+// ID returns the id of the object
 func (ge graphEntry) ID() string {
 	return ge.id
 }
 
+// initGraph initializes the dag.DAG for a given datastore instance, should be invoked during init time
 func (ds *datastoreImpl) initGraph() error {
 
 	// build graph object
@@ -262,7 +269,7 @@ func (ds *datastoreImpl) GetMany(ctx context.Context, ids []string) ([]*storage.
 func (ds *datastoreImpl) addCollectionWorkflow(ctx context.Context, collection *storage.ResourceCollection, dryrun bool) error {
 
 	// sanity checks
-	if err := verifyCollectionObjectNotEmpty(collection); err != nil {
+	if err := verifyCollectionConstraints(collection); err != nil {
 		return err
 	}
 	if collection.GetId() != "" {
@@ -317,7 +324,7 @@ func (ds *datastoreImpl) DryRunAddCollection(ctx context.Context, collection *st
 func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collection *storage.ResourceCollection, dryrun bool) error {
 
 	// sanity checks
-	if err := verifyCollectionObjectNotEmpty(collection); err != nil {
+	if err := verifyCollectionConstraints(collection); err != nil {
 		return err
 	}
 	if collection.GetId() == "" {
@@ -329,7 +336,7 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 		return err
 	}
 
-	// if this a dryrun we don't ever end up calling upsert so we only need to get a read lock
+	// if this a dryrun we don't ever end up calling upsert, so we only need to get a read lock
 	if dryrun {
 		ds.lock.RLock()
 		defer ds.lock.RUnlock()
@@ -352,6 +359,9 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 	if err != nil {
 		return err
 	}
+
+	collection.CreatedBy = storedCollection.GetCreatedBy()
+	collection.CreatedAt = storedCollection.GetCreatedAt()
 
 	// if this is a dryrun we don't want to make changes to the datastore or tracking objects
 	if dryrun {
@@ -416,5 +426,158 @@ func verifyCollectionObjectNotEmpty(obj *storage.ResourceCollection) error {
 	if obj == nil {
 		return errors.New("passed collection must be non nil")
 	}
+	return nil
+}
+
+func (ds *datastoreImpl) ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection) ([]*storage.ListDeployment, error) {
+
+	if err := verifyCollectionConstraints(collection); err != nil {
+		return nil, err
+	}
+
+	query, err := ds.resolveCollectionQuery(ctx, collection)
+	if err != nil {
+		return nil, err
+	}
+	return ds.deploymentDS.SearchListDeployments(ctx, query)
+}
+
+func (ds *datastoreImpl) resolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
+	var collections []*storage.ResourceCollection
+	var collectionSet set.Set[string]
+	var disjunctions []*v1.Query
+
+	collections = append(collections, collection)
+
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	for len(collections) > 0 {
+
+		// get first index and remove from list
+		collection := collections[0]
+		collections = collections[1:]
+
+		if !collectionSet.Add(collection.GetId()) {
+			continue
+		}
+
+		// resolve the collection to queries
+		queries, err := collectionToQueries(collection)
+		if err != nil {
+			return nil, err
+		}
+		disjunctions = append(disjunctions, queries...)
+
+		// add embedded values
+		embeddedList, _, err := ds.storage.GetMany(ctx, embeddedCollectionsToIDList(collection.GetEmbeddedCollections()))
+		if err != nil {
+			return nil, err
+		}
+		collections = append(collections, embeddedList...)
+	}
+
+	return pkgSearch.DisjunctionQuery(disjunctions...), nil
+}
+
+// collectionToQueries returns a list of queries derived from the given resource collection's storage.ResourceSelector list
+// these should be combined as disjunct with any resolved embedded queries
+func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, error) {
+	var ret []*v1.Query
+
+	for _, resourceSelector := range collection.GetResourceSelectors() {
+		var selectorRuleQueries []*v1.Query
+		for _, selectorRule := range resourceSelector.GetRules() {
+
+			fieldLabel, present := supportedFieldNames[selectorRule.GetFieldName()]
+			if !present {
+				return nil, errors.Wrapf(errox.InvalidArgs, "unsupported field name %q", selectorRule.GetFieldName())
+			}
+
+			ruleValueQueries := ruleValuesToQueryList(fieldLabel, selectorRule.GetValues())
+			if len(ruleValueQueries) > 0 {
+				// rule values are conjunct or disjunct with each other depending on the operator
+				switch selectorRule.GetOperator() {
+				case storage.BooleanOperator_OR:
+					selectorRuleQueries = append(selectorRuleQueries, pkgSearch.DisjunctionQuery(ruleValueQueries...))
+				case storage.BooleanOperator_AND:
+					selectorRuleQueries = append(selectorRuleQueries, pkgSearch.ConjunctionQuery(ruleValueQueries...))
+				default:
+					return nil, errors.Wrap(errox.InvalidArgs, "unsupported boolean operator")
+				}
+			}
+		}
+		if len(selectorRuleQueries) > 0 {
+			// selector rules are conjunct with each other
+			ret = append(ret, pkgSearch.ConjunctionQuery(selectorRuleQueries...))
+		}
+	}
+
+	return ret, nil
+}
+
+func ruleValuesToQueryList(fieldLabel pkgSearch.FieldLabel, ruleValues []*storage.RuleValue) []*v1.Query {
+	ret := make([]*v1.Query, 0, len(ruleValues))
+	for _, ruleValue := range ruleValues {
+		ret = append(ret, pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel, ruleValue.GetValue()).ProtoQuery())
+	}
+	return ret
+}
+
+func embeddedCollectionsToIDList(embeddedList []*storage.ResourceCollection_EmbeddedResourceCollection) []string {
+	ret := make([]string, 0, len(embeddedList))
+	for _, embedded := range embeddedList {
+		ret = append(ret, embedded.GetId())
+	}
+	return ret
+}
+
+// verifyCollectionConstraints ensures the given collection is valid according to implementation constraints
+//   - the collection object is not nil
+//   - there is at most one storage.ResourceSelector
+//   - only storage.BooleanOperator_OR is supported as an operator
+//   - all storage.SelectorRule "FieldName" values are valid
+//   - all storage.RuleValue fields compile as valid regex
+//   - storage.RuleValue fields supplied when "FieldName" values provided
+func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
+
+	// object not nil
+	if collection == nil {
+		return errors.New("passed collection must be non nil")
+	}
+
+	// currently we only support one resource selector per collection from UX
+	if collection.GetResourceSelectors() != nil && len(collection.GetResourceSelectors()) > 1 {
+		return errors.Wrap(errox.InvalidArgs, "only 1 resource selector is supported per collection")
+	}
+
+	for _, resourceSelector := range collection.GetResourceSelectors() {
+		for _, selectorRule := range resourceSelector.GetRules() {
+
+			// currently we only support disjunction (OR) operations
+			if selectorRule.GetOperator() != storage.BooleanOperator_OR {
+				return errors.Wrapf(errox.InvalidArgs, "%q boolean operator unsupported", selectorRule.GetOperator().String())
+			}
+
+			// we have a short list of supported field name values
+			_, present := supportedFieldNames[selectorRule.GetFieldName()]
+			if !present {
+				return errors.Wrapf(errox.InvalidArgs, "unsupported field name %q", selectorRule.GetFieldName())
+			}
+
+			// we require at least one value if a field name is set
+			if len(selectorRule.GetValues()) == 0 {
+				return errors.Wrap(errox.InvalidArgs, "rule values required with a set field name")
+			}
+			for _, ruleValue := range selectorRule.GetValues() {
+
+				// rule values must be valid regex
+				if _, err := regexp.Compile(ruleValue.GetValue()); err != nil {
+					return errors.Wrap(errors.Wrap(err, errox.InvalidArgs.Error()), "failed to compile rule value regex")
+				}
+			}
+		}
+	}
+
 	return nil
 }

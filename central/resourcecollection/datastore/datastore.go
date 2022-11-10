@@ -12,14 +12,14 @@ import (
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 //go:generate mockgen-wrapper
 
 // DataStore is the entry point for modifying Collection data.
 type DataStore interface {
-	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
+	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchCollections(ctx context.Context, q *v1.Query) ([]*storage.ResourceCollection, error)
 
@@ -32,9 +32,36 @@ type DataStore interface {
 	AddCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	DeleteCollection(ctx context.Context, id string) error
 	DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error
+	// UpdateCollection updates the given collection object, and preserves createdAt and createdBy fields from stored collection
 	UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	DryRunUpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error
+	ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection) ([]*storage.ListDeployment, error)
 	// autocomplete workflow, maybe SearchResults? TODO ROX-12616
+
+	// ResolveCollectionQuery exported exclusively for testing purposes, should be hidden once e2e tests go in
+	// ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error)
+}
+
+var (
+	supportedFieldNames = map[string]pkgSearch.FieldLabel{
+		pkgSearch.Cluster.String():              pkgSearch.Cluster,
+		pkgSearch.ClusterLabel.String():         pkgSearch.ClusterLabel,
+		pkgSearch.Namespace.String():            pkgSearch.Namespace,
+		pkgSearch.NamespaceLabel.String():       pkgSearch.NamespaceLabel,
+		pkgSearch.NamespaceAnnotation.String():  pkgSearch.NamespaceAnnotation,
+		pkgSearch.DeploymentName.String():       pkgSearch.DeploymentName,
+		pkgSearch.DeploymentLabel.String():      pkgSearch.DeploymentLabel,
+		pkgSearch.DeploymentAnnotation.String(): pkgSearch.DeploymentAnnotation,
+	}
+)
+
+// GetSupportedFieldLabels returns a list of the supported search.FieldLabel values for resolving deployments for a collection
+func GetSupportedFieldLabels() []pkgSearch.FieldLabel {
+	var ret []pkgSearch.FieldLabel
+	for _, label := range supportedFieldNames {
+		ret = append(ret, label)
+	}
+	return ret
 }
 
 // New returns a new instance of a DataStore.

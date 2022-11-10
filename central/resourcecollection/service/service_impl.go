@@ -32,7 +32,7 @@ var (
 	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v1.CollectionService/GetCollection",
-			// "/v1.CollectionService/GetCollectionCount", TODO ROX-12625
+			"/v1.CollectionService/GetCollectionCount",
 			"/v1.CollectionService/ListCollections",
 			// "/v1.CollectionService/ListCollectionSelectors", TODO ROX-12612
 		},
@@ -41,7 +41,7 @@ var (
 			"/v1.CollectionService/CreateCollection",
 			"/v1.CollectionService/DeleteCollection",
 			// "/v1.CollectionService/DryRunCollection", TODO ROX-13031
-			// "/v1.CollectionService/UpdateCollection", TODO ROX-13032
+			"/v1.CollectionService/UpdateCollection",
 		},
 	}))
 )
@@ -78,7 +78,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetCollection returns a collection for the given request
 func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollectionRequest) (*v1.GetCollectionResponse, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, errors.New("Resource collections is not enabled")
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Id field should be set when requesting a collection")
@@ -101,10 +101,29 @@ func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetColl
 	}, nil
 }
 
+// GetCollectionCount returns count of collections matching the query in the request
+func (s *serviceImpl) GetCollectionCount(ctx context.Context, request *v1.GetCollectionCountRequest) (*v1.GetCollectionCountResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	}
+
+	// parse query
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	count, err := s.datastore.Count(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.GetCollectionCountResponse{Count: int32(count)}, nil
+}
+
 // DeleteCollection deletes the collection with the given ID
 func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, errors.New("Support for resource collections is not enabled")
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
@@ -118,10 +137,10 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 // CreateCollection creates a new collection from the given request
 func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCollectionRequest) (*v1.CreateCollectionResponse, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, errors.New("Support for resource collections is not enabled")
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 
-	collection, err := collectionRequestToCollection(ctx, request, true)
+	collection, err := collectionRequestToCollection(ctx, request, "")
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +153,29 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 	return &v1.CreateCollectionResponse{Collection: collection}, nil
 }
 
-func collectionRequestToCollection(ctx context.Context, request collectionRequest, isCreate bool) (*storage.ResourceCollection, error) {
+func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCollectionRequest) (*v1.UpdateCollectionResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	}
+
+	if request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to update a collection")
+	}
+
+	collection, err := collectionRequestToCollection(ctx, request, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.datastore.UpdateCollection(ctx, collection)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.UpdateCollectionResponse{Collection: collection}, nil
+}
+
+func collectionRequestToCollection(ctx context.Context, request collectionRequest, id string) (*storage.ResourceCollection, error) {
 	if request.GetName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
 	}
@@ -151,6 +192,7 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
 
 	collection := &storage.ResourceCollection{
+		Id:                id,
 		Name:              request.GetName(),
 		Description:       request.GetDescription(),
 		LastUpdated:       timeNow,
@@ -158,7 +200,8 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 		ResourceSelectors: request.GetResourceSelectors(),
 	}
 
-	if isCreate {
+	if id == "" {
+		// new  collection
 		collection.CreatedBy = slimUser
 		collection.CreatedAt = timeNow
 	}
@@ -176,7 +219,7 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 
 func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListCollectionsRequest) (*v1.ListCollectionsResponse, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, errors.New("Resource collections is not enabled")
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 
 	// parse query
