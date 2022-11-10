@@ -35,6 +35,10 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	parent4ID = "44444444-4444-4011-0000-444444444444"
+)
+
 var (
 	testCtx = sac.WithAllAccess(context.Background())
 
@@ -169,7 +173,7 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 		},
 	}))
 	s.Require().NoError(s.testParent4Store.Upsert(testCtx, &storage.TestParent4{
-		Id:       "4",
+		Id:       parent4ID,
 		ParentId: "1",
 		Val:      "TestParent4",
 	}))
@@ -195,7 +199,7 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 	}))
 	s.Require().NoError(s.testChild1P4Store.Upsert(testCtx, &storage.TestChild1P4{
 		Id:       "C1P4",
-		ParentId: "4",
+		ParentId: parent4ID,
 		Val:      "Child1P4",
 	}))
 
@@ -538,13 +542,13 @@ func (s *GraphQueriesTestSuite) TestSubGraphSearch() {
 			desc:              "query in-scope resource from parent4",
 			queriedProtoType:  "testparent4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestParent4Val: {"r/.*4"}},
-			expectedResultIDs: []string{"4"},
+			expectedResultIDs: []string{parent4ID},
 		},
 		{
 			desc:              "query in-scope child from parent4",
 			queriedProtoType:  "testparent4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestChild1P4ID: {"r/.*P4"}},
-			expectedResultIDs: []string{"4"},
+			expectedResultIDs: []string{parent4ID},
 		},
 		{
 			desc:              "query out-of-scope parent from child1p4",
@@ -575,14 +579,14 @@ func (s *GraphQueriesTestSuite) TestSubGraphCountQueries() {
 			desc:              "query in-scope resource from parent4",
 			queriedProtoType:  "testparent4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestParent4Val: {"r/.*4"}},
-			expectedResultIDs: []string{"4"},
+			expectedResultIDs: []string{parent4ID},
 			queryType:         postgres.COUNT,
 		},
 		{
 			desc:              "query in-scope child from parent4",
 			queriedProtoType:  "testparent4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestChild1P4ID: {"r/.*P4"}},
-			expectedResultIDs: []string{"4"},
+			expectedResultIDs: []string{parent4ID},
 			queryType:         postgres.COUNT,
 		},
 		{

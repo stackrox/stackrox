@@ -3,12 +3,13 @@ package fixtures
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // GetTestSingleKeyStruct returns filled TestSingleKeyStruct
 func GetTestSingleKeyStruct() *storage.TestSingleKeyStruct {
 	return &storage.TestSingleKeyStruct{
-		Key:  "key1",
+		Key:  uuid.NewDummy().String(),
 		Name: "name",
 		StringSlice: []string{
 			"slice1", "slice2",

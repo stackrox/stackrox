@@ -38,8 +38,8 @@ const (
 
 // ImageIntegrations holds the Gorm model for Postgres table `image_integrations`.
 type ImageIntegrations struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Id         string `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
-	ClusterId  string `gorm:"column:clusterid;type:varchar;index:imageintegrations_sac_filter,type:btree"`
+	ClusterId  string `gorm:"column:clusterid;type:uuid;index:imageintegrations_sac_filter,type:btree"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

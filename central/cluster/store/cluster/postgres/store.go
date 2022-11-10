@@ -87,7 +87,7 @@ func insertIntoClusters(ctx context.Context, batch *pgx.Batch, obj *storage.Clus
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		obj.GetLabels(),
 		serialized,
