@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { PageSection } from '@patternfly/react-core';
 
 import usePermissions from 'hooks/usePermissions';
 import useURLParameter from 'hooks/useURLParameter';
@@ -27,14 +26,10 @@ function CollectionsPage() {
 
     if (validPageActionProp) {
         return (
-            <>
-                <PageSection className="pf-u-h-100" padding={{ default: 'noPadding' }}>
-                    <CollectionsFormPage
-                        hasWriteAccessForCollections={hasWriteAccessForCollections}
-                        pageAction={validPageActionProp}
-                    />
-                </PageSection>
-            </>
+            <CollectionsFormPage
+                hasWriteAccessForCollections={hasWriteAccessForCollections}
+                pageAction={validPageActionProp}
+            />
         );
     }
 

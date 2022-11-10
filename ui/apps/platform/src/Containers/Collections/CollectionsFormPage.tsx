@@ -14,6 +14,7 @@ import {
     DropdownToggle,
     Flex,
     FlexItem,
+    PageSection,
     Title,
 } from '@patternfly/react-core';
 import { useMediaQuery } from 'react-responsive';
@@ -289,7 +290,7 @@ function CollectionsFormPage({
     }
 
     return (
-        <>
+        <PageSection className="pf-u-h-100" padding={{ default: 'noPadding' }}>
             {content}
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }) => (
@@ -321,7 +322,7 @@ function CollectionsFormPage({
             >
                 Are you sure you want to delete this collection?
             </ConfirmationModal>
-        </>
+        </PageSection>
     );
 }
 
