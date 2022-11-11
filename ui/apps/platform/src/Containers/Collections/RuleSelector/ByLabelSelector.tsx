@@ -201,6 +201,7 @@ function ByLabelSelector({
                                                         }
                                                     >
                                                         <TrashIcon
+                                                            aria-label={`Delete ${value}`}
                                                             style={{ cursor: 'pointer' }}
                                                             color="var(--pf-global--Color--dark-200)"
                                                         />
