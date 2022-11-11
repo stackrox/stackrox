@@ -20,9 +20,11 @@ import {
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
 
-import { Deployment } from 'types/deployment.proto';
+import { Deployment, PortConfig } from 'types/deployment.proto';
 import { ListenPort } from 'types/networkFlow.proto';
 import { getDateTime } from 'utils/dateUtils';
+
+import DeploymentPortConfig from 'Components/DeploymentPortConfig';
 
 type DeploymentDetailsProps = {
     deployment: Deployment;
@@ -30,6 +32,47 @@ type DeploymentDetailsProps = {
     numInternalFlows: number;
     listenPorts: ListenPort[];
 };
+
+const mockPorts: PortConfig[] = [
+    {
+        name: 'api',
+        containerPort: 8443,
+        protocol: 'TCP',
+        exposure: 'INTERNAL',
+        exposedPort: 0,
+        exposureInfos: [
+            {
+                level: 'INTERNAL',
+                serviceName: 'sensor',
+                serviceId: 'b830c97f-7ecf-49c7-898c-ea9c68f2e131',
+                serviceClusterIp: '10.73.232.126',
+                servicePort: 443,
+                nodePort: 0,
+                externalIps: [],
+                externalHostnames: [],
+            },
+        ],
+    },
+    {
+        name: 'webhook',
+        containerPort: 9443,
+        protocol: 'TCP',
+        exposure: 'INTERNAL',
+        exposedPort: 0,
+        exposureInfos: [
+            {
+                level: 'INTERNAL',
+                serviceName: 'sensor-webhook',
+                serviceId: '3d879536-0521-4a52-9a8e-d33b4aa75ca5',
+                serviceClusterIp: '10.73.232.21',
+                servicePort: 443,
+                nodePort: 0,
+                externalIps: [],
+                externalHostnames: [],
+            },
+        ],
+    },
+];
 
 function DetailSection({ title, children }) {
     const [isExpanded, setIsExpanded] = useState(true);
@@ -248,7 +291,15 @@ function DeploymentDetails({
                 <Divider component="li" className="pf-u-mb-sm" />
                 <li>
                     <DetailSection title="Port configurations">
-                        @TODO: Add port configurations section
+                        <Stack hasGutter>
+                            {mockPorts.map((port) => {
+                                return (
+                                    <StackItem>
+                                        <DeploymentPortConfig port={port} />
+                                    </StackItem>
+                                );
+                            })}
+                        </Stack>
                     </DetailSection>
                 </li>
             </ul>
