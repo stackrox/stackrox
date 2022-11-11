@@ -52,7 +52,7 @@ func TestWithFakeCSCC(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	clusterStore := clusterMocks.NewMockDataStore(mockCtrl)
 	clusterStore.EXPECT().GetCluster(gomock.Any(), "test_id").Return(cluster, true, nil)
-	scc, _ := newCSCC(s, clusterStore)
+	scc, _ := newCSCC(s)
 
 	alertID := "myAlertID"
 	severity := findings.High
@@ -76,7 +76,7 @@ func TestWithFakeCSCC(t *testing.T) {
 	findingID := ""
 	var finding *findings.Finding
 	var err error
-	findingID, finding, err = scc.initFinding(context.Background(), testAlert)
+	findingID, finding, err = scc.initFinding(context.Background(), testAlert, clusterStore)
 	assert.NoError(t, err)
 	assert.Equal(t, "myAlertID", findingID)
 	assert.NotEmpty(t, finding)
