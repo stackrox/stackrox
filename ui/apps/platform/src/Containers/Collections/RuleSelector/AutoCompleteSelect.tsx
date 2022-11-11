@@ -1,11 +1,5 @@
-import React, { ComponentType, ReactElement, useCallback, useMemo, useState } from 'react';
-import {
-    debounce,
-    Select,
-    SelectOption,
-    SelectOptionProps,
-    ValidatedOptions,
-} from '@patternfly/react-core';
+import React, { ReactElement, ReactNode, useCallback, useMemo, useState } from 'react';
+import { debounce, Select, SelectOption, ValidatedOptions } from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
 import { CancellableRequest } from 'services/cancellationUtils';
@@ -19,21 +13,15 @@ export type AutoCompleteSelectProps = {
     validated: ValidatedOptions;
     isDisabled: boolean;
     autocompleteProvider?: (search: string) => CancellableRequest<string[]>;
-    OptionComponent?: ComponentType<SelectOptionProps>;
+    OptionComponent?: ReactNode;
 };
 
 function getOptions(
-    OptionComponent: ComponentType<SelectOptionProps>,
+    OptionComponent: ReactNode,
     data: string[] | undefined
 ): ReactElement[] | undefined {
     return data?.map((value) => (
-        <SelectOption
-            key={value}
-            value={value}
-            component={(props: SelectOptionProps) => (
-                <OptionComponent className={props.className} value={value} />
-            )}
-        />
+        <SelectOption key={value} value={value} component={OptionComponent} />
     ));
 }
 
@@ -46,7 +34,7 @@ export function AutoCompleteSelect({
     validated,
     isDisabled,
     autocompleteProvider,
-    OptionComponent = SelectOption,
+    OptionComponent = 'button',
 }: AutoCompleteSelectProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const [typeahead, setTypeahead] = useState(selectedOption);

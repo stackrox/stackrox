@@ -1,5 +1,5 @@
-import React from 'react';
-import { Select, SelectOption, SelectOptionProps } from '@patternfly/react-core';
+import React, { ForwardedRef, forwardRef, ReactNode } from 'react';
+import { Select, SelectOption } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import { FormikErrors } from 'formik';
 
@@ -42,11 +42,18 @@ function RuleSelector({
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const pluralEntity = pluralize(entityType);
 
-    const OptionComponent = (props: SelectOptionProps) => (
-        <div {...props}>
-            <ResourceIcon kind={entityType} />
-            {props.value}
-        </div>
+    // We need to wrap this custom SelectOption component in a forward ref
+    // because PatternFly will pass a `ref` to it
+    const OptionComponent = forwardRef(
+        (
+            props: { className: string; children: ReactNode },
+            ref: ForwardedRef<HTMLButtonElement | null>
+        ) => (
+            <button className={props.className} type="button" ref={ref}>
+                <ResourceIcon kind={entityType} />
+                {props.children}
+            </button>
+        )
     );
 
     function onRuleOptionSelect(_, value) {

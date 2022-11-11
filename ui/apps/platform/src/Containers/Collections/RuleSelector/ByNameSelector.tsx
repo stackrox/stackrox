@@ -1,11 +1,5 @@
-import React, { ComponentType, useCallback } from 'react';
-import {
-    Button,
-    Flex,
-    FormGroup,
-    SelectOptionProps,
-    ValidatedOptions,
-} from '@patternfly/react-core';
+import React, { ReactNode, useCallback } from 'react';
+import { Button, Flex, FormGroup, ValidatedOptions } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
@@ -31,7 +25,7 @@ export type ByNameSelectorProps = {
     ) => void;
     validationErrors: FormikErrors<ByNameResourceSelector> | undefined;
     isDisabled: boolean;
-    OptionComponent: ComponentType<SelectOptionProps>;
+    OptionComponent: ReactNode;
 };
 
 function ByNameSelector({
