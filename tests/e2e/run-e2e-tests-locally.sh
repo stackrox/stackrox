@@ -10,3 +10,5 @@ source "$ROOT/scripts/lib.sh"
 
 # --flavor qa
 "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+# --flavor e2e
+#"$ROOT/tests/e2e/run.sh"
