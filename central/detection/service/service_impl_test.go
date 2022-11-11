@@ -530,7 +530,7 @@ spec:
   adminPortalCredentialsRef:
     name: asecretname
 `
-const exampleYaml = `
+const cronYaml = `
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -565,7 +565,7 @@ func TestParseList_Success(t *testing.T) {
 	_, _, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
 	require.NoError(t, err)
 
-	_, _, err = getObjectsFromYAML(exampleYaml)
+	_, _, err = getObjectsFromYAML(cronYaml)
 	require.NoError(t, err)
 }
 

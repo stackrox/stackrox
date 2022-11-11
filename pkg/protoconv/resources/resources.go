@@ -123,7 +123,7 @@ func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *Depl
 // SpecToPodTemplateSpec turns a top level spec into a podTemplateSpec
 func SpecToPodTemplateSpec(spec reflect.Value) (v1.PodTemplateSpec, error) {
 	templateInterface := spec.FieldByName("Template")
-	if !doesFieldExist(spec) {
+	if !doesFieldExist(templateInterface) {
 		return v1.PodTemplateSpec{}, errors.Errorf("obj %+v does not have a Template field", spec)
 	}
 	if templateInterface.Type().Kind() == reflect.Ptr && !templateInterface.IsNil() {
