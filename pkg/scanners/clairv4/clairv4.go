@@ -36,8 +36,8 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	errNoMetadata      = errors.New("Unable to complete scan because the image is missing metadata")
-	errInternal        = errors.New("Internal error")
+	errNoMetadata = errors.New("Unable to complete scan because the image is missing metadata")
+	errInternal   = errors.New("Internal error")
 )
 
 // Creator provides the type a scanners.Creator to add to the scanners Registry.
@@ -252,11 +252,11 @@ func (c *clairv4) Match(_ *storage.ImageName) bool {
 func (c *clairv4) Test() error {
 	req, err := http.NewRequest(http.MethodGet, c.testEndpoint, nil)
 	if err != nil {
-		return fmt.Errorf("unable to create test request: %v", err)
+		return fmt.Errorf("unable to create test request: %w", err)
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("test request could not be completed: %v", err)
+		return fmt.Errorf("test request could not be completed: %w", err)
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
