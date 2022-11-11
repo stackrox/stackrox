@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -25,6 +26,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/tecbot/gorocksdb"
 	"go.etcd.io/bbolt"
 	"gorm.io/gorm"
@@ -52,7 +54,7 @@ func startProfilingServer() {
 }
 
 func run() error {
-	log.WriteToStderr("In migrator.run()")
+	log.WriteToStderrf("Run migrator.run() with version: %s, DB sequence: %d", version.GetMainVersion(), migrations.CurrentDBVersionSeqNum())
 	conf := config.GetConfig()
 	if conf == nil {
 		log.WriteToStderrf("cannot get central configuration. Skipping migrator")
@@ -64,6 +66,11 @@ func run() error {
 		return nil
 	}
 
+	rollbackVersion := strings.TrimSpace(conf.Maintenance.ForceRollbackVersion)
+	if rollbackVersion != "" {
+		log.WriteToStderrf("conf.Maintenance.ForceRollbackVersion: %s", rollbackVersion)
+	}
+
 	var dbm cloneMgr.DBCloneManager
 	// Create the clone manager
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -71,9 +78,9 @@ func run() error {
 		if err != nil {
 			return errors.Wrap(err, "unable to get Postgres DB config")
 		}
-		dbm = cloneMgr.NewPostgres(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion, adminConfig, sourceMap)
+		dbm = cloneMgr.NewPostgres(migrations.DBMountPath(), rollbackVersion, adminConfig, sourceMap)
 	} else {
-		dbm = cloneMgr.New(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion)
+		dbm = cloneMgr.New(migrations.DBMountPath(), rollbackVersion)
 	}
 
 	err := dbm.Scan()
