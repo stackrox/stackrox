@@ -50,7 +50,7 @@ const (
 
 // TestParent4 holds the Gorm model for Postgres table `test_parent4`.
 type TestParent4 struct {
-	Id                  string           `gorm:"column:id;type:varchar;primaryKey"`
+	Id                  string           `gorm:"column:id;type:uuid;primaryKey"`
 	ParentId            string           `gorm:"column:parentid;type:varchar"`
 	Val                 string           `gorm:"column:val;type:varchar"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`

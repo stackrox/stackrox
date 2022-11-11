@@ -87,15 +87,15 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		obj.GetNamespace(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetClusterRole(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
-		obj.GetRoleId(),
+		pgutils.NilOrUUID(obj.GetRoleId()),
 		serialized,
 	}
 
@@ -111,7 +111,7 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 	}
 
 	query = "delete from role_bindings_subjects where role_bindings_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetSubjects()))
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetSubjects()))
 	return nil
 }
 
@@ -119,7 +119,7 @@ func insertIntoRoleBindingsSubjects(ctx context.Context, batch *pgx.Batch, obj *
 
 	values := []interface{}{
 		// parent primary keys start
-		role_bindings_Id,
+		pgutils.NilOrUUID(role_bindings_Id),
 		idx,
 		obj.GetKind(),
 		obj.GetName(),
@@ -175,13 +175,13 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx pgx.Tx, objs ..
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
 			obj.GetNamespace(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetClusterName(),
 
@@ -191,7 +191,7 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx pgx.Tx, objs ..
 
 			obj.GetAnnotations(),
 
-			obj.GetRoleId(),
+			pgutils.NilOrUUID(obj.GetRoleId()),
 
 			serialized,
 		})
@@ -255,7 +255,7 @@ func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx pgx.Tx,
 
 		inputRows = append(inputRows, []interface{}{
 
-			role_bindings_Id,
+			pgutils.NilOrUUID(role_bindings_Id),
 
 			idx,
 

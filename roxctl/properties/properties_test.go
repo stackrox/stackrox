@@ -7,6 +7,7 @@ import (
 	"github.com/magiconair/properties"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/roxctl/help"
 	"github.com/stackrox/rox/roxctl/maincommand"
@@ -53,6 +54,10 @@ func (s *helpKeysTestSuite) TestNoDanglingHelpKeys() {
 		props.Delete("generate.long")
 		props.Delete("generate.netpol.short")
 		props.Delete("generate.netpol.long")
+	}
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		props.Delete("central.db.generate.short")
+		props.Delete("central.db.generate.long")
 	}
 
 	if len(props.Keys()) != 0 {

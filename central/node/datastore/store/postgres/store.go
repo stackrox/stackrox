@@ -103,9 +103,9 @@ func (s *storeImpl) insertIntoNodes(
 
 	values := []interface{}{
 		// parent primary keys start
-		cloned.GetId(),
+		pgutils.NilOrUUID(cloned.GetId()),
 		cloned.GetName(),
-		cloned.GetClusterId(),
+		pgutils.NilOrUUID(cloned.GetClusterId()),
 		cloned.GetClusterName(),
 		cloned.GetLabels(),
 		cloned.GetAnnotations(),
@@ -137,7 +137,7 @@ func (s *storeImpl) insertIntoNodes(
 	}
 
 	query = "delete from nodes_taints where nodes_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, cloned.GetId(), len(cloned.GetTaints()))
+	_, err = tx.Exec(ctx, query, pgutils.NilOrUUID(cloned.GetId()), len(cloned.GetTaints()))
 	if err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, n
 
 	values := []interface{}{
 		// parent primary keys start
-		nodeID,
+		pgutils.NilOrUUID(nodeID),
 		idx,
 		obj.GetKey(),
 		obj.GetValue(),
@@ -274,7 +274,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string, o
 	}
 
 	// Copy does not upsert so have to delete first. This also ensures newly orphaned component edges are removed.
-	_, err = tx.Exec(ctx, "DELETE FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", nodeID)
+	_, err = tx.Exec(ctx, "DELETE FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", pgutils.NilOrUUID(nodeID))
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string, o
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			obj.GetNodeId(),
+			pgutils.NilOrUUID(obj.GetNodeId()),
 			obj.GetNodeComponentId(),
 			serialized,
 		})
@@ -554,7 +554,7 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID s
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-			nodeID,
+			pgutils.NilOrUUID(nodeID),
 			idx,
 			obj.GetKey(),
 			obj.GetValue(),
@@ -658,7 +658,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 }
 
 func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (*storage.Node, bool, error) {
-	row := tx.QueryRow(ctx, getNodeMetaStmt, nodeID)
+	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -731,7 +731,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentEdge")
 
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", nodeID)
+	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", pgutils.NilOrUUID(nodeID))
 	if err != nil {
 		return nil, err
 	}
@@ -831,7 +831,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 
 func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeID string) error {
 	// Delete from node table.
-	if _, err := tx.Exec(ctx, "delete from "+nodesTable+" where Id = $1", nodeID); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+nodesTable+" where Id = $1", pgutils.NilOrUUID(nodeID)); err != nil {
 		return err
 	}
 

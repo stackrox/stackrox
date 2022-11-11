@@ -87,10 +87,10 @@ func insertIntoK8sRoles(ctx context.Context, batch *pgx.Batch, obj *storage.K8SR
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		obj.GetNamespace(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetClusterRole(),
 		obj.GetLabels(),
@@ -146,13 +146,13 @@ func (s *storeImpl) copyFromK8sRoles(ctx context.Context, tx pgx.Tx, objs ...*st
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
 			obj.GetNamespace(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetClusterName(),
 

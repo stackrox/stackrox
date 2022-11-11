@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
@@ -57,7 +58,7 @@ func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, cluster
 		return err
 	}
 
-	_, err = tx.Exec(ctx, "DELETE FROM "+clusterCVEEdgeTable+" WHERE clusterid = $1", clusterID)
+	_, err = tx.Exec(ctx, "DELETE FROM "+clusterCVEEdgeTable+" WHERE clusterid = $1", uuid.FromStringOrNil(clusterID))
 	if err != nil {
 		return err
 	}
@@ -225,7 +226,7 @@ func copyFromClusterCVEEdges(ctx context.Context, tx pgx.Tx, cveType storage.CVE
 			obj.GetId(),
 			obj.GetIsFixable(),
 			obj.GetFixedBy(),
-			obj.GetClusterId(),
+			uuid.FromStringOrNil(obj.GetClusterId()),
 			obj.GetCveId(),
 			serialized,
 		})
@@ -283,7 +284,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 func getClusterCVEEdgeIDs(ctx context.Context, tx pgx.Tx, cveType storage.CVE_CVEType, clusterIDs []string) (set.StringSet, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ClusterCVEEdgeIDs")
 
-	rows, err := tx.Query(ctx, "select id FROM "+clusterCVEEdgeTable+" WHERE clusterid = ANY($1::text[]) and cveid in (select id from "+clusterCVEsTable+" where type = $2)", clusterIDs, cveType)
+	rows, err := tx.Query(ctx, "select id FROM "+clusterCVEEdgeTable+" WHERE clusterid = ANY($1::uuid[]) and cveid in (select id from "+clusterCVEsTable+" where type = $2)", clusterIDs, cveType)
 	if err != nil {
 		return nil, err
 	}

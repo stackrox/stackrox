@@ -40,7 +40,7 @@ const (
 
 // Alerts holds the Gorm model for Postgres table `alerts`.
 type Alerts struct {
-	Id                       string                              `gorm:"column:id;type:varchar;primaryKey"`
+	Id                       string                              `gorm:"column:id;type:uuid;primaryKey"`
 	PolicyId                 string                              `gorm:"column:policy_id;type:varchar"`
 	PolicyName               string                              `gorm:"column:policy_name;type:varchar"`
 	PolicyDescription        string                              `gorm:"column:policy_description;type:varchar"`
@@ -53,11 +53,11 @@ type Alerts struct {
 	PolicySORTLifecycleStage string                              `gorm:"column:policy_sortlifecyclestage;type:varchar"`
 	PolicySORTEnforcement    bool                                `gorm:"column:policy_sortenforcement;type:bool"`
 	LifecycleStage           storage.LifecycleStage              `gorm:"column:lifecyclestage;type:integer;index:alerts_lifecyclestage,type:btree"`
-	ClusterId                string                              `gorm:"column:clusterid;type:varchar;index:alerts_sac_filter,type:btree"`
+	ClusterId                string                              `gorm:"column:clusterid;type:uuid;index:alerts_sac_filter,type:btree"`
 	ClusterName              string                              `gorm:"column:clustername;type:varchar"`
 	Namespace                string                              `gorm:"column:namespace;type:varchar;index:alerts_sac_filter,type:btree"`
-	NamespaceId              string                              `gorm:"column:namespaceid;type:varchar"`
-	DeploymentId             string                              `gorm:"column:deployment_id;type:varchar;index:alerts_deployment_id,type:hash"`
+	NamespaceId              string                              `gorm:"column:namespaceid;type:uuid"`
+	DeploymentId             string                              `gorm:"column:deployment_id;type:uuid;index:alerts_deployment_id,type:hash"`
 	DeploymentName           string                              `gorm:"column:deployment_name;type:varchar"`
 	DeploymentInactive       bool                                `gorm:"column:deployment_inactive;type:bool"`
 	ImageId                  string                              `gorm:"column:image_id;type:varchar"`

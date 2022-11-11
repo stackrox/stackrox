@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -80,16 +81,20 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		obj.GetNamespace(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetClusterRole(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
-		obj.GetRoleId(),
+		pgutils.NilOrUUID(obj.GetRoleId()),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO role_bindings (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId, serialized = EXCLUDED.serialized"
@@ -104,7 +109,7 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 	}
 
 	query = "delete from role_bindings_subjects where role_bindings_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetSubjects()))
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetSubjects()))
 	return nil
 }
 
@@ -112,10 +117,14 @@ func insertIntoRoleBindingsSubjects(ctx context.Context, batch *pgx.Batch, obj *
 
 	values := []interface{}{
 		// parent primary keys start
-		role_bindings_Id,
+		pgutils.NilOrUUID(role_bindings_Id),
 		idx,
 		obj.GetKind(),
 		obj.GetName(),
+	}
+	if pgutils.NilOrUUID(role_bindings_Id) == nil {
+		utils.Should(errors.Errorf("role_bindings_Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO role_bindings_subjects (role_bindings_Id, idx, Kind, Name) VALUES($1, $2, $3, $4) ON CONFLICT(role_bindings_Id, idx) DO UPDATE SET role_bindings_Id = EXCLUDED.role_bindings_Id, idx = EXCLUDED.idx, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name"
@@ -168,13 +177,13 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx pgx.Tx, objs ..
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
 			obj.GetNamespace(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetClusterName(),
 
@@ -184,10 +193,14 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx pgx.Tx, objs ..
 
 			obj.GetAnnotations(),
 
-			obj.GetRoleId(),
+			pgutils.NilOrUUID(obj.GetRoleId()),
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
@@ -248,7 +261,7 @@ func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx pgx.Tx,
 
 		inputRows = append(inputRows, []interface{}{
 
-			role_bindings_Id,
+			pgutils.NilOrUUID(role_bindings_Id),
 
 			idx,
 
@@ -256,6 +269,10 @@ func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx pgx.Tx,
 
 			obj.GetName(),
 		})
+		if pgutils.NilOrUUID(role_bindings_Id) == nil {
+			utils.Should(errors.Errorf("role_bindings_Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {

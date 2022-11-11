@@ -316,7 +316,7 @@ message TestParent3 {
 }
 
 message TestParent4 {
-  string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent4 ID" sql:"pk"'];
+  string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent4 ID" sql:"pk,type(uuid)"'];
   string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
 
   string val = 3 [(gogoproto.moretags) = 'search:"Test Parent4 Val"'];
@@ -324,7 +324,7 @@ message TestParent4 {
 
 message TestChild1P4 {
   string id        = 1 [(gogoproto.moretags) = 'search:"Test Child1P4 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestParent4:id)"'];
+  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestParent4:id),type(uuid)"'];
 
   string val = 3 [(gogoproto.moretags) = 'search:"Test Child1P4 Val"'];
 }

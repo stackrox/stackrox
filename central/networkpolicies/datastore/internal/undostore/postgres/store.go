@@ -85,7 +85,7 @@ func insertIntoNetworkpolicyapplicationundorecords(ctx context.Context, batch *p
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
 	}
 
@@ -123,7 +123,7 @@ func (s *storeImpl) copyFromNetworkpolicyapplicationundorecords(ctx context.Cont
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			serialized,
 		})

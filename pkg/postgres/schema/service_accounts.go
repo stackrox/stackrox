@@ -38,11 +38,11 @@ const (
 
 // ServiceAccounts holds the Gorm model for Postgres table `service_accounts`.
 type ServiceAccounts struct {
-	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
+	Id          string            `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`
 	Namespace   string            `gorm:"column:namespace;type:varchar;index:serviceaccounts_sac_filter,type:btree"`
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
-	ClusterId   string            `gorm:"column:clusterid;type:varchar;index:serviceaccounts_sac_filter,type:btree"`
+	ClusterId   string            `gorm:"column:clusterid;type:uuid;index:serviceaccounts_sac_filter,type:btree"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
 	Serialized  []byte            `gorm:"column:serialized;type:bytea"`

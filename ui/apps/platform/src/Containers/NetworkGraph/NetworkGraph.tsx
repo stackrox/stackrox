@@ -26,6 +26,7 @@ import CidrBlockSideBar from './cidr/CidrBlockSideBar';
 import ExternalEntitiesSideBar from './external/ExternalEntitiesSideBar';
 
 import './Topology.css';
+import { getNodeById } from './utils/networkGraphUtils';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -37,11 +38,6 @@ export const UrlDetailType = {
 } as const;
 export type UrlDetailTypeKey = keyof typeof UrlDetailType;
 export type UrlDetailTypeValue = typeof UrlDetailType[UrlDetailTypeKey];
-
-function findEntityById(graphModel: Model, id: string | undefined): NodeModel | undefined {
-    const entity = graphModel.nodes?.find((node: { id: string }) => node.id === id);
-    return entity;
-}
 
 function getUrlParamsForEntity(selectedEntity: NodeModel): [UrlDetailTypeValue, string] {
     const detailType = UrlDetailType[selectedEntity.data.type];
@@ -95,7 +91,7 @@ function setEdges(controller, detailId) {
 const TopologyComponent = ({ model }: TopologyComponentProps) => {
     const history = useHistory();
     const { detailId } = useParams();
-    const selectedEntity = detailId && findEntityById(model, detailId);
+    const selectedEntity = detailId && getNodeById(model, detailId);
     const controller = useVisualizationController();
 
     // to prevent error where graph hasn't initialized yet
@@ -109,7 +105,7 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
 
     function onSelect(ids: string[]) {
         const newSelectedId = ids?.[0] || '';
-        const newSelectedEntity = findEntityById(model, newSelectedId);
+        const newSelectedEntity = getNodeById(model, newSelectedId);
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         if (newSelectedEntity) {
@@ -132,6 +128,7 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
         return () => {
             controller.removeEventListener(SELECTION_EVENT, onSelect);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controller, model]);
 
     const selectedIds = selectedEntity ? [selectedEntity.id] : [];
@@ -144,7 +141,11 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
                         <NamespaceSideBar />
                     )}
                     {selectedEntity && selectedEntity?.data?.type === 'DEPLOYMENT' && (
-                        <DeploymentSideBar />
+                        <DeploymentSideBar
+                            deploymentId={selectedEntity.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
                     )}
                     {selectedEntity && selectedEntity?.data?.type === 'CIDR_BLOCK' && (
                         <CidrBlockSideBar />

@@ -87,16 +87,16 @@ func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.D
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		obj.GetType(),
 		obj.GetNamespace(),
-		obj.GetNamespaceId(),
+		pgutils.NilOrUUID(obj.GetNamespaceId()),
 		obj.GetOrchestratorComponent(),
 		obj.GetLabels(),
 		obj.GetPodLabels(),
 		pgutils.NilOrTime(obj.GetCreated()),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetAnnotations(),
 		obj.GetPriority(),
@@ -119,7 +119,7 @@ func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.D
 	}
 
 	query = "delete from deployments_containers where deployments_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetContainers()))
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetContainers()))
 	for childIdx, child := range obj.GetPorts() {
 		if err := insertIntoDeploymentsPorts(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
@@ -127,7 +127,7 @@ func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.D
 	}
 
 	query = "delete from deployments_ports where deployments_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetPorts()))
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetPorts()))
 	return nil
 }
 
@@ -135,7 +135,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		idx,
 		obj.GetImage().GetId(),
 		obj.GetImage().GetName().GetRegistry(),
@@ -164,7 +164,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 	}
 
 	query = "delete from deployments_containers_envs where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	batch.Queue(query, deployments_Id, idx, len(obj.GetConfig().GetEnv()))
+	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetConfig().GetEnv()))
 	for childIdx, child := range obj.GetVolumes() {
 		if err := insertIntoDeploymentsContainersVolumes(ctx, batch, child, deployments_Id, idx, childIdx); err != nil {
 			return err
@@ -172,7 +172,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 	}
 
 	query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	batch.Queue(query, deployments_Id, idx, len(obj.GetVolumes()))
+	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetVolumes()))
 	for childIdx, child := range obj.GetSecrets() {
 		if err := insertIntoDeploymentsContainersSecrets(ctx, batch, child, deployments_Id, idx, childIdx); err != nil {
 			return err
@@ -180,7 +180,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 	}
 
 	query = "delete from deployments_containers_secrets where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	batch.Queue(query, deployments_Id, idx, len(obj.GetSecrets()))
+	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetSecrets()))
 	return nil
 }
 
@@ -188,7 +188,7 @@ func insertIntoDeploymentsContainersEnvs(ctx context.Context, batch *pgx.Batch, 
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		deployments_containers_idx,
 		idx,
 		obj.GetKey(),
@@ -206,7 +206,7 @@ func insertIntoDeploymentsContainersVolumes(ctx context.Context, batch *pgx.Batc
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		deployments_containers_idx,
 		idx,
 		obj.GetName(),
@@ -226,7 +226,7 @@ func insertIntoDeploymentsContainersSecrets(ctx context.Context, batch *pgx.Batc
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		deployments_containers_idx,
 		idx,
 		obj.GetName(),
@@ -243,7 +243,7 @@ func insertIntoDeploymentsPorts(ctx context.Context, batch *pgx.Batch, obj *stor
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		idx,
 		obj.GetContainerPort(),
 		obj.GetProtocol(),
@@ -262,7 +262,7 @@ func insertIntoDeploymentsPorts(ctx context.Context, batch *pgx.Batch, obj *stor
 	}
 
 	query = "delete from deployments_ports_exposure_infos where deployments_Id = $1 AND deployments_ports_idx = $2 AND idx >= $3"
-	batch.Queue(query, deployments_Id, idx, len(obj.GetExposureInfos()))
+	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetExposureInfos()))
 	return nil
 }
 
@@ -270,7 +270,7 @@ func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, batch *pgx.Bat
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		deployments_ports_idx,
 		idx,
 		obj.GetLevel(),
@@ -347,7 +347,7 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
@@ -355,7 +355,7 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...
 
 			obj.GetNamespace(),
 
-			obj.GetNamespaceId(),
+			pgutils.NilOrUUID(obj.GetNamespaceId()),
 
 			obj.GetOrchestratorComponent(),
 
@@ -365,7 +365,7 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...
 
 			pgutils.NilOrTime(obj.GetCreated()),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetClusterName(),
 
@@ -468,7 +468,7 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			idx,
 
@@ -559,7 +559,7 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx pg
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			deployments_containers_idx,
 
@@ -622,7 +622,7 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			deployments_containers_idx,
 
@@ -683,7 +683,7 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			deployments_containers_idx,
 
@@ -738,7 +738,7 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx pgx.Tx, dep
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			idx,
 
@@ -809,7 +809,7 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			deployments_ports_idx,
 

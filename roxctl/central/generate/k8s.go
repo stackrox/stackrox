@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -21,6 +22,7 @@ import (
 
 const (
 	noteOpenShift3xCompatibilityMode = `NOTE: Deployment files are generated in OpenShift 3.x compatibility mode. Set the --openshift-version flag to 3 to suppress this note, or to 4 take advantage of OpenShift 4.x features.`
+	defaultBundlePath                = "central-bundle"
 )
 
 type flagsWrapper struct {
@@ -67,7 +69,7 @@ func orchestratorCommand(shortName, longName string) *cobra.Command {
 		}),
 	}
 	if !roxctl.InMainImage() {
-		c.PersistentFlags().Var(newOutputDir(&cfg.OutputDir), "output-dir", "the directory to output the deployment bundle to")
+		c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, defaultBundlePath), "output-dir", "the directory to output the deployment bundle to")
 	}
 	return c
 }

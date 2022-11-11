@@ -6,15 +6,19 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/heimdalr/dag"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -314,17 +318,482 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	assert.True(s.T(), ok)
 	assert.Equal(s.T(), objB, obj)
 
+	// successful updates preserve createdAt and createdBy
+	objC := getTestCollection("c", nil)
+	objC.CreatedAt = protoconv.ConvertTimeToTimestamp(time.Now())
+	objC.CreatedBy = &storage.SlimUser{
+		Id:   "uid",
+		Name: "uname",
+	}
+	err = s.datastore.AddCollection(ctx, objC)
+	assert.NoError(s.T(), err)
+	objC.Name = "C"
+	err = s.datastore.UpdateCollection(ctx, objC)
+	assert.NoError(s.T(), err)
+	obj, ok, err = s.datastore.Get(ctx, objC.GetId())
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), ok)
+	assert.Equal(s.T(), objC, obj)
+
 	// clean up testing data and verify the datastore is empty
 	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objB.GetId()))
 	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objE.GetId()))
 	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objA.GetId()))
+	assert.NoError(s.T(), s.datastore.DeleteCollection(ctx, objC.GetId()))
 	count, err = s.datastore.Count(ctx, nil)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, count)
 }
 
+func (s *CollectionPostgresDataStoreTestSuite) TestVerifyCollectionConstraints() {
+
+	verifyCollectionTests := []struct {
+		name          string
+		collectionObj *storage.ResourceCollection
+		errExpected   bool
+	}{
+		{
+			"nil collection",
+			nil,
+			true,
+		},
+		{
+			"no selector rules",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{},
+				},
+			}),
+			false,
+		},
+		{
+			"1 selector rule",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			false,
+		},
+		{
+			"more than 1 selector rules",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			true,
+		},
+		{
+			"and operator",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_AND,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			true,
+		},
+		{
+			"unsupported field name",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.ClusterRole.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			true,
+		},
+		{
+			"unknown field name",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: "bad name",
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			true,
+		},
+		{
+			"no rule values with field name set",
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values:    []*storage.RuleValue{},
+						},
+					},
+				},
+			}),
+			true,
+		},
+	}
+
+	// test all supported field names values
+	for _, label := range GetSupportedFieldLabels() {
+		verifyCollectionTests = append(verifyCollectionTests, struct {
+			name          string
+			collectionObj *storage.ResourceCollection
+			errExpected   bool
+		}{
+			fmt.Sprintf("supported label test %s", label.String()),
+			getTestCollectionWithSelectors("name", nil, []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: label.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "value",
+								},
+							},
+						},
+					},
+				},
+			}),
+			false,
+		})
+	}
+
+	for _, test := range verifyCollectionTests {
+		s.T().Run(test.name, func(t *testing.T) {
+			err := verifyCollectionConstraints(test.collectionObj)
+			if test.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func (s *CollectionPostgresDataStoreTestSuite) TestCollectionToQueries() {
+
+	var supportedLabelRules []*storage.SelectorRule
+
+	for _, label := range GetSupportedFieldLabels() {
+		supportedLabelRules = append(supportedLabelRules, &storage.SelectorRule{
+			FieldName: label.String(),
+			Operator:  storage.BooleanOperator_OR,
+		})
+	}
+
+	collectionToQueryTests := []struct {
+		name              string
+		resourceSelectors []*storage.ResourceSelector
+		// if this value is nil we expect failure
+		expectedQueries []*v1.Query
+	}{
+		{
+			"all supported selector rule field names",
+			[]*storage.ResourceSelector{{Rules: supportedLabelRules}},
+			[]*v1.Query{},
+		},
+		{
+			"unsupported selector rule field name",
+			[]*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.ClusterRole.String(),
+							Operator:  storage.BooleanOperator_OR,
+						},
+					},
+				},
+			},
+			nil,
+		},
+		{
+			"unknown selector rule field name",
+			[]*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: "bad label",
+							Operator:  storage.BooleanOperator_OR,
+						},
+					},
+				},
+			},
+			nil,
+		},
+		{
+			"nil resource selector list",
+			nil,
+			[]*v1.Query{},
+		},
+		{
+			"empty resource selector list",
+			[]*storage.ResourceSelector{},
+			[]*v1.Query{},
+		},
+		{
+			"two entry resource selector list",
+			[]*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Cluster.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "1",
+								},
+								{
+									Value: "2",
+								},
+							},
+						},
+					},
+				},
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: pkgSearch.Namespace.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "3",
+								},
+							},
+						},
+					},
+				},
+			},
+			[]*v1.Query{
+				{
+					Query: &v1.Query_Disjunction{
+						Disjunction: &v1.DisjunctionQuery{
+							Queries: []*v1.Query{
+								{
+									Query: getBaseQuery(pkgSearch.Cluster, "r/1"),
+								},
+								{
+									Query: getBaseQuery(pkgSearch.Cluster, "r/2"),
+								},
+							},
+						},
+					},
+				},
+				{
+					Query: getBaseQuery(pkgSearch.Namespace, "r/3"),
+				},
+			},
+		},
+		{
+			"nil selector rule list",
+			[]*storage.ResourceSelector{
+				{
+					Rules: nil,
+				},
+			},
+			[]*v1.Query{},
+		},
+		{
+			"empty selector rule list",
+			[]*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{},
+				},
+			},
+			[]*v1.Query{},
+		},
+	}
+
+	for _, test := range collectionToQueryTests {
+		s.T().Run(test.name, func(t *testing.T) {
+			testCollection := getTestCollection("1", nil)
+			testCollection.ResourceSelectors = test.resourceSelectors
+			parsedQueries, err := collectionToQueries(testCollection)
+			if test.expectedQueries == nil {
+				assert.Error(t, err)
+				assert.Nil(s.T(), parsedQueries)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, len(test.expectedQueries), len(parsedQueries))
+				for i := 0; i < len(test.expectedQueries) && i < len(parsedQueries); i++ {
+					assert.Equal(t, test.expectedQueries[i], parsedQueries[i])
+				}
+			}
+		})
+	}
+}
+
+// func (s *CollectionPostgresDataStoreTestSuite) TestResolveCollectionQuery() {
+// 	ctx := sac.WithAllAccess(context.Background())
+//
+// 	var err error
+//
+// 	// upsert collections and reference those as embedded, make sure we resolve the embedded collections
+// 	objA := getTestCollection("a", nil)
+// 	objA.ResourceSelectors = []*storage.ResourceSelector{
+// 		{
+// 			Rules: []*storage.SelectorRule{
+// 				{
+// 					FieldName: pkgSearch.Cluster.String(),
+// 					Operator:  storage.BooleanOperator_OR,
+// 					Values: []*storage.RuleValue{
+// 						{
+// 							Value: "1",
+// 						},
+// 					},
+// 				},
+// 			},
+// 		},
+// 	}
+// 	err = s.datastore.AddCollection(ctx, objA)
+// 	s.NoError(err)
+// 	objB := getTestCollection("b", []string{objA.GetId()})
+// 	objB.ResourceSelectors = []*storage.ResourceSelector{
+// 		{
+// 			Rules: []*storage.SelectorRule{
+// 				{
+// 					FieldName: pkgSearch.Namespace.String(),
+// 					Operator:  storage.BooleanOperator_OR,
+// 					Values: []*storage.RuleValue{
+// 						{
+// 							Value: "2",
+// 						},
+// 					},
+// 				},
+// 			},
+// 		},
+// 	}
+// 	err = s.datastore.AddCollection(ctx, objB)
+// 	s.NoError(err)
+// 	objC := getTestCollection("c", []string{objB.GetId()})
+// 	objC.ResourceSelectors = []*storage.ResourceSelector{
+// 		{
+// 			Rules: []*storage.SelectorRule{
+// 				{
+// 					FieldName: pkgSearch.DeploymentName.String(),
+// 					Operator:  storage.BooleanOperator_OR,
+// 					Values: []*storage.RuleValue{
+// 						{
+// 							Value: "3",
+// 						},
+// 					},
+// 				},
+// 			},
+// 		},
+// 	}
+// 	err = s.datastore.AddCollection(ctx, objC)
+// 	s.NoError(err)
+//
+// 	expectedQuery := &v1.Query{
+// 		Query: &v1.Query_Disjunction{
+// 			Disjunction: &v1.DisjunctionQuery{
+// 				Queries: []*v1.Query{
+// 					{
+// 						Query: getBaseQuery(pkgSearch.DeploymentName, "r/3"),
+// 					},
+// 					{
+// 						Query: getBaseQuery(pkgSearch.Namespace, "r/2"),
+// 					},
+// 					{
+// 						Query: getBaseQuery(pkgSearch.Cluster, "r/1"),
+// 					},
+// 				},
+// 			},
+// 		},
+// 	}
+// 	testObj := getTestCollection("test", []string{objC.GetId()})
+// 	query, err := s.datastore.ResolveCollectionQuery(ctx, testObj)
+// 	assert.NoError(s.T(), err)
+// 	assert.Equal(s.T(), expectedQuery.String(), query.String())
+//
+// 	expectedQuery = &v1.Query{
+// 		Query: &v1.Query_Disjunction{
+// 			Disjunction: &v1.DisjunctionQuery{
+// 				Queries: []*v1.Query{
+// 					{
+// 						Query: getBaseQuery(pkgSearch.Cluster, "r/1"),
+// 					},
+// 					{
+// 						Query: getBaseQuery(pkgSearch.Namespace, "r/2"),
+// 					},
+// 				},
+// 			},
+// 		},
+// 	}
+// 	testObj = getTestCollection("test", []string{objA.GetId(), objB.GetId()})
+// 	query, err = s.datastore.ResolveCollectionQuery(ctx, testObj)
+// 	assert.NoError(s.T(), err)
+// 	assert.Equal(s.T(), expectedQuery.String(), query.String())
+// }
+
 func (s *CollectionPostgresDataStoreTestSuite) TestFoo() {
 	// TODO e2e testing ROX-12626
+	// test regex doesn't compile
+}
+
+func getTestCollectionWithSelectors(name string, ids []string, selectors []*storage.ResourceSelector) *storage.ResourceCollection {
+	ret := getTestCollection(name, ids)
+	ret.ResourceSelectors = selectors
+	return ret
 }
 
 func getTestCollection(name string, ids []string) *storage.ResourceCollection {
@@ -355,4 +824,17 @@ func resetLocalGraph(ds *datastoreImpl) error {
 		ds.graph = nil
 	}
 	return ds.initGraph()
+}
+
+func getBaseQuery(field pkgSearch.FieldLabel, value string) *v1.Query_BaseQuery {
+	return &v1.Query_BaseQuery{
+		BaseQuery: &v1.BaseQuery{
+			Query: &v1.BaseQuery_MatchFieldQuery{
+				MatchFieldQuery: &v1.MatchFieldQuery{
+					Field: field.String(),
+					Value: value,
+				},
+			},
+		},
+	}
 }
