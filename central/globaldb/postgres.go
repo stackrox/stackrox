@@ -131,7 +131,7 @@ func collectPostgresStats(ctx context.Context, db *pgxpool.Pool) {
 			tableSize   int
 		)
 		if err := row.Scan(&tableName, &rowEstimate, &totalSize, &indexSize, &toastSize, &tableSize); err != nil {
-			log.Errorf("error scanning row: %v", err)
+			log.Errorf("error scanning row for table %s: %v", tableName, err)
 			return
 		}
 
