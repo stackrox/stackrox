@@ -30,4 +30,7 @@ const (
 
 	// ScopedImageIntegrations identifies the capability to have image integrations with sources from image pull secrets
 	ScopedImageIntegrations SensorCapability = "ScopedImageIntegrations"
+
+	// NodeScanningCap identifies the capability to scan nodes and provide node components for vulnerability analysis.
+	NodeScanningCap SensorCapability = "NodeScanning"
 )
