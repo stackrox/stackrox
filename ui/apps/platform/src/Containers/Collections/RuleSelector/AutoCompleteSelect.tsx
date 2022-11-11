@@ -34,7 +34,7 @@ export function AutoCompleteSelect({
     validated,
     isDisabled,
     autocompleteProvider,
-    OptionComponent = 'button',
+    OptionComponent = SelectOption,
 }: AutoCompleteSelectProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const [typeahead, setTypeahead] = useState(selectedOption);

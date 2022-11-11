@@ -3,16 +3,15 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
+import { mockDebounce } from 'test-utils/mocks/@patternfly/react-core';
 import RuleSelector from './RuleSelector';
-import { ByNameResourceSelector, ScopedResourceSelector } from '../types';
+import { ByLabelResourceSelector, ByNameResourceSelector, ScopedResourceSelector } from '../types';
+
+jest.mock('@patternfly/react-core', () => mockDebounce);
 
 jest.mock('services/CollectionsService', () => ({
     __esModule: true,
-    getCollectionAutoComplete() {
-        return {
-            request: Promise.resolve([]),
-        };
-    },
+    getCollectionAutoComplete: () => ({ request: Promise.resolve([]) }),
 }));
 
 // Component wrapper to allow a higher level component to feed updated state back to the RuleSelector.
@@ -81,7 +80,6 @@ describe('Collection RuleSelector component', () => {
 
         const typeAheadInput = screen.getByLabelText('Select value 1 of 1 for the deployment name');
         await user.type(typeAheadInput, 'visa-processor{Enter}');
-        // await user.click(await screen.findByText(/Create.*visa-processor/));
 
         expect(resourceSelector.field).toBe('Deployment');
         expect(resourceSelector.rule.values).toEqual(['visa-processor']);
@@ -124,7 +122,6 @@ describe('Collection RuleSelector component', () => {
         expect(screen.getByText('All deployments')).toBeInTheDocument();
     });
 
-    /*
     it('Should allow users to add label key/value selectors', async () => {
         let resourceSelector: ByLabelResourceSelector = {
             type: 'ByLabel',
@@ -215,6 +212,15 @@ describe('Collection RuleSelector component', () => {
                 },
             ],
         });
+
+        // Check that deletion of all items removes the selector
+        await user.click(screen.getByLabelText('Delete stable'));
+        await user.click(screen.getByLabelText('Delete beta'));
+        await user.click(screen.getByLabelText('Delete visa-processor'));
+        await user.click(screen.getByLabelText('Delete mastercard-processor'));
+        await user.click(screen.getByLabelText('Delete discover-processor'));
+
+        expect(resourceSelector).toEqual({ type: 'All' });
+        expect(screen.getByText('All deployments')).toBeInTheDocument();
     });
-    */
 });
