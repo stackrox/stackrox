@@ -32,7 +32,7 @@ var (
 
 func init() {
 	notifiers.Add("cscc", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		j, err := newCSCC(notifier, clusterDatastore.Singleton())
+		j, err := newCSCC(notifier)
 		return j, err
 	})
 }
@@ -42,9 +42,8 @@ type cscc struct {
 	// The Service Account is a Google JSON service account key.
 	// The GCP Organization ID is a numeric identifier for the Google Cloud Platform
 	// organization. It is required so that we can tag findings to the right org.
-	client       client.Config
-	config       *config
-	clusterStore clusterDatastore.DataStore
+	client client.Config
+	config *config
 	*storage.Notifier
 }
 
@@ -131,8 +130,9 @@ func processUUID(u string) string {
 	return strings.Replace(u, "-", "", -1)
 }
 
-func (c *cscc) getCluster(id string) (*storage.Cluster, error) {
-	cluster, exists, err := c.clusterStore.GetCluster(clusterForAlertContext, id)
+func (c *cscc) getCluster(id string, clusterDatastore clusterDatastore.DataStore) (*storage.Cluster, error) {
+
+	cluster, exists, err := clusterDatastore.GetCluster(clusterForAlertContext, id)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (c *cscc) Close(ctx context.Context) error {
 // AlertNotify takes in an alert and generates the notification
 func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 
-	findingID, finding, err := c.initFinding(ctx, alert)
+	findingID, finding, err := c.initFinding(ctx, alert, clusterDatastore.Singleton())
 
 	if err != nil {
 		return err
@@ -179,7 +179,7 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 }
 
 // initFinding takes in an alert and generates the notification
-func (c *cscc) initFinding(ctx context.Context, alert *storage.Alert) (string, *findings.Finding, error) {
+func (c *cscc) initFinding(ctx context.Context, alert *storage.Alert, clusterDatastore clusterDatastore.DataStore) (string, *findings.Finding, error) {
 	if alert.GetImage() != nil {
 		return "", nil, errors.New("CSCC integration can only handle alerts for deployments and resources")
 	}
@@ -189,7 +189,7 @@ func (c *cscc) initFinding(ctx context.Context, alert *storage.Alert) (string, *
 
 	findingID := processUUID(alert.GetId())
 
-	cluster, err := c.getCluster(alert.GetDeployment().GetClusterId())
+	cluster, err := c.getCluster(alert.GetDeployment().GetClusterId(), clusterDatastore)
 	if err != nil {
 		return "", nil, err
 	}
@@ -243,7 +243,7 @@ func (c *cscc) initFinding(ctx context.Context, alert *storage.Alert) (string, *
 
 }
 
-func newCSCC(protoNotifier *storage.Notifier, clusterStore clusterDatastore.DataStore) (*cscc, error) {
+func newCSCC(protoNotifier *storage.Notifier) (*cscc, error) {
 	csccConfig, ok := protoNotifier.GetConfig().(*storage.Notifier_Cscc)
 	if !ok {
 		return nil, errors.New("Cloud SCC config is required")
@@ -257,10 +257,10 @@ func newCSCC(protoNotifier *storage.Notifier, clusterStore clusterDatastore.Data
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
-	return newWithConfig(protoNotifier, cfg, clusterStore), nil
+	return newWithConfig(protoNotifier, cfg), nil
 }
 
-func newWithConfig(protoNotifier *storage.Notifier, cfg *config, clusterStore clusterDatastore.DataStore) *cscc {
+func newWithConfig(protoNotifier *storage.Notifier, cfg *config) *cscc {
 	return &cscc{
 		Notifier: protoNotifier,
 		client: client.Config{
@@ -268,8 +268,7 @@ func newWithConfig(protoNotifier *storage.Notifier, cfg *config, clusterStore cl
 			SourceID:       cfg.SourceID,
 			Logger:         log,
 		},
-		config:       cfg,
-		clusterStore: clusterStore,
+		config: cfg,
 	}
 }
 
