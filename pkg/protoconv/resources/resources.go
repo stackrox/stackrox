@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
+	batchV1 "k8s.io/api/batch/v1"
 	batchV1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -237,7 +238,10 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
 		podSpec = o.Spec
+	// batch/v1beta1 CronJob is deprecated in v1.21+, unavailable in v1.25+. YAML
 	case *batchV1beta1.CronJob:
+		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
+	case *batchV1.CronJob:
 		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
 	default:
 		podTemplate, err := SpecToPodTemplateSpec(spec)

@@ -530,6 +530,27 @@ spec:
   adminPortalCredentialsRef:
     name: asecretname
 `
+const exampleYaml = `
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: example
+  namespace: sst-etcd-backup
+spec:
+  schedule: '@daily'
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: hello
+              image: busybox
+              args:
+                - /bin/sh
+                - '-c'
+                - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+`
 
 func TestParseList_Success(t *testing.T) {
 	_, _, err := getObjectsFromYAML(listYAML)
@@ -542,6 +563,9 @@ func TestParseList_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
+	require.NoError(t, err)
+
+	_, _, err = getObjectsFromYAML(exampleYaml)
 	require.NoError(t, err)
 }
 
