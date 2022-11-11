@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -233,26 +233,21 @@ func (ds *dataStoreImpl) RemoveAllWithEmptyProperties(ctx context.Context) error
 		return err
 	}
 
-	var removeGroupErrs errorhelpers.ErrorList
+	var removeGroupErrs *multierror.Error
 	for _, group := range groups {
 		// Since we are dealing with empty properties, we only require the ID to be set.
 		// In case the ID is not set, add the error to the error list.
 		id := group.GetProps().GetId()
 		if id == "" {
-			removeGroupErrs.AddError(errox.InvalidArgs.Newf("group %s has no ID set and cannot be deleted",
-				proto.MarshalTextString(group)))
-			continue
-		}
-		_, err := ds.validateGroupExists(ctx, id)
-		if err != nil {
-			removeGroupErrs.AddError(err)
+			removeGroupErrs = multierror.Append(removeGroupErrs, errox.InvalidArgs.Newf("group %s has no ID"+
+				" set and cannot be deleted", proto.MarshalTextString(group)))
 			continue
 		}
 		if err := ds.storage.Delete(ctx, id); err != nil {
-			removeGroupErrs.AddError(err)
+			removeGroupErrs = multierror.Append(removeGroupErrs, err)
 		}
 	}
-	return removeGroupErrs.ToError()
+	return removeGroupErrs.ErrorOrNil()
 }
 
 // Helpers

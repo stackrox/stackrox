@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/group/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -759,9 +758,7 @@ func (s *groupDataStoreTestSuite) TestRemoveAllWithEmptyProperties() {
 	}
 	gomock.InOrder(
 		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(groupsWithoutProperties)),
-		s.storage.EXPECT().Get(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil, true, nil),
 		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil),
-		s.storage.EXPECT().Get(gomock.Any(), groupsWithoutProperties[1].GetProps().GetId()).Return(nil, true, nil),
 		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[1].GetProps().GetId()).Return(nil),
 	)
 
@@ -786,22 +783,14 @@ func (s *groupDataStoreTestSuite) TestRemoveAllWithEmptyProperties() {
 			},
 			RoleName: "know anything",
 		},
-		{
-			RoleName: "not supposed to happen",
-		},
 	}
 	gomock.InOrder(
 		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(groupsWithoutProperties)),
-		s.storage.EXPECT().Get(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil, true, nil),
 		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil),
-		s.storage.EXPECT().Get(gomock.Any(), groupsWithoutProperties[2].GetProps().GetId()).Return(nil, true, nil),
 		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[2].GetProps().GetId()).Return(nil),
 	)
 
 	err = s.dataStore.RemoveAllWithEmptyProperties(s.hasWriteCtx)
 	s.Error(err)
-	// For better or worse, check via string whether the error contains both groups that do not have an ID
-	// associated with them.
-	s.Contains(err.Error(), proto.MarshalTextString(groupsWithoutProperties[1]))
-	s.Contains(err.Error(), proto.MarshalTextString(groupsWithoutProperties[3]))
+	s.ErrorIs(err, errox.InvalidArgs)
 }
