@@ -211,13 +211,13 @@ export function getCollectionAutoComplete(
     searchCategory: string,
     searchLabel: string
 ): CancellableRequest<string[]> {
-    const params = qs.stringify(
-        { resourceSelectors, searchCategory, searchLabel },
-        { arrayFormat: 'repeat' }
-    );
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<{ values: string[] }>(`${collectionsAutocompleteUrl}?${params}`, { signal })
+            .post<{ values: string[] }>(
+                collectionsAutocompleteUrl,
+                { resourceSelectors, searchCategory, searchLabel },
+                { signal }
+            )
             .then((response) => response.data.values)
     );
 }
