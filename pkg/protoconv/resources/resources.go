@@ -123,6 +123,9 @@ func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *Depl
 // SpecToPodTemplateSpec turns a top level spec into a podTemplateSpec
 func SpecToPodTemplateSpec(spec reflect.Value) (v1.PodTemplateSpec, error) {
 	templateInterface := spec.FieldByName("Template")
+	if !doesFieldExist(spec) {
+		return v1.PodTemplateSpec{}, errors.Errorf("obj %+v does not have a Template field", spec)
+	}
 	if templateInterface.Type().Kind() == reflect.Ptr && !templateInterface.IsNil() {
 		templateInterface = templateInterface.Elem()
 	}
@@ -238,7 +241,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
 		podSpec = o.Spec
-	// batch/v1beta1 CronJob is deprecated in v1.21+, unavailable in v1.25+. YAML
+	// batch/v1beta1 CronJob is deprecated in v1.21+, unavailable in v1.25+.
 	case *batchV1beta1.CronJob:
 		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
 	case *batchV1.CronJob:
