@@ -25,7 +25,7 @@ import (
 
 const (
 	requestTimeout = 30 * time.Second
-	typeString     = "clairv4"
+	typeString     = "clairV4"
 
 	indexStatePath          = "/indexer/api/v1/index_state"
 	indexReportPath         = "/indexer/api/v1/index_report"
@@ -64,21 +64,21 @@ type clairv4 struct {
 }
 
 func newScanner(integration *storage.ImageIntegration) (*clairv4, error) {
-	config := integration.GetClairV4()
-	if config == nil {
+	cfg := integration.GetClairV4()
+	if cfg == nil {
 		return nil, errors.New("Clair v4 configuration required")
 	}
-	if err := validate(config); err != nil {
+	if err := validate(cfg); err != nil {
 		return nil, err
 	}
 
-	endpoint := urlfmt.FormatURL(config.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	endpoint := urlfmt.FormatURL(cfg.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	client := &http.Client{
 		// No need to specify a context for HTTP requests, as the client specifies a request timeout.
 		Timeout: requestTimeout,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: config.GetInsecure(),
+				InsecureSkipVerify: cfg.GetInsecure(),
 			},
 			Proxy: proxy.FromConfig(),
 		},
@@ -98,9 +98,9 @@ func newScanner(integration *storage.ImageIntegration) (*clairv4, error) {
 	return scanner, nil
 }
 
-func validate(clairv4 *storage.ClairV4Config) error {
+func validate(cfg *storage.ClairV4Config) error {
 	errorList := errorhelpers.NewErrorList("Clair v4 Validation")
-	if clairv4.GetEndpoint() == "" {
+	if cfg.GetEndpoint() == "" {
 		errorList.AddString("Endpoint must be specified")
 	}
 	return errorList.ToError()

@@ -97,7 +97,7 @@ class ClairV4ScannerIntegration implements ImageIntegration {
 
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
         Map defaultArgs = [
-                name: "clairv4",
+                name: "clairV4",
                 endpoint: Env.get("CLAIR_V4_ENDPOINT", ""),
         ]
         Map args = defaultArgs + customArgs
@@ -108,7 +108,7 @@ class ClairV4ScannerIntegration implements ImageIntegration {
 
         return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                 .setName(args.name as String)
-                .setType("clairv4")
+                .setType("clairV4")
                 .clearCategories()
                 .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER])
                 .setClairV4(config)

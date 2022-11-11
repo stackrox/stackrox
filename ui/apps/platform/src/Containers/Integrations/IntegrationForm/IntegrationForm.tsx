@@ -4,7 +4,7 @@ import { Integration, IntegrationSource, IntegrationType } from '../utils/integr
 // image integrations
 import ClairifyIntegrationForm from './Forms/ClairifyIntegrationForm';
 import ClairIntegrationForm from './Forms/ClairIntegrationForm';
-import Clairv4IntegrationForm from './Forms/Clairv4IntegrationForm';
+import ClairV4IntegrationForm from './Forms/ClairV4IntegrationForm';
 import DockerIntegrationForm from './Forms/DockerIntegrationForm';
 import EcrIntegrationForm from './Forms/EcrIntegrationForm';
 import GoogleIntegrationForm from './Forms/GoogleIntegrationForm';
@@ -54,7 +54,7 @@ const ComponentFormMap = {
     imageIntegrations: {
         clairify: ClairifyIntegrationForm,
         clair: ClairIntegrationForm,
-        clairv4: Clairv4IntegrationForm,
+        clairV4: ClairV4IntegrationForm,
         docker: DockerIntegrationForm,
         ecr: EcrIntegrationForm,
         google: GoogleIntegrationForm,

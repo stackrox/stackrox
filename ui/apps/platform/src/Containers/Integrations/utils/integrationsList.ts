@@ -176,7 +176,7 @@ const integrationsList: IntegrationDescriptorMap = {
         },
         {
             label: 'Clair v4',
-            type: 'clairv4',
+            type: 'clairV4',
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: clair,
