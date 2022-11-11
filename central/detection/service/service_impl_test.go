@@ -553,20 +553,21 @@ spec:
 `
 
 func TestParseList_Success(t *testing.T) {
-	_, _, err := getObjectsFromYAML(listYAML)
-	require.NoError(t, err)
-
-	_, _, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
-	require.NoError(t, err)
-
-	_, _, err = getObjectsFromYAML(multiYaml)
-	require.NoError(t, err)
-
-	_, _, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
-	require.NoError(t, err)
-
-	_, _, err = getObjectsFromYAML(cronYaml)
-	require.NoError(t, err)
+	for name, yaml := range map[string]string{
+		"listYaml":                          listYAML,
+		"openshiftDeploymentConfigYaml":     openshiftDeploymentConfigYaml,
+		"multiYaml":                         multiYaml,
+		"openshiftDeployConfMultiYaml":      openshiftDeploymentConfigYaml,
+		"operatorCRDMultiYaml":              operatorCRDMultiYaml,
+		"operatorCRDYaml":                   operatorCRDYaml,
+		"openshiftRouteWithOperatorCRDYaml": openshiftRouteWithOperatorCRDYaml,
+		"cronYaml":                          cronYaml,
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, _, err := getObjectsFromYAML(yaml)
+			require.NoError(t, err)
+		})
+	}
 }
 
 func TestParseList_ConversionToOpenshiftObjects(t *testing.T) {

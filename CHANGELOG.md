@@ -48,7 +48,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The service account "central", which is used by the central deployment, will now include `get` and `list` access to the following resources in the namespace where central is deployed to:
   `pods`, `events`, and `namespaces`. This fixes an issue when generating diagnostic bundles to now correctly include all relevant information within the namespace of central.
 - ROX-13265: Fix missing rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
-- ROX-13500: Previously, deployment YAML check on V1 CronJob workload would cause Central to panic. This has is now fixed.
+- ROX-13500: Previously, deployment YAML check on V1 CronJob workload would cause Central to panic. This is now fixed.
 
 ## [3.72.0]
 
