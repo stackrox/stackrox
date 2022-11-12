@@ -48,7 +48,7 @@ kubectl create ns "${namespace}"
 
 export POSTGRES_PASSWORD="${CLAIR_V4_DB_PASSWORD}"
 kubectl -n "${namespace}" create secret generic clairsecret --from-file="${DIR}/config.yaml"
-kubectl -n "${namespace}" create -f "${DIR}/clair-kubernetes.yaml"
+kubectl -n "${namespace}" create -f "${DIR}/clairv4-kubernetes.yaml"
 
 wait_for_pod_count_to_be 2
 
@@ -58,16 +58,16 @@ wait_for_pod_count_to_be 1
 
 # Seed the DB with nginx:1.12.1 data
 
-kubectl -n "${namespace}" port-forward "svc/postgres" 5432:5432 > /dev/null &
-PID=$!
-
-sleep 5
-
-gsutil cat gs://stackrox-ci/clair-1-2-4-nginx-1-12-1.sql | psql -h localhost -U postgres
-
-kill ${PID}
-wait
-
-kubectl -n "${namespace}" scale --replicas 1 deployment clair
-
-wait_for_pod_count_to_be 2
+#kubectl -n "${namespace}" port-forward "svc/postgres" 5432:5432 > /dev/null &
+#PID=$!
+#
+#sleep 5
+#
+#gsutil cat gs://stackrox-ci/clair-1-2-4-nginx-1-12-1.sql | psql -h localhost -U postgres
+#
+#kill ${PID}
+#wait
+#
+#kubectl -n "${namespace}" scale --replicas 1 deployment clairv4
+#
+#wait_for_pod_count_to_be 2
