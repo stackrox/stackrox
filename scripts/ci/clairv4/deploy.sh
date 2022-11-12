@@ -45,7 +45,6 @@ if kubectl get ns "${namespace}"; then
     kubectl delete ns "${namespace}" # handle CI re-runs
 fi
 kubectl create ns "${namespace}"
-kubectl -n "${namespace}" apply -f "${DIR}/psp.yaml"
 
 export POSTGRES_PASSWORD="${CLAIR_V4_DB_PASSWORD}"
 kubectl -n "${namespace}" create secret generic clairsecret --from-file="${DIR}/config.yaml"
