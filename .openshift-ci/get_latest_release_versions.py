@@ -24,7 +24,7 @@ def cli_output_to_tags(stdoutput):
     return separated
 
 def make_image_tag():
-    return subprocess.check_output(["make", "tag"]).decode(encoding="utf-8")
+    return subprocess.check_output(["make", "--quiet", "--no-print-directory", "tag"]).decode(encoding="utf-8")
 
 def extract_y_from_main_image_tag(mainimagetag):
     return int(re.search(r"\d+\.(\d+)", mainimagetag).group(1))
