@@ -65,7 +65,7 @@ func (f *unknownTotalSizeFiller) Fill(w io.Writer, width int, stat *decor.Statis
 }
 
 func createProgressBars(ctx context.Context, name string, totalSize int64) (*mpb.Bar, func()) {
-	outFile := os.Stderr
+	outFile := os.Stderr //nolint:forbidigo // TODO(ROX-13473)
 
 	opts := []mpb.ContainerOption{
 		mpb.WithWidth(progressBarWidth),
