@@ -29,12 +29,15 @@ def transform_tags_to_numbers(tags):
     return sorted(numTags)
 
 def split_version(version):
-    digits = re.search(r"(\d+)\.(\d+)\.\D*(\d+)", version)
+    digits = re.search(r"(\d+)\.(\d+)\.(\d+)", version)
     return int(digits.group(1)), int(digits.group(2)), int(digits.group(3))
+
+def extract_y_from_main_image_tag(mainimagetag):
+    return int(re.search(r"\d+\.(\d+)", mainimagetag).group(1))
 
 def get_latest_tags(tags, num_versions):
     numericaltags = transform_tags_to_numbers(tags)
-    _,y,_ = split_version(make_image_tag())
+    y = extract_y_from_main_image_tag(make_image_tag())
     latestversions = []
     ycurr = y
     for tags in numericaltags[::-1]:
