@@ -21,6 +21,9 @@ const selectorListCells = [
 ];
 
 export type CollectionAttacherProps = {
+    // A collection ID that should not be visible in the collection attacher component. This is
+    // used when editing a collection to prevent reference cycles.
+    excludedCollectionId: string | null;
     initialEmbeddedCollections: CollectionResponse[];
     onSelectionChange: (collections: CollectionResponse[]) => void;
 };
@@ -30,11 +33,12 @@ function compareNameLowercase(search: string): (item: { name: string }) => boole
 }
 
 function CollectionAttacher({
+    excludedCollectionId,
     initialEmbeddedCollections,
     onSelectionChange,
 }: CollectionAttacherProps) {
     const [search, setSearch] = useState('');
-    const embedded = useEmbeddedCollections(initialEmbeddedCollections);
+    const embedded = useEmbeddedCollections(excludedCollectionId, initialEmbeddedCollections);
     const { attached, detached, attach, detach, hasMore, fetchMore, onSearch } = embedded;
     const { isFetchingMore, fetchMoreError } = embedded;
 
