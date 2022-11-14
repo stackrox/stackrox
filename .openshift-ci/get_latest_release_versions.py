@@ -15,9 +15,6 @@ def is_release_tag(version):
 def filter_tags(rawtags):
     return set([t for t in rawtags if is_release_tag(t)])
 
-def cli_output_to_tags(stdoutput):
-    return stdoutput.decode(encoding="utf-8").splitlines()
-
 def make_image_tag():
     return subprocess.check_output(["make", "--quiet", "--no-print-directory", "tag"]).decode(encoding="utf-8")
 
@@ -37,7 +34,7 @@ def get_latest_tags(tags, num_versions):
 
 # get_latest_release_versions gets the latest patches of the last num_versions major versions via Git CLI
 def get_latest_release_versions(num_versions):
-    rawtags = cli_output_to_tags(subprocess.check_output(["git", "tag", "--list"]))
+    rawtags = subprocess.check_output(["git", "tag", "--list"]).decode(encoding="utf-8").splitlines()
     tags = filter_tags(rawtags)
     return get_latest_tags(tags, num_versions)
 
