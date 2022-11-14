@@ -30,6 +30,6 @@ const (
 
 // Networkpolicyapplicationundorecords holds the Gorm model for Postgres table `networkpolicyapplicationundorecords`.
 type Networkpolicyapplicationundorecords struct {
-	ClusterId  string `gorm:"column:clusterid;type:varchar;primaryKey"`
+	ClusterId  string `gorm:"column:clusterid;type:uuid;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

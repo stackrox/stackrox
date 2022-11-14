@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	io2 "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/mode"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -228,7 +229,7 @@ func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, e
 
 // OutputZip renders a deployment bundle. The deployment bundle can either be
 // written directly into a directory, or as a zipfile to STDOUT.
-func OutputZip(logger logger.Logger, config renderer.Config) error {
+func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 	logger.InfofLn("Generating deployment bundle...")
 
 	common.LogInfoPsp(logger, config.EnablePodSecurityPolicies)
@@ -244,7 +245,7 @@ func OutputZip(logger logger.Logger, config renderer.Config) error {
 		if err != nil {
 			return errors.Wrap(err, "error generating zip file")
 		}
-		_, err = os.Stdout.Write(bytes)
+		_, err = io.Out().Write(bytes)
 		if err != nil {
 			return errors.Wrap(err, "couldn't write zip file")
 		}
@@ -262,7 +263,7 @@ func OutputZip(logger logger.Logger, config renderer.Config) error {
 		logger.InfofLn("Wrote central bundle to %q", outputPath)
 	}
 
-	if err := config.WriteInstructions(os.Stderr); err != nil {
+	if err := config.WriteInstructions(io.ErrOut()); err != nil {
 		return err
 	}
 	return nil

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -79,13 +80,17 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetNamespace(),
 		pgutils.NilOrTime(obj.GetCreatedAt()),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO secrets (Id, Name, ClusterId, ClusterName, Namespace, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
@@ -100,7 +105,7 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 	}
 
 	query = "delete from secrets_files where secrets_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetFiles()))
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetFiles()))
 	return nil
 }
 
@@ -108,10 +113,14 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 
 	values := []interface{}{
 		// parent primary keys start
-		secrets_Id,
+		pgutils.NilOrUUID(secrets_Id),
 		idx,
 		obj.GetType(),
 		pgutils.NilOrTime(obj.GetCert().GetEndDate()),
+	}
+	if pgutils.NilOrUUID(secrets_Id) == nil {
+		utils.Should(errors.Errorf("secrets_Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO secrets_files (secrets_Id, idx, Type, Cert_EndDate) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Type = EXCLUDED.Type, Cert_EndDate = EXCLUDED.Cert_EndDate"
@@ -126,7 +135,7 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 	}
 
 	query = "delete from secrets_files_registries where secrets_Id = $1 AND secrets_files_idx = $2 AND idx >= $3"
-	batch.Queue(query, secrets_Id, idx, len(obj.GetImagePullSecret().GetRegistries()))
+	batch.Queue(query, pgutils.NilOrUUID(secrets_Id), idx, len(obj.GetImagePullSecret().GetRegistries()))
 	return nil
 }
 
@@ -134,10 +143,14 @@ func insertIntoSecretsFilesRegistries(ctx context.Context, batch *pgx.Batch, obj
 
 	values := []interface{}{
 		// parent primary keys start
-		secrets_Id,
+		pgutils.NilOrUUID(secrets_Id),
 		secrets_files_idx,
 		idx,
 		obj.GetName(),
+	}
+	if pgutils.NilOrUUID(secrets_Id) == nil {
+		utils.Should(errors.Errorf("secrets_Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO secrets_files_registries (secrets_Id, secrets_files_idx, idx, Name) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, secrets_files_idx, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, secrets_files_idx = EXCLUDED.secrets_files_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name"
@@ -184,11 +197,11 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetClusterName(),
 
@@ -198,6 +211,10 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
@@ -258,7 +275,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 
 		inputRows = append(inputRows, []interface{}{
 
-			secrets_Id,
+			pgutils.NilOrUUID(secrets_Id),
 
 			idx,
 
@@ -266,6 +283,10 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 
 			pgutils.NilOrTime(obj.GetCert().GetEndDate()),
 		})
+		if pgutils.NilOrUUID(secrets_Id) == nil {
+			utils.Should(errors.Errorf("secrets_Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -317,7 +338,7 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 
 		inputRows = append(inputRows, []interface{}{
 
-			secrets_Id,
+			pgutils.NilOrUUID(secrets_Id),
 
 			secrets_files_idx,
 
@@ -325,6 +346,10 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 
 			obj.GetName(),
 		})
+		if pgutils.NilOrUUID(secrets_Id) == nil {
+			utils.Should(errors.Errorf("secrets_Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {

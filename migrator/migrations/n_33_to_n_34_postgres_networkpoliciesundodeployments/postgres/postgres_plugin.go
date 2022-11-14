@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -78,8 +79,12 @@ func insertIntoNetworkpoliciesundodeployments(ctx context.Context, batch *pgx.Ba
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetDeploymentId(),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
+		utils.Should(errors.Errorf("DeploymentId is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO networkpoliciesundodeployments (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
@@ -116,10 +121,14 @@ func (s *storeImpl) copyFromNetworkpoliciesundodeployments(ctx context.Context, 
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetDeploymentId(),
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
+			utils.Should(errors.Errorf("DeploymentId is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetDeploymentId())

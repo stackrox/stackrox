@@ -34,8 +34,8 @@ const (
 // ProcessBaselines holds the Gorm model for Postgres table `process_baselines`.
 type ProcessBaselines struct {
 	Id              string `gorm:"column:id;type:varchar;primaryKey"`
-	KeyDeploymentId string `gorm:"column:key_deploymentid;type:varchar"`
-	KeyClusterId    string `gorm:"column:key_clusterid;type:varchar;index:processbaselines_sac_filter,type:btree"`
+	KeyDeploymentId string `gorm:"column:key_deploymentid;type:uuid"`
+	KeyClusterId    string `gorm:"column:key_clusterid;type:uuid;index:processbaselines_sac_filter,type:btree"`
 	KeyNamespace    string `gorm:"column:key_namespace;type:varchar;index:processbaselines_sac_filter,type:btree"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 }

@@ -47,17 +47,17 @@ const (
 
 // Pods holds the Gorm model for Postgres table `pods`.
 type Pods struct {
-	Id           string `gorm:"column:id;type:varchar;primaryKey"`
+	Id           string `gorm:"column:id;type:uuid;primaryKey"`
 	Name         string `gorm:"column:name;type:varchar"`
-	DeploymentId string `gorm:"column:deploymentid;type:varchar"`
+	DeploymentId string `gorm:"column:deploymentid;type:uuid"`
 	Namespace    string `gorm:"column:namespace;type:varchar;index:pods_sac_filter,type:btree"`
-	ClusterId    string `gorm:"column:clusterid;type:varchar;index:pods_sac_filter,type:btree"`
+	ClusterId    string `gorm:"column:clusterid;type:uuid;index:pods_sac_filter,type:btree"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
 
 // PodsLiveInstances holds the Gorm model for Postgres table `pods_live_instances`.
 type PodsLiveInstances struct {
-	PodsId      string `gorm:"column:pods_id;type:varchar;primaryKey"`
+	PodsId      string `gorm:"column:pods_id;type:uuid;primaryKey"`
 	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:podsliveinstances_idx,type:btree"`
 	ImageDigest string `gorm:"column:imagedigest;type:varchar"`
 	PodsRef     Pods   `gorm:"foreignKey:pods_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`

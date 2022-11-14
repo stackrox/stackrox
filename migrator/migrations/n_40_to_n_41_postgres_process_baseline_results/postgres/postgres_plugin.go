@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -79,10 +80,14 @@ func insertIntoProcessBaselineResults(ctx context.Context, batch *pgx.Batch, obj
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetDeploymentId(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
+		utils.Should(errors.Errorf("DeploymentId is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO process_baseline_results (DeploymentId, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
@@ -123,14 +128,18 @@ func (s *storeImpl) copyFromProcessBaselineResults(ctx context.Context, tx pgx.T
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetDeploymentId(),
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetNamespace(),
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
+			utils.Should(errors.Errorf("DeploymentId is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetDeploymentId())

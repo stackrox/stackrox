@@ -56,9 +56,9 @@ const (
 
 // Nodes holds the Gorm model for Postgres table `nodes`.
 type Nodes struct {
-	Id                      string            `gorm:"column:id;type:varchar;primaryKey"`
+	Id                      string            `gorm:"column:id;type:uuid;primaryKey"`
 	Name                    string            `gorm:"column:name;type:varchar"`
-	ClusterId               string            `gorm:"column:clusterid;type:varchar;index:nodes_sac_filter,type:hash"`
+	ClusterId               string            `gorm:"column:clusterid;type:uuid;index:nodes_sac_filter,type:hash"`
 	ClusterName             string            `gorm:"column:clustername;type:varchar"`
 	Labels                  map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations             map[string]string `gorm:"column:annotations;type:jsonb"`
@@ -78,7 +78,7 @@ type Nodes struct {
 
 // NodesTaints holds the Gorm model for Postgres table `nodes_taints`.
 type NodesTaints struct {
-	NodesId     string              `gorm:"column:nodes_id;type:varchar;primaryKey"`
+	NodesId     string              `gorm:"column:nodes_id;type:uuid;primaryKey"`
 	Idx         int                 `gorm:"column:idx;type:integer;primaryKey;index:nodestaints_idx,type:btree"`
 	Key         string              `gorm:"column:key;type:varchar"`
 	Value       string              `gorm:"column:value;type:varchar"`

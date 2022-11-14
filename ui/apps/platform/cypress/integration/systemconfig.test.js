@@ -6,6 +6,7 @@ import {
     visitSystemConfigurationFromLeftNav,
     visitSystemConfigurationWithStaticResponseForPermissions,
 } from '../helpers/systemConfig';
+import { getRegExpForTitleWithBranding } from '../helpers/title';
 
 function editBaseConfig(type) {
     cy.get(selectors.pageHeader.editButton).click();
@@ -53,6 +54,12 @@ describe('System Configuration', () => {
         cy.get(selectors.header.widget).should('exist');
         cy.get(selectors.footer.widget).should('exist');
         cy.get(selectors.loginNotice.widget).should('exist');
+    });
+
+    it('should have title', () => {
+        visitSystemConfiguration();
+
+        cy.title().should('match', getRegExpForTitleWithBranding('System Configuration'));
     });
 
     it('should not render Edit button if READ_ACCESS to resource', () => {

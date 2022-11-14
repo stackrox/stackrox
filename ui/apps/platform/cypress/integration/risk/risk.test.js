@@ -14,6 +14,7 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 describe('Risk page', () => {
     withAuth();
@@ -25,8 +26,10 @@ describe('Risk page', () => {
             cy.get(RiskPageSelectors.risk).should('have.class', 'pf-m-current');
         });
 
-        it('should have table columns', () => {
+        it('should have title and table column headings', () => {
             visitRiskDeployments();
+
+            cy.title().should('match', getRegExpForTitleWithBranding('Risk'));
 
             cy.get('.rt-th:contains("Name")');
             cy.get('.rt-th:contains("Created")');

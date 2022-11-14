@@ -36,7 +36,7 @@ func (o *mockScanner) KubernetesScan(version string) (map[string][]*storage.Embe
 			continue
 		}
 		for _, node := range cve.nvdCVE.Configurations.Nodes {
-			embeddedCve, err := utils.NvdCVEToEmbeddedCVE(cve.nvdCVE, utils.K8s)
+			embeddedCve, err := utils.NVDCVEToEmbeddedCVE(cve.nvdCVE, utils.K8s)
 			if err != nil {
 				return nil, err
 			}
@@ -65,7 +65,7 @@ func (o *mockScanner) OpenShiftScan(version string) ([]*storage.EmbeddedVulnerab
 			continue
 		}
 		for _, node := range cve.nvdCVE.Configurations.Nodes {
-			embeddedCve, err := utils.NvdCVEToEmbeddedCVE(cve.nvdCVE, utils.OpenShift)
+			embeddedCve, err := utils.NVDCVEToEmbeddedCVE(cve.nvdCVE, utils.OpenShift)
 			if err != nil {
 				return nil, err
 			}

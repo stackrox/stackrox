@@ -51,7 +51,7 @@ const (
 // NodeComponentEdges holds the Gorm model for Postgres table `node_component_edges`.
 type NodeComponentEdges struct {
 	Id              string `gorm:"column:id;type:varchar;primaryKey"`
-	NodeId          string `gorm:"column:nodeid;type:varchar;index:nodecomponentedges_nodeid,type:hash"`
+	NodeId          string `gorm:"column:nodeid;type:uuid;index:nodecomponentedges_nodeid,type:hash"`
 	NodeComponentId string `gorm:"column:nodecomponentid;type:varchar;index:nodecomponentedges_nodecomponentid,type:hash"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 	NodesRef        Nodes  `gorm:"foreignKey:nodeid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

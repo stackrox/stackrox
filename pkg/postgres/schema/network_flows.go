@@ -48,5 +48,5 @@ type NetworkFlows struct {
 	PropsDstPort       uint32                         `gorm:"column:props_dstport;type:integer"`
 	PropsL4Protocol    storage.L4Protocol             `gorm:"column:props_l4protocol;type:integer"`
 	LastSeenTimestamp  *time.Time                     `gorm:"column:lastseentimestamp;type:timestamp"`
-	ClusterID          string                         `gorm:"column:clusterid;type:varchar;index:network_flows_cluster,type:btree;index:network_flows_src,type:btree;index:network_flows_dst,type:btree"`
+	ClusterID          string                         `gorm:"column:clusterid;type:uuid;index:network_flows_cluster,type:btree;index:network_flows_src,type:btree;index:network_flows_dst,type:btree"`
 }

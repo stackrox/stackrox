@@ -34,6 +34,7 @@ import (
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
+    "github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
@@ -87,6 +88,8 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
         {{- range $field := $schema.DBColumnFields -}}
         {{- if eq $field.DataType "datetime" }}
         pgutils.NilOrTime({{$field.Getter "obj"}}),
+        {{- else if eq $field.SQLType "uuid" }}
+        pgutils.NilOrUUID({{$field.Getter "obj"}}),
         {{- else }}
         {{$field.Getter "obj"}},{{end}}
         {{- end}}

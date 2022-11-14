@@ -46,9 +46,9 @@ const (
 
 // Secrets holds the Gorm model for Postgres table `secrets`.
 type Secrets struct {
-	Id          string     `gorm:"column:id;type:varchar;primaryKey"`
+	Id          string     `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string     `gorm:"column:name;type:varchar"`
-	ClusterId   string     `gorm:"column:clusterid;type:varchar;index:secrets_sac_filter,type:btree"`
+	ClusterId   string     `gorm:"column:clusterid;type:uuid;index:secrets_sac_filter,type:btree"`
 	ClusterName string     `gorm:"column:clustername;type:varchar"`
 	Namespace   string     `gorm:"column:namespace;type:varchar;index:secrets_sac_filter,type:btree"`
 	CreatedAt   *time.Time `gorm:"column:createdat;type:timestamp"`
@@ -57,7 +57,7 @@ type Secrets struct {
 
 // SecretsFiles holds the Gorm model for Postgres table `secrets_files`.
 type SecretsFiles struct {
-	SecretsId   string             `gorm:"column:secrets_id;type:varchar;primaryKey"`
+	SecretsId   string             `gorm:"column:secrets_id;type:uuid;primaryKey"`
 	Idx         int                `gorm:"column:idx;type:integer;primaryKey;index:secretsfiles_idx,type:btree"`
 	Type        storage.SecretType `gorm:"column:type;type:integer"`
 	CertEndDate *time.Time         `gorm:"column:cert_enddate;type:timestamp"`
@@ -66,7 +66,7 @@ type SecretsFiles struct {
 
 // SecretsFilesRegistries holds the Gorm model for Postgres table `secrets_files_registries`.
 type SecretsFilesRegistries struct {
-	SecretsId       string       `gorm:"column:secrets_id;type:varchar;primaryKey"`
+	SecretsId       string       `gorm:"column:secrets_id;type:uuid;primaryKey"`
 	SecretsFilesIdx int          `gorm:"column:secrets_files_idx;type:integer;primaryKey"`
 	Idx             int          `gorm:"column:idx;type:integer;primaryKey;index:secretsfilesregistries_idx,type:btree"`
 	Name            string       `gorm:"column:name;type:varchar"`

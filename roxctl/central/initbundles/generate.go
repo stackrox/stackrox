@@ -33,7 +33,7 @@ func generateInitBundle(cliEnvironment environment.Environment, name string, out
 	files := make([]*os.File, 0, len(outputs))
 	defer func() {
 		for _, f := range files {
-			if f != nil && f != os.Stdout {
+			if f != nil && f != os.Stdout { //nolint:forbidigo // TODO(ROX-13473)
 				name := f.Name()
 				_ = f.Close()
 				utils.Should(os.Remove(name))
@@ -44,7 +44,7 @@ func generateInitBundle(cliEnvironment environment.Environment, name string, out
 	// First try to open all files. Since creating a bundle has side effects, let's not attempt to do so
 	// before we have high confidence that the writing will succeed.
 	for _, out := range outputs {
-		outFile := os.Stdout
+		outFile := os.Stdout //nolint:forbidigo // TODO(ROX-13473)
 		if out.filename != "" {
 			outFile, err = os.OpenFile(out.filename, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 			if err != nil {
@@ -77,7 +77,7 @@ func generateInitBundle(cliEnvironment environment.Environment, name string, out
 		if _, err := outFile.Write(out.format(resp)); err != nil {
 			return errors.Wrapf(err, "writing init bundle to %s", stringutils.FirstNonEmpty(out.filename, "<stdout>"))
 		}
-		if outFile != os.Stdout {
+		if outFile != os.Stdout { //nolint:forbidigo // TODO(ROX-13473)
 			cliEnvironment.Logger().InfofLn("The newly generated init bundle has been written to file %q.", outFile.Name())
 			if err := outFile.Close(); err != nil {
 				return errors.Wrapf(err, "closing output file %q", outFile.Name())

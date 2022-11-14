@@ -1406,7 +1406,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"imageScope: VulnReqImageScope",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_CVEs", []string{
-		"ids: [String!]!",
+		"cves: [String!]!",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope", []string{
 		"globalScope: VulnerabilityRequest_Scope_Global",
@@ -15190,8 +15190,8 @@ func (resolver *Resolver) wrapVulnerabilityRequest_CVEsesWithContext(ctx context
 	return output, nil
 }
 
-func (resolver *vulnerabilityRequest_CVEsResolver) Ids(ctx context.Context) []string {
-	value := resolver.data.GetIds()
+func (resolver *vulnerabilityRequest_CVEsResolver) Cves(ctx context.Context) []string {
+	value := resolver.data.GetCves()
 	return value
 }
 

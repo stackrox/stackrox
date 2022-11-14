@@ -52,7 +52,7 @@ message Timing {
     int64  nanos      = 3;
 }
 
-// Next tag: 24.
+// Next tag: 26.
 message SensorEvent {
     // These fields may be duplicated in the individual events, but avoid the need to branch all the time
     string         id                           = 1;
@@ -68,6 +68,7 @@ message SensorEvent {
         storage.NamespaceMetadata namespace         = 6;
         storage.Secret            secret            = 7;
         storage.Node              node              = 9;
+        storage.NodeScanV2        node_scan_v2      = 25;
         storage.ServiceAccount    service_account   = 14;
         storage.K8sRole           role              = 15;
         storage.K8sRoleBinding    binding           = 16;

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -441,7 +442,7 @@ var alertUnrestrictedSACSearchTestCases = map[string]alertSACSearchResult{
 				testconsts.NamespaceB: 3,
 				testconsts.NamespaceC: 2,
 			},
-			"prod cluster": {"stackrox": 1},
+			fixtureconsts.Cluster1: {"stackrox": 1},
 		},
 	},
 	"full read-write access should see all alerts": {
@@ -455,7 +456,7 @@ var alertUnrestrictedSACSearchTestCases = map[string]alertSACSearchResult{
 				testconsts.NamespaceB: 3,
 				testconsts.NamespaceC: 2,
 			},
-			"prod cluster": {"stackrox": 1},
+			fixtureconsts.Cluster1: {"stackrox": 1},
 		},
 	},
 }

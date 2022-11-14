@@ -30,7 +30,7 @@ var (
 			legacyStore := legacy.NewClusterStore(databases.PkgRocksDB)
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
-					"moving network_baselines from rocksdb to postgres")
+					"moving network_flows from rocksdb to postgres")
 			}
 			return nil
 		},

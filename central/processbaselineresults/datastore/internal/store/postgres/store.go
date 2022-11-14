@@ -87,8 +87,8 @@ func insertIntoProcessBaselineResults(ctx context.Context, batch *pgx.Batch, obj
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetDeploymentId(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		serialized,
 	}
@@ -131,9 +131,9 @@ func (s *storeImpl) copyFromProcessBaselineResults(ctx context.Context, tx pgx.T
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetDeploymentId(),
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetNamespace(),
 

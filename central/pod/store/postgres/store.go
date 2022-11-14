@@ -87,11 +87,11 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
-		obj.GetDeploymentId(),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		obj.GetNamespace(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
 	}
 
@@ -107,7 +107,7 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 	}
 
 	query = "delete from pods_live_instances where pods_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetLiveInstances()))
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetLiveInstances()))
 	return nil
 }
 
@@ -115,7 +115,7 @@ func insertIntoPodsLiveInstances(ctx context.Context, batch *pgx.Batch, obj *sto
 
 	values := []interface{}{
 		// parent primary keys start
-		pods_Id,
+		pgutils.NilOrUUID(pods_Id),
 		idx,
 		obj.GetImageDigest(),
 	}
@@ -162,15 +162,15 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
-			obj.GetDeploymentId(),
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
 
 			obj.GetNamespace(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			serialized,
 		})
@@ -232,7 +232,7 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 
 		inputRows = append(inputRows, []interface{}{
 
-			pods_Id,
+			pgutils.NilOrUUID(pods_Id),
 
 			idx,
 

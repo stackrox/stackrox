@@ -698,9 +698,6 @@ func (resolver *clusterResolver) clusterScopeContext(ctx context.Context) contex
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		resolver.ctx = ctx
-	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_CLUSTERS,
 		ID:    resolver.data.GetId(),

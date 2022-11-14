@@ -144,7 +144,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		return nil, err
 	}
 	if enrichResult.ImageUpdated {
-		img.Id = utils.GetImageID(img)
+		img.Id = utils.GetSHA(img)
 		if img.GetId() != "" {
 			if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
 				return nil, err
@@ -176,7 +176,7 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 	for _, idx := range updatedIndices {
 		img := images[idx]
-		img.Id = utils.GetImageID(img)
+		img.Id = utils.GetSHA(img)
 		if err := s.riskManager.CalculateRiskAndUpsertImage(images[idx]); err != nil {
 			return nil, err
 		}

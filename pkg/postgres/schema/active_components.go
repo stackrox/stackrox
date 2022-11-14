@@ -54,7 +54,7 @@ const (
 // ActiveComponents holds the Gorm model for Postgres table `active_components`.
 type ActiveComponents struct {
 	Id           string `gorm:"column:id;type:varchar;primaryKey"`
-	DeploymentId string `gorm:"column:deploymentid;type:varchar;index:activecomponents_deploymentid,type:hash"`
+	DeploymentId string `gorm:"column:deploymentid;type:uuid;index:activecomponents_deploymentid,type:hash"`
 	ComponentId  string `gorm:"column:componentid;type:varchar"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }

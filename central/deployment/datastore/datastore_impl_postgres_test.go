@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
@@ -116,9 +117,9 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	img3 := fixtures.GetImageWithUniqueComponents(5)
 	img3.Id = uuid.NewV4().String()
 	img3.Scan.OperatingSystem = "saturn"
-	dep1 := fixtures.GetDeploymentWithImage("c1", "n1", img1)
-	dep2 := fixtures.GetDeploymentWithImage("c1", "n2", img2)
-	dep3 := fixtures.GetDeploymentWithImage("c2", "n1", img3)
+	dep1 := fixtures.GetDeploymentWithImage(testconsts.Cluster1, "n1", img1)
+	dep2 := fixtures.GetDeploymentWithImage(testconsts.Cluster1, "n2", img2)
+	dep3 := fixtures.GetDeploymentWithImage(testconsts.Cluster2, "n1", img3)
 
 	// Upsert images.
 	s.NoError(s.imageDatastore.UpsertImage(ctx, img1))

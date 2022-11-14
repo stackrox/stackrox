@@ -1,6 +1,6 @@
 /* eslint-disable no-nested-ternary */
 import React, { ReactElement, useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
@@ -21,11 +21,7 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import { actions as authActions, types as authActionTypes } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
-import {
-    actions as roleActions,
-    types as roleActionTypes,
-    getHasReadWritePermission,
-} from 'reducers/roles';
+import { actions as roleActions, types as roleActionTypes } from 'reducers/roles';
 import { AuthProvider } from 'services/AuthService';
 
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
@@ -39,6 +35,8 @@ import AuthProvidersList from './AuthProvidersList';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
+import usePermissions from '../../../hooks/usePermissions';
+import AccessControlNoPermission from '../AccessControlNoPermission';
 
 const entityType = 'AUTH_PROVIDER';
 
@@ -65,6 +63,9 @@ function getNewAuthProviderObj(type) {
 }
 
 function AuthProviders(): ReactElement {
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasReadAccessForPage = hasReadAccess('Role') && hasReadAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -78,18 +79,27 @@ function AuthProviders(): ReactElement {
         groups,
         isFetchingAuthProviders,
         isFetchingRoles,
-        userRolePermissions,
         availableProviderTypes,
     } = useSelector(authProviderState);
-    const hasWriteAccess = getHasReadWritePermission('Access', userRolePermissions);
 
     const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
 
     useEffect(() => {
-        dispatch(authActions.fetchAuthProviders.request());
-        dispatch(roleActions.fetchRoles.request());
-        dispatch(groupActions.fetchGroups.request());
-    }, [dispatch]);
+        if (hasReadAccessForPage) {
+            dispatch(authActions.fetchAuthProviders.request());
+            dispatch(roleActions.fetchRoles.request());
+            dispatch(groupActions.fetchGroups.request());
+        }
+    }, [dispatch, hasReadAccessForPage]);
+
+    // Return "no access" page immediately if user doesn't have enough permissions.
+    if (!hasReadAccessForPage) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="auth providers" entityType={entityType} />
+            </>
+        );
+    }
 
     function onToggleCreateMenu(isOpen) {
         setIsCreateMenuOpen(isOpen);
@@ -152,7 +162,7 @@ function AuthProviders(): ReactElement {
                             </AccessControlDescription>
                         }
                         actionComponent={
-                            hasWriteAccess && (
+                            hasWriteAccessForPage && (
                                 <Dropdown
                                     className="auth-provider-dropdown"
                                     onSelect={onClickCreate}
@@ -214,7 +224,7 @@ function AuthProviders(): ReactElement {
                     />
                 ) : (
                     <AuthProviderForm
-                        isActionable={hasWriteAccess}
+                        isActionable={hasWriteAccessForPage}
                         action={action}
                         selectedAuthProvider={selectedAuthProvider ?? getNewAuthProviderObj(type)}
                         onClickCancel={onClickCancel}

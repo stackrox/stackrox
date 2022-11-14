@@ -1,6 +1,7 @@
 package schema
 
 //go:generate pg-schema-migration-helper --type=storage.TestSingleKeyStruct --search-category SEARCH_UNSET --get-all-func
+//go:generate pg-schema-migration-helper --type=storage.TestSingleUUIDKeyStruct --search-category SEARCH_UNSET --get-all-func
 //go:generate pg-schema-migration-helper --type=storage.TestMultiKeyStruct --search-category SEARCH_UNSET
 //go:generate pg-schema-migration-helper --type=storage.TestParent4 --search-category 72 --references storage.TestGrandparent --search-scope 61,74
 //go:generate pg-schema-migration-helper --type=storage.TestParent3 --search-category 69 --references storage.TestGrandparent

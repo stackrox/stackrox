@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -79,16 +80,16 @@ func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.D
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		obj.GetType(),
 		obj.GetNamespace(),
-		obj.GetNamespaceId(),
+		pgutils.NilOrUUID(obj.GetNamespaceId()),
 		obj.GetOrchestratorComponent(),
 		obj.GetLabels(),
 		obj.GetPodLabels(),
 		pgutils.NilOrTime(obj.GetCreated()),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetAnnotations(),
 		obj.GetPriority(),
@@ -97,6 +98,10 @@ func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.D
 		obj.GetServiceAccountPermissionLevel(),
 		obj.GetRiskScore(),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO deployments (Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, serialized = EXCLUDED.serialized"
@@ -111,7 +116,7 @@ func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.D
 	}
 
 	query = "delete from deployments_containers where deployments_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetContainers()))
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetContainers()))
 	for childIdx, child := range obj.GetPorts() {
 		if err := insertIntoDeploymentsPorts(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
@@ -119,7 +124,7 @@ func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.D
 	}
 
 	query = "delete from deployments_ports where deployments_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetPorts()))
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetPorts()))
 	return nil
 }
 
@@ -127,7 +132,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		idx,
 		obj.GetImage().GetId(),
 		obj.GetImage().GetName().GetRegistry(),
@@ -143,6 +148,10 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 		obj.GetResources().GetMemoryMbRequest(),
 		obj.GetResources().GetMemoryMbLimit(),
 	}
+	if pgutils.NilOrUUID(deployments_Id) == nil {
+		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		return nil
+	}
 
 	finalStr := "INSERT INTO deployments_containers (deployments_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
 	batch.Queue(finalStr, values...)
@@ -156,7 +165,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 	}
 
 	query = "delete from deployments_containers_envs where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	batch.Queue(query, deployments_Id, idx, len(obj.GetConfig().GetEnv()))
+	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetConfig().GetEnv()))
 	for childIdx, child := range obj.GetVolumes() {
 		if err := insertIntoDeploymentsContainersVolumes(ctx, batch, child, deployments_Id, idx, childIdx); err != nil {
 			return err
@@ -164,7 +173,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 	}
 
 	query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	batch.Queue(query, deployments_Id, idx, len(obj.GetVolumes()))
+	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetVolumes()))
 	for childIdx, child := range obj.GetSecrets() {
 		if err := insertIntoDeploymentsContainersSecrets(ctx, batch, child, deployments_Id, idx, childIdx); err != nil {
 			return err
@@ -172,7 +181,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 	}
 
 	query = "delete from deployments_containers_secrets where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	batch.Queue(query, deployments_Id, idx, len(obj.GetSecrets()))
+	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetSecrets()))
 	return nil
 }
 
@@ -180,12 +189,16 @@ func insertIntoDeploymentsContainersEnvs(ctx context.Context, batch *pgx.Batch, 
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		deployments_containers_idx,
 		idx,
 		obj.GetKey(),
 		obj.GetValue(),
 		obj.GetEnvVarSource(),
+	}
+	if pgutils.NilOrUUID(deployments_Id) == nil {
+		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO deployments_containers_envs (deployments_Id, deployments_containers_idx, idx, Key, Value, EnvVarSource) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, EnvVarSource = EXCLUDED.EnvVarSource"
@@ -198,7 +211,7 @@ func insertIntoDeploymentsContainersVolumes(ctx context.Context, batch *pgx.Batc
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		deployments_containers_idx,
 		idx,
 		obj.GetName(),
@@ -206,6 +219,10 @@ func insertIntoDeploymentsContainersVolumes(ctx context.Context, batch *pgx.Batc
 		obj.GetDestination(),
 		obj.GetReadOnly(),
 		obj.GetType(),
+	}
+	if pgutils.NilOrUUID(deployments_Id) == nil {
+		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO deployments_containers_volumes (deployments_Id, deployments_containers_idx, idx, Name, Source, Destination, ReadOnly, Type) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Source = EXCLUDED.Source, Destination = EXCLUDED.Destination, ReadOnly = EXCLUDED.ReadOnly, Type = EXCLUDED.Type"
@@ -218,11 +235,15 @@ func insertIntoDeploymentsContainersSecrets(ctx context.Context, batch *pgx.Batc
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		deployments_containers_idx,
 		idx,
 		obj.GetName(),
 		obj.GetPath(),
+	}
+	if pgutils.NilOrUUID(deployments_Id) == nil {
+		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO deployments_containers_secrets (deployments_Id, deployments_containers_idx, idx, Name, Path) VALUES($1, $2, $3, $4, $5) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Path = EXCLUDED.Path"
@@ -235,11 +256,15 @@ func insertIntoDeploymentsPorts(ctx context.Context, batch *pgx.Batch, obj *stor
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		idx,
 		obj.GetContainerPort(),
 		obj.GetProtocol(),
 		obj.GetExposure(),
+	}
+	if pgutils.NilOrUUID(deployments_Id) == nil {
+		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO deployments_ports (deployments_Id, idx, ContainerPort, Protocol, Exposure) VALUES($1, $2, $3, $4, $5) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure"
@@ -254,7 +279,7 @@ func insertIntoDeploymentsPorts(ctx context.Context, batch *pgx.Batch, obj *stor
 	}
 
 	query = "delete from deployments_ports_exposure_infos where deployments_Id = $1 AND deployments_ports_idx = $2 AND idx >= $3"
-	batch.Queue(query, deployments_Id, idx, len(obj.GetExposureInfos()))
+	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetExposureInfos()))
 	return nil
 }
 
@@ -262,7 +287,7 @@ func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, batch *pgx.Bat
 
 	values := []interface{}{
 		// parent primary keys start
-		deployments_Id,
+		pgutils.NilOrUUID(deployments_Id),
 		deployments_ports_idx,
 		idx,
 		obj.GetLevel(),
@@ -271,6 +296,10 @@ func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, batch *pgx.Bat
 		obj.GetNodePort(),
 		obj.GetExternalIps(),
 		obj.GetExternalHostnames(),
+	}
+	if pgutils.NilOrUUID(deployments_Id) == nil {
+		utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO deployments_ports_exposure_infos (deployments_Id, deployments_ports_idx, idx, Level, ServiceName, ServicePort, NodePort, ExternalIps, ExternalHostnames) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(deployments_Id, deployments_ports_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_ports_idx = EXCLUDED.deployments_ports_idx, idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
@@ -339,7 +368,7 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
@@ -347,7 +376,7 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...
 
 			obj.GetNamespace(),
 
-			obj.GetNamespaceId(),
+			pgutils.NilOrUUID(obj.GetNamespaceId()),
 
 			obj.GetOrchestratorComponent(),
 
@@ -357,7 +386,7 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...
 
 			pgutils.NilOrTime(obj.GetCreated()),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetClusterName(),
 
@@ -375,6 +404,10 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
@@ -460,7 +493,7 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			idx,
 
@@ -490,6 +523,10 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx
 
 			obj.GetResources().GetMemoryMbLimit(),
 		})
+		if pgutils.NilOrUUID(deployments_Id) == nil {
+			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -551,7 +588,7 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx pg
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			deployments_containers_idx,
 
@@ -563,6 +600,10 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx pg
 
 			obj.GetEnvVarSource(),
 		})
+		if pgutils.NilOrUUID(deployments_Id) == nil {
+			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -614,7 +655,7 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			deployments_containers_idx,
 
@@ -630,6 +671,10 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 
 			obj.GetType(),
 		})
+		if pgutils.NilOrUUID(deployments_Id) == nil {
+			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -675,7 +720,7 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			deployments_containers_idx,
 
@@ -685,6 +730,10 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 
 			obj.GetPath(),
 		})
+		if pgutils.NilOrUUID(deployments_Id) == nil {
+			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -730,7 +779,7 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx pgx.Tx, dep
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			idx,
 
@@ -740,6 +789,10 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx pgx.Tx, dep
 
 			obj.GetExposure(),
 		})
+		if pgutils.NilOrUUID(deployments_Id) == nil {
+			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -801,7 +854,7 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 
 		inputRows = append(inputRows, []interface{}{
 
-			deployments_Id,
+			pgutils.NilOrUUID(deployments_Id),
 
 			deployments_ports_idx,
 
@@ -819,6 +872,10 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 
 			obj.GetExternalHostnames(),
 		})
+		if pgutils.NilOrUUID(deployments_Id) == nil {
+			utils.Should(errors.Errorf("deployments_Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {

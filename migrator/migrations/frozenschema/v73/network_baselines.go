@@ -33,8 +33,8 @@ const (
 
 // NetworkBaselines holds the Gorm model for Postgres table `network_baselines`.
 type NetworkBaselines struct {
-	DeploymentId string `gorm:"column:deploymentid;type:varchar;primaryKey"`
-	ClusterId    string `gorm:"column:clusterid;type:varchar;index:networkbaselines_sac_filter,type:btree"`
+	DeploymentId string `gorm:"column:deploymentid;type:uuid;primaryKey"`
+	ClusterId    string `gorm:"column:clusterid;type:uuid;index:networkbaselines_sac_filter,type:btree"`
 	Namespace    string `gorm:"column:namespace;type:varchar;index:networkbaselines_sac_filter,type:btree"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
