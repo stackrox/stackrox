@@ -178,7 +178,7 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 		}
 
 		permissionSet := &storage.PermissionSet{
-			Id:               rolePkg.EnsureValidPermissionSetID(attributes.idSuffix),
+			Id:               attributes.getID(),
 			Name:             role.Name,
 			Description:      role.Description,
 			ResourceToAccess: resourceToAccess,
