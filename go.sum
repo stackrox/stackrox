@@ -207,8 +207,6 @@ github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRF
 github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d/go.mod h1:rBZYJk541a8SKzHPHnH3zbiI+7dagKZ0cgpgrD7Fyho=
 github.com/alexflint/go-filemutex v0.0.0-20171022225611-72bdc8eae2ae/go.mod h1:CgnQgUtFrFz9mxFNtED3jI5tLDjKlOM+oUF/sTk6ps0=
-github.com/amplitude/analytics-go v0.0.10-0.20221027231036-9944eaeec86f h1:iPBse6W0UmIJxESYXWKitKTbwtsXJ1gOcWoYtk5WL6E=
-github.com/amplitude/analytics-go v0.0.10-0.20221027231036-9944eaeec86f/go.mod h1:usOqpc3xyDqxJyjGKWVIDbuVvk2H93KX1Skir/TM0nA=
 github.com/amplitude/analytics-go v0.0.11 h1:AiNzIGfT9qFLsor4TM5prOG8xUwORDgHx5VRJwBh54I=
 github.com/amplitude/analytics-go v0.0.11/go.mod h1:usOqpc3xyDqxJyjGKWVIDbuVvk2H93KX1Skir/TM0nA=
 github.com/andybalholm/brotli v1.0.0/go.mod h1:loMXtMfwqflxFJPmdbJO0a3KNoPuLBgiu3qAvBg8x/Y=
