@@ -40,8 +40,8 @@ var (
 			// "/v1.CollectionService/AutoCompleteCollection", TODO ROX-12616
 			"/v1.CollectionService/CreateCollection",
 			"/v1.CollectionService/DeleteCollection",
-			// "/v1.CollectionService/DryRunCollection", TODO ROX-13031
 			"/v1.CollectionService/UpdateCollection",
+			"/v1.CollectionService/DryRunCollection",
 		},
 	}))
 )
@@ -81,9 +81,19 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Id field should be set when requesting a collection")
+		return nil, errors.Wrap(errox.InvalidArgs, "Id should be set when requesting a collection")
 	}
-	return s.getCollection(ctx, request.Id)
+
+	resp, err := s.getCollection(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	// if request.GetOptions().GetWithMatches() {
+	// 	 TODO match deployments for response
+	// }
+
+	return resp, err
 }
 
 func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetCollectionResponse, error) {
@@ -238,5 +248,33 @@ func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListColle
 
 	return &v1.ListCollectionsResponse{
 		Collections: collections,
+	}, nil
+}
+
+func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCollectionRequest) (*v1.DryRunCollectionResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	}
+
+	collection, err := collectionRequestToCollection(ctx, request, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	if request.GetId() == "" {
+		err = s.datastore.DryRunAddCollection(ctx, collection)
+	} else {
+		err = s.datastore.DryRunUpdateCollection(ctx, collection)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// if !request.GetOptions().GetSkipDeploymentMatching() {
+	// 	TODO match deployments for response
+	// }
+
+	return &v1.DryRunCollectionResponse{
+		Deployments: nil,
 	}, nil
 }
