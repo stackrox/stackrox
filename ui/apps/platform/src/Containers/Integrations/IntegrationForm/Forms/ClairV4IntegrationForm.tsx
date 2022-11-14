@@ -21,11 +21,11 @@ export const validationSchema = yup.object().shape({
         .of(yup.string().trim().oneOf(['SCANNER']))
         .min(1, 'Must have at least one type selected')
         .required('A category is required'),
-    clairv4: yup.object().shape({
+    clairV4: yup.object().shape({
         endpoint: yup.string().trim().required('An endpoint is required').min(1),
         insecure: yup.bool(),
     }),
-    type: yup.string().matches(/clairv4/),
+    type: yup.string().matches(/clairV4/),
 });
 
 export const defaultValues: ClairV4ImageIntegration = {
@@ -97,7 +97,7 @@ function ClairV4IntegrationForm({
                     <FormLabelGroup
                         label="Endpoint"
                         isRequired
-                        fieldId="clairv4.endpoint"
+                        fieldId="clairV4.endpoint"
                         touched={touched}
                         errors={errors}
                     >
@@ -111,7 +111,7 @@ function ClairV4IntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup fieldId="clairv4.insecure" touched={touched} errors={errors}>
+                    <FormLabelGroup fieldId="clairV4.insecure" touched={touched} errors={errors}>
                         <Checkbox
                             label="Disable TLS certificate validation (insecure)"
                             id="clairV4.insecure"
