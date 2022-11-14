@@ -81,7 +81,7 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Id field should be set when requesting a collection")
+		return nil, errors.Wrap(errox.InvalidArgs, "Id should be set when requesting a collection")
 	}
 
 	resp, err := s.getCollection(ctx, request.GetId())
@@ -253,7 +253,7 @@ func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListColle
 
 func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCollectionRequest) (*v1.DryRunCollectionResponse, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, errors.New("Resource collections is not enabled")
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 
 	collection, err := collectionRequestToCollection(ctx, request, request.GetId())
