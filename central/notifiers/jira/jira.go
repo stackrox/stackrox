@@ -68,11 +68,11 @@ type jira struct {
 func isPriorityNeeded(client *jiraLib.Client, project, issueType string) (bool, error) {
 	cmi, _, err := client.Issue.GetCreateMeta(project)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "could not get meta information for JIRA project %q", project)
 	}
 	proj := cmi.GetProjectWithKey(project)
 	if proj == nil {
-		return false, fmt.Errorf("could not find project %q", project)
+		return false, errors.Errorf("could not find project %q", project)
 	}
 	var validIssues []string
 	for _, issue := range proj.IssueTypes {
@@ -85,7 +85,7 @@ func isPriorityNeeded(client *jiraLib.Client, project, issueType string) (bool, 
 		_, hasPriority := issue.Fields["priority"]
 		return hasPriority, nil
 	}
-	return false, fmt.Errorf("could not find issue type %q in project %q. Valid issue types are: %+v", issueType, project, validIssues)
+	return false, errors.Errorf("could not find issue type %q in project %q. Valid issue types are: %+v", issueType, project, validIssues)
 }
 
 func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
@@ -244,11 +244,11 @@ func newJira(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore
 
 	client, err := jiraLib.NewClient(httpClient, url)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not create JIRA client")
 	}
 	prios, _, err := client.Priority.GetList()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not get the priority list")
 	}
 	jiraConf := notifier.GetJira()
 
@@ -269,7 +269,7 @@ func newJira(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore
 
 	needsPriority, err := isPriorityNeeded(client, notifier.GetLabelDefault(), jiraConf.GetIssueType())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "could not determine if priority is a required field for project %q issue type %q", notifier.GetLabelDefault(), jiraConf.GetIssueType())
 	}
 
 	// marshal unknowns
