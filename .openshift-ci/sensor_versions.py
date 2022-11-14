@@ -40,8 +40,8 @@ def get_latest_tags(tags, num_versions):
     top_major_versions = sorted(list(top_patch_version.keys()), reverse=True)[:num_versions]
     return [t + '.' + str(top_patch_version[t]) for t in top_major_versions]
 
-# get_last_sensor_versions_from_git_tags_cli gets the latest patches of the last num_versions major versions via Git CLI
-def get_last_sensor_versions_from_git_tags_cli(num_versions):
+# get_latest_release_versions gets the latest patches of the last num_versions major versions via Git CLI
+def get_latest_release_versions(num_versions):
     rawtags = cli_output_to_tags(subprocess.check_output(["git", "tag", "--list"]))
     tags = filter_git_cli_tags(rawtags)
     return get_latest_tags(tags, num_versions)
