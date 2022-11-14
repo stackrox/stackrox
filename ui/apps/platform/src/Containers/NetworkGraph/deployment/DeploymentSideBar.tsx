@@ -2,7 +2,6 @@ import React from 'react';
 import {
     Alert,
     AlertVariant,
-    Badge,
     Bullseye,
     Flex,
     FlexItem,
@@ -27,6 +26,7 @@ import {
     getNumInternalFlows,
 } from '../utils/networkGraphUtils';
 
+import { DeploymentIcon } from '../common/NetworkGraphIcons';
 import DeploymentDetails from './DeploymentDetails';
 import DeploymentNetworkPolicies from './DeploymentNetworkPolicies';
 import DeploymentFlows from './DeploymentFlows';
@@ -68,7 +68,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
             <StackItem>
                 <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
                     <FlexItem>
-                        <Badge style={{ backgroundColor: 'rgb(0,102,205)' }}>D</Badge>
+                        <DeploymentIcon />
                     </FlexItem>
                     <FlexItem>
                         <TextContent>
