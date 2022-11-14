@@ -35,13 +35,10 @@ describe('Access Control Permission sets', () => {
         cy.wait('@GetMyPermissions');
 
         cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLink).should('not.exist');
-
-        cy.get(selectors.h2).should('not.exist');
 
         cy.get(selectors.alertTitle).should(
             'contain', // not have.text because it contains "Info alert:" for screen reader
-            'You do not have permission to view Access Control'
+            'You do not have permission to view permission sets.'
         );
     });
 

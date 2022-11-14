@@ -23,6 +23,7 @@ import {
     getIsValidRules,
 } from './accessScopes.utils';
 import AccessScopeForm from './AccessScopeForm';
+import usePermissions from '../../../hooks/usePermissions';
 
 export type AccessScopeFormWrapperProps = {
     isActionable: boolean;
@@ -45,6 +46,8 @@ function AccessScopeFormWrapper({
 }: AccessScopeFormWrapperProps): ReactElement {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
 
     // Disable Save button while editing label selectors.
     const [labelSelectorsEditingState, setLabelSelectorsEditingState] =
@@ -127,7 +130,7 @@ function AccessScopeFormWrapper({
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
-                                        isDisabled={action === 'edit'}
+                                        isDisabled={!hasWriteAccessForPage || action === 'edit'}
                                         isSmall
                                     >
                                         Edit access scope

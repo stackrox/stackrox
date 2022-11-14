@@ -15,6 +15,7 @@ import { AccessScope, getIsDefaultAccessScopeId } from 'services/AccessScopesSer
 import { Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
+import usePermissions from '../../../hooks/usePermissions';
 
 const entityType = 'ACCESS_SCOPE';
 
@@ -32,6 +33,8 @@ function AccessScopesList({
     const [idDeleting, setIdDeleting] = useState('');
     const [nameConfirmingDelete, setNameConfirmingDelete] = useState<string | null>(null);
     const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
 
     function onClickDelete(id: string) {
         setIdDeleting(id);
@@ -101,6 +104,7 @@ function AccessScopesList({
                             <Td
                                 actions={{
                                     disable:
+                                        !hasWriteAccessForPage ||
                                         idDeleting === id ||
                                         getIsDefaultAccessScopeId(id) ||
                                         roles.some(({ accessScopeId }) => accessScopeId === id),
