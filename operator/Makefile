@@ -160,7 +160,7 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 
 ##@ Dependencies download
 
-CONTROLLER_GEN_VERSION = 0.8.0
+CONTROLLER_GEN_VERSION = 0.10.0
 CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen-$(CONTROLLER_GEN_VERSION)
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
