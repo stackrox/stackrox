@@ -53,8 +53,9 @@ var _ types.Scanner = (*clairv4)(nil)
 type clairv4 struct {
 	types.ScanSemaphore
 
+	name string
+
 	client                *http.Client
-	protoImageIntegration *storage.ImageIntegration
 
 	testEndpoint                string
 	indexReportEndpoint         string
@@ -81,12 +82,18 @@ func newScanner(integration *storage.ImageIntegration) (*clairv4, error) {
 				InsecureSkipVerify: cfg.GetInsecure(),
 			},
 			Proxy: proxy.FromConfig(),
+			// The following values are taken from http.DefaultTransport as of go1.19.3.
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
 		},
 	}
 
 	scanner := &clairv4{
-		client:                client,
-		protoImageIntegration: integration,
+		name: integration.GetName(),
+
+		client: client,
 
 		testEndpoint:                path.Join(endpoint, indexStatePath),
 		indexReportEndpoint:         path.Join(endpoint, indexReportPath),
@@ -114,6 +121,8 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	// For logging/error message purposes.
 	imgName := image.GetName().GetFullName()
 
+	// Use claircore.ParseDigest instead of types.Digest (see pkg/images/types/digest.go)
+	// to mirror clairctl (https://github.com/quay/clair/blob/v4.5.0/cmd/clairctl/report.go#L251).
 	digest, err := claircore.ParseDigest(imageutils.GetSHA(image))
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing image digest for image %s", imgName)
@@ -121,12 +130,12 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 
 	exists, err := c.indexReportExists(digest)
 	// Exit early if this is an unexpected status code error.
-	// Otherwise, continue as if the index report does not already exist.
+	// If it's not an unexpected error, then continue as normal and ignore the error.
 	if isUnexpectedStatusCodeError(err) {
 		return nil, errors.Wrapf(err, "checking if index report exists for Clair v4 scan of %s", imgName)
 	}
-
-	if exists {
+	if !exists {
+		// The index report does not exist, so we need to index the image's manifest.
 		manifest, err := manifestForImage(image)
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating manifest for Clair v4 scan of %s", imgName)
@@ -137,6 +146,7 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		}
 	}
 
+	// Clair v4 should have the image's manifest indexed by now, so get the vulnerability report.
 	report, err := c.getVulnerabilityReport(digest)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting vulnerability report for Clair v4 scan of %s", imgName)
@@ -162,6 +172,7 @@ func (c *clairv4) indexReportExists(digest claircore.Digest) (bool, error) {
 
 		switch resp.StatusCode {
 		case http.StatusNotModified:
+			// This is the only status code which indicates the index already exists.
 			exists = true
 			return nil
 		case http.StatusOK, http.StatusNotFound:
@@ -273,7 +284,7 @@ func (c *clairv4) Type() string {
 }
 
 func (c *clairv4) Name() string {
-	return c.protoImageIntegration.GetName()
+	return c.name
 }
 
 func (c *clairv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {

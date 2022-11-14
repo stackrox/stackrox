@@ -11,7 +11,7 @@ import (
 )
 
 func manifestForImage(image *storage.Image) (*claircore.Manifest, error) {
-	// Use claircore.ParseDigest instead of types.Digest (see pkg/images/types.digest.go)
+	// Use claircore.ParseDigest instead of types.Digest (see pkg/images/types/digest.go)
 	// to make it easier to set the (*claircore.Manifest).Hash.
 	imgDigest, err := claircore.ParseDigest(utils.GetSHA(image))
 	if err != nil {
@@ -27,6 +27,7 @@ func manifestForImage(image *storage.Image) (*claircore.Manifest, error) {
 			return nil, errors.Wrapf(err, "parsing image layer digest for image %s", image.GetName())
 		}
 		// TODO
+		// Layers needs to be ordered from base -> top layer, which is the same as how the metadata sorts them.
 		manifest.Layers = append(manifest.Layers, &claircore.Layer{
 			Hash:    layerDigest,
 			URI:     "",
