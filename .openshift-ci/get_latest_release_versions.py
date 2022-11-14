@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Returns the latest patches of the last 4 major versions
+Returns the latest patches of the last n major versions
 """
 
 import sys
@@ -45,3 +45,10 @@ def get_latest_release_versions(num_versions):
     rawtags = cli_output_to_tags(subprocess.check_output(["git", "tag", "--list"]))
     tags = filter_git_cli_tags(rawtags)
     return get_latest_tags(tags, num_versions)
+
+def main(argv):
+    latestversions = get_latest_release_versions(int(argv[1]))
+    print("\n".join(latestversions))
+
+if (__name__ == "__main__"):
+    main(sys.argv)
