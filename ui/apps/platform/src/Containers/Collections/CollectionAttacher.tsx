@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Alert, Button, debounce, Flex, SearchInput, Truncate } from '@patternfly/react-core';
+import React, { ReactNode, useMemo, useState } from 'react';
+import { Alert, Button, debounce, Flex, SearchInput } from '@patternfly/react-core';
 
 import BacklogListSelector from 'Components/PatternFly/BacklogListSelector';
 import { CollectionResponse } from 'services/CollectionsService';
@@ -11,7 +11,7 @@ export type CollectionAttacherProps = {
     excludedCollectionId: string | null;
     initialEmbeddedCollections: CollectionResponse[];
     onSelectionChange: (collections: CollectionResponse[]) => void;
-    onItemClick: (collectionId: string) => void;
+    collectionTableCells: { name: string; render: (collection: CollectionResponse) => ReactNode }[];
 };
 
 function compareNameLowercase(search: string): (item: { name: string }) => boolean {
@@ -22,7 +22,7 @@ function CollectionAttacher({
     excludedCollectionId,
     initialEmbeddedCollections,
     onSelectionChange,
-    onItemClick,
+    collectionTableCells,
 }: CollectionAttacherProps) {
     const [search, setSearch] = useState('');
     const embedded = useEmbeddedCollections(excludedCollectionId, initialEmbeddedCollections);
@@ -37,26 +37,6 @@ function CollectionAttacher({
             }, 800),
         [onSearch]
     );
-
-    const selectorListCells = [
-        {
-            name: 'Name',
-            render: ({ id, name }) => (
-                <Button
-                    variant="link"
-                    className="pf-u-pl-0"
-                    isInline
-                    onClick={() => onItemClick(id)}
-                >
-                    {name}
-                </Button>
-            ),
-        },
-        {
-            name: 'Description',
-            render: ({ description }) => <Truncate content={description} />,
-        },
-    ];
 
     const selectedOptions = attached.filter(compareNameLowercase(search));
     const deselectedOptions = detached.filter(compareNameLowercase(search));
@@ -76,7 +56,7 @@ function CollectionAttacher({
                 onDeselectItem={({ id }) => detach(id)}
                 onSelectionChange={onSelectionChange}
                 rowKey={({ id }) => id}
-                cells={selectorListCells}
+                cells={collectionTableCells}
                 selectedLabel="Attached collections"
                 deselectedLabel="Detached collections"
                 selectButtonText="Attach"

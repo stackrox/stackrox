@@ -12,7 +12,6 @@ import {
     Label,
     TextInput,
     Title,
-    Truncate,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
@@ -24,34 +23,26 @@ import { CollectionResponse } from 'services/CollectionsService';
 import { getIsValidLabelKey } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
-import CollectionAttacher from './CollectionAttacher';
+import CollectionAttacher, { CollectionAttacherProps } from './CollectionAttacher';
 import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
 
 function AttachedCollectionTable({
     collections,
-    onItemClick,
+    collectionTableCells,
 }: {
     collections: CollectionResponse[];
-    onItemClick: (id: string) => void;
+    collectionTableCells: CollectionAttacherProps['collectionTableCells'];
 }) {
     return collections.length > 0 ? (
         <TableComposable aria-label="Attached collections" variant={TableVariant.compact}>
             <Tbody>
-                {collections.map(({ id, name, description }) => (
-                    <Tr key={name}>
-                        <Td dataLabel="Name">
-                            <Button
-                                variant="link"
-                                className="pf-u-pl-0"
-                                isInline
-                                onClick={() => onItemClick(id)}
-                            >
-                                {name}
-                            </Button>
-                        </Td>
-                        <Td dataLabel="Description">
-                            <Truncate content={description} />
-                        </Td>
+                {collections.map((collection) => (
+                    <Tr key={collection.name}>
+                        {collectionTableCells.map(({ name, render }) => (
+                            <Td key={name} dataLabel={name}>
+                                {render(collection)}
+                            </Td>
+                        ))}
                     </Tr>
                 ))}
             </Tbody>
@@ -73,8 +64,8 @@ export type CollectionFormProps = {
     /* collection responses for the embedded collections of `initialData` */
     initialEmbeddedCollections: CollectionResponse[];
     onSubmit: (collection: Collection) => Promise<void>;
-    /* Callback used when clicking on a collection name in the CollectionAttacher section. */
-    appendTableLinkAction: (collectionId: string) => void;
+    /* Table cells to render for each collection in the CollectionAttacher component */
+    collectionTableCells: CollectionAttacherProps['collectionTableCells'];
     /* content to render before the main form */
     headerContent?: ReactElement;
 };
@@ -113,7 +104,7 @@ function CollectionForm({
     initialData,
     initialEmbeddedCollections,
     onSubmit,
-    appendTableLinkAction,
+    collectionTableCells,
 }: CollectionFormProps) {
     const history = useHistory();
 
@@ -266,7 +257,7 @@ function CollectionForm({
                     {isReadOnly ? (
                         <AttachedCollectionTable
                             collections={initialEmbeddedCollections}
-                            onItemClick={appendTableLinkAction}
+                            collectionTableCells={collectionTableCells}
                         />
                     ) : (
                         <>
@@ -277,7 +268,7 @@ function CollectionForm({
                                 }
                                 initialEmbeddedCollections={initialEmbeddedCollections}
                                 onSelectionChange={onEmbeddedCollectionsChange}
-                                onItemClick={appendTableLinkAction}
+                                collectionTableCells={collectionTableCells}
                             />
                         </>
                     )}

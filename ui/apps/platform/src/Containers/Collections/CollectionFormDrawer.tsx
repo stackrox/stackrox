@@ -1,5 +1,6 @@
 import React, { ReactElement, useEffect } from 'react';
 import {
+    Button,
     Drawer,
     DrawerActions,
     DrawerCloseButton,
@@ -10,6 +11,7 @@ import {
     DrawerPanelContent,
     Text,
     Title,
+    Truncate,
 } from '@patternfly/react-core';
 
 import { CollectionResponse } from 'services/CollectionsService';
@@ -17,7 +19,7 @@ import { CollectionPageAction } from './collections.utils';
 import CollectionResults from './CollectionResults';
 import { Collection } from './types';
 import { parseCollection } from './converter';
-import CollectionForm from './CollectionForm';
+import CollectionForm, { CollectionFormProps } from './CollectionForm';
 
 export type CollectionFormDrawerProps = {
     hasWriteAccessForCollections: boolean;
@@ -34,8 +36,7 @@ export type CollectionFormDrawerProps = {
     toggleDrawer: (isOpen: boolean) => void;
     headerContent?: ReactElement;
     onSubmit: (collection: Collection) => Promise<void>;
-    /* Callback used when clicking on a collection name in the CollectionAttacher section. */
-    appendTableLinkAction: (collectionId: string) => void;
+    collectionTableCells: CollectionFormProps['collectionTableCells'];
 };
 
 function CollectionFormDrawer({
@@ -47,7 +48,7 @@ function CollectionFormDrawer({
     isDrawerOpen,
     toggleDrawer,
     onSubmit,
-    appendTableLinkAction,
+    collectionTableCells,
 }: CollectionFormDrawerProps) {
     const initialData = parseCollection(collectionData.collection);
     const initialEmbeddedCollections = collectionData.embeddedCollections;
@@ -95,7 +96,7 @@ function CollectionFormDrawer({
                                 initialData={initialData}
                                 initialEmbeddedCollections={initialEmbeddedCollections}
                                 onSubmit={onSubmit}
-                                appendTableLinkAction={appendTableLinkAction}
+                                collectionTableCells={collectionTableCells}
                             />
                         )}
                     </DrawerContentBody>

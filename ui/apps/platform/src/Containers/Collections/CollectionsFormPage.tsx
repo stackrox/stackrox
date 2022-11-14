@@ -16,6 +16,7 @@ import {
     FlexItem,
     PageSection,
     Title,
+    Truncate,
 } from '@patternfly/react-core';
 import { useMediaQuery } from 'react-responsive';
 
@@ -133,6 +134,21 @@ function CollectionsFormPage({
             });
     }
 
+    const collectionTableCells = [
+        {
+            name: 'Name',
+            render: ({ id, name }) => (
+                <Button variant="link" isInline onClick={() => setModalCollectionId(id)}>
+                    {name}
+                </Button>
+            ),
+        },
+        {
+            name: 'Description',
+            render: ({ description }) => <Truncate content={description} />,
+        },
+    ];
+
     let content: ReactElement | undefined;
 
     if (error) {
@@ -155,7 +171,7 @@ function CollectionsFormPage({
                 isDrawerOpen={isDrawerOpen}
                 toggleDrawer={toggleDrawer}
                 onSubmit={onSubmit}
-                appendTableLinkAction={setModalCollectionId}
+                collectionTableCells={collectionTableCells}
                 headerContent={
                     <>
                         <Breadcrumb className="pf-u-my-xs pf-u-px-lg pf-u-py-md">

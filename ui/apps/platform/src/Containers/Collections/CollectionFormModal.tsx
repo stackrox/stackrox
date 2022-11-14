@@ -1,10 +1,11 @@
 import React, { ReactElement } from 'react';
-import { Button, Divider, Flex, FlexItem, Modal, Title } from '@patternfly/react-core';
+import { Button, Divider, Flex, FlexItem, Modal, Title, Truncate } from '@patternfly/react-core';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import { useMediaQuery } from 'react-responsive';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { collectionsBasePath } from 'routePaths';
+import { CollectionResponse } from 'services/CollectionsService';
 import useCollection from './hooks/useCollection';
 import CollectionFormDrawer from './CollectionFormDrawer';
 
@@ -13,6 +14,28 @@ export type CollectionsFormModalProps = {
     collectionId: string;
     onClose: () => void;
 };
+const collectionTableCells = [
+    {
+        name: 'Name',
+        render: ({ id, name }: CollectionResponse) => (
+            <Button
+                variant="link"
+                component="a"
+                isInline
+                href={`${collectionsBasePath}/${id}?action=edit`}
+                target="_blank"
+                rel="noopener noreferrer"
+                icon={<ExternalLinkAltIcon />}
+            >
+                {name}
+            </Button>
+        ),
+    },
+    {
+        name: 'Description',
+        render: ({ description }) => <Truncate content={description} />,
+    },
+];
 
 function CollectionsFormModal({
     hasWriteAccessForCollections,
@@ -92,10 +115,7 @@ function CollectionsFormModal({
                     toggleDrawer={toggleDrawer}
                     // Since the form cannot be submitted, stub this out with an empty promise
                     onSubmit={() => Promise.resolve()}
-                    appendTableLinkAction={(id) => {
-                        const url = `${window.location.origin}${collectionsBasePath}/${id}`;
-                        window.open(url, '_blank', 'noopener noreferrer');
-                    }}
+                    collectionTableCells={collectionTableCells}
                 />
             </Modal>
         );
