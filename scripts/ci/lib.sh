@@ -1469,7 +1469,7 @@ EOT
 }
 
 get_junit_parse_cli() {
-    go install github.com/stackrox/junit-parse
+    go install github.com/stackrox/junit-parse@latest
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
