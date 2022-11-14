@@ -14,6 +14,10 @@ import "api/v1/search_service.proto";
 
 package v1;
 
+message ListCollectionSelectorsResponse {
+    repeated string selectors = 1;
+}
+
 message GetCollectionRequest {
     message Options {
         bool with_matches = 1;
@@ -84,6 +88,12 @@ message ListCollectionsResponse {
 }
 
 service CollectionService {
+
+    rpc ListCollectionSelectors (Empty) returns (ListCollectionSelectorsResponse) {
+        option (google.api.http) = {
+            get: "/v1/collections/selectors"
+        };
+    }
 
     rpc GetCollection (GetCollectionRequest) returns (GetCollectionResponse) {
         option (google.api.http) = {

@@ -33,6 +33,24 @@ var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
 var _ = metadata.Join
 
+func request_CollectionService_ListCollectionSelectors_0(ctx context.Context, marshaler runtime.Marshaler, client CollectionServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Empty
+	var metadata runtime.ServerMetadata
+
+	msg, err := client.ListCollectionSelectors(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_CollectionService_ListCollectionSelectors_0(ctx context.Context, marshaler runtime.Marshaler, server CollectionServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Empty
+	var metadata runtime.ServerMetadata
+
+	msg, err := server.ListCollectionSelectors(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 var (
 	filter_CollectionService_GetCollection_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
@@ -375,6 +393,29 @@ func local_request_CollectionService_DryRunCollection_0(ctx context.Context, mar
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterCollectionServiceHandlerFromEndpoint instead.
 func RegisterCollectionServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server CollectionServiceServer) error {
 
+	mux.Handle("GET", pattern_CollectionService_ListCollectionSelectors_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_CollectionService_ListCollectionSelectors_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_CollectionService_ListCollectionSelectors_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("GET", pattern_CollectionService_GetCollection_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -577,6 +618,26 @@ func RegisterCollectionServiceHandler(ctx context.Context, mux *runtime.ServeMux
 // "CollectionServiceClient" to call the correct interceptors.
 func RegisterCollectionServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client CollectionServiceClient) error {
 
+	mux.Handle("GET", pattern_CollectionService_ListCollectionSelectors_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CollectionService_ListCollectionSelectors_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_CollectionService_ListCollectionSelectors_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("GET", pattern_CollectionService_GetCollection_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -721,6 +782,8 @@ func RegisterCollectionServiceHandlerClient(ctx context.Context, mux *runtime.Se
 }
 
 var (
+	pattern_CollectionService_ListCollectionSelectors_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "collections", "selectors"}, "", runtime.AssumeColonVerbOpt(false)))
+
 	pattern_CollectionService_GetCollection_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "collections", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_CollectionService_GetCollectionCount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "collectionscount"}, "", runtime.AssumeColonVerbOpt(false)))
@@ -737,6 +800,8 @@ var (
 )
 
 var (
+	forward_CollectionService_ListCollectionSelectors_0 = runtime.ForwardResponseMessage
+
 	forward_CollectionService_GetCollection_0 = runtime.ForwardResponseMessage
 
 	forward_CollectionService_GetCollectionCount_0 = runtime.ForwardResponseMessage

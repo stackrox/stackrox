@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -43,6 +44,22 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 
 func (suite *CollectionServiceTestSuite) TearDownSuite() {
 	suite.mockCtrl.Finish()
+}
+
+func (suite *CollectionServiceTestSuite) TestListCollectionSelectors() {
+	if !features.ObjectCollections.Enabled() {
+		suite.T().Skip("skipping because env var is not set")
+	}
+
+	selectorsResponse, err := suite.collectionService.ListCollectionSelectors(context.Background(), &v1.Empty{})
+	suite.NoError(err)
+	supportedLabels := datastore.GetSupportedFieldLabels()
+	supportedLabelStrings := make([]string, 0, len(supportedLabels))
+	for _, label := range supportedLabels {
+		supportedLabelStrings = append(supportedLabelStrings, label.String())
+	}
+
+	suite.ElementsMatch(supportedLabelStrings, selectorsResponse.GetSelectors())
 }
 
 func (suite *CollectionServiceTestSuite) TestGetCollection() {
