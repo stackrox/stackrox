@@ -10,7 +10,7 @@ import subprocess
 from collections import defaultdict
 
 def is_release_tag(version):
-    return bool(re.search(r"^\d+\.\d+\.\d+$", version))
+    return re.search(r"^\d+\.\d+\.\d+$", version) is not None
 
 def filter_tags(rawtags):
     filteredtags = []
