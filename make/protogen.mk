@@ -94,11 +94,6 @@ $(PROTOC_GEN_GO_BIN): $(MODFILE_DIR)/github.com/gogo/protobuf/UPDATE_CHECK $(PRO
 	@echo "+ $@"
 	$(SILENT)GOBIN=$(PROTO_GOBIN) go install github.com/gogo/protobuf/$(notdir $@)
 
-PROTOC_GEN_LINT := $(PROTO_GOBIN)/protoc-gen-lint
-$(PROTOC_GEN_LINT): $(MODFILE_DIR)/github.com/ckaznocha/protoc-gen-lint/UPDATE_CHECK $(PROTO_GOBIN)
-	@echo "+ $@"
-	$(SILENT)GOBIN=$(PROTO_GOBIN) go install github.com/ckaznocha/protoc-gen-lint
-
 GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
 
 # The --go_out=M... argument specifies the go package to use for an imported proto file.
@@ -129,18 +124,6 @@ $(PROTOC_INCLUDES): $(PROTOC)
 
 GOGO_DIR = $(shell go list -f '{{.Dir}}' -m github.com/gogo/protobuf)
 GRPC_GATEWAY_DIR = $(shell go list -f '{{.Dir}}' -m github.com/grpc-ecosystem/grpc-gateway)
-
-.PHONY: proto-fmt
-proto-fmt: $(PROTOC_GEN_LINT)
-	@echo "Checking for proto style errors"
-	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
-		-I$(PROTOC_INCLUDES) \
-		-I$(GOGO_DIR)/protobuf \
-		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
-		-I$(SCANNER_PROTO_BASE_PATH) \
-		--lint_out=. \
-		--proto_path=$(PROTO_BASE_PATH) \
-		$(ALL_PROTOS)
 
 PROTO_DEPS=$(PROTOC) $(PROTOC_INCLUDES)
 
