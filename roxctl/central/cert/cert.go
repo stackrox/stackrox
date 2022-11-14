@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/ioutils"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -85,7 +86,7 @@ func (cmd *centralCertCommand) certs() error {
 	switch cmd.filename {
 	case "-":
 		// Default to STDOUT.
-		handle = os.Stdout
+		handle = ioutils.NopWriteCloser(cmd.env.InputOutput().Out())
 	default:
 		// Open the given filename.
 		handle, err = os.Create(cmd.filename)
