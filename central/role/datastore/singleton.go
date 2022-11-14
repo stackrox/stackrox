@@ -67,23 +67,34 @@ func Singleton() DataStore {
 
 type roleAttributes struct {
 	idSuffix           string
+	postgresID         string
 	description        string
 	resourceWithAccess []permissions.ResourceWithAccess
+}
+
+func (attributes *roleAttributes) getID() string {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return attributes.postgresID
+	}
+	return rolePkg.EnsureValidPermissionSetID(attributes.idSuffix)
 }
 
 var defaultRoles = map[string]roleAttributes{
 	rolePkg.Admin: {
 		idSuffix:           "admin",
+		postgresID:         adminPermissionSetID,
 		description:        "For users: use it to provide read and write access to all the resources",
 		resourceWithAccess: resources.AllResourcesModifyPermissions(),
 	},
 	rolePkg.Analyst: {
 		idSuffix:           "analyst",
+		postgresID:         analystPermissionSetID,
 		resourceWithAccess: rolePkg.GetAnalystPermissions(),
 		description:        "For users: use it to give read-only access to all the resources",
 	},
 	rolePkg.ContinuousIntegration: {
 		idSuffix:    "continuousintegration",
+		postgresID:  continuousIntegrationPermissionSetID,
 		description: "For automation: it includes the permissions required to enforce deployment policies",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Detection),
@@ -92,10 +103,12 @@ var defaultRoles = map[string]roleAttributes{
 	},
 	rolePkg.None: {
 		idSuffix:    "none",
+		postgresID:  nonePermissionSetID,
 		description: "For users: use it to provide no read and write access to any resource",
 	},
 	rolePkg.ScopeManager: {
 		idSuffix:    "scopemanager",
+		postgresID:  scopeManagerPermissionSetID,
 		description: "For users: use it to create and modify scopes for the purpose of access control or vulnerability reporting",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Access),
@@ -107,6 +120,7 @@ var defaultRoles = map[string]roleAttributes{
 	},
 	rolePkg.SensorCreator: {
 		idSuffix:    "sensorcreator",
+		postgresID:  sensorCreatorPermissionSetID,
 		description: "For automation: it consists of the permissions to create Sensors in secured clusters",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Cluster),
@@ -117,6 +131,7 @@ var defaultRoles = map[string]roleAttributes{
 	},
 	rolePkg.VulnMgmtApprover: {
 		idSuffix:    "vulnmgmtapprover",
+		postgresID:  vulnMgmtApproverPermissionSetID,
 		description: "For users: use it to provide access to approve vulnerability deferrals or false positive requests",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.VulnerabilityManagementApprovals),
@@ -125,6 +140,7 @@ var defaultRoles = map[string]roleAttributes{
 	},
 	rolePkg.VulnMgmtRequester: {
 		idSuffix:    "vulnmgmtrequester",
+		postgresID:  vulnMgmtRequesterPermissionSetID,
 		description: "For users: use it to provide access to request vulnerability deferrals or false positives",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.VulnerabilityManagementRequests),
@@ -136,6 +152,7 @@ var defaultRoles = map[string]roleAttributes{
 var vulnReportingDefaultRoles = map[string]roleAttributes{
 	rolePkg.VulnReporter: {
 		idSuffix:    "vulnreporter",
+		postgresID:  vulnReporterPermissionSetID,
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations
