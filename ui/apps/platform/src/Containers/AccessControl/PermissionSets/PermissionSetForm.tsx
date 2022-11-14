@@ -23,6 +23,7 @@ import { PermissionSet } from 'services/RolesService';
 import { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
+import usePermissions from '../../../hooks/usePermissions';
 
 export type PermissionSetFormProps = {
     isActionable: boolean;
@@ -45,6 +46,8 @@ function PermissionSetForm({
 }: PermissionSetFormProps): ReactElement {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
 
     const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
         initialValues: permissionSet,
@@ -128,7 +131,7 @@ function PermissionSetForm({
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
-                                        isDisabled={action === 'edit'}
+                                        isDisabled={!hasWriteAccessForPage || action === 'edit'}
                                         isSmall
                                     >
                                         Edit permission set

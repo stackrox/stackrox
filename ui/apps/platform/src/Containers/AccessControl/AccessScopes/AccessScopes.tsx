@@ -40,8 +40,9 @@ import usePermissions from '../../../hooks/usePermissions';
 const entityType = 'ACCESS_SCOPE';
 
 function AccessScopes(): ReactElement {
-    const { hasReadAccess } = usePermissions();
-    const hasReadAccessForAccessScopes = hasReadAccess('Role');
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasReadAccessToPage = hasReadAccess('Role') && hasReadAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -106,7 +107,7 @@ function AccessScopes(): ReactElement {
     }, []);
 
     // Return "no access" page immediately if user doesn't have enough permissions.
-    if (!hasReadAccessForAccessScopes) {
+    if (!hasReadAccessToPage) {
         return (
             <>
                 <AccessControlNoPermission subPage="access scopes" entityType={entityType} />
@@ -176,7 +177,11 @@ function AccessScopes(): ReactElement {
                             </AccessControlDescription>
                         }
                         actionComponent={
-                            <Button variant="primary" onClick={handleCreate}>
+                            <Button
+                                isDisabled={!hasWriteAccessForPage}
+                                variant="primary"
+                                onClick={handleCreate}
+                            >
                                 Create access scope
                             </Button>
                         }
