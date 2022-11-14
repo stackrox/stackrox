@@ -20,8 +20,7 @@ def filter_tags(rawtags):
     return set(filteredtags)
 
 def cli_output_to_tags(stdoutput):
-    separated = stdoutput.decode(encoding="utf-8").splitlines()
-    return separated
+    return stdoutput.decode(encoding="utf-8").splitlines()
 
 def make_image_tag():
     return subprocess.check_output(["make", "--quiet", "--no-print-directory", "tag"]).decode(encoding="utf-8")
