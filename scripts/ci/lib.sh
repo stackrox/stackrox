@@ -1310,7 +1310,7 @@ __EOM__
         "type": "section",
         "text": {
           "type": "plain_text",
-          "text": "Could not parse junit files. Check build logs for more information. 
+          "text": "Could not parse junit files. Check build logs for more information."
         }
       }
     ]
