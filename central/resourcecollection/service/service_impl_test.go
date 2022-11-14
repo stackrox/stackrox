@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -53,10 +52,16 @@ func (suite *CollectionServiceTestSuite) TestListCollectionSelectors() {
 
 	selectorsResponse, err := suite.collectionService.ListCollectionSelectors(context.Background(), &v1.Empty{})
 	suite.NoError(err)
-	supportedLabels := datastore.GetSupportedFieldLabels()
-	supportedLabelStrings := make([]string, 0, len(supportedLabels))
-	for _, label := range supportedLabels {
-		supportedLabelStrings = append(supportedLabelStrings, label.String())
+
+	supportedLabelStrings := []string{
+		search.Cluster.String(),
+		search.ClusterLabel.String(),
+		search.Namespace.String(),
+		search.NamespaceLabel.String(),
+		search.NamespaceAnnotation.String(),
+		search.DeploymentName.String(),
+		search.DeploymentLabel.String(),
+		search.DeploymentAnnotation.String(),
 	}
 
 	suite.ElementsMatch(supportedLabelStrings, selectorsResponse.GetSelectors())
