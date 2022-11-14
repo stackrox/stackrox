@@ -84,6 +84,7 @@ function CollectionsFormModal({
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 icon={<ExternalLinkAltIcon />}
+                                iconPosition="right"
                             >
                                 Edit collection
                             </Button>
