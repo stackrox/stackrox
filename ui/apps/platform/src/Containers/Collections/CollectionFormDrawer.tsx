@@ -1,6 +1,5 @@
 import React, { ReactElement, useEffect } from 'react';
 import {
-    Button,
     Drawer,
     DrawerActions,
     DrawerCloseButton,
@@ -11,7 +10,6 @@ import {
     DrawerPanelContent,
     Text,
     Title,
-    Truncate,
 } from '@patternfly/react-core';
 
 import { CollectionResponse } from 'services/CollectionsService';
