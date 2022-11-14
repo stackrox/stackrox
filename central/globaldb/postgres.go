@@ -36,7 +36,7 @@ SELECT TABLE_NAME
               , SUM(c.reltuples) OVER (partition BY parent) AS row_estimate
               , SUM(pg_total_relation_size(c.oid)) OVER (partition BY parent) AS total_bytes
               , SUM(pg_indexes_size(c.oid)) OVER (partition BY parent) AS index_bytes
-              , SUM(pg_total_relation_size(reltoastrelid)) OVER (partition BY parent) AS toast_bytes
+              , SUM(COALESCE(pg_total_relation_size(reltoastrelid), 0)) OVER (partition BY parent) AS toast_bytes
               , parent
           FROM (
                 SELECT pg_class.oid
@@ -131,7 +131,7 @@ func collectPostgresStats(ctx context.Context, db *pgxpool.Pool) {
 			tableSize   int
 		)
 		if err := row.Scan(&tableName, &rowEstimate, &totalSize, &indexSize, &toastSize, &tableSize); err != nil {
-			log.Errorf("error scanning row: %v", err)
+			log.Errorf("error scanning row for table %s: %v", tableName, err)
 			return
 		}
 
