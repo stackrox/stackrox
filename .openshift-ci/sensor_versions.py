@@ -8,33 +8,33 @@ import sys
 import re
 import subprocess
 
-def isReleaseTagGitCLI(version):
+def is_release_tag_git_cli(version):
     return bool(re.search(r"^\d+\.\d+\.\d+$", version))
 
-def filterGitCLITags(rawtags):
+def filter_git_cli_tags(rawtags):
     filteredtags = []
     for t in rawtags:
-        if isReleaseTagGitCLI(t):
+        if is_release_tag_git_cli(t):
             filteredtags.append(t)
     return set(filteredtags)
 
-def cliOutputToTags(stdoutput):
+def cli_output_to_tags(stdoutput):
     separated = stdoutput.decode(encoding="utf-8").splitlines()
     return separated
 
-def transformTagsToNumbers(tags):
+def transform_tags_to_numbers(tags):
     numTags = []
     for t in tags:
-        numTags.append(splitVersion(t))
+        numTags.append(split_version(t))
     return sorted(numTags)
 
-def splitVersion(version):
+def split_version(version):
     digits = re.search(r"(\d+)\.(\d+)\.\D*(\d+)", version)
     return int(digits.group(1)), int(digits.group(2)), int(digits.group(3))
 
-def getLatestTags(tags, num_versions):
-    numericaltags = transformTagsToNumbers(tags)
-    _,y,_ = splitVersion(makeImageTag())
+def get_latest_tags(tags, num_versions):
+    numericaltags = transform_tags_to_numbers(tags)
+    _,y,_ = split_version(make_image_tag())
     latestversions = []
     ycurr = y
     for tags in numericaltags[::-1]:
@@ -47,11 +47,11 @@ def getLatestTags(tags, num_versions):
             ycurr-=1
     return latestversions
 
-def makeImageTag():
+def make_image_tag():
     return subprocess.check_output(["make", "tag"]).decode(encoding="utf-8")
 
-# getLastSensorVersionsFromGitTagsCLI gets the latest patches of the last num_versions major versions via Git CLI
-def getLastSensorVersionsFromGitTagsCLI(num_versions):
-    rawtags = cliOutputToTags(subprocess.check_output(["git", "tag", "--list"]))
-    tags = filterGitCLITags(rawtags)
-    return getLatestTags(tags, num_versions)
+# get_last_sensor_versions_from_git_tags_cli gets the latest patches of the last num_versions major versions via Git CLI
+def get_last_sensor_versions_from_git_tags_cli(num_versions):
+    rawtags = cli_output_to_tags(subprocess.check_output(["git", "tag", "--list"]))
+    tags = filter_git_cli_tags(rawtags)
+    return get_latest_tags(tags, num_versions)
