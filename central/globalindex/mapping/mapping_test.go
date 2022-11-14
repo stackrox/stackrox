@@ -589,7 +589,7 @@ var (
 		Analyzer:  "",
 	}
 	// Field Values - ComplianceControl
-	complianceControlGroupIDField = &search.Field{
+	complianceControlObjGroupIDField = &search.Field{
 		FieldPath: "control.group_id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -597,7 +597,7 @@ var (
 		Category:  v1.SearchCategory_COMPLIANCE_CONTROL,
 		Analyzer:  "",
 	}
-	complianceControlIDField = &search.Field{
+	complianceControlObjIDField = &search.Field{
 		FieldPath: "control.id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -605,7 +605,7 @@ var (
 		Category:  v1.SearchCategory_COMPLIANCE_CONTROL,
 		Analyzer:  "",
 	}
-	complianceControlNameField = &search.Field{
+	complianceControlObjNameField = &search.Field{
 		FieldPath: "control.name",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -613,7 +613,7 @@ var (
 		Category:  v1.SearchCategory_COMPLIANCE_CONTROL,
 		Analyzer:  "",
 	}
-	complianceControlStandardIDField = &search.Field{
+	complianceControlObjStandardIDField = &search.Field{
 		FieldPath: "control.standard_id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -622,7 +622,7 @@ var (
 		Analyzer:  "",
 	}
 	// Field Values - ComplianceStandard
-	complianceStandardIDField = &search.Field{
+	complianceStandardObjIDField = &search.Field{
 		FieldPath: "standard.metadata.id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -630,7 +630,7 @@ var (
 		Category:  v1.SearchCategory_COMPLIANCE_STANDARD,
 		Analyzer:  "",
 	}
-	complianceStandardNameField = &search.Field{
+	complianceStandardObjNameField = &search.Field{
 		FieldPath: "standard.metadata.name",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -712,7 +712,7 @@ var (
 		Analyzer:  "",
 	}
 	// Field Values - Deployment
-	deploymentAddCapabilitiesField = &search.Field{
+	deploymentObjAddCapabilitiesField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.security_context.add_capabilities",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -720,7 +720,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentAnnotationsField = &search.Field{
+	deploymentObjAnnotationsField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".annotations",
 		Type:      v1.SearchDataType_SEARCH_MAP,
 		Store:     false,
@@ -728,7 +728,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentClusterIDField = &search.Field{
+	deploymentObjClusterIDField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".cluster_id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -736,7 +736,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentClusterNameField = &search.Field{
+	deploymentObjClusterNameField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".cluster_name",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -744,7 +744,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentCPUCoresLimitField = &search.Field{
+	deploymentObjCPUCoresLimitField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.resources.cpu_cores_limit",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     true,
@@ -752,7 +752,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentCPUCoresRequestField = &search.Field{
+	deploymentObjCPUCoresRequestField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.resources.cpu_cores_request",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     true,
@@ -760,7 +760,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentCreatedField = &search.Field{
+	deploymentObjCreatedField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".created.seconds",
 		Type:      v1.SearchDataType_SEARCH_DATETIME,
 		Store:     true,
@@ -768,7 +768,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentDropCapabilitiesField = &search.Field{
+	deploymentObjDropCapabilitiesField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.security_context.drop_capabilities",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -776,7 +776,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentEnvKeyField = &search.Field{
+	deploymentObjEnvKeyField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.config.env.key",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -784,7 +784,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentEnvValueField = &search.Field{
+	deploymentObjEnvValueField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.config.env.value",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -792,7 +792,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentEnvVarSourceField = &search.Field{
+	deploymentObjEnvVarSourceField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.config.env.env_var_source",
 		Type:      v1.SearchDataType_SEARCH_ENUM,
 		Store:     true,
@@ -800,7 +800,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentExposedNodePortField = &search.Field{
+	deploymentObjExposedNodePortField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".ports.exposure_infos.node_port",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     true,
@@ -808,7 +808,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentExposingServiceField = &search.Field{
+	deploymentObjExposingServiceField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".ports.exposure_infos.service_name",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -816,7 +816,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentExposingServicePortField = &search.Field{
+	deploymentObjExposingServicePortField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".ports.exposure_infos.service_port",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     true,
@@ -824,7 +824,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentExposureLevelField = &search.Field{
+	deploymentObjExposureLevelField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".ports.exposure_infos.level",
 		Type:      v1.SearchDataType_SEARCH_ENUM,
 		Store:     true,
@@ -832,7 +832,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentExternalHostnameField = &search.Field{
+	deploymentObjExternalHostnameField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".ports.exposure_infos.external_hostnames",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -840,7 +840,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentExternalIPField = &search.Field{
+	deploymentObjExternalIPField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".ports.exposure_infos.external_ips",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -848,7 +848,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentIDField = &search.Field{
+	deploymentObjIDField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -856,7 +856,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentImageIDField = &search.Field{
+	deploymentObjImageIDField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.image.id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -864,7 +864,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentImageNameField = &search.Field{
+	deploymentObjImageNameField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.image.name.full_name",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -872,7 +872,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "standard",
 	}
-	deploymentImagePullSecretsField = &search.Field{
+	deploymentObjImagePullSecretsField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".image_pull_secrets",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -880,7 +880,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentImageRegistryField = &search.Field{
+	deploymentObjImageRegistryField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.image.name.registry",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -888,7 +888,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentImageRemoteField = &search.Field{
+	deploymentObjImageRemoteField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.image.name.remote",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -896,7 +896,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentImageTagField = &search.Field{
+	deploymentObjImageTagField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.image.name.tag",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -904,7 +904,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentLabelsField = &search.Field{
+	deploymentObjLabelsField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".labels",
 		Type:      v1.SearchDataType_SEARCH_MAP,
 		Store:     true,
@@ -912,7 +912,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentMaxExposureField = &search.Field{
+	deploymentObjMaxExposureField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".ports.exposure",
 		Type:      v1.SearchDataType_SEARCH_ENUM,
 		Store:     true,
@@ -920,7 +920,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentMemoryLimitField = &search.Field{
+	deploymentObjMemoryLimitField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.resources.memory_mb_limit",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     true,
@@ -928,7 +928,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentMemoryRequestField = &search.Field{
+	deploymentObjMemoryRequestField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.resources.memory_mb_request",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     true,
@@ -936,7 +936,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentNameField = &search.Field{
+	deploymentObjNameField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".name",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -944,7 +944,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentNamespaceField = &search.Field{
+	deploymentObjNamespaceField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".namespace",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -952,7 +952,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentNamespaceIDField = &search.Field{
+	deploymentObjNamespaceIDField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".namespace_id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -960,7 +960,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentOrchestratorComponentField = &search.Field{
+	deploymentObjOrchestratorComponentField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".orchestrator_component",
 		Type:      v1.SearchDataType_SEARCH_BOOL,
 		Store:     false,
@@ -968,7 +968,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentPodLabelField = &search.Field{
+	deploymentObjPodLabelField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".pod_labels",
 		Type:      v1.SearchDataType_SEARCH_MAP,
 		Store:     true,
@@ -976,7 +976,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentPortField = &search.Field{
+	deploymentObjPortField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".ports.container_port",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     true,
@@ -984,7 +984,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentPortProtocolField = &search.Field{
+	deploymentObjPortProtocolField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".ports.protocol",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -992,7 +992,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentPriorityField = &search.Field{
+	deploymentObjPriorityField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".priority",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     false,
@@ -1000,7 +1000,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentPrivilegedField = &search.Field{
+	deploymentObjPrivilegedField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.security_context.privileged",
 		Type:      v1.SearchDataType_SEARCH_BOOL,
 		Store:     true,
@@ -1008,7 +1008,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentReadOnlyRootFilesystemField = &search.Field{
+	deploymentObjReadOnlyRootFilesystemField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.security_context.read_only_root_filesystem",
 		Type:      v1.SearchDataType_SEARCH_BOOL,
 		Store:     true,
@@ -1016,7 +1016,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentRiskScoreField = &search.Field{
+	deploymentObjRiskScoreField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".risk_score",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     false,
@@ -1024,7 +1024,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentSecretNameField = &search.Field{
+	deploymentObjSecretNameField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.secrets.name",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -1032,7 +1032,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentSecretPathField = &search.Field{
+	deploymentObjSecretPathField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.secrets.path",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -1040,7 +1040,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentServiceAccountNameField = &search.Field{
+	deploymentObjServiceAccountNameField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".service_account",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -1048,7 +1048,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentServiceAccountPermissionLevelField = &search.Field{
+	deploymentObjServiceAccountPermissionLevelField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".service_account_permission_level",
 		Type:      v1.SearchDataType_SEARCH_ENUM,
 		Store:     true,
@@ -1056,7 +1056,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentTypeField = &search.Field{
+	deploymentObjTypeField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".type",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -1064,7 +1064,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentVolumeDestinationField = &search.Field{
+	deploymentObjVolumeDestinationField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.volumes.destination",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1072,7 +1072,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentVolumeNameField = &search.Field{
+	deploymentObjVolumeNameField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.volumes.name",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1080,7 +1080,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentVolumeReadOnlyField = &search.Field{
+	deploymentObjVolumeReadOnlyField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.volumes.read_only",
 		Type:      v1.SearchDataType_SEARCH_BOOL,
 		Store:     true,
@@ -1088,7 +1088,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentVolumeSourceField = &search.Field{
+	deploymentObjVolumeSourceField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.volumes.source",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1096,7 +1096,7 @@ var (
 		Category:  v1.SearchCategory_DEPLOYMENTS,
 		Analyzer:  "",
 	}
-	deploymentVolumeTypeField = &search.Field{
+	deploymentObjVolumeTypeField = &search.Field{
 		FieldPath: getDeploymentPrefix() + ".containers.volumes.type",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1427,7 +1427,7 @@ var (
 		Analyzer:  "",
 	}
 	// Field Values - ImageComponentCVEEdge
-	imageComponentCVEEdgeFixableField = &search.Field{
+	imageComponentCVEEdgeObjFixableField = &search.Field{
 		FieldPath: getComponentVulnEdgePrefix() + ".is_fixable",
 		Type:      v1.SearchDataType_SEARCH_BOOL,
 		Store:     true,
@@ -1435,7 +1435,7 @@ var (
 		Category:  v1.SearchCategory_COMPONENT_VULN_EDGE,
 		Analyzer:  "",
 	}
-	imageComponentCVEEdgeFixedByField = &search.Field{
+	imageComponentCVEEdgeObjFixedByField = &search.Field{
 		FieldPath: getComponentVulnEdgePrefix() + ".HasFixedBy.fixed_by",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1444,7 +1444,7 @@ var (
 		Analyzer:  "",
 	}
 	// Field Values - ImageComponentEdge
-	imageComponentEdgeLocationField = &search.Field{
+	imageComponentEdgeObjLocationField = &search.Field{
 		FieldPath: getImageComponentEdgePrefix() + ".location",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1453,7 +1453,7 @@ var (
 		Analyzer:  "",
 	}
 	// Field Values - ImageCVE
-	imageCVECreatedTimeField = &search.Field{
+	imageCVEObjCreatedTimeField = &search.Field{
 		FieldPath: getImageCVEPrefix() + ".cve_base_info.created_at.seconds",
 		Type:      v1.SearchDataType_SEARCH_DATETIME,
 		Store:     false,
@@ -1461,7 +1461,7 @@ var (
 		Category:  getImageCVESearchCategory(),
 		Analyzer:  "",
 	}
-	imageCVECVEField = &search.Field{
+	imageCVEObjCVEField = &search.Field{
 		FieldPath: getImageCVEPrefix() + ".cve_base_info.cve",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1469,7 +1469,7 @@ var (
 		Category:  getImageCVESearchCategory(),
 		Analyzer:  "",
 	}
-	imageCVECVSSField = &search.Field{
+	imageCVEObjCVSSField = &search.Field{
 		FieldPath: getImageCVEPrefix() + ".cvss",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     true,
@@ -1477,7 +1477,7 @@ var (
 		Category:  getImageCVESearchCategory(),
 		Analyzer:  "",
 	}
-	imageCVEIDField = &search.Field{
+	imageCVEObjIDField = &search.Field{
 		FieldPath: getImageCVEPrefix() + ".id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -1485,7 +1485,7 @@ var (
 		Category:  getImageCVESearchCategory(),
 		Analyzer:  "",
 	}
-	imageCVEImpactScoreField = &search.Field{
+	imageCVEObjImpactScoreField = &search.Field{
 		FieldPath: getImageCVEPrefix() + ".impact_score",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     false,
@@ -1493,7 +1493,7 @@ var (
 		Category:  getImageCVESearchCategory(),
 		Analyzer:  "",
 	}
-	imageCVEOperatingSystemField = &search.Field{
+	imageCVEObjOperatingSystemField = &search.Field{
 		FieldPath: getImageCVEPrefix() + ".operating_system",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -1501,7 +1501,7 @@ var (
 		Category:  getImageCVESearchCategory(),
 		Analyzer:  "",
 	}
-	imageCVEPublishedOnField = &search.Field{
+	imageCVEObjPublishedOnField = &search.Field{
 		FieldPath: getImageCVEPrefix() + ".cve_base_info.published_on.seconds",
 		Type:      v1.SearchDataType_SEARCH_DATETIME,
 		Store:     false,
@@ -1509,7 +1509,7 @@ var (
 		Category:  getImageCVESearchCategory(),
 		Analyzer:  "",
 	}
-	imageCVESeverityField = &search.Field{
+	imageCVEObjSeverityField = &search.Field{
 		FieldPath: getImageCVEPrefix() + ".severity",
 		Type:      v1.SearchDataType_SEARCH_ENUM,
 		Store:     false,
@@ -1517,7 +1517,7 @@ var (
 		Category:  getImageCVESearchCategory(),
 		Analyzer:  "",
 	}
-	imageCVESnoozedField = &search.Field{
+	imageCVEObjSnoozedField = &search.Field{
 		FieldPath: getImageCVEPrefix() + ".snoozed",
 		Type:      v1.SearchDataType_SEARCH_BOOL,
 		Store:     false,
@@ -1525,7 +1525,7 @@ var (
 		Category:  getImageCVESearchCategory(),
 		Analyzer:  "",
 	}
-	imageCVESnoozeExpiryField = &search.Field{
+	imageCVEObjSnoozeExpiryField = &search.Field{
 		FieldPath: getImageCVEPrefix() + ".snooze_expiry.seconds",
 		Type:      v1.SearchDataType_SEARCH_DATETIME,
 		Store:     false,
@@ -1534,7 +1534,7 @@ var (
 		Analyzer:  "",
 	}
 	// Field Values - ImageCVEEdge
-	imageCVEEdgeFirstOccurrenceField = &search.Field{
+	imageCVEEdgeObjFirstOccurrenceField = &search.Field{
 		FieldPath: getImageCVEEdgePrefix() + ".first_image_occurrence.seconds",
 		Type:      v1.SearchDataType_SEARCH_DATETIME,
 		Store:     false,
@@ -1542,7 +1542,7 @@ var (
 		Category:  v1.SearchCategory_IMAGE_VULN_EDGE,
 		Analyzer:  "",
 	}
-	imageCVEEdgeStateField = &search.Field{
+	imageCVEEdgeObjStateField = &search.Field{
 		FieldPath: getImageCVEEdgePrefix() + ".state",
 		Type:      v1.SearchDataType_SEARCH_ENUM,
 		Store:     false,
@@ -1560,7 +1560,7 @@ var (
 		Analyzer:  "",
 	}
 	// Field Values - Namespace
-	namespaceAnnotationsField = &search.Field{
+	namespaceObjAnnotationsField = &search.Field{
 		FieldPath: getNamespacePrefix() + ".annotations",
 		Type:      v1.SearchDataType_SEARCH_MAP,
 		Store:     false,
@@ -1568,7 +1568,7 @@ var (
 		Category:  v1.SearchCategory_NAMESPACES,
 		Analyzer:  "",
 	}
-	namespaceClusterField = &search.Field{
+	namespaceObjClusterField = &search.Field{
 		FieldPath: getNamespacePrefix() + ".cluster_name",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -1576,7 +1576,7 @@ var (
 		Category:  v1.SearchCategory_NAMESPACES,
 		Analyzer:  "",
 	}
-	namespaceClusterIDField = &search.Field{
+	namespaceObjClusterIDField = &search.Field{
 		FieldPath: getNamespacePrefix() + ".cluster_id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1584,7 +1584,7 @@ var (
 		Category:  v1.SearchCategory_NAMESPACES,
 		Analyzer:  "",
 	}
-	namespaceIDField = &search.Field{
+	namespaceObjIDField = &search.Field{
 		FieldPath: getNamespacePrefix() + ".id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -1592,7 +1592,7 @@ var (
 		Category:  v1.SearchCategory_NAMESPACES,
 		Analyzer:  "",
 	}
-	namespaceLabelField = &search.Field{
+	namespaceObjLabelField = &search.Field{
 		FieldPath: getNamespacePrefix() + ".labels",
 		Type:      v1.SearchDataType_SEARCH_MAP,
 		Store:     false,
@@ -1600,7 +1600,7 @@ var (
 		Category:  v1.SearchCategory_NAMESPACES,
 		Analyzer:  "",
 	}
-	namespaceNameField = &search.Field{
+	namespaceObjNameField = &search.Field{
 		FieldPath: getNamespacePrefix() + ".name",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1907,7 +1907,7 @@ var (
 		Analyzer:  "",
 	}
 	// Field Values - NodeComponentCVEEdge
-	nodeComponentCVEEdgeFixableField = &search.Field{
+	nodeComponentCVEEdgeObjFixableField = &search.Field{
 		FieldPath: getNodeComponentVulnEdgePrefix() + ".is_fixable",
 		Type:      v1.SearchDataType_SEARCH_BOOL,
 		Store:     true,
@@ -1915,7 +1915,7 @@ var (
 		Category:  getNodeComponentCVEEdgeSearchCategory(),
 		Analyzer:  "",
 	}
-	nodeComponentCVEEdgeFixedByField = &search.Field{
+	nodeComponentCVEEdgeObjFixedByField = &search.Field{
 		FieldPath: getNodeComponentVulnEdgePrefix() + ".HasFixedBy.fixed_by",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1924,7 +1924,7 @@ var (
 		Analyzer:  "",
 	}
 	// Field Values - NodeComponentEdge
-	nodeComponentEdgeLocationField = &search.Field{
+	nodeComponentEdgeObjLocationField = &search.Field{
 		FieldPath: getNodeComponentEdgePrefix() + ".location",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1933,7 +1933,7 @@ var (
 		Analyzer:  "",
 	}
 	// Field Values - NodeCVE
-	nodeCVECreatedTimeField = &search.Field{
+	nodeCVEObjCreatedTimeField = &search.Field{
 		FieldPath: getNodeCVEPrefix() + ".cve_base_info.created_at.seconds",
 		Type:      v1.SearchDataType_SEARCH_DATETIME,
 		Store:     false,
@@ -1941,7 +1941,7 @@ var (
 		Category:  getNodeCVESearchCategory(),
 		Analyzer:  "",
 	}
-	nodeCVECVEField = &search.Field{
+	nodeCVEObjCVEField = &search.Field{
 		FieldPath: getNodeCVEPrefix() + ".cve_base_info.cve",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     true,
@@ -1949,7 +1949,7 @@ var (
 		Category:  getNodeCVESearchCategory(),
 		Analyzer:  "",
 	}
-	nodeCVECVSSField = &search.Field{
+	nodeCVEObjCVSSField = &search.Field{
 		FieldPath: getNodeCVEPrefix() + ".cvss",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     true,
@@ -1957,7 +1957,7 @@ var (
 		Category:  getNodeCVESearchCategory(),
 		Analyzer:  "",
 	}
-	nodeCVEIDField = &search.Field{
+	nodeCVEObjIDField = &search.Field{
 		FieldPath: getNodeCVEPrefix() + ".id",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -1965,7 +1965,7 @@ var (
 		Category:  getNodeCVESearchCategory(),
 		Analyzer:  "",
 	}
-	nodeCVEImpactScoreField = &search.Field{
+	nodeCVEObjImpactScoreField = &search.Field{
 		FieldPath: getNodeCVEPrefix() + ".impact_score",
 		Type:      v1.SearchDataType_SEARCH_NUMERIC,
 		Store:     false,
@@ -1973,7 +1973,7 @@ var (
 		Category:  getNodeCVESearchCategory(),
 		Analyzer:  "",
 	}
-	nodeCVEOperatingSystemField = &search.Field{
+	nodeCVEObjOperatingSystemField = &search.Field{
 		FieldPath: getNodeCVEPrefix() + ".operating_system",
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     false,
@@ -1981,7 +1981,7 @@ var (
 		Category:  getNodeCVESearchCategory(),
 		Analyzer:  "",
 	}
-	nodeCVEPublishedOnField = &search.Field{
+	nodeCVEObjPublishedOnField = &search.Field{
 		FieldPath: getNodeCVEPrefix() + ".cve_base_info.published_on.seconds",
 		Type:      v1.SearchDataType_SEARCH_DATETIME,
 		Store:     false,
@@ -1989,7 +1989,7 @@ var (
 		Category:  getNodeCVESearchCategory(),
 		Analyzer:  "",
 	}
-	nodeCVESeverityField = &search.Field{
+	nodeCVEObjSeverityField = &search.Field{
 		FieldPath: getNodeCVEPrefix() + ".severity",
 		Type:      v1.SearchDataType_SEARCH_ENUM,
 		Store:     false,
@@ -1997,7 +1997,7 @@ var (
 		Category:  getNodeCVESearchCategory(),
 		Analyzer:  "",
 	}
-	nodeCVESnoozedField = &search.Field{
+	nodeCVEObjSnoozedField = &search.Field{
 		FieldPath: getNodeCVEPrefix() + ".snoozed",
 		Type:      v1.SearchDataType_SEARCH_BOOL,
 		Store:     false,
@@ -2005,7 +2005,7 @@ var (
 		Category:  getNodeCVESearchCategory(),
 		Analyzer:  "",
 	}
-	nodeCVESnoozeExpiryField = &search.Field{
+	nodeCVEObjSnoozeExpiryField = &search.Field{
 		FieldPath: getNodeCVEPrefix() + ".snooze_expiry.seconds",
 		Type:      v1.SearchDataType_SEARCH_DATETIME,
 		Store:     false,
@@ -2097,49 +2097,49 @@ var (
 
 	// Composite OptionsMaps
 	postgresImageToVulnFieldMap = map[search.FieldLabel]*search.Field{
-		search.AddCapabilities:               deploymentAddCapabilitiesField,
-		search.Cluster:                       deploymentClusterNameField,
-		search.ClusterID:                     deploymentClusterIDField,
+		search.AddCapabilities:               deploymentObjAddCapabilitiesField,
+		search.Cluster:                       deploymentObjClusterNameField,
+		search.ClusterID:                     deploymentObjClusterIDField,
 		search.Component:                     imageObjComponentNameField,
 		search.ComponentCount:                imageObjComponentCountField,
 		search.ComponentID:                   imageComponentObjIDField,
-		search.ComponentLocation:             imageComponentEdgeLocationField,
+		search.ComponentLocation:             imageComponentEdgeObjLocationField,
 		search.ComponentPriority:             imageComponentObjPriorityField,
 		search.ComponentRiskScore:            imageObjComponentRiskScoreField,
 		search.ComponentSource:               imageComponentObjSourceField,
 		search.ComponentTopCVSS:              imageComponentObjTopCVSSField,
 		search.ComponentVersion:              imageObjComponentVersionField,
-		search.CPUCoresLimit:                 deploymentCPUCoresLimitField,
-		search.CPUCoresRequest:               deploymentCPUCoresRequestField,
-		search.Created:                       deploymentCreatedField,
+		search.CPUCoresLimit:                 deploymentObjCPUCoresLimitField,
+		search.CPUCoresRequest:               deploymentObjCPUCoresRequestField,
+		search.Created:                       deploymentObjCreatedField,
 		search.CVE:                           imageObjCVEField,
 		search.CVECount:                      imageObjCVECountField,
-		search.CVECreatedTime:                imageCVECreatedTimeField,
-		search.CVEID:                         imageCVEIDField,
+		search.CVECreatedTime:                imageCVEObjCreatedTimeField,
+		search.CVEID:                         imageCVEObjIDField,
 		search.CVEPublishedOn:                imageObjCVEPublishedOnField,
 		search.CVESuppressed:                 imageObjCVESuppressedField,
-		search.CVESuppressExpiry:             imageCVESnoozeExpiryField,
+		search.CVESuppressExpiry:             imageCVEObjSnoozeExpiryField,
 		search.CVSS:                          imageObjCVSSField,
-		search.DeploymentAnnotation:          deploymentAnnotationsField,
-		search.DeploymentID:                  deploymentIDField,
-		search.DeploymentLabel:               deploymentLabelsField,
-		search.DeploymentName:                deploymentNameField,
-		search.DeploymentPriority:            deploymentPriorityField,
-		search.DeploymentRiskScore:           deploymentRiskScoreField,
-		search.DeploymentType:                deploymentTypeField,
+		search.DeploymentAnnotation:          deploymentObjAnnotationsField,
+		search.DeploymentID:                  deploymentObjIDField,
+		search.DeploymentLabel:               deploymentObjLabelsField,
+		search.DeploymentName:                deploymentObjNameField,
+		search.DeploymentPriority:            deploymentObjPriorityField,
+		search.DeploymentRiskScore:           deploymentObjRiskScoreField,
+		search.DeploymentType:                deploymentObjTypeField,
 		search.DockerfileInstructionKeyword:  imageObjDockerfileInstructionField,
 		search.DockerfileInstructionValue:    imageObjDockerfileInstructionValueField,
-		search.DropCapabilities:              deploymentDropCapabilitiesField,
-		search.EnvironmentKey:                deploymentEnvKeyField,
-		search.EnvironmentValue:              deploymentEnvValueField,
-		search.EnvironmentVarSrc:             deploymentEnvVarSourceField,
-		search.ExposedNodePort:               deploymentExposedNodePortField,
-		search.ExposingService:               deploymentExposingServiceField,
-		search.ExposingServicePort:           deploymentExposingServicePortField,
-		search.ExposureLevel:                 deploymentExposureLevelField,
-		search.ExternalHostname:              deploymentExternalHostnameField,
-		search.ExternalIP:                    deploymentExternalIPField,
-		search.Fixable:                       imageComponentCVEEdgeFixableField,
+		search.DropCapabilities:              deploymentObjDropCapabilitiesField,
+		search.EnvironmentKey:                deploymentObjEnvKeyField,
+		search.EnvironmentValue:              deploymentObjEnvValueField,
+		search.EnvironmentVarSrc:             deploymentObjEnvVarSourceField,
+		search.ExposedNodePort:               deploymentObjExposedNodePortField,
+		search.ExposingService:               deploymentObjExposingServiceField,
+		search.ExposingServicePort:           deploymentObjExposingServicePortField,
+		search.ExposureLevel:                 deploymentObjExposureLevelField,
+		search.ExternalHostname:              deploymentObjExternalHostnameField,
+		search.ExternalIP:                    deploymentObjExternalIPField,
+		search.Fixable:                       imageComponentCVEEdgeObjFixableField,
 		search.FixableCVECount:               imageObjFixableCVEsField,
 		search.FixedBy:                       imageObjFixedByField,
 		search.ImageCommand:                  imageObjCommandField,
@@ -2149,7 +2149,7 @@ var (
 		search.ImageName:                     imageObjNameField,
 		search.ImageOS:                       imageObjOperatingSystemField,
 		search.ImagePriority:                 imageObjPriorityField,
-		search.ImagePullSecret:               deploymentImagePullSecretsField,
+		search.ImagePullSecret:               deploymentObjImagePullSecretsField,
 		search.ImageRegistry:                 imageObjRegistryField,
 		search.ImageRemote:                   imageObjRemoteField,
 		search.ImageRiskScore:                imageObjRiskScoreField,
@@ -2160,30 +2160,30 @@ var (
 		search.ImageTopCVSS:                  imageObjTopCVSSField,
 		search.ImageUser:                     imageObjUserField,
 		search.ImageVolumes:                  imageObjVolumesField,
-		search.ImpactScore:                   imageCVEImpactScoreField,
+		search.ImpactScore:                   imageCVEObjImpactScoreField,
 		search.LastUpdatedTime:               imageObjLastUpdatedField,
-		search.MaxExposureLevel:              deploymentMaxExposureField,
-		search.MemoryLimit:                   deploymentMemoryLimitField,
-		search.MemoryRequest:                 deploymentMemoryRequestField,
-		search.Namespace:                     deploymentNamespaceField,
-		search.NamespaceID:                   deploymentNamespaceIDField,
+		search.MaxExposureLevel:              deploymentObjMaxExposureField,
+		search.MemoryLimit:                   deploymentObjMemoryLimitField,
+		search.MemoryRequest:                 deploymentObjMemoryRequestField,
+		search.Namespace:                     deploymentObjNamespaceField,
+		search.NamespaceID:                   deploymentObjNamespaceIDField,
 		search.OperatingSystem:               imageComponentObjOperatingSystemField,
-		search.OrchestratorComponent:         deploymentOrchestratorComponentField,
-		search.PodLabel:                      deploymentPodLabelField,
-		search.Port:                          deploymentPortField,
-		search.PortProtocol:                  deploymentPortProtocolField,
-		search.Privileged:                    deploymentPrivilegedField,
-		search.ReadOnlyRootFilesystem:        deploymentReadOnlyRootFilesystemField,
-		search.SecretName:                    deploymentSecretNameField,
-		search.SecretPath:                    deploymentSecretPathField,
-		search.ServiceAccountName:            deploymentServiceAccountNameField,
-		search.ServiceAccountPermissionLevel: deploymentServiceAccountPermissionLevelField,
-		search.Severity:                      imageCVESeverityField,
-		search.VolumeDestination:             deploymentVolumeDestinationField,
-		search.VolumeName:                    deploymentVolumeNameField,
-		search.VolumeReadonly:                deploymentVolumeReadOnlyField,
-		search.VolumeSource:                  deploymentVolumeSourceField,
-		search.VolumeType:                    deploymentVolumeTypeField,
+		search.OrchestratorComponent:         deploymentObjOrchestratorComponentField,
+		search.PodLabel:                      deploymentObjPodLabelField,
+		search.Port:                          deploymentObjPortField,
+		search.PortProtocol:                  deploymentObjPortProtocolField,
+		search.Privileged:                    deploymentObjPrivilegedField,
+		search.ReadOnlyRootFilesystem:        deploymentObjReadOnlyRootFilesystemField,
+		search.SecretName:                    deploymentObjSecretNameField,
+		search.SecretPath:                    deploymentObjSecretPathField,
+		search.ServiceAccountName:            deploymentObjServiceAccountNameField,
+		search.ServiceAccountPermissionLevel: deploymentObjServiceAccountPermissionLevelField,
+		search.Severity:                      imageCVEObjSeverityField,
+		search.VolumeDestination:             deploymentObjVolumeDestinationField,
+		search.VolumeName:                    deploymentObjVolumeNameField,
+		search.VolumeReadonly:                deploymentObjVolumeReadOnlyField,
+		search.VolumeSource:                  deploymentObjVolumeSourceField,
+		search.VolumeType:                    deploymentObjVolumeTypeField,
 		search.VulnerabilityState:            imageObjCVEStateField,
 	}
 	postgresNodeToVulnFieldMap = map[search.FieldLabel]*search.Field{
@@ -2204,15 +2204,15 @@ var (
 		search.CVE:                    nodeObjCVEField,
 		search.CVECount:               nodeObjCVECountField,
 		search.CVECreatedTime:         nodeObjCVECreatedTimeField,
-		search.CVEID:                  nodeCVEIDField,
+		search.CVEID:                  nodeCVEObjIDField,
 		search.CVEPublishedOn:         nodeObjCVEPublishedOnField,
 		search.CVESuppressed:          nodeObjCVESnoozedField,
-		search.CVESuppressExpiry:      nodeCVESnoozeExpiryField,
+		search.CVESuppressExpiry:      nodeCVEObjSnoozeExpiryField,
 		search.CVSS:                   nodeObjCVSSField,
-		search.Fixable:                nodeComponentCVEEdgeFixableField,
+		search.Fixable:                nodeComponentCVEEdgeObjFixableField,
 		search.FixableCVECount:        nodeObjFixableCVECountField,
 		search.FixedBy:                nodeObjFixedByField,
-		search.ImpactScore:            nodeCVEImpactScoreField,
+		search.ImpactScore:            nodeCVEObjImpactScoreField,
 		search.LastContactTime:        clusterObjLastContactField,
 		search.LastUpdatedTime:        nodeObjLastUpdatedField,
 		search.Node:                   nodeObjNameField,
@@ -2227,14 +2227,12 @@ var (
 		search.OperatingSystem:        nodeObjOperatingSystemField,
 		search.ScannerStatus:          clusterObjScannerStatusField,
 		search.SensorStatus:           clusterObjSensorStatusField,
-		search.Severity:               nodeCVESeverityField,
+		search.Severity:               nodeCVEObjSeverityField,
 		search.TaintKey:               nodeObjTaintKeyField,
 		search.TaintValue:             nodeObjTaintValueField,
 		search.TolerationEffect:       nodeObjTaintEffectField,
 		search.VulnerabilityState:     nodeObjVulnerabilityStateField,
 	}
-
-	// Field Values - WIP
 )
 
 func TestActiveComponentMapping(t *testing.T) {
@@ -2385,10 +2383,10 @@ func TestClustersMapping(t *testing.T) {
 
 func TestComplianceControlMapping(t *testing.T) {
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
-		search.Control:        complianceControlNameField,
-		search.ControlID:      complianceControlIDField,
-		search.ControlGroupID: complianceControlGroupIDField,
-		search.StandardID:     complianceControlStandardIDField,
+		search.Control:        complianceControlObjNameField,
+		search.ControlID:      complianceControlObjIDField,
+		search.ControlGroupID: complianceControlObjGroupIDField,
+		search.StandardID:     complianceControlObjStandardIDField,
 	}
 	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
 	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
@@ -2401,8 +2399,8 @@ func TestComplianceControlMapping(t *testing.T) {
 
 func TestComplianceStandardMapping(t *testing.T) {
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
-		search.Standard:   complianceStandardNameField,
-		search.StandardID: complianceStandardIDField,
+		search.Standard:   complianceStandardObjNameField,
+		search.StandardID: complianceStandardObjIDField,
 	}
 	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
 	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
@@ -2415,8 +2413,8 @@ func TestComplianceStandardMapping(t *testing.T) {
 
 func TestComponentVulnEdgeMapping(t *testing.T) {
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
-		search.Fixable: imageComponentCVEEdgeFixableField,
-		search.FixedBy: imageComponentCVEEdgeFixedByField,
+		search.Fixable: imageComponentCVEEdgeObjFixableField,
+		search.FixedBy: imageComponentCVEEdgeObjFixedByField,
 	}
 	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
 	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
@@ -2429,90 +2427,90 @@ func TestComponentVulnEdgeMapping(t *testing.T) {
 
 func TestDeploymentMapping(t *testing.T) {
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
-		search.AddCapabilities:               deploymentAddCapabilitiesField,
-		search.Cluster:                       deploymentClusterNameField,
-		search.ClusterID:                     deploymentClusterIDField,
+		search.AddCapabilities:               deploymentObjAddCapabilitiesField,
+		search.Cluster:                       deploymentObjClusterNameField,
+		search.ClusterID:                     deploymentObjClusterIDField,
 		search.Component:                     imageObjComponentNameField,
 		search.ComponentCount:                imageObjComponentCountField,
 		search.ComponentRiskScore:            imageObjComponentRiskScoreField,
 		search.ComponentVersion:              imageObjComponentVersionField,
 		search.ContainerID:                   processIndicatorObjContainerIDField,
 		search.ContainerName:                 processIndicatorObjContainerNameField,
-		search.CPUCoresLimit:                 deploymentCPUCoresLimitField,
-		search.CPUCoresRequest:               deploymentCPUCoresRequestField,
-		search.Created:                       deploymentCreatedField,
+		search.CPUCoresLimit:                 deploymentObjCPUCoresLimitField,
+		search.CPUCoresRequest:               deploymentObjCPUCoresRequestField,
+		search.Created:                       deploymentObjCreatedField,
 		search.CVE:                           imageObjCVEField,
 		search.CVECount:                      imageObjCVECountField,
 		search.CVEPublishedOn:                imageObjCVEPublishedOnField,
 		search.CVESuppressed:                 imageObjCVESuppressedField,
 		search.CVSS:                          imageObjCVSSField,
-		search.DeploymentAnnotation:          deploymentAnnotationsField,
-		search.DeploymentID:                  deploymentIDField,
-		search.DeploymentLabel:               deploymentLabelsField,
-		search.DeploymentName:                deploymentNameField,
-		search.DeploymentPriority:            deploymentPriorityField,
-		search.DeploymentRiskScore:           deploymentRiskScoreField,
-		search.DeploymentType:                deploymentTypeField,
+		search.DeploymentAnnotation:          deploymentObjAnnotationsField,
+		search.DeploymentID:                  deploymentObjIDField,
+		search.DeploymentLabel:               deploymentObjLabelsField,
+		search.DeploymentName:                deploymentObjNameField,
+		search.DeploymentPriority:            deploymentObjPriorityField,
+		search.DeploymentRiskScore:           deploymentObjRiskScoreField,
+		search.DeploymentType:                deploymentObjTypeField,
 		search.DockerfileInstructionKeyword:  imageObjDockerfileInstructionField,
 		search.DockerfileInstructionValue:    imageObjDockerfileInstructionValueField,
-		search.DropCapabilities:              deploymentDropCapabilitiesField,
-		search.EnvironmentKey:                deploymentEnvKeyField,
-		search.EnvironmentValue:              deploymentEnvValueField,
-		search.EnvironmentVarSrc:             deploymentEnvVarSourceField,
-		search.ExposedNodePort:               deploymentExposedNodePortField,
-		search.ExposingService:               deploymentExposingServiceField,
-		search.ExposingServicePort:           deploymentExposingServicePortField,
-		search.ExposureLevel:                 deploymentExposureLevelField,
-		search.ExternalHostname:              deploymentExternalHostnameField,
-		search.ExternalIP:                    deploymentExternalIPField,
+		search.DropCapabilities:              deploymentObjDropCapabilitiesField,
+		search.EnvironmentKey:                deploymentObjEnvKeyField,
+		search.EnvironmentValue:              deploymentObjEnvValueField,
+		search.EnvironmentVarSrc:             deploymentObjEnvVarSourceField,
+		search.ExposedNodePort:               deploymentObjExposedNodePortField,
+		search.ExposingService:               deploymentObjExposingServiceField,
+		search.ExposingServicePort:           deploymentObjExposingServicePortField,
+		search.ExposureLevel:                 deploymentObjExposureLevelField,
+		search.ExternalHostname:              deploymentObjExternalHostnameField,
+		search.ExternalIP:                    deploymentObjExternalIPField,
 		search.FixableCVECount:               imageObjFixableCVEsField,
 		search.FixedBy:                       imageObjFixedByField,
 		search.ImageCommand:                  imageObjCommandField,
 		search.ImageCreatedTime:              imageObjCreatedTimeField,
 		search.ImageEntrypoint:               imageObjEntrypointField,
 		search.ImageLabel:                    imageObjLabelField,
-		search.ImageName:                     deploymentImageNameField,
+		search.ImageName:                     deploymentObjImageNameField,
 		search.ImageOS:                       imageObjOperatingSystemField,
 		search.ImagePriority:                 imageObjPriorityField,
-		search.ImagePullSecret:               deploymentImagePullSecretsField,
-		search.ImageRegistry:                 deploymentImageRegistryField,
-		search.ImageRemote:                   deploymentImageRemoteField,
+		search.ImagePullSecret:               deploymentObjImagePullSecretsField,
+		search.ImageRegistry:                 deploymentObjImageRegistryField,
+		search.ImageRemote:                   deploymentObjImageRemoteField,
 		search.ImageRiskScore:                imageObjRiskScoreField,
 		search.ImageScanTime:                 imageObjScanTimeField,
-		search.ImageSHA:                      deploymentImageIDField,
+		search.ImageSHA:                      deploymentObjImageIDField,
 		search.ImageSignatureFetchedTime:     imageObjSignatureFetchTimeField,
-		search.ImageTag:                      deploymentImageTagField,
+		search.ImageTag:                      deploymentObjImageTagField,
 		search.ImageTopCVSS:                  imageObjTopCVSSField,
 		search.ImageUser:                     imageObjUserField,
 		search.ImageVolumes:                  imageObjVolumesField,
 		search.LastUpdatedTime:               imageObjLastUpdatedField,
-		search.MaxExposureLevel:              deploymentMaxExposureField,
-		search.MemoryLimit:                   deploymentMemoryLimitField,
-		search.MemoryRequest:                 deploymentMemoryRequestField,
-		search.Namespace:                     deploymentNamespaceField,
-		search.NamespaceID:                   deploymentNamespaceIDField,
-		search.OrchestratorComponent:         deploymentOrchestratorComponentField,
+		search.MaxExposureLevel:              deploymentObjMaxExposureField,
+		search.MemoryLimit:                   deploymentObjMemoryLimitField,
+		search.MemoryRequest:                 deploymentObjMemoryRequestField,
+		search.Namespace:                     deploymentObjNamespaceField,
+		search.NamespaceID:                   deploymentObjNamespaceIDField,
+		search.OrchestratorComponent:         deploymentObjOrchestratorComponentField,
 		search.PodID:                         processIndicatorObjPodIDField,
 		search.PodLabel:                      processIndicatorObjPodLabelField,
 		search.PodUID:                        processIndicatorObjPodUIDField,
-		search.Port:                          deploymentPortField,
-		search.PortProtocol:                  deploymentPortProtocolField,
-		search.Privileged:                    deploymentPrivilegedField,
+		search.Port:                          deploymentObjPortField,
+		search.PortProtocol:                  deploymentObjPortProtocolField,
+		search.Privileged:                    deploymentObjPrivilegedField,
 		search.ProcessArguments:              processIndicatorObjProcessArgumentsField,
 		search.ProcessExecPath:               processIndicatorObjProcessExecPathField,
 		search.ProcessID:                     processIndicatorObjProcessIDField,
 		search.ProcessName:                   processIndicatorObjProcessNameField,
 		search.ProcessUID:                    processIndicatorObjProcessUIDField,
-		search.ReadOnlyRootFilesystem:        deploymentReadOnlyRootFilesystemField,
-		search.SecretName:                    deploymentSecretNameField,
-		search.SecretPath:                    deploymentSecretPathField,
-		search.ServiceAccountName:            deploymentServiceAccountNameField,
-		search.ServiceAccountPermissionLevel: deploymentServiceAccountPermissionLevelField,
-		search.VolumeDestination:             deploymentVolumeDestinationField,
-		search.VolumeName:                    deploymentVolumeNameField,
-		search.VolumeReadonly:                deploymentVolumeReadOnlyField,
-		search.VolumeSource:                  deploymentVolumeSourceField,
-		search.VolumeType:                    deploymentVolumeTypeField,
+		search.ReadOnlyRootFilesystem:        deploymentObjReadOnlyRootFilesystemField,
+		search.SecretName:                    deploymentObjSecretNameField,
+		search.SecretPath:                    deploymentObjSecretPathField,
+		search.ServiceAccountName:            deploymentObjServiceAccountNameField,
+		search.ServiceAccountPermissionLevel: deploymentObjServiceAccountPermissionLevelField,
+		search.VolumeDestination:             deploymentObjVolumeDestinationField,
+		search.VolumeName:                    deploymentObjVolumeNameField,
+		search.VolumeReadonly:                deploymentObjVolumeReadOnlyField,
+		search.VolumeSource:                  deploymentObjVolumeSourceField,
+		search.VolumeType:                    deploymentObjVolumeTypeField,
 		search.VulnerabilityState:            imageObjCVEStateField,
 	}
 	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
@@ -2526,12 +2524,12 @@ func TestDeploymentMapping(t *testing.T) {
 
 func TestImageMapping(t *testing.T) {
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
-		search.Cluster:                      deploymentClusterNameField,
-		search.ClusterID:                    deploymentClusterIDField,
+		search.Cluster:                      deploymentObjClusterNameField,
+		search.ClusterID:                    deploymentObjClusterIDField,
 		search.Component:                    imageObjComponentNameField,
 		search.ComponentCount:               imageObjComponentCountField,
 		search.ComponentID:                  imageComponentObjIDField,
-		search.ComponentLocation:            imageComponentEdgeLocationField,
+		search.ComponentLocation:            imageComponentEdgeObjLocationField,
 		search.ComponentPriority:            imageComponentObjPriorityField,
 		search.ComponentRiskScore:           imageObjComponentRiskScoreField,
 		search.ComponentSource:              imageComponentObjSourceField,
@@ -2542,12 +2540,12 @@ func TestImageMapping(t *testing.T) {
 		search.CVEPublishedOn:               imageObjCVEPublishedOnField,
 		search.CVESuppressed:                imageObjCVESuppressedField,
 		search.CVSS:                         imageObjCVSSField,
-		search.DeploymentID:                 deploymentIDField,
-		search.DeploymentLabel:              deploymentLabelsField,
-		search.DeploymentName:               deploymentNameField,
+		search.DeploymentID:                 deploymentObjIDField,
+		search.DeploymentLabel:              deploymentObjLabelsField,
+		search.DeploymentName:               deploymentObjNameField,
 		search.DockerfileInstructionKeyword: imageObjDockerfileInstructionField,
 		search.DockerfileInstructionValue:   imageObjDockerfileInstructionValueField,
-		search.Fixable:                      imageComponentCVEEdgeFixableField,
+		search.Fixable:                      imageComponentCVEEdgeObjFixableField,
 		search.FixableCVECount:              imageObjFixableCVEsField,
 		search.FixedBy:                      imageObjFixedByField,
 		search.ImageCommand:                 imageObjCommandField,
@@ -2568,8 +2566,8 @@ func TestImageMapping(t *testing.T) {
 		search.ImageUser:                    imageObjUserField,
 		search.ImageVolumes:                 imageObjVolumesField,
 		search.LastUpdatedTime:              imageObjLastUpdatedField,
-		search.Namespace:                    deploymentNamespaceField,
-		search.NamespaceID:                  deploymentNamespaceIDField,
+		search.Namespace:                    deploymentObjNamespaceField,
+		search.NamespaceID:                  deploymentObjNamespaceIDField,
 		search.OperatingSystem:              imageComponentObjOperatingSystemField,
 		search.VulnerabilityState:           imageObjCVEStateField,
 	}
@@ -2595,13 +2593,13 @@ func TestImageMapping(t *testing.T) {
 
 func TestImageComponentMapping(t *testing.T) {
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
-		search.Cluster:                      deploymentClusterNameField,
-		search.ClusterID:                    deploymentClusterIDField,
+		search.Cluster:                      deploymentObjClusterNameField,
+		search.ClusterID:                    deploymentObjClusterIDField,
 		search.Component:                    imageComponentObjNameField,
 		search.ComponentCount:               imageObjComponentCountField,
 		search.ComponentID:                  imageComponentObjIDField,
 		search.ComponentPriority:            imageComponentObjPriorityField,
-		search.ComponentLocation:            imageComponentEdgeLocationField,
+		search.ComponentLocation:            imageComponentEdgeObjLocationField,
 		search.ComponentRiskScore:           imageComponentObjRiskScoreField,
 		search.ComponentSource:              imageComponentObjSourceField,
 		search.ComponentTopCVSS:             imageComponentObjTopCVSSField,
@@ -2611,14 +2609,14 @@ func TestImageComponentMapping(t *testing.T) {
 		search.CVEPublishedOn:               imageObjCVEPublishedOnField,
 		search.CVESuppressed:                imageObjCVESuppressedField,
 		search.CVSS:                         imageObjCVSSField,
-		search.DeploymentID:                 deploymentIDField,
-		search.DeploymentLabel:              deploymentLabelsField,
-		search.DeploymentName:               deploymentNameField,
+		search.DeploymentID:                 deploymentObjIDField,
+		search.DeploymentLabel:              deploymentObjLabelsField,
+		search.DeploymentName:               deploymentObjNameField,
 		search.DockerfileInstructionKeyword: imageObjDockerfileInstructionField,
 		search.DockerfileInstructionValue:   imageObjDockerfileInstructionValueField,
-		search.Fixable:                      imageComponentCVEEdgeFixableField,
+		search.Fixable:                      imageComponentCVEEdgeObjFixableField,
 		search.FixableCVECount:              imageObjFixableCVEsField,
-		search.FixedBy:                      imageComponentCVEEdgeFixedByField,
+		search.FixedBy:                      imageComponentCVEEdgeObjFixedByField,
 		search.ImageCommand:                 imageObjCommandField,
 		search.ImageCreatedTime:             imageObjCreatedTimeField,
 		search.ImageEntrypoint:              imageObjEntrypointField,
@@ -2636,12 +2634,12 @@ func TestImageComponentMapping(t *testing.T) {
 		search.ImageTopCVSS:                 imageObjTopCVSSField,
 		search.ImageUser:                    imageObjUserField,
 		search.ImageVolumes:                 imageObjVolumesField,
-		search.ImpactScore:                  imageCVEImpactScoreField,
+		search.ImpactScore:                  imageCVEObjImpactScoreField,
 		search.LastUpdatedTime:              imageObjLastUpdatedField,
-		search.Namespace:                    deploymentNamespaceField,
-		search.NamespaceID:                  deploymentNamespaceIDField,
+		search.Namespace:                    deploymentObjNamespaceField,
+		search.NamespaceID:                  deploymentObjNamespaceIDField,
 		search.OperatingSystem:              imageComponentObjOperatingSystemField,
-		search.Severity:                     imageCVESeverityField,
+		search.Severity:                     imageCVEObjSeverityField,
 		search.VulnerabilityState:           imageObjCVEStateField,
 	}
 	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{
@@ -2655,8 +2653,8 @@ func TestImageComponentMapping(t *testing.T) {
 			expectedPostgresSearchFieldMap[k] = v
 		}
 	}
-	expectedPostgresSearchFieldMap[search.CVECreatedTime] = imageCVECreatedTimeField
-	expectedPostgresSearchFieldMap[search.CVESuppressExpiry] = imageCVESnoozeExpiryField
+	expectedPostgresSearchFieldMap[search.CVECreatedTime] = imageCVEObjCreatedTimeField
+	expectedPostgresSearchFieldMap[search.CVESuppressExpiry] = imageCVEObjSnoozeExpiryField
 	validateOptionsMap(t,
 		v1.SearchCategory_IMAGE_COMPONENTS,
 		expectedSearchFieldMap,
@@ -2666,7 +2664,7 @@ func TestImageComponentMapping(t *testing.T) {
 
 func TestImageComponentEdgeMapping(t *testing.T) {
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
-		search.ComponentLocation: imageComponentEdgeLocationField,
+		search.ComponentLocation: imageComponentEdgeObjLocationField,
 	}
 	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
 	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
@@ -2684,13 +2682,13 @@ func TestImageComponentEdgeMapping(t *testing.T) {
 
 func TestImageCVEMapping(t *testing.T) {
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
-		search.AddCapabilities:               deploymentAddCapabilitiesField,
-		search.Cluster:                       deploymentClusterNameField,
-		search.ClusterID:                     deploymentClusterIDField,
+		search.AddCapabilities:               deploymentObjAddCapabilitiesField,
+		search.Cluster:                       deploymentObjClusterNameField,
+		search.ClusterID:                     deploymentObjClusterIDField,
 		search.Component:                     imageComponentObjNameField,
 		search.ComponentCount:                imageObjComponentCountField,
 		search.ComponentID:                   imageComponentObjIDField,
-		search.ComponentLocation:             imageComponentEdgeLocationField,
+		search.ComponentLocation:             imageComponentEdgeObjLocationField,
 		search.ComponentPriority:             imageComponentObjPriorityField,
 		search.ComponentRiskScore:            imageComponentObjRiskScoreField,
 		search.ComponentSource:               imageComponentObjSourceField,
@@ -2698,32 +2696,32 @@ func TestImageCVEMapping(t *testing.T) {
 		search.ComponentVersion:              imageComponentObjVersionField,
 		search.ContainerID:                   processIndicatorObjContainerIDField,
 		search.ContainerName:                 processIndicatorObjContainerNameField,
-		search.CPUCoresLimit:                 deploymentCPUCoresLimitField,
-		search.CPUCoresRequest:               deploymentCPUCoresRequestField,
-		search.Created:                       deploymentCreatedField,
+		search.CPUCoresLimit:                 deploymentObjCPUCoresLimitField,
+		search.CPUCoresRequest:               deploymentObjCPUCoresRequestField,
+		search.Created:                       deploymentObjCreatedField,
 		search.CVECount:                      imageObjCVECountField,
-		search.DeploymentAnnotation:          deploymentAnnotationsField,
-		search.DeploymentID:                  deploymentIDField,
-		search.DeploymentLabel:               deploymentLabelsField,
-		search.DeploymentName:                deploymentNameField,
-		search.DeploymentPriority:            deploymentPriorityField,
-		search.DeploymentRiskScore:           deploymentRiskScoreField,
-		search.DeploymentType:                deploymentTypeField,
+		search.DeploymentAnnotation:          deploymentObjAnnotationsField,
+		search.DeploymentID:                  deploymentObjIDField,
+		search.DeploymentLabel:               deploymentObjLabelsField,
+		search.DeploymentName:                deploymentObjNameField,
+		search.DeploymentPriority:            deploymentObjPriorityField,
+		search.DeploymentRiskScore:           deploymentObjRiskScoreField,
+		search.DeploymentType:                deploymentObjTypeField,
 		search.DockerfileInstructionKeyword:  imageObjDockerfileInstructionField,
 		search.DockerfileInstructionValue:    imageObjDockerfileInstructionValueField,
-		search.DropCapabilities:              deploymentDropCapabilitiesField,
-		search.EnvironmentKey:                deploymentEnvKeyField,
-		search.EnvironmentValue:              deploymentEnvValueField,
-		search.EnvironmentVarSrc:             deploymentEnvVarSourceField,
-		search.ExposedNodePort:               deploymentExposedNodePortField,
-		search.ExposingService:               deploymentExposingServiceField,
-		search.ExposingServicePort:           deploymentExposingServicePortField,
-		search.ExposureLevel:                 deploymentExposureLevelField,
-		search.ExternalHostname:              deploymentExternalHostnameField,
-		search.ExternalIP:                    deploymentExternalIPField,
-		search.Fixable:                       imageComponentCVEEdgeFixableField,
+		search.DropCapabilities:              deploymentObjDropCapabilitiesField,
+		search.EnvironmentKey:                deploymentObjEnvKeyField,
+		search.EnvironmentValue:              deploymentObjEnvValueField,
+		search.EnvironmentVarSrc:             deploymentObjEnvVarSourceField,
+		search.ExposedNodePort:               deploymentObjExposedNodePortField,
+		search.ExposingService:               deploymentObjExposingServiceField,
+		search.ExposingServicePort:           deploymentObjExposingServicePortField,
+		search.ExposureLevel:                 deploymentObjExposureLevelField,
+		search.ExternalHostname:              deploymentObjExternalHostnameField,
+		search.ExternalIP:                    deploymentObjExternalIPField,
+		search.Fixable:                       imageComponentCVEEdgeObjFixableField,
 		search.FixableCVECount:               imageObjFixableCVEsField,
-		search.FixedBy:                       imageComponentCVEEdgeFixedByField,
+		search.FixedBy:                       imageComponentCVEEdgeObjFixedByField,
 		search.ImageCommand:                  imageObjCommandField,
 		search.ImageCreatedTime:              imageObjCreatedTimeField,
 		search.ImageEntrypoint:               imageObjEntrypointField,
@@ -2731,7 +2729,7 @@ func TestImageCVEMapping(t *testing.T) {
 		search.ImageName:                     imageObjNameField,
 		search.ImageOS:                       imageObjOperatingSystemField,
 		search.ImagePriority:                 imageObjPriorityField,
-		search.ImagePullSecret:               deploymentImagePullSecretsField,
+		search.ImagePullSecret:               deploymentObjImagePullSecretsField,
 		search.ImageRegistry:                 imageObjRegistryField,
 		search.ImageRemote:                   imageObjRemoteField,
 		search.ImageRiskScore:                imageObjRiskScoreField,
@@ -2743,33 +2741,33 @@ func TestImageCVEMapping(t *testing.T) {
 		search.ImageUser:                     imageObjUserField,
 		search.ImageVolumes:                  imageObjVolumesField,
 		search.LastUpdatedTime:               imageObjLastUpdatedField,
-		search.MaxExposureLevel:              deploymentMaxExposureField,
-		search.MemoryLimit:                   deploymentMemoryLimitField,
-		search.MemoryRequest:                 deploymentMemoryRequestField,
-		search.Namespace:                     deploymentNamespaceField,
-		search.NamespaceID:                   deploymentNamespaceIDField,
-		search.OrchestratorComponent:         deploymentOrchestratorComponentField,
-		search.PodLabel:                      deploymentPodLabelField,
+		search.MaxExposureLevel:              deploymentObjMaxExposureField,
+		search.MemoryLimit:                   deploymentObjMemoryLimitField,
+		search.MemoryRequest:                 deploymentObjMemoryRequestField,
+		search.Namespace:                     deploymentObjNamespaceField,
+		search.NamespaceID:                   deploymentObjNamespaceIDField,
+		search.OrchestratorComponent:         deploymentObjOrchestratorComponentField,
+		search.PodLabel:                      deploymentObjPodLabelField,
 		search.PodID:                         processIndicatorObjPodIDField,
 		search.PodUID:                        processIndicatorObjPodUIDField,
-		search.Port:                          deploymentPortField,
-		search.PortProtocol:                  deploymentPortProtocolField,
-		search.Privileged:                    deploymentPrivilegedField,
+		search.Port:                          deploymentObjPortField,
+		search.PortProtocol:                  deploymentObjPortProtocolField,
+		search.Privileged:                    deploymentObjPrivilegedField,
 		search.ProcessArguments:              processIndicatorObjProcessArgumentsField,
 		search.ProcessExecPath:               processIndicatorObjProcessExecPathField,
 		search.ProcessID:                     processIndicatorObjProcessIDField,
 		search.ProcessName:                   processIndicatorObjProcessNameField,
 		search.ProcessUID:                    processIndicatorObjProcessUIDField,
-		search.ReadOnlyRootFilesystem:        deploymentReadOnlyRootFilesystemField,
-		search.SecretName:                    deploymentSecretNameField,
-		search.SecretPath:                    deploymentSecretPathField,
-		search.ServiceAccountName:            deploymentServiceAccountNameField,
-		search.ServiceAccountPermissionLevel: deploymentServiceAccountPermissionLevelField,
-		search.VolumeDestination:             deploymentVolumeDestinationField,
-		search.VolumeName:                    deploymentVolumeNameField,
-		search.VolumeReadonly:                deploymentVolumeReadOnlyField,
-		search.VolumeSource:                  deploymentVolumeSourceField,
-		search.VolumeType:                    deploymentVolumeTypeField,
+		search.ReadOnlyRootFilesystem:        deploymentObjReadOnlyRootFilesystemField,
+		search.SecretName:                    deploymentObjSecretNameField,
+		search.SecretPath:                    deploymentObjSecretPathField,
+		search.ServiceAccountName:            deploymentObjServiceAccountNameField,
+		search.ServiceAccountPermissionLevel: deploymentObjServiceAccountPermissionLevelField,
+		search.VolumeDestination:             deploymentObjVolumeDestinationField,
+		search.VolumeName:                    deploymentObjVolumeNameField,
+		search.VolumeReadonly:                deploymentObjVolumeReadOnlyField,
+		search.VolumeSource:                  deploymentObjVolumeSourceField,
+		search.VolumeType:                    deploymentObjVolumeTypeField,
 		search.VulnerabilityState:            imageObjCVEStateField,
 	}
 	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{
@@ -2789,22 +2787,22 @@ func TestImageCVEMapping(t *testing.T) {
 		search.ClusterLabel:                  clusterObjLabelsField,
 		search.ClusterStatus:                 clusterObjClusterStatusField,
 		search.CollectorStatus:               clusterObjCollectorStatusField,
-		search.CVE:                           imageCVECVEField,
-		search.CVECreatedTime:                imageCVECreatedTimeField,
-		search.CVEID:                         imageCVEIDField,
-		search.CVEPublishedOn:                imageCVEPublishedOnField,
-		search.CVESuppressed:                 imageCVESnoozedField,
-		search.CVESuppressExpiry:             imageCVESnoozeExpiryField,
-		search.CVSS:                          imageCVECVSSField,
-		search.FirstImageOccurrenceTimestamp: imageCVEEdgeFirstOccurrenceField,
-		search.ImpactScore:                   imageCVEImpactScoreField,
+		search.CVE:                           imageCVEObjCVEField,
+		search.CVECreatedTime:                imageCVEObjCreatedTimeField,
+		search.CVEID:                         imageCVEObjIDField,
+		search.CVEPublishedOn:                imageCVEObjPublishedOnField,
+		search.CVESuppressed:                 imageCVEObjSnoozedField,
+		search.CVESuppressExpiry:             imageCVEObjSnoozeExpiryField,
+		search.CVSS:                          imageCVEObjCVSSField,
+		search.FirstImageOccurrenceTimestamp: imageCVEEdgeObjFirstOccurrenceField,
+		search.ImpactScore:                   imageCVEObjImpactScoreField,
 		search.LastContactTime:               clusterObjLastContactField,
-		search.NamespaceAnnotation:           namespaceAnnotationsField,
-		search.NamespaceLabel:                namespaceLabelField,
-		search.OperatingSystem:               imageCVEOperatingSystemField,
+		search.NamespaceAnnotation:           namespaceObjAnnotationsField,
+		search.NamespaceLabel:                namespaceObjLabelField,
+		search.OperatingSystem:               imageCVEObjOperatingSystemField,
 		search.ScannerStatus:                 clusterObjScannerStatusField,
 		search.SensorStatus:                  clusterObjSensorStatusField,
-		search.Severity:                      imageCVESeverityField,
+		search.Severity:                      imageCVEObjSeverityField,
 	}
 	validateOptionsMap(t,
 		getImageCVESearchCategory(),
@@ -2815,8 +2813,8 @@ func TestImageCVEMapping(t *testing.T) {
 
 func TestImageCVEEdgeMapping(t *testing.T) {
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
-		search.FirstImageOccurrenceTimestamp: imageCVEEdgeFirstOccurrenceField,
-		search.VulnerabilityState:            imageCVEEdgeStateField,
+		search.FirstImageOccurrenceTimestamp: imageCVEEdgeObjFirstOccurrenceField,
+		search.VulnerabilityState:            imageCVEEdgeObjStateField,
 	}
 	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
 	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
@@ -2842,12 +2840,12 @@ func TestImageIntegrationsMapping(t *testing.T) {
 
 func TestNamespaceMapping(t *testing.T) {
 	expectedSearchFieldMap := map[search.FieldLabel]*search.Field{
-		search.Cluster:             namespaceClusterField,
-		search.ClusterID:           namespaceClusterIDField,
-		search.Namespace:           namespaceNameField,
-		search.NamespaceAnnotation: namespaceAnnotationsField,
-		search.NamespaceID:         namespaceIDField,
-		search.NamespaceLabel:      namespaceLabelField,
+		search.Cluster:             namespaceObjClusterField,
+		search.ClusterID:           namespaceObjClusterIDField,
+		search.Namespace:           namespaceObjNameField,
+		search.NamespaceAnnotation: namespaceObjAnnotationsField,
+		search.NamespaceID:         namespaceObjIDField,
+		search.NamespaceLabel:      namespaceObjLabelField,
 	}
 	expectedLegacySearchFieldMap := map[search.FieldLabel]*search.Field{}
 	expectedPostgresSearchFieldMap := map[search.FieldLabel]*search.Field{}
@@ -2876,7 +2874,7 @@ func TestNodeMapping(t *testing.T) {
 		search.CVEPublishedOn:     nodeObjCVEPublishedOnField,
 		search.CVESuppressed:      nodeObjCVESnoozedField,
 		search.CVSS:               nodeObjCVSSField,
-		search.Fixable:            nodeComponentCVEEdgeFixableField,
+		search.Fixable:            nodeComponentCVEEdgeObjFixableField,
 		search.FixableCVECount:    nodeObjFixableCVECountField,
 		search.FixedBy:            nodeObjFixedByField,
 		search.LastUpdatedTime:    nodeObjLastUpdatedField,
