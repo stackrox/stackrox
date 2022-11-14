@@ -492,7 +492,8 @@ class ImageScanningTest extends BaseSpecification {
     @Category(Integration)
     def "Verify image scan exceptions - #scanner.name() - #testAspect"() {
         Assume.assumeTrue(scanner.isTestable())
-        Assume.assumeFalse(testAspect == "missing required registry" && Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
+        Assume.assumeFalse(
+            testAspect == "missing required registry" && Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         cleanupSetupForRetry()
 
         when:
