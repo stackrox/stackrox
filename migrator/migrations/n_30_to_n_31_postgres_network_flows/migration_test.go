@@ -86,6 +86,14 @@ func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*stor
 		return flows[i].LastSeenTimestamp.Compare(flows[j].LastSeenTimestamp) < 0
 	})
 	for i, flow := range flows {
+		// Postgres Datetime columns only have microsecond granularity for timestamps.
+		// Adapt the input data to take this into account.
+		flowLastSeenTimestampNanos := flow.GetLastSeenTimestamp().GetNanos()
+		flowLastSeenTimestampNanos /= 1000
+		flowLastSeenTimestampNanos *= 1000
+		if flow != nil && flow.LastSeenTimestamp != nil {
+			flow.LastSeenTimestamp.Nanos = flowLastSeenTimestampNanos
+		}
 		s.Equal(flow, fetched[i])
 	}
 }
