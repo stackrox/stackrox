@@ -8,7 +8,7 @@ MENU_OPTIONS=(
   "Quit"
 )
 
-FIX_VERSION="3.72.0" # copy this from JIRA
+FIX_VERSION="3.73.0" # copy this from JIRA
 
 main() {
   local action="${1}"
@@ -82,7 +82,7 @@ not_done_yet() {
   local QRY
   read -r -d '' QRY <<EOF
     project IN (ROX, RS, RTOOLS)
-    AND (Component IS EMPTY or Component NOT IN (Documentation, "ACS Managed Service"))
+    AND (Component IS EMPTY or Component NOT IN (Documentation, "ACS Cloud Service"))
     AND fixVersion = "$FIX_VERSION"
     AND statusCategory != done
     AND issuetype NOT IN (Epic, "Feature Request")
