@@ -150,34 +150,49 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 
 // CentralDBEnabled returns a bool if CentralDBSpec is not nil
 func (c *CentralComponentSpec) CentralDBEnabled() bool {
-	if c == nil {
+	if c == nil || c.DB == nil {
 		return false
 	}
-	return c.DB != nil
+
+	return c.DB.Enabled == CentralDBEnabledTrue
 }
 
 // CentralDBSpec defines settings for the "central db" component.
 type CentralDBSpec struct {
+	//+kubebuilder:default=Default
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Enabled CentralDBEnabled `json:"enabled"`
 	// Specify a secret that contains the password in the "password" data item.
 	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
 	// in the "central-db-password" secret.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=2
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
 	// Specify a connection string that corresponds to an existing database. If set, the operator will not manage Central DB.
 	// When using this option, you must explicitly set a password secret; automatically generating a password will not
 	// be supported.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	ConnectionStringOverride *string `json:"connectionString,omitempty"`
 
 	// Configures how Central DB should store its persistent data. You can choose between using a persistent
 	// volume claim (recommended default), and a host path.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Persistence *DBPersistence `json:"persistence,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
 }
+
+// CentralDBEnabled is a type for values of spec.central.db.enabled.
+//+kubebuilder:validation:Enum=Default;Enabled
+type CentralDBEnabled string
+
+const (
+	// CentralDBEnabledDefault configures the central to use rocksdb
+	CentralDBEnabledDefault CentralDBEnabled = "Default"
+	// CentralDBEnabledTrue configures the central to use a PostgreSQL database (Technical Preview)
+	CentralDBEnabledTrue CentralDBEnabled = "Enabled"
+)
 
 // GetPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
 func (c *CentralDBSpec) GetPasswordSecret() *LocalSecretReference {

@@ -70,6 +70,13 @@ spec:
                           set a password secret; automatically generating a password
                           will not be supported.
                         type: string
+                      enabled:
+                        default: Default
+                        description: CentralDBEnabled is a type for values of spec.central.db.enabled.
+                        enum:
+                        - Default
+                        - Enabled
+                        type: string
                       nodeSelector:
                         additionalProperties:
                           type: string
@@ -203,6 +210,8 @@ spec:
                               type: string
                           type: object
                         type: array
+                    required:
+                    - enabled
                     type: object
                   defaultTLSSecret:
                     description: By default, Central will only serve an internal TLS
