@@ -50,6 +50,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   `pods`, `events`, and `namespaces`. This fixes an issue when generating diagnostic bundles to now correctly include all relevant information within the namespace of central.
 - ROX-13265: Fix missing rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
 - ROX-13500: Previously, deployment YAML check on V1 CronJob workload would cause Central to panic. This is now fixed.
+- `cves.ids` field of `storage.VulnerabilityRequest` object, which is in the response of `VulnerabilityRequestService` (`/v1/cve/requests/`) endpoints, has been renamed to `cves.cves`.
 
 ## [3.72.0]
 
@@ -179,7 +180,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [69.0]
 
-- `collector` image with `-slim` in the image tag is no longer published (`collector-slim` with suffix in the image name will continue to be published).
+- `collector` image with `-slim` image tag is no longer published (`collector-slim` with suffix in the image name will continue to be published).
 - `collector-rhel`, `main-rhel`, `scanner-rhel`, and `scanner-db-rhel` images are not published any more. These images were identical to non-rhel ones since version 3.66.
 - Increased default Scanner memory limit from 3000 MiB to 4GiB.
 - API changes/deprecations:
