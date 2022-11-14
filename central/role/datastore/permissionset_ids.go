@@ -1,6 +1,6 @@
 package datastore
 
-// The postgresID field is there for UUID support of permission set ID fields in postgres mode.
+// Postgres IDs for permission sets
 // The values are UUIDs taken in descending order from ffffffff-ffff-fff4-f5ff-ffffffffffff
 // Next ID: ffffffff-ffff-fff4-f5ff-fffffffffff6
 const (

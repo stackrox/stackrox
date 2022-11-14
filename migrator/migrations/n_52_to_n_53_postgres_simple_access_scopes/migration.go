@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	rocksdb "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
@@ -38,31 +39,7 @@ var (
 		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 52,
 		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 53},
 		Run: func(databases *types.Databases) error {
-			legacyAccessScopeStore, err := legacysimpleaccessscopes.New(databases.PkgRocksDB)
-			if err != nil {
-				return err
-			}
-			if err := migrateAccessScopes(databases.GormDB, databases.PostgresDB, legacyAccessScopeStore); err != nil {
-				return errors.Wrap(err,
-					"moving simple_access_scopes from rocksdb to postgres")
-			}
-			legacyPermissionSetStore, err := legacypermissionsets.New(databases.PkgRocksDB)
-			if err != nil {
-				return err
-			}
-			if err := migratePermissionSets(databases.GormDB, databases.PostgresDB, legacyPermissionSetStore); err != nil {
-				return errors.Wrap(err,
-					"moving permission_sets from rocksdb to postgres")
-			}
-			legacyRoleStore, err := legacyroles.New(databases.PkgRocksDB)
-			if err != nil {
-				return err
-			}
-			if err := migrateRoles(databases.GormDB, databases.PostgresDB, legacyRoleStore); err != nil {
-				return errors.Wrap(err,
-					"moving roles from rocksdb to postgres")
-			}
-			return nil
+			return migrateAll(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB)
 		},
 	}
 	batchSize              = 1000
@@ -88,6 +65,34 @@ var (
 		"vulnreporter":          "ffffffff-ffff-fff4-f5ff-fffffffffff7",
 	}
 )
+
+func migrateAll(rocksDatabase *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
+	legacyAccessScopeStore, err := legacysimpleaccessscopes.New(rocksDatabase)
+	if err != nil {
+		return err
+	}
+	if err := migrateAccessScopes(gormDB, postgresDB, legacyAccessScopeStore); err != nil {
+		return errors.Wrap(err,
+			"moving simple_access_scopes from rocksdb to postgres")
+	}
+	legacyPermissionSetStore, err := legacypermissionsets.New(rocksDatabase)
+	if err != nil {
+		return err
+	}
+	if err := migratePermissionSets(gormDB, postgresDB, legacyPermissionSetStore); err != nil {
+		return errors.Wrap(err,
+			"moving permission_sets from rocksdb to postgres")
+	}
+	legacyRoleStore, err := legacyroles.New(rocksDatabase)
+	if err != nil {
+		return err
+	}
+	if err := migrateRoles(gormDB, postgresDB, legacyRoleStore); err != nil {
+		return errors.Wrap(err,
+			"moving roles from rocksdb to postgres")
+	}
+	return nil
+}
 
 func convertAccessScopeID(accessScopeID string) string {
 	identifierSuffix := strings.TrimPrefix(accessScopeID, accessScopeIDPrefix)
