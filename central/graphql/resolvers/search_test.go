@@ -16,7 +16,7 @@ import (
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	k8sroleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	k8srolebindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
-	search2 "github.com/stackrox/rox/central/search"
+	globalSearch "github.com/stackrox/rox/central/search"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -64,7 +64,7 @@ func TestSearchCategories(t *testing.T) {
 	searchCategories := resolver.getAutoCompleteSearchers()
 	searchFuncs := resolver.getSearchFuncs()
 
-	for globalCategory := range search2.GetGlobalSearchCategories() {
+	for globalCategory := range globalSearch.GetGlobalSearchCategories() {
 		if globalCategory == v1.SearchCategory_IMAGE_INTEGRATIONS {
 			continue
 		}

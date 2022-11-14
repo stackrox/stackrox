@@ -30,7 +30,7 @@ func SuppressCVEReqToVulnReq(request *v1.SuppressCVERequest, createdAt *types.Ti
 		},
 		Entities: &storage.VulnerabilityRequest_Cves{
 			Cves: &storage.VulnerabilityRequest_CVEs{
-				Ids: request.GetCves(),
+				Cves: request.GetCves(),
 			},
 		},
 		Req: &storage.VulnerabilityRequest_DeferralReq{
@@ -57,7 +57,7 @@ func UnSuppressCVEReqToVulnReq(request *v1.UnsuppressCVERequest) *storage.Vulner
 		},
 		Entities: &storage.VulnerabilityRequest_Cves{
 			Cves: &storage.VulnerabilityRequest_CVEs{
-				Ids: request.GetCves(),
+				Cves: request.GetCves(),
 			},
 		},
 	}
