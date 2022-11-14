@@ -31,9 +31,6 @@ const (
 	datasetSize     = 2500
 	legacyBatchSize = 100
 
-	accessScopeIDPrefix   = "io.stackrox.authz.accessscope."
-	permissionSetIDPrefix = "io.stackrox.authz.permissionset."
-
 	defaultDenyAllAccessScopeID        = accessScopeIDPrefix + "denyall"
 	defaultDenyAllAccessScopeName      = "Default DenyAll Access Scope"
 	defaultUnrestrictedAccessScopeID   = accessScopeIDPrefix + "unrestricted"
@@ -209,10 +206,12 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 	newScopeStore := pgSimpleAccessScopeStore.New(s.postgresDB.Pool)
 	newPermissionStore := pgPermissionSetStore.New(s.postgresDB.Pool)
 	newRoleStore := pgRoleStore.New(s.postgresDB.Pool)
-	legacyScopeStore, err := legacysimpleaccessscopes.New(s.legacyDB)
-	legacyPermissionStore, err := legacypermissionsets.New(s.legacyDB)
-	legacyRoleStore, err := legacyroles.New(s.legacyDB)
-	s.NoError(err)
+	legacyScopeStore, scopeErr := legacysimpleaccessscopes.New(s.legacyDB)
+	s.NoError(scopeErr)
+	legacyPermissionStore, permissionSetErr := legacypermissionsets.New(s.legacyDB)
+	s.NoError(permissionSetErr)
+	legacyRoleStore, roleErr := legacyroles.New(s.legacyDB)
+	s.NoError(roleErr)
 
 	// Prepare data and write to legacy DB
 	accessScopes := []*storage.SimpleAccessScope{
@@ -309,7 +308,6 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 		permissionSetOldIDToNameMapping[permissionSet.GetId()] = permissionSet.GetName()
 	}
 
-	var roles []*storage.Role
 	roles := []*storage.Role{
 		{
 			Name:            "R11",
@@ -579,11 +577,11 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 	s.NoError(err)
 	s.Equal(len(accessScopes), scopeCount)
 	newScopeIDs := make([]string, 0, len(accessScopes))
-	err = newScopeStore.Walk(s.ctx, func(obj *storage.SimpleAccessScope) error {
+	scopeWalkErr := newScopeStore.Walk(s.ctx, func(obj *storage.SimpleAccessScope) error {
 		newScopeIDs = append(newScopeIDs, obj.GetId())
 		return nil
 	})
-	s.NoError(err)
+	s.NoError(scopeWalkErr)
 	for _, scopeID := range newScopeIDs {
 		fetched, exists, err := newScopeStore.Get(s.ctx, scopeID)
 		s.NoError(err)
@@ -597,10 +595,11 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 	s.NoError(err)
 	s.Equal(len(permissionSets), permissionSetCount)
 	newPermissionSetIDs := make([]string, 0, len(permissionSets))
-	err = newPermissionStore.Walk(s.ctx, func(obj *storage.PermissionSet) error {
+	permissionWalkErr := newPermissionStore.Walk(s.ctx, func(obj *storage.PermissionSet) error {
 		newPermissionSetIDs = append(newPermissionSetIDs, obj.GetId())
 		return nil
 	})
+	s.NoError(permissionWalkErr)
 	for _, permissionSetID := range newPermissionSetIDs {
 		fetched, exists, err := newPermissionStore.Get(s.ctx, permissionSetID)
 		s.NoError(err)
