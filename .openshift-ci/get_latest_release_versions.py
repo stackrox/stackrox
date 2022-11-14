@@ -13,11 +13,7 @@ def is_release_tag(version):
     return re.search(r"^\d+\.\d+\.\d+$", version) is not None
 
 def filter_tags(rawtags):
-    filteredtags = []
-    for t in rawtags:
-        if is_release_tag(t):
-            filteredtags.append(t)
-    return set(filteredtags)
+    return set([t for t in rawtags if is_release_tag(t)])
 
 def cli_output_to_tags(stdoutput):
     return stdoutput.decode(encoding="utf-8").splitlines()
