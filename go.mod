@@ -17,7 +17,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.119
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cenkalti/backoff/v3 v3.2.2
-	github.com/ckaznocha/protoc-gen-lint v0.2.4
+	github.com/ckaznocha/protoc-gen-lint v0.3.0
 	github.com/cloudflare/cfssl v1.6.3
 	github.com/containers/image/v5 v5.23.0
 	github.com/coreos/go-oidc/v3 v3.4.0
@@ -43,7 +43,7 @@ require (
 	github.com/google/certificate-transparency-go v1.1.4
 	github.com/google/gnostic v0.6.9
 	github.com/google/go-cmp v0.5.9
-	github.com/google/go-containerregistry v0.12.0
+	github.com/google/go-containerregistry v0.12.1
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
@@ -95,6 +95,7 @@ require (
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.10.0
+	go.uber.org/goleak v1.2.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.2.0
 	golang.org/x/exp v0.0.0-20220823124025-807a23277127
@@ -103,7 +104,7 @@ require (
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.2.0
 	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af
-	golang.org/x/tools v0.2.0
+	golang.org/x/tools v0.3.0
 	golang.stackrox.io/grpc-http1 v0.2.5
 	google.golang.org/api v0.103.0
 	google.golang.org/genproto v0.0.0-20221027153422-115e99e71e1c
@@ -333,7 +334,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/mod v0.6.0 // indirect
+	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/term v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect

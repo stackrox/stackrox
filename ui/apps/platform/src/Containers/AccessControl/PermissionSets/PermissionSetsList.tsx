@@ -14,6 +14,7 @@ import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-tab
 import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
+import usePermissions from '../../../hooks/usePermissions';
 
 const entityType = 'PERMISSION_SET';
 
@@ -32,6 +33,8 @@ function PermissionSetsList({
     const [idDeleting, setIdDeleting] = useState('');
     const [nameConfirmingDelete, setNameConfirmingDelete] = useState<string | null>(null);
     const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
 
     function onClickDelete(id: string) {
         setIdDeleting(id);
@@ -102,6 +105,7 @@ function PermissionSetsList({
                                 <Td
                                     actions={{
                                         disable:
+                                            !hasWriteAccessForPage ||
                                             idDeleting === id ||
                                             roles.some(
                                                 ({ permissionSetId }) => permissionSetId === id

@@ -1,6 +1,6 @@
 import { CollectionRequest, CollectionResponse } from 'services/CollectionsService';
 import { generateRequest, parseCollection } from './converter';
-import { Collection } from './types';
+import { ByLabelResourceSelector, Collection, LabelSelectorRule } from './types';
 
 describe('Collection parser', () => {
     it('should convert between BE CollectionResponse and FE Collection', () => {
@@ -162,6 +162,59 @@ describe('Collection parser', () => {
         };
 
         expect(parseCollection(collectionResponse)).toBeInstanceOf(AggregateError);
+    });
+
+    it('should correctly handle label key/value splitting on `=` delimiter', () => {
+        const collectionResponse: CollectionResponse = {
+            id: 'a-b-c',
+            name: 'Sample',
+            description: 'Sample description',
+            inUse: false,
+            resourceSelectors: [
+                {
+                    rules: [
+                        { operator: 'OR', fieldName: 'Cluster Label', values: [{ value: '' }] },
+                    ],
+                },
+            ],
+            embeddedCollections: [],
+        };
+
+        // Get the resource selector we are interested in without so many type assertions
+        function getLabelRule(collection: CollectionResponse): LabelSelectorRule {
+            return (
+                (parseCollection(collection) as Collection).resourceSelector
+                    .Cluster as ByLabelResourceSelector
+            ).rules[0];
+        }
+
+        const firstLabelRule = collectionResponse.resourceSelectors[0].rules[0].values[0];
+
+        // Test empty label key handling (NOTE, this should be forbidden from occurring by BE)
+        firstLabelRule.value = '=test';
+        expect(getLabelRule(collectionResponse)).toMatchObject({ key: '', values: ['test'] });
+
+        // Test empty label value handling (NOTE, this should be forbidden from occurring by BE)
+        firstLabelRule.value = 'test=';
+        expect(getLabelRule(collectionResponse)).toMatchObject({ key: 'test', values: [''] });
+
+        // Test plain characters
+        firstLabelRule.value = 'key=value';
+        expect(getLabelRule(collectionResponse)).toMatchObject({ key: 'key', values: ['value'] });
+
+        // Test subdomain prefix
+        firstLabelRule.value = 'app.kubernetes.io/name=value';
+        expect(getLabelRule(collectionResponse)).toMatchObject({
+            key: 'app.kubernetes.io/name',
+            values: ['value'],
+        });
+
+        // Test multiple '=' characters
+        firstLabelRule.value = 'app.kubernetes.io/name=value=with=extra=eq';
+        expect(getLabelRule(collectionResponse)).toMatchObject({
+            key: 'app.kubernetes.io/name',
+            values: ['value=with=extra=eq'],
+        });
     });
 });
 

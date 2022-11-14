@@ -3,8 +3,16 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
+import { mockDebounce } from 'test-utils/mocks/@patternfly/react-core';
 import RuleSelector from './RuleSelector';
 import { ByLabelResourceSelector, ByNameResourceSelector, ScopedResourceSelector } from '../types';
+
+jest.mock('@patternfly/react-core', () => mockDebounce);
+
+jest.mock('services/CollectionsService', () => ({
+    __esModule: true,
+    getCollectionAutoComplete: () => ({ request: Promise.resolve([]) }),
+}));
 
 // Component wrapper to allow a higher level component to feed updated state back to the RuleSelector.
 function DeploymentRuleSelector({ defaultSelector, onChange }) {
@@ -17,6 +25,17 @@ function DeploymentRuleSelector({ defaultSelector, onChange }) {
 
     return (
         <RuleSelector
+            collection={{
+                name: '',
+                description: '',
+                inUse: false,
+                resourceSelector: {
+                    Deployment: { type: 'All' },
+                    Namespace: { type: 'All' },
+                    Cluster: { type: 'All' },
+                },
+                embeddedCollectionIds: [],
+            }}
             entityType="Deployment"
             scopedResourceSelector={resourceSelector}
             handleChange={(_, newSelector) => setResourceSelector(newSelector)}
@@ -168,18 +187,13 @@ describe('Collection RuleSelector component', () => {
         );
         await user.type(
             screen.getByLabelText('Select label value 1 of 1 for deployment rule 2 of 2'),
-            // typo
-            'stabl{Enter}'
+            'stable{Enter}'
         );
+
         await user.click(screen.getAllByText('Add value')[1]);
         await user.type(
             screen.getByLabelText('Select label value 2 of 2 for deployment rule 2 of 2'),
             'beta{Enter}'
-        );
-        // test editing typo
-        await user.type(
-            screen.getByLabelText('Select label value 1 of 2 for deployment rule 2 of 2'),
-            'e{Enter}'
         );
 
         expect(resourceSelector).toEqual({
@@ -198,5 +212,15 @@ describe('Collection RuleSelector component', () => {
                 },
             ],
         });
+
+        // Check that deletion of all items removes the selector
+        await user.click(screen.getByLabelText('Delete stable'));
+        await user.click(screen.getByLabelText('Delete beta'));
+        await user.click(screen.getByLabelText('Delete visa-processor'));
+        await user.click(screen.getByLabelText('Delete mastercard-processor'));
+        await user.click(screen.getByLabelText('Delete discover-processor'));
+
+        expect(resourceSelector).toEqual({ type: 'All' });
+        expect(screen.getByText('All deployments')).toBeInTheDocument();
     });
 });
