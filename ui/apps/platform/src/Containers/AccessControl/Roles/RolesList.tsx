@@ -18,6 +18,7 @@ import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
 import { AccessControlQueryFilter } from '../accessControlPaths';
+import usePermissions from '../../../hooks/usePermissions';
 
 // Return whether an auth provider rule refers to a role name,
 // therefore need to disable the delete action for the role.
@@ -47,6 +48,8 @@ function RolesList({
     const [nameDeleting, setNameDeleting] = useState('');
     const [nameConfirmingDelete, setNameConfirmingDelete] = useState<string | null>(null);
     const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
 
     function onClickDelete(name: string) {
         setNameDeleting(name);
@@ -138,6 +141,7 @@ function RolesList({
                                     <Td
                                         actions={{
                                             disable:
+                                                !hasWriteAccessForPage ||
                                                 nameDeleting === name ||
                                                 getIsDefaultRoleName(name) ||
                                                 getHasRoleName(groups, name),

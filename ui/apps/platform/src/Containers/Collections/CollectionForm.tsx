@@ -12,7 +12,6 @@ import {
     Label,
     TextInput,
     Title,
-    Truncate,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-table';
@@ -21,25 +20,29 @@ import * as yup from 'yup';
 
 import { collectionsBasePath } from 'routePaths';
 import { CollectionResponse } from 'services/CollectionsService';
+import { getIsValidLabelKey } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
-import CollectionAttacher from './CollectionAttacher';
+import CollectionAttacher, { CollectionAttacherProps } from './CollectionAttacher';
 import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
 
-function AttachedCollectionTable({ collections }: { collections: CollectionResponse[] }) {
+function AttachedCollectionTable({
+    collections,
+    collectionTableCells,
+}: {
+    collections: CollectionResponse[];
+    collectionTableCells: CollectionAttacherProps['collectionTableCells'];
+}) {
     return collections.length > 0 ? (
         <TableComposable aria-label="Attached collections" variant={TableVariant.compact}>
             <Tbody>
-                {collections.map(({ name, description }) => (
-                    <Tr key={name}>
-                        <Td dataLabel="Name">
-                            <Button variant="link" className="pf-u-pl-0" isInline>
-                                {name}
-                            </Button>
-                        </Td>
-                        <Td dataLabel="Description">
-                            <Truncate content={description} />
-                        </Td>
+                {collections.map((collection) => (
+                    <Tr key={collection.name}>
+                        {collectionTableCells.map(({ name, render }) => (
+                            <Td key={name} dataLabel={name}>
+                                {render(collection)}
+                            </Td>
+                        ))}
                     </Tr>
                 ))}
             </Tbody>
@@ -61,9 +64,8 @@ export type CollectionFormProps = {
     /* collection responses for the embedded collections of `initialData` */
     initialEmbeddedCollections: CollectionResponse[];
     onSubmit: (collection: Collection) => Promise<void>;
-    /* Callback used when clicking on a collection name in the CollectionAttacher section. If
-    left undefined, collection names will not be linked. */
-    appendTableLinkAction?: (collectionId: string) => void;
+    /* Table cells to render for each collection in the CollectionAttacher component */
+    collectionTableCells: CollectionAttacherProps['collectionTableCells'];
     /* content to render before the main form */
     headerContent?: ReactElement;
 };
@@ -81,7 +83,7 @@ function yupResourceSelectorObject() {
                   rules: yup.array().of(
                       yup.object().shape({
                           operator: yup.string().required().matches(/OR/),
-                          key: yup.string().trim().required(),
+                          key: yup.string().trim().required().test(getIsValidLabelKey),
                           values: yup.array().of(yup.string().trim().required()).required(),
                       })
                   ),
@@ -102,6 +104,7 @@ function CollectionForm({
     initialData,
     initialEmbeddedCollections,
     onSubmit,
+    collectionTableCells,
 }: CollectionFormProps) {
     const history = useHistory();
 
@@ -252,13 +255,20 @@ function CollectionForm({
                         Attached collections
                     </Title>
                     {isReadOnly ? (
-                        <AttachedCollectionTable collections={initialEmbeddedCollections} />
+                        <AttachedCollectionTable
+                            collections={initialEmbeddedCollections}
+                            collectionTableCells={collectionTableCells}
+                        />
                     ) : (
                         <>
                             <p>Extend this collection by attaching other sets.</p>
                             <CollectionAttacher
+                                excludedCollectionId={
+                                    action.type === 'edit' ? action.collectionId : null
+                                }
                                 initialEmbeddedCollections={initialEmbeddedCollections}
                                 onSelectionChange={onEmbeddedCollectionsChange}
+                                collectionTableCells={collectionTableCells}
                             />
                         </>
                     )}
