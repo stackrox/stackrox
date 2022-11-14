@@ -21,6 +21,7 @@ import * as yup from 'yup';
 
 import { collectionsBasePath } from 'routePaths';
 import { CollectionResponse } from 'services/CollectionsService';
+import { getIsValidLabelKey } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
@@ -81,7 +82,7 @@ function yupResourceSelectorObject() {
                   rules: yup.array().of(
                       yup.object().shape({
                           operator: yup.string().required().matches(/OR/),
-                          key: yup.string().trim().required(),
+                          key: yup.string().trim().required().test(getIsValidLabelKey),
                           values: yup.array().of(yup.string().trim().required()).required(),
                       })
                   ),
