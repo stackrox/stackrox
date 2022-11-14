@@ -54,12 +54,10 @@ describe('Access Control Auth providers', () => {
         visitWithStaticResponseForPermissions(authProvidersUrl, staticResponseForPermissions);
 
         cy.get(`${selectors.h1}:contains("${h1}")`);
-        cy.get(selectors.navLink).should('not.exist');
-        cy.get(selectors.h2).should('not.exist');
 
         cy.get(selectors.alertTitle).should(
             'contain', // instead of have.text because of "Info alert:" for screen reader
-            'You do not have permission to view Access Control'
+            'You do not have permission to view auth providers.'
         );
     });
 
