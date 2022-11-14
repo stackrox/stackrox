@@ -78,9 +78,13 @@ func insertIntoPermissionSets(ctx context.Context, batch *pgx.Batch, obj *storag
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO permission_sets (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
@@ -119,12 +123,16 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx pgx.Tx, objs 
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())

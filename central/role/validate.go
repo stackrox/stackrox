@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/uuid"
 	"k8s.io/apimachinery/pkg/labels"
@@ -25,34 +26,60 @@ const (
 	accessScopeIDPrefix = "io.stackrox.authz.accessscope."
 )
 
+func generateIdentifier(prefix string) string {
+	generatedIDSuffix := uuid.NewV4().String()
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return generatedIDSuffix
+	}
+	return prefix + generatedIDSuffix
+}
+
+func isValidIdentifier(prefix string, id string) bool {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		_, parseErr := uuid.FromString(id)
+		return parseErr == nil
+	}
+	return strings.HasPrefix(id, prefix)
+}
+
 // GeneratePermissionSetID returns a random valid permission set ID.
 func GeneratePermissionSetID() string {
-	return permissionSetIDPrefix + uuid.NewV4().String()
+	return generateIdentifier(permissionSetIDPrefix)
 }
 
 // EnsureValidPermissionSetID converts id to the correct format if necessary.
 func EnsureValidPermissionSetID(id string) string {
-	if strings.HasPrefix(id, permissionSetIDPrefix) {
+	if isValidIdentifier(permissionSetIDPrefix, id) {
 		return id
+	}
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return generateIdentifier(permissionSetIDPrefix)
 	}
 	return permissionSetIDPrefix + id
 }
 
 // GenerateAccessScopeID returns a random valid access scope ID.
 func GenerateAccessScopeID() string {
-	return accessScopeIDPrefix + uuid.NewV4().String()
+	return generateIdentifier(accessScopeIDPrefix)
 }
 
 // EnsureValidAccessScopeID converts id to the correct format if necessary.
 func EnsureValidAccessScopeID(id string) string {
-	if strings.HasPrefix(id, accessScopeIDPrefix) {
+	if isValidIdentifier(accessScopeIDPrefix, id) {
 		return id
+	}
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return generateIdentifier(accessScopeIDPrefix)
 	}
 	return accessScopeIDPrefix + id
 }
 
 // ValidateAccessScopeID returns an error if the scope ID prefix is not correct.
 func ValidateAccessScopeID(scope *storage.SimpleAccessScope) error {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		_, parseErr := uuid.FromString(scope.GetId())
+		return parseErr
+	}
 	if !strings.HasPrefix(scope.GetId(), accessScopeIDPrefix) {
 		return errors.Errorf("id field must be in '%s*' format", accessScopeIDPrefix)
 	}
@@ -92,7 +119,12 @@ func ValidateRole(role *storage.Role) error {
 func ValidatePermissionSet(ps *storage.PermissionSet) error {
 	var multiErr error
 
-	if !strings.HasPrefix(ps.GetId(), permissionSetIDPrefix) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		_, parseErr := uuid.FromString(ps.GetId())
+		if parseErr != nil {
+			multiErr = multierror.Append(multiErr, errors.Wrap(parseErr, "id field must be a valid UUID"))
+		}
+	} else if !strings.HasPrefix(ps.GetId(), permissionSetIDPrefix) {
 		multiErr = multierror.Append(multiErr, errors.Errorf("id field must be in '%s*' format", permissionSetIDPrefix))
 	}
 	if ps.GetName() == "" {

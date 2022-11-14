@@ -78,9 +78,13 @@ func insertIntoSimpleAccessScopes(ctx context.Context, batch *pgx.Batch, obj *st
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO simple_access_scopes (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
@@ -119,12 +123,16 @@ func (s *storeImpl) copyFromSimpleAccessScopes(ctx context.Context, tx pgx.Tx, o
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
