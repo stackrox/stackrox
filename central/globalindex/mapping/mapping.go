@@ -130,9 +130,6 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.ImagesSchema.OptionsMap,
 		schema.ImageCvesSchema.OptionsMap,
 		schema.DeploymentsSchema.OptionsMap,
-		schema.ImageCveEdgesSchema.OptionsMap,
-		schema.NamespacesSchema.OptionsMap,
-		schema.ClustersSchema.OptionsMap,
 	)
 
 	imageVulnerabilitySearchOptions := search.CombineOptionsMaps(
