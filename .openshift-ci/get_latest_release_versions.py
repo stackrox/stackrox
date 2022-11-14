@@ -9,13 +9,13 @@ import re
 import subprocess
 from collections import defaultdict
 
-def is_release_tag_git_cli(version):
+def is_release_tag(version):
     return bool(re.search(r"^\d+\.\d+\.\d+$", version))
 
-def filter_git_cli_tags(rawtags):
+def filter_tags(rawtags):
     filteredtags = []
     for t in rawtags:
-        if is_release_tag_git_cli(t):
+        if is_release_tag(t):
             filteredtags.append(t)
     return set(filteredtags)
 
@@ -43,7 +43,7 @@ def get_latest_tags(tags, num_versions):
 # get_latest_release_versions gets the latest patches of the last num_versions major versions via Git CLI
 def get_latest_release_versions(num_versions):
     rawtags = cli_output_to_tags(subprocess.check_output(["git", "tag", "--list"]))
-    tags = filter_git_cli_tags(rawtags)
+    tags = filter_tags(rawtags)
     return get_latest_tags(tags, num_versions)
 
 def main(argv):
