@@ -23,7 +23,7 @@ import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
 
-// TODO(ROX-12814): Scanner OOMs on this test in some Openshift jobs.
+// Scanner OOMs on this test in some Openshift jobs. See ROX-12814.
 @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 class PolicyFieldsTest extends BaseSpecification {
 
