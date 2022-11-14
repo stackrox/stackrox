@@ -18,16 +18,17 @@ def filter_tags(rawtags):
 def make_image_tag():
     return subprocess.check_output(["make", "--quiet", "--no-print-directory", "tag"]).decode(encoding="utf-8")
 
-def extract_y_from_main_image_tag(mainimagetag):
-    return int(re.search(r"\d+\.(\d+)", mainimagetag).group(1))
+def extract_x_y_from_main_image_tag(mainimagetag):
+    x_y = re.search(r"(\d+)\.(\d+)", mainimagetag)
+    return int(x_y.group(1)), int(x_y.group(2))
 
 def get_latest_tags(tags, num_versions):
-    main_image_y = extract_y_from_main_image_tag(make_image_tag())
+    central_major, central_minor = extract_x_y_from_main_image_tag(make_image_tag())
     top_patch_version = defaultdict(int)
     for t in tags:
         [major, minor, patch] = t.split('.')
         k = '.'.join([major, minor])
-        if (int(minor) <= main_image_y):
+        if (int(major) < central_major or (int(major) == central_major and int(minor) <= central_minor)):
             top_patch_version[k] = max(top_patch_version[k], int(patch))
     top_major_versions = sorted(list(top_patch_version.keys()), reverse=True)[:num_versions]
     return [t + '.' + str(top_patch_version[t]) for t in top_major_versions]
@@ -39,7 +40,9 @@ def get_latest_release_versions(num_versions):
     return get_latest_tags(tags, num_versions)
 
 def main(argv):
-    latestversions = get_latest_release_versions(int(argv[1]))
+    n = int(argv[1]) if len(argv)>1 else 4
+    latestversions = get_latest_release_versions(n)
+    print(f"Last {n} versions:")
     print("\n".join(latestversions))
 
 if (__name__ == "__main__"):
