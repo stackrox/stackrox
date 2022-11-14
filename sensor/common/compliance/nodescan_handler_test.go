@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/goleak"
 )
@@ -117,19 +116,30 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 		}
 	}()
 	err := h.Start()
-	assert.NoError(s.T(), err)
+	s.Assert().NoError(err)
 }
 
 func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
 	nodeScans := make(chan *storage.NodeScanV2)
-	defer close(nodeScans)
-	h := NewNodeScanHandler(nodeScans)
+	s.Assert().NotPanics(func() {
+		defer close(nodeScans)
+		h := NewNodeScanHandler(nodeScans)
+		s.Assert().NoError(h.Start())
+		h.Stop(nil)
+		// try to start & stop the stopped handler again
+		s.Assert().NoError(h.Start())
+		h.Stop(nil)
+	})
+}
 
-	assert.NoError(s.T(), h.Start())
-	h.Stop(nil)
-
-	// try to start & stop the stopped handler again
-	assert.Error(s.T(), h.Start())
-	h.Stop(nil)
+func (s *NodeScanHandlerTestSuite) TestDoubleStartHandler() {
+	nodeScans := make(chan *storage.NodeScanV2)
+	s.Assert().NotPanics(func() {
+		defer close(nodeScans)
+		h := NewNodeScanHandler(nodeScans)
+		s.Assert().NoError(h.Start())
+		s.Assert().NoError(h.Start())
+		h.Stop(nil)
+	})
 
 }
