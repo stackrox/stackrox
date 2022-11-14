@@ -76,7 +76,9 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 			rocksVersion.LastPersisted = d.dbmRocks.GetCurrentCloneCreationTime()
 		}
 
-		pgClone, migrateFromRocks, err = d.dbmPostgres.GetCloneToMigrate(rocksVersion)
+		restoreFromRocks := d.dbmRocks.CheckForRestore()
+
+		pgClone, migrateFromRocks, err = d.dbmPostgres.GetCloneToMigrate(rocksVersion, restoreFromRocks)
 		if err != nil {
 			return "", "", "", err
 		}
@@ -126,7 +128,7 @@ func (d *dbCloneManagerImpl) Persist(cloneName string, pgClone string, persistBo
 
 			// If the versions do not match, we have updated another time with Postgres,
 			// so we can no longer roll back to RocksDB.
-			if rocksVersion == nil || (currentPostgresVersion != nil && rocksVersion.MainVersion != currentPostgresVersion.MainVersion) {
+			if rocksVersion != nil && currentPostgresVersion != nil && rocksVersion.MainVersion != currentPostgresVersion.MainVersion {
 				d.dbmRocks.DecommissionRocksDB()
 			}
 		}

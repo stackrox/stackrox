@@ -141,7 +141,7 @@ func (d *dbCloneManagerImpl) databaseExists(clone string) bool {
 
 // GetCloneToMigrate - finds a clone to migrate.
 // It returns the database clone name, flag informing if Rocks should be used as well and error if fails.
-func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.MigrationVersion) (string, bool, error) {
+func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.MigrationVersion, restoreFromRocks bool) (string, bool, error) {
 	log.Info("GetCloneToMigrate")
 
 	// If a restore clone exists, our focus is to try to restore that database.
@@ -154,7 +154,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
 	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
 	// Otherwise we roll with Postgres->Postgres
-	if d.rocksExists(rocksVersion) {
+	if d.rocksExists(rocksVersion) || restoreFromRocks {
 		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
 		// Rocks has been used but Postgres is fresh.  So just return current.
 		if !currExists || currClone.GetMigVersion() == nil {
@@ -163,7 +163,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 
 		// Rocks more recently updated than Postgres so need to migrate from there.  Otherwise, Postgres is more recent
 		// so just fall through to the rest of the processing.
-		if currClone.GetMigVersion().LastPersisted.Before(rocksVersion.LastPersisted) {
+		if currClone.GetMigVersion().LastPersisted.Before(rocksVersion.LastPersisted) || restoreFromRocks {
 			// We want to start fresh as we are migrating from Rocks->Postgres.  So any data that exists in
 			// Postgres from a previous upgrade followed by a rollback needs to be ignored.  So just drop current
 			// and let it create anew.

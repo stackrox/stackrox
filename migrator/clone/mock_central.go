@@ -388,7 +388,7 @@ func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
 		dbm := postgres.New("", config, sourceMap)
 		err = dbm.Scan()
 		require.NoError(m.t, err)
-		clone, _, err := dbm.GetCloneToMigrate(nil)
+		clone, _, err := dbm.GetCloneToMigrate(nil, false)
 		require.NoError(m.t, err)
 		m.upgradeDB("", "", clone)
 
