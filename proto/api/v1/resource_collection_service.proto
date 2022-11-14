@@ -75,7 +75,7 @@ service CollectionService {
 
     rpc GetCollectionCount (GetCollectionCountRequest) returns (GetCollectionCountResponse) {
         option (google.api.http) = {
-            get: "/v1/collections/count"
+            get: "/v1/collectionscount"
         };
     }
 
@@ -88,7 +88,7 @@ service CollectionService {
 
     rpc UpdateCollection (UpdateCollectionRequest) returns (UpdateCollectionResponse) {
         option (google.api.http) = {
-            post: "/v1/collections/{id}"
+            patch: "/v1/collections/{id}"
             body: "*"
         };
     }

@@ -410,7 +410,7 @@ func RegisterCollectionServiceHandlerServer(ctx context.Context, mux *runtime.Se
 
 	})
 
-	mux.Handle("POST", pattern_CollectionService_UpdateCollection_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PATCH", pattern_CollectionService_UpdateCollection_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -580,7 +580,7 @@ func RegisterCollectionServiceHandlerClient(ctx context.Context, mux *runtime.Se
 
 	})
 
-	mux.Handle("POST", pattern_CollectionService_UpdateCollection_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PATCH", pattern_CollectionService_UpdateCollection_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -646,7 +646,7 @@ func RegisterCollectionServiceHandlerClient(ctx context.Context, mux *runtime.Se
 var (
 	pattern_CollectionService_GetCollection_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "collections", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_CollectionService_GetCollectionCount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "collections", "count"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_CollectionService_GetCollectionCount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "collectionscount"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_CollectionService_CreateCollection_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "collections"}, "", runtime.AssumeColonVerbOpt(false)))
 

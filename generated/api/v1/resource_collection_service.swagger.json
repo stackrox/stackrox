@@ -97,62 +97,6 @@
         ]
       }
     },
-    "/v1/collections/count": {
-      "get": {
-        "operationId": "CollectionService_GetCollectionCount",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1GetCollectionCountResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "query.query",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "query.pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "query.pagination.offset",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "query.pagination.sortOption.field",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "query.pagination.sortOption.reversed",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          }
-        ],
-        "tags": [
-          "CollectionService"
-        ]
-      }
-    },
     "/v1/collections/{id}": {
       "get": {
         "operationId": "CollectionService_GetCollection",
@@ -216,7 +160,7 @@
           "CollectionService"
         ]
       },
-      "post": {
+      "patch": {
         "operationId": "CollectionService_UpdateCollection",
         "responses": {
           "200": {
@@ -246,6 +190,62 @@
             "schema": {
               "$ref": "#/definitions/v1UpdateCollectionRequest"
             }
+          }
+        ],
+        "tags": [
+          "CollectionService"
+        ]
+      }
+    },
+    "/v1/collectionscount": {
+      "get": {
+        "operationId": "CollectionService_GetCollectionCount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetCollectionCountResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
