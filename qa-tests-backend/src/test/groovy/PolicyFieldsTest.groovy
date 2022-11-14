@@ -18,10 +18,13 @@ import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.AlertService
 import services.PolicyService
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
 
+// TODO(ROX-12814): Scanner OOMs on this test in some Openshift jobs.
+@IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 class PolicyFieldsTest extends BaseSpecification {
 
     // NOTE: this is populated by registerDeployments call, do not manually
