@@ -53,15 +53,15 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 		res, verifiedImageReferences, err := verifier.VerifySignature(ctx, image)
 
 		verificationResult := &storage.ImageSignatureVerificationResult{
-			VerificationTime: protoconv.ConvertTimeToTimestamp(time.Now()),
-			VerifierId:       integration.GetId(),
-			Status:           res,
+			VerificationTime:        protoconv.ConvertTimeToTimestamp(time.Now()),
+			VerifierId:              integration.GetId(),
+			Status:                  res,
+			VerifiedImageReferences: verifiedImageReferences,
 		}
 		// We do not currently support specifying which specific method within an image signature integration should
 		// be successful. Hence, short-circuit on the first successfully verified signature within an image signature
 		// integration.
 		if res == storage.ImageSignatureVerificationResult_VERIFIED {
-			verificationResult.VerifiedImageReferences = verifiedImageReferences
 			return []*storage.ImageSignatureVerificationResult{
 				verificationResult,
 			}

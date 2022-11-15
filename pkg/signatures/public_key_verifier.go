@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -103,9 +102,7 @@ func (c *cosignPublicKeyVerifier) VerifySignature(ctx context.Context,
 		verifiedImageReferences, err := verifyImageSignatures(ctx, sigs, hash, image, opts)
 		if err == nil {
 			if len(verifiedImageReferences) == 0 {
-				// Fallback to the default name of the image if the reference is empty. In theory, this should never happen,
-				// but since we skip errors during unmarshalling of the payload with utils.Should, we should have this
-				// default case here.
+				// Fallback to the default name of the image if the reference is empty.
 				verifiedImageReferences = []string{image.GetName().GetFullName()}
 			}
 			return storage.ImageSignatureVerificationResult_VERIFIED, verifiedImageReferences, nil
@@ -130,10 +127,7 @@ func verifyImageSignatures(ctx context.Context, signatures []oci.Signature, imag
 		// within a single signature integration.
 		if err == nil {
 			verifiedImageReferences, err = getVerifiedImageReference(signature, image)
-			// This error should not occur, since the signature should always have a payload associated with it of the
-			// simple signing format type.
-			utils.Should(errors.Wrap(err, "retrieving verified image reference from signature payload"))
-			return verifiedImageReferences, nil
+			return verifiedImageReferences, err
 		}
 		verificationErrors = multierror.Append(verificationErrors, err)
 	}
@@ -206,7 +200,7 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	}
 	// The payload of each signature will be the JSON representation of the simple signing format.
 	// This will include the docker manifest reference which was used for this specific signature, which will be our
-	// reference which is vaild for this specific signature.
+	// reference which is valid for this specific signature.
 	var simpleContainer payload.SimpleContainerImage
 	if err := json.Unmarshal(payloadBytes, &simpleContainer); err != nil {
 		return nil, err
@@ -219,9 +213,12 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	// - and has the same digest
 	// This way we also cover the case where we e.g. reference an image with digest format (<registry>/<repository>@sha256-<digest>)
 	// as well as images using floating tags (<registry>/<repository>:<tag>).
+	signatureImageReference := simpleContainer.Critical.Identity.DockerReference
+	log.Debugf("Retrieving verified image references from the image names [%v] and image reference within the "+
+		"signature %q", image.GetNames(), signatureImageReference)
 	var verifiedImageReferences []string
 	for _, name := range image.GetNames() {
-		if simpleContainer.Critical.Identity.DockerReference == fmt.Sprintf("%s%s",
+		if signatureImageReference == fmt.Sprintf("%s/%s",
 			name.GetRegistry(), name.GetRemote()) {
 			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
 		}

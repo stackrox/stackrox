@@ -124,8 +124,7 @@ type SignatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureI
 
 // signatureVerifierForIntegrations will be used to verify signatures for an image using a list of integrations.
 // This is used for mocking purposes, otherwise it will use signatures.VerifyAgainstSignatureIntegrations.
-type signatureVerifierForIntegrations func(ctx context.Context, integrations []*storage.SignatureIntegration,
-	image *storage.Image) []*storage.ImageSignatureVerificationResult
+type signatureVerifierForIntegrations func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)

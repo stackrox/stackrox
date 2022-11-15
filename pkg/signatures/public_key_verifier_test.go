@@ -92,6 +92,53 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 		"image full name should match verified image reference")
 }
 
+func TestPublicKeyVerifier_VerifySignature_Multiple_Names(t *testing.T) {
+	const pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
+		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE04soAoNygRhaytCtygPcwsP+6Ein\n" +
+		"YoDv/BJx1T9WmtsANh2HplRR66Fbm+3OjFuah2IhFufPhDl6a85I3ymVYw==\n" +
+		"-----END PUBLIC KEY-----"
+	const b64Signature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAYZNkn8h" +
+		"kAnXI="
+	const b64SignaturePayload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2Q4ZDM4OTJkLTQ" +
+		"4YmQtNDY3MS1hNTQ2LTJlNzBhOTAwYjcwMiJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OmVlODliMDA1Mj" +
+		"hmZjRmMDJmMjQwNWU0ZWUyMjE3NDNlYmMzZjhlOGRkMGJmZDVjNGMyMGEyZmEyYWFhN2VkZTMifSwidHlwZSI6ImNvc2lnbiBjb250YWluZ" +
+		"XIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
+	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
+		"bfd5c4c20a2fa2aaa7ede3"
+
+	pubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				Name:            "cosignPublicKeyVerifier",
+				PublicKeyPemEnc: pemPublicKey,
+			},
+		},
+	})
+
+	require.NoError(t, err, "creating public key verifier")
+
+	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
+	require.NoError(t, err, "creating image with signature")
+
+	secondImageName := &storage.ImageName{
+		Registry: "docker.io",
+		Remote:   "nginx",
+		Tag:      "1.23",
+		FullName: "docker.io/nginx:1.23",
+	}
+
+	img.Names = append(img.GetNames(), secondImageName)
+
+	status, verifiedImageReferences, err := pubKeyVerifier.VerifySignature(context.Background(), img)
+	assert.NoError(t, err, "verification should be successful")
+	assert.Equal(t, storage.ImageSignatureVerificationResult_VERIFIED, status, "status should be VERIFIED")
+	require.Len(t, verifiedImageReferences, 1)
+	assert.Contains(t, verifiedImageReferences, img.GetName().GetFullName(),
+		"image full name should match verified image reference")
+	assert.NotContainsf(t, verifiedImageReferences, secondImageName.GetFullName(),
+		"verified image references should not contain image name %s", secondImageName.GetFullName())
+}
+
 func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 	const pemNonMatchingPubKey = "-----BEGIN PUBLIC KEY-----\n" +
 		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6\n" +
