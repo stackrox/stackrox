@@ -151,19 +151,37 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 
 	currClone, currExists := d.cloneMap[CurrentClone]
 
+	if restoreFromRocks {
+		if !currExists || currClone.GetMigVersion() == nil {
+			return CurrentClone, true, nil
+		}
+
+		// Create an empty clone for processing the restore data from Rocks
+		// If such a clone already exists then we were previously in the middle of processing and need to clear it
+		if d.databaseExists(RestoreFromRocksClone) {
+			err := pgadmin.DropDB(d.sourceMap, d.adminConfig, RestoreFromRocksClone)
+			if err != nil {
+				log.Errorf("Unable to drop temp clone: %v", err)
+				return "", true, err
+			}
+		}
+
+		d.cloneMap[RestoreFromRocksClone] = metadata.NewPostgres(rocksVersion, RestoreFromRocksClone)
+		return RestoreFromRocksClone, true, nil
+	}
+
 	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
 	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
 	// Otherwise we roll with Postgres->Postgres
 	if d.rocksExists(rocksVersion) || restoreFromRocks {
 		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
-		// Rocks has been used but Postgres is fresh.  So just return current.
 		if !currExists || currClone.GetMigVersion() == nil {
 			return CurrentClone, true, nil
 		}
 
 		// Rocks more recently updated than Postgres so need to migrate from there.  Otherwise, Postgres is more recent
 		// so just fall through to the rest of the processing.
-		if currClone.GetMigVersion().LastPersisted.Before(rocksVersion.LastPersisted) || restoreFromRocks {
+		if currClone.GetMigVersion().LastPersisted.Before(rocksVersion.LastPersisted) {
 			// We want to start fresh as we are migrating from Rocks->Postgres.  So any data that exists in
 			// Postgres from a previous upgrade followed by a rollback needs to be ignored.  So just drop current
 			// and let it create anew.
@@ -219,7 +237,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 		return PreviousClone, false, nil
 	}
 
-	log.Info("Fell through all checks to return current, meaning probably empty OR rollback disabled.")
+	log.Info("Fell through all checks to return current.")
 	return CurrentClone, false, nil
 }
 
@@ -242,10 +260,10 @@ func (d *dbCloneManagerImpl) Persist(cloneName string) error {
 	log.Infof("Persisting upgraded clone: %s", cloneName)
 
 	switch cloneName {
-	case RestoreClone:
+	case RestoreClone, RestoreFromRocksClone:
 		// For a restore, we should analyze it to get the stats because pg_dump does not
 		// contain that information.
-		err := pgadmin.AnalyzeDatabase(d.adminConfig, "central_restore")
+		err := pgadmin.AnalyzeDatabase(d.adminConfig, cloneName)
 		if err != nil {
 			log.Warnf("unable to force analyze restore database:  %v", err)
 		}

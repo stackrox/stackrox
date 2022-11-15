@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/migrations"
 )
 
 // dbCloneManagerImpl - scans and manage database clones within central.
@@ -69,14 +70,21 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 	var err error
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		// We have to support restore of Rocks data for a couple of release.  This allows us to determine
+		// if we are dealing with that case.
+		restoreFromRocks := d.dbmRocks.CheckForRestore()
+
 		// Get the version of the Rocks Current so Postgres manager can use that info
 		// to determine what clone it needs to migrate.
-		rocksVersion := d.dbmRocks.GetVersion(rocksdb.CurrentClone)
-		if rocksVersion != nil {
-			rocksVersion.LastPersisted = d.dbmRocks.GetCurrentCloneCreationTime()
+		var rocksVersion *migrations.MigrationVersion
+		if restoreFromRocks {
+			rocksVersion = d.dbmRocks.GetVersion(rocksdb.RestoreClone)
+		} else {
+			rocksVersion = d.dbmRocks.GetVersion(rocksdb.CurrentClone)
+			if rocksVersion != nil {
+				rocksVersion.LastPersisted = d.dbmRocks.GetCurrentCloneCreationTime()
+			}
 		}
-
-		restoreFromRocks := d.dbmRocks.CheckForRestore()
 
 		pgClone, migrateFromRocks, err = d.dbmPostgres.GetCloneToMigrate(rocksVersion, restoreFromRocks)
 		if err != nil {
@@ -109,7 +117,7 @@ func (d *dbCloneManagerImpl) Persist(cloneName string, pgClone string, persistBo
 		// We need to persist the Rocks previous, so it is there in case of a rollback.  In the case of
 		// an upgrade that will generate a previous, the Temp Clone will be the one RocksDB persists.
 		// During the persist operation the Current clone will move to Previous and Temp will move to Current.
-		if persistBoth && cloneName == rocksdb.TempClone {
+		if persistBoth && (cloneName == rocksdb.TempClone || cloneName == rocksdb.RestoreClone) {
 			if err := d.dbmRocks.Persist(cloneName); err != nil {
 				log.Warnf("Unable to create a previous version of Rocks to rollback to: %v", err)
 			}

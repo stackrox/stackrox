@@ -21,10 +21,13 @@ const (
 
 	// TempClone - temp postgres clone
 	TempClone = "central_temp"
+
+	// RestoreFromRocksClone - special clone for restoring from RocksDB
+	RestoreFromRocksClone = "central_rocks"
 )
 
 var (
-	knownClones = set.NewStringSet(CurrentClone, RestoreClone, BackupClone, PreviousClone)
+	knownClones = set.NewStringSet(CurrentClone, RestoreClone, BackupClone, PreviousClone, RestoreFromRocksClone)
 
 	log = logging.CurrentModule().Logger()
 )

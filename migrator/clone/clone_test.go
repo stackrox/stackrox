@@ -271,6 +271,7 @@ func TestCloneRestore(t *testing.T) {
 		description string
 		toVersion   *versionPair
 		breakPoint  string
+		fromRocks   bool
 	}{
 		{
 			description: "Restore to earlier version",
@@ -318,13 +319,22 @@ func TestCloneRestore(t *testing.T) {
 			c.description = c.description + " with reboot"
 		}
 
+		rocksToPostgres := rand.Intn(2) == 1
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			if rocksToPostgres {
+				c.description = c.description + " rocksDB to Postgres"
+			}
+		} else {
+			rocksToPostgres = false
+		}
+
 		t.Run(c.description, func(t *testing.T) {
 			log.Infof("Test = %q", c.description)
-			mock := createAndRunCentral(t, &preHistoryVer, false)
+			mock := createAndRunCentral(t, &preHistoryVer, rocksToPostgres)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
 			mock.upgradeCentral(&currVer, "")
-			mock.restoreCentral(c.toVersion, c.breakPoint)
+			mock.restoreCentral(c.toVersion, c.breakPoint, rocksToPostgres)
 			if reboot {
 				mock.rebootCentral()
 			}
@@ -626,7 +636,7 @@ func doTestRollback(t *testing.T) {
 
 // TestRollbackPostgresToRocks - set of tests that will test rolling back to Rocks from Postgres.
 func TestRollbackPostgresToRocks(t *testing.T) {
-	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
+	//// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		currVer = releaseVer
 		doTestRollbackPostgresToRocks(t)
@@ -737,7 +747,7 @@ func TestRacingConditionInPersist(t *testing.T) {
 		{
 			description: "Restore breaks in persist",
 			preRun: func(m *mockCentral) {
-				m.restore(&preVer)
+				m.restore(&preVer, false)
 			},
 		},
 		{
