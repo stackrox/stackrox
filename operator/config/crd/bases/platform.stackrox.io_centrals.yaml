@@ -210,8 +210,6 @@ spec:
                               type: string
                           type: object
                         type: array
-                    required:
-                    - enabled
                     type: object
                   defaultTLSSecret:
                     description: By default, Central will only serve an internal TLS

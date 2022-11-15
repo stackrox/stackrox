@@ -150,18 +150,19 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 
 // CentralDBEnabled returns a bool if CentralDBSpec is not nil
 func (c *CentralComponentSpec) CentralDBEnabled() bool {
-	if c == nil || c.DB == nil {
+	if c == nil || c.DB == nil || c.DB.Enabled != nil {
 		return false
 	}
 
-	return c.DB.Enabled == CentralDBEnabledTrue
+	return *c.DB.Enabled == CentralDBEnabledTrue
 }
 
 // CentralDBSpec defines settings for the "central db" component.
 type CentralDBSpec struct {
+	//+kubebuilder:validation:Default=Default
 	//+kubebuilder:default=Default
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
-	Enabled CentralDBEnabled `json:"enabled"`
+	Enabled *CentralDBEnabled `json:"enabled,omitempty"`
 	// Specify a secret that contains the password in the "password" data item.
 	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
 	// in the "central-db-password" secret.
