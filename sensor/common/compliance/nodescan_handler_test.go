@@ -86,7 +86,7 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 			}
 		}
 	}()
-	// this is a producer that stops the handler after producing the first message and then sends 30 more messages
+	// this is a producer that stops the handler after producing the first message and then sends many (29) more messages
 	go func() {
 		defer close(nodeScans)
 		for i := 0; i < 30; i++ {
@@ -101,8 +101,7 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 		}
 	}()
 
-	err := h.Start()
-	s.Assert().NoError(err)
+	s.Assert().NoError(h.Start())
 }
 
 func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
