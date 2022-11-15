@@ -19,13 +19,6 @@ var (
 	once sync.Once
 )
 
-var isEmptyGroupPropertiesF = func(props *storage.GroupProperties) bool {
-	if props.GetAuthProviderId() == "" && props.GetKey() == "" && props.GetValue() == "" {
-		return true
-	}
-	return false
-}
-
 func initialize() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		ds = New(postgres.New(globaldb.GetPostgres()))
@@ -39,12 +32,7 @@ func initialize() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 
-	grps, err := ds.GetFiltered(ctx, isEmptyGroupPropertiesF)
-	utils.Should(err)
-	for _, grp := range grps {
-		err = ds.Remove(ctx, grp.GetProps(), true)
-		utils.Should(err)
-	}
+	utils.Should(ds.RemoveAllWithEmptyProperties(ctx))
 }
 
 // Singleton returns the singleton providing access to the roles store.

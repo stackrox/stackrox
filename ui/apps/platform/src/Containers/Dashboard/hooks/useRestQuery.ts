@@ -19,6 +19,7 @@ export default function useRestQuery<ReturnType>(
         const { request, cancel } = cancellableRequestFn();
 
         setError(undefined);
+        setLoading(true);
 
         request
             .then((result) => {

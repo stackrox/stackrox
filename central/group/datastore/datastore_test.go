@@ -738,3 +738,59 @@ func (s *groupDataStoreTestSuite) TestMutateGroupForce() {
 	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{mutableGroup}, []*storage.Group{immutableGroup}, nil, true)
 	s.NoError(err)
 }
+
+func (s *groupDataStoreTestSuite) TestRemoveAllWithEmptyProperties() {
+	// 1. Try and remove groups without properties without running into any issues.
+	groupsWithoutProperties := []*storage.Group{
+		{
+			Props: &storage.GroupProperties{
+				Id: "id1",
+			},
+			RoleName: "i don't",
+		},
+
+		{
+			Props: &storage.GroupProperties{
+				Id: "id2",
+			},
+			RoleName: "know anything",
+		},
+	}
+	gomock.InOrder(
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(groupsWithoutProperties)),
+		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil),
+		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[1].GetProps().GetId()).Return(nil),
+	)
+
+	err := s.dataStore.RemoveAllWithEmptyProperties(s.hasWriteCtx)
+	s.NoError(err)
+
+	// 2. Try and remove groups without properties with some groups not having an ID.
+	groupsWithoutProperties = []*storage.Group{
+		{
+			Props: &storage.GroupProperties{
+				Id: "id1",
+			},
+			RoleName: "i don't",
+		},
+		{
+			Props:    &storage.GroupProperties{},
+			RoleName: "this is",
+		},
+		{
+			Props: &storage.GroupProperties{
+				Id: "id2",
+			},
+			RoleName: "know anything",
+		},
+	}
+	gomock.InOrder(
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(groupsWithoutProperties)),
+		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil),
+		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[2].GetProps().GetId()).Return(nil),
+	)
+
+	err = s.dataStore.RemoveAllWithEmptyProperties(s.hasWriteCtx)
+	s.Error(err)
+	s.ErrorIs(err, errox.InvalidArgs)
+}

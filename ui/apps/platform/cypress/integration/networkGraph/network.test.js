@@ -16,6 +16,7 @@ import {
     visitNetworkGraphWithMockedData,
     visitNetworkGraphWithNamespaceFilter,
 } from '../../helpers/networkGraph';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 function uploadYAMLFile(fileName, selector) {
     cy.intercept('POST', api.network.simulate).as('postNetworkPolicySimulate');
@@ -31,7 +32,6 @@ describe('Network page', () => {
 
     it('should visit using the left nav', () => {
         visitNetworkGraphFromLeftNav();
-        cy.get('h1:contains("Network Graph")');
     });
 
     it('should have selected item in nav bar', () => {
@@ -40,6 +40,12 @@ describe('Network page', () => {
             'have.class',
             'pf-m-current'
         );
+    });
+
+    it('should have title', () => {
+        visitNetworkGraph();
+
+        cy.title().should('match', getRegExpForTitleWithBranding('Network Graph'));
     });
 
     it('should display a legend', () => {

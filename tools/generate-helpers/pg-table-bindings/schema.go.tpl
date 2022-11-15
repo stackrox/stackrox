@@ -15,6 +15,7 @@ import (
     "github.com/stackrox/rox/pkg/postgres"
     "github.com/stackrox/rox/pkg/postgres/walker"
     "github.com/stackrox/rox/pkg/search"
+    "github.com/stackrox/rox/pkg/uuid"
 )
 
 {{- define "createTableStmt" }}

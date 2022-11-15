@@ -44,6 +44,10 @@ type AuditLogCollectionManagerTestSuite struct {
 	suite.Suite
 }
 
+func (s *AuditLogCollectionManagerTestSuite) TearDownTest() {
+	defer assertNoGoroutineLeaks(s.T())
+}
+
 func (s *AuditLogCollectionManagerTestSuite) getFakeServersAndStates() (map[string]sensor.ComplianceService_CommunicateServer, map[string]*storage.AuditLogFileState) {
 	servers := map[string]sensor.ComplianceService_CommunicateServer{
 		"node-a": &mockServer{

@@ -19,12 +19,12 @@ package storage;
 // next available tag: 28
 message Node {
     // A unique ID identifying this node.
-    string id                              = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk"'];
+    string id                              = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk,type(uuid)"'];
     // The (host)name of the node. Might or might not be the same as ID.
     string name                            = 2 [(gogoproto.moretags) = 'search:"Node,store"'];
     // Taints on the host
     repeated Taint taints                  = 3;
-    string cluster_id                      = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint"'];
+    string cluster_id                      = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
     string cluster_name                    = 5 [(gogoproto.moretags) = 'search:"Cluster,store"'];
     map<string, string> labels             = 6 [(gogoproto.moretags) = 'search:"Node Label"'];
     map<string, string> annotations        = 7 [(gogoproto.moretags) = 'search:"Node Annotation"'];
@@ -86,7 +86,7 @@ message NodeScan {
 }
 
 message NodeScanV2 {
-    string                         node_id    = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk"'];
+    string                         node_id    = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk,type(uuid)"'];
     string                         node_name  = 2 [(gogoproto.moretags) = 'search:"Node,store"'];
     google.protobuf.Timestamp      scan_time  = 3 [(gogoproto.moretags) = 'search:"Node Scan Time,store"'];
     scannerV1.Components           components = 4;

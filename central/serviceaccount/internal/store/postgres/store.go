@@ -87,11 +87,11 @@ func insertIntoServiceAccounts(ctx context.Context, batch *pgx.Batch, obj *stora
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		obj.GetNamespace(),
 		obj.GetClusterName(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
 		serialized,
@@ -143,7 +143,7 @@ func (s *storeImpl) copyFromServiceAccounts(ctx context.Context, tx pgx.Tx, objs
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
@@ -151,7 +151,7 @@ func (s *storeImpl) copyFromServiceAccounts(ctx context.Context, tx pgx.Tx, objs
 
 			obj.GetClusterName(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetLabels(),
 

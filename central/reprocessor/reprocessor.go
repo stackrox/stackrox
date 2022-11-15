@@ -473,7 +473,7 @@ func (l *loopImpl) reprocessWatchedImage(name string) bool {
 		return false
 	}
 	// Save the image
-	img.Id = utils.GetImageID(img)
+	img.Id = utils.GetSHA(img)
 	if img.GetId() == "" {
 		return false
 	}

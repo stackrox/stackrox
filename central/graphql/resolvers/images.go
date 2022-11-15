@@ -182,6 +182,9 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuer
 func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopImageVulnerability")
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		if resolver.data.GetSetTopCvss() == nil {
+			return nil, nil
+		}
 		vulnResolver, err := resolver.topVulnV2(ctx, args)
 		if err != nil || vulnResolver == nil {
 			return nil, err
@@ -198,6 +201,9 @@ func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (Vuln
 		return nil, errors.New("TopVuln not supported with postgres enabled. Please use TopImageVulnerability.")
 	}
 
+	if resolver.data.GetSetTopCvss() == nil {
+		return nil, nil
+	}
 	vulnResolver, err := resolver.topVulnV2(ctx, args)
 	if err != nil || vulnResolver == nil {
 		return nil, err
@@ -209,10 +215,6 @@ func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (*c
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
-	}
-
-	if resolver.data.GetSetTopCvss() == nil {
-		return nil, nil
 	}
 
 	query = search.ConjunctionQuery(query, resolver.getImageQuery())
@@ -362,9 +364,6 @@ func (resolver *imageResolver) imageScopeContext(ctx context.Context) context.Co
 		}
 	}
 	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		resolver.ctx = ctx
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{

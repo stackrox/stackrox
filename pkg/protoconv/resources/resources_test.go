@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsV1 "k8s.io/api/apps/v1"
 	appsV1beta2 "k8s.io/api/apps/v1beta2"
+	batchV1 "k8s.io/api/batch/v1"
+	batchV1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	extV1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -101,6 +103,42 @@ func TestDaemonSetReplicas(t *testing.T) {
 	}
 	deploymentWrap.populateReplicas(reflect.Value{}, daemonSet4)
 	assert.Equal(t, int(deploymentWrap.Replicas), 0)
+}
+
+func TestCronJobPopulateSpec(t *testing.T) {
+	deploymentWrap := &DeploymentWrap{
+		Deployment: &storage.Deployment{
+			Type: kubernetes.CronJob,
+		},
+	}
+
+	cronJob1 := &batchV1.CronJob{
+		Spec: batchV1.CronJobSpec{
+			JobTemplate: batchV1.JobTemplateSpec{
+				Spec: batchV1.JobSpec{
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{Containers: []v1.Container{{Name: "container1"}}},
+					},
+				},
+			},
+		},
+	}
+	deploymentWrap.populateFields(cronJob1)
+	assert.Equal(t, deploymentWrap.Containers[0].Name, "container1")
+
+	cronJob2 := &batchV1beta1.CronJob{
+		Spec: batchV1beta1.CronJobSpec{
+			JobTemplate: batchV1beta1.JobTemplateSpec{
+				Spec: batchV1.JobSpec{
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{Containers: []v1.Container{{Name: "container2"}}},
+					},
+				},
+			},
+		},
+	}
+	deploymentWrap.populateFields(cronJob2)
+	assert.Equal(t, deploymentWrap.Containers[0].Name, "container2")
 }
 
 func TestIsTrackedReference(t *testing.T) {

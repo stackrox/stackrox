@@ -195,9 +195,6 @@ func (resolver *imageComponentResolver) imageComponentScopeContext(ctx context.C
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		resolver.ctx = ctx
-	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    resolver.data.GetId(),

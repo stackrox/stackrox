@@ -86,6 +86,15 @@ describe('User Info', () => {
     });
 
     describe('User Page', () => {
+        // TODO after we split into 2 test files and factor out helper functions.
+        /*
+        it('should have title', () => {
+            visitUserProfile();
+    
+            cy.title().should('match', getRegExpForTitleWithBranding('User Profile'));
+        });
+        */
+
         it('should show user name and email', () => {
             interceptWithMockAdminUser();
             cy.visit(userPageUrl);

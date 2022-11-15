@@ -30,7 +30,7 @@ const LABEL_SEPARATOR = '=';
  * of a `Collection` that can be supported by the current UI controls. If any incompatibilities are detected
  * it will return a list of validation errors to the caller.
  */
-export function parseCollection(data: CollectionResponse): Collection | AggregateError {
+export function parseCollection(data: Omit<CollectionResponse, 'id'>): Collection | AggregateError {
     const collection: Collection = {
         name: data.name,
         description: data.description,
@@ -107,13 +107,16 @@ export function parseCollection(data: CollectionResponse): Collection | Aggregat
                 const firstValue = rule.values[0]?.value;
 
                 if (firstValue && firstValue.includes(LABEL_SEPARATOR)) {
-                    const key = firstValue.split(LABEL_SEPARATOR)[0] ?? '';
+                    const [key] = firstValue.split(LABEL_SEPARATOR);
                     selector.rules.push({
                         operator: 'OR',
                         key,
-                        // TODO Verify with BE whether or not this is a valid method to get the label values. Is
-                        //      it possible that multiple `=` symbols will appear in the data here?
-                        values: rule.values.map(({ value }) => value.split('=')[1] ?? ''),
+                        values: rule.values.map(({ value }) => {
+                            // Since the label key does not support RE2 Regex, and must be a valid k8s
+                            // label, anything after the first '=' character is the label rule value.
+                            const [, ...valuesPart] = value.split(LABEL_SEPARATOR);
+                            return valuesPart.join(LABEL_SEPARATOR);
+                        }),
                     });
                 }
                 break;

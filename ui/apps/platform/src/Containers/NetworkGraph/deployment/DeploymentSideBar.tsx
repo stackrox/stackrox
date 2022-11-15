@@ -1,8 +1,12 @@
 import React from 'react';
 import {
+    Alert,
+    AlertVariant,
     Badge,
+    Bullseye,
     Flex,
     FlexItem,
+    Spinner,
     Stack,
     StackItem,
     Tab,
@@ -13,16 +17,51 @@ import {
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
+import { EdgeModel, NodeModel } from '@patternfly/react-topology';
 
 import useTabs from 'hooks/patternfly/useTabs';
+import useFetchDeployment from 'hooks/useFetchDeployment';
+import {
+    getListenPorts,
+    getNumExternalFlows,
+    getNumInternalFlows,
+} from '../utils/networkGraphUtils';
+
 import DeploymentDetails from './DeploymentDetails';
 import DeploymentNetworkPolicies from './DeploymentNetworkPolicies';
 import DeploymentFlows from './DeploymentFlows';
 
-function DeploymentSideBar() {
+type DeploymentSideBarProps = {
+    deploymentId: string;
+    nodes: NodeModel[];
+    edges: EdgeModel[];
+};
+
+function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProps) {
+    // component state
+    const { deployment, isLoading, error } = useFetchDeployment(deploymentId);
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: 'Details',
     });
+
+    // derived values
+    const numExternalFlows = getNumExternalFlows(nodes, edges, deploymentId);
+    const numInternalFlows = getNumInternalFlows(nodes, edges, deploymentId);
+    const listenPorts = getListenPorts(nodes, deploymentId);
+
+    if (isLoading) {
+        return (
+            <Bullseye>
+                <Spinner isSVG size="lg" />
+            </Bullseye>
+        );
+    }
+
+    if (error) {
+        return (
+            <Alert isInline variant={AlertVariant.danger} title={error} className="pf-u-mb-lg" />
+        );
+    }
 
     return (
         <Stack>
@@ -34,7 +73,7 @@ function DeploymentSideBar() {
                     <FlexItem>
                         <TextContent>
                             <Text component={TextVariants.h1} className="pf-u-font-size-xl">
-                                visa-processor
+                                {deployment?.name}
                             </Text>
                         </TextContent>
                         <TextContent>
@@ -42,7 +81,7 @@ function DeploymentSideBar() {
                                 component={TextVariants.h2}
                                 className="pf-u-font-size-sm pf-u-color-200"
                             >
-                                in &quot;production / naples&quot;
+                                in &quot;{deployment?.clusterName} / {deployment?.namespace}&quot;
                             </Text>
                         </TextContent>
                     </FlexItem>
@@ -74,7 +113,14 @@ function DeploymentSideBar() {
             </StackItem>
             <StackItem isFilled style={{ overflow: 'auto' }}>
                 <TabContent eventKey="Details" id="Details" hidden={activeKeyTab !== 'Details'}>
-                    <DeploymentDetails />
+                    {deployment && (
+                        <DeploymentDetails
+                            deployment={deployment}
+                            numExternalFlows={numExternalFlows}
+                            numInternalFlows={numInternalFlows}
+                            listenPorts={listenPorts}
+                        />
+                    )}
                 </TabContent>
                 <TabContent eventKey="Flows" id="Flows" hidden={activeKeyTab !== 'Flows'}>
                     <DeploymentFlows />

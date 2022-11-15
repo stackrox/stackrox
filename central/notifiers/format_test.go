@@ -9,6 +9,7 @@ import (
 	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/assert"
@@ -16,8 +17,8 @@ import (
 )
 
 const (
-	expectedFormattedDeploymentAlert = `Alert ID: Alert1
-Alert URL: https://localhost:8080/main/violations/Alert1
+	expectedFormattedDeploymentAlert = `Alert ID: ` + fixtureconsts.Alert1 + `
+Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
 Time (UTC): 2021-01-20 22:42:02
 Severity: Low
 
@@ -66,15 +67,15 @@ Policy Definition:
 			- Add Capabilities: ADD1 OR ADD2
 
 Deployment:
-	 - ID: s79mdvmb6dsl
+	 - ID: ` + fixtureconsts.Deployment1 + `
 	 - Name: nginx_server
 	 - Cluster: prod cluster
-	 - ClusterId: prod cluster
+	 - ClusterId: ` + fixtureconsts.Cluster1 + `
 	 - Namespace: stackrox
 	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
 `
-	expectedFormattedDeploymentAlertWithMitre = `Alert ID: Alert1
-Alert URL: https://localhost:8080/main/violations/Alert1
+	expectedFormattedDeploymentAlertWithMitre = `Alert ID: ` + fixtureconsts.Alert1 + `
+Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
 Time (UTC): 2021-01-20 22:42:02
 Severity: Low
 
@@ -130,14 +131,14 @@ Policy Definition:
 			- Add Capabilities: ADD1 OR ADD2
 
 Deployment:
-	 - ID: s79mdvmb6dsl
+	 - ID: ` + fixtureconsts.Deployment1 + `
 	 - Name: nginx_server
 	 - Cluster: prod cluster
-	 - ClusterId: prod cluster
+	 - ClusterId: ` + fixtureconsts.Cluster1 + `
 	 - Namespace: stackrox
 	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
 `
-	expectedFormatImageAlert = `Alert ID: Alert1
+	expectedFormatImageAlert = `Alert ID: ` + fixtureconsts.Alert1 + `
 Alert URL: https://localhost:8080/main/vulnerability-management/image/sha256:SHA2
 Time (UTC): 2021-01-20 22:42:02
 Severity: Low

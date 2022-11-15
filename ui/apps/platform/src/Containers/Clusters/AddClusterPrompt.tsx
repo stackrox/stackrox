@@ -49,7 +49,7 @@ function AddClusterPrompt() {
                         component="a"
                         target="_blank"
                         rel="noopener noreferrer nofollow"
-                        href="https://docs.openshift.com/acs/3.72/installing/install-ocp-operator.html#adding-a-new-cluster-to-rhacs"
+                        href="https://docs.openshift.com/acs/installing/install-ocp-operator.html#adding-a-new-cluster-to-rhacs"
                     >
                         View instructions
                     </Button>

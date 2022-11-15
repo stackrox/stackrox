@@ -237,7 +237,7 @@ func (s *nodeDatastoreSACSuite) TestExists() {
 	clusterID := testconsts.Cluster2
 	nodeID := s.testNodeIDs[clusterID][2]
 
-	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
+	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -252,7 +252,7 @@ func (s *nodeDatastoreSACSuite) TestGetNode() {
 	clusterID := testconsts.Cluster2
 	nodeID := s.testNodeIDs[clusterID][1]
 
-	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
+	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -279,7 +279,7 @@ func (s *nodeDatastoreSACSuite) TestCountNodes() {
 	s.addTestNode(clusterIDs[0])
 	s.waitForIndexing()
 
-	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, "not-valid", resources.Node)
+	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -316,7 +316,7 @@ func (s *nodeDatastoreSACSuite) TestCount() {
 	s.addTestNode(clusterIDs[0])
 	s.waitForIndexing()
 
-	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, "not-valid", resources.Node)
+	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -350,7 +350,7 @@ func (s *nodeDatastoreSACSuite) TestCount() {
 func (s *nodeDatastoreSACSuite) TestSearch() {
 	clusterIDs := []string{testconsts.Cluster1, testconsts.Cluster3}
 
-	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, "not-valid", resources.Node)
+	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -375,7 +375,7 @@ func (s *nodeDatastoreSACSuite) TestSearch() {
 func (s *nodeDatastoreSACSuite) TestSearchNodes() {
 	clusterIDs := []string{testconsts.Cluster1, testconsts.Cluster3}
 
-	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, "not-valid", resources.Node)
+	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -400,7 +400,7 @@ func (s *nodeDatastoreSACSuite) TestSearchNodes() {
 func (s *nodeDatastoreSACSuite) TestSearchRawNodes() {
 	clusterIDs := []string{testconsts.Cluster1, testconsts.Cluster3}
 
-	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, "not-valid", resources.Node)
+	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -438,7 +438,7 @@ func (s *nodeDatastoreSACSuite) TestGetNodesBatch() {
 		}
 	}
 
-	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, "not-valid", resources.Node)
+	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, testconsts.WrongCluster, resources.Node)
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context

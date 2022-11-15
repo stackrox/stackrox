@@ -5,9 +5,9 @@ import {
     ModelKind,
     GraphComponent,
     DefaultNode,
+    DefaultEdge,
+    DefaultGroup,
 } from '@patternfly/react-topology';
-import Edge from './DefaultEdge';
-import Group from './DefaultGroup';
 
 // @ts-expect-error TODO: raise type error issue with patternfly/react-topology team
 const defaultComponentFactory: ComponentFactory = (
@@ -15,14 +15,14 @@ const defaultComponentFactory: ComponentFactory = (
     type: string
 ):
     | ComponentType<{ element: GraphElement }>
-    | typeof Group
+    | typeof DefaultGroup
     | typeof GraphComponent
     | typeof DefaultNode
-    | typeof Edge
+    | typeof DefaultEdge
     | typeof undefined => {
     switch (type) {
         case 'group':
-            return Group;
+            return DefaultGroup;
         default:
             switch (kind) {
                 case ModelKind.graph:
@@ -30,7 +30,7 @@ const defaultComponentFactory: ComponentFactory = (
                 case ModelKind.node:
                     return DefaultNode;
                 case ModelKind.edge:
-                    return Edge;
+                    return DefaultEdge;
                 default:
                     return undefined;
             }
