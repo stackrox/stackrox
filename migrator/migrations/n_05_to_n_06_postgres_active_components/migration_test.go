@@ -63,7 +63,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 }
 
 var (
-	deploymentID  = "depA"
+	deploymentID  = "536c3ce3-aa06-49fb-b6de-a056a03c545c"
 	componentName = "bash"
 	os            = []string{"rhel:8", "debian:10"}
 	versions      = []string{"v1", "v2"}
