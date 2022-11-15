@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	cveUtil "github.com/stackrox/rox/migrator/migrations/cvehelper"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_09_to_n_10_postgres_cluster_cves/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_09_to_n_10_postgres_cluster_cves/postgres"
@@ -36,14 +36,14 @@ var (
 		},
 	}
 	batchSize = 500
-	schema    = pkgSchema.ClusterCvesSchema
+	schema    = frozenSchema.ClusterCvesSchema
 	log       = loghelper.LogWrapper{}
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableClusterCvesStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableClusterCvesStmt)
 	var clusterCves []*storage.ClusterCVE
 	err := walk(ctx, legacyStore, func(obj *storage.CVE) error {
 		clusterCves = append(clusterCves, convertCVEToClusterCVEs(obj)...)

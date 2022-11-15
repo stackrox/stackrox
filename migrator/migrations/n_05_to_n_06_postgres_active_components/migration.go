@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_05_to_n_06_postgres_active_components/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_05_to_n_06_postgres_active_components/postgres"
@@ -37,7 +37,7 @@ var (
 	batchSize      = 3000
 	imageBatchSize = 1000
 
-	schema = pkgSchema.ActiveComponentsSchema
+	schema = frozenSchema.ActiveComponentsSchema
 	log    = loghelper.LogWrapper{}
 )
 
@@ -47,7 +47,7 @@ type imageIDAndOs struct {
 }
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
-	imageTable := gormDB.Table(pkgSchema.ImagesSchema.Table).Model(pkgSchema.CreateTableImagesStmt.GormModel)
+	imageTable := gormDB.Table(frozenSchema.ImagesSchema.Table).Model(frozenSchema.CreateTableImagesStmt.GormModel)
 	var imageCount int64
 	if err := imageTable.Count(&imageCount).Error; err != nil {
 		return err
@@ -66,7 +66,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	log.WriteToStderrf("Found %d images", result.RowsAffected)
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableActiveComponentsStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableActiveComponentsStmt)
 	var activeComponents []*storage.ActiveComponent
 	err := walk(ctx, legacyStore, func(obj *storage.ActiveComponent) error {
 		activeComponents = append(activeComponents, convertActiveVuln(imageToOsMap, obj)...)

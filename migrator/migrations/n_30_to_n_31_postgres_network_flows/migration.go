@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/postgres"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store"
@@ -35,12 +35,12 @@ var (
 			return nil
 		},
 	}
-	schema = pkgSchema.NetworkFlowsSchema
+	schema = frozenSchema.NetworkFlowsSchema
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore store.ClusterStore) error {
 	ctx := sac.WithAllAccess(context.Background())
-	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableNetworkFlowsStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNetworkFlowsStmt)
 
 	clusterStore := pgStore.NewClusterStore(postgresDB)
 

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_01_to_n_02_postgres_clusters/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_01_to_n_02_postgres_clusters/postgres"
@@ -36,14 +36,14 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = pkgSchema.ClustersSchema
+	schema    = frozenSchema.ClustersSchema
 	log       = loghelper.LogWrapper{}
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableClustersStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableClustersStmt)
 	var clusters []*storage.Cluster
 	err := walk(ctx, legacyStore, func(obj *storage.Cluster) error {
 		clusters = append(clusters, obj)

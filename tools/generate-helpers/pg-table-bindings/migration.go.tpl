@@ -1,4 +1,4 @@
-{{- define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
+{{- define "schemaVar"}}frozenSchema.{{.Table|upperCamelCase}}Schema{{end}}
 package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 {{- $ := . }}
 {{- $name := .TrimmedType|lowerCamelCase }}
@@ -19,7 +19,7 @@ import (
 	pgStore "github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/postgres"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -63,7 +63,7 @@ var (
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTable{{.Table|upperCamelCase}}Stmt)
 
 	{{- if .Migration.SingletonStore}}
 	obj, found, err := legacyStore.Get(ctx)

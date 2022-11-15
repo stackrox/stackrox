@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_48_to_n_49_postgres_sensor_upgrade_configs/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_48_to_n_49_postgres_sensor_upgrade_configs/postgres"
@@ -33,14 +33,14 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = pkgSchema.SensorUpgradeConfigsSchema
+	schema    = frozenSchema.SensorUpgradeConfigsSchema
 	log       = loghelper.LogWrapper{}
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableSensorUpgradeConfigsStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableSensorUpgradeConfigsStmt)
 	obj, found, err := legacyStore.Get(ctx)
 	if err != nil {
 		log.WriteToStderr("failed to fetch sensorUpgradeConfig")

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_45_to_n_46_postgres_role_bindings/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_45_to_n_46_postgres_role_bindings/postgres"
@@ -36,14 +36,14 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = pkgSchema.RoleBindingsSchema
+	schema    = frozenSchema.RoleBindingsSchema
 	log       = loghelper.LogWrapper{}
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableRoleBindingsStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableRoleBindingsStmt)
 	var roleBindings []*storage.K8SRoleBinding
 	err := walk(ctx, legacyStore, func(obj *storage.K8SRoleBinding) error {
 		roleBindings = append(roleBindings, obj)

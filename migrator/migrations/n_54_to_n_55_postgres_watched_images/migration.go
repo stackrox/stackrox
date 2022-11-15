@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_54_to_n_55_postgres_watched_images/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_54_to_n_55_postgres_watched_images/postgres"
@@ -36,14 +36,14 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = pkgSchema.WatchedImagesSchema
+	schema    = frozenSchema.WatchedImagesSchema
 	log       = loghelper.LogWrapper{}
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableWatchedImagesStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableWatchedImagesStmt)
 	var watchedImages []*storage.WatchedImage
 	err := walk(ctx, legacyStore, func(obj *storage.WatchedImage) error {
 		watchedImages = append(watchedImages, obj)

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_20_to_n_21_postgres_compliance_strings/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_20_to_n_21_postgres_compliance_strings/postgres"
@@ -36,14 +36,14 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = pkgSchema.ComplianceStringsSchema
+	schema    = frozenSchema.ComplianceStringsSchema
 	log       = loghelper.LogWrapper{}
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pgutils.CreateTableFromModel(context.Background(), gormDB, pkgSchema.CreateTableComplianceStringsStmt)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableComplianceStringsStmt)
 	var complianceStrings []*storage.ComplianceStrings
 	err := walk(ctx, legacyStore, func(obj *storage.ComplianceStrings) error {
 		complianceStrings = append(complianceStrings, obj)
