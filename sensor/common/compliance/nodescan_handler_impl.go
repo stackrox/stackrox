@@ -12,8 +12,7 @@ type nodeScanHandlerImpl struct {
 	nodeScans <-chan *storage.NodeScanV2
 	toCentral chan *central.MsgFromSensor
 
-	stopC    concurrency.ErrorSignal
-	stoppedC concurrency.ErrorSignal
+	stopC concurrency.ErrorSignal
 }
 
 func (c *nodeScanHandlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -44,10 +43,6 @@ func (c *nodeScanHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 func (c *nodeScanHandlerImpl) run() {
-	c.toCentral = make(chan *central.MsgFromSensor)
-	defer c.stoppedC.SignalWithError(c.stopC.Err())
-	defer close(c.toCentral)
-
 	for !c.stopC.IsDone() {
 		select {
 		case <-c.stopC.Done():

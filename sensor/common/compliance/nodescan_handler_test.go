@@ -65,23 +65,6 @@ func (s *NodeScanHandlerTestSuite) TearDownTest() {
 	s.cancel()
 }
 
-func (s *NodeScanHandlerTestSuite) startForwardingToCentral(c <-chan *central.MsgFromSensor) {
-	go func() {
-		defer close(s.toCentral)
-		for {
-			select {
-			case <-s.ctx.Done():
-				return
-			case msg, ok := <-c:
-				if !ok {
-					return
-				}
-				s.toCentral <- msg
-			}
-		}
-	}()
-}
-
 // TestStopHandler goal is to stop handler while there are still some messages to process
 // in the channel passed into NewNodeScanHandler.
 // We expect that premature stop of the handler produces no race condition or goroutine leak.
@@ -89,32 +72,35 @@ func (s *NodeScanHandlerTestSuite) startForwardingToCentral(c <-chan *central.Ms
 func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 	nodeScans := make(chan *storage.NodeScanV2)
 	h := NewNodeScanHandler(nodeScans)
-	// consume all messages send toCentral
+	// simulate Central: consume all messages from h.ResponsesC()
 	go func() {
+		defer close(s.toCentral)
 		for {
 			select {
 			case <-s.ctx.Done():
 				return
-			case <-s.toCentral:
+			case _, ok := <-h.ResponsesC():
+				if !ok {
+					return
+				}
 			}
 		}
 	}()
-	s.startForwardingToCentral(h.ResponsesC())
-	// this is a producer that stops the handler after producing the first message and then sends 3 more messages
+	// this is a producer that stops the handler after producing the first message and then sends 30 more messages
 	go func() {
 		defer close(nodeScans)
-		for i := 0; i < 4; i++ {
+		for i := 0; i < 30; i++ {
 			select {
 			case <-s.ctx.Done():
 				return
-			default:
-				nodeScans <- fakeNodeScanV2("Node")
+			case nodeScans <- fakeNodeScanV2("Node"):
 				if i == 0 {
 					h.Stop(nil)
 				}
 			}
 		}
 	}()
+
 	err := h.Start()
 	s.Assert().NoError(err)
 }
@@ -126,8 +112,8 @@ func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
 		h := NewNodeScanHandler(nodeScans)
 		s.Assert().NoError(h.Start())
 		h.Stop(nil)
-		// try to start & stop the stopped handler again
-		s.Assert().NoError(h.Start())
+		// try to start & stop the stopped handler again and see error "stopped handlers cannot be restarted"
+		s.Assert().Error(h.Start())
 		h.Stop(nil)
 	})
 }
