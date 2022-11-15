@@ -14,6 +14,7 @@ import { filtersToSelections, selectionsToFilters } from './advancedFlowsFilterU
 export type AdvancedFlowsFilterProps = {
     filters: AdvancedFlowsFilterType;
     setFilters: React.Dispatch<React.SetStateAction<AdvancedFlowsFilterType>>;
+    allUniqPorts: string[];
 };
 
 export const defaultAdvancedFlowsFilters: AdvancedFlowsFilterType = {
@@ -26,6 +27,7 @@ export const defaultAdvancedFlowsFilters: AdvancedFlowsFilterType = {
 function AdvancedFlowsFilter({
     filters,
     setFilters,
+    allUniqPorts,
 }: AdvancedFlowsFilterProps): React.ReactElement {
     // derived state
     const selections = filtersToSelections(filters);
@@ -96,15 +98,18 @@ function AdvancedFlowsFilter({
                 <Select
                     className="pf-u-px-md"
                     variant={SelectVariant.typeaheadMulti}
-                    aria-label="Select one or more days"
+                    aria-label="Select ports"
                     onToggle={onTogglePortsSelect}
                     onSelect={onSelectPorts}
                     selections={filters.ports}
                     isOpen={isPortsSelectOpen}
                     placeholderText="Select ports"
-                    isCreatable
-                    createText="Select port"
-                />
+                    menuAppendTo="parent"
+                >
+                    {allUniqPorts.map((port) => {
+                        return <SelectOption value={port}>{port}</SelectOption>;
+                    })}
+                </Select>
             </SelectGroup>
         </Select>
     );
