@@ -42,7 +42,7 @@ const routeMatcherMapForAuthenticatedRoutes = {
      */
 };
 
-/*
+/**
  * Wait for prerequisite requests to render container components.
  *
  * Always wait on generic requests for MainPage component.
@@ -68,7 +68,7 @@ export function visit(pageUrl, routeMatcherMap, staticResponseMap) {
     waitForResponses(routeMatcherMap);
 }
 
-/*
+/**
  * Visit page to test conditional rendering for user role permissions specified as response or fixture.
  *
  * { body: { resourceToAccess: { … } } }

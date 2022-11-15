@@ -71,6 +71,9 @@ export function visitMainDashboardFromLeftNav() {
     cy.get(`h1:contains("${title}")`);
 }
 
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
 export function visitMainDashboard(staticResponseMap) {
     visit(basePath, routeMatcherMap, staticResponseMap);
 

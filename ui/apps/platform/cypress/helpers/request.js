@@ -1,4 +1,4 @@
-/*
+/**
  * For example, given ['searchOptions', 'getDeployments'] return:
  * {
  *     searchOptions: {
@@ -14,6 +14,9 @@
  * Remember to enclose single opname in array brackets. For example, ['searchOptions']
  *
  * Use object spread to merge GraphQL object into object which has properties for REST requests.
+ *
+ * @param {[string]} opnames
+ * @returns Record<string, { method: string, url: string }>
  */
 export function getRouteMatcherMapForGraphQL(opnames) {
     const routeMatcherMap = {};
@@ -28,7 +31,7 @@ export function getRouteMatcherMapForGraphQL(opnames) {
     return routeMatcherMap;
 }
 
-/*
+/**
  * Intercept requests before initial page visit or subsequent interaction:
  * routeMatcherMap: { alias: routeMatcher, … }
  *
@@ -52,7 +55,7 @@ export function interceptRequests(routeMatcherMap, staticResponseMap) {
     }
 }
 
-/*
+/**
  * Wait for responses after initial page visit or subsequent interaction.
  *
  * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
@@ -65,7 +68,7 @@ export function waitForResponses(routeMatcherMap) {
     }
 }
 
-/*
+/**
  * Intercept requests before interaction and then wait for responses.
  *
  * @param {() => void} interactionCallback
