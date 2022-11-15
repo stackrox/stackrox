@@ -148,9 +148,9 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 	return pointer.BoolPtrDerefOr(c.AdminPasswordGenerationDisabled, false)
 }
 
-// CentralDBEnabled returns a bool if CentralDBSpec is not nil
+// CentralDBEnabled returns true if central db should be created
 func (c *CentralComponentSpec) CentralDBEnabled() bool {
-	if c == nil || c.DB == nil || c.DB.Enabled != nil {
+	if c == nil || c.DB == nil || c.DB.Enabled == nil {
 		return false
 	}
 
@@ -194,6 +194,12 @@ const (
 	// CentralDBEnabledTrue configures the central to use a PostgreSQL database (Technical Preview)
 	CentralDBEnabledTrue CentralDBEnabled = "Enabled"
 )
+
+func CentralDBEnabledPtr(c CentralDBEnabled) *CentralDBEnabled {
+	ptr := new(CentralDBEnabled)
+	*ptr = c
+	return ptr
+}
 
 // GetPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
 func (c *CentralDBSpec) GetPasswordSecret() *LocalSecretReference {
