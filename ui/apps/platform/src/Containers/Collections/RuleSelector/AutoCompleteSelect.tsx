@@ -38,14 +38,20 @@ export function AutoCompleteSelect({
 }: AutoCompleteSelectProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const [typeahead, setTypeahead] = useState(selectedOption);
+    const [isTyping, setIsTyping] = useState(false);
 
     const autocompleteCallback = useCallback(() => {
         const shouldMakeRequest = isOpen && autocompleteProvider;
         if (shouldMakeRequest) {
-            return autocompleteProvider(typeahead);
+            const { request, cancel } = autocompleteProvider(typeahead);
+            request.finally(() => setIsTyping(false));
+            return { request, cancel };
         }
         return {
-            request: Promise.resolve([]),
+            request: new Promise<string[]>((resolve) => {
+                setIsTyping(false);
+                resolve([]);
+            }),
             cancel: () => {},
         };
     }, [isOpen, autocompleteProvider, typeahead]);
@@ -73,14 +79,18 @@ export function AutoCompleteSelect({
                 variant="typeahead"
                 isCreatable
                 isOpen={isOpen}
-                onFilter={() => getOptions(OptionComponent, data)}
+                onFilter={() => getOptions(OptionComponent, isTyping ? [] : data)}
                 onToggle={onToggle}
-                onTypeaheadInputChanged={updateTypeahead}
+                onTypeaheadInputChanged={(val: string) => {
+                    setIsTyping(true);
+                    updateTypeahead(val);
+                }}
+                onBlur={() => updateTypeahead(selectedOption)}
                 selections={selectedOption}
                 onSelect={onSelect}
                 isDisabled={isDisabled}
             >
-                {getOptions(OptionComponent, data)}
+                {getOptions(OptionComponent, isTyping ? [] : data)}
             </Select>
         </>
     );
