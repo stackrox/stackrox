@@ -85,9 +85,12 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
      * before its first requirement or value has been added.
      */
     const isValidRules =
-        values.id !== defaultAccessScopeIds.Unrestricted && getIsValidRules(values.rules);
+        values.id !== defaultAccessScopeIds.Unrestricted &&
+        values.id !== defaultAccessScopeIds.UnrestrictedPostgres &&
+        getIsValidRules(values.rules);
     useEffect(() => {
-        if (values.id === defaultAccessScopeIds.Unrestricted) {
+        if (values.id === defaultAccessScopeIds.Unrestricted ||
+            values.id === defaultAccessScopeIds.UnrestrictedPostgres) {
             return;
         }
         setCounterComputing((counterPrev) => counterPrev + 1);
@@ -195,7 +198,8 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                 />
             </FormGroup>
             {alertCompute}
-            {values.id !== defaultAccessScopeIds.Unrestricted && (
+            {values.id !== defaultAccessScopeIds.Unrestricted &&
+                values.id !== defaultAccessScopeIds.UnrestrictedPostgres &&(
                 <Flex
                     direction={{ default: 'row' }}
                     spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}

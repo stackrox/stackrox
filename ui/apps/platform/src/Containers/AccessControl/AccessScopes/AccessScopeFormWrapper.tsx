@@ -82,7 +82,9 @@ function AccessScopeFormWrapper({
      * before its first requirement or value has been added.
      */
     const isValidRules =
-        values.id !== defaultAccessScopeIds.Unrestricted && getIsValidRules(values.rules);
+        values.id !== defaultAccessScopeIds.Unrestricted &&
+        values.id !== defaultAccessScopeIds.UnrestrictedPostgres &&
+        getIsValidRules(values.rules);
 
     function onClickSubmit() {
         // TODO submit through Formik, especially to update its initialValue.
