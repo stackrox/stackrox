@@ -2,7 +2,7 @@ import * as api from '../constants/apiEndpoints';
 
 import { interceptRequests, waitForResponses } from './request';
 
-// Single source of truth for keys in optional staticResponseMap argument.
+// Single source of truth for keys in staticResponseMapForAuthenticatedRoutes object.
 export const availableAuthProvidersAlias = 'availableAuthProviders';
 export const featureFlagsAlias = 'featureflags';
 export const loginAuthProvidersAlias = 'login/authproviders';
@@ -10,8 +10,8 @@ export const myPermissionsAlias = 'mypermissions';
 export const configPublicAlias = 'config/public';
 export const authStatusAlias = 'auth/status';
 
-// generic requests to render the MainPage component
-const routeMatcherMapGeneric = {
+// Requests to render pages via MainPage and Body components.
+const routeMatcherMapForAuthenticatedRoutes = {
     [availableAuthProvidersAlias]: {
         method: 'GET',
         url: api.auth.availableAuthProviders,
@@ -59,12 +59,12 @@ const routeMatcherMapGeneric = {
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visit(pageUrl, routeMatcherMap, staticResponseMap) {
-    interceptRequests(routeMatcherMapGeneric);
+    interceptRequests(routeMatcherMapForAuthenticatedRoutes);
     interceptRequests(routeMatcherMap, staticResponseMap);
 
     cy.visit(pageUrl);
 
-    waitForResponses(routeMatcherMapGeneric);
+    waitForResponses(routeMatcherMapForAuthenticatedRoutes);
     waitForResponses(routeMatcherMap);
 }
 
@@ -85,14 +85,17 @@ export function visitWithStaticResponseForPermissions(
     routeMatcherMap,
     staticResponseMap
 ) {
-    const staticResponseMapGeneric = {
+    const staticResponseMapForAuthenticatedRoutes = {
         [myPermissionsAlias]: staticResponseForPermissions,
     };
-    interceptRequests(routeMatcherMapGeneric, staticResponseMapGeneric);
+    interceptRequests(
+        routeMatcherMapForAuthenticatedRoutes,
+        staticResponseMapForAuthenticatedRoutes
+    );
     interceptRequests(routeMatcherMap, staticResponseMap);
 
     cy.visit(pageUrl);
 
-    waitForResponses(routeMatcherMapGeneric);
+    waitForResponses(routeMatcherMapForAuthenticatedRoutes);
     waitForResponses(routeMatcherMap);
 }
