@@ -3,6 +3,7 @@ package m111tom112
 import (
 	"bytes"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -74,7 +75,10 @@ func fetchGroupsToRemove(db *bolt.DB) (groupsStoredByCompositeKey []groupStoredB
 			return nil
 		})
 	})
-	return groupsStoredByCompositeKey, err
+	if err != nil {
+		return nil, err
+	}
+	return groupsStoredByCompositeKey, nil
 }
 
 func removeGroupsStoredByCompositeKey(db *bolt.DB, groupStoredByCompositeKeys []groupStoredByCompositeKey) error {
@@ -85,15 +89,17 @@ func removeGroupsStoredByCompositeKey(db *bolt.DB, groupStoredByCompositeKeys []
 			return nil
 		}
 
-		for i := range groupStoredByCompositeKeys {
-			compositeKey := groupStoredByCompositeKeys[i].compositeKey
+		var deleteGroupErrs *multierror.Error
+		for _, group := range groupStoredByCompositeKeys {
+			compositeKey := group.compositeKey
 
-			// 1. Remove the value stored behind the composite key, since the migrated group is now successfully stored.
+			// Remove the value stored behind the composite key, since the migrated group is now successfully stored.
 			if err := bucket.Delete(compositeKey); err != nil {
-				return err
+				deleteGroupErrs = multierror.Append(deleteGroupErrs, err)
 			}
+
 		}
 
-		return nil
+		return deleteGroupErrs.ErrorOrNil()
 	})
 }

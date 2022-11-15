@@ -12,26 +12,26 @@ import (
 )
 
 func TestMigration(t *testing.T) {
-	suite.Run(t, new(removeGroups))
+	suite.Run(t, new(removeGroupsMigrationSuite))
 }
 
-type removeGroups struct {
+type removeGroupsMigrationSuite struct {
 	suite.Suite
 
 	db *bolt.DB
 }
 
-func (suite *removeGroups) SetupTest() {
+func (suite *removeGroupsMigrationSuite) SetupTest() {
 	db, err := bolthelpers.NewTemp(testutils.DBFileName(suite))
 	suite.Require().NoError(err, "failed to make BoltDB")
 	suite.db = db
 }
 
-func (suite *removeGroups) TearDownTest() {
+func (suite *removeGroupsMigrationSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
 }
 
-func (suite *removeGroups) TestMigrate() {
+func (suite *removeGroupsMigrationSuite) TestMigrate() {
 	// Expected groups after migration. Note that:
 	// * Group "r1" should not be removed, as it is by ID,
 	// * Group "r2" should be removed, as it has an empty role name,
