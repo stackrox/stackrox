@@ -131,27 +131,37 @@ func TestGeneratePermissionSetID(t *testing.T) {
 }
 
 func TestEnsureValidPermissionSetID(t *testing.T) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip()
+	}
 	validID := GeneratePermissionSetID()
 	checkedValidID := EnsureValidPermissionSetID(validID)
 	assert.Equal(t, validID, checkedValidID)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		// Test that an invalid ID triggers the generation of a valid UUID.
-		invalidID := "abcdefgh-ijkl-mnop-qrst-uvwxyz012345"
-		checkedInvalidID := EnsureValidPermissionSetID(invalidID)
-		assert.NotEqual(t, invalidID, checkedInvalidID)
-		_, err := uuid.FromString(checkedInvalidID)
-		assert.NoError(t, err)
-	} else {
-		suffix := "some identifier"
-		// Test that prefixed ID is returned as is
-		prefixedID := permissionSetIDPrefix + suffix
-		checkedPrefixedID := EnsureValidPermissionSetID(prefixedID)
-		assert.Equal(t, prefixedID, checkedPrefixedID)
-		// Test that unprefixed ID is returned with permissionSetID prefix prepended
-		checkedNonPrefixedID := EnsureValidPermissionSetID(suffix)
-		assert.Equal(t, permissionSetIDPrefix+suffix, checkedNonPrefixedID)
+	suffix := "some identifier"
+	// Test that prefixed ID is returned as is
+	prefixedID := permissionSetIDPrefix + suffix
+	checkedPrefixedID := EnsureValidPermissionSetID(prefixedID)
+	assert.Equal(t, prefixedID, checkedPrefixedID)
+	// Test that unprefixed ID is returned with permissionSetID prefix prepended
+	checkedNonPrefixedID := EnsureValidPermissionSetID(suffix)
+	assert.Equal(t, permissionSetIDPrefix+suffix, checkedNonPrefixedID)
+}
+
+func TestEnsureValidPermissionSetIDPostgres(t *testing.T) {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip()
 	}
+	validID := GeneratePermissionSetID()
+	checkedValidID := EnsureValidPermissionSetID(validID)
+	assert.Equal(t, validID, checkedValidID)
+
+	// Test that an invalid ID triggers the generation of a valid UUID.
+	invalidID := "abcdefgh-ijkl-mnop-qrst-uvwxyz012345"
+	checkedInvalidID := EnsureValidPermissionSetID(invalidID)
+	assert.NotEqual(t, invalidID, checkedInvalidID)
+	_, err := uuid.FromString(checkedInvalidID)
+	assert.NoError(t, err)
 }
 
 func TestValidateSimpleAccessScope(t *testing.T) {
