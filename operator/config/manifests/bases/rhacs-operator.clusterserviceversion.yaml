@@ -47,11 +47,11 @@ spec:
           password and store it in the "password" item in the "central-htpasswd" secret.
         displayName: Administrator Password
         path: central.adminPasswordSecret
-      - description: Specify a secret that contains the password in the "password"
-          data item. If omitted, the operator will auto-generate a DB password and
-          store it in the "password" item in the "central-db-password" secret.
-        displayName: Administrator Password
-        path: central.db.passwordSecret
+      - description: Specify wether central-db is enabled, Default configures central
+          to use rocksdb. If Enabled the operator will provision the Central DB or
+          use an external DB if a connection string is provided.
+        displayName: Enabled
+        path: central.db.enabled
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
           storage location of persistent data. Recommended for most users.
         displayName: Persistent volume claim
@@ -114,12 +114,11 @@ spec:
           settings in this section will have no effect.
         displayName: Scanner Component
         path: scanner.scannerComponent
-      - description: Specify a connection string that corresponds to an existing database.
-          If set, the operator will not manage Central DB. When using this option,
-          you must explicitly set a password secret; automatically generating a password
-          will not be supported.
-        displayName: Connection String Override
-        path: central.db.connectionString
+      - description: Specify a secret that contains the password in the "password"
+          data item. If omitted, the operator will auto-generate a DB password and
+          store it in the "password" item in the "central-db-password" secret.
+        displayName: Administrator Password
+        path: central.db.passwordSecret
       - description: The size of the persistent volume when created through the claim.
           If a claim was automatically created, this can be used after the initial
           deployment to resize (grow) the volume (only supported by some storage class
@@ -175,11 +174,12 @@ spec:
           be configured to match this value.
         displayName: Default Replicas
         path: scanner.analyzer.scaling.replicas
-      - description: Configures how Central DB should store its persistent data. You
-          can choose between using a persistent volume claim (recommended default),
-          and a host path.
-        displayName: Persistence
-        path: central.db.persistence
+      - description: Specify a connection string that corresponds to an existing database.
+          If set, the operator will not manage Central DB. When using this option,
+          you must explicitly set a password secret; automatically generating a password
+          will not be supported.
+        displayName: Connection String Override
+        path: central.db.connectionString
       - description: The name of the storage class to use for the PVC. If your cluster
           is not configured with a default storage class, you must select a value
           here.
@@ -226,6 +226,11 @@ spec:
         path: scanner.db
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
+      - description: Configures how Central DB should store its persistent data. You
+          can choose between using a persistent volume claim (recommended default),
+          and a host path.
+        displayName: Persistence
+        path: central.db.persistence
       - description: Configures monitoring endpoint for Central. The monitoring endpoint
           allows other services to collect metrics from Central, provided in Prometheus
           compatible format.

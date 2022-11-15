@@ -159,10 +159,13 @@ func (c *CentralComponentSpec) CentralDBEnabled() bool {
 
 // CentralDBSpec defines settings for the "central db" component.
 type CentralDBSpec struct {
+	// Specify wether central-db is enabled, Default configures central to use rocksdb.
+	// If Enabled the operator will provision the Central DB or use an external DB if a connection string is provided.
 	//+kubebuilder:validation:Default=Default
 	//+kubebuilder:default=Default
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *CentralDBEnabled `json:"enabled,omitempty"`
+
 	// Specify a secret that contains the password in the "password" data item.
 	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
 	// in the "central-db-password" secret.
