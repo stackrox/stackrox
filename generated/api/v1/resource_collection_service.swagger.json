@@ -97,6 +97,38 @@
         ]
       }
     },
+    "/v1/collections/dryrun": {
+      "post": {
+        "operationId": "CollectionService_DryRunCollection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DryRunCollectionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1DryRunCollectionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CollectionService"
+        ]
+      }
+    },
     "/v1/collections/{id}": {
       "get": {
         "operationId": "CollectionService_GetCollection",
@@ -461,6 +493,57 @@
       "properties": {
         "collection": {
           "$ref": "#/definitions/storageResourceCollection"
+        }
+      }
+    },
+    "v1DryRunCollectionRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "resourceSelectors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageResourceSelector"
+          }
+        },
+        "embeddedCollectionIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "options": {
+          "$ref": "#/definitions/v1DryRunCollectionRequestOptions"
+        }
+      }
+    },
+    "v1DryRunCollectionRequestOptions": {
+      "type": "object",
+      "properties": {
+        "pagination": {
+          "$ref": "#/definitions/v1Pagination"
+        },
+        "skipDeploymentMatching": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1DryRunCollectionResponse": {
+      "type": "object",
+      "properties": {
+        "deployments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageListDeployment"
+          }
         }
       }
     },
