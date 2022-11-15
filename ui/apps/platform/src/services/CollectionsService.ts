@@ -2,19 +2,18 @@ import qs from 'qs';
 
 import { ListDeployment } from 'types/deployment.proto';
 import { SearchFilter, ApiSortOption } from 'types/search';
-import { SelectorField } from 'Containers/Collections/types';
-import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import axios from './instance';
 import { Empty, Pagination } from './types';
 
 export const collectionsBaseUrl = '/v1/collections';
-export const collectionsCountUrl = '/v1/collections/count';
+export const collectionsCountUrl = '/v1/collectionscount';
 export const collectionsDryRunUrl = '/v1/collections/dryrun';
 export const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
 
 export type SelectorRule = {
-    fieldName: SelectorField;
+    fieldName: string;
     values: { value: string }[];
     operator: 'AND' | 'OR';
 };
@@ -45,10 +44,18 @@ export type CollectionResponse = {
 export function listCollections(
     searchFilter: SearchFilter,
     sortOption: ApiSortOption,
-    page: number,
-    pageSize: number
+    page?: number,
+    pageSize?: number
 ): CancellableRequest<CollectionResponse[]> {
-    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
+    let offset: number | undefined;
+    if (typeof page === 'number' && typeof pageSize === 'number') {
+        offset = page > 0 ? page * pageSize : 0;
+    }
+    const query = {
+        query: getRequestQueryStringForSearchFilter(searchFilter),
+        pagination: { offset, limit: pageSize, sortOption },
+    };
+    const params = qs.stringify({ query }, { allowDots: true });
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<{
@@ -65,7 +72,7 @@ export function getCollectionCount(searchFilter: SearchFilter): CancellableReque
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<{ count: number }>(`${collectionsCountUrl}?query=${query}`, { signal })
+            .get<{ count: number }>(`${collectionsCountUrl}?query.query=${query}`, { signal })
             .then((response) => response.data.count)
     );
 }
@@ -95,10 +102,6 @@ export function getCollection(
             .then((response) => response.data)
     );
 }
-
-export type GetCollectionSelectorsResponse = {
-    selectors: SelectorField[];
-};
 
 /**
  * Create a new collection
@@ -135,7 +138,7 @@ export function updateCollection(
 ): CancellableRequest<CollectionResponse> {
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .put<CollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, { signal })
+            .patch<CollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, { signal })
             .then((response) => response.data)
     );
 }
@@ -213,16 +216,16 @@ export function dryRunCollection(
  */
 export function getCollectionAutoComplete(
     resourceSelectors: ResourceSelector[],
-    searchCategory: SelectorField,
+    searchCategory: string,
     searchLabel: string
 ): CancellableRequest<string[]> {
-    const params = qs.stringify(
-        { resourceSelectors, searchCategory, searchLabel },
-        { arrayFormat: 'repeat' }
-    );
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<{ values: string[] }>(`${collectionsAutocompleteUrl}?${params}`, { signal })
+            .post<{ values: string[] }>(
+                collectionsAutocompleteUrl,
+                { resourceSelectors, searchCategory, searchLabel },
+                { signal }
+            )
             .then((response) => response.data.values)
     );
 }

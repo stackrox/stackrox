@@ -114,7 +114,7 @@ func (s *violationsTestSuite) TestQueryAlertsWithTimestamp() {
 		},
 	}
 
-	s.withAlerts(these(&s.processAlert, &s.k8sAlert, &s.deployAlert), func(alertsDS datastore.DataStore) {
+	s.withAlerts(these(s.processAlert, s.k8sAlert, s.deployAlert), func(alertsDS datastore.DataStore) {
 		for _, c := range cases {
 			s.Run(c.name, func() {
 				alerts := s.queryAlertsWithCheckpoint(alertsDS, c.timestamp, defaultPaginationSettings.maxAlertsFromQuery)
@@ -128,7 +128,7 @@ func (s *violationsTestSuite) TestQueryAlertsWithTimestamp() {
 }
 
 func (s *violationsTestSuite) TestQueryAlertsAreSortedByAlertID() {
-	alerts := []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert}
+	alerts := []*storage.Alert{s.processAlert, s.k8sAlert, s.deployAlert, s.networkAlert}
 	sortedIDs := make([]string, 0, len(alerts))
 	// Generate new random UUIDs for Alerts. This will make it highly likely that default ordering of alerts by
 	// decreasing timestamp does not match ordering by ID. Therefore we'll be able to validate that our requested
@@ -187,7 +187,7 @@ func (s *violationsTestSuite) TestQueryAlertsFromAlertIDAndWithLimit() {
 		{fromAlertID: "", limit: defaultPaginationSettings.maxAlertsFromQuery, result: ids},
 	}
 
-	s.withAlerts(these(&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert), func(alertsDS datastore.DataStore) {
+	s.withAlerts(these(s.processAlert, s.k8sAlert, s.deployAlert, s.networkAlert), func(alertsDS datastore.DataStore) {
 		for _, c := range cases {
 			s.Run(fmt.Sprintf("from:%q, limit:%d", c.fromAlertID, c.limit), func() {
 				result := s.queryAlertsWithCheckpoint(alertsDS, "2000-01-01T00:00:00Z__2021-03-26T17:36:00Z__"+c.fromAlertID, c.limit)

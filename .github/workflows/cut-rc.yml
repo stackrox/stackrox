@@ -101,7 +101,7 @@ jobs:
             "${{needs.properties.outputs.jira-projects}}" \
             "${{needs.variables.outputs.release}}" \
             "${{needs.variables.outputs.patch}}" \
-            "${{needs.variables.outputs.release-patch}}"
+            "${{needs.variables.outputs.named-release-patch}}"
 
   postpone-prs:
     name: Postpone open PRs
@@ -185,7 +185,7 @@ jobs:
             cherry-pick \
             "${{needs.variables.outputs.milestone}}" \
             "${{needs.variables.outputs.branch}}" \
-            "${{needs.variables.outputs.release-patch}}"
+            "${{needs.variables.outputs.named-release-patch}}"
 
       - name: Post to Slack about picked cherries
         if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
@@ -266,16 +266,9 @@ jobs:
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
-            draft-release-notes \
-            "${{ needs.variables.outputs.release-patch }}" \
-            "${{ needs.variables.outputs.branch }}" \
-            "RELEASE_NOTES_GENERATED.md"
-          URL=$(gh release create "${{needs.variables.outputs.milestone}}" \
-            --prerelease \
-            --notes-file RELEASE_NOTES_GENERATED.md \
-            --repo "${{ github.repository }}" \
-            --target "${{ needs.variables.outputs.branch }}")
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
+            create-release \
+            "${{ needs.variables.outputs.named-release-patch }}" \
+            "true"
 
       - run: |
           echo "Created GitHub pre-release [${{needs.variables.outputs.milestone}}](${{steps.pre-release.outputs.url}})" >> "$GITHUB_STEP_SUMMARY"
@@ -532,6 +525,7 @@ jobs:
       TAG: ${{needs.variables.outputs.milestone}}
       KUBECONFIG: artifacts/kubeconfig
       INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
+      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
     steps:
       - uses: stackrox/actions/infra/install-infractl@v1
       - name: Test readiness
@@ -540,8 +534,6 @@ jobs:
           if [ "$STATUS" != "READY" ]; then
             exit 1
           fi
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v2.0
       - name: Check out code
         uses: actions/checkout@v3
         with:
@@ -550,6 +542,10 @@ jobs:
       - uses: 'google-github-actions/auth@v0'
         with:
           credentials_json: '${{ secrets.GCP_RELEASE_AUTOMATION_SA }}'
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0'
+        with:
+          install_components: "gke-gcloud-auth-plugin"
       - name: Download artifacts
         id: artifacts
         run: |
@@ -566,8 +562,8 @@ jobs:
           LOAD_BALANCER: lb
           ROX_ADMIN_USERNAME: admin
           PAGERDUTY_INTEGRATION_KEY: ${{ secrets.RELEASE_MANAGEMENT_PAGERDUTY_INTEGRATION_KEY }}
-          REGISTRY_USERNAME: ${{ secrets.QUAY_REGISTRY_USERNAME_RO }}
-          REGISTRY_PASSWORD: ${{ secrets.QUAY_REGISTRY_PASSWORD_RO }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
           set -uo pipefail
           ./deploy/k8s/central.sh

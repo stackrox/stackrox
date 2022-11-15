@@ -75,6 +75,16 @@ func (s *postgresMigrationSuite) populateStore(clusterStore store.ClusterStore, 
 	return flowStore, flows
 }
 
+func roundTimestampToMicroseconds(timestamp *types.Timestamp) {
+	if timestamp == nil {
+		return
+	}
+	timestampNanos := timestamp.GetNanos()
+	timestampNanos /= 1000
+	timestampNanos *= 1000
+	timestamp.Nanos = timestampNanos
+}
+
 func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*storage.NetworkFlow) {
 	fetched, _, err := flowStore.GetAllFlows(s.ctx, &types.Timestamp{})
 	s.NoError(err)
@@ -86,6 +96,9 @@ func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*stor
 		return flows[i].LastSeenTimestamp.Compare(flows[j].LastSeenTimestamp) < 0
 	})
 	for i, flow := range flows {
+		// Postgres Datetime columns only have microsecond granularity for timestamps.
+		// Adapt the input data to take this into account.
+		roundTimestampToMicroseconds(flow.GetLastSeenTimestamp())
 		s.Equal(flow, fetched[i])
 	}
 }
@@ -95,13 +108,13 @@ func (s *postgresMigrationSuite) TestNetworkFlowMigration() {
 	legacyStore := legacy.NewClusterStore(s.legacyDB)
 
 	// Prepare data and write to legacy DB
-	_, cluster1Flows := s.populateStore(legacyStore, "cluster1")
-	_, cluster2Flows := s.populateStore(legacyStore, "cluster2")
+	_, cluster1Flows := s.populateStore(legacyStore, "b3bf0acc-f870-4456-8730-f8b39cf59009")
+	_, cluster2Flows := s.populateStore(legacyStore, "a78f0c04-fb07-41ce-908b-1e07e1fb5674")
 
 	// Move
 	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
 
 	// Verify
-	s.verify(newStore.GetFlowStore("cluster1"), cluster1Flows)
-	s.verify(newStore.GetFlowStore("cluster2"), cluster2Flows)
+	s.verify(newStore.GetFlowStore("b3bf0acc-f870-4456-8730-f8b39cf59009"), cluster1Flows)
+	s.verify(newStore.GetFlowStore("a78f0c04-fb07-41ce-908b-1e07e1fb5674"), cluster2Flows)
 }

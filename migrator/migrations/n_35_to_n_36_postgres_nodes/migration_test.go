@@ -66,7 +66,7 @@ func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
 	nodes := []*storage.Node{
 		{
-			Id:   "id1",
+			Id:   "b7766f6d-5e03-474c-834a-34250bf323a6",
 			Name: "node1",
 			Scan: &storage.NodeScan{
 				Components: []*storage.EmbeddedNodeScanComponent{
@@ -96,7 +96,7 @@ func (s *postgresMigrationSuite) TestMigration() {
 			},
 		},
 		{
-			Id:   "id2",
+			Id:   "caa1f009-c3ba-4ef6-a371-8932d8212505",
 			Name: "node2",
 			Scan: &storage.NodeScan{
 				Components: []*storage.EmbeddedNodeScanComponent{

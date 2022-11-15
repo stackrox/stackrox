@@ -53,6 +53,8 @@ var (
 )
 
 type splunk struct {
+	client *http.Client
+
 	eventEndpoint  string
 	healthEndpoint string
 	conf           *storage.Splunk
@@ -176,13 +178,7 @@ func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.conf.HttpToken))
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: s.conf.Insecure},
-		Proxy:           proxy.FromConfig(),
-	}
-
-	client := &http.Client{Transport: tr}
-	resp, err := client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -215,7 +211,11 @@ func newSplunk(notifier *storage.Notifier) (*splunk, error) {
 		healthEndpoint = url + splunkHECHealthEndpoint
 	}
 
+	tr := proxy.RoundTripperWithTLSConfig(&tls.Config{InsecureSkipVerify: conf.GetInsecure()})
+	client := &http.Client{Transport: tr}
+
 	return &splunk{
+		client:         client,
 		conf:           conf,
 		eventEndpoint:  eventEndpoint,
 		healthEndpoint: healthEndpoint,

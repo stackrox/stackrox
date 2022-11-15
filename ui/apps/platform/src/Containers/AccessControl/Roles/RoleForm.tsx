@@ -25,6 +25,7 @@ import AccessScopesTable from './AccessScopesTable';
 import PermissionSetsTable from './PermissionSetsTable';
 
 import './RoleForm.css';
+import usePermissions from '../../../hooks/usePermissions';
 
 export type RoleFormProps = {
     isActionable: boolean;
@@ -51,6 +52,8 @@ function RoleForm({
 }: RoleFormProps): ReactElement {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
 
     const { dirty, errors, handleChange, isValid, resetForm, values } = useFormik({
         initialValues: role,
@@ -122,7 +125,7 @@ function RoleForm({
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
-                                        isDisabled={action === 'edit'}
+                                        isDisabled={!hasWriteAccessForPage || action === 'edit'}
                                         isSmall
                                     >
                                         Edit role

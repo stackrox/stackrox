@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 type {{$namePrefix}}StoreSuite struct {
@@ -485,7 +486,7 @@ func getSACContexts(obj *{{.Type}}, access storage.Access) map[string]context.Co
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(access),
 				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys("unknown cluster"),
+				sac.ClusterScopeKeys(uuid.Nil.String()),
 		)),
 	}
 }

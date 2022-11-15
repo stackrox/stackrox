@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
 )
 
@@ -47,22 +48,22 @@ const (
 
 	deleteStmt         = "DELETE FROM network_flows WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
 	deleteStmtWithTime = "DELETE FROM network_flows WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp = $8"
-	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM network_flows nf " + joinStmt + " WHERE nf.ClusterId = $1"
+	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text FROM network_flows nf " + joinStmt + " WHERE nf.ClusterId = $1"
 
 	// These mimic how the RocksDB version of the flow store work
 	getSinceStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
-	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId 
+	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text 
 	FROM network_flows nf ` + joinStmt +
 		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2`
 	deleteSrcDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
 	deleteDstDeploymentStmt = "DELETE FROM network_flows WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
 
 	getByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, 
-	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId
+	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
 	FROM network_flows nf ` + joinStmt +
 		`WHERE nf.Props_SrcEntity_Type = 1 AND nf.Props_SrcEntity_Id = $1 AND nf.ClusterId = $2
 	UNION ALL
-	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId
+	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
 	FROM network_flows nf ` + joinStmt +
 		`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1 AND nf.ClusterId = $2`
 
@@ -101,8 +102,8 @@ var (
 // FlowStore stores all of the flows for a single cluster.
 type FlowStore interface {
 	// GetAllFlows The methods below are the ones that match the flow interface which is what we probably have to match.
-	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
-	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
+	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error)
+	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error)
 	// GetFlowsForDeployment returns all flows referencing a specific deployment id
 	GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
 
@@ -126,10 +127,10 @@ type FlowStore interface {
 type flowStoreImpl struct {
 	db        *pgxpool.Pool
 	mutex     sync.Mutex
-	clusterID string
+	clusterID uuid.UUID
 }
 
-func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, obj *storage.NetworkFlow) error {
+func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID uuid.UUID, obj *storage.NetworkFlow) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -201,9 +202,15 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool, clusterID string) FlowStore {
+	clusterUUID, err := uuid.FromString(clusterID)
+	if err != nil {
+		log.Errorf("cluster ID is not valid.  %v", err)
+		return nil
+	}
+
 	return &flowStoreImpl{
 		db:        db,
-		clusterID: clusterID,
+		clusterID: clusterUUID,
 	}
 }
 
@@ -383,19 +390,19 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 }
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
-func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, types.Timestamp, error) {
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *types.Timestamp, error) {
 		return s.retryableGetAllFlows(ctx, since)
 	})
 }
 
-func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := *types.TimestampNow()
+	lastUpdateTS := types.TimestampNow()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
@@ -404,33 +411,33 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since), s.clusterID)
 	}
 	if err != nil {
-		return nil, types.Timestamp{}, pgutils.ErrNilIfNoRows(err)
+		return nil, nil, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 
 	flows, err := s.readRows(rows, nil)
 	if err != nil {
-		return nil, types.Timestamp{}, pgutils.ErrNilIfNoRows(err)
+		return nil, nil, pgutils.ErrNilIfNoRows(err)
 	}
 
 	return flows, lastUpdateTS, nil
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
-func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
 
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, types.Timestamp, error) {
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *types.Timestamp, error) {
 		return s.retryableGetMatchingFlows(ctx, pred, since)
 	})
 }
 
-func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
 	var rows pgx.Rows
 	var err error
 
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := *types.TimestampNow()
+	lastUpdateTS := types.TimestampNow()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
@@ -440,7 +447,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	}
 
 	if err != nil {
-		return nil, types.Timestamp{}, pgutils.ErrNilIfNoRows(err)
+		return nil, nil, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 

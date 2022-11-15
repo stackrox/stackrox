@@ -5,6 +5,7 @@ import {
 } from '../../constants/apiEndpoints';
 
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 const h1 = 'Access Control';
 const h2 = 'Permission sets';
@@ -34,18 +35,18 @@ describe('Access Control Permission sets', () => {
         cy.wait('@GetMyPermissions');
 
         cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLink).should('not.exist');
-
-        cy.get(selectors.h2).should('not.exist');
 
         cy.get(selectors.alertTitle).should(
             'contain', // not have.text because it contains "Info alert:" for screen reader
-            'You do not have permission to view Access Control'
+            'You do not have permission to view permission sets.'
         );
     });
 
     it('list has headings, link, button, and table head cells, and no breadcrumbs', () => {
         visitPermissionSets();
+
+        // Table has plural noun in title.
+        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - ${h2}`));
 
         cy.get(selectors.breadcrumbNav).should('not.exist');
 
@@ -73,6 +74,9 @@ describe('Access Control Permission sets', () => {
 
         const name = 'Admin';
         cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
+
+        // Form has singular noun in title.
+        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - Permission set`));
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${name}")`);
@@ -135,6 +139,7 @@ describe('Access Control Permission sets', () => {
         });
     });
 
+    // TODO: ROX-12750 Rename DebugLogs to Administration
     it('direct link to default Analyst has all (but DebugLogs) read and no write access', () => {
         visitPermissionSet('io.stackrox.authz.permissionset.analyst');
 
@@ -155,7 +160,8 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (resource === 'DebugLogs') {
+                // TODO: ROX-12750 Rename DebugLogs to Administration
+                if (resource.includes('DebugLogs')) {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
@@ -207,7 +213,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (!resourcesLimited.includes(resource)) {
+                if (!resourcesLimited.some((v) => resource.includes(v))) {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
@@ -301,6 +307,7 @@ describe('Access Control Permission sets', () => {
             getAccessLevelSelectForResource,
         } = selectors.form.permissionSet;
 
+        // TODO: ROX-12750 Rename ServiceIdentity to Administration
         const resourcesLimited = ['Cluster', 'ServiceIdentity'];
 
         cy.get(selectors.form.permissionSet.tdResource).then(($tds) => {
@@ -312,7 +319,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (!resourcesLimited.includes(resource)) {
+                if (!resourcesLimited.some((v) => resource.includes(v))) {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
@@ -346,16 +353,19 @@ describe('Access Control Permission sets', () => {
             'Read and Write Access'
         );
 
+        // TODO: ROX-12750 Rename ServiceIdentity to Administration
         cy.get(getReadAccessIconForResource('ServiceIdentity')).should(
             'have.attr',
             'aria-label',
             'permitted'
         );
+        // TODO: ROX-12750 Rename ServiceIdentity to Administration
         cy.get(getWriteAccessIconForResource('ServiceIdentity')).should(
             'have.attr',
             'aria-label',
             'permitted'
         );
+        // TODO: ROX-12750 Rename ServiceIdentity to Administration
         cy.get(getAccessLevelSelectForResource('ServiceIdentity')).should(
             'contain',
             'Read and Write Access'

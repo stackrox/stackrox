@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
   name: centrals.platform.stackrox.io
 spec:
@@ -65,7 +65,9 @@ spec:
                       connectionString:
                         description: Specify a connection string that corresponds
                           to an existing database. If set, the operator will not manage
-                          Central DB.
+                          Central DB. When using this option, you must explicitly
+                          set a password secret; automatically generating a password
+                          will not be supported.
                         type: string
                       nodeSelector:
                         additionalProperties:
@@ -73,12 +75,6 @@ spec:
                         description: If you want this component to only run on specific
                           nodes, you can configure a node selector here.
                         type: object
-                      passwordGenerationDisabled:
-                        description: Disable database password generation. Do not
-                          use this for first-time installations in which the operator
-                          is managing Central DB as Central will have no way to connect
-                          to the database.
-                        type: boolean
                       passwordSecret:
                         description: Specify a secret that contains the password in
                           the "password" data item. If omitted, the operator will
@@ -112,6 +108,7 @@ spec:
                               Recommended for most users.
                             properties:
                               claimName:
+                                default: central-db
                                 description: The name of the PVC to manage persistent
                                   data. If no PVC with the given name exists, it will
                                   be created. Defaults to "central-db" if not set.
@@ -452,6 +449,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -470,6 +468,7 @@ spec:
                               required:
                               - fieldPath
                               type: object
+                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -494,6 +493,7 @@ spec:
                               required:
                               - resource
                               type: object
+                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -514,6 +514,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -882,5 +883,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: null
+  storedVersions: null

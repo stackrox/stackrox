@@ -24,6 +24,7 @@ export type ByLabelSelectorProps = {
         scopedResourceSelector: ScopedResourceSelector
     ) => void;
     validationErrors: FormikErrors<ByLabelResourceSelector> | undefined;
+    isDisabled: boolean;
 };
 
 function ByLabelSelector({
@@ -31,6 +32,7 @@ function ByLabelSelector({
     scopedResourceSelector,
     handleChange,
     validationErrors,
+    isDisabled,
 }: ByLabelSelectorProps) {
     const { keyFor, invalidateIndexKeys } = useIndexKey();
     function onChangeLabelKey(resourceSelector: ByLabelResourceSelector, ruleIndex, value) {
@@ -84,7 +86,7 @@ function ByLabelSelector({
             handleChange(entityType, newSelector);
         } else {
             // This was the last value in the last rule, so drop the selector
-            handleChange(entityType, {});
+            handleChange(entityType, { type: 'All' });
         }
     }
 
@@ -139,6 +141,7 @@ function ByLabelSelector({
                                             )
                                         }
                                         validated={keyValidation}
+                                        isDisabled={isDisabled}
                                     />
                                 </FormGroup>
                                 <FlexItem
@@ -188,38 +191,52 @@ function ByLabelSelector({
                                                         )
                                                     }
                                                     validated={valueValidation}
+                                                    isDisabled={isDisabled}
                                                 />
-                                                <Button
-                                                    variant="plain"
-                                                    onClick={() =>
-                                                        onDeleteValue(ruleIndex, valueIndex)
-                                                    }
-                                                >
-                                                    <TrashIcon
-                                                        style={{ cursor: 'pointer' }}
-                                                        color="var(--pf-global--Color--dark-200)"
-                                                    />
-                                                </Button>
+                                                {!isDisabled && (
+                                                    <Button
+                                                        variant="plain"
+                                                        onClick={() =>
+                                                            onDeleteValue(ruleIndex, valueIndex)
+                                                        }
+                                                    >
+                                                        <TrashIcon
+                                                            aria-label={`Delete ${value}`}
+                                                            style={{ cursor: 'pointer' }}
+                                                            color="var(--pf-global--Color--dark-200)"
+                                                        />
+                                                    </Button>
+                                                )}
                                             </Flex>
                                         );
                                     })}
                                 </Flex>
-                                <Button
-                                    className="pf-u-pl-0 pf-u-pt-md"
-                                    variant="link"
-                                    onClick={() => onAddLabelValue(ruleIndex)}
-                                >
-                                    Add value
-                                </Button>
+                                {!isDisabled && (
+                                    <Button
+                                        className="pf-u-pl-0 pf-u-pt-md"
+                                        variant="link"
+                                        onClick={() => onAddLabelValue(ruleIndex)}
+                                    >
+                                        Add value
+                                    </Button>
+                                )}
                             </FormGroup>
                         </Flex>
                     </div>
                 );
             })}
-            <Divider component="div" className="pf-u-pt-lg" />
-            <Button className="pf-u-pl-0 pf-u-pt-md" variant="link" onClick={onAddLabelRule}>
-                Add label rule
-            </Button>
+            {!isDisabled && (
+                <>
+                    <Divider component="div" className="pf-u-pt-lg" />
+                    <Button
+                        className="pf-u-pl-0 pf-u-pt-md"
+                        variant="link"
+                        onClick={onAddLabelRule}
+                    >
+                        Add label rule
+                    </Button>
+                </>
+            )}
         </>
     );
 }

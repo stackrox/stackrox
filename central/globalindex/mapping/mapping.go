@@ -109,9 +109,9 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	)
 
 	deploymentsCustomSearchOptions := search.CombineOptionsMaps(
+		schema.DeploymentsSchema.OptionsMap,
 		schema.ImagesSchema.OptionsMap,
 		schema.ProcessIndicatorsSchema.OptionsMap,
-		schema.DeploymentsSchema.OptionsMap,
 	)
 
 	imageToVulnerabilitySearchOptions := search.CombineOptionsMaps(
@@ -122,8 +122,6 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.ImageComponentEdgesSchema.OptionsMap,
 		schema.ImagesSchema.OptionsMap,
 		schema.DeploymentsSchema.OptionsMap,
-		schema.NamespacesSchema.OptionsMap,
-		schema.ClustersSchema.OptionsMap,
 	)
 
 	nodeToVulnerabilitySearchOptions := search.CombineOptionsMaps(
@@ -132,7 +130,6 @@ func getPostgresEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.NodeComponentsSchema.OptionsMap,
 		schema.NodeComponentEdgesSchema.OptionsMap,
 		schema.NodesSchema.OptionsMap,
-		schema.ClustersSchema.OptionsMap,
 	)
 
 	// alerts has a reconciliation mechanism implemented in postgres mode in order to keep only search fields

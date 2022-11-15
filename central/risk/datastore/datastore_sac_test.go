@@ -64,7 +64,7 @@ func (s *riskDatastoreSACSuite) SetupSuite() {
 	}
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.Risk)
+		resources.DeploymentExtension)
 }
 
 func (s *riskDatastoreSACSuite) TearDownSuite() {
@@ -220,7 +220,18 @@ func (s *riskDatastoreSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(results))
+	for _, r := range results {
+		subjectType, subjectID, err := GetIDParts(r.ID)
+		if err != nil {
+			continue
+		}
+		obj, found, err := s.datastore.GetRisk(s.testContexts[testutils.UnrestrictedReadCtx], subjectID, subjectType)
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj.GetSubject())
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
@@ -233,7 +244,7 @@ func (s *riskDatastoreSACSuite) TestScopedSearch() {
 }
 
 func (s *riskDatastoreSACSuite) TestUnrestrictedSearch() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})

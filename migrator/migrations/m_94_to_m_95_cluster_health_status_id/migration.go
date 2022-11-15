@@ -19,7 +19,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 94,
-		VersionAfter:   storage.Version{SeqNum: 95},
+		VersionAfter:   &storage.Version{SeqNum: 95},
 		Run:            addIDToClusterHealthStatus,
 	}
 

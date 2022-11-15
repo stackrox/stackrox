@@ -44,7 +44,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: central-db
+  name: {{ $claimName }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "persistentvolumeclaim" "central-db") | nindent 4 }}

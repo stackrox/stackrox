@@ -6,6 +6,7 @@ import io.stackrox.proto.storage.Rbac
 
 import common.Constants
 import groups.BAT
+import groups.COMPATIBILITY
 import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
@@ -50,7 +51,7 @@ class K8sRbacTest extends BaseSpecification {
         orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
     }
 
-    @Category(BAT)
+    @Category([BAT, COMPATIBILITY])
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null
@@ -92,7 +93,7 @@ class K8sRbacTest extends BaseSpecification {
         }
     }
 
-    @Category(BAT)
+    @Category([BAT, COMPATIBILITY])
     def "Add Service Account and verify it gets scraped"() {
         given:
         "create a new service account"

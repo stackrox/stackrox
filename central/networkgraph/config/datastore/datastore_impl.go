@@ -22,6 +22,7 @@ const (
 )
 
 var (
+	// TODO: ROX-12750 Replace NetworkGraphConfig with Administration and rename the variable.
 	graphConfigSAC = sac.ForResource(resources.NetworkGraphConfig)
 	log            = logging.LoggerForModule()
 )
@@ -39,6 +40,7 @@ func New(s store.Store) DataStore {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			// TODO: ROX-12750 Replace NetworkGraphConfig with Administration.
 			sac.ResourceScopeKeys(resources.NetworkGraphConfig),
 		))
 

@@ -2,7 +2,6 @@ package list
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
@@ -67,7 +66,7 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 	}
 	if cmd.json {
 		m := jsonpb.Marshaler{Indent: "  "}
-		err = m.Marshal(os.Stdout, providers)
+		err = m.Marshal(cmd.env.InputOutput().Out(), providers)
 		if err == nil {
 			cmd.env.Logger().PrintfLn("")
 		}

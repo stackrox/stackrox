@@ -66,6 +66,8 @@ func mainCmd() error {
 		log.Errorf("Failed to configure certificates: %v. Connection to sensor might fail.", err)
 	}
 
+	clientconn.SetUserAgent("admission-control")
+
 	// Note that the following call returns immediately (connecting happens in the background), hence this does not
 	// delay readiness of the admission-control service even if sensor is unavailable.
 	sensorConn, err := clientconn.AuthenticatedGRPCConnection(env.SensorEndpoint.Setting(), mtls.SensorSubject)

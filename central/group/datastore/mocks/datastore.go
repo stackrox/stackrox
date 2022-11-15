@@ -136,6 +136,20 @@ func (mr *MockDataStoreMockRecorder) RemoveAllWithAuthProviderID(ctx, authProvid
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAllWithAuthProviderID", reflect.TypeOf((*MockDataStore)(nil).RemoveAllWithAuthProviderID), ctx, authProviderID, force)
 }
 
+// RemoveAllWithEmptyProperties mocks base method.
+func (m *MockDataStore) RemoveAllWithEmptyProperties(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveAllWithEmptyProperties", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveAllWithEmptyProperties indicates an expected call of RemoveAllWithEmptyProperties.
+func (mr *MockDataStoreMockRecorder) RemoveAllWithEmptyProperties(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAllWithEmptyProperties", reflect.TypeOf((*MockDataStore)(nil).RemoveAllWithEmptyProperties), ctx)
+}
+
 // Update mocks base method.
 func (m *MockDataStore) Update(ctx context.Context, group *storage.Group, force bool) error {
 	m.ctrl.T.Helper()

@@ -35,22 +35,31 @@ func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.Serve
 func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 	return []routes.CustomRoute{
 		{
-			Route:         "/api/extensions/certgen/central",
+			Route: "/api/extensions/certgen/central",
+			// TODO: ROX-12750 replace ServiceIdentity with Administration
 			Authorizer:    user.With(permissions.Modify(resources.ServiceIdentity)),
 			ServerHandler: http.HandlerFunc(s.centralHandler),
 			Compression:   false,
 		},
 		{
-			Route:         "/api/extensions/certgen/scanner",
+			Route: "/api/extensions/certgen/scanner",
+			// TODO: ROX-12750 replace ServiceIdentity with Administration
 			Authorizer:    user.With(permissions.Modify(resources.ServiceIdentity)),
 			ServerHandler: http.HandlerFunc(s.scannerHandler),
 			Compression:   false,
 		},
 
 		{
-			Route:         "/api/extensions/certgen/cluster",
+			Route: "/api/extensions/certgen/cluster",
+			// TODO: ROX-12750 replace ServiceIdentity with Administration
 			Authorizer:    user.With(permissions.Modify(resources.ServiceIdentity)),
 			ServerHandler: http.HandlerFunc(s.securedClusterHandler),
+			Compression:   false,
+		},
+		{
+			Route:         "/api/extensions/certgen/centraldb",
+			Authorizer:    user.With(permissions.Modify(resources.ServiceIdentity)),
+			ServerHandler: http.HandlerFunc(s.centralDBHandler),
 			Compression:   false,
 		},
 	}

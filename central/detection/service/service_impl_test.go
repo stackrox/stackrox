@@ -530,19 +530,44 @@ spec:
   adminPortalCredentialsRef:
     name: asecretname
 `
+const cronYaml = `
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: example
+  namespace: sst-etcd-backup
+spec:
+  schedule: '@daily'
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: hello
+              image: busybox
+              args:
+                - /bin/sh
+                - '-c'
+                - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+`
 
 func TestParseList_Success(t *testing.T) {
-	_, _, err := getObjectsFromYAML(listYAML)
-	require.NoError(t, err)
-
-	_, _, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
-	require.NoError(t, err)
-
-	_, _, err = getObjectsFromYAML(multiYaml)
-	require.NoError(t, err)
-
-	_, _, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
-	require.NoError(t, err)
+	for name, yaml := range map[string]string{
+		"listYaml":                          listYAML,
+		"openshiftDeploymentConfigYaml":     openshiftDeploymentConfigYaml,
+		"multiYaml":                         multiYaml,
+		"openshiftDeployConfMultiYaml":      openshiftDeploymentConfigYaml,
+		"operatorCRDMultiYaml":              operatorCRDMultiYaml,
+		"operatorCRDYaml":                   operatorCRDYaml,
+		"openshiftRouteWithOperatorCRDYaml": openshiftRouteWithOperatorCRDYaml,
+		"cronYaml":                          cronYaml,
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, _, err := getObjectsFromYAML(yaml)
+			require.NoError(t, err)
+		})
+	}
 }
 
 func TestParseList_ConversionToOpenshiftObjects(t *testing.T) {

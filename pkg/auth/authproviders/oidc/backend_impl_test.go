@@ -884,7 +884,7 @@ func TestBackend(t *testing.T) {
 			}
 
 			// create backend and perform related assertions
-			backendInterface, err := f.CreateBackend(context.TODO(), "abcde-12345", []string{"endpoint1", "endpoint2"}, tt.config)
+			backendInterface, err := f.CreateBackend(context.TODO(), "abcde-12345", []string{"endpoint1", "endpoint2"}, tt.config, nil)
 			gotBackend := backendInterface.(*backendImpl)
 			require.Equal(t, fmt.Sprint(tt.wantBackendErr), fmt.Sprint(err), "Unexpected newBackend() error")
 			tt.wantBackend.assertMatches(t, gotBackend)
@@ -960,11 +960,17 @@ type mockOIDCUserInfo struct {
 	claims claims
 }
 
-func (m mockOIDCUserInfo) Claims(u interface{}) error {
-	userInfo := u.(*userInfoType)
-	userInfo.UID = m.claims.uid
-	userInfo.Name = m.claims.name
-	userInfo.EMail = m.claims.email
+func (m mockOIDCUserInfo) Claims(v interface{}) error {
+	switch u := v.(type) {
+	case *userInfoType:
+		u.UID = m.claims.uid
+		u.Name = m.claims.name
+		u.EMail = m.claims.email
+	case map[string]interface{}, *map[string]interface{}:
+		return nil
+	default:
+		return errors.Errorf("unsupported type %T", v)
+	}
 	return nil
 }
 
@@ -1002,10 +1008,17 @@ func (m mockOIDCToken) GetNonce() string {
 	return m.nonce
 }
 
-func (m mockOIDCToken) Claims(u *userInfoType) error {
-	u.Name = m.name
-	u.EMail = m.email
-	u.UID = m.uid
+func (m mockOIDCToken) Claims(v interface{}) error {
+	switch u := v.(type) {
+	case *userInfoType:
+		u.UID = m.uid
+		u.Name = m.name
+		u.EMail = m.email
+	case map[string]interface{}, *map[string]interface{}:
+		return nil
+	default:
+		return errors.Errorf("unsupported type %T", v)
+	}
 	return nil
 }
 

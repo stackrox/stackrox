@@ -50,7 +50,7 @@ func (s *NodesStoreSuite) TestStore() {
 	store := CreateTableAndNewStore(ctx, s.T(), pool, gormDB, false)
 
 	node := &storage.Node{}
-	s.NoError(testutils.FullInit(node, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	for _, comp := range node.GetScan().GetComponents() {
 		comp.Vulns = nil
 	}

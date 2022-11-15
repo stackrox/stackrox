@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -80,13 +81,17 @@ func insertIntoNamespaces(ctx context.Context, batch *pgx.Batch, obj *storage.Na
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
-		obj.GetClusterId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
 		serialized,
+	}
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+		return nil
 	}
 
 	finalStr := "INSERT INTO namespaces (Id, Name, ClusterId, ClusterName, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
@@ -133,11 +138,11 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
-			obj.GetClusterId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 
 			obj.GetClusterName(),
 
@@ -147,6 +152,10 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*
 
 			serialized,
 		})
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
+			continue
+		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())

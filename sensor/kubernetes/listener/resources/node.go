@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -37,7 +38,7 @@ func convertTaints(taints []v1.Taint) []*storage.Taint {
 	return roxTaints
 }
 
-func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	node := obj.(*v1.Node)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		h.nodeStore.removeNode(node)
@@ -96,5 +97,5 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 		},
 	}
 
-	return events
+	return component.NewResourceEvent(events, nil, nil)
 }

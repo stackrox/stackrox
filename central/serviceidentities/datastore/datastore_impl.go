@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	// TODO: ROX-12750 Replace ServiceIdentity with Administration and rename variable.
 	serviceIdentitiesSAC = sac.ForResource(resources.ServiceIdentity)
 )
 

@@ -36,5 +36,5 @@ type Migration struct {
 	// The seq num in VersionAfter MUST be one greater than the StartingSeqNum of this migration.
 	// All other (optional) metadata can be whatever the user desires, and has no bearing on the
 	// functioning of the migrator.
-	VersionAfter storage.Version
+	VersionAfter *storage.Version
 }

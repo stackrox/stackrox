@@ -59,10 +59,7 @@ function NavigationSidebar({
         systemHealthPath,
     ];
 
-    // TODO
-    // - This must be restricted based on permissions once the BE is in place https://issues.redhat.com/browse/ROX-12695
-    // - See also https://issues.redhat.com/browse/ROX-12619
-    if (isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS')) {
+    if (isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS') && hasReadAccess('WorkflowAdministration')) {
         // Insert 'Collections' after 'Policy Management'
         platformConfigurationPaths.splice(
             platformConfigurationPaths.indexOf(policyManagementBasePath) + 1,

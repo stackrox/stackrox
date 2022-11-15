@@ -5,12 +5,11 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
 const (
@@ -23,13 +22,12 @@ const (
 
 type listenerImpl struct {
 	client             client.Interface
-	eventsC            chan *central.MsgFromSensor
 	stopSig            concurrency.Signal
 	credentialsManager awscredentials.RegistryCredentialsManager
 	configHandler      config.Handler
-	detector           detector.Detector
 	resyncPeriod       time.Duration
 	traceWriter        io.Writer
+	outputQueue        component.OutputQueue
 }
 
 func (k *listenerImpl) Start() error {
@@ -51,16 +49,8 @@ func (k *listenerImpl) Stop(_ error) {
 	k.stopSig.Signal()
 }
 
-func (k *listenerImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (k *listenerImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	return nil
-}
-
 func (k *listenerImpl) ResponsesC() <-chan *central.MsgFromSensor {
-	return k.eventsC
+	return nil
 }
 
 func clusterOperatorCRDExists(client client.Interface) (bool, error) {

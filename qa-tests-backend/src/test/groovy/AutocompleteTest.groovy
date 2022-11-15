@@ -14,6 +14,8 @@ class AutocompleteTest extends BaseSpecification {
 
     private static final String GROUP_AUTOCOMPLETE = isPostgresRun() ? "GROUP" : "group"
 
+// TODO(ROX-13271): Investigate why AutocompleteTests fail with older Sensor versions and maybe fix it
+// Re-Add COMPATIBILITY tag here
     @Category([BAT])
     def "Verify Autocomplete: #query #category #contains"() {
         when:
@@ -39,6 +41,8 @@ class AutocompleteTest extends BaseSpecification {
     }
 
     @Unroll
+// TODO(ROX-13271): Investigate why AutocompleteTests fail with older Sensor versions and maybe fix it
+// Re-Add COMPATIBILITY tag here
     @Category([BAT])
     def "Verify #category search options contains #options"() {
         when:

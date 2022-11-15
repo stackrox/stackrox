@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestCVEDataStoreSAC(t *testing.T) {
+func TestImageComponentDataStoreSAC(t *testing.T) {
 	suite.Run(t, new(cveDataStoreSACTestSuite))
 }
 

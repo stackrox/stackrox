@@ -11,7 +11,6 @@ import services.AuthProviderService
 import services.BaseService
 import services.ClusterService
 import services.NetworkPolicyService
-import services.ProcessService
 import services.RoleService
 import spock.lang.Shared
 import spock.lang.Unroll
@@ -177,59 +176,5 @@ spec:
          "Deployment": RoleOuterClass.Access.READ_ACCESS,
          "NetworkGraph": RoleOuterClass.Access.READ_ACCESS,
          "NetworkPolicy": RoleOuterClass.Access.READ_WRITE_ACCESS,] | ["NetworkPolicy"]
-    }
-
-    @Category(BAT)
-    def "Verify token with multiple roles works as expected"() {
-        when:
-        "Create two roles for individual access"
-        def roles = ["Indicator", "ProcessWhitelist"].collect {
-            Map<String, RoleOuterClass.Access> resourceToAccess = [
-                    (it): RoleOuterClass.Access.READ_ACCESS
-            ]
-            def role = RoleService.createRoleWithScopeAndPermissionSet("View ${it}",
-                UNRESTRICTED_SCOPE_ID, resourceToAccess)
-            assert RoleService.getRole(role.name)
-            log.info "Created Role:\n${role.name}"
-            role
-        }
-        assert roles.size() == 2
-
-        and:
-        "Create tokens that use either one or both roles"
-        def tokens = roles.subsequences().collect {
-            def token = ApiTokenService.generateToken("API Token - ${it*.name}", (it*.name).toArray(new String[0]))
-            assert token != null
-            token
-        }
-        assert tokens.size() == 3
-
-        then:
-        "Call to RPC method should succeed iff token represents union role"
-        for (def token : tokens) {
-            log.info "Checking behavior with token ${token.metadata.name}"
-            assert canDo({
-                ProcessService.getGroupedProcessByDeploymentAndContainer("unknown")
-            }, token.token, true) == (token.metadata.rolesCount > 1)
-        }
-
-        and:
-        "MyPermissions API should return the union of permissions"
-        for (def token : tokens) {
-            log.info "Checking permissions for token ${token.metadata.name}"
-            assert myPermissions(token.token).resourceToAccessMap.size() == token.metadata.rolesList.size()
-        }
-
-        cleanup:
-        "Revoke tokens"
-        for (def token : tokens) {
-            ApiTokenService.revokeToken(token.metadata.id)
-        }
-
-        and:
-        "Delete roles"
-        for (def role : roles) {
-            RoleService.deleteRole(role.name)
-        }
     }
 }

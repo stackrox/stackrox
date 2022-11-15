@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	networkBaselineSAC = sac.ForResource(resources.NetworkBaseline)
+	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 type dataStoreImpl struct {
@@ -134,7 +134,7 @@ func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentI
 	elevatedCheckForDeleteCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkBaseline),
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		))
 	for _, id := range deploymentIDs {
 		baseline, found, err := ds.storage.Get(elevatedCheckForDeleteCtx, id)
@@ -170,16 +170,15 @@ func (ds *dataStoreImpl) allowed(
 	access storage.Access,
 	baseline *storage.NetworkBaseline,
 ) (bool, error) {
-	return networkBaselineSAC.ScopeChecker(ctx, access).ForNamespaceScopedObject(baseline).IsAllowed(), nil
+	return deploymentExtensionSAC.ScopeChecker(ctx, access).ForNamespaceScopedObject(baseline).IsAllowed(), nil
 }
 
 func (ds *dataStoreImpl) Walk(ctx context.Context, f func(baseline *storage.NetworkBaseline) error) error {
-	if ok, err := networkBaselineSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return nil
 	}
-
+	// Postgres retry in caller.
 	return ds.storage.Walk(ctx, f)
-
 }

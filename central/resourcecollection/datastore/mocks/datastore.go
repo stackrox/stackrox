@@ -94,6 +94,20 @@ func (mr *MockDataStoreMockRecorder) DryRunAddCollection(ctx, collection interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DryRunAddCollection", reflect.TypeOf((*MockDataStore)(nil).DryRunAddCollection), ctx, collection)
 }
 
+// DryRunUpdateCollection mocks base method.
+func (m *MockDataStore) DryRunUpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DryRunUpdateCollection", ctx, collection)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DryRunUpdateCollection indicates an expected call of DryRunUpdateCollection.
+func (mr *MockDataStoreMockRecorder) DryRunUpdateCollection(ctx, collection interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DryRunUpdateCollection", reflect.TypeOf((*MockDataStore)(nil).DryRunUpdateCollection), ctx, collection)
+}
+
 // Exists mocks base method.
 func (m *MockDataStore) Exists(ctx context.Context, id string) (bool, error) {
 	m.ctrl.T.Helper()
@@ -125,19 +139,34 @@ func (mr *MockDataStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataStore)(nil).Get), ctx, id)
 }
 
-// GetBatch mocks base method.
-func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.ResourceCollection, error) {
+// GetMany mocks base method.
+func (m *MockDataStore) GetMany(ctx context.Context, id []string) ([]*storage.ResourceCollection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBatch", ctx, id)
+	ret := m.ctrl.Call(m, "GetMany", ctx, id)
 	ret0, _ := ret[0].([]*storage.ResourceCollection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetBatch indicates an expected call of GetBatch.
-func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id interface{}) *gomock.Call {
+// GetMany indicates an expected call of GetMany.
+func (mr *MockDataStoreMockRecorder) GetMany(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockDataStore)(nil).GetMany), ctx, id)
+}
+
+// ResolveListDeployments mocks base method.
+func (m *MockDataStore) ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection) ([]*storage.ListDeployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveListDeployments", ctx, collection)
+	ret0, _ := ret[0].([]*storage.ListDeployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResolveListDeployments indicates an expected call of ResolveListDeployments.
+func (mr *MockDataStoreMockRecorder) ResolveListDeployments(ctx, collection interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveListDeployments", reflect.TypeOf((*MockDataStore)(nil).ResolveListDeployments), ctx, collection)
 }
 
 // Search mocks base method.
@@ -183,4 +212,18 @@ func (m *MockDataStore) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.S
 func (mr *MockDataStoreMockRecorder) SearchResults(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockDataStore)(nil).SearchResults), ctx, q)
+}
+
+// UpdateCollection mocks base method.
+func (m *MockDataStore) UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCollection", ctx, collection)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateCollection indicates an expected call of UpdateCollection.
+func (mr *MockDataStoreMockRecorder) UpdateCollection(ctx, collection interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCollection", reflect.TypeOf((*MockDataStore)(nil).UpdateCollection), ctx, collection)
 }

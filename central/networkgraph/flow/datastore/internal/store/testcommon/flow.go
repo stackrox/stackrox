@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
@@ -33,7 +34,7 @@ type FlowStoreTestSuite struct {
 // SetupSuite runs before any tests
 func (suite *FlowStoreTestSuite) SetupSuite() {
 	var err error
-	suite.tested, err = suite.store.CreateFlowStore(context.Background(), "fakecluster")
+	suite.tested, err = suite.store.CreateFlowStore(context.Background(), fixtureconsts.Cluster1)
 	suite.Require().NoError(err)
 }
 
@@ -46,32 +47,32 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment1},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment2},
 				DstPort:    1,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t1),
-			ClusterId:         "fakecluster",
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment3},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment4},
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t2),
-			ClusterId:         "fakecluster",
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment5},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment6},
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			ClusterId: "fakecluster",
+			ClusterId: fixtureconsts.Cluster1,
 		},
 	}
 	var err error
@@ -86,7 +87,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 
 	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), protoconv.ConvertTimeToTimestamp(t2))
@@ -95,7 +96,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 
 	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), protoconv.ConvertTimeToTimestamp(time.Now()))
@@ -104,7 +105,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 
 	updateTS += 1337
@@ -134,7 +135,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 
 	updateTS += 42
@@ -147,14 +148,14 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 
 	node1Flows, readUpdateTS, err := suite.tested.GetMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
-		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetDstEntity().GetId() == "someNode1" {
+		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetDstEntity().GetId() == fixtureconsts.Deployment1 {
 			return true
 		}
-		if props.GetSrcEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetSrcEntity().GetId() == "someNode1" {
+		if props.GetSrcEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetSrcEntity().GetId() == fixtureconsts.Deployment1 {
 			return true
 		}
 		return false
@@ -164,7 +165,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
 	}
 }
 
@@ -180,32 +181,32 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment1},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment2},
 				DstPort:    1,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t1),
-			ClusterId:         "fakecluster",
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment3},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment4},
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t2),
-			ClusterId:         "fakecluster",
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment5},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment6},
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			ClusterId: "fakecluster",
+			ClusterId: fixtureconsts.Cluster1,
 		},
 	}
 	updateTS := timestamp.Now() - 1000000

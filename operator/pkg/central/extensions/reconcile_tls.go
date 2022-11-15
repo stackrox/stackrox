@@ -61,10 +61,9 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
-	if r.centralObj.Spec.Central.CentralDBEnabled() && !r.centralObj.Spec.Central.DB.IsExternal() {
-		if err := r.ReconcileSecret(ctx, "central-db-tls", !shouldDelete, r.validateCentralDBTLSData, r.generateCentralDBTLSData, true); err != nil {
-			return errors.Wrap(err, "reconciling central-db-tls secret")
-		}
+	internalCentralDBEnabled := r.centralObj.Spec.Central.CentralDBEnabled() && !r.centralObj.Spec.Central.DB.IsExternal()
+	if err := r.ReconcileSecret(ctx, "central-db-tls", internalCentralDBEnabled && !shouldDelete, r.validateCentralDBTLSData, r.generateCentralDBTLSData, true); err != nil {
+		return errors.Wrap(err, "reconciling central-db-tls secret")
 	}
 
 	// scanner and scanner-db certs can be re-issued without a problem.
@@ -79,7 +78,7 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 }
 
 //lint:ignore U1000 ignore unused method. TODO(ROX-9969): remove lint ignore after the init-bundle cert rotation stabilization.
-func (r createCentralTLSExtensionRun) reconcileInitBundleSecrets(ctx context.Context, shouldDelete bool) error {
+func (r *createCentralTLSExtensionRun) reconcileInitBundleSecrets(ctx context.Context, shouldDelete bool) error {
 	bundleSecretShouldExist, err := r.shouldBundleSecretsExist(ctx, shouldDelete)
 	if err != nil {
 		return err

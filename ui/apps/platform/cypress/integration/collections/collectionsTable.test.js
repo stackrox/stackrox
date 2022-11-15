@@ -6,6 +6,7 @@ import {
     visitCollectionsFromLeftNav,
 } from '../../helpers/collections';
 import { hasFeatureFlag } from '../../helpers/features';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 // Mock responses until endpoints are implemented.
 
@@ -38,8 +39,10 @@ describe('Collections table', () => {
         visitCollections(staticResponseMap);
     });
 
-    it('should have table column headings', () => {
+    it('should have plural title and table column headings', () => {
         visitCollections(staticResponseMap);
+
+        cy.title().should('match', getRegExpForTitleWithBranding('Collections'));
 
         cy.get('th:contains("Collection")');
         cy.get('th:contains("Description")');

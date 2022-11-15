@@ -5,6 +5,7 @@ import {
 } from '../../constants/apiEndpoints';
 
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 const h1 = 'Access Control';
 const h2 = 'Access scopes';
@@ -28,18 +29,17 @@ describe('Access Control Access scopes', () => {
         cy.wait('@GetMyPermissions');
 
         cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLink).should('not.exist');
-
-        cy.get(selectors.h2).should('not.exist');
-
         cy.get(selectors.alertTitle).should(
             'contain', // not have.text because it contains "Info alert:" for screen reader
-            'You do not have permission to view Access Control'
+            'You do not have permission to view access scopes.'
         );
     });
 
     it('list has headings, link, button, and table head cells, and no breadcrumbs', () => {
         visitAccessScopes();
+
+        // Table has plural noun in title.
+        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - ${h2}`));
 
         cy.get(selectors.breadcrumbNav).should('not.exist');
 
@@ -67,6 +67,9 @@ describe('Access Control Access scopes', () => {
 
         const name = 'Deny All';
         cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
+
+        // Form has singular noun in title.
+        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - Access scope`));
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${name}")`);

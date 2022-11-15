@@ -27,10 +27,7 @@ type clusterStoreImpl struct {
 
 // GetFlowStore returns the FlowStore for the cluster ID, or nil if none exists.
 func (s *clusterStoreImpl) GetFlowStore(clusterID string) store.FlowStore {
-	return &flowStoreImpl{
-		db:        s.db,
-		clusterID: clusterID,
-	}
+	return New(s.db, clusterID)
 }
 
 // CreateFlowStore returns the FlowStore for the cluster ID, or creates one if none exists.
@@ -39,7 +36,7 @@ func (s *clusterStoreImpl) CreateFlowStore(_ context.Context, clusterID string) 
 }
 
 // Walk is a stub for satisfying interfaces
-func (s *clusterStoreImpl) Walk(_ context.Context, _ func(clusterID string, _ types.Timestamp, _ []*storage.NetworkFlow) error) error {
+func (s *clusterStoreImpl) Walk(_ context.Context, _ func(clusterID string, _ *types.Timestamp, _ []*storage.NetworkFlow) error) error {
 	utils.CrashOnError(errors.New("Unexpected call to stub interface"))
 	return nil
 }

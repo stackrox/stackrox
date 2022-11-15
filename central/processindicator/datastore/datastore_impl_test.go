@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -55,6 +56,8 @@ type IndicatorDataStoreTestSuite struct {
 	hasWriteCtx context.Context
 
 	mockCtrl *gomock.Controller
+
+	podToIndicators map[string]map[string]string
 }
 
 func (suite *IndicatorDataStoreTestSuite) SetupTest() {
@@ -62,11 +65,11 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Indicator)))
+			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Indicator)))
+			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		suite.postgres = pgtest.ForT(suite.T())
@@ -82,6 +85,8 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 	suite.searcher = processSearch.New(suite.storage, suite.indexer)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
+
+	suite.initPodToIndicatorsMap()
 }
 
 func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
@@ -91,6 +96,24 @@ func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
 		rocksdbtest.TearDownRocksDB(suite.rocksDB)
 	}
 	suite.mockCtrl.Finish()
+}
+
+func (suite *IndicatorDataStoreTestSuite) initPodToIndicatorsMap() {
+	suite.podToIndicators = make(map[string]map[string]string)
+	suite.podToIndicators[fixtureconsts.PodUID1] = make(map[string]string)
+	suite.podToIndicators[fixtureconsts.PodUID1]["c1"] = uuid.NewV4().String()
+	suite.podToIndicators[fixtureconsts.PodUID1]["c2"] = uuid.NewV4().String()
+	suite.podToIndicators[fixtureconsts.PodUID1]["c3"] = uuid.NewV4().String()
+
+	suite.podToIndicators[fixtureconsts.PodUID2] = make(map[string]string)
+	suite.podToIndicators[fixtureconsts.PodUID2]["c1"] = uuid.NewV4().String()
+	suite.podToIndicators[fixtureconsts.PodUID2]["c2"] = uuid.NewV4().String()
+	suite.podToIndicators[fixtureconsts.PodUID2]["c3"] = uuid.NewV4().String()
+
+	suite.podToIndicators[fixtureconsts.PodUID3] = make(map[string]string)
+	suite.podToIndicators[fixtureconsts.PodUID3]["c1"] = uuid.NewV4().String()
+	suite.podToIndicators[fixtureconsts.PodUID3]["c2"] = uuid.NewV4().String()
+	suite.podToIndicators[fixtureconsts.PodUID3]["c3"] = uuid.NewV4().String()
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
@@ -147,17 +170,17 @@ func getIndicators() (indicators []*storage.ProcessIndicator, repeatIndicator *s
 
 	indicators = []*storage.ProcessIndicator{
 		{
-			Id:            "id1",
-			DeploymentId:  "d1",
-			PodUid:        "p1",
+			Id:            fixtureconsts.ProcessIndicatorID1,
+			DeploymentId:  fixtureconsts.Deployment1,
+			PodUid:        fixtureconsts.PodUID1,
 			ContainerName: "container1",
 
 			Signal: repeatedSignal,
 		},
 		{
-			Id:            "id2",
-			DeploymentId:  "d2",
-			PodUid:        "p2",
+			Id:            fixtureconsts.ProcessIndicatorID2,
+			DeploymentId:  fixtureconsts.Deployment2,
+			PodUid:        fixtureconsts.PodUID2,
 			ContainerName: "container1",
 
 			Signal: &storage.ProcessSignal{
@@ -169,9 +192,9 @@ func getIndicators() (indicators []*storage.ProcessIndicator, repeatIndicator *s
 	}
 
 	repeatIndicator = &storage.ProcessIndicator{
-		Id:            "id1",
-		DeploymentId:  "d1",
-		PodUid:        "p1",
+		Id:            fixtureconsts.ProcessIndicatorID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		PodUid:        fixtureconsts.PodUID1,
 		ContainerName: "container1",
 		Signal:        repeatedSignal,
 	}
@@ -211,12 +234,12 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorAddOneByOne() {
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 }
 
-func generateIndicatorsWithPods(podIDs []string, containerIDs []string) []*storage.ProcessIndicator {
+func (suite *IndicatorDataStoreTestSuite) generateIndicatorsWithPods(podIDs []string, containerIDs []string) []*storage.ProcessIndicator {
 	var indicators []*storage.ProcessIndicator
 	for _, p := range podIDs {
 		for _, c := range containerIDs {
 			indicators = append(indicators, &storage.ProcessIndicator{
-				Id:     fmt.Sprintf("indicator_id_%s_%s", p, c),
+				Id:     suite.podToIndicators[p][c],
 				PodUid: p,
 				Signal: &storage.ProcessSignal{
 					ContainerId:  fmt.Sprintf("%s_%s", p, c),
@@ -231,22 +254,23 @@ func generateIndicatorsWithPods(podIDs []string, containerIDs []string) []*stora
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByPodID() {
 	suite.setupDataStoreNoPruning()
 
-	indicators := generateIndicatorsWithPods([]string{"p1", "p2"}, []string{"c1", "c2"})
+	indicators := suite.generateIndicatorsWithPods([]string{fixtureconsts.PodUID1, fixtureconsts.PodUID2}, []string{"c1", "c2"})
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, "p1"))
-	suite.verifyIndicatorsAre(generateIndicatorsWithPods([]string{"p2"}, []string{"c1", "c2"})...)
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, fixtureconsts.PodUID1))
+	suite.verifyIndicatorsAre(suite.generateIndicatorsWithPods([]string{fixtureconsts.PodUID2}, []string{"c1", "c2"})...)
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByPodIDAgain() {
 	suite.setupDataStoreNoPruning()
 
-	indicators := generateIndicatorsWithPods([]string{"p1", "p2", "p3"}, []string{"c1", "c2", "c3"})
+	indicators := suite.generateIndicatorsWithPods([]string{fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3}, []string{"c1", "c2", "c3"})
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, "pnonexistent"))
+	// Try to remove where pod id does not exist in indicators
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, uuid.NewV4().String()))
 	suite.verifyIndicatorsAre(indicators...)
 }
 
@@ -363,7 +387,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesGet() {
 	mockStore, _, _ := suite.setupDataStoreWithMocks()
 	mockStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
 
-	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasNoneCtx, "hkjddjhk")
+	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasNoneCtx, uuid.Nil.String())
 	suite.NoError(err, "expected no error, should return nil without access")
 	suite.False(exists)
 	suite.Nil(indicator, "expected return value to be nil")
@@ -374,13 +398,13 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 	testIndicator := &storage.ProcessIndicator{}
 
 	mockStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(testIndicator, true, nil)
-	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasReadCtx, "An Id")
+	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasReadCtx, uuid.Nil.String())
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.True(exists)
 	suite.Equal(testIndicator, indicator)
 
 	mockStore.EXPECT().Get(suite.hasWriteCtx, gomock.Any()).Return(testIndicator, true, nil)
-	indicator, exists, err = suite.datastore.GetProcessIndicator(suite.hasWriteCtx, "beef")
+	indicator, exists, err = suite.datastore.GetProcessIndicator(suite.hasWriteCtx, uuid.NewDummy().String())
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.True(exists)
 	suite.Equal(testIndicator, indicator)
@@ -415,9 +439,9 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
 	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Return(nil)
 	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Return(nil)
 
-	storeMock.EXPECT().AckKeysIndexed(suite.hasWriteCtx, "id").Return(nil)
+	storeMock.EXPECT().AckKeysIndexed(suite.hasWriteCtx, fixtureconsts.ProcessIndicatorID1).Return(nil)
 
-	err := suite.datastore.AddProcessIndicators(suite.hasWriteCtx, &storage.ProcessIndicator{Id: "id"})
+	err := suite.datastore.AddProcessIndicators(suite.hasWriteCtx, &storage.ProcessIndicator{Id: fixtureconsts.ProcessIndicatorID1})
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 
@@ -425,10 +449,10 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByPod() {
 	_, indexMock, _ := suite.setupDataStoreWithMocks()
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Times(0)
 
-	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasNoneCtx, "Joseph Rules")
+	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasNoneCtx, uuid.NewDummy().String())
 	suite.Error(err, "expected an error trying to write without permissions")
 
-	err = suite.datastore.RemoveProcessIndicatorsByPod(suite.hasReadCtx, "nfsiux")
+	err = suite.datastore.RemoveProcessIndicatorsByPod(suite.hasReadCtx, uuid.Nil.String())
 	suite.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -437,14 +461,14 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		storeMock.EXPECT().DeleteByQuery(gomock.Any(), gomock.Any()).Return(nil)
 	} else {
-		searchMock.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "jkldfjk"}}, nil)
+		searchMock.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: uuid.NewDummy().String()}}, nil)
 		storeMock.EXPECT().DeleteMany(suite.hasWriteCtx, gomock.Any()).Return(nil)
 		indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Return(nil)
 
-		storeMock.EXPECT().AckKeysIndexed(suite.hasWriteCtx, "jkldfjk").Return(nil)
+		storeMock.EXPECT().AckKeysIndexed(suite.hasWriteCtx, uuid.NewDummy().String()).Return(nil)
 	}
 
-	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, "eoiurvbf")
+	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, uuid.NewDummy().String())
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 
@@ -473,34 +497,34 @@ func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return
 	}
-	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
+	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
 	pi1 := fixtures.GetProcessIndicator()
-	pi1.Id = "A"
+	pi1.Id = fixtureconsts.ProcessIndicatorID1
 	pi2 := fixtures.GetProcessIndicator()
-	pi2.Id = "B"
+	pi2.Id = fixtureconsts.ProcessIndicatorID2
 	pi3 := fixtures.GetProcessIndicator()
-	pi3.Id = "C"
+	pi3.Id = fixtureconsts.ProcessIndicatorID3
 
 	processes := []*storage.ProcessIndicator{pi1, pi2, pi3}
 
-	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(processes, nil, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3}).Return(processes, nil, nil)
 	suite.indexer.EXPECT().AddProcessIndicators(processes).Return(nil)
-	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3}).Return(nil)
 
 	_, err := New(suite.storage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)
 
 	// Make listAlerts just A,B so C should be deleted
 	processes = processes[:1]
-	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
+	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
-	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(processes, []int{2}, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3}).Return(processes, []int{2}, nil)
 	suite.indexer.EXPECT().AddProcessIndicators(processes).Return(nil)
-	suite.indexer.EXPECT().DeleteProcessIndicators([]string{"C"}).Return(nil)
-	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
+	suite.indexer.EXPECT().DeleteProcessIndicators([]string{fixtureconsts.ProcessIndicatorID3}).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3}).Return(nil)
 
 	_, err = New(suite.storage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)

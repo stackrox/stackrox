@@ -3,18 +3,21 @@ package datastore
 import (
 	"context"
 
+	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
-	groupSAC = sac.ForResource(resources.Group)
+	accessSAC = sac.ForResource(resources.Access)
 )
 
 type dataStoreImpl struct {
@@ -24,7 +27,7 @@ type dataStoreImpl struct {
 }
 
 func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
-	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -39,7 +42,7 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 }
 
 func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
-	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -49,27 +52,32 @@ func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
 }
 
 func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.GroupProperties) bool) ([]*storage.Group, error) {
-	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
 	}
 
 	var groups []*storage.Group
-	err := ds.storage.Walk(ctx, func(g *storage.Group) error {
-		if filter == nil || filter(g.GetProps()) {
-			groups = append(groups, g)
-		}
-		return nil
-	})
-
-	return groups, err
+	walkFn := func() error {
+		groups = groups[:0]
+		return ds.storage.Walk(ctx, func(g *storage.Group) error {
+			if filter == nil || filter(g.GetProps()) {
+				groups = append(groups, g)
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
+	return groups, nil
 }
 
 // Walk is an optimization that allows to search through the datastore and find
 // groups that apply to a user within a single transaction.
 func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attributes map[string][]string) ([]*storage.Group, error) {
-	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -78,20 +86,25 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attrib
 	// Search through the datastore and find all groups that apply to a user within a single transaction.
 	toSearch := getPossibleGroupProperties(authProviderID, attributes)
 	var groups []*storage.Group
-	err := ds.storage.Walk(ctx, func(group *storage.Group) error {
-		for _, check := range toSearch {
-			if propertiesMatch(group.GetProps(), check) {
-				groups = append(groups, group)
+	walkFn := func() error {
+		groups = groups[:0]
+		return ds.storage.Walk(ctx, func(group *storage.Group) error {
+			for _, check := range toSearch {
+				if propertiesMatch(group.GetProps(), check) {
+					groups = append(groups, group)
+				}
 			}
-		}
-		return nil
-	})
-
-	return groups, err
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
+	return groups, nil
 }
 
 func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -109,7 +122,7 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 }
 
 func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force bool) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -126,7 +139,7 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force
 }
 
 func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group, force bool) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -179,7 +192,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 }
 
 func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupProperties, force bool) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -205,6 +218,36 @@ func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authPr
 		return errors.Wrap(err, "collecting associated groups")
 	}
 	return ds.Mutate(ctx, groups, nil, nil, force)
+}
+
+func (ds *dataStoreImpl) RemoveAllWithEmptyProperties(ctx context.Context) error {
+	// Search through all groups and verify whether any group exists with empty properties and attempt to delete them.
+	isEmptyGroupPropertiesF := func(props *storage.GroupProperties) bool {
+		if props.GetAuthProviderId() == "" && props.GetKey() == "" && props.GetValue() == "" {
+			return true
+		}
+		return false
+	}
+	groups, err := ds.GetFiltered(ctx, isEmptyGroupPropertiesF)
+	if err != nil {
+		return err
+	}
+
+	var removeGroupErrs *multierror.Error
+	for _, group := range groups {
+		// Since we are dealing with empty properties, we only require the ID to be set.
+		// In case the ID is not set, add the error to the error list.
+		id := group.GetProps().GetId()
+		if id == "" {
+			removeGroupErrs = multierror.Append(removeGroupErrs, errox.InvalidArgs.Newf("group %s has no ID"+
+				" set and cannot be deleted", proto.MarshalTextString(group)))
+			continue
+		}
+		if err := ds.storage.Delete(ctx, id); err != nil {
+			removeGroupErrs = multierror.Append(removeGroupErrs, err)
+		}
+	}
+	return removeGroupErrs.ErrorOrNil()
 }
 
 // Helpers
@@ -359,12 +402,9 @@ func (ds *dataStoreImpl) getDefaultGroupForProps(ctx context.Context, props *sto
 // validateMutableGroupIDNoLock validates whether a group allows changes or not based on the mutability mode set.
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id string, force bool) error {
-	group, exists, err := ds.storage.Get(ctx, id)
+	group, err := ds.validateGroupExists(ctx, id)
 	if err != nil {
 		return err
-	}
-	if !exists {
-		return errox.NotFound.Newf("group with id %q was not found", id)
 	}
 
 	switch group.GetProps().GetTraits().GetMutabilityMode() {
@@ -381,4 +421,15 @@ func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id st
 			group.GetProps().GetTraits().GetMutabilityMode().String()))
 	}
 	return errox.InvalidArgs.Newf("group %q is immutable", id)
+}
+
+func (ds *dataStoreImpl) validateGroupExists(ctx context.Context, id string) (*storage.Group, error) {
+	group, exists, err := ds.storage.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errox.NotFound.Newf("group with id %q was not found", id)
+	}
+	return group, nil
 }

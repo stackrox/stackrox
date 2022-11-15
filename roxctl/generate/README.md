@@ -12,36 +12,6 @@ The static network policy generator is a tool that analyzes k8s manifests and ge
 
 ## Usage
 
-### Compiling
-
-The feature `roxctl generate netpol` is currently not available in the officially released images of `roxctl` and must be compiled locally after fetching the stackrox repository.
-
-Refer to [the build tooling section in the Readme](https://github.com/stackrox/stackrox#build-tooling) for details about build prerequisites.
-
-```shell
-git clone https://github.com/stackrox/stackrox.git && cd stackrox
-# Compile roxctl for a given OS with empty GOTAGS
-make cli-{darwin,linux} GOTAGS=''
-# Set feature-flag
-export ROX_ROXCTL_NETPOL_GENERATE="true"
-# Confirm feature availability
-
-$ bin/darwin_amd64/roxctl generate netpol -h
-Based on a given folder containing deployment YAMLs, will generate a list of recommended Network Policies. Will write to stdout if no output flags are provided.
-
-Usage:
-  bin/darwin_amd64/roxctl generate netpol <folder-path> [flags]
-
-Flags:
-      --fail                 fail on the first encountered error (default false)
-  -h, --help                 help for netpol
-  -d, --output-dir string    save generated policies into target folder - one file per policy
-  -f, --output-file string   save and merge generated policies into a single yaml file
-      --remove               remove the output path if it already exists (default false)
-      --strict               treat warnings as errors (default false)
-(...)
-```
-
 ### Generating Network Policies from yaml manifests
 
 To generate network policies, `roxctl generate netpol` requires a folder containing K8s manifests.

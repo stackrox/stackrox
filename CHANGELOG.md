@@ -6,6 +6,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 ### Removed Features
+- ROX-12839: we will stop shipping the docs embedded in the product, starting with the release following this one (docs will still be available online)
 - ROX-6194: `ROX_WHITELIST_GENERATION_DURATION` env var is removed in favor of `ROX_BASELINE_GENERATION_DURATION`;
   `DeploymentWithProcessInfo` items in `/v1/deploymentswithprocessinfo` endpoint response do not include
   `whitelist_statuses` anymore.
@@ -25,8 +26,19 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-11592: Support to Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field
   being set in the `/v1/groups` endpoint have been removed.
 - The unused "ComplianceRunSchedule" resource has been removed.
+- ROX-11101: As announced in 3.71.0 (ROX-8520), some permissions for permission sets are being grouped for simplification. The deprecation process will remove and replace the deprecated permissions with the replacing permission as listed below. The access level granted to the replacing permission will be the lowest among all access levels of the replaced permissions.
+  - Permission `Access` replaces the deprecated permissions `AuthProvider, Group, Licenses, User`.
+  - Permission `DeploymentExtension` replaces the deprecated permissions `Indicator, NetworkBaseline, ProcessWhitelist, Risk`.
+  - Permission `Integration` replaces the deprecated permissions `APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration`.
+  - Permission `Image` replaces the deprecated permission `ImageComponent`.
+  - Note: the `Role` permission, previously announced as being grouped under `Access` remains a standalone permission.
+  - Important: As stated above, the access level granted to the replacing permission will be the lowest among all access levels of the replaced permissions. This can impact the ability of some created roles to perform their intended duty. Consolidation of the mapping from replaced resources to new ones can help assess the desired access level, should any issue be experienced.
+- ROX-13034: Central reaches out to scanner `scanner.<namespace>.svc` now to respect OpenShift's `NO_PROXY` configuration.
 
 ### Deprecated Features
+- ROX-11101: As first announced in 3.71.0 for ROX-8250, we continue to simplify access control management by grouping some permissions in permission sets. As a result:
+  - New permission `Administration` will deprecate the permissions `AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity`.
+  - The permission `Compliance` will deprecate the permission `ComplianceRuns`.
 
 ### Technical Changes
 - ROX-11937: The Splunk integration now processes all additional standards of the compliance operator (ocp4-cis & ocp4-cis-node) correctly.
@@ -37,6 +49,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The service account "central", which is used by the central deployment, will now include `get` and `list` access to the following resources in the namespace where central is deployed to:
   `pods`, `events`, and `namespaces`. This fixes an issue when generating diagnostic bundles to now correctly include all relevant information within the namespace of central.
 - ROX-13265: Fix missing rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
+- ROX-13500: Previously, deployment YAML check on V1 CronJob workload would cause Central to panic. This is now fixed.
+- `cves.ids` field of `storage.VulnerabilityRequest` object, which is in the response of `VulnerabilityRequestService` (`/v1/cve/requests/`) endpoints, has been renamed to `cves.cves`.
 
 ## [3.72.0]
 
@@ -166,7 +180,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [69.0]
 
-- `collector` image with `-slim` in the image tag is no longer published (`collector-slim` with suffix in the image name will continue to be published).
+- `collector` image with `-slim` image tag is no longer published (`collector-slim` with suffix in the image name will continue to be published).
 - `collector-rhel`, `main-rhel`, `scanner-rhel`, and `scanner-db-rhel` images are not published any more. These images were identical to non-rhel ones since version 3.66.
 - Increased default Scanner memory limit from 3000 MiB to 4GiB.
 - API changes/deprecations:

@@ -7,14 +7,13 @@ import (
 	"github.com/stackrox/rox/central/integrationhealth/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
-	imageSAC    = sac.ForResource(resources.ImageIntegration)
-	notifierSAC = sac.ForResource(resources.Notifier)
-	backupSAC   = sac.ForResource(resources.BackupPlugins)
+	integrationSAC = sac.ForResource(resources.Integration)
 )
 
 type datastoreImpl struct {
@@ -22,7 +21,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) GetRegistriesAndScanners(ctx context.Context) ([]*storage.IntegrationHealth, error) {
-	if ok, err := imageSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return nil,
 			errors.Errorf("Failed to retrieve health for registries and scanners: %v", err)
 	} else if !ok {
@@ -32,7 +31,7 @@ func (ds *datastoreImpl) GetRegistriesAndScanners(ctx context.Context) ([]*stora
 }
 
 func (ds *datastoreImpl) GetNotifierPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error) {
-	if ok, err := notifierSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, errors.Errorf("Failed to retrieve health for notifiers: %v", err)
 	} else if !ok {
 		return nil, nil
@@ -41,7 +40,7 @@ func (ds *datastoreImpl) GetNotifierPlugins(ctx context.Context) ([]*storage.Int
 }
 
 func (ds *datastoreImpl) GetBackupPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error) {
-	if ok, err := backupSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, errors.Errorf("Failed to retrieve health for backup plugins: %v", err)
 	} else if !ok {
 		return nil, nil
@@ -89,41 +88,35 @@ func (ds *datastoreImpl) GetIntegrationHealth(ctx context.Context, id string) (*
 }
 
 func writeAllowed(ctx context.Context, typ storage.IntegrationHealth_Type) (bool, error) {
-	switch typ {
-	case storage.IntegrationHealth_IMAGE_INTEGRATION:
-		return imageSAC.WriteAllowed(ctx)
-	case storage.IntegrationHealth_NOTIFIER:
-		return notifierSAC.WriteAllowed(ctx)
-	case storage.IntegrationHealth_BACKUP:
-		return backupSAC.WriteAllowed(ctx)
-	default:
+	if typ != storage.IntegrationHealth_IMAGE_INTEGRATION &&
+		typ != storage.IntegrationHealth_NOTIFIER &&
+		typ != storage.IntegrationHealth_BACKUP {
 		return false, utils.Should(errors.New("Unknown integration type"))
 	}
+	return integrationSAC.WriteAllowed(ctx)
 }
 
 func readAllowed(ctx context.Context, typ storage.IntegrationHealth_Type) (bool, error) {
-	switch typ {
-	case storage.IntegrationHealth_IMAGE_INTEGRATION:
-		return imageSAC.ReadAllowed(ctx)
-	case storage.IntegrationHealth_NOTIFIER:
-		return notifierSAC.ReadAllowed(ctx)
-	case storage.IntegrationHealth_BACKUP:
-		return backupSAC.ReadAllowed(ctx)
-	default:
+	if typ != storage.IntegrationHealth_IMAGE_INTEGRATION &&
+		typ != storage.IntegrationHealth_NOTIFIER &&
+		typ != storage.IntegrationHealth_BACKUP {
 		return false, utils.Should(errors.New("Unknown integration type"))
 	}
+	return integrationSAC.ReadAllowed(ctx)
 }
 
 func (ds *datastoreImpl) getIntegrationsOfType(ctx context.Context, integrationType storage.IntegrationHealth_Type) ([]*storage.IntegrationHealth, error) {
 	var integrationHealth []*storage.IntegrationHealth
-	err := ds.store.Walk(ctx, func(obj *storage.IntegrationHealth) error {
-		if obj.GetType() == integrationType {
-			integrationHealth = append(integrationHealth, obj)
-		}
-		return nil
-	})
-
-	if err != nil {
+	walkFn := func() error {
+		integrationHealth = integrationHealth[:0]
+		return ds.store.Walk(ctx, func(obj *storage.IntegrationHealth) error {
+			if obj.GetType() == integrationType {
+				integrationHealth = append(integrationHealth, obj)
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 	return integrationHealth, nil

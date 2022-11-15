@@ -4,6 +4,8 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	selector2 "github.com/stackrox/rox/sensor/kubernetes/selector"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -15,13 +17,13 @@ type serviceWithRoutes struct {
 
 type serviceWrap struct {
 	*v1.Service
-	selector selector
+	selector selector2.Selector
 }
 
 func wrapService(svc *v1.Service) *serviceWrap {
 	return &serviceWrap{
 		Service:  svc,
-		selector: createSelector(svc.Spec.Selector, emptyMatchesNothing()),
+		selector: selector2.CreateSelector(svc.Spec.Selector, selector2.EmptyMatchesNothing()),
 	}
 }
 
@@ -116,7 +118,7 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 	return result
 }
 
-// serviceDispatcher handles servidce resource events.
+// serviceDispatcher handles service resource events.
 type serviceDispatcher struct {
 	serviceStore           *serviceStore
 	deploymentStore        *DeploymentStore
@@ -134,13 +136,13 @@ func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *Deploymen
 	}
 }
 
-// Process processes a service resource event, and returns the sensor events to emit in response.
-func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+// ProcessEvent processes a service resource event, and returns the sensor events to emit in response.
+func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	svc := obj.(*v1.Service)
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
-	var sel selector
+	var sel selector2.Selector
 	oldWrap := sh.serviceStore.getService(svc.Namespace, svc.Name)
 	if oldWrap != nil {
 		sel = oldWrap.selector
@@ -149,7 +151,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 		newWrap := wrapService(svc)
 		sh.serviceStore.addOrUpdateService(newWrap)
 		if sel != nil {
-			sel = or(sel, newWrap.selector)
+			sel = selector2.Or(sel, newWrap.selector)
 		} else {
 			sel = newWrap.selector
 		}
@@ -164,13 +166,13 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector) []*central.SensorEvent {
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector2.Selector) *component.ResourceEvent {
 	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)
 	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
-	return events
+	return component.NewResourceEvent(events, nil, nil)
 }
 
-func (sh *serviceDispatcher) processCreate(svc *v1.Service) []*central.SensorEvent {
+func (sh *serviceDispatcher) processCreate(svc *v1.Service) *component.ResourceEvent {
 	svcWrap := wrapService(svc)
 	sh.serviceStore.addOrUpdateService(svcWrap)
 	events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(serviceWithRoutes{
@@ -178,5 +180,5 @@ func (sh *serviceDispatcher) processCreate(svc *v1.Service) []*central.SensorEve
 		routes:      sh.serviceStore.getRoutesForService(svcWrap),
 	})
 	sh.endpointManager.OnServiceCreate(svcWrap)
-	return events
+	return component.NewResourceEvent(events, nil, nil)
 }

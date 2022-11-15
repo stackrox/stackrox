@@ -55,7 +55,6 @@ import (
 )
 
 const (
-	otherClusterID = "OtherClusterID"
 	otherNamespace = "OtherNamespace"
 )
 
@@ -88,7 +87,7 @@ type deploymentDatastoreSACSuite struct {
 	testContexts                    map[string]context.Context
 	testContextsWithImageAccess     map[string]context.Context
 	testContextsWithImageOnlyAccess map[string]context.Context
-	processIndicatorTestContexts    map[string]context.Context
+	deploymentExtensionTestContexts map[string]context.Context
 
 	testDeploymentIDs []deploymentIDs
 	testNamespaceIDs  []string
@@ -146,7 +145,7 @@ func (s *deploymentDatastoreSACSuite) SetupSuite() {
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Deployment)
 	s.testContextsWithImageAccess = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Deployment, resources.Image)
 	s.testContextsWithImageOnlyAccess = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
-	s.processIndicatorTestContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Indicator)
+	s.deploymentExtensionTestContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.DeploymentExtension)
 }
 
 func (s *deploymentDatastoreSACSuite) TearDownSuite() {
@@ -220,7 +219,7 @@ func (s *deploymentDatastoreSACSuite) setupMultipleDeploymentReadTest() ([]strin
 	deploymentID2 := deployment2.GetId()
 	deployment3 := s.pushDeploymentToStore(testconsts.Cluster2, testconsts.NamespaceB)
 	deploymentID3 := deployment3.GetId()
-	deployment4 := s.pushDeploymentToStore(otherClusterID, otherNamespace)
+	deployment4 := s.pushDeploymentToStore(testconsts.Cluster3, otherNamespace)
 	deploymentID4 := deployment4.GetId()
 	pushedIDs := []string{deploymentID1, deploymentID2, deploymentID3, deploymentID4}
 	IDtoDeployment := map[string]*storage.Deployment{
@@ -567,7 +566,7 @@ func (s *deploymentDatastoreSACSuite) TestScopedCount() {
 
 func (s *deploymentDatastoreSACSuite) TestUnrestrictedCount() {
 	s.setupSearchTest()
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runTestCount(c)
 		})
@@ -593,7 +592,7 @@ func (s *deploymentDatastoreSACSuite) TestScopedCountDeployments() {
 
 func (s *deploymentDatastoreSACSuite) TestUnrestrictedCountDeployments() {
 	s.setupSearchTest()
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runTestCountDeployments(c)
 		})

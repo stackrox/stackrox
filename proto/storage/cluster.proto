@@ -113,7 +113,7 @@ message SensorDeploymentIdentification {
 }
 
 message Cluster {
-    string                    id                               = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"pk"'];
+    string                    id                               = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"'];
     string                    name                             = 2 [(gogoproto.moretags) = 'search:"Cluster,store" sql:"unique"'];
     ClusterType               type                             = 3;
     map<string, string>       labels                           = 27 [(gogoproto.moretags) = 'search:"Cluster Label"'];
@@ -258,7 +258,7 @@ message AuditLogFileState {
 }
 
 message ClusterHealthStatus {
-    string                    id                               = 9 [(gogoproto.moretags) = 'sql:"pk,fk(Cluster:id),no-fk-constraint"'];
+    string                    id                               = 9 [(gogoproto.moretags) = 'sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"'];
     enum HealthStatusLabel {
         UNINITIALIZED = 0;
         // Only collector can have unavailable status

@@ -22,8 +22,8 @@ const (
 )
 
 var (
-	processBaselineSACSearchHelper         = sac.ForResource(resources.ProcessWhitelist).MustCreateSearchHelper(mappings.OptionsMap)
-	processBaselinePostgresSACSearchHelper = sac.ForResource(resources.ProcessWhitelist).MustCreatePgSearchHelper()
+	deploymentExtensionSACSearchHelper         = sac.ForResource(resources.DeploymentExtension).MustCreateSearchHelper(mappings.OptionsMap)
+	deploymentExtensionPostgresSACSearchHelper = sac.ForResource(resources.DeploymentExtension).MustCreatePgSearchHelper()
 )
 
 type searcherImpl struct {
@@ -67,9 +67,9 @@ func (s *searcherImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Quer
 		err     error
 	)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		results, err = processBaselinePostgresSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
+		results, err = deploymentExtensionPostgresSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
 	} else {
-		results, err = processBaselineSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
+		results, err = deploymentExtensionSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
 	}
 	if err != nil || len(results) == 0 {
 		return nil, err
@@ -97,10 +97,10 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	var filteredSearcher search.Searcher
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		filteredSearcher = processBaselinePostgresSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the
+		filteredSearcher = deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the
 		// UnsafeSearcher safe.
 	} else {
-		filteredSearcher = processBaselineSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher
+		filteredSearcher = deploymentExtensionSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher
 		// safe.
 	}
 	paginatedSearcher := paginated.Paginated(filteredSearcher)

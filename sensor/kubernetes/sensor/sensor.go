@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -41,7 +42,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
-	"github.com/stackrox/rox/sensor/kubernetes/listener"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/localscanner"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
@@ -102,8 +103,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), resources.ServiceAccountStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager, resources.NetworkPolicySingleton())
-	resourceListener := listener.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter)
-	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, resourceListener)
+	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter)
+	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
 	imageService := image.NewService(imageCache, registry.Singleton())
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
@@ -129,6 +130,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
 		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
+	}
+	if features.RHCOSNodeScanning.Enabled() {
+		components = append(components, compliance.NewNodeScanHandler(complianceService.NodeScans()))
 	}
 
 	if !cfg.localSensor {

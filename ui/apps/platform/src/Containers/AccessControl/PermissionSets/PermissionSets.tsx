@@ -35,10 +35,15 @@ import { getNewPermissionSet, getCompletePermissionSet } from './permissionSets.
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
+import AccessControlNoPermission from '../AccessControlNoPermission';
+import usePermissions from '../../../hooks/usePermissions';
 
 const entityType = 'PERMISSION_SET';
 
 function PermissionSets(): ReactElement {
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasReadAccessForPage = hasReadAccess('Role') && hasReadAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -128,6 +133,15 @@ function PermissionSets(): ReactElement {
             });
     }, []);
 
+    // Return "no access" page immediately if user doesn't have enough permissions.
+    if (!hasReadAccessForPage) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="permission sets" entityType={entityType} />
+            </>
+        );
+    }
+
     function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
@@ -190,7 +204,11 @@ function PermissionSets(): ReactElement {
                             </AccessControlDescription>
                         }
                         actionComponent={
-                            <Button variant="primary" onClick={handleCreate}>
+                            <Button
+                                isDisabled={!hasWriteAccessForPage}
+                                variant="primary"
+                                onClick={handleCreate}
+                            >
                                 Create permission set
                             </Button>
                         }

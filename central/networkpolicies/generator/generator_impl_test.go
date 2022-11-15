@@ -383,7 +383,7 @@ func (s *generatorTestSuite) TestGenerate() {
 					},
 				},
 			},
-		}, *types.TimestampNow(), nil)
+		}, types.TimestampNow(), nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
@@ -661,7 +661,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			depFlow("depF", "depC"),
 			depFlow("depF", "depD"),
 			depFlow("depF", "depG"),
-		}, *types.TimestampNow(), nil)
+		}, types.TimestampNow(), nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)

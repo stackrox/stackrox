@@ -46,7 +46,7 @@ func (simpleInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField)
 	case reflect.Bool:
 		return true
 	case reflect.String:
-		return "a"
+		return uuid.NewDummy().String()
 	}
 	return nil
 }

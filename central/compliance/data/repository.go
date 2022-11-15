@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/data"
 	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -297,19 +298,22 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	}
 
 	r.complianceOperatorResults = make(map[string][]*storage.ComplianceOperatorCheckResult)
-	err = f.complianceOperatorResultStore.Walk(ctx, func(c *storage.ComplianceOperatorCheckResult) error {
-		if c.GetClusterId() != clusterID {
+	walkFn := func() error {
+		r.complianceOperatorResults = make(map[string][]*storage.ComplianceOperatorCheckResult)
+		return f.complianceOperatorResultStore.Walk(ctx, func(c *storage.ComplianceOperatorCheckResult) error {
+			if c.GetClusterId() != clusterID {
+				return nil
+			}
+			rule := c.Annotations[v1alpha1.RuleIDAnnotationKey]
+			if rule == "" {
+				log.Errorf("Expected rule annotation for %+v", c)
+				return nil
+			}
+			r.complianceOperatorResults[rule] = append(r.complianceOperatorResults[rule], c)
 			return nil
-		}
-		rule := c.Annotations[v1alpha1.RuleIDAnnotationKey]
-		if rule == "" {
-			log.Errorf("Expected rule annotation for %+v", c)
-			return nil
-		}
-		r.complianceOperatorResults[rule] = append(r.complianceOperatorResults[rule], c)
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 

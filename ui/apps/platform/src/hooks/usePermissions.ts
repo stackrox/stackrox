@@ -4,6 +4,7 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { Access } from 'types/role.proto';
 import { ResourceName } from 'types/roleResources';
+import { replacedResourceMapping } from 'constants/accessControl';
 
 export type HasNoAccess = (resourceName: ResourceName) => boolean;
 export type HasReadAccess = (resourceName: ResourceName) => boolean;
@@ -23,20 +24,6 @@ const stateSelector = createStructuredSelector<{
     userRolePermissions: selectors.getUserRolePermissions,
     isLoadingPermissions: selectors.getIsLoadingUserRolePermissions,
 });
-
-// TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
-const replacedResourceMapping = new Map<ResourceName, string>([
-    ['AllComments', 'Administration'],
-    ['ComplianceRuns', 'Compliance'],
-    ['Config', 'Administration'],
-    ['DebugLogs', 'Administration'],
-    ['NetworkGraphConfig', 'Administration'],
-    ['ProbeUpload', 'Administration'],
-    ['ScannerBundle', 'Administration'],
-    ['ScannerDefinitions', 'Administration'],
-    ['SensorUpgradeConfig', 'Administration'],
-    ['ServiceIdentity', 'Administration'],
-]);
 
 const usePermissions = (): UsePermissionsResponse => {
     const { userRolePermissions, isLoadingPermissions } = useSelector(stateSelector);

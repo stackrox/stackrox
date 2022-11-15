@@ -161,13 +161,13 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 	r.statusLine.SetSpinner(waitingSpinner)
 	r.statusLine.SetTextStatic("Initiating restore ...")
 
-	termWidth, _, err := terminal.GetSize(int(os.Stderr.Fd()))
+	termWidth, _, err := terminal.GetSize(int(os.Stderr.Fd())) //nolint:forbidigo // TODO(ROX-13473)
 	if err == nil && termWidth > 40 {
 		if termWidth > 120 {
 			termWidth = 120
 		}
 
-		progressBarContainer := mpb.NewWithContext(subCtx, mpb.WithOutput(os.Stderr), mpb.WithWidth(termWidth))
+		progressBarContainer := mpb.NewWithContext(subCtx, mpb.WithOutput(r.env.InputOutput().ErrOut()), mpb.WithWidth(termWidth))
 		defer progressBarContainer.Wait()
 		defer cancel() // canceling twice doesn't hurt, but we need to ensure this gets called before Wait() above.
 

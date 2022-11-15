@@ -107,7 +107,7 @@ const StandardsByEntity = ({ match, location, entityType, bodyClassName, classNa
         groupBy: [entityTypes.STANDARD, entityType],
         unit: entityTypes.CHECK,
     };
-    const { loading, error, data } = useQuery(AGGREGATED_RESULTS_STANDARDS_BY_ENTITY, {
+    const { loading, error, data } = useQuery(AGGREGATED_RESULTS_STANDARDS_BY_ENTITY(entityType), {
         variables,
     });
 

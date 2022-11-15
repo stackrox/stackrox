@@ -15,7 +15,12 @@ issues:
     - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|sensor|tests|tools|scale)/"
       linters:
         - wrapcheck
+    - path: "(central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|sensor|tests|tools|scale)/"
+      linters:
         - forbidigo
+    - path: "roxctl/central/generate/interactive.go"
+      linters:
+      - forbidigo
     - path: _test\.go
       linters:
         - wrapcheck
@@ -53,7 +58,20 @@ linters-settings:
     - G101
     - G102
     - G103
+    - G106
+    - G108
+    - G109
+    - G111
+    - G113
+    - G201
+    - G202
+    - G203
     - G303
+    - G307
+    - G403
+    - G502
+    - G503
+    - G504
     - G601
   revive:
     min-confidence: 0

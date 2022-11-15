@@ -21,6 +21,7 @@ func init() {
 
 // ComplianceTriggerRuns is a mutation to trigger compliance runs on a specific cluster and standard (or all clusters/all standards)
 func (resolver *Resolver) ComplianceTriggerRuns(ctx context.Context, args struct{ ClusterID, StandardID graphql.ID }) ([]*complianceRunResolver, error) {
+	// TODO: ROX-12750 Replace writeComplianceRuns with writeCompliance
 	if err := writeComplianceRuns(ctx); err != nil {
 		return nil, err
 	}
@@ -35,6 +36,7 @@ func (resolver *Resolver) ComplianceTriggerRuns(ctx context.Context, args struct
 
 // ComplianceRunStatuses is a query to obtain the statuses of a list of compliance runs.
 func (resolver *Resolver) ComplianceRunStatuses(ctx context.Context, args struct{ Ids []graphql.ID }) (*getComplianceRunStatusesResponseResolver, error) {
+	// TODO: ROX-12750 Replace readComplianceRuns with readCompliance
 	if err := readComplianceRuns(ctx); err != nil {
 		return nil, err
 	}
@@ -55,6 +57,7 @@ func (resolver *Resolver) ComplianceRecentRuns(
 		ClusterID, StandardID *graphql.ID
 		Since                 *graphql.Time
 	}) ([]*complianceRunResolver, error) {
+	// TODO: ROX-12750 Replace readComplianceRuns with readCompliance
 	if err := readComplianceRuns(ctx); err != nil {
 		return nil, err
 	}
@@ -81,6 +84,7 @@ func (resolver *Resolver) ComplianceRecentRuns(
 
 // ComplianceRun returns a specific compliance run, if it exists
 func (resolver *Resolver) ComplianceRun(ctx context.Context, args struct{ graphql.ID }) (*complianceRunResolver, error) {
+	// TODO: ROX-12750 Replace readComplianceRuns with readCompliance
 	if err := readComplianceRuns(ctx); err != nil {
 		return nil, err
 	}

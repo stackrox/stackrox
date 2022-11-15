@@ -44,6 +44,8 @@ import (
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
+    "github.com/stackrox/rox/pkg/utils"
+    "github.com/stackrox/rox/pkg/uuid"
     "gorm.io/gorm"
 )
 
@@ -125,6 +127,7 @@ func New(db *pgxpool.Pool) Store {
 {{- end}}
 
 {{- define "insertObject"}}
+{{- $migration := .migration }}
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     {{if not $schema.Parent }}
@@ -139,10 +142,23 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx
         {{- range $field := $schema.DBColumnFields -}}
         {{- if eq $field.DataType "datetime" }}
         pgutils.NilOrTime({{$field.Getter "obj"}}),
+        {{- else if eq $field.SQLType "uuid" }}
+        pgutils.NilOrUUID({{$field.Getter "obj"}}),
         {{- else }}
         {{$field.Getter "obj"}},{{end}}
         {{- end}}
     }
+
+    {{- if $migration }}
+        {{- range $field := $schema.PrimaryKeys -}}
+            {{- if eq $field.SQLType "uuid" }}
+            if pgutils.NilOrUUID({{$field.Getter "obj"}}) == nil {
+                utils.Should(errors.Errorf("{{$field.Name}} is not a valid uuid -- %v", obj))
+                return nil
+            }
+            {{- end }}
+        {{- end }}
+    {{- end }}
 
     finalStr := "INSERT INTO {{$schema.Table}} ({{template "commaSeparatedColumns" $schema.DBColumnFields }}) VALUES({{ valueExpansion (len $schema.DBColumnFields) }}) ON CONFLICT({{template "commaSeparatedColumns" $schema.PrimaryKeys}}) DO UPDATE SET {{template "updateExclusions" $schema.DBColumnFields}}"
     batch.Queue(finalStr, values...)
@@ -159,23 +175,24 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx
     }
 
     query = "delete from {{$child.Table}} where {{ range $idx, $field := $child.FieldsReferringToParent }}{{if $idx}} AND {{end}}{{$field.ColumnName}} = ${{add $idx 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
-    batch.Queue(query{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, len(obj.{{$child.ObjectGetter}}))
+    batch.Queue(query{{ range $field := $schema.PrimaryKeys }}, {{if eq $field.SQLType "uuid"}}pgutils.NilOrUUID({{end}}{{$field.Getter "obj"}}{{if eq $field.SQLType "uuid"}}){{end}}{{end}}, len(obj.{{$child.ObjectGetter}}))
     {{- end}}
     return nil
 }
 
-{{range $idx, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
+{{range $idx, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false "migration" $migration }}{{end}}
 {{- end}}
 
 {{- if not .JoinTable }}
-{{ template "insertObject" dict "schema" .Schema "joinTable" .JoinTable }}
+{{ template "insertObject" dict "schema" .Schema "joinTable" .JoinTable "migration" $inMigration }}
 {{- end}}
 
 {{- define "copyFunctionName"}}{{- $schema := . }}copyFrom{{$schema.Table|upperCamelCase}}
 {{- end}}
 
 {{- define "copyObject"}}
-{{- $schema := . }}
+{{- $migration := .migration }}
+{{- $schema := .schema }}
 func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, {{ range $idx, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
 
     inputRows := [][]interface{}{}
@@ -210,10 +227,23 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
             {{ range $idx, $field := $schema.DBColumnFields }}
             {{if eq $field.DataType "datetime"}}
             pgutils.NilOrTime({{$field.Getter "obj"}}),
+            {{- else if eq $field.SQLType "uuid" }}
+            pgutils.NilOrUUID({{$field.Getter "obj"}}),
             {{- else}}
             {{$field.Getter "obj"}},{{end}}
             {{end}}
         })
+
+        {{- if $migration }}
+        {{- range $field := $schema.PrimaryKeys -}}
+            {{- if eq $field.SQLType "uuid" }}
+            if pgutils.NilOrUUID({{$field.Getter "obj"}}) == nil {
+                utils.Should(errors.Errorf("{{$field.Name}} is not a valid uuid -- %v", obj))
+                continue
+            }
+            {{- end }}
+        {{- end }}
+        {{- end }}
 
         {{ if not $schema.Parent }}
         {{if eq (len $schema.PrimaryKeys) 1}}
@@ -263,12 +293,12 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
     return err
 }
-{{range $child := $schema.Children}}{{ template "copyObject" $child }}{{end}}
+{{range $child := $schema.Children}}{{ template "copyObject" dict "schema" $child "migration" $migration }}{{end}}
 {{- end}}
 
 {{- if not .JoinTable }}
 {{- if not .NoCopyFrom }}
-{{ template "copyObject" .Schema }}
+{{ template "copyObject" dict "schema" .Schema "migration" $inMigration }}
 {{- end }}
 {{- end }}
 
@@ -440,9 +470,9 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 		return 0, err
 	}
     {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
     {{- else}}
-    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
 
 	if err != nil {
@@ -478,9 +508,9 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 		return false, err
 	}
     {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
     {{- else}}
-    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
 	if err != nil {
 		return false, err
@@ -529,9 +559,9 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
         return nil, false, err
 	}
     {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
     {{- else}}
-    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
 	if err != nil {
         return nil, false, err
@@ -611,9 +641,9 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 		return err
 	}
     {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
     {{- else}}
-    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
 	if err != nil {
 		return err
@@ -664,9 +694,9 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 		return err
 	}
     {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
     {{- else}}
-    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
 	if err != nil {
 		return err
@@ -708,9 +738,9 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 		return nil, err
 	}
     {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
     {{- else}}
-    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
 	if err != nil {
 		return nil, err
@@ -763,9 +793,9 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
         return nil, nil, err
 	}
     {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
     {{- else}}
-    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
 	if err != nil {
         return nil, nil, err
@@ -835,9 +865,9 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
         return nil, err
 	}
     {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
     {{- else}}
-    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
 	if err != nil {
         return nil, err
@@ -887,9 +917,9 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
         return err
     }
     {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
     {{- else}}
-    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
     if err != nil {
         return err
@@ -953,9 +983,9 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
         return err
     }
     {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
     {{- else}}
-    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
     {{- end }}
     if err != nil {
         return err

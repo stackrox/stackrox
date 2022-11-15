@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -70,10 +71,12 @@ var (
 	log = logging.LoggerForModule()
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		// TODO: ROX-12750 Replace DebugLogs with Administration
 		user.With(permissions.View(resources.DebugLogs)): {
 			"/v1.DebugService/GetLogLevel",
 			"/v1.DebugService/StreamAuthzTraces",
 		},
+		// TODO: ROX-12750 Replace DebugLogs with Administration
 		user.With(permissions.Modify(resources.DebugLogs)): {
 			"/v1.DebugService/SetLogLevel",
 		},
@@ -389,7 +392,7 @@ func (s *serviceImpl) getGroups(_ context.Context) (interface{}, error) {
 	accessGroupsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Group)))
+			sac.ResourceScopeKeys(resources.Access)))
 
 	return s.groupDataStore.GetAll(accessGroupsCtx)
 }
@@ -436,7 +439,7 @@ func (s *serviceImpl) getNotifiers(_ context.Context) (interface{}, error) {
 	accessNotifierCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Notifier)))
+			sac.ResourceScopeKeys(resources.Integration)))
 
 	return s.notifierDataStore.GetScrubbedNotifiers(accessNotifierCtx)
 }
@@ -445,6 +448,7 @@ func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 	accessConfigCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-12750 Replace Config with Administration
 			sac.ResourceScopeKeys(resources.Config)))
 
 	return s.configDataStore.GetConfig(accessConfigCtx)
@@ -454,17 +458,20 @@ func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 	customRoutes := []routes.CustomRoute{
 		{
-			Route:         "/debug/dump",
+			Route: "/debug/dump",
+			// TODO: ROX-12750 Replace DebugLogs with Administration
 			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
 			ServerHandler: http.HandlerFunc(s.getDebugDump),
 		},
 		{
-			Route:         "/api/extensions/diagnostics",
+			Route: "/api/extensions/diagnostics",
+			// TODO: ROX-12750 Replace DebugLogs with Administration
 			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
 			ServerHandler: http.HandlerFunc(s.getDiagnosticDump),
 		},
 		{
-			Route:         "/debug/versions.json",
+			Route: "/debug/versions.json",
+			// TODO: ROX-12750 Replace DebugLogs with Administration
 			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
 			ServerHandler: http.HandlerFunc(s.getVersionsJSON),
 		},
@@ -484,6 +491,7 @@ type debugDumpOptions struct {
 	withLogImbue      bool
 	withAccessControl bool
 	withNotifiers     bool
+	withCentral       bool
 	clusters          []string
 	since             time.Time
 }
@@ -499,33 +507,35 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		return
 	}
 
-	if err := zipPrometheusMetrics(zipWriter, "metrics-1"); err != nil {
-		log.Error(err)
-	}
-
-	if err := getMemory(zipWriter); err != nil {
-		log.Error(err)
-	}
-
-	if err := getGoroutines(zipWriter); err != nil {
-		log.Error(err)
-	}
-
-	if err := getBlock(zipWriter); err != nil {
-		log.Error(err)
-	}
-
-	if err := getMutex(zipWriter); err != nil {
-		log.Error(err)
-	}
-
-	if opts.withCPUProfile {
-		if err := getCPU(ctx, zipWriter, cpuProfileDuration); err != nil {
+	if opts.withCentral {
+		if err := zipPrometheusMetrics(zipWriter, "metrics-1"); err != nil {
 			log.Error(err)
 		}
 
-		if err := zipPrometheusMetrics(zipWriter, "metrics-2"); err != nil {
+		if err := getMemory(zipWriter); err != nil {
 			log.Error(err)
+		}
+
+		if err := getGoroutines(zipWriter); err != nil {
+			log.Error(err)
+		}
+
+		if err := getBlock(zipWriter); err != nil {
+			log.Error(err)
+		}
+
+		if err := getMutex(zipWriter); err != nil {
+			log.Error(err)
+		}
+
+		if opts.withCPUProfile {
+			if err := getCPU(ctx, zipWriter, cpuProfileDuration); err != nil {
+				log.Error(err)
+			}
+
+			if err := zipPrometheusMetrics(zipWriter, "metrics-2"); err != nil {
+				log.Error(err)
+			}
 		}
 	}
 
@@ -540,7 +550,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	}
 
 	if s.telemetryGatherer != nil && opts.telemetryMode > 0 {
-		telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= 2)
+		telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= 2, opts.withCentral)
 		if err := writeTelemetryData(zipWriter, telemetryData); err != nil {
 			log.Error(err)
 		}
@@ -559,13 +569,13 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	fetchAndAddJSONToZip(ctx, zipWriter, "system-configuration.json", s.getConfig)
 
 	// Get logs last to also catch logs made during creation of diag bundle.
-	if opts.logs == localLogs {
+	if opts.withCentral && opts.logs == localLogs {
 		if err := getLogs(zipWriter); err != nil {
 			log.Error(err)
 		}
 	}
 
-	if opts.withLogImbue {
+	if opts.withCentral && opts.withLogImbue {
 		if err := s.getLogImbue(ctx, zipWriter); err != nil {
 			log.Error(err)
 		}
@@ -607,6 +617,7 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 		withLogImbue:      true,
 		withAccessControl: true,
 		withNotifiers:     true,
+		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
 		telemetryMode:     0,
 	}
 
@@ -651,6 +662,7 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		withCPUProfile:    false,
 		withLogImbue:      true,
 		withAccessControl: true,
+		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
 		withNotifiers:     true,
 	}
 

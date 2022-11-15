@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	mappings "github.com/stackrox/rox/pkg/search/options/deployments"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,6 +76,7 @@ func TestMultiTableQueries(t *testing.T) {
 		expectedWhere        string
 		expectedData         []interface{}
 		expectedJoinTables   []string
+		expectedError        string
 	}{
 		{
 			desc:          "base schema query",
@@ -169,21 +171,43 @@ func TestMultiTableQueries(t *testing.T) {
 				search.MatchNoneQuery(),
 			),
 			expectedFrom:  "deployments",
-			expectedWhere: "(deployments.Id = ANY($$::text[]) and false)",
+			expectedWhere: "(deployments.Id = ANY($$::uuid[]) and false)",
 			expectedData:  []interface{}{[]string{"123"}},
+		},
+		{
+			desc: "base schema and child schema conjunction query on base ID",
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentID, uuid.NewDummy().String()).ProtoQuery(),
+			expectedFrom:       "deployments",
+			expectedWhere:      "(deployments.Id = $$ and deployments_containers.Image_Name_FullName = $$)",
+			expectedJoinTables: []string{"deployments_containers"},
+			expectedData:       []interface{}{uuid.NewDummy(), "stackrox"},
+		},
+		{
+			desc: "base schema and child schema conjunction query on base invalid ID",
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentID, "not a uuid").ProtoQuery(),
+			expectedError: `uuid: incorrect UUID length 10 in string "not a uuid"
+        	            	value "not a uuid" in search query must be valid UUID`,
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			actual, err := standardizeQueryAndPopulatePath(c.q, deploymentBaseSchema, SEARCH)
-			assert.NoError(t, err)
-			assert.Equal(t, c.expectedFrom, actual.From)
-			assert.Equal(t, c.expectedWhere, actual.Where)
-			assert.ElementsMatch(t, c.expectedData, actual.Data)
-			var actualJoins []string
-			for _, join := range actual.InnerJoins {
-				actualJoins = append(actualJoins, join.rightTable)
+			if c.expectedError != "" {
+				assert.Error(t, err, c.expectedError)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, c.expectedFrom, actual.From)
+				assert.Equal(t, c.expectedWhere, actual.Where)
+				assert.ElementsMatch(t, c.expectedData, actual.Data)
+				var actualJoins []string
+				for _, join := range actual.InnerJoins {
+					actualJoins = append(actualJoins, join.rightTable)
+				}
+				assert.ElementsMatch(t, c.expectedJoinTables, actualJoins)
 			}
-			assert.ElementsMatch(t, c.expectedJoinTables, actualJoins)
 		})
 	}
 }

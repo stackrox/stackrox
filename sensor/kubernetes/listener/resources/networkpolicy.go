@@ -5,8 +5,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
-	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"github.com/stackrox/rox/sensor/kubernetes/selector"
 	networkingV1 "k8s.io/api/networking/v1"
 )
 
@@ -14,23 +15,22 @@ import (
 type networkPolicyDispatcher struct {
 	netpolStore     store.NetworkPolicyStore
 	deploymentStore *DeploymentStore
-	detector        detector.Detector
 }
 
-func newNetworkPolicyDispatcher(networkPolicyStore store.NetworkPolicyStore, deploymentStore *DeploymentStore, detector detector.Detector) *networkPolicyDispatcher {
+func newNetworkPolicyDispatcher(networkPolicyStore store.NetworkPolicyStore, deploymentStore *DeploymentStore) *networkPolicyDispatcher {
 	return &networkPolicyDispatcher{
 		netpolStore:     networkPolicyStore,
 		deploymentStore: deploymentStore,
-		detector:        detector,
 	}
 }
 
 // ProcessEvent processes a network policy resource event and returns the sensor events to generate.
-func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action central.ResourceAction) *component.ResourceEvent {
 	np := obj.(*networkingV1.NetworkPolicy)
 
 	roxNetpol := networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
 
+	var reprocessingIds []string
 	if features.NetworkPolicySystemPolicy.Enabled() {
 		var roxOldNetpol *storage.NetworkPolicy
 		if oldNp, ok := old.(*networkingV1.NetworkPolicy); ok && oldNp != nil {
@@ -43,34 +43,35 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 			h.netpolStore.Upsert(roxNetpol)
 		}
 
-		h.updateDeploymentsFromStore(roxNetpol, sel)
+		reprocessingIds = h.updateDeploymentsFromStore(roxNetpol, sel)
 	}
 
-	return []*central.SensorEvent{
-		{
-			Id:     string(np.UID),
-			Action: action,
-			Resource: &central.SensorEvent_NetworkPolicy{
-				NetworkPolicy: roxNetpol,
+	return component.NewResourceEvent(
+		[]*central.SensorEvent{
+			{
+				Id:     string(np.UID),
+				Action: action,
+				Resource: &central.SensorEvent_NetworkPolicy{
+					NetworkPolicy: roxNetpol,
+				},
 			},
-		},
-	}
+		}, nil, reprocessingIds)
 }
 
-func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selector {
-	newsel := createSelector(np.GetSpec().GetPodSelector().GetMatchLabels(), emptyMatchesEverything())
+func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selector.Selector {
+	newsel := selector.CreateSelector(np.GetSpec().GetPodSelector().GetMatchLabels(), selector.EmptyMatchesEverything())
 	if oldNp != nil {
-		oldsel := createSelector(oldNp.GetSpec().GetPodSelector().GetMatchLabels(), emptyMatchesEverything())
-		return or(oldsel, newsel)
+		oldsel := selector.CreateSelector(oldNp.GetSpec().GetPodSelector().GetMatchLabels(), selector.EmptyMatchesEverything())
+		return selector.Or(oldsel, newsel)
 	}
 	return newsel
 }
 
-func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel selector) {
+func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel selector.Selector) []string {
 	deployments := h.deploymentStore.getMatchingDeployments(np.GetNamespace(), sel)
 	idsRequireReprocessing := make([]string, 0, len(deployments))
 	for _, deploymentWrap := range deployments {
 		idsRequireReprocessing = append(idsRequireReprocessing, deploymentWrap.GetId())
 	}
-	h.detector.ReprocessDeployments(idsRequireReprocessing...)
+	return idsRequireReprocessing
 }

@@ -2,6 +2,7 @@ import { rolesUrl, selectors } from '../../constants/AccessControlPage';
 import { permissions as permissionsApi } from '../../constants/apiEndpoints';
 
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 // Migration from cy.server and cy.route to cy.intercept fails for /v1/roles/* imported from apiEndpoints.
 const rolesApi = {
@@ -36,18 +37,18 @@ describe('Access Control Roles', () => {
         cy.wait('@GetMyPermissions');
 
         cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLink).should('not.exist');
-
-        cy.get(selectors.h2).should('not.exist');
 
         cy.get(selectors.alertTitle).should(
             'contain', // not have.text because it contains "Info alert:" for screen reader
-            'You do not have permission to view Access Control'
+            'You do not have permission to view roles.'
         );
     });
 
     it('list has headings, link, button, and table head cells, and no breadcrumbs', () => {
         visitRoles();
+
+        // Table has plural noun in title.
+        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - ${h2}`));
 
         cy.get(selectors.breadcrumbNav).should('not.exist');
 
@@ -84,6 +85,9 @@ describe('Access Control Roles', () => {
 
         const name = 'Admin';
         cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
+
+        // Form has singular noun in title.
+        cy.title().should('match', getRegExpForTitleWithBranding(`${h1} - Role`));
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');

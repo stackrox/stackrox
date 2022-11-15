@@ -15,20 +15,20 @@ package storage;
 
 // Next available tag: 35
 message Deployment {
-    string id                                  = 1 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" sql:"pk"'];
+    string id                                  = 1 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" sql:"pk,type(uuid)"'];
     string name                                = 2 [(gogoproto.moretags) = 'search:"Deployment,store"'];
     reserved 3;
     uint64 hash                                = 26 [(gogoproto.moretags) = 'hash:"ignore" sensorhash:"ignore"'];
     string type                                = 4 [(gogoproto.moretags) = 'search:"Deployment Type"'];
     string namespace                           = 5 [(gogoproto.moretags) = 'search:"Namespace,store"'];
-    string namespace_id                        = 23 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint"'];
+    string namespace_id                        = 23 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"'];
     bool orchestrator_component                = 33 [(gogoproto.moretags) = 'search:"Orchestrator Component"'];
     int64 replicas                             = 6 [(gogoproto.moretags) = 'policy:"Replicas"'];
     map<string, string> labels                 = 7 [(gogoproto.moretags) = 'search:"Deployment Label,store"'];
     map<string, string> pod_labels             = 19 [(gogoproto.moretags) = 'search:"Pod Label,store"'];
     LabelSelector label_selector               = 20;
     google.protobuf.Timestamp created          = 8 [(gogoproto.moretags) = 'search:"Created,store,hidden" hash:"ignore"'];
-    string cluster_id                          = 9 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden"'];
+    string cluster_id                          = 9 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" sql:"type(uuid)"'];
     string cluster_name                        = 10 [(gogoproto.moretags) = 'search:"Cluster,store"'];
     repeated Container containers              = 11;
     reserved 12;
@@ -116,11 +116,11 @@ message ReadinessProbe {
 // Pod represents information for a currently running pod or deleted pod in an active deployment.
 message Pod {
     // Pod UID
-    string id                                           = 1 [(gogoproto.moretags) = 'search:"Pod ID,hidden" sql:"pk"'];
+    string id                                           = 1 [(gogoproto.moretags) = 'search:"Pod ID,hidden" sql:"pk,type(uuid)"'];
     string name                                         = 2 [(gogoproto.moretags) = 'search:"Pod Name,hidden"'];
-    string deployment_id                                = 3 [(gogoproto.moretags) = 'search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint"'];
+    string deployment_id                                = 3 [(gogoproto.moretags) = 'search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"'];
     string namespace                                    = 4 [(gogoproto.moretags) = 'search:"Namespace,store"'];
-    string cluster_id                                   = 5 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden"'];
+    string cluster_id                                   = 5 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" sql:"type(uuid)"'];
     repeated ContainerInstance live_instances           = 6;
     // Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)
     // There is one bucket (list) per container name.

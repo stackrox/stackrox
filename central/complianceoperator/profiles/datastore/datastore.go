@@ -36,6 +36,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(result *storage.Compli
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator profiles read")
 	}
+	// Postgres retry in caller.
 	return d.store.Walk(ctx, fn)
 }
 

@@ -14,7 +14,7 @@ import {
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
-import { hasFeatureFlag } from '../../helpers/features';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 describe('Risk page', () => {
     withAuth();
@@ -26,8 +26,10 @@ describe('Risk page', () => {
             cy.get(RiskPageSelectors.risk).should('have.class', 'pf-m-current');
         });
 
-        it('should have table columns', () => {
+        it('should have title and table column headings', () => {
             visitRiskDeployments();
+
+            cy.title().should('match', getRegExpForTitleWithBranding('Risk'));
 
             cy.get('.rt-th:contains("Name")');
             cy.get('.rt-th:contains("Created")');
@@ -161,10 +163,7 @@ describe('Risk page', () => {
             cy.get(RiskPageSelectors.search.searchLabels).should('not.exist');
         });
 
-        it('should have a single URL search param key/value pair in its search bar', function () {
-            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-                this.skip();
-            }
+        it('should have a single URL search param key/value pair in its search bar', () => {
             visitRiskDeployments();
 
             const nsOption = 'Namespace';
@@ -196,10 +195,7 @@ describe('Risk page', () => {
             });
         });
 
-        it('should have multiple URL search param key/value pairs in its search bar', function () {
-            if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-                this.skip();
-            }
+        it('should have multiple URL search param key/value pairs in its search bar', () => {
             visitRiskDeployments();
 
             const nsOption = 'Namespace';

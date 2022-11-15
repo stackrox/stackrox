@@ -11,7 +11,7 @@ import (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 98,
-		VersionAfter:   storage.Version{SeqNum: 99},
+		VersionAfter:   &storage.Version{SeqNum: 99},
 		Run: func(databases *types.Databases) error {
 			err := deleteProcessAndAlertCommentsBuckets(databases.BoltDB)
 			if err != nil {

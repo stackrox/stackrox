@@ -21,11 +21,11 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.SignatureIntegration)): {
+		user.With(permissions.View(resources.Integration)): {
 			"/v1.SignatureIntegrationService/ListSignatureIntegrations",
 			"/v1.SignatureIntegrationService/GetSignatureIntegration",
 		},
-		user.With(permissions.Modify(resources.SignatureIntegration)): {
+		user.With(permissions.Modify(resources.Integration)): {
 			"/v1.SignatureIntegrationService/PostSignatureIntegration",
 			"/v1.SignatureIntegrationService/PutSignatureIntegration",
 			"/v1.SignatureIntegrationService/DeleteSignatureIntegration",

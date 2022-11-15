@@ -4,7 +4,6 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/env"
 	helmTemplate "github.com/stackrox/rox/pkg/helm/template"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/zip"
@@ -312,16 +311,20 @@ central:
     htpasswd: |
       {{- index .SecretsBase64Map "htpasswd" | b64dec | nindent 6 }}
   {{- end }}
-
-  {{- if .K8sConfig.EnableCentralDB }}
+  db:
   {{- if ne (index .SecretsBase64Map "central-db-password") "" }}
   # Password for securing the communication between Central and its DB.
   # This password is not relevant to the user (unless for debugging purposes);
   # it merely acts as a pre-shared, random secret for securing the connection.
-  db:
     password:
       value: {{ index .SecretsBase64Map "central-db-password" | b64dec }}
   {{- end }}
+  {{- if ne (index .SecretsBase64Map "central-db-cert.pem") "" }}
+    serviceTLS:
+      cert: |
+      {{- index .SecretsBase64Map "central-db-cert.pem" | b64dec | nindent 8 }}
+      key: |
+      {{- index .SecretsBase64Map "central-db-key.pem" | b64dec | nindent 8 }}
   {{- end }}
 
   {{- if ne (index .SecretsBase64Map "jwt-key.pem") "" }}
@@ -394,7 +397,7 @@ var (
 // two entries, one for `values-public.yaml`, and one for `values-private.yaml`.
 func renderNewHelmValues(c Config) ([]*zip.File, error) {
 	privateTemplate := privateValuesTemplate
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
+	if c.K8sConfig.EnableCentralDB {
 		privateTemplate = privateValuesPostgresTemplate
 	}
 

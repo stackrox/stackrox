@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -134,11 +135,14 @@ type datastoreImpl struct {
 func (b *datastoreImpl) buildIndex(ctx context.Context) error {
 	log.Info("[STARTUP] initializing namespaces")
 	var namespaces []*storage.NamespaceMetadata
-	err := b.store.Walk(ctx, func(ns *storage.NamespaceMetadata) error {
-		namespaces = append(namespaces, ns)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		namespaces = namespaces[:0]
+		return b.store.Walk(ctx, func(ns *storage.NamespaceMetadata) error {
+			namespaces = append(namespaces, ns)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 
@@ -175,16 +179,19 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 // GetAllNamespaces retrieves namespaces matching the request from bolt
 func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	var allowedNamespaces []*storage.NamespaceMetadata
-	err := b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
-		scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
-		if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
-			IsAllowed() {
+	walkFn := func() error {
+		allowedNamespaces = allowedNamespaces[:0]
+		return b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
+			scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
+			if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
+				IsAllowed() {
+				return nil
+			}
+			allowedNamespaces = append(allowedNamespaces, namespace)
 			return nil
-		}
-		allowedNamespaces = append(allowedNamespaces, namespace)
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 	b.updateNamespacePriority(allowedNamespaces...)

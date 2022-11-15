@@ -165,6 +165,7 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 
 type connectionOptions struct {
 	useServiceCertToken bool
+	useInsecureNoTLS    bool
 	dialTLSFunc         DialTLSFunc
 	rootCAs             *x509.CertPool
 }
@@ -198,10 +199,18 @@ func AddRootCAs(certs ...*x509.Certificate) ConnectionOption {
 	})
 }
 
-// UseServiceCertToken specifies whether or not a `ServiceCert` token should be used.
+// UseServiceCertToken specifies whether a `ServiceCert` token should be used.
 func UseServiceCertToken(use bool) ConnectionOption {
 	return connectOptFunc(func(opts *connectionOptions) error {
 		opts.useServiceCertToken = use
+		return nil
+	})
+}
+
+// UseInsecureNoTLS specifies whether to use insecure, non-TLS connections.
+func UseInsecureNoTLS(use bool) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		opts.useInsecureNoTLS = use
 		return nil
 	})
 }
@@ -229,6 +238,7 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 	}
 
 	clientConnOpts := Options{
+		InsecureNoTLS: connOpts.useInsecureNoTLS,
 		TLS: TLSConfigOptions{
 			UseClientCert: MustUseClientCert,
 			ServerName:    host,
@@ -355,7 +365,7 @@ func AuthenticatedHTTPTransport(endpoint string, server mtls.Subject, baseTransp
 
 // GRPCConnection establishes a gRPC connection to the given server, using the given connection options.
 func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint string, clientConnOpts Options, dialOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+2)
+	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+3)
 
 	clientConnOpts.TLS.GRPCOnly = true
 
@@ -377,11 +387,16 @@ func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint strin
 		allDialOpts = append(allDialOpts, grpc.WithPerRPCCredentials(perRPCCreds))
 	}
 	allDialOpts = append(allDialOpts, dialOpts...)
+	allDialOpts = append(allDialOpts, grpc.WithUserAgent(GetUserAgent()))
 	return clientConnOpts.dialTLSFunc()(dialCtx, endpoint, tlsConf, allDialOpts...)
 }
 
 // NewHTTPClient creates an HTTP client for the given service using the client
 // certificate of the calling service.
+// When specifying the url.URL for the *http.Request for the returned *http.Client to complete,
+// there is no need to specify the Host nor Scheme; however,
+// if provided, they both must match the expected values.
+// See AuthenticatedHTTPTransport for more information.
 func NewHTTPClient(serviceIdentity mtls.Subject, serviceEndpoint string, timeout time.Duration) (*http.Client, error) {
 	transport, err := AuthenticatedHTTPTransport(
 		serviceEndpoint, serviceIdentity, nil, UseServiceCertToken(true))

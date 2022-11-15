@@ -296,7 +296,7 @@ func (s *clusterDatastoreSACSuite) TestGetCluster() {
 	cluster.Id = clusterID
 	cluster.Priority = 1
 
-	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Cluster)
+	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, testconsts.Cluster3, resources.Cluster)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -352,7 +352,7 @@ func (s *clusterDatastoreSACSuite) TestGetClusters() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 
@@ -525,7 +525,7 @@ func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
-				sac.ClusterScopeKeys(clusterID, "otherthan"+clusterID)))
+				sac.ClusterScopeKeys(clusterID, testconsts.Cluster3)))
 		removeErr := s.datastore.RemoveCluster(ctx, clusterID, &doneSignal)
 		s.NoError(removeErr)
 		if removeErr == nil {
@@ -1016,7 +1016,7 @@ func (s *clusterDatastoreSACSuite) TestCount() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 
@@ -1041,7 +1041,7 @@ func (s *clusterDatastoreSACSuite) TestCountClusters() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 
@@ -1066,7 +1066,7 @@ func (s *clusterDatastoreSACSuite) TestSearch() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 
@@ -1095,7 +1095,7 @@ func (s *clusterDatastoreSACSuite) TestSearchRawClusters() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 
@@ -1129,7 +1129,7 @@ func (s *clusterDatastoreSACSuite) TestSearchResults() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 

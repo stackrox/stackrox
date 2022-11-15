@@ -28,6 +28,7 @@ import { filterAllowedSearch, convertToRestSearch } from 'utils/searchUtils';
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
+import AddClusterPrompt from './AddClusterPrompt';
 
 function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOptions }) {
     const { hasReadWriteAccess } = usePermissions();
@@ -46,6 +47,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const [pollingCount, setPollingCount] = useState(0);
     const [tableRef, setTableRef] = useState(null);
     const [showDialog, setShowDialog] = useState(false);
+    const [fetchingClusters, setFetchingClusters] = useState(false);
 
     // Handle changes to applied search options.
     const [isViewFiltered, setIsViewFiltered] = useState(false);
@@ -84,10 +86,16 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     ));
 
     function refreshClusterList(restSearch) {
-        return fetchClustersWithRetentionInfo(restSearch).then((clustersResponse) => {
-            setCurrentClusters(clustersResponse.clusters);
-            setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
-        });
+        setFetchingClusters(true);
+        return fetchClustersWithRetentionInfo(restSearch)
+            .then((clustersResponse) => {
+                setCurrentClusters(clustersResponse.clusters);
+                setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
+                setFetchingClusters(false);
+            })
+            .catch(() => {
+                setFetchingClusters(false);
+            });
     }
 
     const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
@@ -263,23 +271,28 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
                             {messages}
                         </div>
                     )}
-                    <div data-testid="clusters-table" className="h-full w-full">
-                        <CheckboxTable
-                            ref={(table) => {
-                                setTableRef(table);
-                            }}
-                            rows={currentClusters}
-                            columns={clusterColumns}
-                            onRowClick={setSelectedClusterId}
-                            toggleRow={toggleCluster}
-                            toggleSelectAll={toggleAllClusters}
-                            selection={checkedClusterIds}
-                            selectedRowId={selectedClusterId}
-                            noDataText="No clusters to show."
-                            minRows={20}
-                            pageSize={pageSize}
-                        />
-                    </div>
+                    {(!fetchingClusters || pollingCount > 0) && currentClusters.length <= 0 && (
+                        <AddClusterPrompt />
+                    )}
+                    {(!fetchingClusters || pollingCount > 0) && currentClusters.length > 0 && (
+                        <div data-testid="clusters-table" className="h-full w-full">
+                            <CheckboxTable
+                                ref={(table) => {
+                                    setTableRef(table);
+                                }}
+                                rows={currentClusters}
+                                columns={clusterColumns}
+                                onRowClick={setSelectedClusterId}
+                                toggleRow={toggleCluster}
+                                toggleSelectAll={toggleAllClusters}
+                                selection={checkedClusterIds}
+                                selectedRowId={selectedClusterId}
+                                noDataText="No clusters to show."
+                                minRows={20}
+                                pageSize={pageSize}
+                            />
+                        </div>
+                    )}
                 </PanelBody>
             </PanelNew>
             <Dialog

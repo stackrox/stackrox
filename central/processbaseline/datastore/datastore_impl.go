@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	processBaselineSAC = sac.ForResource(resources.ProcessWhitelist)
+	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 
 	genDuration = env.BaselineGenerationDuration.DurationSetting()
 )
@@ -47,7 +47,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 }
 
 func (ds *datastoreImpl) GetProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, bool, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, false, nil
 	}
 	id, err := keyToID(key)
@@ -62,7 +62,7 @@ func (ds *datastoreImpl) GetProcessBaseline(ctx context.Context, key *storage.Pr
 }
 
 func (ds *datastoreImpl) AddProcessBaseline(ctx context.Context, baseline *storage.ProcessBaseline) (string, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(baseline.GetKey()).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(baseline.GetKey()).IsAllowed() {
 		return "", sac.ErrResourceAccessDenied
 	}
 
@@ -130,7 +130,7 @@ func (ds *datastoreImpl) removeProcessBaselineResults(ctx context.Context, deplo
 }
 
 func (ds *datastoreImpl) RemoveProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) error {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -155,7 +155,7 @@ func (ds *datastoreImpl) RemoveProcessBaseline(ctx context.Context, key *storage
 }
 
 func (ds *datastoreImpl) RemoveProcessBaselinesByDeployment(ctx context.Context, deploymentID string) error {
-	if ok, err := processBaselineSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -262,7 +262,7 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 }
 
 func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -283,7 +283,7 @@ func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key 
 }
 
 func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool, lock bool) (*storage.ProcessBaseline, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -330,7 +330,7 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 }
 
 func (ds *datastoreImpl) UserLockProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, locked bool) (*storage.ProcessBaseline, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -360,7 +360,7 @@ func (ds *datastoreImpl) UserLockProcessBaseline(ctx context.Context, key *stora
 }
 
 func (ds *datastoreImpl) CreateUnlockedProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -431,11 +431,12 @@ func (ds *datastoreImpl) getProcessList(ctx context.Context, key *storage.Proces
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(baseline *storage.ProcessBaseline) error) error {
-	if ok, err := processBaselineSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+	// Postgres retries in the caller.
 	return ds.storage.Walk(ctx, fn)
 }
 
@@ -445,7 +446,7 @@ func (ds *datastoreImpl) RemoveProcessBaselinesByIDs(ctx context.Context, ids []
 		if err != nil {
 			return err
 		}
-		if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+		if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 			return sac.ErrResourceAccessDenied
 		}
 		if err := ds.removeProcessBaselineByID(ctx, id); err != nil {
@@ -464,7 +465,7 @@ func (ds *datastoreImpl) ClearProcessBaselines(ctx context.Context, ids []string
 
 	// Go through the baselines and clear them out
 	for _, baseline := range baselines {
-		if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(baseline.Key).IsAllowed() {
+		if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(baseline.Key).IsAllowed() {
 			return sac.ErrResourceAccessDenied
 		}
 

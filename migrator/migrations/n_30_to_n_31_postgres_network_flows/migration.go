@@ -24,12 +24,12 @@ import (
 var (
 	migration = types.Migration{
 		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 30,
-		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 31},
+		VersionAfter:   &storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 31},
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.NewClusterStore(databases.PkgRocksDB)
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
-					"moving network_baselines from rocksdb to postgres")
+					"moving network_flows from rocksdb to postgres")
 			}
 			return nil
 		},
@@ -43,9 +43,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore store.ClusterSt
 
 	clusterStore := pgStore.NewClusterStore(postgresDB)
 
-	return legacyStore.Walk(ctx, func(clusterID string, ts protoTypes.Timestamp, allFlows []*storage.NetworkFlow) error {
+	return legacyStore.Walk(ctx, func(clusterID string, ts *protoTypes.Timestamp, allFlows []*storage.NetworkFlow) error {
 		store := clusterStore.GetFlowStore(clusterID)
-		return store.UpsertFlows(ctx, allFlows, timestamp.FromProtobuf(&ts))
+		return store.UpsertFlows(ctx, allFlows, timestamp.FromProtobuf(ts))
 	})
 }
 

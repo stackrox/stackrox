@@ -248,10 +248,7 @@ func (resolver *clusterResolver) Deployments(ctx context.Context, args Paginated
 		return resolver.root.Deployments(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Deployments(resolver.clusterScopeContext(), args)
+	return resolver.root.Deployments(resolver.clusterScopeContext(ctx), args)
 }
 
 // DeploymentCount returns count of all deployments in this cluster
@@ -268,10 +265,7 @@ func (resolver *clusterResolver) DeploymentCount(ctx context.Context, args RawQu
 		return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
 	}
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.DeploymentCount(resolver.clusterScopeContext(), args)
+	return resolver.root.DeploymentCount(resolver.clusterScopeContext(ctx), args)
 }
 
 // Nodes returns all nodes on the cluster
@@ -288,10 +282,7 @@ func (resolver *clusterResolver) Nodes(ctx context.Context, args PaginatedQuery)
 		return resolver.root.Nodes(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Nodes(resolver.clusterScopeContext(), args)
+	return resolver.root.Nodes(resolver.clusterScopeContext(ctx), args)
 }
 
 // NodeCount returns count of all nodes on the cluster
@@ -308,10 +299,7 @@ func (resolver *clusterResolver) NodeCount(ctx context.Context, args RawQuery) (
 		return resolver.root.NodeCount(ctx, RawQuery{Query: &query})
 	}
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.NodeCount(resolver.clusterScopeContext(), args)
+	return resolver.root.NodeCount(resolver.clusterScopeContext(ctx), args)
 }
 
 // Node returns a given node on a cluster
@@ -330,10 +318,7 @@ func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node gra
 		return resolver.root.wrapNode(node, node != nil, err)
 	}
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Node(resolver.clusterScopeContext(), struct{ graphql.ID }{args.Node})
+	return resolver.root.Node(resolver.clusterScopeContext(ctx), struct{ graphql.ID }{args.Node})
 }
 
 // Namespaces returns the namespaces in a cluster.
@@ -350,10 +335,7 @@ func (resolver *clusterResolver) Namespaces(ctx context.Context, args PaginatedQ
 		return resolver.root.Namespaces(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Namespaces(resolver.clusterScopeContext(), args)
+	return resolver.root.Namespaces(resolver.clusterScopeContext(ctx), args)
 }
 
 // Namespace returns a given namespace in a cluster.
@@ -367,10 +349,7 @@ func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Nam
 		})
 	}
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.NamespaceByClusterIDAndName(resolver.clusterScopeContext(), clusterIDAndNameQuery{
+	return resolver.root.NamespaceByClusterIDAndName(resolver.clusterScopeContext(ctx), clusterIDAndNameQuery{
 		ClusterID: graphql.ID(resolver.data.GetId()),
 		Name:      args.Name,
 	})
@@ -390,10 +369,7 @@ func (resolver *clusterResolver) NamespaceCount(ctx context.Context, args RawQue
 		return resolver.root.NamespaceCount(ctx, RawQuery{Query: &query})
 	}
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.NamespaceCount(resolver.clusterScopeContext(), args)
+	return resolver.root.NamespaceCount(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ComplianceResults(ctx context.Context, args RawQuery) ([]*controlResultResolver, error) {
@@ -608,10 +584,7 @@ func (resolver *clusterResolver) Images(ctx context.Context, args PaginatedQuery
 		return resolver.root.Images(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Images(resolver.clusterScopeContext(), args)
+	return resolver.root.Images(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -623,10 +596,7 @@ func (resolver *clusterResolver) ImageCount(ctx context.Context, args RawQuery) 
 		return resolver.root.ImageCount(ctx, RawQuery{Query: &query})
 	}
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageCount(resolver.clusterScopeContext(), args)
+	return resolver.root.ImageCount(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
@@ -647,36 +617,24 @@ func (resolver *clusterResolver) ComponentCount(ctx context.Context, args RawQue
 
 func (resolver *clusterResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponents")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageComponents(resolver.clusterScopeContext(), args)
+	return resolver.root.ImageComponents(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponentCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageComponentCount(resolver.clusterScopeContext(), args)
+	return resolver.root.ImageComponentCount(resolver.clusterScopeContext(ctx), args)
 }
 
 // NodeComponents returns the node components in the cluster.
 func (resolver *clusterResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponents")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.NodeComponents(resolver.clusterScopeContext(), args)
+	return resolver.root.NodeComponents(resolver.clusterScopeContext(ctx), args)
 }
 
 // NodeComponentCount returns the number of node components in the cluster
 func (resolver *clusterResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponentCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.NodeComponentCount(resolver.clusterScopeContext(), args)
+	return resolver.root.NodeComponentCount(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
@@ -730,10 +688,15 @@ func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, a
 	return resolver.root.NodeVulnerabilityCounter(ctx, RawQuery{Query: &query})
 }
 
-func (resolver *clusterResolver) clusterScopeContext() context.Context {
+func (resolver *clusterResolver) clusterScopeContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		err := utils.Should(errors.New("argument 'ctx' is nil"))
+		if err != nil {
+			log.Error(err)
+		}
+	}
 	if resolver.ctx == nil {
-		log.Errorf("attempted to scope context on nil")
-		return nil
+		resolver.ctx = ctx
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_CLUSTERS,
@@ -743,98 +706,62 @@ func (resolver *clusterResolver) clusterScopeContext() context.Context {
 
 func (resolver *clusterResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageVulnerabilities")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageVulnerabilities(resolver.clusterScopeContext(), args)
+	return resolver.root.ImageVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageVulnerabilityCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageVulnerabilityCount(resolver.clusterScopeContext(), args)
+	return resolver.root.ImageVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageVulnerabilityCounter")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageVulnerabilityCounter(resolver.clusterScopeContext(), args)
+	return resolver.root.ImageVulnerabilityCounter(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilities")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ClusterVulnerabilities(resolver.clusterScopeContext(), args)
+	return resolver.root.ClusterVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilityCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ClusterVulnerabilityCount(resolver.clusterScopeContext(), args)
+	return resolver.root.ClusterVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ClusterVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilityCounter")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ClusterVulnerabilityCounter(resolver.clusterScopeContext(), args)
+	return resolver.root.ClusterVulnerabilityCounter(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) K8sClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sClusterVulnerabilities")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.K8sClusterVulnerabilities(resolver.clusterScopeContext(), args)
+	return resolver.root.K8sClusterVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) K8sClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sClusterVulnerabilityCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.K8sClusterVulnerabilityCount(resolver.clusterScopeContext(), args)
+	return resolver.root.K8sClusterVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) IstioClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IstioClusterVulnerabilities")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.IstioClusterVulnerabilities(resolver.clusterScopeContext(), args)
+	return resolver.root.IstioClusterVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) IstioClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IstioClusterVulnerabilityCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.IstioClusterVulnerabilityCount(resolver.clusterScopeContext(), args)
+	return resolver.root.IstioClusterVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) OpenShiftClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "OpenShiftClusterVulnerabilities")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.OpenShiftClusterVulnerabilities(resolver.clusterScopeContext(), args)
+	return resolver.root.OpenShiftClusterVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) OpenShiftClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "OpenShiftClusterVulnerabilityCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.OpenShiftClusterVulnerabilityCount(resolver.clusterScopeContext(), args)
+	return resolver.root.OpenShiftClusterVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) K8sVulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
@@ -1145,7 +1072,7 @@ func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context, q *v
 
 func (resolver *clusterResolver) Risk(ctx context.Context) (*riskResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Risk")
-	if err := readRisks(ctx); err != nil {
+	if err := readDeploymentExtensions(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.root.wrapRisk(resolver.getClusterRisk(ctx))
@@ -1238,10 +1165,7 @@ func (resolver *clusterResolver) PlottedNodeVulnerabilities(ctx context.Context,
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *clusterResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlottedImageVulnerabilities")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.PlottedImageVulnerabilities(resolver.clusterScopeContext(), args)
+	return resolver.root.PlottedImageVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {

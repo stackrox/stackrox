@@ -2,12 +2,15 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/vulnerabilityrequest/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -15,26 +18,40 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
+)
+
+const (
+	defaultPageSize = 1000
 )
 
 var (
 	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v1.CollectionService/GetCollection",
-			// "/v1.CollectionService/GetCollectionCount", TODO ROX-12625
-			// "/v1.CollectionService/ListCollections", TODO ROX-12623
+			"/v1.CollectionService/GetCollectionCount",
+			"/v1.CollectionService/ListCollections",
 			// "/v1.CollectionService/ListCollectionSelectors", TODO ROX-12612
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			// "/v1.CollectionService/AutoCompleteCollection", TODO ROX-12616
-			// "/v1.CollectionService/CreateCollection", TODO ROX-12622
-			// "/v1.CollectionService/DeleteCollection", TODO ROX-13030
-			// "/v1.CollectionService/DryRunCollection", TODO ROX-13031
-			// "/v1.CollectionService/UpdateCollection", TODO ROX-13032
+			"/v1.CollectionService/CreateCollection",
+			"/v1.CollectionService/DeleteCollection",
+			"/v1.CollectionService/UpdateCollection",
+			"/v1.CollectionService/DryRunCollection",
 		},
 	}))
 )
+
+type collectionRequest interface {
+	GetName() string
+	GetDescription() string
+	GetResourceSelectors() []*storage.ResourceSelector
+	GetEmbeddedCollectionIds() []string
+}
 
 // serviceImpl is the struct that manages the collection API
 type serviceImpl struct {
@@ -61,12 +78,22 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetCollection returns a collection for the given request
 func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollectionRequest) (*v1.GetCollectionResponse, error) {
 	if !features.ObjectCollections.Enabled() {
-		return nil, nil
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Id field should be set when requesting a collection")
+		return nil, errors.Wrap(errox.InvalidArgs, "Id should be set when requesting a collection")
 	}
-	return s.getCollection(ctx, request.Id)
+
+	resp, err := s.getCollection(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	// if request.GetOptions().GetWithMatches() {
+	// 	 TODO match deployments for response
+	// }
+
+	return resp, err
 }
 
 func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetCollectionResponse, error) {
@@ -80,6 +107,174 @@ func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetColl
 
 	return &v1.GetCollectionResponse{
 		Collection:  collection,
+		Deployments: nil,
+	}, nil
+}
+
+// GetCollectionCount returns count of collections matching the query in the request
+func (s *serviceImpl) GetCollectionCount(ctx context.Context, request *v1.GetCollectionCountRequest) (*v1.GetCollectionCountResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	}
+
+	// parse query
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	count, err := s.datastore.Count(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.GetCollectionCountResponse{Count: int32(count)}, nil
+}
+
+// DeleteCollection deletes the collection with the given ID
+func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	}
+	if request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
+	}
+	if err := s.datastore.DeleteCollection(ctx, request.GetId()); err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
+}
+
+// CreateCollection creates a new collection from the given request
+func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCollectionRequest) (*v1.CreateCollectionResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	}
+
+	collection, err := collectionRequestToCollection(ctx, request, "")
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.datastore.AddCollection(ctx, collection)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.CreateCollectionResponse{Collection: collection}, nil
+}
+
+func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCollectionRequest) (*v1.UpdateCollectionResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	}
+
+	if request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to update a collection")
+	}
+
+	collection, err := collectionRequestToCollection(ctx, request, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.datastore.UpdateCollection(ctx, collection)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.UpdateCollectionResponse{Collection: collection}, nil
+}
+
+func collectionRequestToCollection(ctx context.Context, request collectionRequest, id string) (*storage.ResourceCollection, error) {
+	if request.GetName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Collection name should not be empty")
+	}
+
+	slimUser := utils.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	if len(request.GetResourceSelectors()) == 0 {
+		return nil, errors.Wrap(errox.InvalidArgs, "No resource selectors were provided")
+	}
+
+	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
+
+	collection := &storage.ResourceCollection{
+		Id:                id,
+		Name:              request.GetName(),
+		Description:       request.GetDescription(),
+		LastUpdated:       timeNow,
+		UpdatedBy:         slimUser,
+		ResourceSelectors: request.GetResourceSelectors(),
+	}
+
+	if id == "" {
+		// new  collection
+		collection.CreatedBy = slimUser
+		collection.CreatedAt = timeNow
+	}
+
+	if len(request.GetEmbeddedCollectionIds()) > 0 {
+		embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(request.GetEmbeddedCollectionIds()))
+		for _, id := range request.GetEmbeddedCollectionIds() {
+			embeddedCollections = append(embeddedCollections, &storage.ResourceCollection_EmbeddedResourceCollection{Id: id})
+		}
+		collection.EmbeddedCollections = embeddedCollections
+	}
+
+	return collection, nil
+}
+
+func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListCollectionsRequest) (*v1.ListCollectionsResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	}
+
+	// parse query
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	// pagination
+	paginated.FillPagination(parsedQuery, request.GetQuery().GetPagination(), defaultPageSize)
+
+	collections, err := s.datastore.SearchCollections(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.ListCollectionsResponse{
+		Collections: collections,
+	}, nil
+}
+
+func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCollectionRequest) (*v1.DryRunCollectionResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	}
+
+	collection, err := collectionRequestToCollection(ctx, request, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	if request.GetId() == "" {
+		err = s.datastore.DryRunAddCollection(ctx, collection)
+	} else {
+		err = s.datastore.DryRunUpdateCollection(ctx, collection)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// if !request.GetOptions().GetSkipDeploymentMatching() {
+	// 	TODO match deployments for response
+	// }
+
+	return &v1.DryRunCollectionResponse{
 		Deployments: nil,
 	}, nil
 }

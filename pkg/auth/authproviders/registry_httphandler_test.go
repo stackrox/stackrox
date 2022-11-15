@@ -528,8 +528,7 @@ func (f *tstAuthProviderBackendFactory) registerProcessResponse(providerID strin
 	f.err = err
 }
 
-func (*tstAuthProviderBackendFactory) CreateBackend(_ context.Context, _ string, _ []string,
-	_ map[string]string) (Backend, error) {
+func (*tstAuthProviderBackendFactory) CreateBackend(_ context.Context, _ string, _ []string, _ map[string]string, _ map[string]string) (Backend, error) {
 	return testAuthProviderBackend, nil
 }
 

@@ -4,6 +4,7 @@
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$SCRIPTS_ROOT/scripts/lib.sh"
+source "$SCRIPTS_ROOT/scripts/ci/test_state.sh"
 
 set -euo pipefail
 
@@ -544,6 +545,8 @@ poll_for_system_test_images() {
         fi
         sleep 60
     done
+
+    touch "${STATE_IMAGES_AVAILABLE}"
 }
 
 check_rhacs_eng_image_exists() {
@@ -1296,6 +1299,39 @@ __EOM__
       slack_mention="_unable to resolve Slack user for GitHub login ${author_login}_"
     fi
 
+    info "Converting junit failures to slack attachments"
+
+    local slack_attachments='
+[
+  {
+    "color": "#bb2124",
+    "blocks": [
+      {
+        "type": "section",
+        "text": {
+          "type": "plain_text",
+          "text": "Could not parse junit files. Check build logs for more information."
+        }
+      }
+    ]
+  }
+]
+'
+    if [[ -n "${ARTIFACT_DIR}" ]]; then
+        if ! command -v junit-parse >/dev/null 2>&1; then
+            get_junit_parse_cli || true
+        fi
+        if command -v junit-parse >/dev/null 2>&1; then
+            local junit_file_names
+            junit_file_names=( "$(find "${ARTIFACT_DIR}" -type f -name '*.xml' -print0 | xargs -0)" ) || true
+            local check_slack_attachments
+            check_slack_attachments=$(junit-parse "${junit_file_names[@]}") || exitstatus="$?"
+            if [[ "$exitstatus" == "0" ]]; then
+                slack_attachments="$check_slack_attachments"
+            fi
+        fi
+    fi
+
     # shellcheck disable=SC2016
     local body='
 {
@@ -1327,7 +1363,8 @@ __EOM__
         {
             "type": "divider"
         }
-    ]
+    ],
+    "attachments": $slack_attachments
 }
 '
 
@@ -1339,6 +1376,7 @@ __EOM__
       --arg author_name "$author_name" \
       --arg slack_mention "$slack_mention" \
       --arg log_url "$log_url" \
+      --argjson slack_attachments "$slack_attachments" \
       "$body")"
     echo -e "About to post:\n$payload"
 
@@ -1346,6 +1384,27 @@ __EOM__
         slack_error "Error posting to Slack"
         return 1
     }
+}
+
+save_junit_success() {
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: save_junit_success <class> <description>"
+    fi
+
+    if [[ -z "${ARTIFACT_DIR}" ]]; then
+        info "Warning: save_junit_success() requires the \$ARTIFACT_DIR variable to be set"
+        return
+    fi
+
+    local class="$1"
+    local description="$2"
+
+    cat << EOF > "${ARTIFACT_DIR}/junit-${class}.xml"
+<testsuite name="${class}" tests="1" skipped="0" failures="0" errors="0">
+    <testcase name="${description}" classname="${class}">
+    </testcase>
+</testsuite>
+EOF
 }
 
 save_junit_failure() {
@@ -1407,6 +1466,10 @@ To use with deploy scripts, first \`export MAIN_IMAGE_TAG={{.Env._TAG}}\`.
 EOT
 
     hub-comment -type build -template-file "$tmpfile"
+}
+
+get_junit_parse_cli() {
+    go install github.com/stackrox/junit-parse@latest
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

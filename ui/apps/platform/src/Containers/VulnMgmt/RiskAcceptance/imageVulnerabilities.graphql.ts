@@ -16,7 +16,7 @@ export type VulnerabilityRequest = {
     deferralReq: DeferralRequest;
     updatedDeferralReq: DeferralRequest;
     cves: {
-        ids: string[];
+        cves: string[];
     };
 };
 
@@ -133,7 +133,7 @@ export const GET_IMAGE_VULNERABILITIES = gql`
                         }
                     }
                     cves {
-                        ids
+                        cves
                     }
                 }
             }
@@ -202,7 +202,7 @@ export const GET_IMAGE_VULNERABILITIES_LEGACY = gql`
                         }
                     }
                     cves {
-                        ids
+                        cves
                     }
                 }
             }

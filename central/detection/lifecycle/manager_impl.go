@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/filter"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -40,7 +41,7 @@ import (
 var (
 	lifecycleMgrCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image, resources.Indicator, resources.Policy, resources.ProcessWhitelist, resources.Namespace)))
+			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image, resources.DeploymentExtension, resources.Policy, resources.Namespace)))
 
 	genDuration = env.BaselineGenerationDuration.DurationSetting()
 )
@@ -93,28 +94,29 @@ func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIn
 
 func (m *managerImpl) buildIndicatorFilter() {
 	ctx := sac.WithAllAccess(context.Background())
-	var processesToRemove []string
-
 	deploymentIDs, err := m.deploymentDataStore.GetDeploymentIDs(ctx)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "error getting deployment IDs"))
 		return
 	}
 
-	deploymentIDSet := set.NewStringSet(deploymentIDs...)
-
-	err = m.processesDataStore.WalkAll(ctx, func(pi *storage.ProcessIndicator) error {
-		if !deploymentIDSet.Contains(pi.GetDeploymentId()) {
-			// Don't remove as these processes will be removed by GC
-			// but don't add to the filter
+	var processesToRemove []string
+	walkFn := func() error {
+		deploymentIDSet := set.NewStringSet(deploymentIDs...)
+		processesToRemove = processesToRemove[:0]
+		return m.processesDataStore.WalkAll(ctx, func(pi *storage.ProcessIndicator) error {
+			if !deploymentIDSet.Contains(pi.GetDeploymentId()) {
+				// Don't remove as these processes will be removed by GC
+				// but don't add to the filter
+				return nil
+			}
+			if !m.processFilter.Add(pi) {
+				processesToRemove = append(processesToRemove, pi.GetId())
+			}
 			return nil
-		}
-		if !m.processFilter.Add(pi) {
-			processesToRemove = append(processesToRemove, pi.GetId())
-		}
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		utils.Should(errors.Wrap(err, "error building indicator filter"))
 	}
 
