@@ -39,25 +39,25 @@ const (
 	prefixedNamedAccessScopeName       = "Prefixed Named Access Scope"
 	prefixedUUIDAccessScopeID          = accessScopeIDPrefix + "47d9f01d-3def-4f0d-9777-916b5879aaf7"
 	prefixedUUIDAccessScopeName        = "Prefixed UUID Access Scope"
-	prefixlessUUIDAccessScopeID        = "07693a3d-ec29-4707-9ecf-e90fd0c2a338"
-	prefixlessUUIDAccessScopeName      = "Prefixless Named Access Scope"
 	prefixlessNamedAccessScopeID       = "prefixlessAccessScopeID"
 	prefixlessNamedAccessScopeName     = "Prefixless Named Access Scope"
+	prefixlessUUIDAccessScopeID        = "07693a3d-ec29-4707-9ecf-e90fd0c2a338"
+	prefixlessUUIDAccessScopeName      = "Prefixless UUID Access Scope"
 
-	prefixedNamedPermissionSetID     = permissionSetIDPrefix + "prefixedPermissionSetID"
-	prefixedNamedPermissionSetName   = "Prefixed Named Permission Set"
-	prefixlessNamedPermissionSetID   = "prefixlessPermissionSetID"
-	prefixlessNamedPermissionSetName = "Prefixless Named Permission Set"
 	defaultAdminPermissionSetID      = permissionSetIDPrefix + "admin"
 	defaultAdminPermissionSetName    = "Default Admin Permission Set"
 	defaultAnalystPermissionSetID    = permissionSetIDPrefix + "analyst"
 	defaultAnalystPermissionSetName  = "Default Analyst Permission Set"
 	defaultNonePermissionSetID       = permissionSetIDPrefix + "none"
 	defaultNonePermissionSetName     = "Default None Permission Set"
+	prefixedNamedPermissionSetID     = permissionSetIDPrefix + "prefixedPermissionSetID"
+	prefixedNamedPermissionSetName   = "Prefixed Named Permission Set"
 	prefixedUUIDPermissionSetID      = permissionSetIDPrefix + "b450b538-2abc-41ae-ae2e-938dc7af3689"
 	prefixedUUIDPermissionSetName    = "Prefixed UUID Permission Set"
+	prefixlessNamedPermissionSetID   = "prefixlessPermissionSetID"
+	prefixlessNamedPermissionSetName = "Prefixless Named Permission Set"
 	prefixlessUUIDPermissionSetID    = "bc79bced-0fa5-45f6-9ae2-e054485ae6ff"
-	prefixlessUUIDPermissionSetName  = "Prefixless Named Permission Set"
+	prefixlessUUIDPermissionSetName  = "Prefixless UUID Permission Set"
 )
 
 func TestMigration(t *testing.T) {
@@ -589,6 +589,12 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 		if fetched != nil {
 			accessScopeNameToNewIDMapping[fetched.GetName()] = fetched.GetId()
 		}
+		if fetched.GetName() == prefixedUUIDAccessScopeName {
+			s.Equal(strings.TrimPrefix(prefixedUUIDAccessScopeID, accessScopeIDPrefix), scopeID)
+		}
+		if fetched.GetName() == prefixlessUUIDAccessScopeName {
+			s.Equal(prefixlessUUIDAccessScopeID, scopeID)
+		}
 	}
 	s.Equal(len(accessScopeOldIDToNameMapping), len(accessScopeNameToNewIDMapping))
 	permissionSetCount, err := newPermissionStore.Count(s.ctx)
@@ -606,6 +612,12 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 		s.True(exists)
 		if fetched != nil {
 			permissionSetNameToNewIDMapping[fetched.GetName()] = fetched.GetId()
+		}
+		if fetched.GetName() == prefixedUUIDPermissionSetName {
+			s.Equal(strings.TrimPrefix(prefixedUUIDPermissionSetID, permissionSetIDPrefix), scopeID)
+		}
+		if fetched.GetName() == prefixlessUUIDPermissionSetName {
+			s.Equal(prefixlessUUIDPermissionSetID, scopeID)
 		}
 	}
 	roleCount, err := newRoleStore.Count(s.ctx)
