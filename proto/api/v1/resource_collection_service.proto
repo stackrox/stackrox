@@ -21,6 +21,7 @@ message ListCollectionSelectorsResponse {
 message GetCollectionRequest {
     message Options {
         bool with_matches = 1;
+        Pagination pagination = 2;
     }
     string id = 1;
     Options options = 2;
@@ -64,8 +65,8 @@ message UpdateCollectionResponse {
 
 message DryRunCollectionRequest {
     message Options {
-        Pagination pagination = 1;
-        bool skip_deployment_matching = 2;
+        bool with_matches = 1;
+        Pagination pagination = 2;
     }
     string name = 1;
     string id = 2; // set if dryrun on existing collections

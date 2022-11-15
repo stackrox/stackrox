@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -24,6 +25,7 @@ import (
 
 const (
 	graphInitBatchSize = 20
+	defaultPageSize    = 1000
 )
 
 var (
@@ -429,7 +431,7 @@ func verifyCollectionObjectNotEmpty(obj *storage.ResourceCollection) error {
 	return nil
 }
 
-func (ds *datastoreImpl) ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection) ([]*storage.ListDeployment, error) {
+func (ds *datastoreImpl) ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection, pagination *v1.Pagination) ([]*storage.ListDeployment, error) {
 
 	if err := verifyCollectionConstraints(collection); err != nil {
 		return nil, err
@@ -439,6 +441,7 @@ func (ds *datastoreImpl) ResolveListDeployments(ctx context.Context, collection 
 	if err != nil {
 		return nil, err
 	}
+	paginated.FillPagination(query, pagination, defaultPageSize)
 	return ds.deploymentDS.SearchListDeployments(ctx, query)
 }
 

@@ -99,20 +99,7 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 		return nil, errors.Wrap(errox.InvalidArgs, "Id should be set when requesting a collection")
 	}
 
-	resp, err := s.getCollection(ctx, request.GetId())
-	if err != nil {
-		return nil, err
-	}
-
-	// if request.GetOptions().GetWithMatches() {
-	// 	 TODO match deployments for response
-	// }
-
-	return resp, err
-}
-
-func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetCollectionResponse, error) {
-	collection, ok, err := s.datastore.Get(ctx, id)
+	collection, ok, err := s.datastore.Get(ctx, request.GetId())
 	if err != nil {
 		return nil, errors.Errorf("Could not get collection: %s", err)
 	}
@@ -120,10 +107,18 @@ func (s *serviceImpl) getCollection(ctx context.Context, id string) (*v1.GetColl
 		return nil, errors.Wrap(errox.NotFound, "Not found")
 	}
 
-	return &v1.GetCollectionResponse{
-		Collection:  collection,
-		Deployments: nil,
-	}, nil
+	resp := &v1.GetCollectionResponse{
+		Collection: collection,
+	}
+
+	if request.GetOptions() != nil && request.GetOptions().GetWithMatches() {
+		resp.Deployments, err = s.datastore.ResolveListDeployments(ctx, resp.Collection, request.GetOptions().GetPagination())
+		if err != nil {
+			return nil, errors.Wrap(err, "failed resolving deployments")
+		}
+	}
+
+	return resp, err
 }
 
 // GetCollectionCount returns count of collections matching the query in the request
@@ -132,13 +127,18 @@ func (s *serviceImpl) GetCollectionCount(ctx context.Context, request *v1.GetCol
 		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 
-	// parse query
-	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	var query *v1.Query
+	var err error
+
+	// query
+	if request.GetQuery() != nil {
+		query, err = search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+		if err != nil {
+			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		}
 	}
 
-	count, err := s.datastore.Count(ctx, parsedQuery)
+	count, err := s.datastore.Count(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -247,16 +247,22 @@ func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListColle
 		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 
-	// parse query
-	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	var query *v1.Query
+	var err error
+
+	// query with pagination
+	if request.GetQuery() != nil {
+		query, err = search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+		if err != nil {
+			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		}
+		paginated.FillPagination(query, request.GetQuery().GetPagination(), defaultPageSize)
+	} else {
+		query = search.EmptyQuery()
+		paginated.FillPagination(query, &v1.Pagination{}, defaultPageSize)
 	}
 
-	// pagination
-	paginated.FillPagination(parsedQuery, request.GetQuery().GetPagination(), defaultPageSize)
-
-	collections, err := s.datastore.SearchCollections(ctx, parsedQuery)
+	collections, err := s.datastore.SearchCollections(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -285,11 +291,14 @@ func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCo
 		return nil, err
 	}
 
-	// if !request.GetOptions().GetSkipDeploymentMatching() {
-	// 	TODO match deployments for response
-	// }
+	resp := &v1.DryRunCollectionResponse{}
 
-	return &v1.DryRunCollectionResponse{
-		Deployments: nil,
-	}, nil
+	if request.GetOptions() != nil && request.GetOptions().GetWithMatches() {
+		resp.Deployments, err = s.datastore.ResolveListDeployments(ctx, collection, request.GetOptions().GetPagination())
+		if err != nil {
+			return nil, errors.Wrap(err, "failed resolving deployments")
+		}
+	}
+
+	return resp, nil
 }

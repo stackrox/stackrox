@@ -35,7 +35,7 @@ type DataStore interface {
 	// UpdateCollection updates the given collection object, and preserves createdAt and createdBy fields from stored collection
 	UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	DryRunUpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error
-	ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection) ([]*storage.ListDeployment, error)
+	ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection, pagination *v1.Pagination) ([]*storage.ListDeployment, error)
 	// autocomplete workflow, maybe SearchResults? TODO ROX-12616
 
 	// ResolveCollectionQuery exported exclusively for testing purposes, should be hidden once e2e tests go in

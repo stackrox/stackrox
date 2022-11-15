@@ -180,6 +180,32 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "options.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "options.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "options.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "options.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -550,11 +576,11 @@
     "v1DryRunCollectionRequestOptions": {
       "type": "object",
       "properties": {
+        "withMatches": {
+          "type": "boolean"
+        },
         "pagination": {
           "$ref": "#/definitions/v1Pagination"
-        },
-        "skipDeploymentMatching": {
-          "type": "boolean"
         }
       }
     },
@@ -586,6 +612,9 @@
       "properties": {
         "withMatches": {
           "type": "boolean"
+        },
+        "pagination": {
+          "$ref": "#/definitions/v1Pagination"
         }
       }
     },
