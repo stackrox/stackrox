@@ -137,7 +137,7 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Specify wether central-db is enabled, Default configures central
+      - description: Specify whether central-db is enabled, Default configures central
           to use rocksdb. If Enabled the operator will provision the Central DB or
           use an external DB if a connection string is provided.
         displayName: Enabled

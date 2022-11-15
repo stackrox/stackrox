@@ -72,7 +72,7 @@ spec:
                         type: string
                       enabled:
                         default: Default
-                        description: Specify wether central-db is enabled, Default
+                        description: Specify whether central-db is enabled, Default
                           configures central to use rocksdb. If Enabled the operator
                           will provision the Central DB or use an external DB if a
                           connection string is provided.
