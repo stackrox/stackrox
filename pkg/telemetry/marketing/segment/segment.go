@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/marketing"
-	"github.com/stackrox/rox/pkg/version"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -24,9 +23,8 @@ func Enabled() bool {
 }
 
 type segmentTelemeter struct {
-	client         analytics.Client
-	deviceID       string
-	staticIdentity map[string]any
+	client analytics.Client
+	config *marketing.Config
 }
 
 // Ensure Telemeter interface implementation.
@@ -35,15 +33,13 @@ var _ = marketing.Telemeter((*segmentTelemeter)(nil))
 func (t *segmentTelemeter) Identify(props map[string]any) {
 	traits := analytics.NewTraits()
 	identity := analytics.Identify{
-		UserId: t.deviceID,
+		UserId: t.config.ID,
 		Traits: traits,
 	}
-	if t.staticIdentity != nil {
-		for k, v := range t.staticIdentity {
+	if t.config.Identity != nil {
+		for k, v := range t.config.Identity {
 			traits.Set(k, v)
 		}
-		// Set the static properties only once:
-		t.staticIdentity = nil
 	}
 	for k, v := range props {
 		traits.Set(k, v)
@@ -79,8 +75,13 @@ func (l *logWrapper) Errorf(format string, args ...any) {
 func initSegment(config *marketing.Config, key, server string) *segmentTelemeter {
 	segmentConfig := analytics.Config{
 		Endpoint: server,
-		Interval: 1 * time.Hour,
+		Interval: 5 * time.Minute,
 		Logger:   &logWrapper{internal: log},
+		DefaultContext: &analytics.Context{
+			Extra: map[string]any{
+				"Central ID": config.ID,
+			},
+		},
 	}
 
 	client, err := analytics.NewWithConfig(key, segmentConfig)
@@ -90,14 +91,8 @@ func initSegment(config *marketing.Config, key, server string) *segmentTelemeter
 	}
 
 	return &segmentTelemeter{
-		client:   client,
-		deviceID: config.ID,
-		staticIdentity: map[string]any{
-			"Central version":    version.GetMainVersion(),
-			"Chart version":      version.GetChartVersion(),
-			"Orchestrator":       config.Orchestrator,
-			"Kubernetes version": config.Version,
-		},
+		client: client,
+		config: config,
 	}
 }
 
@@ -112,14 +107,14 @@ func (t *segmentTelemeter) Stop() {
 	}
 }
 
-func (t *segmentTelemeter) TrackProps(event string, props map[string]any) {
+func (t *segmentTelemeter) TrackProps(event, userID string, props map[string]any) {
 	if t == nil {
 		return
 	}
 	log.Info("Tracking event ", event, " with ", props)
 
 	if err := t.client.Enqueue(analytics.Track{
-		UserId:     t.deviceID,
+		UserId:     userID,
 		Event:      event,
 		Properties: props,
 	}); err != nil {
@@ -127,10 +122,10 @@ func (t *segmentTelemeter) TrackProps(event string, props map[string]any) {
 	}
 }
 
-func (t *segmentTelemeter) TrackProp(event string, key string, value any) {
-	t.TrackProps(event, map[string]any{key: value})
+func (t *segmentTelemeter) TrackProp(event, userID string, key string, value any) {
+	t.TrackProps(event, userID, map[string]any{key: value})
 }
 
-func (t *segmentTelemeter) Track(event string) {
-	t.TrackProps(event, nil)
+func (t *segmentTelemeter) Track(event, userID string) {
+	t.TrackProps(event, userID, nil)
 }

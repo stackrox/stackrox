@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	erroxGRPC "github.com/stackrox/rox/pkg/errox/grpc"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/set"
@@ -15,11 +16,11 @@ import (
 var ignoredPaths = set.NewFrozenSet("/v1/ping", "/v1/metadata")
 
 func track(ctx context.Context, t mpkg.Telemeter, err error, info *grpc.UnaryServerInfo, trackedPaths set.FrozenSet[string]) {
-	userAgent, path, code := getRequestDetails(ctx, err, info)
+	userAgent, userID, path, code := getRequestDetails(ctx, err, info)
 
 	// Track the API path and error code of some requests:
 	if !ignoredPaths.Contains(path) && (trackedPaths.Contains("*") || trackedPaths.Contains(path)) {
-		t.TrackProps("API Call", map[string]any{
+		t.TrackProps("API Call", userID, map[string]any{
 			"Path":       path,
 			"Code":       code,
 			"User-Agent": userAgent,
@@ -27,12 +28,22 @@ func track(ctx context.Context, t mpkg.Telemeter, err error, info *grpc.UnarySer
 	}
 }
 
-func getRequestDetails(ctx context.Context, err error, info *grpc.UnaryServerInfo) (string, string, int) {
+func getRequestDetails(ctx context.Context, err error, info *grpc.UnaryServerInfo) (userAgent string, userID string, method string, code int) {
 	ri := requestinfo.FromContext(ctx)
-	userAgent := strings.Join(ri.Metadata.Get("User-Agent"), ", ")
+	userAgent = strings.Join(ri.Metadata.Get("User-Agent"), ", ")
+
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		log.Debug("Cannot identify user from context: ", err)
+		userID = id.UID()
+	}
 
 	if ri.HTTPRequest != nil && ri.HTTPRequest.URL != nil {
-		return userAgent, ri.HTTPRequest.URL.Path, grpcError.ErrToHTTPStatus(err)
+		method = ri.HTTPRequest.URL.Path
+		code = grpcError.ErrToHTTPStatus(err)
+	} else {
+		method = info.FullMethod
+		code = int(erroxGRPC.RoxErrorToGRPCCode(err))
 	}
-	return userAgent, info.FullMethod, int(erroxGRPC.RoxErrorToGRPCCode(err))
+	return
 }

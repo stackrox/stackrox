@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/version"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -42,9 +43,13 @@ func GetDeviceConfig() (*Config, error) {
 	paths := d.GetAnnotations()[annotation]
 
 	return &Config{
-		ID:           string(d.GetUID()),
-		Orchestrator: orchestrator,
-		Version:      v.GitVersion,
-		APIPaths:     strings.Split(paths, ","),
+		ID:       string(d.GetUID()),
+		APIPaths: strings.Split(paths, ","),
+		Identity: map[string]any{
+			"Central version":    version.GetMainVersion(),
+			"Chart version":      version.GetChartVersion(),
+			"Orchestrator":       orchestrator,
+			"Kubernetes version": v.GitVersion,
+		},
 	}, nil
 }
