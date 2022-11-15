@@ -8,6 +8,8 @@ indexer:
   layer_scan_concurrency: 5
   migrations: true
 matcher:
+  # Offline/Air-gapped mode.
+  disable_updaters: true
   connstring: host=clairv4-postgres port=5432 dbname=clair user=postgres password=postgres sslmode=disable
   max_conn_pool: 100
   run: ""

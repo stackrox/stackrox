@@ -47,14 +47,14 @@ fi
 kubectl create ns "${namespace}"
 
 export POSTGRES_PASSWORD="${CLAIR_V4_DB_PASSWORD}"
-kubectl -n "${namespace}" create secret generic clairsecret --from-file="${DIR}/config.yaml"
+kubectl -n "${namespace}" create secret generic clairv4-config --from-file="${DIR}/config.yaml"
 kubectl -n "${namespace}" create -f "${DIR}/clairv4-kubernetes.yaml"
 
 wait_for_pod_count_to_be 2
 
-kubectl -n "${namespace}" scale --replicas 0 deployment clairv4
-
-wait_for_pod_count_to_be 1
+#kubectl -n "${namespace}" scale --replicas 0 deployment clairv4
+#
+#wait_for_pod_count_to_be 1
 
 # Seed the DB with nginx:1.12.1 data
 

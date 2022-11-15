@@ -14,6 +14,7 @@ spec:
     spec:
       containers:
       - name: clairv4
+        # This image is based on registry.redhat.io/quay/clair-rhel8:v3.7.10-2
         image: us.gcr.io/stackrox-ci/clair:v4.4.4
         env:
         - name: CLAIR_CONF
@@ -33,7 +34,7 @@ spec:
       volumes:
       - name: config
         secret:
-          secretName: clairv4-config-secret
+          secretName: clairv4-config
 ---
 apiVersion: v1
 kind: Service
