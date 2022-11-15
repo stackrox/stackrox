@@ -139,6 +139,9 @@ spec:
         - mountPath: /host/usr
           name: usr-ro
           readOnly: true
+        - mountPath: /host/lib
+          name: lib-ro
+          readOnly: true
         - mountPath: /host/var/lib/kubelet/kubeconfig
           name: var-lib-kubelet-kubeconfig
           readOnly: true
@@ -168,7 +171,7 @@ spec:
           path: /etc
         name: etc-ro
       - hostPath:
-          path: /sys/
+          path: /sys
         name: sys-ro
       - hostPath:
           path: /dev
@@ -185,6 +188,9 @@ spec:
       - hostPath:
           path: /usr
         name: usr-ro
+      - hostPath:
+          path: /lib
+        name: lib-ro
       - hostPath:
           path: /var/lib/kubelet/kubeconfig
         name: var-lib-kubelet-kubeconfig
