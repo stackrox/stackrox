@@ -132,13 +132,15 @@ function CollectionsTable({
             <TableComposable variant={TableVariant.compact}>
                 <Thead>
                     <Tr>
-                        <Th modifier="wrap" width={25} sort={getEnabledSortParams('name')}>
+                        <Th
+                            modifier="wrap"
+                            width={25}
+                            sort={getEnabledSortParams('Collection Name')}
+                        >
                             Collection
                         </Th>
-                        <Th modifier="wrap" sort={getEnabledSortParams('description')}>
-                            Description
-                        </Th>
-                        <Th modifier="wrap" width={10} sort={getEnabledSortParams('inUse')}>
+                        <Th modifier="wrap">Description</Th>
+                        <Th modifier="wrap" width={10}>
                             In use
                         </Th>
                         <Th aria-label="Row actions" />
