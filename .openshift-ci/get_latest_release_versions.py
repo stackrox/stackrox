@@ -27,8 +27,8 @@ def reduce_tags_to_latest_patch(tags):
 def make_image_tag():
     return subprocess.check_output(["make", "--quiet", "--no-print-directory", "tag"]).decode(encoding="utf-8")
 
-def extract_x_y_from_main_image_tag(mainimagetag):
-    x_y = re.search(r"^(\d+)\.(\d+)", mainimagetag)
+def extract_x_y_from_main_image_tag(tag):
+    x_y = re.search(r"^(\d+)\.(\d+)", tag)
     return int(x_y.group(1)), int(x_y.group(2))
 
 def get_latest_n_tags(tags, num_versions):

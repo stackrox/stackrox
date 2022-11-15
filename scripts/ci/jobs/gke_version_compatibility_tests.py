@@ -15,11 +15,9 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["ROX_POSTGRES_DATASTORE"] = "false"
 
 versions=get_latest_release_versions(4)
-print("\n".join(versions))
-
 
 gkecluster=GKECluster("qa-e2e-test")
 
-#for version in versions:
-#    os.environ["SENSOR_IMAGE_TAG"] = version
-#    make_compatibility_test_runner(cluster=gkecluster).run()
+for version in versions:
+    os.environ["SENSOR_IMAGE_TAG"] = version
+    make_compatibility_test_runner(cluster=gkecluster).run()
