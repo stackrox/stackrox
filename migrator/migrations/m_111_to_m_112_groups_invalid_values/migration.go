@@ -91,13 +91,10 @@ func removeGroupsStoredByCompositeKey(db *bolt.DB, groupStoredByCompositeKeys []
 
 		var deleteGroupErrs *multierror.Error
 		for _, group := range groupStoredByCompositeKeys {
-			compositeKey := group.compositeKey
-
 			// Remove the value stored behind the composite key, since the migrated group is now successfully stored.
-			if err := bucket.Delete(compositeKey); err != nil {
+			if err := bucket.Delete(group.compositeKey); err != nil {
 				deleteGroupErrs = multierror.Append(deleteGroupErrs, err)
 			}
-
 		}
 
 		return deleteGroupErrs.ErrorOrNil()

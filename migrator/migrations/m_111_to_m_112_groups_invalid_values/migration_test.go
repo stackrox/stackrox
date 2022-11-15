@@ -88,7 +88,7 @@ func (suite *removeGroupsMigrationSuite) TestMigrate() {
 		},
 	}
 
-	// 1. Buckets don't exist should succeed still
+	// 1. Migration should succeed if the bucket does not exist.
 	suite.NoError(removeGroupsWithInvalidValues(suite.db))
 
 	// 2. Add the old groups to the groups bucket and create it if it does not exist yet.
