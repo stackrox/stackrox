@@ -32,9 +32,11 @@ func getRequestDetails(ctx context.Context, err error, info *grpc.UnaryServerInf
 	ri := requestinfo.FromContext(ctx)
 	userAgent = strings.Join(ri.Metadata.Get("User-Agent"), ", ")
 
-	id, err := authn.IdentityFromContext(ctx)
-	if err != nil {
-		log.Debug("Cannot identify user from context: ", err)
+	id, iderr := authn.IdentityFromContext(ctx)
+	if iderr != nil {
+		userID = "unknown"
+		log.Debug("Cannot identify user from context: ", iderr)
+	} else {
 		userID = id.UID()
 	}
 
