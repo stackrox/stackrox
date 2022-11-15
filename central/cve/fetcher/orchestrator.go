@@ -72,8 +72,6 @@ func (m *orchestratorCVEManager) Reconcile() {
 	err = m.reconcileCVEs(clusters, utils.Istio)
 	if err != nil {
 		log.Errorf("failed to reconcile Istio CVEs: %v", err)
-	} else {
-		log.Info("successfully reconcile Istio CVEs")
 	}
 }
 
@@ -115,7 +113,6 @@ func (m *orchestratorCVEManager) updateCVEs(embeddedCVEs []*storage.EmbeddedVuln
 		cve := utils.EmbeddedCVEToProtoCVE("", embeddedCVE)
 		newCVEs = append(newCVEs, converter.NewClusterCVEParts(cve, embeddedCVEToClusters[embeddedCVE.GetCve()], embeddedCVE.GetFixedBy()))
 	}
-
 	return m.updateCVEsInDB(newCVEs, cveType)
 }
 
@@ -217,13 +214,14 @@ func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveT
 			version = metadata.GetOpenshiftVersion()
 		case utils.Istio:
 			allAccessCtx = sac.WithAllAccess(context.Background())
-			matcher := m.cveMatcher
-			versions, err := matcher.GetValidIstioVersions(allAccessCtx, cluster)
+			versions, err := m.cveMatcher.GetValidIstioVersions(allAccessCtx, cluster)
+			log.Infof("reconcileCVEs: current number of Istio version is: %d", len(versions))
 			if err != nil || len(versions) < 1 {
 				continue
 			}
 			for _, v := range versions.AsSlice() {
 				if v != "" {
+					log.Infof("reconcileCVEs Istio: Affected cluster name: %s", cluster.Name)
 					versionToClusters[v] = append(versionToClusters[v], cluster)
 				}
 			}
@@ -283,6 +281,7 @@ func istioScan(version string, scanners map[string]types.OrchestratorScanner) ([
 			continue
 		}
 		vulnIDsSet := set.NewStringSet()
+		log.Infof("istioScan: total number of vulns %d", len(result))
 		for _, vuln := range result {
 			if vulnIDsSet.Add(vuln.GetCve()) {
 				allVulns = append(allVulns, vuln)
