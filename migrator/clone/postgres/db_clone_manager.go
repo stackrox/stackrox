@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	knownClones = set.NewStringSet(CurrentClone, RestoreClone, BackupClone, PreviousClone, RestoreFromRocksClone)
+	knownClones = set.NewStringSet(CurrentClone, RestoreClone, BackupClone, PreviousClone)
 
 	log = logging.CurrentModule().Logger()
 )

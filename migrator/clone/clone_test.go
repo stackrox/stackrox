@@ -271,7 +271,6 @@ func TestCloneRestore(t *testing.T) {
 		description string
 		toVersion   *versionPair
 		breakPoint  string
-		fromRocks   bool
 	}{
 		{
 			description: "Restore to earlier version",
@@ -636,7 +635,7 @@ func doTestRollback(t *testing.T) {
 
 // TestRollbackPostgresToRocks - set of tests that will test rolling back to Rocks from Postgres.
 func TestRollbackPostgresToRocks(t *testing.T) {
-	//// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
+	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		currVer = releaseVer
 		doTestRollbackPostgresToRocks(t)

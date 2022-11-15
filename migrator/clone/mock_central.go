@@ -272,12 +272,11 @@ func (m *mockCentral) restoreCentral(ver *versionPair, breakPoint string, rocksT
 		m.runMigrator(breakPoint, "", false)
 	}
 	m.runMigrator("", "", false)
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		m.verifyClone(rocksdb.BackupClone, curVer)
-	}
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		m.verifyClonePostgres(postgres.BackupClone, curVer)
+	} else {
+		m.verifyClone(rocksdb.BackupClone, curVer)
 	}
 
 	m.runCentral()
