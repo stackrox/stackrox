@@ -155,18 +155,18 @@ func (mr *MockDataStoreMockRecorder) GetMany(ctx, id interface{}) *gomock.Call {
 }
 
 // ResolveListDeployments mocks base method.
-func (m *MockDataStore) ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection) ([]*storage.ListDeployment, error) {
+func (m *MockDataStore) ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection, pagination *v1.Pagination) ([]*storage.ListDeployment, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveListDeployments", ctx, collection)
+	ret := m.ctrl.Call(m, "ResolveListDeployments", ctx, collection, pagination)
 	ret0, _ := ret[0].([]*storage.ListDeployment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ResolveListDeployments indicates an expected call of ResolveListDeployments.
-func (mr *MockDataStoreMockRecorder) ResolveListDeployments(ctx, collection interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) ResolveListDeployments(ctx, collection, pagination interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveListDeployments", reflect.TypeOf((*MockDataStore)(nil).ResolveListDeployments), ctx, collection)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveListDeployments", reflect.TypeOf((*MockDataStore)(nil).ResolveListDeployments), ctx, collection, pagination)
 }
 
 // Search mocks base method.
