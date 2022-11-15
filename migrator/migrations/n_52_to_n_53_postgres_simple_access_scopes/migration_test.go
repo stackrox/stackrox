@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -59,6 +60,10 @@ const (
 	prefixlessNamedPermissionSetName = "Prefixless Named Permission Set"
 	prefixlessUUIDPermissionSetID    = "bc79bced-0fa5-45f6-9ae2-e054485ae6ff"
 	prefixlessUUIDPermissionSetName  = "Prefixless UUID Permission Set"
+
+	namePermission = "name"
+	uuidPermission = "uuid"
+	defaultPermission = "default"
 )
 
 func TestMigration(t *testing.T) {
@@ -215,92 +220,140 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 	s.NoError(roleErr)
 
 	// Prepare data and write to legacy DB
-	accessScopes := []*storage.SimpleAccessScope{
-		{
+	accessScopes := map[string]*storage.SimpleAccessScope{
+		prefixedNamedAccessScopeName: {
 			Id:          prefixedNamedAccessScopeID,
 			Name:        prefixedNamedAccessScopeName,
-			Description: "",
-			Rules:       nil,
+			Description: "Test access scope 1",
+			Rules:       &storage.SimpleAccessScope_Rules{
+				NamespaceLabelSelectors: {
+					{
+						Requirements: {
+							{
+								Key:                  "k8s-app",
+								Op:                   storage.SetBasedLabelSelector_IN,
+								Values:               ["kube-dns"],
+							},
+						},
+					},
+				},
+			},
 		},
-		{
+		prefixlessNamedAccessScopeName: {
 			Id:          prefixlessNamedAccessScopeID,
 			Name:        prefixlessNamedAccessScopeName,
-			Description: "",
-			Rules:       nil,
+			Description: "Test access scope 2",
+			Rules:       &storage.SimpleAccessScope_Rules{
+				NamespaceLabelSelectors: {
+					{
+						Requirements: {
+							{
+								Key:                  "k8s-app",
+								Op:                   storage.SetBasedLabelSelector_NOT_IN,
+								Values:               ["kube-dns"],
+							},
+						},
+					},
+				},
+			},
 		},
-		{
+		defaultUnrestrictedAccessScopeName: {
 			Id:          defaultUnrestrictedAccessScopeID,
 			Name:        defaultUnrestrictedAccessScopeName,
-			Description: "",
+			Description: "Test access scope 3",
 			Rules:       nil,
 		},
-		{
+		defaultDenyAllAccessScopeName: {
 			Id:          defaultDenyAllAccessScopeID,
 			Name:        defaultDenyAllAccessScopeName,
-			Description: "",
-			Rules:       nil,
+			Description: "Test access scope 4",
+			Rules:       &storage.SimpleAccessScope_Rules{},
 		},
-		{
+		prefixedUUIDAccessScopeName: {
 			Id:          prefixedUUIDAccessScopeID,
 			Name:        prefixedUUIDAccessScopeName,
-			Description: "",
-			Rules:       nil,
+			Description: "Test access scope 5",
+			Rules: {IncludedClusters: ["3e86497c-1289-4752-9502-ae11b9f23027"]},
 		},
-		{
+		prefixlessUUIDAccessScopeName: {
 			Id:          prefixlessUUIDAccessScopeID,
 			Name:        prefixlessUUIDAccessScopeName,
-			Description: "",
-			Rules:       nil,
+			Description: "Test access scope 6",
+			Rules:       {
+				IncludedNamespaces: [
+					{
+						ClusterName: "TestCluster",
+						NamespaceName: "TestNamespace",
+					}
+				]
+			},
 		},
 	}
 	accessScopeOldIDToNameMapping := make(map[string]string, len(accessScopes))
 	accessScopeNameToNewIDMapping := make(map[string]string, len(accessScopes))
+
 	for _, scope := range accessScopes {
 		accessScopeOldIDToNameMapping[scope.GetId()] = scope.GetName()
 	}
 
-	permissionSets := []*storage.PermissionSet{
-		{
+	permissionSets := map[string]*storage.PermissionSet{
+		prefixedNamedPermissionSetName: {
 			Id:               prefixedNamedPermissionSetID,
 			Name:             prefixedNamedPermissionSetName,
-			Description:      "",
-			ResourceToAccess: nil,
+			Description:      "Test permission set 1",
+			ResourceToAccess: map[string]storage.Access{
+				namePermission: storage.Access_READ_WRITE_ACCESS,
+			},
 		},
-		{
+		prefixlessNamedPermissionSetName: {
 			Id:               prefixlessNamedPermissionSetID,
 			Name:             prefixlessNamedPermissionSetName,
-			Description:      "",
-			ResourceToAccess: nil,
+			Description:      "Test permission set 2",
+			ResourceToAccess: map[string]storage.Access{
+				namePermission: storage.Access_READ_ACCESS,
+			},
 		},
-		{
+		defaultAdminPermissionSetName: {
 			Id:               defaultAdminPermissionSetID,
 			Name:             defaultAdminPermissionSetName,
-			Description:      "",
-			ResourceToAccess: nil,
+			Description:      "Test permission set 3",
+			ResourceToAccess: map[string]storage.Access{
+				defaultPermission: storage.Access_READ_WRITE_ACCESS,
+				namePermission: storage.Access_READ_WRITE_ACCESS,
+				uuidPermission: storage.Access_READ_WRITE_ACCESS,
+			},
 		},
-		{
+		defaultAnalystPermissionSetName: {
 			Id:               defaultAnalystPermissionSetID,
 			Name:             defaultAnalystPermissionSetName,
-			Description:      "",
-			ResourceToAccess: nil,
+			Description:      "Test permission set 4",
+			ResourceToAccess: map[string]storage.Access{
+				defaultPermission: storage.Access_READ_ACCESS,
+				namePermission: storage.Access_READ_ACCESS,
+				uuidPermission: storage.Access_READ_ACCESS,
+			},
 		},
-		{
+		defaultNonePermissionSetName: {
 			Id:               defaultNonePermissionSetID,
 			Name:             defaultNonePermissionSetName,
-			Description:      "",
-			ResourceToAccess: nil,
+			Description:      "Test permission set 5",
+			ResourceToAccess: map[string]storage.Access{},
 		},
-		{
+		prefixedUUIDPermissionSetName: {
 			Id:               prefixedUUIDPermissionSetID,
 			Name:             prefixedUUIDPermissionSetName,
-			Description:      "",
-			ResourceToAccess: nil,
+			Description:      "Test permission set 6",
+			ResourceToAccess: map[string]storage.Access{
+				uuidPermission: storage.Access_READ_WRITE_ACCESS,
+			},
 		},
-		{
+		prefixlessUUIDPermissionSetName: {
 			Id:               prefixlessUUIDPermissionSetID,
 			Name:             prefixlessUUIDPermissionSetName,
-			Description:      "",
-			ResourceToAccess: nil,
+			Description:      "Test permission set 7",
+			ResourceToAccess: map[string]storage.Access{
+				uuidPermission: storage.Access_READ_ACCESS,
+			},
 		},
 	}
 	permissionSetOldIDToNameMapping := make(map[string]string, len(permissionSets))
@@ -582,6 +635,10 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 	})
 	s.NoError(scopeWalkErr)
 	for _, scopeID := range newScopeIDs {
+		// Ensure the newly generated ID is a UUID
+		_, identifierParseErr := uuid.FromString(scopeID)
+		s.NoError(identifierParseErr)
+		// Check the migrated access scope matches the original one
 		fetched, exists, err := newScopeStore.Get(s.ctx, scopeID)
 		s.NoError(err)
 		s.True(exists)
@@ -594,6 +651,9 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 		if fetched.GetName() == prefixlessUUIDAccessScopeName {
 			s.Equal(prefixlessUUIDAccessScopeID, scopeID)
 		}
+		referenceScope := accessScopes[fetched.GetName()]
+		s.Equal(referenceScope.GetDescription(), fetched.GetDescription())
+		s.Equal(referenceScope.GetRules(), fetched.GetRules())
 	}
 	s.Equal(len(accessScopeOldIDToNameMapping), len(accessScopeNameToNewIDMapping))
 	permissionSetCount, err := newPermissionStore.Count(s.ctx)
@@ -606,6 +666,10 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 	})
 	s.NoError(permissionWalkErr)
 	for _, permissionSetID := range newPermissionSetIDs {
+		// Check the new allocated ID is a UUID
+		_, identifierParseErr := uuid.FromString(permissionSetID)
+		s.NoError(identifierParseErr)
+		// Validate the retrieved permission set matches the initial one
 		fetched, exists, err := newPermissionStore.Get(s.ctx, permissionSetID)
 		s.NoError(err)
 		s.True(exists)
@@ -618,6 +682,9 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 		if fetched.GetName() == prefixlessUUIDPermissionSetName {
 			s.Equal(prefixlessUUIDPermissionSetID, permissionSetID)
 		}
+		referencePermissionSet := permissionSets[fetched.GetName()]
+		s.Equal(referencePermissionSet.GetDescription(), fetched.GetDescription())
+		s.Equal(referencePermissionSet.GetResourceToAccess(), fetched.GetResourceToAccess())
 	}
 	roleCount, err := newRoleStore.Count(s.ctx)
 	s.NoError(err)
@@ -627,8 +694,10 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 		s.NoError(err)
 		s.True(exists)
 		expectedRole := role.Clone()
+		// Map role permission set ID to new ID
 		permissionSetName := permissionSetOldIDToNameMapping[role.GetPermissionSetId()]
 		expectedRole.PermissionSetId = permissionSetNameToNewIDMapping[permissionSetName]
+		// Map role access scope ID to new ID
 		accessScopeName := accessScopeOldIDToNameMapping[role.GetAccessScopeId()]
 		expectedRole.AccessScopeId = accessScopeNameToNewIDMapping[accessScopeName]
 		s.Equal(expectedRole, fetched)
