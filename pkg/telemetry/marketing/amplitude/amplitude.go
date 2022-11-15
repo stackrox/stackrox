@@ -18,6 +18,11 @@ var (
 	instance *amplitudeTelemeter
 )
 
+// Enabled tells whether telemetry data collection is enabled.
+func Enabled() bool {
+	return env.AmplitudeAPIKey.Setting() != ""
+}
+
 type amplitudeTelemeter struct {
 	client         amplitude.Client
 	opts           *types.EventOptions

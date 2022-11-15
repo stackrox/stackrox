@@ -68,7 +68,7 @@ func (m *marketing) loop() {
 }
 
 func (m *marketing) Start() {
-	if mpkg.Enabled() {
+	if enabled() {
 		m.telemeter.Start()
 		m.ticker = time.NewTicker(m.period)
 		go m.loop()

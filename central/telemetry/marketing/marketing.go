@@ -10,10 +10,14 @@ import (
 	"google.golang.org/grpc"
 )
 
+func enabled() bool {
+	return segment.Enabled()
+}
+
 // Init initializes the periodic telemetry data gatherer and returns an GRPC API
 // call inteceptor. Returns nil if telemetry data collection is disabled.
 func Init() grpc.UnaryServerInterceptor {
-	if mpkg.Enabled() {
+	if enabled() {
 		config, err := mpkg.GetDeviceConfig()
 		if err != nil {
 			log.Errorf("Failed to get device telemetry configuration: %v", err)

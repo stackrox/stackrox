@@ -18,6 +18,11 @@ var (
 	instance *segmentTelemeter
 )
 
+// Enabled tells whether telemetry data collection is enabled.
+func Enabled() bool {
+	return env.SegmentAPIKey.Setting() != ""
+}
+
 type segmentTelemeter struct {
 	client         analytics.Client
 	deviceID       string
