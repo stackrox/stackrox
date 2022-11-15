@@ -1,7 +1,7 @@
 import * as api from '../../constants/apiEndpoints';
 
 import { visitFromLeftNavExpandable } from '../nav';
-import { getRouteMatcherForGraphQL, interactAndWaitForResponses } from '../request';
+import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../request';
 import { visit } from '../visit';
 
 // visit
@@ -10,8 +10,10 @@ const searchOptionsOpname = 'searchOptions';
 const reportConfigurationsAlias = 'report/configurations';
 const reportConfigurationsCountAlias = 'report-configurations-count';
 
+const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([searchOptionsOpname]);
+
 const routeMatcherMap = {
-    [searchOptionsOpname]: getRouteMatcherForGraphQL(searchOptionsOpname),
+    ...routeMatcherMapForSearchFilter,
     [reportConfigurationsAlias]: {
         method: 'GET',
         url: '/v1/report/configurations*',

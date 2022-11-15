@@ -1,22 +1,4 @@
 /*
- * For pages which have GraphQL and REST requests.
- *
- * For example, given 'searchOptions' return:
- * {
- *     method: 'POST',
- *     url: '/api/graphql?opname=searchOptions',
- * }
- */
-export function getRouteMatcherForGraphQL(opname) {
-    return {
-        method: 'POST',
-        url: `/api/graphql?opname=${opname}`,
-    };
-}
-
-/*
- * For pages which have only GraphQL requests.
- *
  * For example, given ['searchOptions', 'getDeployments'] return:
  * {
  *     searchOptions: {
@@ -28,12 +10,19 @@ export function getRouteMatcherForGraphQL(opname) {
  *         url: '/api/graphql?opname=getDeployments',
  *     },
  * }
+ *
+ * Remember to enclose single opname in array brackets. For example, ['searchOptions']
+ *
+ * Use object spread to merge GraphQL object into object which has properties for REST requests.
  */
 export function getRouteMatcherMapForGraphQL(opnames) {
     const routeMatcherMap = {};
 
     opnames.forEach((opname) => {
-        routeMatcherMap[opname] = getRouteMatcherForGraphQL(opname);
+        routeMatcherMap[opname] = {
+            method: 'POST',
+            url: `/api/graphql?opname=${opname}`,
+        };
     });
 
     return routeMatcherMap;

@@ -1,7 +1,7 @@
 import * as api from '../constants/apiEndpoints';
 import { selectors as networkGraphSelectors } from '../constants/NetworkPage';
 import { visitFromLeftNav } from './nav';
-import { getRouteMatcherForGraphQL, interactAndWaitForResponses } from './request';
+import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
 import { visit } from './visit';
 import selectSelectors from '../selectors/select';
 import tabSelectors from '../selectors/tab';
@@ -220,6 +220,12 @@ export const networkPoliciesGraphEpochAlias = 'networkpolicies/graph/epoch';
 export const searchMetadataOptionsAlias = 'search/metadata/options';
 export const getClusterNamespaceNamesOpname = 'getClusterNamespaceNames';
 
+// Network Graph makes the following query on the first visit, but not subsequent visit via browser Back button.
+// Include it because each cypress test has a new connection, therefore behaves as a first visit.
+const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
+    getClusterNamespaceNamesOpname,
+]);
+
 const routeMatcherMapToVisitNetworkGraph = {
     [notifiersAlias]: {
         method: 'GET',
@@ -237,9 +243,7 @@ const routeMatcherMapToVisitNetworkGraph = {
         method: 'GET',
         url: api.search.optionsCategories('DEPLOYMENTS'),
     },
-    // Network Graph makes the following query on the first visit, but not subsequent visit via browser Back button.
-    // Include it because each cypress test has a new connection, therefore behaves as a first visit.
-    [getClusterNamespaceNamesOpname]: getRouteMatcherForGraphQL(getClusterNamespaceNamesOpname),
+    ...routeMatcherMapForSearchFilter,
 };
 
 export const deploymentAlias = 'deployments/id';

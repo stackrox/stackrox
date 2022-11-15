@@ -1,7 +1,7 @@
 import { url as basePath } from '../constants/DashboardPage';
 import navSelectors from '../selectors/navigation';
 
-import { getRouteMatcherForGraphQL, interactAndWaitForResponses } from './request';
+import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
 import { visit } from './visit';
 
 /*
@@ -18,37 +18,44 @@ export const agingImagesQueryOpname = 'agingImagesQuery';
 export const alertsSummaryCountsGroupByCategoryAlias = 'alerts/summary/counts_CATEGORY';
 export const getAggregatedResultsOpname = 'getAggregatedResults';
 
-const routeMatcherMap = {
-    [summaryCountsOpname]: getRouteMatcherForGraphQL(summaryCountsOpname),
-    [getAllNamespacesByClusterOpname]: getRouteMatcherForGraphQL(getAllNamespacesByClusterOpname),
+const routeMatcherMapForSummaryCounts = getRouteMatcherMapForGraphQL([summaryCountsOpname]);
+const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
+    getAllNamespacesByClusterOpname,
+]);
+const routeMatcherMapForViolationsByPolicySeverity = {
     [alertsSummaryCountsAlias]: {
         method: 'GET',
         url: '/v1/alerts/summary/counts?request.query=',
     },
-
-    // ViolationsByPolicySeverity
-    [mostRecentAlertsOpname]: getRouteMatcherForGraphQL(mostRecentAlertsOpname),
-
-    // ImagesAtMostRisk
-    [getImagesOpname]: getRouteMatcherForGraphQL(getImagesOpname),
-
-    // DeploymentsAtMostRisk
+    ...getRouteMatcherMapForGraphQL([mostRecentAlertsOpname]),
+};
+const routeMatcherMapForImagesAtMostRisk = getRouteMatcherMapForGraphQL([getImagesOpname]);
+const routeMatcherMapForDeploymentsAtMostRisk = {
     [deploymentsWithProcessInfoAlias]: {
         method: 'GET',
         url: '/v1/deploymentswithprocessinfo?*',
     },
-
-    // AgingImages
-    [agingImagesQueryOpname]: getRouteMatcherForGraphQL(agingImagesQueryOpname),
-
-    // ViolationsByPolicySeverity ViolationsByPolicyCategory
+};
+const routeMatcherMapForAgingImages = getRouteMatcherMapForGraphQL([agingImagesQueryOpname]);
+const routeMatcherMapForViolationsByPolicyCategory = {
     [alertsSummaryCountsGroupByCategoryAlias]: {
         method: 'GET',
         url: '/v1/alerts/summary/counts?request.query=&group_by=CATEGORY',
     },
+};
+const routeMatcherMapForComplianceLevelsByStandard = getRouteMatcherMapForGraphQL([
+    getAggregatedResultsOpname,
+]);
 
-    // ComplianceLevelsByStandard
-    [getAggregatedResultsOpname]: getRouteMatcherForGraphQL(getAggregatedResultsOpname),
+const routeMatcherMap = {
+    ...routeMatcherMapForSummaryCounts,
+    ...routeMatcherMapForSearchFilter,
+    ...routeMatcherMapForViolationsByPolicySeverity,
+    ...routeMatcherMapForImagesAtMostRisk,
+    ...routeMatcherMapForDeploymentsAtMostRisk,
+    ...routeMatcherMapForAgingImages,
+    ...routeMatcherMapForViolationsByPolicyCategory,
+    ...routeMatcherMapForComplianceLevelsByStandard,
 };
 
 const title = 'Dashboard';
