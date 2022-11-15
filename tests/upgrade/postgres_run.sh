@@ -208,6 +208,8 @@ test_upgrade_paths() {
     roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "${backup_dir}"/stackrox_db_* || touch DB_TEST_FAIL
     [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
 
+    wait_for_api
+    
     # Ensure we still have the access scopes added to Rocks
     checkForRocksAccessScopes
     # The scopes added after the initial upgrade to Postgres should no longer exist.
