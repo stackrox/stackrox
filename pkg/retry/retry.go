@@ -67,7 +67,7 @@ func (t *retryOptions) do() (err error) {
 				if t.withExponentialBackoff {
 					// Back off by 100 milliseconds after the first attempt,
 					// 400 milliseconds after the second, 900 milliseconds after the third, etc.
-					time.Sleep(time.Duration(100*(i+1)*(i+1))*time.Millisecond)
+					time.Sleep(time.Duration(100*(i+1)*(i+1)) * time.Millisecond)
 				}
 			} else {
 				// If we can't retry then return.

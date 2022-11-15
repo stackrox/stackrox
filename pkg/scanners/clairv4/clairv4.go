@@ -61,7 +61,6 @@ type clairv4 struct {
 	indexReportEndpoint         string
 	indexEndpoint               string
 	vulnerabilityReportEndpoint string
-
 }
 
 func newScanner(integration *storage.ImageIntegration) (*clairv4, error) {
@@ -95,10 +94,10 @@ func newScanner(integration *storage.ImageIntegration) (*clairv4, error) {
 
 		client: client,
 
-		testEndpoint:                path.Join(endpoint, indexStatePath),
-		indexReportEndpoint:         path.Join(endpoint, indexReportPath),
-		indexEndpoint:               path.Join(endpoint, indexPath),
-		vulnerabilityReportEndpoint: path.Join(endpoint, vulnerabilityReportPath),
+		testEndpoint:                endpoint + indexStatePath,
+		indexReportEndpoint:         endpoint + indexReportPath,
+		indexEndpoint:               endpoint + indexPath,
+		vulnerabilityReportEndpoint: endpoint + vulnerabilityReportPath,
 
 		ScanSemaphore: types.NewDefaultSemaphore(),
 	}
