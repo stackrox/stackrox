@@ -16,4 +16,7 @@ var (
 
 	// AmplitudeAPIKey can be empty to disable marketing telemetry collection
 	AmplitudeAPIKey = RegisterSetting("ROX_AMPLITUDE_API_KEY", AllowEmpty())
+
+	// SegmentAPIKey can be empty to disable marketing telemetry collection
+	SegmentAPIKey = RegisterSetting("ROX_SEGMENT_API_KEY", AllowEmpty())
 )

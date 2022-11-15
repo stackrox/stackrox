@@ -6,7 +6,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/set"
 	mpkg "github.com/stackrox/rox/pkg/telemetry/marketing"
-	"github.com/stackrox/rox/pkg/telemetry/marketing/amplitude"
+	"github.com/stackrox/rox/pkg/telemetry/marketing/segment"
 	"google.golang.org/grpc"
 )
 
@@ -20,7 +20,7 @@ func Init() grpc.UnaryServerInterceptor {
 			return nil
 		}
 
-		telemeter := amplitude.Init(config)
+		telemeter := segment.Init(config)
 
 		InitGatherer(telemeter, 5*time.Minute)
 
