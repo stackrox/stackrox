@@ -34,7 +34,7 @@ var (
 			"/v1.CollectionService/GetCollection",
 			"/v1.CollectionService/GetCollectionCount",
 			"/v1.CollectionService/ListCollections",
-			// "/v1.CollectionService/ListCollectionSelectors", TODO ROX-12612
+			"/v1.CollectionService/ListCollectionSelectors",
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			// "/v1.CollectionService/AutoCompleteCollection", TODO ROX-12616
@@ -73,6 +73,21 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
+}
+
+// ListCollectionSelectors returns all supported selectors
+func (s *serviceImpl) ListCollectionSelectors(_ context.Context, _ *v1.Empty) (*v1.ListCollectionSelectorsResponse, error) {
+	if !features.ObjectCollections.Enabled() {
+		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
+	}
+	selectors := datastore.GetSupportedFieldLabels()
+	selectorStrings := make([]string, 0, len(selectors))
+	for _, selector := range selectors {
+		selectorStrings = append(selectorStrings, selector.String())
+	}
+	return &v1.ListCollectionSelectorsResponse{
+		Selectors: selectorStrings,
+	}, nil
 }
 
 // GetCollection returns a collection for the given request
