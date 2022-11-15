@@ -9,6 +9,7 @@ package n52ton53
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -563,8 +564,6 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 		},
 	}
 
-	// Roles : all possible pair combinations of the above
-
 	s.NoError(legacyScopeStore.UpsertMany(s.ctx, accessScopes))
 	s.NoError(legacyPermissionStore.UpsertMany(s.ctx, permissionSets))
 	s.NoError(legacyRoleStore.UpsertMany(s.ctx, roles))
@@ -614,10 +613,10 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 			permissionSetNameToNewIDMapping[fetched.GetName()] = fetched.GetId()
 		}
 		if fetched.GetName() == prefixedUUIDPermissionSetName {
-			s.Equal(strings.TrimPrefix(prefixedUUIDPermissionSetID, permissionSetIDPrefix), scopeID)
+			s.Equal(strings.TrimPrefix(prefixedUUIDPermissionSetID, permissionSetIDPrefix), permissionSetID)
 		}
 		if fetched.GetName() == prefixlessUUIDPermissionSetName {
-			s.Equal(prefixlessUUIDPermissionSetID, scopeID)
+			s.Equal(prefixlessUUIDPermissionSetID, permissionSetID)
 		}
 	}
 	roleCount, err := newRoleStore.Count(s.ctx)
