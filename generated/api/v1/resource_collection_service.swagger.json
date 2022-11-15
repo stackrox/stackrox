@@ -129,6 +129,28 @@
         ]
       }
     },
+    "/v1/collections/selectors": {
+      "get": {
+        "operationId": "CollectionService_ListCollectionSelectors",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListCollectionSelectorsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "CollectionService"
+        ]
+      }
+    },
     "/v1/collections/{id}": {
       "get": {
         "operationId": "CollectionService_GetCollection",
@@ -577,6 +599,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageListDeployment"
+          }
+        }
+      }
+    },
+    "v1ListCollectionSelectorsResponse": {
+      "type": "object",
+      "properties": {
+        "selectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       }
