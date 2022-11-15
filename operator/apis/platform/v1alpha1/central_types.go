@@ -195,6 +195,7 @@ const (
 	CentralDBEnabledTrue CentralDBEnabled = "Enabled"
 )
 
+// CentralDBEnabledPtr return a pointer for the given CentralDBEnabled value
 func CentralDBEnabledPtr(c CentralDBEnabled) *CentralDBEnabled {
 	ptr := new(CentralDBEnabled)
 	*ptr = c
