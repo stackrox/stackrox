@@ -55,7 +55,7 @@ type clairv4 struct {
 
 	name string
 
-	client                *http.Client
+	client *http.Client
 
 	testEndpoint                string
 	indexReportEndpoint         string
