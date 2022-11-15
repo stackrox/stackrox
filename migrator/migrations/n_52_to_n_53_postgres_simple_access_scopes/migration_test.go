@@ -342,7 +342,7 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 			Id:               defaultNonePermissionSetID,
 			Name:             defaultNonePermissionSetName,
 			Description:      "Test permission set 5",
-			ResourceToAccess: map[string]storage.Access{},
+			ResourceToAccess: nil,
 		},
 		prefixedUUIDPermissionSetName: {
 			Id:          prefixedUUIDPermissionSetID,
