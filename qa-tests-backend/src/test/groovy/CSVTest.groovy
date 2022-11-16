@@ -133,11 +133,11 @@ class CSVTest extends BaseSpecification {
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
             .setName("nginx-deployment")
-            .setImage("quay.io/rhacs-eng/qa:nginx-1-9")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
             .addLabel("app", "test")
 
     def setupSpec() {
-        ImageService.scanImage("quay.io/rhacs-eng/qa:nginx-1-9")
+        ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
         orchestrator.createDeployment(CVE_DEPLOYMENT)
         assert Services.waitForDeployment(CVE_DEPLOYMENT)
     }

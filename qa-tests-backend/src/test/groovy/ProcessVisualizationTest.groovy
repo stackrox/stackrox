@@ -26,32 +26,32 @@ class ProcessVisualizationTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                 .setName (NGINXDEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:nginx-1-14-alpine")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:nginx-1-14-alpine")
                 .addLabel ( "app", "test" ),
             new Deployment()
                 .setName (STRUTSDEPLOYMENT)
-                .setImage("quay.io/rhacs-eng/qa:struts-app")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (CENTOSDEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:centos-"+
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:centos-"+
                            "fc2476ccae2a5186313f2d1dadb4a969d6d2d4c6b23fa98b6c7b0a1faad67685")
                 .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (FEDORADEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:fedora-"+
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:fedora-"+
                            "6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187")
                 .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ELASTICDEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:elasticsearch-"+
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:elasticsearch-"+
                            "cdeb134689bb0318a773e03741f4414b3d1d0ee443b827d5954f957775db57eb")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (REDISDEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:redis-"+
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-"+
                            "96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
                 .addLabel ("app", "test" ),
             new Deployment()
@@ -61,11 +61,11 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ROX4751DEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:ROX4751")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:ROX4751")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ROX4979DEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:ROX4979")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:ROX4979")
                 .addLabel ("app", "test" ),
      ]
 

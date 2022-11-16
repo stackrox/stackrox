@@ -77,7 +77,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
-            .setImage("quay.io/rhacs-eng/qa:struts-app")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
             .addLabel("app", "test")
             .addPort(80)
 
