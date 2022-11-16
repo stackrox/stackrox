@@ -65,8 +65,7 @@ spec:
           readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /host/var/run/docker.sock
-          name: var-run
-          subPath: var/run/docker.sock
+          name: var-run-docker-sock-ro
           readOnly: true
         - mountPath: /host/proc
           name: proc-ro
@@ -77,8 +76,7 @@ spec:
           name: etc-ro
           readOnly: true
         - mountPath: /host/usr/lib
-          name: usr-ro
-          subPath: usr/lib
+          name: usr-lib-ro
           readOnly: true
         - mountPath: /host/sys
           name: sys-ro
@@ -189,6 +187,9 @@ spec:
           path: /usr
         name: usr-ro
       - hostPath:
+          path: /usr/lib
+        name: usr-lib-ro
+      - hostPath:
           path: /lib
         name: lib-ro
       - hostPath:
@@ -206,6 +207,9 @@ spec:
       - hostPath:
           path: /var/run
         name: var-run
+      - hostPath:
+          path: /var/run/docker.sock
+        name: var-run-docker-sock-ro
       - name: certs
         secret:
           secretName: collector-tls
