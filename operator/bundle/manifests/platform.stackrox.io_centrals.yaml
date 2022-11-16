@@ -234,13 +234,13 @@ spec:
                       loadBalancer:
                         description: Expose Central through a load balancer service.
                         properties:
-                          enabled:
-                            default: false
-                            type: boolean
                           ip:
                             description: If you have a static IP address reserved
                               for your load balancer, you can enter it here.
                             type: string
+                          isEnabled:
+                            default: false
+                            type: boolean
                           port:
                             default: 443
                             description: Defaults to 443 if not set.

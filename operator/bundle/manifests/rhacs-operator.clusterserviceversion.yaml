@@ -227,7 +227,7 @@ spec:
         displayName: Node Port
         path: central.exposure.nodePort
       - displayName: Enabled
-        path: central.exposure.loadBalancer.enabled
+        path: central.exposure.loadBalancer.isEnabled
       - description: Defaults to 443 if not set.
         displayName: Port
         path: central.exposure.loadBalancer.port

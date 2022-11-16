@@ -62,7 +62,7 @@ spec:
         displayName: Claim Name
         path: central.db.persistence.persistentVolumeClaim.claimName
       - displayName: Enabled
-        path: central.exposure.loadBalancer.enabled
+        path: central.exposure.loadBalancer.isEnabled
       - displayName: Enabled
         path: central.exposure.nodePort.enabled
       - description: Expose Central through an OpenShift route.
