@@ -1,4 +1,4 @@
-export const graphql = (operationName) => `/api/graphql?opname=${operationName}`;
+export const graphql = (opname) => `/api/graphql?opname=${opname}`;
 
 function searchObjToQuery(searchObj) {
     let result = '';
@@ -84,7 +84,6 @@ export const auth = {
     loginAuthProviders: '/v1/login/authproviders',
     authProviders: '/v1/authProviders',
     authStatus: '/v1/auth/status',
-    logout: '/sso/session/logout',
     tokenRefresh: '/sso/session/tokenrefresh',
 };
 
@@ -99,7 +98,6 @@ export const network = {
     networkBaselineLock: '/v1/networkbaseline/*/lock',
     networkBaselineUnlock: '/v1/networkbaseline/*/unlock',
     networkBaselinePeers: '/v1/networkbaseline/*/peers',
-    networkBaselineStatus: '/v1/networkbaseline/*/status',
     networkPoliciesGraph: '/v1/networkpolicies/cluster/*',
     networkGraph: '/v1/networkgraph/cluster/*',
     epoch: '/v1/networkpolicies/graph/epoch',
@@ -137,21 +135,6 @@ export const groups = {
 
 export const userAttributes = {
     list: '/v1/userattributes/*',
-};
-
-const complianceEntitiesOp = {
-    clusters: 'clustersList',
-    deployments: 'deploymentsList',
-    namespaces: 'namespaceList', // singular: too bad, so sad
-    nodes: 'nodesList',
-};
-
-export const compliance = {
-    // For example, graphqlEntities('clusters')
-    graphqlEntities: (key) => graphql(complianceEntitiesOp[key]),
-    export: {
-        csv: '/api/compliance/export/csv',
-    },
 };
 
 export const logs = '/api/logimbue';
