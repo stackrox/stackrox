@@ -368,7 +368,7 @@ type ExposureLoadBalancer struct {
 	//+kubebuilder:validation:Default=false
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
-	Enabled *bool `json:"isEnabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 
 	// Defaults to 443 if not set.
 	//+kubebuilder:validation:Minimum=1
