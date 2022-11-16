@@ -100,6 +100,13 @@ func (s *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	})
 }
 
+// UpsertInvalidEntry for testing
+func (s *storeImpl) UpsertInvalidEntry(ctx context.Context, group *storage.Group) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		return upsertInvalidEntryInTransaction(tx, group)
+	})
+}
+
 // Helpers
 //////////
 
@@ -132,4 +139,10 @@ func deleteInTransaction(tx *bolt.Tx, ids ...string) error {
 		}
 	}
 	return nil
+}
+
+func upsertInvalidEntryInTransaction(tx *bolt.Tx, group *storage.Group) error {
+	bucket := tx.Bucket(groupsBucket)
+	key, value := serialize(group)
+	return bucket.Put(key, value)
 }

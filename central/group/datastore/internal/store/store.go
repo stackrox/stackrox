@@ -16,4 +16,5 @@ type Store interface {
 	UpsertMany(ctx context.Context, groups []*storage.Group) error
 	Delete(ctx context.Context, propsID string) error
 	DeleteMany(ctx context.Context, ids []string) error
+	UpsertInvalidEntry(ctx context.Context, group *storage.Group) error
 }

@@ -108,6 +108,20 @@ func (mr *MockStoreMockRecorder) Upsert(ctx, group interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, group)
 }
 
+// UpsertInvalidEntry mocks base method.
+func (m *MockStore) UpsertInvalidEntry(ctx context.Context, group *storage.Group) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertInvalidEntry", ctx, group)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertInvalidEntry indicates an expected call of UpsertInvalidEntry.
+func (mr *MockStoreMockRecorder) UpsertInvalidEntry(ctx, group interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertInvalidEntry", reflect.TypeOf((*MockStore)(nil).UpsertInvalidEntry), ctx, group)
+}
+
 // UpsertMany mocks base method.
 func (m *MockStore) UpsertMany(ctx context.Context, groups []*storage.Group) error {
 	m.ctrl.T.Helper()
