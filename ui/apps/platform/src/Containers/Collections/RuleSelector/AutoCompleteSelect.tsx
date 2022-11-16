@@ -38,6 +38,8 @@ export function AutoCompleteSelect({
 }: AutoCompleteSelectProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const [typeahead, setTypeahead] = useState(selectedOption);
+    // When isTyping is true, autocomplete results will not be displayed. This prevents
+    // a clunky UX where the dropdown results and the user text get out of sync.
     const [isTyping, setIsTyping] = useState(false);
 
     const autocompleteCallback = useCallback(() => {
