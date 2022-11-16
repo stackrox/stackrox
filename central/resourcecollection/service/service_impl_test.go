@@ -45,6 +45,28 @@ func (suite *CollectionServiceTestSuite) TearDownSuite() {
 	suite.mockCtrl.Finish()
 }
 
+func (suite *CollectionServiceTestSuite) TestListCollectionSelectors() {
+	if !features.ObjectCollections.Enabled() {
+		suite.T().Skip("skipping because env var is not set")
+	}
+
+	selectorsResponse, err := suite.collectionService.ListCollectionSelectors(context.Background(), &v1.Empty{})
+	suite.NoError(err)
+
+	supportedLabelStrings := []string{
+		search.Cluster.String(),
+		search.ClusterLabel.String(),
+		search.Namespace.String(),
+		search.NamespaceLabel.String(),
+		search.NamespaceAnnotation.String(),
+		search.DeploymentName.String(),
+		search.DeploymentLabel.String(),
+		search.DeploymentAnnotation.String(),
+	}
+
+	suite.ElementsMatch(supportedLabelStrings, selectorsResponse.GetSelectors())
+}
+
 func (suite *CollectionServiceTestSuite) TestGetCollection() {
 	if !features.ObjectCollections.Enabled() {
 		suite.T().Skip("skipping because env var is not set")
