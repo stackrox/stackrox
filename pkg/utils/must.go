@@ -39,7 +39,7 @@ func CrashOnError(errs ...error) {
 	}
 }
 
-// Should panics on development builds and logs on release builds
+// ShouldErr panics on development builds and logs on release builds
 // The expectation is that this function will be called with an error wrapped by errors.Wrap
 // so that tracing is easier
 func ShouldErr(errs ...error) error {
