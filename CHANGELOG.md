@@ -5,7 +5,7 @@ Entries in this file should be limited to:
 -  Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
-## [NEXT RELEASE]
+## [3.73.0]
 ### Removed Features
 - ROX-12839: we will stop shipping the docs embedded in the product, starting with the release following this one (docs will still be available online)
 - ROX-6194: `ROX_WHITELIST_GENERATION_DURATION` env var is removed in favor of `ROX_BASELINE_GENERATION_DURATION`;
