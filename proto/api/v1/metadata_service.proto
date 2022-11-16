@@ -26,6 +26,7 @@ message Metadata {
 
     string central_id = 5;
     string organization_id = 6;
+    string segment_key = 7;
 }
 
 message TrustInfo {

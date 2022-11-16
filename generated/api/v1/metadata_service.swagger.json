@@ -134,6 +134,9 @@
         },
         "organizationId": {
           "type": "string"
+        },
+        "segmentKey": {
+          "type": "string"
         }
       }
     },

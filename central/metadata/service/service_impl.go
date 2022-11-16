@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -55,6 +56,7 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		if err == nil {
 			metadata.CentralId = config.ID
 			metadata.OrganizationId = config.OrgID
+			metadata.SegmentKey = env.SegmentAPIKey.Setting()
 		}
 	}
 	// Only return the version to logged in users, not anonymous users.
