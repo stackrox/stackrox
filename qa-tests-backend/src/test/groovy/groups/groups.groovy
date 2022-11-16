@@ -15,3 +15,4 @@ package groups
 @interface GraphQL { }
 @interface Notifiers { }
 @interface K8sEvents { }
+@interface MultiArch { }  // set of tests to run for multi-arch project

@@ -54,17 +54,39 @@ test_upgrade() {
     wait_for_api
     setup_client_TLS_certs
 
+    # TODO(sbostick): try installing to secondary "secured cluster"
     info "Deploying sensor"
-    "$TEST_ROOT/$DEPLOY_DIR/sensor.sh"
-    validate_sensor_bundle_via_upgrader "$TEST_ROOT/$DEPLOY_DIR"
+    "$TEST_ROOT/$DEPLOY_DIR/sensor.sh"  # <---- override as "deploy/openshift"?
+    ### validate_sensor_bundle_via_upgrader "$TEST_ROOT/$DEPLOY_DIR"
     sensor_wait
 
     touch "${STATE_DEPLOYED}"
 
-    test_sensor_bundle
-    test_upgrader
-    remove_existing_stackrox_resources
-    test_upgrade_paths "$log_output_dir"
+    ### test_sensor_bundle
+    ### test_upgrader
+    ### remove_existing_stackrox_resources
+    ### test_upgrade_paths "$log_output_dir"
+
+    # TODO(sbostick): these must be set for manual debugging in test exec pod
+    # TODO(sbostick): note that timeout still applies
+    export CLUSTER="K8S"
+    export ORCHESTRATOR_FLAVOR="k8s"
+    export ROX_AFTERGLOW_PERIOD="15"
+    export SENSOR_HELM_DEPLOY="true"
+    export ROX_POSTGRES_DATASTORE="false"
+
+    make -C qa-tests-backend multiarch-debug || touch FAIL
+    store_qa_test_results "multiarch-debug"
+
+    # TODO(sbostick): DEBUGx
+    env > /tmp/dotenv
+    touch /tmp/hold
+    while [[ -e /tmp/hold ]]; do
+        info "Holding this job for debug"
+        sleep 60
+    done
+
+    [[ ! -f FAIL ]] || die "multiarch-debug failed"
 }
 
 preamble() {
