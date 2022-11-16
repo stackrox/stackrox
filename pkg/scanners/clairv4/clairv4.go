@@ -220,7 +220,7 @@ func (c *clairv4) index(manifest *claircore.Manifest) error {
 			return err
 		}
 		if !ir.Success && ir.Err != "" {
-			return errors.New(ir.Err)
+			return errors.Errorf("indexing error: %s", ir.Err)
 		}
 
 		return nil
