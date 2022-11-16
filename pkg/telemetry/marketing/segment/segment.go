@@ -3,7 +3,7 @@ package segment
 import (
 	"time"
 
-	analytics "github.com/segmentio/analytics-go"
+	segment "github.com/segmentio/analytics-go"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -23,7 +23,7 @@ func Enabled() bool {
 }
 
 type segmentTelemeter struct {
-	client analytics.Client
+	client segment.Client
 	config *marketing.Config
 }
 
@@ -31,8 +31,8 @@ type segmentTelemeter struct {
 var _ = marketing.Telemeter((*segmentTelemeter)(nil))
 
 func (t *segmentTelemeter) Identify(props map[string]any) {
-	traits := analytics.NewTraits()
-	identity := analytics.Identify{
+	traits := segment.NewTraits()
+	identity := segment.Identify{
 		UserId: t.config.ID,
 		Traits: traits,
 	}
@@ -73,18 +73,18 @@ func (l *logWrapper) Errorf(format string, args ...any) {
 }
 
 func initSegment(config *marketing.Config, key, server string) *segmentTelemeter {
-	segmentConfig := analytics.Config{
+	segmentConfig := segment.Config{
 		Endpoint: server,
 		Interval: 5 * time.Minute,
 		Logger:   &logWrapper{internal: log},
-		DefaultContext: &analytics.Context{
+		DefaultContext: &segment.Context{
 			Extra: map[string]any{
 				"Central ID": config.ID,
 			},
 		},
 	}
 
-	client, err := analytics.NewWithConfig(key, segmentConfig)
+	client, err := segment.NewWithConfig(key, segmentConfig)
 	if err != nil {
 		log.Error("Cannot initialize Segment client: %v", err)
 		return nil
@@ -113,19 +113,11 @@ func (t *segmentTelemeter) TrackProps(event, userID string, props map[string]any
 	}
 	log.Info("Tracking event ", event, " with ", props)
 
-	if err := t.client.Enqueue(analytics.Track{
+	if err := t.client.Enqueue(segment.Track{
 		UserId:     userID,
 		Event:      event,
 		Properties: props,
 	}); err != nil {
 		log.Error("Cannot enqueue Segment track event: %v", err)
 	}
-}
-
-func (t *segmentTelemeter) TrackProp(event, userID string, key string, value any) {
-	t.TrackProps(event, userID, map[string]any{key: value})
-}
-
-func (t *segmentTelemeter) Track(event, userID string) {
-	t.TrackProps(event, userID, nil)
 }

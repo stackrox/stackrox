@@ -5,8 +5,6 @@ type Telemeter interface {
 	Start()
 	Stop()
 	Identify(props map[string]any)
-	Track(event, userID string)
-	TrackProp(event, userID string, key string, value any)
 	TrackProps(event, userID string, props map[string]any)
 }
 
