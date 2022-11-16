@@ -16,6 +16,7 @@ import {
     FlexItem,
     PageSection,
     Title,
+    Truncate,
 } from '@patternfly/react-core';
 import { useMediaQuery } from 'react-responsive';
 
@@ -32,6 +33,7 @@ import CollectionFormDrawer from './CollectionFormDrawer';
 import { generateRequest } from './converter';
 import { Collection } from './types';
 import useCollection from './hooks/useCollection';
+import CollectionsFormModal from './CollectionFormModal';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
@@ -52,6 +54,7 @@ function CollectionsFormPage({
 
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [modalCollectionId, setModalCollectionId] = useState<string | null>(null);
 
     const {
         isOpen: menuIsOpen,
@@ -131,6 +134,21 @@ function CollectionsFormPage({
             });
     }
 
+    const collectionTableCells = [
+        {
+            name: 'Name',
+            render: ({ id, name }) => (
+                <Button variant="link" isInline onClick={() => setModalCollectionId(id)}>
+                    {name}
+                </Button>
+            ),
+        },
+        {
+            name: 'Description',
+            render: ({ description }) => <Truncate content={description} />,
+        },
+    ];
+
     let content: ReactElement | undefined;
 
     if (error) {
@@ -153,9 +171,7 @@ function CollectionsFormPage({
                 isDrawerOpen={isDrawerOpen}
                 toggleDrawer={toggleDrawer}
                 onSubmit={onSubmit}
-                appendTableLinkAction={() => {
-                    /* TODO */
-                }}
+                collectionTableCells={collectionTableCells}
                 headerContent={
                     <>
                         <Breadcrumb className="pf-u-my-xs pf-u-px-lg pf-u-py-md">
@@ -230,11 +246,11 @@ function CollectionsFormPage({
                                 )}
                                 {isDrawerOpen ? (
                                     <Button variant="secondary" onClick={closeDrawer}>
-                                        Hide collection results
+                                        Hide results
                                     </Button>
                                 ) : (
                                     <Button variant="secondary" onClick={openDrawer}>
-                                        Preview collection results
+                                        Preview results
                                     </Button>
                                 )}
                             </FlexItem>
@@ -249,6 +265,13 @@ function CollectionsFormPage({
     return (
         <PageSection className="pf-u-h-100" padding={{ default: 'noPadding' }}>
             {content}
+            {modalCollectionId && (
+                <CollectionsFormModal
+                    hasWriteAccessForCollections={hasWriteAccessForCollections}
+                    collectionId={modalCollectionId}
+                    onClose={() => setModalCollectionId(null)}
+                />
+            )}
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }) => (
                     <Alert

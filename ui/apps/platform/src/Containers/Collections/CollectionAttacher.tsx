@@ -1,24 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { Alert, Button, debounce, Flex, SearchInput, Truncate } from '@patternfly/react-core';
+import React, { ReactNode, useMemo, useState } from 'react';
+import { Alert, Button, debounce, Flex, SearchInput } from '@patternfly/react-core';
 
 import BacklogListSelector from 'Components/PatternFly/BacklogListSelector';
 import { CollectionResponse } from 'services/CollectionsService';
 import useEmbeddedCollections from './hooks/useEmbeddedCollections';
-
-const selectorListCells = [
-    {
-        name: 'Name',
-        render: ({ name }) => (
-            <Button variant="link" className="pf-u-pl-0" isInline>
-                {name}
-            </Button>
-        ),
-    },
-    {
-        name: 'Description',
-        render: ({ description }) => <Truncate content={description} />,
-    },
-];
 
 export type CollectionAttacherProps = {
     // A collection ID that should not be visible in the collection attacher component. This is
@@ -26,6 +11,7 @@ export type CollectionAttacherProps = {
     excludedCollectionId: string | null;
     initialEmbeddedCollections: CollectionResponse[];
     onSelectionChange: (collections: CollectionResponse[]) => void;
+    collectionTableCells: { name: string; render: (collection: CollectionResponse) => ReactNode }[];
 };
 
 function compareNameLowercase(search: string): (item: { name: string }) => boolean {
@@ -36,6 +22,7 @@ function CollectionAttacher({
     excludedCollectionId,
     initialEmbeddedCollections,
     onSelectionChange,
+    collectionTableCells,
 }: CollectionAttacherProps) {
     const [search, setSearch] = useState('');
     const embedded = useEmbeddedCollections(excludedCollectionId, initialEmbeddedCollections);
@@ -69,7 +56,7 @@ function CollectionAttacher({
                 onDeselectItem={({ id }) => detach(id)}
                 onSelectionChange={onSelectionChange}
                 rowKey={({ id }) => id}
-                cells={selectorListCells}
+                cells={collectionTableCells}
                 selectedLabel="Attached collections"
                 deselectedLabel="Detached collections"
                 selectButtonText="Attach"

@@ -17,7 +17,7 @@ import { CollectionPageAction } from './collections.utils';
 import CollectionResults from './CollectionResults';
 import { Collection } from './types';
 import { parseCollection } from './converter';
-import CollectionForm from './CollectionForm';
+import CollectionForm, { CollectionFormProps } from './CollectionForm';
 
 export type CollectionFormDrawerProps = {
     hasWriteAccessForCollections: boolean;
@@ -34,9 +34,7 @@ export type CollectionFormDrawerProps = {
     toggleDrawer: (isOpen: boolean) => void;
     headerContent?: ReactElement;
     onSubmit: (collection: Collection) => Promise<void>;
-    /* Callback used when clicking on a collection name in the CollectionAttacher section. If
-    left undefined, collection names will not be linked. */
-    appendTableLinkAction?: (collectionId: string) => void;
+    collectionTableCells: CollectionFormProps['collectionTableCells'];
 };
 
 function CollectionFormDrawer({
@@ -48,6 +46,7 @@ function CollectionFormDrawer({
     isDrawerOpen,
     toggleDrawer,
     onSubmit,
+    collectionTableCells,
 }: CollectionFormDrawerProps) {
     const initialData = parseCollection(collectionData.collection);
     const initialEmbeddedCollections = collectionData.embeddedCollections;
@@ -69,9 +68,11 @@ function CollectionFormDrawer({
                             <DrawerHead>
                                 <Title headingLevel="h2">Collection results</Title>
                                 <Text>See a preview of current matches.</Text>
-                                <DrawerActions>
-                                    <DrawerCloseButton onClick={() => toggleDrawer(false)} />
-                                </DrawerActions>
+                                {!isInlineDrawer && (
+                                    <DrawerActions>
+                                        <DrawerCloseButton onClick={() => toggleDrawer(false)} />
+                                    </DrawerActions>
+                                )}
                             </DrawerHead>
                             <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
                                 <CollectionResults />
@@ -93,6 +94,7 @@ function CollectionFormDrawer({
                                 initialData={initialData}
                                 initialEmbeddedCollections={initialEmbeddedCollections}
                                 onSubmit={onSubmit}
+                                collectionTableCells={collectionTableCells}
                             />
                         )}
                     </DrawerContentBody>

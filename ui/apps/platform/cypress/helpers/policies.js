@@ -26,14 +26,14 @@ const routeMatcherMap = {
 };
 
 export function visitPolicies(staticResponseMap) {
-    visit(policiesUrl, { routeMatcherMap }, staticResponseMap);
+    visit(policiesUrl, routeMatcherMap, staticResponseMap);
 
     cy.get('h1:contains("Policy management")');
     cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
 }
 
 export function visitPoliciesFromLeftNav() {
-    visitFromLeftNavExpandable('Platform Configuration', 'Policy Management', { routeMatcherMap });
+    visitFromLeftNavExpandable('Platform Configuration', 'Policy Management', routeMatcherMap);
 
     cy.get('h1:contains("Policy management")');
     cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
@@ -47,11 +47,7 @@ export function visitPolicy(policyId, staticResponseMap) {
         },
     };
 
-    visit(
-        `${policiesUrl}/${policyId}`,
-        { routeMatcherMap: routeMatcherMapPolicy },
-        staticResponseMap
-    );
+    visit(`${policiesUrl}/${policyId}`, routeMatcherMapPolicy, staticResponseMap);
     cy.get('h2:contains("Policy details")');
 }
 

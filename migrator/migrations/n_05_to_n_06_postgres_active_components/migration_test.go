@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_05_to_n_06_postgres_active_components/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_05_to_n_06_postgres_active_components/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
@@ -18,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/env"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/postgres"
@@ -63,7 +64,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 }
 
 var (
-	deploymentID  = "depA"
+	deploymentID  = "536c3ce3-aa06-49fb-b6de-a056a03c545c"
 	componentName = "bash"
 	os            = []string{"rhel:8", "debian:10"}
 	versions      = []string{"v1", "v2"}
@@ -207,7 +208,7 @@ func (s *postgresMigrationSuite) verify(newStore pgStore.Store, images []*pkgSch
 }
 
 func (s *postgresMigrationSuite) populateImages(images []*pkgSchema.Images) {
-	pkgSchema.ApplySchemaForTable(s.ctx, s.postgresDB.GetGormDB(), pkgSchema.ImagesSchema.Table)
+	pgutils.CreateTableFromModel(s.ctx, s.postgresDB.GetGormDB(), pkgSchema.CreateTableImagesStmt)
 	imageTable := s.postgresDB.GetGormDB().Table(pkgSchema.ImagesSchema.Table).Model(pkgSchema.CreateTableImagesStmt.GormModel)
 	s.NoError(imageTable.Create(images).Error)
 }

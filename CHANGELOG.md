@@ -1,3 +1,4 @@
+
 # Changelog
 Entries in this file should be limited to:
 -  Any changes that introduce a deprecation in functionality, OR
@@ -51,6 +52,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-13265: Fix missing rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
 - ROX-13500: Previously, deployment YAML check on V1 CronJob workload would cause Central to panic. This is now fixed.
 - `cves.ids` field of `storage.VulnerabilityRequest` object, which is in the response of `VulnerabilityRequestService` (`/v1/cve/requests/`) endpoints, has been renamed to `cves.cves`.
+- ROX-13347: Vulnerability reporting scopes specifying cluster and/or namespace names now perform exact matches on those entities, as opposed to the erroneous prefix match.
+- ROX-9350: The compliance container no longer mounts the entire host root to prevent a recursive mount of other pods' persistent volumes.
 
 ## [3.72.0]
 

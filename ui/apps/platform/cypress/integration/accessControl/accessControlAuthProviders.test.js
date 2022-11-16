@@ -31,7 +31,7 @@ const routeMatcherMap = {
 };
 
 function visitAuthProviders(staticResponseMap) {
-    visit(authProvidersUrl, { routeMatcherMap }, staticResponseMap);
+    visit(authProvidersUrl, routeMatcherMap, staticResponseMap);
 
     cy.get(selectors.breadcrumbNav).should('not.exist');
     cy.get(`${selectors.h1}:contains("${h1}")`);
@@ -41,7 +41,7 @@ function visitAuthProviders(staticResponseMap) {
 }
 
 function visitAuthProviderById(id, staticResponseMap) {
-    visit(`${authProvidersUrl}/${id}`, { routeMatcherMap }, staticResponseMap);
+    visit(`${authProvidersUrl}/${id}`, routeMatcherMap, staticResponseMap);
 }
 
 describe('Access Control Auth providers', () => {

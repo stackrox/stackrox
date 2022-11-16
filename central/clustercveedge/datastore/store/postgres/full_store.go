@@ -32,14 +32,14 @@ type fullStoreImpl struct {
 
 func (f *fullStoreImpl) Upsert(_ context.Context, _ ...converter.ClusterCVEParts) error {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return utils.Should(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
+		return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
 	}
 	return nil
 }
 
 func (f *fullStoreImpl) Delete(_ context.Context, _ ...string) error {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return utils.Should(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
+		return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
 	}
 	return nil
 }

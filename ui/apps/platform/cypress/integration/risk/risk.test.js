@@ -1,6 +1,5 @@
 import { selectors as RiskPageSelectors } from '../../constants/RiskPage';
 import withAuth from '../../helpers/basicAuth';
-import { reachNetworkGraph } from '../../helpers/networkGraph';
 import {
     deploymentswithprocessinfoAlias,
     deploymentscountAlias,
@@ -144,9 +143,7 @@ describe('Risk page', () => {
         it('should navigate to network page with selected deployment', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
-            reachNetworkGraph(() => {
-                viewRiskDeploymentInNetworkGraph();
-            });
+            viewRiskDeploymentInNetworkGraph();
         });
 
         const searchPlaceholderText = 'Add one or more resource filters';
