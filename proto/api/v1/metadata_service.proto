@@ -23,6 +23,9 @@ message Metadata {
 
     // Do not use this field. It will always contain "VALID"
     LicenseStatus license_status = 4 [deprecated = true];
+
+    string central_id = 5;
+    string organization_id = 6;
 }
 
 message TrustInfo {

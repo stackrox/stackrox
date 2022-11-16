@@ -13,6 +13,7 @@ type Telemeter interface {
 // Config represents the central instance telemetry configuration.
 type Config struct {
 	ID       string
+	OrgID    string
 	APIPaths []string
 	Identity map[string]any
 }

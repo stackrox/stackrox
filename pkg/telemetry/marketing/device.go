@@ -14,9 +14,15 @@ import (
 )
 
 const annotation = "stackrox.com/telemetry-apipaths"
+const orgID = "stackrox.com/organization-id"
+
+var config *Config
 
 // GetDeviceConfig collects the central instance telemetry configuration.
 func GetDeviceConfig() (*Config, error) {
+	if config != nil {
+		return config, nil
+	}
 	rc, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create k8s config")
@@ -42,8 +48,9 @@ func GetDeviceConfig() (*Config, error) {
 	}
 	paths := d.GetAnnotations()[annotation]
 
-	return &Config{
+	config = &Config{
 		ID:       string(d.GetUID()),
+		OrgID:    d.GetAnnotations()[orgID],
 		APIPaths: strings.Split(paths, ","),
 		Identity: map[string]any{
 			"Central version":    version.GetMainVersion(),
@@ -51,5 +58,6 @@ func GetDeviceConfig() (*Config, error) {
 			"Orchestrator":       orchestrator,
 			"Kubernetes version": v.GitVersion,
 		},
-	}, nil
+	}
+	return config, nil
 }
