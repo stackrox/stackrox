@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
-	"github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
+	service2 "github.com/stackrox/rox/sensor/kubernetes/store/service"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -16,7 +16,7 @@ type endpointManager interface {
 	OnDeploymentCreateOrUpdate(deployment *deploymentWrap)
 	OnDeploymentRemove(deployment *deploymentWrap)
 
-	OnServiceCreate(svc *servicewrapper.SelectorWrap)
+	OnServiceCreate(svc *store.SelectorWrap)
 	OnServiceUpdateOrRemove(namespace string, sel selector.Selector)
 
 	OnNodeCreate(node *nodeWrap)
@@ -159,7 +159,7 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 	targetInfo := clusterentities.EndpointTargetInfo{
 		PortName: port.Name,
 	}
-	if portCfg := deployment.portConfigs[servicewrapper.PortRefOf(port)]; portCfg != nil {
+	if portCfg := deployment.portConfigs[service2.PortRefOf(port)]; portCfg != nil {
 		targetInfo.ContainerPort = uint16(portCfg.ContainerPort)
 	} else {
 		targetInfo.ContainerPort = uint16(port.TargetPort.IntValue())
@@ -178,7 +178,7 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 	}
 }
 
-func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWrap, svc *servicewrapper.SelectorWrap, data *clusterentities.EntityData) {
+func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWrap, svc *store.SelectorWrap, data *clusterentities.EntityData) {
 	var allNodeIPs []net.IPAddress
 	if svc.Spec.Type == v1.ServiceTypeLoadBalancer || svc.Spec.Type == v1.ServiceTypeNodePort {
 		for _, node := range m.nodeStore.getNodes() {
@@ -192,7 +192,7 @@ func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWr
 	}
 }
 
-func (m *endpointManagerImpl) OnServiceCreate(svc *servicewrapper.SelectorWrap) {
+func (m *endpointManagerImpl) OnServiceCreate(svc *store.SelectorWrap) {
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.Selector) {
 		update := &clusterentities.EntityData{}

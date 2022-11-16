@@ -1,4 +1,4 @@
-package servicewrapper
+package service
 
 import (
 	v1 "k8s.io/api/core/v1"

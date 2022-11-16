@@ -3,8 +3,6 @@ package store
 import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/sensor/common/store/deployment"
-	"github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -13,7 +11,7 @@ import (
 type DeploymentStore interface {
 	GetAll() []*storage.Deployment
 	Get(id string) *storage.Deployment
-	BuildDeploymentWithDependencies(id string, dependencies deployment.Dependencies) (*storage.Deployment, error)
+	BuildDeploymentWithDependencies(id string, dependencies Dependencies) (*storage.Deployment, error)
 }
 
 // PodStore provides functionality to fetch all pods from underlying store.
@@ -44,15 +42,14 @@ type ServiceAccountStore interface {
 }
 
 // ServiceStore provides functionality for find services
-// TODO: Remove dependency from servicewrapper package
 type ServiceStore interface {
 	UpsertRoute(route *routeV1.Route)
 	RemoveRoute(route *routeV1.Route)
-	UpsertService(svc *servicewrapper.SelectorWrap)
-	NodePortServicesSnapshot() []*servicewrapper.SelectorWrap
+	UpsertService(svc *SelectorWrap)
+	NodePortServicesSnapshot() []*SelectorWrap
 	RemoveService(svc *v1.Service)
-	GetMatchingServicesWithRoutes(namespace string, labels map[string]string) []servicewrapper.SelectorRouteWrap
-	GetService(namespace, name string) *servicewrapper.SelectorWrap
-	GetRoutesForService(svc *servicewrapper.SelectorWrap) []*routeV1.Route
+	GetMatchingServicesWithRoutes(namespace string, labels map[string]string) []SelectorRouteWrap
+	GetService(namespace, name string) *SelectorWrap
+	GetRoutesForService(svc *SelectorWrap) []*routeV1.Route
 	OnNamespaceDeleted(ns string)
 }

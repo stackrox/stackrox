@@ -1,32 +1,12 @@
-package servicewrapper
+package service
 
 import (
-	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/sensor/common/selector"
+	commonStore "github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/kubernetes/store/service"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-// SelectorRouteWrap wraps a service with routes and selectors
-type SelectorRouteWrap struct {
-	*SelectorWrap
-	Routes []*routeV1.Route
-}
-
-// SelectorWrap wraps a service with selectors
-type SelectorWrap struct {
-	*v1.Service
-	Selector selector.Selector
-}
-
-// WrapService returns a service object with selector objects
-func WrapService(svc *v1.Service) *SelectorWrap {
-	return &SelectorWrap{
-		Service:  svc,
-		Selector: selector.CreateSelector(svc.Spec.Selector, selector.EmptyMatchesNothing()),
-	}
-}
 
 // getPortMatchFunc takes a target port specified in a route, and returns a function that takes in a
 // service port, and returns whether the route is targeting that port of the service or not.
@@ -48,8 +28,7 @@ func exposureInfoFromPort(template *storage.PortConfig_ExposureInfo, port v1.Ser
 	return out
 }
 
-// Exposure returns port exposure info
-func (s *SelectorRouteWrap) Exposure() map[PortRef][]*storage.PortConfig_ExposureInfo {
+func Exposure(s *commonStore.SelectorRouteWrap) map[service.PortRef][]*storage.PortConfig_ExposureInfo {
 	if s.Spec.Type == v1.ServiceTypeExternalName {
 		return nil
 	}
@@ -75,9 +54,9 @@ func (s *SelectorRouteWrap) Exposure() map[PortRef][]*storage.PortConfig_Exposur
 		}
 	}
 
-	result := make(map[PortRef][]*storage.PortConfig_ExposureInfo, len(s.Spec.Ports))
+	result := make(map[service.PortRef][]*storage.PortConfig_ExposureInfo, len(s.Spec.Ports))
 	for _, port := range s.Spec.Ports {
-		ref := PortRefOf(port)
+		ref := service.PortRefOf(port)
 		exposureInfo := exposureInfoFromPort(exposureTemplate, port)
 		result[ref] = append(result[ref], exposureInfo)
 	}
@@ -101,7 +80,7 @@ func (s *SelectorRouteWrap) Exposure() map[PortRef][]*storage.PortConfig_Exposur
 				if !matchFunc(&s.Spec.Ports[i]) {
 					continue
 				}
-				ref := PortRefOf(port)
+				ref := service.PortRefOf(port)
 				exposureInfo := exposureInfoFromPort(routeExposureTemplate, port)
 				result[ref] = append(result[ref], exposureInfo)
 				break // Only one port will ever match
@@ -110,7 +89,7 @@ func (s *SelectorRouteWrap) Exposure() map[PortRef][]*storage.PortConfig_Exposur
 			// This is the case where route.Spec.Port is not specified, in which case
 			// the route targets all ports on the service.
 			for _, port := range s.Spec.Ports {
-				ref := PortRefOf(port)
+				ref := service.PortRefOf(port)
 				exposureInfo := exposureInfoFromPort(routeExposureTemplate, port)
 				result[ref] = append(result[ref], exposureInfo)
 			}

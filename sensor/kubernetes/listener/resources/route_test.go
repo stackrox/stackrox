@@ -8,8 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
-	"github.com/stackrox/rox/sensor/common/store/service"
-	"github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
+	service2 "github.com/stackrox/rox/sensor/kubernetes/store/service"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,7 +66,7 @@ func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(names
 	return nil
 }
 
-func (m *mockPortExposureReconciler) UpdateExposureOnServiceCreate(svc servicewrapper.SelectorRouteWrap) []*central.SensorEvent {
+func (m *mockPortExposureReconciler) UpdateExposureOnServiceCreate(svc store.SelectorRouteWrap) []*central.SensorEvent {
 	m.orderedCalls = append(m.orderedCalls,
 		call{
 			"UpdateExposureOnServiceCreate",
@@ -86,7 +85,7 @@ func (m *mockEndpointManager) OnDeploymentCreateOrUpdate(*deploymentWrap) {
 func (m *mockEndpointManager) OnDeploymentRemove(*deploymentWrap) {
 }
 
-func (m *mockEndpointManager) OnServiceCreate(*servicewrapper.SelectorWrap) {
+func (m *mockEndpointManager) OnServiceCreate(*store.SelectorWrap) {
 }
 
 func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selector.Selector) {
@@ -98,9 +97,9 @@ func (m *mockEndpointManager) OnNodeCreate(*nodeWrap) {
 func (m *mockEndpointManager) OnNodeUpdateOrRemove() {
 }
 
-func getSvcWithRoutes(svc *v1.Service, routes ...*routeV1.Route) servicewrapper.SelectorRouteWrap {
-	return servicewrapper.SelectorRouteWrap{
-		SelectorWrap: servicewrapper.WrapService(svc),
+func getSvcWithRoutes(svc *v1.Service, routes ...*routeV1.Route) store.SelectorRouteWrap {
+	return store.SelectorRouteWrap{
+		SelectorWrap: store.WrapService(svc),
 		Routes:       routes,
 	}
 }
@@ -128,7 +127,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) SetupTest() {
 	suite.mockEndpointManager = &mockEndpointManager{}
 
 	suite.depStore = newDeploymentStore()
-	suite.serviceStore = service.NewServiceStore()
+	suite.serviceStore = service2.NewServiceStore()
 	suite.serviceDispatcher = newServiceDispatcher(suite.serviceStore, suite.depStore, suite.mockEndpointManager, suite.mockReconciler)
 	suite.routeDispatcher = newRouteDispatcher(suite.serviceStore, suite.mockReconciler)
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/selector"
-	"github.com/stackrox/rox/sensor/common/store/deployment"
+	"github.com/stackrox/rox/sensor/common/store"
 )
 
 // DeploymentStore stores deployments.
@@ -144,7 +144,7 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 }
 
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies
-func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependencies deployment.Dependencies) (*storage.Deployment, error) {
+func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, error) {
 	wrap := ds.getWrap(id)
 	clonedWrap := wrap.Clone()
 

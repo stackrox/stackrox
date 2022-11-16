@@ -10,8 +10,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/openshift/api/route/v1"
 	storage "github.com/stackrox/rox/generated/storage"
-	deployment "github.com/stackrox/rox/sensor/common/store/deployment"
-	servicewrapper "github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
+	store "github.com/stackrox/rox/sensor/common/store"
 	v10 "k8s.io/api/core/v1"
 )
 
@@ -39,7 +38,7 @@ func (m *MockDeploymentStore) EXPECT() *MockDeploymentStoreMockRecorder {
 }
 
 // BuildDeploymentWithDependencies mocks base method.
-func (m *MockDeploymentStore) BuildDeploymentWithDependencies(id string, dependencies deployment.Dependencies) (*storage.Deployment, error) {
+func (m *MockDeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildDeploymentWithDependencies", id, dependencies)
 	ret0, _ := ret[0].(*storage.Deployment)
@@ -320,10 +319,10 @@ func (m *MockServiceStore) EXPECT() *MockServiceStoreMockRecorder {
 }
 
 // GetMatchingServicesWithRoutes mocks base method.
-func (m *MockServiceStore) GetMatchingServicesWithRoutes(namespace string, labels map[string]string) []servicewrapper.SelectorRouteWrap {
+func (m *MockServiceStore) GetMatchingServicesWithRoutes(namespace string, labels map[string]string) []store.SelectorRouteWrap {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMatchingServicesWithRoutes", namespace, labels)
-	ret0, _ := ret[0].([]servicewrapper.SelectorRouteWrap)
+	ret0, _ := ret[0].([]store.SelectorRouteWrap)
 	return ret0
 }
 
@@ -334,7 +333,7 @@ func (mr *MockServiceStoreMockRecorder) GetMatchingServicesWithRoutes(namespace,
 }
 
 // GetRoutesForService mocks base method.
-func (m *MockServiceStore) GetRoutesForService(svc *servicewrapper.SelectorWrap) []*v1.Route {
+func (m *MockServiceStore) GetRoutesForService(svc *store.SelectorWrap) []*v1.Route {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRoutesForService", svc)
 	ret0, _ := ret[0].([]*v1.Route)
@@ -348,10 +347,10 @@ func (mr *MockServiceStoreMockRecorder) GetRoutesForService(svc interface{}) *go
 }
 
 // GetService mocks base method.
-func (m *MockServiceStore) GetService(namespace, name string) *servicewrapper.SelectorWrap {
+func (m *MockServiceStore) GetService(namespace, name string) *store.SelectorWrap {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetService", namespace, name)
-	ret0, _ := ret[0].(*servicewrapper.SelectorWrap)
+	ret0, _ := ret[0].(*store.SelectorWrap)
 	return ret0
 }
 
@@ -362,10 +361,10 @@ func (mr *MockServiceStoreMockRecorder) GetService(namespace, name interface{}) 
 }
 
 // NodePortServicesSnapshot mocks base method.
-func (m *MockServiceStore) NodePortServicesSnapshot() []*servicewrapper.SelectorWrap {
+func (m *MockServiceStore) NodePortServicesSnapshot() []*store.SelectorWrap {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NodePortServicesSnapshot")
-	ret0, _ := ret[0].([]*servicewrapper.SelectorWrap)
+	ret0, _ := ret[0].([]*store.SelectorWrap)
 	return ret0
 }
 
@@ -424,7 +423,7 @@ func (mr *MockServiceStoreMockRecorder) UpsertRoute(route interface{}) *gomock.C
 }
 
 // UpsertService mocks base method.
-func (m *MockServiceStore) UpsertService(svc *servicewrapper.SelectorWrap) {
+func (m *MockServiceStore) UpsertService(svc *store.SelectorWrap) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "UpsertService", svc)
 }

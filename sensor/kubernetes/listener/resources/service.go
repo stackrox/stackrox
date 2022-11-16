@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
-	"github.com/stackrox/rox/sensor/common/store/service/servicewrapper"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
@@ -39,7 +38,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 		sel = oldWrap.Selector
 	}
 	if action == central.ResourceAction_UPDATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
-		newWrap := servicewrapper.WrapService(svc)
+		newWrap := store.WrapService(svc)
 		sh.serviceStore.UpsertService(newWrap)
 		if sel != nil {
 			sel = selector.Or(sel, newWrap.Selector)
@@ -51,7 +50,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	}
 	// If OnNamespaceDelete is called before we need to get the selector from the received object
 	if sel == nil {
-		wrap := servicewrapper.WrapService(svc)
+		wrap := store.WrapService(svc)
 		sel = wrap.Selector
 	}
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
@@ -64,9 +63,9 @@ func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel se
 }
 
 func (sh *serviceDispatcher) processCreate(svc *v1.Service) *component.ResourceEvent {
-	svcWrap := servicewrapper.WrapService(svc)
+	svcWrap := store.WrapService(svc)
 	sh.serviceStore.UpsertService(svcWrap)
-	events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(servicewrapper.SelectorRouteWrap{
+	events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(store.SelectorRouteWrap{
 		SelectorWrap: svcWrap,
 		Routes:       sh.serviceStore.GetRoutesForService(svcWrap),
 	})
