@@ -8,13 +8,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_03_to_n_04_postgres_deployments/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_03_to_n_04_postgres_deployments/postgres"
 	"github.com/stackrox/rox/migrator/types"
 	rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
@@ -33,14 +34,14 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = pkgSchema.DeploymentsSchema
+	schema    = frozenSchema.DeploymentsSchema
 	log       = loghelper.LogWrapper{}
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableDeploymentsStmt)
 	var deployments []*storage.Deployment
 	err := walk(ctx, legacyStore, func(obj *storage.Deployment) error {
 		deployments = append(deployments, obj)

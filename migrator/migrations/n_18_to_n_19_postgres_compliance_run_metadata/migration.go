@@ -8,12 +8,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_18_to_n_19_postgres_compliance_run_metadata/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_18_to_n_19_postgres_compliance_run_metadata/postgres"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
@@ -35,14 +36,14 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = pkgSchema.ComplianceRunMetadataSchema
+	schema    = frozenSchema.ComplianceRunMetadataSchema
 	log       = loghelper.LogWrapper{}
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableComplianceRunMetadataStmt)
 	var complianceRunMetadata []*storage.ComplianceRunMetadata
 	err := walk(ctx, legacyStore, func(obj *storage.ComplianceRunMetadata) error {
 		complianceRunMetadata = append(complianceRunMetadata, obj)
