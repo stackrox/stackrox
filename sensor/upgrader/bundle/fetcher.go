@@ -29,12 +29,12 @@ func (f *fetcher) FetchBundle() (Contents, error) {
 	}
 	var buf bytes.Buffer
 	if err := new(jsonpb.Marshaler).Marshal(&buf, resByID); err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 
 	req, err := http.NewRequest(http.MethodPost, "/api/extensions/clusters/zip", &buf)
 	if err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 
 	resp, err := f.ctx.DoCentralHTTPRequest(req)

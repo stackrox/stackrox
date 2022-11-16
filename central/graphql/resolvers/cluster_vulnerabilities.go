@@ -315,7 +315,7 @@ func withOpenShiftTypeFiltering(q string) string {
 
 func (resolver *clusterCVEResolver) clusterVulnerabilityScopeContext(ctx context.Context) context.Context {
 	if ctx == nil {
-		err := utils.Should(errors.New("argument 'ctx' is nil"))
+		err := utils.ShouldErr(errors.New("argument 'ctx' is nil"))
 		if err != nil {
 			log.Error(err)
 		}

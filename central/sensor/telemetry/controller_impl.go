@@ -184,7 +184,7 @@ func (c *controller) PullClusterInfo(ctx context.Context, cb ClusterInfoCallback
 func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDataResponse) error {
 	requestID := resp.GetRequestId()
 	if resp.GetPayload() == nil {
-		return utils.Should(errors.Errorf("received a telemetry response with an empty payload for requested ID %s", requestID))
+		return utils.ShouldErr(errors.Errorf("received a telemetry response with an empty payload for requested ID %s", requestID))
 	}
 
 	var retC chan *central.TelemetryResponsePayload

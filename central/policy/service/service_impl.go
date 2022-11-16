@@ -733,7 +733,7 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 	if len(missingIndices) > 0 {
 		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be retrieved. Check the error details for a list of policies that could not be found").WithDetails(errDetails)
 		if err != nil {
-			return nil, utils.Should(errors.Errorf("unexpected error creating status proto: %v", err))
+			return nil, utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
 		}
 		return nil, statusMsg.Err()
 	}

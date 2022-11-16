@@ -33,7 +33,7 @@ func (g *grpcMetricsImpl) getOrCreateAllMetrics(path string) *perPathGRPCMetrics
 	perPathMetric := g.allMetrics[path]
 	if perPathMetric == nil {
 		panicLRU, err := lru.New(cacheSize)
-		err = utils.Should(errors.Wrap(err, "error creating an lru"))
+		err = utils.ShouldErr(errors.Wrap(err, "error creating an lru"))
 		if err != nil {
 			return nil
 		}

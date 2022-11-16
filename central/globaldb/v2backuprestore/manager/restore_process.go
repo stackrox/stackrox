@@ -76,7 +76,7 @@ type restoreProcess struct {
 func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreRequestHeader, handlerFuncs []common.RestoreFileHandlerFunc, data io.Reader) (*restoreProcess, error) {
 	mfFiles := header.GetManifest().GetFiles()
 	if len(mfFiles) != len(handlerFuncs) {
-		return nil, utils.Should(errors.Errorf("mismatch: %d handler functions provided for %d files in the manifest", len(handlerFuncs), len(mfFiles)))
+		return nil, utils.ShouldErr(errors.Errorf("mismatch: %d handler functions provided for %d files in the manifest", len(handlerFuncs), len(mfFiles)))
 	}
 
 	files := make([]*restoreFile, 0, len(mfFiles))
@@ -99,7 +99,7 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 
 	resumableDataReader, initAttach, detachEvents := ioutils.NewResumableReader(crc32.NewIEEE())
 	if err := initAttach.Attach(data, 0, nil); err != nil {
-		return nil, utils.Should(errors.Wrap(err, "could not attach initial reader to resumable reader"))
+		return nil, utils.ShouldErr(errors.Wrap(err, "could not attach initial reader to resumable reader"))
 	}
 
 	p := &restoreProcess{

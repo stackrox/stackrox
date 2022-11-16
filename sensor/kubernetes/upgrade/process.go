@@ -72,7 +72,7 @@ func newProcess(trigger *central.SensorUpgradeTrigger, checkInClient central.Sen
 	}
 	k8sClient, err := kubernetes.NewForConfig(&config)
 	if err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 	p.k8sClient = k8sClient
 
@@ -220,7 +220,7 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 
 			obj, _ := ev.Object.(metav1.Object)
 			if obj == nil {
-				return utils.Should(errors.Errorf("object returned by watch is a non-k8s object of type %T", ev.Object))
+				return utils.ShouldErr(errors.Errorf("object returned by watch is a non-k8s object of type %T", ev.Object))
 			}
 
 			if obj.GetName() != name {
