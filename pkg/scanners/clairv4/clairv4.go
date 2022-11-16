@@ -194,12 +194,12 @@ func (c *clairv4) index(manifest *claircore.Manifest) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, c.indexEndpoint, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-
 	return retry.WithRetry(func() error {
+		req, err := http.NewRequest(http.MethodPost, c.indexEndpoint, bytes.NewReader(body))
+		if err != nil {
+			return err
+		}
+
 		resp, err := c.client.Do(req)
 		if err != nil {
 			return err
@@ -230,14 +230,15 @@ func (c *clairv4) index(manifest *claircore.Manifest) error {
 func (c *clairv4) getVulnerabilityReport(digest claircore.Digest) (*claircore.VulnerabilityReport, error) {
 	// FIXME: go1.19 adds https://pkg.go.dev/net/url#JoinPath, which seems more idiomatic.
 	url := strings.Join([]string{c.vulnerabilityReportEndpoint, digest.String()}, "/")
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
 
 	var vulnReport claircore.VulnerabilityReport
 	// Ignore any error returned. Just assume
-	err = retry.WithRetry(func() error {
+	err := retry.WithRetry(func() error {
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			return err
+		}
+
 		resp, err := c.client.Do(req)
 		if err != nil {
 			return err
