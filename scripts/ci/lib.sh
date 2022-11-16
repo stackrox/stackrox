@@ -1322,8 +1322,8 @@ __EOM__
             get_junit_parse_cli || true
         fi
         if command -v junit-parse >/dev/null 2>&1; then
-            local junit_file_names
-            junit_file_names=( "$(find "${ARTIFACT_DIR}" -type f -name '*.xml' -print0 | xargs -0)" ) || true
+            local junit_file_names=()
+            while IFS='' read -r line; do junit_file_names+=("$line"); done < <(find "${ARTIFACT_DIR}" -type f -name '*.xml' || true)
             local check_slack_attachments
             check_slack_attachments=$(junit-parse "${junit_file_names[@]}") || exitstatus="$?"
             if [[ "$exitstatus" == "0" ]]; then
