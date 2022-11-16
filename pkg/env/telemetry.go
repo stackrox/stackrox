@@ -14,9 +14,6 @@ var (
 	// TelemetryFrequency is the frequency at which we will report telemetry
 	TelemetryFrequency = registerDurationSetting("ROX_TELEMETRY_FREQUENCY", 24*time.Hour)
 
-	// AmplitudeAPIKey can be empty to disable marketing telemetry collection
-	AmplitudeAPIKey = RegisterSetting("ROX_AMPLITUDE_API_KEY", AllowEmpty())
-
 	// SegmentAPIKey can be empty to disable marketing telemetry collection
 	SegmentAPIKey = RegisterSetting("ROX_SEGMENT_API_KEY", AllowEmpty())
 )
