@@ -14,6 +14,10 @@ export function getIsDefaultAccessScopeId(id: string): boolean {
     return Object.values(defaultAccessScopeIds).includes(id);
 }
 
+export function getIsUnrestrictedAccessScopeId(id: string): boolean {
+    return id === defaultAccessScopeIds.Unrestricted || id === defaultAccessScopeIds.UnrestrictedPostgres
+}
+
 export type SimpleAccessScopeNamespace = {
     clusterName: string;
     namespaceName: string;
