@@ -92,7 +92,7 @@ func (p *backendImpl) RefreshURL() string {
 func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	restPath := strings.TrimPrefix(r.URL.Path, p.pathPrefix)
 	if len(restPath) == len(r.URL.Path) {
-		return nil, utils.Should(httputil.Errorf(http.StatusNotFound,
+		return nil, utils.ShouldErr(httputil.Errorf(http.StatusNotFound,
 			"invalid URL %q, expected sub-path of %q", r.URL.Path, p.pathPrefix))
 	}
 

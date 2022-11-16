@@ -690,7 +690,7 @@ func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, a
 
 func (resolver *clusterResolver) clusterScopeContext(ctx context.Context) context.Context {
 	if ctx == nil {
-		err := utils.Should(errors.New("argument 'ctx' is nil"))
+		err := utils.ShouldErr(errors.New("argument 'ctx' is nil"))
 		if err != nil {
 			log.Error(err)
 		}

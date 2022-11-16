@@ -476,7 +476,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 				}
 			}
 		default:
-			return utils.Should(errors.Errorf("unknown status: %v", peerAndStatus.GetStatus()))
+			return utils.ShouldErr(errors.Errorf("unknown status: %v", peerAndStatus.GetStatus()))
 		}
 	}
 	if err := m.persistNetworkBaselines(modifiedDeploymentIDs, nil); err != nil {

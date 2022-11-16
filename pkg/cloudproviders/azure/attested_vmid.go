@@ -42,7 +42,7 @@ type attestedMetadata struct {
 func getAttestedVMID(ctx context.Context) (string, error) {
 	req, err := http.NewRequest(http.MethodGet, attestedMetadataBaseURL, nil)
 	if err != nil {
-		return "", utils.Should(err)
+		return "", utils.ShouldErr(err)
 	}
 	req = req.WithContext(ctx)
 

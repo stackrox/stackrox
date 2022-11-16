@@ -117,11 +117,11 @@ func instructions(c Config, mode mode) (string, error) {
 
 	tpl, err := helmTemplate.InitTemplate("temp").Parse(template)
 	if err != nil {
-		return "", utils.Should(err)
+		return "", utils.ShouldErr(err)
 	}
 	data, err := templates.ExecuteToBytes(tpl, &c)
 	if err != nil {
-		return "", utils.Should(err)
+		return "", utils.ShouldErr(err)
 	}
 
 	instructions := string(data)

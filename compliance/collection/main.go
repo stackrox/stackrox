@@ -82,7 +82,7 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 				}
 			}
 		default:
-			_ = utils.Should(errors.Errorf("Unhandled msg type: %T", t))
+			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}
 	}
 }

@@ -127,7 +127,7 @@ func renderAndExtractSingleFileContents(c Config, mode mode, imageFlavor default
 	}
 
 	if len(files) != 1 {
-		return nil, utils.Should(errors.Errorf("got unexpected number of files when rendering in mode %s: %d", mode, len(files)))
+		return nil, utils.ShouldErr(errors.Errorf("got unexpected number of files when rendering in mode %s: %d", mode, len(files)))
 	}
 	return files[0].Content, nil
 }
