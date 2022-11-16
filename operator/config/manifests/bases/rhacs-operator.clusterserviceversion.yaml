@@ -51,7 +51,7 @@ spec:
           to use rocksdb. If IsEnabled the operator will provision the Central DB
           or use an external DB if a connection string is provided.
         displayName: Is Enabled
-        path: central.db.enabled
+        path: central.db.isEnabled
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
           storage location of persistent data. Recommended for most users.
         displayName: Persistent volume claim

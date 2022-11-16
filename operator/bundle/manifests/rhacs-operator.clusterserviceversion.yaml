@@ -141,7 +141,7 @@ spec:
           to use rocksdb. If IsEnabled the operator will provision the Central DB
           or use an external DB if a connection string is provided.
         displayName: Is Enabled
-        path: central.db.enabled
+        path: central.db.isEnabled
       - description: Specify a secret that contains the password in the "password"
           data item. If omitted, the operator will auto-generate a DB password and
           store it in the "password" item in the "central-db-password" secret.

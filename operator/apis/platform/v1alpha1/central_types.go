@@ -165,7 +165,7 @@ type CentralDBSpec struct {
 	//+kubebuilder:validation:Default=Default
 	//+kubebuilder:default=Default
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
-	IsEnabled *CentralDBEnabled `json:"enabled,omitempty"`
+	IsEnabled *CentralDBEnabled `json:"isEnabled,omitempty"`
 
 	// Specify a secret that contains the password in the "password" data item.
 	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
