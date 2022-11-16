@@ -8,12 +8,10 @@ const configEndpoint = '/v1/config';
 
 const configAliasForGET = 'config';
 
-const requestConfigForGET = {
-    routeMatcherMap: {
-        [configAliasForGET]: {
-            method: 'GET',
-            url: configEndpoint,
-        },
+const routeMatcherMapForGET = {
+    [configAliasForGET]: {
+        method: 'GET',
+        url: configEndpoint,
     },
 };
 
@@ -22,13 +20,13 @@ const title = 'System Configuration';
 // visit
 
 export function visitSystemConfiguration() {
-    visit(basePath, requestConfigForGET);
+    visit(basePath, routeMatcherMapForGET);
 
     cy.get(`h1:contains("${title}")`);
 }
 
 export function visitSystemConfigurationFromLeftNav() {
-    visitFromLeftNavExpandable('Platform Configuration', title, requestConfigForGET);
+    visitFromLeftNavExpandable('Platform Configuration', title, routeMatcherMapForGET);
 
     cy.location('pathname').should('eq', basePath);
     cy.get(`h1:contains("${title}")`);
@@ -40,7 +38,7 @@ export function visitSystemConfigurationWithStaticResponseForPermissions(
     visitWithStaticResponseForPermissions(
         basePath,
         staticResponseForPermissions,
-        requestConfigForGET
+        routeMatcherMapForGET
     );
 
     cy.get(`h1:contains("${title}")`);
@@ -50,17 +48,15 @@ export function visitSystemConfigurationWithStaticResponseForPermissions(
 
 const configAliasForPUT = 'PUT_config';
 
-const requestConfigForPUT = {
-    routeMatcherMap: {
-        [configAliasForPUT]: {
-            method: 'PUT',
-            url: configEndpoint,
-        },
+const routeMatcherMapForPUT = {
+    [configAliasForPUT]: {
+        method: 'PUT',
+        url: configEndpoint,
     },
 };
 
 export function saveSystemConfiguration() {
     interactAndWaitForResponses(() => {
         cy.get('button:contains("Save")').click();
-    }, requestConfigForPUT);
+    }, routeMatcherMapForPUT);
 }

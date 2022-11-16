@@ -119,7 +119,7 @@ func buildUploadManifest(probeFilesInPackage map[string]*zip.File, existingFiles
 func (cmd *collectorSPUploadCommand) doFileUpload(manifest *v1.ProbeUploadManifest, data io.Reader) error {
 	totalSize, err := probeupload.AnalyzeManifest(manifest)
 	if err != nil {
-		return utils.Should(errors.Wrap(err, "generated invalid manifest"))
+		return utils.ShouldErr(errors.Wrap(err, "generated invalid manifest"))
 	}
 
 	manifestBytes, err := proto.Marshal(manifest)

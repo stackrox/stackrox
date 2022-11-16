@@ -160,7 +160,7 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 		backend = p.backend
 	})
 	if backend == nil {
-		return nil, utils.Should(errors.New("unexpected: backend was nil"))
+		return nil, utils.ShouldErr(errors.New("unexpected: backend was nil"))
 	}
 	return backend, nil
 }

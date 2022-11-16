@@ -36,8 +36,8 @@ type CollectionsTablePageProps = {
 };
 
 const sortOptions = {
-    sortFields: ['name', 'description', 'inUse'],
-    defaultSortOption: { field: 'name', direction: 'asc' } as const,
+    sortFields: ['Collection Name'],
+    defaultSortOption: { field: 'Collection Name', direction: 'asc' } as const,
 };
 
 function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTablePageProps) {
@@ -65,6 +65,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
         error: countError,
         refetch: countRefetch,
     } = useRestQuery(countQuery);
+
     const isDataAvailable = typeof listData !== 'undefined' && typeof countData !== 'undefined';
     const isLoading = !isDataAvailable && (listLoading || countLoading);
     const loadError = listError || countError;

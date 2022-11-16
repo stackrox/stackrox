@@ -27,19 +27,20 @@ const routeMatcherMap = {
  * For example, click View All button from System Health.
  */
 export function reachClusters(interactionCallback, staticResponseMap) {
-    interactAndWaitForResponses(interactionCallback, { routeMatcherMap }, staticResponseMap);
+    interactAndWaitForResponses(interactionCallback, routeMatcherMap, staticResponseMap);
 
     cy.get(selectors.clustersListHeading).contains('Clusters');
 }
 
 export function visitClustersFromLeftNav() {
-    visitFromLeftNavExpandable('Platform Configuration', 'Clusters', { routeMatcherMap });
+    visitFromLeftNavExpandable('Platform Configuration', 'Clusters', routeMatcherMap);
 
+    cy.location('pathname').should('eq', clustersUrl);
     cy.get(selectors.clustersListHeading).contains('Clusters');
 }
 
 export function visitClusters(staticResponseMap) {
-    visit(clustersUrl, { routeMatcherMap }, staticResponseMap);
+    visit(clustersUrl, routeMatcherMap, staticResponseMap);
 
     cy.get(selectors.clustersListHeading).contains('Clusters');
 }
@@ -61,11 +62,7 @@ export function visitClusterById(clusterId, staticResponseMap) {
             url: `${api.clusters.list}/${clusterId}`,
         },
     };
-    visit(
-        `${clustersUrl}/${clusterId}`,
-        { routeMatcherMap: routeMatcherMapClusterById },
-        staticResponseMap
-    );
+    visit(`${clustersUrl}/${clusterId}`, routeMatcherMapClusterById, staticResponseMap);
 
     cy.get(selectors.clustersListHeading).contains('Clusters');
 }

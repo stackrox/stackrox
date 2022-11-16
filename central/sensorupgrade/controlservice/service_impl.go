@@ -76,7 +76,7 @@ func (s *service) UpgradeCheckInFromSensor(ctx context.Context, req *central.Upg
 	if err := s.connectionManager.ProcessUpgradeCheckInFromSensor(ctx, clusterID, req); err != nil {
 		if errors.Is(err, upgradecontroller.ErrNoUpgradeInProgress) {
 			s, err := status.New(codes.Internal, err.Error()).WithDetails(&central.UpgradeCheckInResponseDetails_NoUpgradeInProgress{})
-			if utils.Should(err) == nil {
+			if utils.ShouldErr(err) == nil {
 				return nil, s.Err()
 			}
 		}

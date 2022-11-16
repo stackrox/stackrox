@@ -170,7 +170,7 @@ func (a *resourceLevelScopeCheckerCore) Allowed() bool {
 	}
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
-		if utils.Should(err) != nil {
+		if utils.ShouldErr(err) != nil {
 			return false
 		}
 		if scope.State == effectiveaccessscope.Included {
@@ -235,7 +235,7 @@ type clusterNamespaceLevelScopeCheckerCore struct {
 func (a *clusterNamespaceLevelScopeCheckerCore) Allowed() bool {
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
-		if utils.Should(err) != nil {
+		if utils.ShouldErr(err) != nil {
 			return false
 		}
 		if effectiveAccessScopeAllows(scope, a.resource, a.clusterID, a.namespace) {

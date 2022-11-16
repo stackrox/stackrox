@@ -87,7 +87,7 @@ func (r *SecretReconciliator) ReconcileSecret(ctx context.Context, name string, 
 	}
 
 	if generate == nil {
-		return pkgUtils.Should(errors.Errorf("secret %s should exist, but no generation logic has been specified", name))
+		return pkgUtils.ShouldErr(errors.Errorf("secret %s should exist, but no generation logic has been specified", name))
 	}
 
 	// Try to generate the secret, in order to fix it.

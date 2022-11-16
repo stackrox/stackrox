@@ -23,7 +23,7 @@ func GRPCClientSingleton() *Client {
 		var err error
 		scannerClient, err = dial(env.ScannerSlimGRPCEndpoint.Setting())
 		// If err is not nil, then there was a configuration error.
-		_ = utils.Should(err)
+		utils.Should(err)
 	})
 	return scannerClient
 }
