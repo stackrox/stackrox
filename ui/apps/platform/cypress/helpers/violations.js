@@ -18,13 +18,14 @@ const routeMatcherMap = {
 };
 
 export function visitViolationsFromLeftNav() {
-    visitFromLeftNav('Violations', { routeMatcherMap });
+    visitFromLeftNav('Violations', routeMatcherMap);
 
+    cy.location('pathname').should('eq', url);
     cy.get('h1:contains("Violations")');
 }
 
 export function visitViolations(staticResponseMap) {
-    visit(url, { routeMatcherMap }, staticResponseMap);
+    visit(url, routeMatcherMap, staticResponseMap);
 
     cy.get('h1:contains("Violations")');
 }
@@ -37,7 +38,7 @@ export function visitViolationsWithFixture(fixturePath) {
             alertscount: { body: { count } },
         };
 
-        visit(url, { routeMatcherMap }, staticResponseMap);
+        visit(url, routeMatcherMap, staticResponseMap);
 
         cy.get('h1:contains("Violations")');
     });
