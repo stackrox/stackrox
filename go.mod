@@ -50,7 +50,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.6.0
-	github.com/hashicorp/golang-lru v0.5.4
 	github.com/heimdalr/dag v1.2.1
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgconn v1.13.0
