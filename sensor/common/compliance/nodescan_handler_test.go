@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
@@ -19,7 +18,11 @@ func assertNoGoroutineLeaks(t *testing.T) {
 	)
 }
 func TestNodeScanHandler(t *testing.T) {
-	suite.Run(t, new(NodeScanHandlerTestSuite))
+	ctx, cancel := context.WithCancel(context.Background())
+	suite.Run(t, &NodeScanHandlerTestSuite{
+		ctx:    ctx,
+		cancel: cancel,
+	})
 }
 
 func fakeNodeScanV2(nodeName string) *storage.NodeScanV2 {
@@ -50,14 +53,12 @@ func fakeNodeScanV2(nodeName string) *storage.NodeScanV2 {
 
 type NodeScanHandlerTestSuite struct {
 	suite.Suite
-	cancel    context.CancelFunc
-	ctx       context.Context
-	toCentral chan *central.MsgFromSensor
+	cancel context.CancelFunc
+	ctx    context.Context
 }
 
 func (s *NodeScanHandlerTestSuite) SetupTest() {
-	s.ctx, s.cancel = context.WithCancel(context.Background())
-	s.toCentral = make(chan *central.MsgFromSensor)
+
 }
 
 func (s *NodeScanHandlerTestSuite) TearDownTest() {
@@ -74,7 +75,6 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 	h := NewNodeScanHandler(nodeScans)
 	// simulate Central: consume all messages from h.ResponsesC()
 	go func() {
-		defer close(s.toCentral)
 		for {
 			select {
 			case <-s.ctx.Done():
@@ -100,31 +100,95 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 			}
 		}
 	}()
+	s.NoError(h.Start())
+}
 
-	s.Assert().NoError(h.Start())
+func (s *NodeScanHandlerTestSuite) TestHandlerRegularRoutine() {
+	h := NewNodeScanHandler(s.generateTestInput())
+	s.handlerWorksNormally(h)
+}
+
+func (s *NodeScanHandlerTestSuite) TestHandlerWorksAfterRestart() {
+	s.NotPanics(func() {
+		h := NewNodeScanHandler(s.generateTestInput())
+
+		s.NoError(h.Start())
+		h.Stop(nil)
+
+		s.handlerWorksNormally(h)
+	})
+}
+
+// generateTestInput generates 10 input messages to the NodeScanHandler
+func (s *NodeScanHandlerTestSuite) generateTestInput() <-chan *storage.NodeScanV2 {
+	input := make(chan *storage.NodeScanV2)
+	// this is a producer that sends 10 nodescan messages
+	go func() {
+		defer close(input)
+		for i := 0; i < 10; i++ {
+			select {
+			case <-s.ctx.Done():
+				return
+			case input <- fakeNodeScanV2("Node"):
+			}
+		}
+	}()
+	return input
+}
+
+// handlerWorksNormally starts handler and blocks until it stops
+func (s *NodeScanHandlerTestSuite) handlerWorksNormally(han NodeScanHandler) {
+	s.NoError(han.Start())
+	// simulate Central: consume all messages from h.ResponsesC()
+	go func() {
+		for {
+			select {
+			case <-s.ctx.Done():
+				return
+			case _, ok := <-han.ResponsesC():
+				if !ok {
+					return
+				}
+			}
+		}
+	}()
+	han.Stop(nil)
+	s.NoError(han.Stopped().Wait())
 }
 
 func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
-	nodeScans := make(chan *storage.NodeScanV2)
-	s.Assert().NotPanics(func() {
-		defer close(nodeScans)
-		h := NewNodeScanHandler(nodeScans)
-		s.Assert().NoError(h.Start())
+	s.NotPanics(func() {
+		h := NewNodeScanHandler(s.generateTestInput())
+		s.NoError(h.Start())
 		h.Stop(nil)
-		// try to start & stop the stopped handler again and see error "stopped handlers cannot be restarted"
-		s.Assert().Error(h.Start())
-		h.Stop(nil)
+
+		// restart handler
+		s.handlerWorksNormally(h)
 	})
 }
 
 func (s *NodeScanHandlerTestSuite) TestDoubleStartHandler() {
-	nodeScans := make(chan *storage.NodeScanV2)
-	s.Assert().NotPanics(func() {
-		defer close(nodeScans)
-		h := NewNodeScanHandler(nodeScans)
-		s.Assert().NoError(h.Start())
-		s.Assert().NoError(h.Start())
-		h.Stop(nil)
-	})
+	s.NotPanics(func() {
+		h := NewNodeScanHandler(s.generateTestInput())
+		s.NoError(h.Start())
 
+		err := h.Start()
+		s.Error(err)
+		s.ErrorContains(err, "running handler must be stopped before it can be started again")
+		h.Stop(nil)
+
+		s.handlerWorksNormally(h)
+	})
+}
+
+func (s *NodeScanHandlerTestSuite) TestDoubleStopHandler() {
+	s.NotPanics(func() {
+		h := NewNodeScanHandler(s.generateTestInput())
+		s.NoError(h.Start())
+
+		h.Stop(nil)
+		h.Stop(nil)
+
+		s.handlerWorksNormally(h)
+	})
 }
