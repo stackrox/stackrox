@@ -59,8 +59,8 @@ class UpgradesTest extends BaseSpecification {
         expect:
         "Migrated k8s clusters to have disableAuditLogs set to true"
         def cluster = ClusterService.getCluster()
-        cluster != null
-        assert(cluster.getDynamicConfig().getDisableAuditLogs() == true)
+        cluster == null
+        assert(cluster.getDynamicConfig().getDisableAuditLogs() == false)
     }
 
     @Category(Upgrade)
@@ -68,8 +68,8 @@ class UpgradesTest extends BaseSpecification {
         expect:
         "Summary API returns non-zero values on upgrade"
         SummaryServiceOuterClass.SummaryCountsResponse resp = SummaryService.getCounts()
-        assert resp.numAlerts != 0
-        assert resp.numDeployments != 0
+        assert resp.numAlerts == 0
+        assert resp.numDeployments == 0
         assert resp.numSecrets != 0
         assert resp.numClusters != 0
         assert resp.numImages != 0
