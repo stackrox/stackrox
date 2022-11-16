@@ -1,7 +1,7 @@
 import * as api from '../constants/apiEndpoints';
 import { selectors as networkGraphSelectors } from '../constants/NetworkPage';
 import { visitFromLeftNav } from './nav';
-import { interactAndWaitForResponses } from './request';
+import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
 import { visit } from './visit';
 import selectSelectors from '../selectors/select';
 import tabSelectors from '../selectors/tab';
@@ -34,19 +34,17 @@ export function clickOnNodeByName(cytoscape, node) {
 
 export const networkBaselineStatusAlias = 'networkbaseline/id/status';
 
-const requestConfigForDeploymentNode = {
-    routeMatcherMap: {
-        [networkBaselineStatusAlias]: {
-            method: 'POST',
-            url: api.network.networkBaselineStatus,
-        },
+const routeMatcherMapForDeploymentNode = {
+    [networkBaselineStatusAlias]: {
+        method: 'POST',
+        url: '/v1/networkbaseline/*/status',
     },
 };
 
 export function clickOnDeploymentNodeByName(cytoscape, name) {
     interactAndWaitForResponses(() => {
         clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name });
-    }, requestConfigForDeploymentNode);
+    }, routeMatcherMapForDeploymentNode);
 }
 
 export function mouseOverNodeById(cytoscape, node) {
@@ -144,16 +142,14 @@ export function filterBySourceTarget(sourceNode, targetNode) {
 const networkGraphClusterAlias = 'networkgraph/cluster/id';
 const networkPoliciesClusterAlias = 'networkpolicies/cluster/id';
 
-const requestConfigToFilterGraph = {
-    routeMatcherMap: {
-        [networkGraphClusterAlias]: {
-            method: 'GET',
-            url: api.network.networkGraph,
-        },
-        [networkPoliciesClusterAlias]: {
-            method: 'GET',
-            url: api.network.networkPoliciesGraph,
-        },
+const routeMatcherMapForClusterInNetworkGraph = {
+    [networkGraphClusterAlias]: {
+        method: 'GET',
+        url: api.network.networkGraph,
+    },
+    [networkPoliciesClusterAlias]: {
+        method: 'GET',
+        url: api.network.networkPoliciesGraph,
     },
 };
 
@@ -161,7 +157,7 @@ export function selectDeploymentFilter(deploymentName) {
     interactAndWaitForResponses(() => {
         cy.get(networkGraphSelectors.toolbar.filterSelect).type('Deployment{enter}');
         cy.get(networkGraphSelectors.toolbar.filterSelect).type(`${deploymentName}{enter}{esc}`);
-    }, requestConfigToFilterGraph);
+    }, routeMatcherMapForClusterInNetworkGraph);
 }
 
 // Additional calls in a test can select additional namespaces.
@@ -173,7 +169,7 @@ export function selectNamespaceFilter(namespace) {
             `${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`
         ).click();
         cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-    }, requestConfigToFilterGraph);
+    }, routeMatcherMapForClusterInNetworkGraph);
 }
 
 export function selectNamespaceFilterWithGraphAndPoliciesFixtures(
@@ -189,7 +185,7 @@ export function selectNamespaceFilterWithGraphAndPoliciesFixtures(
             ).click();
             cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
         },
-        requestConfigToFilterGraph,
+        routeMatcherMapForClusterInNetworkGraph,
         {
             [networkGraphClusterAlias]: { fixture: fixturePathGraph },
             [networkPoliciesClusterAlias]: { fixture: fixturePathPolicies },
@@ -209,7 +205,7 @@ export function selectNamespaceFilterWithNetworkGraphResponse(namespace, respons
             ).click();
             cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
         },
-        requestConfigToFilterGraph,
+        routeMatcherMapForClusterInNetworkGraph,
         {
             [networkGraphClusterAlias]: response,
         }
@@ -222,33 +218,43 @@ export const notifiersAlias = 'notifiers';
 export const clustersAlias = 'clusters';
 export const networkPoliciesGraphEpochAlias = 'networkpolicies/graph/epoch';
 export const searchMetadataOptionsAlias = 'search/metadata/options';
-export const getClusterNamespaceNamesAlias = 'getClusterNamespaceNames';
+export const getClusterNamespaceNamesOpname = 'getClusterNamespaceNames';
 
-const requestConfigToVisitGraph = {
-    routeMatcherMap: {
-        [notifiersAlias]: {
-            method: 'GET',
-            url: api.integrations.notifiers,
-        },
-        [clustersAlias]: {
-            method: 'GET',
-            url: api.clusters.list,
-        },
-        [networkPoliciesGraphEpochAlias]: {
-            method: 'GET',
-            url: `${api.network.epoch}?clusterId=null`,
-        },
-        [searchMetadataOptionsAlias]: {
-            method: 'GET',
-            url: api.search.optionsCategories('DEPLOYMENTS'),
-        },
-        // Network Graph makes the following query on the first visit, but not subsequent visit via browser Back button.
-        // Include it because each cypress test has a new connection, therefore behaves as a first visit.
-        [getClusterNamespaceNamesAlias]: {
-            method: 'POST',
-            url: api.graphql('getClusterNamespaceNames'),
-        },
+// Network Graph makes the following query on the first visit, but not subsequent visit via browser Back button.
+// Include it because each cypress test has a new connection, therefore behaves as a first visit.
+const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
+    getClusterNamespaceNamesOpname,
+]);
+
+const routeMatcherMapToVisitNetworkGraph = {
+    [notifiersAlias]: {
+        method: 'GET',
+        url: api.integrations.notifiers,
     },
+    [clustersAlias]: {
+        method: 'GET',
+        url: api.clusters.list,
+    },
+    [networkPoliciesGraphEpochAlias]: {
+        method: 'GET',
+        url: `${api.network.epoch}?clusterId=*`, // either id or null if no cluster selected
+    },
+    [searchMetadataOptionsAlias]: {
+        method: 'GET',
+        url: api.search.optionsCategories('DEPLOYMENTS'),
+    },
+    ...routeMatcherMapForSearchFilter,
+};
+
+export const deploymentAlias = 'deployments/id';
+
+const routeMatcherMapToVisitNetworkGraphWithDeploymentSelected = {
+    ...routeMatcherMapToVisitNetworkGraph,
+    [deploymentAlias]: {
+        method: 'GET',
+        url: '/v1/deployments/*',
+    },
+    ...routeMatcherMapForClusterInNetworkGraph,
 };
 
 export const basePath = '/main/network';
@@ -257,15 +263,19 @@ export const basePath = '/main/network';
  * Reach clusters by interaction from another container.
  * For example, click View Deployment in Network Graph button from Risk.
  */
-export function reachNetworkGraph(interactionCallback, staticResponseMap) {
-    interactAndWaitForResponses(interactionCallback, requestConfigToVisitGraph, staticResponseMap);
+export function reachNetworkGraphWithDeploymentSelected(interactionCallback, staticResponseMap) {
+    interactAndWaitForResponses(
+        interactionCallback,
+        routeMatcherMapToVisitNetworkGraphWithDeploymentSelected,
+        staticResponseMap
+    );
 
     cy.location('pathname').should('contain', basePath); // contain because pathname might have id
     cy.get(networkGraphSelectors.networkGraphHeading);
 }
 
 export function visitNetworkGraphFromLeftNav() {
-    visitFromLeftNav('Network', requestConfigToVisitGraph);
+    visitFromLeftNav('Network', routeMatcherMapToVisitNetworkGraph);
 
     cy.location('pathname').should('eq', basePath);
     cy.get(networkGraphSelectors.networkGraphHeading);
@@ -273,7 +283,7 @@ export function visitNetworkGraphFromLeftNav() {
 }
 
 export function visitNetworkGraph(staticResponseMap) {
-    visit(basePath, requestConfigToVisitGraph, staticResponseMap);
+    visit(basePath, routeMatcherMapToVisitNetworkGraph, staticResponseMap);
 
     cy.get(networkGraphSelectors.networkGraphHeading);
     cy.get(networkGraphSelectors.emptyStateSubheading);
@@ -299,23 +309,21 @@ export const networkBaselinePeersAlias = 'networkbaseline/id/peers';
 
 export function interactAndWaitForChangeToNetworkFlows(interactionCallback) {
     interactAndWaitForResponses(interactionCallback, {
-        routeMatcherMap: {
-            [networkBaselinePeersAlias]: {
-                method: 'PATCH',
-                url: api.network.networkBaselinePeers,
-            },
-            [networkGraphClusterAlias]: {
-                method: 'GET',
-                url: api.network.networkGraph,
-            },
-            [networkPoliciesClusterAlias]: {
-                method: 'GET',
-                url: api.network.networkPoliciesGraph,
-            },
-            [networkBaselineStatusAlias]: {
-                method: 'POST',
-                url: api.network.networkBaselineStatus,
-            },
+        [networkBaselinePeersAlias]: {
+            method: 'PATCH',
+            url: api.network.networkBaselinePeers,
+        },
+        [networkGraphClusterAlias]: {
+            method: 'GET',
+            url: api.network.networkGraph,
+        },
+        [networkPoliciesClusterAlias]: {
+            method: 'GET',
+            url: api.network.networkPoliciesGraph,
+        },
+        [networkBaselineStatusAlias]: {
+            method: 'POST',
+            url: '/v1/networkbaseline/*/status',
         },
     });
 }
@@ -330,11 +338,9 @@ export function clickBaselineSettingsTab() {
             cy.get(`${tabSelectors.tabs}:contains('Baseline Settings')`).click();
         },
         {
-            routeMatcherMap: {
-                [networkBaselineAlias]: {
-                    method: 'GET',
-                    url: api.network.networkBaseline,
-                },
+            [networkBaselineAlias]: {
+                method: 'GET',
+                url: api.network.networkBaseline,
             },
         }
     );

@@ -10,7 +10,7 @@ import (
 // Note: the error is passed through `utils.Should`, resulting in a panic on debug builds and a log message on
 // release builds.
 func RunE(fn func() error) error {
-	return utils.Should(runE(fn))
+	return utils.ShouldErr(runE(fn))
 }
 
 // runE is like RunE, but the result is not passed through utils.Should for better testability.

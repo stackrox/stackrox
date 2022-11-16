@@ -115,9 +115,9 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	Persistence *Persistence `json:"persistence,omitempty"`
 
-	// NOTE: Central DB is in technical preview.
+	// NOTE: Central DB is in Technology Preview.
 	// Settings for Central DB, which is responsible for data persistence.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Central DB Settings (Technical Preview)"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Central DB Settings (Technology Preview)"
 	DB *CentralDBSpec `json:"db,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
@@ -148,35 +148,63 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 	return pointer.BoolPtrDerefOr(c.AdminPasswordGenerationDisabled, false)
 }
 
-// CentralDBEnabled returns a bool if CentralDBSpec is not nil
+// CentralDBEnabled returns true if central db should be created
+// TODO(ROX-13557): modify the logic to enable Postgres DB by default.
 func (c *CentralComponentSpec) CentralDBEnabled() bool {
-	if c == nil {
+	if c == nil || c.DB == nil || c.DB.IsEnabled == nil {
 		return false
 	}
-	return c.DB != nil
+
+	return *c.DB.IsEnabled == CentralDBEnabledTrue
 }
 
 // CentralDBSpec defines settings for the "central db" component.
 type CentralDBSpec struct {
+	// Specify whether central-db is enabled, Default configures central to use rocksdb.
+	// If IsEnabled the operator will provision the Central DB or use an external DB if a connection string is provided.
+	//+kubebuilder:validation:Default=Default
+	//+kubebuilder:default=Default
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	IsEnabled *CentralDBEnabled `json:"isEnabled,omitempty"`
+
 	// Specify a secret that contains the password in the "password" data item.
 	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
 	// in the "central-db-password" secret.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=2
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
 	// Specify a connection string that corresponds to an existing database. If set, the operator will not manage Central DB.
 	// When using this option, you must explicitly set a password secret; automatically generating a password will not
 	// be supported.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	ConnectionStringOverride *string `json:"connectionString,omitempty"`
 
 	// Configures how Central DB should store its persistent data. You can choose between using a persistent
 	// volume claim (recommended default), and a host path.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Persistence *DBPersistence `json:"persistence,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
+}
+
+// CentralDBEnabled is a type for values of spec.central.db.enabled.
+//+kubebuilder:validation:Enum=Default;Enabled
+type CentralDBEnabled string
+
+const (
+	// CentralDBEnabledDefault configures the central to use rocksdb
+	// TODO(ROX-13557): in 3.74.0 this should say that Default enables PostgreSQL.
+	CentralDBEnabledDefault CentralDBEnabled = "Default"
+	// CentralDBEnabledTrue configures the central to use a PostgreSQL database (Technology Preview)
+	CentralDBEnabledTrue CentralDBEnabled = "Enabled"
+)
+
+// CentralDBEnabledPtr return a pointer for the given CentralDBEnabled value
+func CentralDBEnabledPtr(c CentralDBEnabled) *CentralDBEnabled {
+	ptr := new(CentralDBEnabled)
+	*ptr = c
+	return ptr
 }
 
 // GetPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.

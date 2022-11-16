@@ -46,10 +46,14 @@ function RuleSelector({
     // because PatternFly will pass a `ref` to it
     const OptionComponent = forwardRef(
         (
-            props: { className: string; children: ReactNode },
+            props: {
+                className: string;
+                children: ReactNode;
+                onClick: (...args: unknown[]) => void;
+            },
             ref: ForwardedRef<HTMLButtonElement | null>
         ) => (
-            <button className={props.className} type="button" ref={ref}>
+            <button className={props.className} onClick={props.onClick} type="button" ref={ref}>
                 <ResourceIcon kind={entityType} />
                 {props.children}
             </button>
