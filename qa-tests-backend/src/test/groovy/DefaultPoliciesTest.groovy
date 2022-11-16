@@ -1,8 +1,6 @@
 import static Services.getPolicies
 import static Services.waitForViolation
 
-import io.stackrox.proto.api.v1.SearchServiceOuterClass
-
 import common.Constants
 import groups.BAT
 import groups.COMPATIBILITY
@@ -131,16 +129,6 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         gcrId = GCRImageIntegration.createDefaultIntegration()
         assert gcrId != ""
-
-        ImageService.clearImageCaches()
-        for (Deployment deployment : DEPLOYMENTS) {
-            ImageService.deleteImages(
-                    SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${deployment.getImage()}").build(),
-                    true)
-        }
-        ImageService.deleteImages(
-                SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${STRUTS_DEPLOYMENT.getImage()}").build(),
-                true)
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         orchestrator.createService(new Service(STRUTS_DEPLOYMENT))
