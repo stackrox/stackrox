@@ -26,7 +26,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                 .setName (NGINXDEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:nginx-1.14-alpine")
+                .setImage ("quay.io/rhacs-eng/qa:nginx-1-14-alpine")
                 .addLabel ( "app", "test" ),
             new Deployment()
                 .setName (STRUTSDEPLOYMENT)

@@ -33,25 +33,25 @@ class PaginationTest extends BaseSpecification {
                     .addSecretName("p2", SECRETS[1]),
             new Deployment()
                     .setName("pagination3")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-30")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-30")
                     .addLabel("app", "pagination3")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p3", SECRETS[2]),
             new Deployment()
                     .setName("pagination4")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-29")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-29")
                     .addLabel("app", "pagination4")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p4", SECRETS[3]),
             new Deployment()
                     .setName("pagination5")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-28")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-28")
                     .addLabel("app", "pagination5")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p5", SECRETS[4]),
             new Deployment()
                     .setName("pagination6")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-27")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-27")
                     .addLabel("app", "pagination6")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p6", SECRETS[5]),
