@@ -48,9 +48,9 @@ spec:
         displayName: Administrator Password
         path: central.adminPasswordSecret
       - description: Specify whether central-db is enabled, Default configures central
-          to use rocksdb. If Enabled the operator will provision the Central DB or
-          use an external DB if a connection string is provided.
-        displayName: Enabled
+          to use rocksdb. If IsEnabled the operator will provision the Central DB
+          or use an external DB if a connection string is provided.
+        displayName: Is Enabled
         path: central.db.enabled
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
           storage location of persistent data. Recommended for most users.
@@ -259,9 +259,9 @@ spec:
         path: imagePullSecrets
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: 'NOTE: Central DB is in technical preview. Settings for Central
+      - description: 'NOTE: Central DB is in Technology Preview. Settings for Central
           DB, which is responsible for data persistence.'
-        displayName: Central DB Settings (Technical Preview)
+        displayName: Central DB Settings (Technology Preview)
         path: central.db
       - description: Customizations to apply on all Central Services components.
         displayName: Customizations

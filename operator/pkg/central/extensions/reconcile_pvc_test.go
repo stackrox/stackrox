@@ -81,7 +81,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 	removedCentral := makeCentral(nil)
 	emptyNotDeletedCentral := makeCentral(nil)
 	emptyNotDeletedCentralWithDB := makeCentral(nil)
-	emptyNotDeletedCentralWithDB.Spec.Central.DB = &platform.CentralDBSpec{Enabled: platform.CentralDBEnabledPtr(platform.CentralDBEnabledTrue)}
+	emptyNotDeletedCentralWithDB.Spec.Central.DB = &platform.CentralDBSpec{IsEnabled: platform.CentralDBEnabledPtr(platform.CentralDBEnabledTrue)}
 
 	deleteHostPathCentral := makeCentral(&platform.Persistence{HostPath: makeHostPathSpec("/tmp/path")})
 
@@ -125,7 +125,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 
 	changedPVCConfigCentralDB := makeCentral(nil)
 	changedPVCConfigCentralDB.Spec.Central.DB = &platform.CentralDBSpec{
-		Enabled: platform.CentralDBEnabledPtr(platform.CentralDBEnabledTrue),
+		IsEnabled: platform.CentralDBEnabledPtr(platform.CentralDBEnabledTrue),
 		Persistence: &platform.DBPersistence{
 			PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
 				Size:             pointer.StringPtr("500Gi"),

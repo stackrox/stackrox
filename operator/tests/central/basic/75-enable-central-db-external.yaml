@@ -12,7 +12,7 @@ metadata:
 spec:
   central:
     db:
-      enabled: "Enabled"
+      IsEnabled: "Enabled"
       connectionString: "foobar"
       passwordSecret:
         name: my-central-db-password

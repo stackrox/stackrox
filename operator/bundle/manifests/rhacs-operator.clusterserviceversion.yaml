@@ -104,9 +104,9 @@ spec:
           and a host path.
         displayName: Persistence
         path: central.persistence
-      - description: 'NOTE: Central DB is in technical preview. Settings for Central
+      - description: 'NOTE: Central DB is in Technology Preview. Settings for Central
           DB, which is responsible for data persistence.'
-        displayName: Central DB Settings (Technical Preview)
+        displayName: Central DB Settings (Technology Preview)
         path: central.db
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
@@ -138,9 +138,9 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
       - description: Specify whether central-db is enabled, Default configures central
-          to use rocksdb. If Enabled the operator will provision the Central DB or
-          use an external DB if a connection string is provided.
-        displayName: Enabled
+          to use rocksdb. If IsEnabled the operator will provision the Central DB
+          or use an external DB if a connection string is provided.
+        displayName: Is Enabled
         path: central.db.enabled
       - description: Specify a secret that contains the password in the "password"
           data item. If omitted, the operator will auto-generate a DB password and
