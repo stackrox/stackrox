@@ -8,12 +8,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_46_to_n_47_postgres_roles/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_46_to_n_47_postgres_roles/postgres"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
@@ -35,14 +36,14 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = pkgSchema.RolesSchema
+	schema    = frozenSchema.RolesSchema
 	log       = loghelper.LogWrapper{}
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableRolesStmt)
 	var roles []*storage.Role
 	err := walk(ctx, legacyStore, func(obj *storage.Role) error {
 		roles = append(roles, obj)

@@ -5,16 +5,15 @@ import (
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 )
 
 // ConvertImageFromProto converts a `*storage.Image` to Gorm model
-func ConvertImageFromProto(obj *storage.Image) (*schema.Images, error) {
+func ConvertImageFromProto(obj *storage.Image) (*Images, error) {
 	serialized, err := obj.Marshal()
 	if err != nil {
 		return nil, err
 	}
-	model := &schema.Images{
+	model := &Images{
 		Id:                   obj.GetId(),
 		NameRegistry:         obj.GetName().GetRegistry(),
 		NameRemote:           obj.GetName().GetRemote(),
@@ -42,8 +41,8 @@ func ConvertImageFromProto(obj *storage.Image) (*schema.Images, error) {
 }
 
 // ConvertImageLayerFromProto converts a `*storage.ImageLayer` to Gorm model
-func ConvertImageLayerFromProto(obj *storage.ImageLayer, idx int, images_Id string) (*schema.ImagesLayers, error) {
-	model := &schema.ImagesLayers{
+func ConvertImageLayerFromProto(obj *storage.ImageLayer, idx int, images_Id string) (*ImagesLayers, error) {
+	model := &ImagesLayers{
 		ImagesId:    images_Id,
 		Idx:         idx,
 		Instruction: obj.GetInstruction(),
@@ -53,7 +52,7 @@ func ConvertImageLayerFromProto(obj *storage.ImageLayer, idx int, images_Id stri
 }
 
 // ConvertImageToProto converts Gorm model `Images` to its protobuf type object
-func ConvertImageToProto(m *schema.Images) (*storage.Image, error) {
+func ConvertImageToProto(m *Images) (*storage.Image, error) {
 	var msg storage.Image
 	if err := msg.Unmarshal(m.Serialized); err != nil {
 		return nil, err

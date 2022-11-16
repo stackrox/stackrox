@@ -8,12 +8,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_32_to_n_33_postgres_networkpolicies/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_32_to_n_33_postgres_networkpolicies/postgres"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
@@ -32,14 +33,14 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = pkgSchema.NetworkpoliciesSchema
+	schema    = frozenSchema.NetworkpoliciesSchema
 	log       = loghelper.LogWrapper{}
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
+	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNetworkpoliciesStmt)
 	var networkpolicies []*storage.NetworkPolicy
 	err := walk(ctx, legacyStore, func(obj *storage.NetworkPolicy) error {
 		networkpolicies = append(networkpolicies, obj)

@@ -205,13 +205,19 @@ func main() {
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
-	c.Flags().StringVar(&props.MigrateRoot, "migration-root", "", "Root for migrations")
-	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from, including \"rocksdb\", \"dackbox\" and \"boltdb\"")
-	c.Flags().IntVar(&props.MigrateSeq, "migration-seq", 0, "the unique sequence number to migrate to Postgres")
-	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
-	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
-	c.Flags().IntVar(&props.MigrationBatchSize, "migration-batch", 10000, "the batch size for data migration")
 
+	/**
+	 * Disable migration codes generations.
+	 * We will remove generator codes later in case we need to make massive code changes in migrations.
+	 * TODO(ROX-13549): Remove migration code generation
+	 * c.Flags().StringVar(&props.MigrateRoot, "migration-root", "", "Root for migrations")
+	 * c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from, including \"rocksdb\", \"dackbox\" and \"boltdb\"")
+	 * c.Flags().IntVar(&props.MigrateSeq, "migration-seq", 0, "the unique sequence number to migrate to Postgres")
+	 * c.Flags().IntVar(&props.MigrationBatchSize, "migration-batch", 10000, "the batch size for data migration")
+	 */
+
+	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
+	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
 	c.RunE = func(*cobra.Command, []string) error {
 		if (props.MigrateSeq == 0) != (props.MigrateFrom == "") {
 			log.Fatal("please use both \"--migrate-from\" and \"--migration-seq\" to create data migration")

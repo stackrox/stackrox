@@ -3,16 +3,15 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 )
 
 // ConvertTestGGrandChild1FromProto converts a `*storage.TestGGrandChild1` to Gorm model
-func ConvertTestGGrandChild1FromProto(obj *storage.TestGGrandChild1) (*schema.TestGGrandChild1, error) {
+func ConvertTestGGrandChild1FromProto(obj *storage.TestGGrandChild1) (*TestGGrandChild1, error) {
 	serialized, err := obj.Marshal()
 	if err != nil {
 		return nil, err
 	}
-	model := &schema.TestGGrandChild1{
+	model := &TestGGrandChild1{
 		Id:         obj.GetId(),
 		Val:        obj.GetVal(),
 		Serialized: serialized,
@@ -21,7 +20,7 @@ func ConvertTestGGrandChild1FromProto(obj *storage.TestGGrandChild1) (*schema.Te
 }
 
 // ConvertTestGGrandChild1ToProto converts Gorm model `TestGGrandChild1` to its protobuf type object
-func ConvertTestGGrandChild1ToProto(m *schema.TestGGrandChild1) (*storage.TestGGrandChild1, error) {
+func ConvertTestGGrandChild1ToProto(m *TestGGrandChild1) (*storage.TestGGrandChild1, error) {
 	var msg storage.TestGGrandChild1
 	if err := msg.Unmarshal(m.Serialized); err != nil {
 		return nil, err
