@@ -28,6 +28,7 @@ func exposureInfoFromPort(template *storage.PortConfig_ExposureInfo, port v1.Ser
 	return out
 }
 
+// Exposure processes a SelectorRouteWrap and returns the Exposure Info data relevant to the matching deployment object.
 func Exposure(s *commonStore.SelectorRouteWrap) map[service.PortRef][]*storage.PortConfig_ExposureInfo {
 	if s.Spec.Type == v1.ServiceTypeExternalName {
 		return nil
