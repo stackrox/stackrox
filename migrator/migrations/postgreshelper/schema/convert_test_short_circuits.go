@@ -3,16 +3,15 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 )
 
 // ConvertTestShortCircuitFromProto converts a `*storage.TestShortCircuit` to Gorm model
-func ConvertTestShortCircuitFromProto(obj *storage.TestShortCircuit) (*schema.TestShortCircuits, error) {
+func ConvertTestShortCircuitFromProto(obj *storage.TestShortCircuit) (*TestShortCircuits, error) {
 	serialized, err := obj.Marshal()
 	if err != nil {
 		return nil, err
 	}
-	model := &schema.TestShortCircuits{
+	model := &TestShortCircuits{
 		Id:             obj.GetId(),
 		ChildId:        obj.GetChildId(),
 		G2GrandchildId: obj.GetG2GrandchildId(),
@@ -22,7 +21,7 @@ func ConvertTestShortCircuitFromProto(obj *storage.TestShortCircuit) (*schema.Te
 }
 
 // ConvertTestShortCircuitToProto converts Gorm model `TestShortCircuits` to its protobuf type object
-func ConvertTestShortCircuitToProto(m *schema.TestShortCircuits) (*storage.TestShortCircuit, error) {
+func ConvertTestShortCircuitToProto(m *TestShortCircuits) (*storage.TestShortCircuit, error) {
 	var msg storage.TestShortCircuit
 	if err := msg.Unmarshal(m.Serialized); err != nil {
 		return nil, err
