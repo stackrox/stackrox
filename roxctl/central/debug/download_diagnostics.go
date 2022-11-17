@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -36,6 +37,8 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 			if since != "" {
 				values.Add("since", since)
 			}
+			timeoutSeconds := strconv.Itoa(int(flags.Timeout(c).Seconds()))
+			values.Add("timeout", timeoutSeconds)
 
 			urlParams := values.Encode()
 			if urlParams != "" {

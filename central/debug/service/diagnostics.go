@@ -174,7 +174,7 @@ func getClusterCandidate(conn connection.SensorConnection, clusterNameMap map[st
 }
 
 func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writer, opts debugDumpOptions) error {
-	subCtx, cancel := context.WithTimeout(ctx, metricsPullTimeout)
+	subCtx, cancel := context.WithTimeout(ctx, opts.timeout)
 	defer cancel()
 
 	filesC := make(chan k8sintrospect.File)
@@ -235,7 +235,7 @@ func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writ
 }
 
 func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writer, opts debugDumpOptions) error {
-	subCtx, cancel := context.WithTimeout(ctx, diagnosticsPullTimeout)
+	subCtx, cancel := context.WithTimeout(ctx, opts.timeout)
 	defer cancel()
 
 	filesC := make(chan k8sintrospect.File)
