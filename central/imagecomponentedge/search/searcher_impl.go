@@ -8,15 +8,17 @@ import (
 	"github.com/stackrox/rox/central/imagecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/filtered"
 )
 
 type searcherImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
+	storage       store.Store
+	indexer       index.Indexer
+	searcher      search.Searcher
+	graphProvider graph.Provider
 }
 
 // SearchImageComponentEdges returns the search results from indexed cves for the query.
@@ -34,8 +36,11 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 }
 
 // Count returns the number of search results from the query
-func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.searcher.Count(ctx, q)
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (count int, err error) {
+	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
+		count, err = ds.searcher.Count(inner, q)
+	})
+	return count, err
 }
 
 // SearchRawImageComponentEdges retrieves cves from the indexer and storage
@@ -43,8 +48,11 @@ func (ds *searcherImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*sto
 	return ds.searchImageComponentEdges(ctx, q)
 }
 
-func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return ds.searcher.Search(ctx, q)
+func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
+	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
+		res, err = ds.searcher.Search(inner, q)
+	})
+	return res, err
 }
 
 // ToImageComponentEdges returns the cves from the db for the given search results.

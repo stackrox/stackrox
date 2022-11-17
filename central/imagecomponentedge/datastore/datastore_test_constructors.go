@@ -27,6 +27,6 @@ func GetTestRocksBleveDataStore(_ *testing.T, bleveIndex bleve.Index, dacky *dac
 		return nil, err
 	}
 	indexer := dackboxIndex.New(bleveIndex)
-	searcher := search.New(storage, indexer)
+	searcher := search.New(dacky, storage, indexer)
 	return New(dacky, storage, indexer, searcher)
 }

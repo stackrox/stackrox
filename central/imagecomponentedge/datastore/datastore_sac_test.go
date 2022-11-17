@@ -265,10 +265,6 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestCount() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in ImageComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
 	s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
 
@@ -287,10 +283,6 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestCount() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in ImageComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
 	s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
 
@@ -312,10 +304,6 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in ImageComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
 	s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
 
@@ -338,10 +326,6 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in ImageComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
 	s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
 
