@@ -40,7 +40,7 @@ func GetDeviceConfig() (*Config, error) {
 		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
 	}
 
-	di := clientset.AppsV1().Deployments("stackrox")
+	di := clientset.AppsV1().Deployments(env.Namespace.Setting())
 	opts := v1.GetOptions{}
 	d, err := di.Get(context.Background(), "central", opts)
 	if err != nil {
