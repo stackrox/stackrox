@@ -24,7 +24,6 @@ import (
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/urlfmt"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
 )
@@ -606,9 +605,9 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 
 	var fetchedSignatures []*storage.Signature
 	for _, name := range img.GetNames() {
-		matchingImageIntegrations, err := getMatchingImageIntegrations(registries, name)
-		if err != nil {
-			// Instead of propagating the error and stopping the image enrichment, we will instead log the occurrence
+		matchingImageIntegrations := integration.GetMatchingImageIntegrations(registries, name)
+		if len(matchingImageIntegrations) == 0 {
+			// Instead of propagating an error and stopping the image enrichment, we will instead log the occurrence
 			// and skip fetching signatures for this particular image name. We know that we have at least one matching
 			// image registry due to the call to checkForMatchingImageIntegrations above, so we do not want to abort
 			// enriching the image completely.
@@ -724,36 +723,6 @@ func filterRegistriesBySource(requestSource *RequestSource, registries []registr
 		}
 		filteredRegistries = append(filteredRegistries, registry)
 	}
-}
-
-func getMatchingImageIntegrations(registries []registryTypes.ImageRegistry,
-	imageName *storage.ImageName) ([]registryTypes.ImageRegistry, error) {
-	var matchingIntegrations []registryTypes.ImageRegistry
-	for _, registry := range registries {
-		if registry.Match(imageName) {
-			matchingIntegrations = append(matchingIntegrations, registry)
-		}
-	}
-
-	if len(matchingIntegrations) == 0 {
-		return nil, errox.NotFound.CausedByf("no matching image integrations found: please add "+
-			"an image integration for %q", imageName.GetFullName())
-	}
-
-	sort.Slice(matchingIntegrations, func(i, j int) bool {
-		// Note: the Name of ImageRegistry does not reflect the registry hostname used within the integration but a
-		// name chosen by the creator. Additionally, we have to trim the HTTP prefixes (http:// & https://).
-		if matchingIntegrations[i].Config() == nil {
-			return true
-		}
-		if matchingIntegrations[j].Config() == nil {
-			return false
-		}
-		return urlfmt.TrimHTTPPrefixes(matchingIntegrations[i].Config().RegistryHostname) <
-			urlfmt.TrimHTTPPrefixes(matchingIntegrations[j].Config().RegistryHostname)
-	})
-
-	return matchingIntegrations, nil
 }
 
 func checkForMatchingImageIntegrations(registries []registryTypes.ImageRegistry, image *storage.Image) error {
