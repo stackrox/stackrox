@@ -211,7 +211,7 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	// - the same registry
 	// - the same repository
 	// - and has the same digest
-	// This way we also cover the case where we e.g. reference an image with digest format (<registry>/<repository>@sha256-<digest>)
+	// This way we also cover the case where we e.g. reference an image with digest format (<registry>/<repository>@<digest>)
 	// as well as images using floating tags (<registry>/<repository>:<tag>).
 	signatureImageReference := simpleContainer.Critical.Identity.DockerReference
 	log.Debugf("Retrieving verified image references from the image names [%v] and image reference within the "+
