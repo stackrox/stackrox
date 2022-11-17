@@ -67,7 +67,7 @@ func Singleton() DataStore {
 
 type roleAttributes struct {
 	idSuffix           string
-	postgresID         string
+	postgresID         string // postgresID should be populated with valid UUID values.
 	description        string
 	resourceWithAccess []permissions.ResourceWithAccess
 }
