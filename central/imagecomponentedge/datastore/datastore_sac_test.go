@@ -265,8 +265,9 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestCount() {
-	s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
+	s.Require().NoError(err)
 
 	for _, c := range testCases {
 		ctx := s.testContexts[c.contextKey]
@@ -283,8 +284,9 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestCount() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
-	s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
+	s.Require().NoError(err)
 
 	for _, c := range testCases {
 		ctx := s.testContexts[c.contextKey]
@@ -304,8 +306,9 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
+	s.Require().NoError(err)
 
 	for _, c := range testCases {
 		ctx := s.testContexts[c.contextKey]
@@ -326,8 +329,9 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
+	s.Require().NoError(err)
 
 	for _, c := range testCases {
 		ctx := s.testContexts[c.contextKey]
