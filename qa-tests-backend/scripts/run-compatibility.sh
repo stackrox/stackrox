@@ -33,6 +33,7 @@ compatibility_test() {
 
         deploy_stackrox
         echo "Stackrox deployed"
+        kubectl -n stackrox get deploy,ds -o wide
 
         deploy_default_psp
         deploy_webhook_server
