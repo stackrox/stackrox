@@ -128,9 +128,6 @@ spec:
         - mountPath: /host/run
           name: run-ro
           readOnly: true
-        - mountPath: /host/srv
-          name: srv-ro
-          readOnly: true
         - mountPath: /host/sys
           name: sys-ro
           readOnly: true
@@ -180,9 +177,6 @@ spec:
       - hostPath:
           path: /run
         name: run-ro
-      - hostPath:
-          path: /srv
-        name: srv-ro
       - hostPath:
           path: /usr
         name: usr-ro
