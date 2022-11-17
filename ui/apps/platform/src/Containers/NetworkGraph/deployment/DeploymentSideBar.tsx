@@ -30,6 +30,7 @@ import {
 import DeploymentDetails from './DeploymentDetails';
 import DeploymentNetworkPolicies from './DeploymentNetworkPolicies';
 import DeploymentFlows from './DeploymentFlows';
+import DeploymentBaselines from './DeploymentBaselines';
 
 type DeploymentSideBarProps = {
     deploymentId: string;
@@ -130,7 +131,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
                     id="Baselines"
                     hidden={activeKeyTab !== 'Baselines'}
                 >
-                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Baselines</div>
+                    <DeploymentBaselines />
                 </TabContent>
                 <TabContent
                     eventKey="Network policies"
