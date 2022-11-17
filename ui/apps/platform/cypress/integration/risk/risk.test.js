@@ -38,9 +38,9 @@ describe('Risk page', () => {
         });
 
         /*
-         * ROX-13468: assertSortedItems sometimes fails for sort descending.
+         * ROX-13468: assertSortedItems sometimes fails for sort descending (step 2) or resort ascending (step 3).
          * This is the only sort test that fails and Risk is the only occurrence of TableV2 element.
-         * Skip test given the comment below about initial table state and other possible rendering problems.
+         * Skip test given the comment below (step 0) initial table state and other possible rendering problems.
          */
         it.skip('should sort the Priority column', () => {
             visitRiskDeployments();
