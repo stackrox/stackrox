@@ -74,7 +74,7 @@ type manager struct {
 	stoppedSig concurrency.ErrorSignal
 
 	client     sensor.ImageServiceClient
-	imageCache sizeboundedcache.Cache[string]
+	imageCache sizeboundedcache.Cache[string, imageCacheEntry]
 
 	depClient        sensor.DeploymentServiceClient
 	resourceUpdatesC chan *sensor.AdmCtrlUpdateResourceRequest
@@ -102,8 +102,8 @@ type manager struct {
 
 // NewManager creates a new manager
 func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient sensor.ImageServiceClient, deploymentServiceClient sensor.DeploymentServiceClient) *manager {
-	cache, err := sizeboundedcache.New(maxImageCacheSize, 2*size.MB, func(key string, value interface{}) int64 {
-		return int64(len(key) + value.(imageCacheEntry).Size())
+	cache, err := sizeboundedcache.New(maxImageCacheSize, 2*size.MB, func(key string, value imageCacheEntry) int64 {
+		return int64(len(key) + value.Size())
 	})
 	utils.CrashOnError(err)
 
