@@ -20,8 +20,10 @@ import (
     {{- if not $inMigration}}
     "github.com/stackrox/rox/central/metrics"
     "github.com/stackrox/rox/central/role/resources"
-    {{- end}}
     pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+    {{- else}}
+    pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
+    {{- end}}
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/auth/permissions"
