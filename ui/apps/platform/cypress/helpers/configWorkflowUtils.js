@@ -1,5 +1,9 @@
 import { selectors as configManagementSelectors } from '../constants/ConfigManagementPage';
-import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
+import {
+    getRouteMatcherMapForGraphQL,
+    interactAndWaitForResponses,
+    interceptAndWaitForResponses,
+} from './request';
 import { visit } from './visit';
 
 const basePath = '/main/configmanagement';
@@ -145,43 +149,53 @@ const routeMatcherMapForConfigurationManagementDashboard = getRouteMatcherMapFor
 ]);
 
 export function visitConfigurationManagementDashboard() {
-    visit(basePath, routeMatcherMapForConfigurationManagementDashboard);
+    visit(basePath);
 
     cy.get('h1:contains("Configuration Management")');
+
+    interceptAndWaitForResponses(routeMatcherMapForConfigurationManagementDashboard);
 }
 
 export function visitConfigurationManagementEntities(entitiesKey) {
-    visit(getEntitiesPath(entitiesKey), getRouteMatcherMapForEntities(entitiesKey));
+    visit(getEntitiesPath(entitiesKey));
 
     cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
+
+    interceptAndWaitForResponses(getRouteMatcherMapForEntities(entitiesKey));
 }
 
 export function visitConfigurationManagementEntitiesWithSearch(entitiesKey, search) {
-    visit(`${getEntitiesPath(entitiesKey)}${search}`, getRouteMatcherMapForEntities(entitiesKey));
+    visit(`${getEntitiesPath(entitiesKey)}${search}`);
 
     cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
+
+    interceptAndWaitForResponses(getRouteMatcherMapForEntities(entitiesKey));
 }
 
 export function interactAndWaitForConfigurationManagementEntities(
     interactionCallback,
     entitiesKey
 ) {
-    interactAndWaitForResponses(interactionCallback, getRouteMatcherMapForEntities(entitiesKey));
+    interactionCallback();
 
     cy.location('pathname').should('eq', getEntitiesPath(entitiesKey));
     cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
+
+    interceptAndWaitForResponses(getRouteMatcherMapForEntities(entitiesKey));
 }
 
 export function interactAndWaitForConfigurationManagementEntityInSidePanel(
     interactionCallback,
     entitiesKey
 ) {
-    interactAndWaitForResponses(interactionCallback, getRouteMatcherMapForEntity(entitiesKey));
+    interactionCallback();
 
     cy.location('pathname').should('contain', getEntitiesPath(entitiesKey)); // contains because it ends with id
     cy.get(
         `[data-testid="breadcrumb-link-text"]:eq(0):contains("${headingForEntity[entitiesKey]}")`
     );
+
+    interceptAndWaitForResponses(getRouteMatcherMapForEntity(entitiesKey));
 }
 
 export function interactAndWaitForConfigurationManagementSecondaryEntityInSidePanel(
@@ -189,21 +203,25 @@ export function interactAndWaitForConfigurationManagementSecondaryEntityInSidePa
     entitiesKey1,
     entitiesKey2
 ) {
-    interactAndWaitForResponses(interactionCallback, getRouteMatcherMapForEntity(entitiesKey2));
+    interactionCallback();
 
     cy.location('pathname').should('contain', getEntitiesPath(entitiesKey1)); // contains because it has id
     cy.location('pathname').should('contain', segmentForEntity[entitiesKey2]); // contains because it has id
     cy.get(`[data-testid="breadcrumb-link-text"]:contains("${headingForEntity[entitiesKey2]}")`);
+
+    interceptAndWaitForResponses(getRouteMatcherMapForEntity(entitiesKey2));
 }
 
 export function interactAndWaitForConfigurationManagementEntityPage(
     interactionCallback,
     entitiesKey
 ) {
-    interactAndWaitForResponses(interactionCallback, getRouteMatcherMapForEntity(entitiesKey));
+    interactionCallback();
 
     cy.location('pathname').should('contain', getEntityPagePath(entitiesKey)); // contains because it ends with id
     cy.get(`h1 + div:contains("${headingForEntity[entitiesKey]}")`);
+
+    interceptAndWaitForResponses(getRouteMatcherMapForEntity(entitiesKey));
 }
 
 export function interactAndWaitForConfigurationManagementSecondaryEntities(

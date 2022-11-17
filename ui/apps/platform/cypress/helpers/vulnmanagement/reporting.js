@@ -1,7 +1,11 @@
 import * as api from '../../constants/apiEndpoints';
 
 import { visitFromLeftNavExpandable } from '../nav';
-import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../request';
+import {
+    getRouteMatcherMapForGraphQL,
+    interactAndWaitForResponses,
+    interceptAndWaitForResponses,
+} from '../request';
 import { visit } from '../visit';
 
 // visit
@@ -26,18 +30,27 @@ const routeMatcherMap = {
 
 const reportingPath = '/main/vulnerability-management/reports';
 
+const title = 'Vulnerability reporting';
+
 export function visitVulnerabilityReportingFromLeftNav() {
-    visitFromLeftNavExpandable('Vulnerability Management', 'Reporting', routeMatcherMap);
+    visitFromLeftNavExpandable('Vulnerability Management', 'Reporting');
 
     cy.location('pathname').should('eq', reportingPath);
     cy.location('search').should('eq', '');
-    cy.get('h1:contains("Vulnerability reporting")');
+    cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap);
 }
 
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
 export function visitVulnerabilityReporting(staticResponseMap) {
-    visit(reportingPath, routeMatcherMap, staticResponseMap);
+    visit(reportingPath);
 
-    cy.get('h1:contains("Vulnerability reporting")');
+    cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap, staticResponseMap);
 }
 
 export function visitVulnerabilityReportingWithFixture(fixturePath) {
@@ -71,10 +84,17 @@ const routeMatcherMapToCreate = {
     },
 };
 
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
 export function visitVulnerabilityReportingToCreate(staticResponseMap) {
     visit(`${reportingPath}?action=create`, routeMatcherMapToCreate, staticResponseMap);
 }
 
+/**
+ * @param {function} interactionCallback
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
 export function interactAndWaitToCreate(interactionCallback, staticResponseMap) {
     interactAndWaitForResponses(interactionCallback, routeMatcherMapToCreate, staticResponseMap);
 }

@@ -1,5 +1,5 @@
 import { visitFromLeftNavExpandable } from './nav';
-import { interactAndWaitForResponses } from './request';
+import { interactAndWaitForResponses, interceptAndWaitForResponses } from './request';
 import { visit, visitWithStaticResponseForPermissions } from './visit';
 
 const basePath = '/main/systemconfig';
@@ -20,28 +20,30 @@ const title = 'System Configuration';
 // visit
 
 export function visitSystemConfiguration() {
-    visit(basePath, routeMatcherMapForGET);
+    visit(basePath);
 
     cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMapForGET);
 }
 
 export function visitSystemConfigurationFromLeftNav() {
-    visitFromLeftNavExpandable('Platform Configuration', title, routeMatcherMapForGET);
+    visitFromLeftNavExpandable('Platform Configuration', title);
 
     cy.location('pathname').should('eq', basePath);
     cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMapForGET);
 }
 
 export function visitSystemConfigurationWithStaticResponseForPermissions(
     staticResponseForPermissions
 ) {
-    visitWithStaticResponseForPermissions(
-        basePath,
-        staticResponseForPermissions,
-        routeMatcherMapForGET
-    );
+    visitWithStaticResponseForPermissions(basePath, staticResponseForPermissions);
 
     cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMapForGET);
 }
 
 // save

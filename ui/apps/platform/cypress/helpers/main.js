@@ -1,7 +1,7 @@
 import { url as basePath } from '../constants/DashboardPage';
 import navSelectors from '../selectors/navigation';
 
-import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
+import { getRouteMatcherMapForGraphQL, interceptAndWaitForResponses } from './request';
 import { visit } from './visit';
 
 /*
@@ -63,20 +63,22 @@ const title = 'Dashboard';
 // visit helpers
 
 export function visitMainDashboardFromLeftNav() {
-    interactAndWaitForResponses(() => {
-        cy.get(`${navSelectors.navLinks}:contains("${title}")`).click();
-    }, routeMatcherMap);
+    cy.get(`${navSelectors.navLinks}:contains("${title}")`).click();
 
     cy.location('pathname').should('eq', basePath);
     cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap);
 }
 
 /**
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitMainDashboard(staticResponseMap) {
-    visit(basePath, routeMatcherMap, staticResponseMap);
+    visit(basePath);
 
     cy.get(`.pf-c-nav__link.pf-m-current:contains("${title}")`);
     cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap, staticResponseMap);
 }

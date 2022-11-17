@@ -1,6 +1,10 @@
 import { headingPlural, selectors, url } from '../constants/CompliancePage';
 
-import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
+import {
+    getRouteMatcherMapForGraphQL,
+    interactAndWaitForResponses,
+    interceptAndWaitForResponses,
+} from './request';
 import { visit } from './visit';
 
 const routeMatcherMapForComplianceDashboard = getRouteMatcherMapForGraphQL([
@@ -23,9 +27,11 @@ const routeMatcherMapForComplianceDashboard = getRouteMatcherMapForGraphQL([
 ]);
 
 export function visitComplianceDashboard() {
-    visit(url.dashboard, routeMatcherMapForComplianceDashboard);
+    visit(url.dashboard);
 
     cy.get('h1:contains("Compliance")');
+
+    interceptAndWaitForResponses(routeMatcherMapForComplianceDashboard);
 }
 
 /*
@@ -75,9 +81,11 @@ export function visitComplianceEntities(entitiesKey) {
         opnameForEntities[entitiesKey],
     ]);
 
-    visit(url.entities[entitiesKey], routeMatcherMap);
+    visit(url.entities[entitiesKey]);
 
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap);
 }
 
 /*
@@ -90,7 +98,9 @@ export function visitComplianceStandard(standardName) {
         'controls',
     ]);
 
-    visit(`${url.controls}?s[standard]=${standardName}`, routeMatcherMap);
+    visit(`${url.controls}?s[standard]=${standardName}`);
 
     cy.get(`h1:contains("${standardName}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap);
 }

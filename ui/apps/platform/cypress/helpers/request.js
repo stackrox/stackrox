@@ -69,6 +69,17 @@ export function waitForResponses(routeMatcherMap) {
 }
 
 /**
+ * Intercept requests and then wait for responses.
+ *
+ * @param {Record<string, { method: string, url: string }>} routeMatcherMap
+ * @param {Record<string, { body: unknown } | { fixture: string }>} staticResponseMap
+ */
+export function interceptAndWaitForResponses(routeMatcherMap, staticResponseMap) {
+    interceptRequests(routeMatcherMap, staticResponseMap);
+    waitForResponses(routeMatcherMap);
+}
+
+/**
  * Intercept requests before interaction and then wait for responses.
  *
  * @param {() => void} interactionCallback

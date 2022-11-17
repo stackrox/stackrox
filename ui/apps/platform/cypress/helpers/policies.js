@@ -1,6 +1,7 @@
 import * as api from '../constants/apiEndpoints';
 import { selectors, url as policiesUrl } from '../constants/PoliciesPage';
 import { visitFromLeftNavExpandable } from './nav';
+import { interceptAndWaitForResponses } from './request';
 import { visit } from './visit';
 
 // Navigation
@@ -25,30 +26,43 @@ const routeMatcherMap = {
     },
 };
 
+// visit
+
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
 export function visitPolicies(staticResponseMap) {
-    visit(policiesUrl, routeMatcherMap, staticResponseMap);
+    visit(policiesUrl);
 
     cy.get('h1:contains("Policy management")');
     cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
+
+    interceptAndWaitForResponses(routeMatcherMap, staticResponseMap);
 }
 
 export function visitPoliciesFromLeftNav() {
-    visitFromLeftNavExpandable('Platform Configuration', 'Policy Management', routeMatcherMap);
+    visitFromLeftNavExpandable('Platform Configuration', 'Policy Management');
 
     cy.get('h1:contains("Policy management")');
     cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
+
+    interceptAndWaitForResponses(routeMatcherMap);
 }
 
+export const policyAlias = 'policies/id';
+
 export function visitPolicy(policyId, staticResponseMap) {
-    const routeMatcherMapPolicy = {
-        'policies/id': {
+    const routeMatcherMapForPolicy = {
+        [policyAlias]: {
             method: 'GET',
             url: api.policies.policy,
         },
     };
 
-    visit(`${policiesUrl}/${policyId}`, routeMatcherMapPolicy, staticResponseMap);
+    visit(`${policiesUrl}/${policyId}`);
     cy.get('h2:contains("Policy details")');
+
+    interceptAndWaitForResponses(routeMatcherMapForPolicy, staticResponseMap);
 }
 
 // Actions on policy table

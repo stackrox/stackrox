@@ -1,7 +1,11 @@
 import * as api from '../constants/apiEndpoints';
 import { selectors as networkGraphSelectors } from '../constants/NetworkPage';
 import { visitFromLeftNav } from './nav';
-import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
+import {
+    getRouteMatcherMapForGraphQL,
+    interactAndWaitForResponses,
+    interceptAndWaitForResponses,
+} from './request';
 import { visit } from './visit';
 import selectSelectors from '../selectors/select';
 import tabSelectors from '../selectors/tab';
@@ -283,10 +287,12 @@ export function visitNetworkGraphFromLeftNav() {
 }
 
 export function visitNetworkGraph(staticResponseMap) {
-    visit(basePath, routeMatcherMapToVisitNetworkGraph, staticResponseMap);
+    visit(basePath);
 
     cy.get(networkGraphSelectors.networkGraphHeading);
     cy.get(networkGraphSelectors.emptyStateSubheading);
+
+    interceptAndWaitForResponses(routeMatcherMapToVisitNetworkGraph, staticResponseMap);
 }
 
 export function visitNetworkGraphWithNamespaceFilter(namespace) {

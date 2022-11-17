@@ -1,4 +1,3 @@
-import { clustersUrl } from '../../constants/ClustersPage';
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
 import { reachClusters } from '../../helpers/clusters';
@@ -23,7 +22,6 @@ describe('System Health Clusters without fixture', () => {
         reachClusters(() => {
             cy.get(selectors.clusters.viewAllButton).click();
         });
-        cy.location('pathname').should('eq', clustersUrl);
     });
 });
 

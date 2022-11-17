@@ -2,7 +2,11 @@ import { selectors } from '../../constants/VulnManagementPage';
 import { hasFeatureFlag } from '../features';
 
 import { visitFromLeftNavExpandable } from '../nav';
-import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../request';
+import {
+    getRouteMatcherMapForGraphQL,
+    interactAndWaitForResponses,
+    interceptAndWaitForResponses,
+} from '../request';
 import { visit } from '../visit';
 
 let opnamesForDashboard = [
@@ -132,22 +136,24 @@ function getEntityPath(entitiesKey, entityId) {
     return getEntitiesPath(entitiesKey, search);
 }
 
+const title = 'Vulnerability Management';
+
 export function visitVulnerabilityManagementDashboardFromLeftNav() {
-    visitFromLeftNavExpandable(
-        'Vulnerability Management',
-        'Dashboard',
-        routeMatcherMapForVulnerabilityManagementDashboard
-    );
+    visitFromLeftNavExpandable(title, 'Dashboard');
 
     cy.location('pathname').should('eq', basePath);
     cy.location('search').should('eq', '');
-    cy.get('h1:contains("Vulnerability Management")');
+    cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMapForVulnerabilityManagementDashboard);
 }
 
 export function visitVulnerabilityManagementDashboard() {
-    visit(basePath, routeMatcherMapForVulnerabilityManagementDashboard);
+    visit(basePath);
 
-    cy.get('h1:contains("Vulnerability Management")');
+    cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMapForVulnerabilityManagementDashboard);
 }
 
 /*
@@ -160,9 +166,11 @@ export function visitVulnerabilityManagementEntities(entitiesKey) {
         opnameForEntities[entitiesKey],
     ]);
 
-    visit(getEntitiesPath(entitiesKey), routeMatcherMap);
+    visit(getEntitiesPath(entitiesKey));
 
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap);
 }
 
 export function visitVulnerabilityManagementEntitiesWithSearch(entitiesKey, search) {
@@ -171,11 +179,18 @@ export function visitVulnerabilityManagementEntitiesWithSearch(entitiesKey, sear
         opnameForEntities[entitiesKey],
     ]);
 
-    visit(getEntitiesPath(entitiesKey, search), routeMatcherMap);
+    visit(getEntitiesPath(entitiesKey, search));
 
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap);
 }
 
+/**
+ * @param {function} interactionCallback
+ * @param {string} entitiesKey
+ * @param {{ body: unknown } | { fixture: string }} [staticResponseForEntities]
+ */
 export function interactAndWaitForVulnerabilityManagementEntities(
     interactionCallback,
     entitiesKey,
@@ -191,12 +206,19 @@ export function interactAndWaitForVulnerabilityManagementEntities(
     const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
     const staticResponseMap = staticResponseForEntities && { [opname]: staticResponseForEntities };
 
-    interactAndWaitForResponses(interactionCallback, routeMatcherMap, staticResponseMap);
+    interactionCallback();
 
     cy.location('pathname').should('eq', getEntitiesPath(entitiesKey));
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap, staticResponseMap);
 }
 
+/**
+ * @param {string} entitiesKey
+ * @param {string} entityId
+ * @param {{ body: unknown } | { fixture: string }} [staticResponseForEntity]
+ */
 export function visitVulnerabilityManagementEntityInSidePanel(
     entitiesKey,
     entityId,
@@ -206,9 +228,16 @@ export function visitVulnerabilityManagementEntityInSidePanel(
     const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
     const staticResponseMap = staticResponseForEntity && { [opname]: staticResponseForEntity };
 
-    visit(getEntityPath(entitiesKey, entityId), routeMatcherMap, staticResponseMap);
+    visit(getEntityPath(entitiesKey, entityId));
+
+    interceptAndWaitForResponses(routeMatcherMap, staticResponseMap);
 }
 
+/**
+ * @param {function} interactionCallback
+ * @param {string} entitiesKey
+ * @param {{ body: unknown } | { fixture: string }} [staticResponseForEntity]
+ */
 export function interactAndWaitForVulnerabilityManagementEntity(
     interactionCallback,
     entitiesKey,
@@ -221,6 +250,12 @@ export function interactAndWaitForVulnerabilityManagementEntity(
     interactAndWaitForResponses(interactionCallback, routeMatcherMap, staticResponseMap);
 }
 
+/**
+ * @param {function} interactionCallback
+ * @param {string} entitiesKey1
+ * @param {string} entitiesKey2
+ * @param {{ body: unknown } | { fixture: string }} [staticResponseForSecondaryEntities]
+ */
 export function interactAndWaitForVulnerabilityManagementSecondaryEntities(
     interactionCallback,
     entitiesKey1,

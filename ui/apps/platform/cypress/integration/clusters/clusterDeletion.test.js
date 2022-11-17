@@ -1,7 +1,12 @@
 import { selectors } from '../../constants/ClustersPage';
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
-import { visitClusterById, visitClusters, visitClustersWithFixture } from '../../helpers/clusters';
+import {
+    clusterAlias,
+    visitClusterById,
+    visitClusters,
+    visitClustersWithFixture,
+} from '../../helpers/clusters';
 
 describe('Clusters list clusterIdToRetentionInfo', () => {
     withAuth();
@@ -63,9 +68,13 @@ describe('Cluster page clusterRetentionInfo', () => {
         cy.fixture(fixturePath).then(({ clusters }) => {
             const cluster = clusters.find(({ name }) => name === clusterName);
 
-            visitClusterById(cluster.id, {
-                cluster: { body: { cluster, clusterRetentionInfo } },
-            });
+            const staticResponseMap = {
+                [clusterAlias]: {
+                    body: { cluster, clusterRetentionInfo },
+                },
+            };
+
+            visitClusterById(staticResponseMap);
 
             cy.get(selectors.clusterSidePanelHeading).contains(clusterName);
         });

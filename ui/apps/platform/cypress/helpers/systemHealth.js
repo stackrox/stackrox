@@ -1,7 +1,7 @@
 import * as api from '../constants/apiEndpoints';
-import { systemHealthUrl } from '../constants/SystemHealth';
 
 import { visitFromLeftNavExpandable } from './nav';
+import { interceptAndWaitForResponses } from './request';
 import { visit } from './visit';
 
 // clock
@@ -13,34 +13,43 @@ export function setClock(currentDatetime) {
 
 // visit
 
+export const basePath = '/main/system-health';
+
+export const integrationHealthImageIntegrationsAlias = 'integrationhealth/imageintegrations';
+export const imageIntegrationsAlias = 'imageintegrations';
+export const integrationHealthNotifiersAlias = 'integrationhealth/notifiers';
+export const notifiersAlias = 'notifiers';
+export const integrationHealthExternalBackupsAlias = 'integrationhealth/externalbackups';
+export const externalBackupsAlias = 'externalbackups';
+export const clustersAlias = 'clusters';
 export const integrationHealthVulnDefinitionsAlias = 'integrationhealth/vulndefinitions';
 
 const routeMatcherMap = {
-    'integrationhealth/imageintegrations': {
+    [integrationHealthImageIntegrationsAlias]: {
         method: 'GET',
         url: api.integrationHealth.imageIntegrations,
     },
-    imageintegrations: {
+    [imageIntegrationsAlias]: {
         method: 'GET',
         url: api.integrations.imageIntegrations,
     },
-    'integrationhealth/notifiers': {
+    [integrationHealthNotifiersAlias]: {
         method: 'GET',
         url: api.integrationHealth.notifiers,
     },
-    notifiers: {
+    [notifiersAlias]: {
         method: 'GET',
         url: api.integrations.notifiers,
     },
-    'integrationhealth/externalbackups': {
+    [integrationHealthExternalBackupsAlias]: {
         method: 'GET',
         url: api.integrationHealth.externalBackups,
     },
-    externalbackups: {
+    [externalBackupsAlias]: {
         method: 'GET',
         url: api.integrations.externalBackups,
     },
-    clusters: {
+    [clustersAlias]: {
         method: 'GET',
         url: api.clusters.list,
     },
@@ -50,15 +59,24 @@ const routeMatcherMap = {
     },
 };
 
-export function visitSystemHealthFromLeftNav() {
-    visitFromLeftNavExpandable('Platform Configuration', 'System Health', routeMatcherMap);
+const title = 'System Health';
 
-    cy.location('pathname').should('eq', systemHealthUrl);
-    cy.get('h1:contains("System Health")');
+export function visitSystemHealthFromLeftNav() {
+    visitFromLeftNavExpandable('Platform Configuration', title);
+
+    cy.location('pathname').should('eq', basePath);
+    cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap);
 }
 
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
 export function visitSystemHealth(staticResponseMap) {
-    visit(systemHealthUrl, routeMatcherMap, staticResponseMap);
+    visit(basePath);
 
-    cy.get('h1:contains("System Health")');
+    cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap, staticResponseMap);
 }

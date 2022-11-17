@@ -1,7 +1,5 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 
-export const systemHealthUrl = '/main/system-health';
-
 export const selectors = {
     bundle: {
         generateDiagnosticBundleButton: 'button:contains("Generate Diagnostic Bundle")',

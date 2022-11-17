@@ -3,6 +3,7 @@ import { selectors as riskPageSelectors, url as riskURL } from '../constants/Ris
 import selectors from '../selectors/index';
 
 import { reachNetworkGraphWithDeploymentSelected } from './networkGraph';
+import { interceptAndWaitForResponses } from './request';
 import { visit } from './visit';
 
 // visit
@@ -26,16 +27,22 @@ const routeMatcherMap = {
     },
 };
 
-export function visitRiskDeployments() {
-    visit(riskURL, routeMatcherMap);
+const title = 'Risk';
 
-    cy.get('h1:contains("Risk")');
+export function visitRiskDeployments() {
+    visit(riskURL);
+
+    cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap);
 }
 
 export function visitRiskDeploymentsWithSearchQuery(search) {
     visit(`${riskURL}${search}`, routeMatcherMap);
 
-    cy.get('h1:contains("Risk")');
+    cy.get(`h1:contains("${title}")`);
+
+    interceptAndWaitForResponses(routeMatcherMap);
 }
 
 export function viewRiskDeploymentByName(deploymentName) {
