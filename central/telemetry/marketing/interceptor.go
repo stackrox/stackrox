@@ -19,7 +19,10 @@ func track(ctx context.Context, t mpkg.Telemeter, err error, info *grpc.UnarySer
 	userAgent, userID, path, code := getRequestDetails(ctx, err, info)
 
 	// Track the API path and error code of some requests:
-	if !ignoredPaths.Contains(path) && (trackedPaths.Contains("*") || trackedPaths.Contains(path)) {
+	if ignoredPaths.Contains(path) {
+	    return
+	}
+	if trackedPaths.Contains("*") || trackedPaths.Contains(path) {
 		t.TrackProps("API Call", userID, map[string]any{
 			"Path":       path,
 			"Code":       code,
