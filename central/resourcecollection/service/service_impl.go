@@ -127,15 +127,9 @@ func (s *serviceImpl) GetCollectionCount(ctx context.Context, request *v1.GetCol
 		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 
-	var query *v1.Query
-	var err error
-
-	// query
-	if request.GetQuery() != nil {
-		query, err = search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
-		if err != nil {
-			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-		}
+	query, err := resolveQuery(request.GetQuery(), false)
+	if err != nil {
+		return nil, err
 	}
 
 	count, err := s.datastore.Count(ctx, query)
@@ -242,24 +236,35 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 	return collection, nil
 }
 
+func resolveQuery(rawQuery *v1.RawQuery, withPagination bool) (*v1.Query, error) {
+	if rawQuery == nil {
+		query := search.EmptyQuery()
+		if withPagination {
+			paginated.FillPagination(query, &v1.Pagination{}, defaultPageSize)
+			return query, nil
+		}
+
+		return search.EmptyQuery(), nil
+	}
+
+	query, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
+	}
+	if withPagination {
+		paginated.FillPagination(query, rawQuery.GetPagination(), defaultPageSize)
+	}
+	return query, nil
+}
+
 func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListCollectionsRequest) (*v1.ListCollectionsResponse, error) {
 	if !features.ObjectCollections.Enabled() {
 		return nil, errors.Errorf("%s env var is not enabled", features.ObjectCollections.EnvVar())
 	}
 
-	var query *v1.Query
-	var err error
-
-	// query with pagination
-	if request.GetQuery() != nil {
-		query, err = search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
-		if err != nil {
-			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-		}
-		paginated.FillPagination(query, request.GetQuery().GetPagination(), defaultPageSize)
-	} else {
-		query = search.EmptyQuery()
-		paginated.FillPagination(query, &v1.Pagination{}, defaultPageSize)
+	query, err := resolveQuery(request.GetQuery(), true)
+	if err != nil {
+		return nil, err
 	}
 
 	collections, err := s.datastore.SearchCollections(ctx, query)
