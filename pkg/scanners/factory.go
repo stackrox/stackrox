@@ -28,7 +28,7 @@ func NewFactory(set registries.Set) Factory {
 	clairScannerType, clairScannerCreator := clairScanner.Creator()
 	reg.creators[clairScannerType] = clairScannerCreator
 
-	clairV4ScannerType, clairV4ScannerCreator := clairV4Scanner.Creator()
+	clairV4ScannerType, clairV4ScannerCreator := clairV4Scanner.Creator(set)
 	reg.creators[clairV4ScannerType] = clairV4ScannerCreator
 
 	clairifyScannerType, clairifyScannerCreator := clairifyScanner.Creator(set)

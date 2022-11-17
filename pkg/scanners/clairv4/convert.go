@@ -1,19 +1,27 @@
 package clairv4
 
 import (
+	"crypto/tls"
+	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
 	gogoTypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
-func manifestForImage(image *storage.Image) (*claircore.Manifest, error) {
+// manifestForImage returns a ClairCore image manifest for the given image.
+func manifestForImage(rc *registryTypes.Config, image *storage.Image) (*claircore.Manifest, error) {
 	// Use claircore.ParseDigest instead of types.Digest (see pkg/images/types/digest.go)
 	// to make it easier to set the (*claircore.Manifest).Hash.
-	imgDigest, err := claircore.ParseDigest(utils.GetSHA(image))
+	imgDigest, err := claircore.ParseDigest(imageUtils.GetSHA(image))
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing image digest for image %s", image.GetName())
 	}
@@ -21,21 +29,70 @@ func manifestForImage(image *storage.Image) (*claircore.Manifest, error) {
 		Hash: imgDigest,
 	}
 
+	// Create the image registry client once to be used for each layer.
+	registryClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: rc.Insecure,
+			},
+			Proxy: proxy.FromConfig(),
+			// The following values are taken from http.DefaultTransport as of go1.19.3.
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+		// Specify a different timeout from requestTimeout to decouple this from Clair v4 requests.
+		Timeout: 30 * time.Second,
+	}
+	url := strings.TrimRight(rc.URL, "/")
+
+	imgName := image.GetName().GetFullName()
 	for _, layerSHA := range image.GetMetadata().GetLayerShas() {
 		layerDigest, err := claircore.ParseDigest(layerSHA)
 		if err != nil {
-			return nil, errors.Wrapf(err, "parsing image layer digest for image %s", image.GetName())
+			return nil, errors.Wrapf(err, "parsing image layer digest for image %s", imgName)
 		}
-		// TODO
+
+		uri, header, err := getLayerURIAndHeader(registryClient, url, image)
+		if err != nil {
+			return nil, err
+		}
+
 		// Layers needs to be ordered from base -> top layer, which is the same as how the metadata sorts them.
 		manifest.Layers = append(manifest.Layers, &claircore.Layer{
 			Hash:    layerDigest,
-			URI:     "",
-			Headers: nil,
+			URI:     uri,
+			Headers: header,
 		})
 	}
 
 	return manifest, nil
+}
+
+// getLayerURIAndHeader is based on the clairctl v4.5.0 implementation for creating manifests:
+// https://github.com/quay/clair/blob/v4.5.0/cmd/clairctl/manifest.go#L76.
+func getLayerURIAndHeader(client *http.Client, url string, image *storage.Image) (string, http.Header, error) {
+	imgName := image.GetName().GetFullName()
+
+	path := fmt.Sprintf("/v2/%s/blobs/%s", image.GetName().GetRegistry(), imageUtils.Reference(image))
+	req, err := http.NewRequest(http.MethodGet, url+path, nil)
+	if err != nil {
+		return "", nil, errors.Wrapf(err, "creating image pull request for imge %s", imgName)
+	}
+	// We don't actually want the layer. We just want the headers.
+	req.Header.Add("Range", "bytes=0-0")
+	res, err := client.Do(req)
+	if err != nil {
+		return "", nil, errors.Wrapf(err, "fetching image layer for image %s", imgName)
+	}
+	utils.IgnoreError(res.Body.Close)
+
+	res.Request.Header.Del("User-Agent")
+	res.Request.Header.Del("Range")
+
+	return res.Request.URL.String(), res.Request.Header, nil
 }
 
 func imageScanFromReport(report *claircore.VulnerabilityReport) *storage.ImageScan {

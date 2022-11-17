@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	imageutils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -36,14 +37,14 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	errNoMetadata = errors.New("Unable to complete scan because the image is missing metadata")
-	errInternal   = errors.New("Internal error")
+	errNoMetadata = errors.New("Clair v4: Unable to complete scan because the image is missing metadata")
+	errInternal   = errors.New("Clair v4: Internal error")
 )
 
 // Creator provides the type a scanners.Creator to add to the scanners Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
+func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
 	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
-		scan, err := newScanner(integration)
+		scan, err := newScanner(integration, set)
 		return scan, err
 	}
 }
@@ -53,9 +54,9 @@ var _ types.Scanner = (*clairv4)(nil)
 type clairv4 struct {
 	types.ScanSemaphore
 
-	name string
-
-	client *http.Client
+	name             string
+	client           *http.Client
+	activeRegistries registries.Set
 
 	testEndpoint                string
 	indexReportEndpoint         string
@@ -63,7 +64,7 @@ type clairv4 struct {
 	vulnerabilityReportEndpoint string
 }
 
-func newScanner(integration *storage.ImageIntegration) (*clairv4, error) {
+func newScanner(integration *storage.ImageIntegration, activeRegistries registries.Set) (*clairv4, error) {
 	cfg := integration.GetClairV4()
 	if cfg == nil {
 		return nil, errors.New("Clair v4 configuration required")
@@ -90,9 +91,9 @@ func newScanner(integration *storage.ImageIntegration) (*clairv4, error) {
 	}
 
 	scanner := &clairv4{
-		name: integration.GetName(),
-
-		client: client,
+		name:             integration.GetName(),
+		client:           client,
+		activeRegistries: activeRegistries,
 
 		testEndpoint:                endpoint + indexStatePath,
 		indexReportEndpoint:         endpoint + indexReportPath,
@@ -124,31 +125,36 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	// to mirror clairctl (https://github.com/quay/clair/blob/v4.5.0/cmd/clairctl/report.go#L251).
 	digest, err := claircore.ParseDigest(imageutils.GetSHA(image))
 	if err != nil {
-		return nil, errors.Wrapf(err, "parsing image digest for image %s", imgName)
+		return nil, errors.Wrapf(err, "Clair v4: parsing image digest for image %s", imgName)
 	}
 
 	exists, err := c.indexReportExists(digest)
 	// Exit early if this is an unexpected status code error.
 	// If it's not an unexpected error, then continue as normal and ignore the error.
 	if isUnexpectedStatusCodeError(err) {
-		return nil, errors.Wrapf(err, "checking if index report exists for Clair v4 scan of %s", imgName)
+		return nil, errors.Wrapf(err, "Clair v4: checking if index report exists for %s", imgName)
 	}
 	if !exists {
+		rc := c.activeRegistries.GetRegistryMetadataByImage(image)
+		if rc == nil {
+			return nil, errors.Errorf("Clair v4: unable to find required registry metadata for %s", imgName)
+		}
+
 		// The index report does not exist, so we need to index the image's manifest.
-		manifest, err := manifestForImage(image)
+		manifest, err := manifestForImage(rc, image)
 		if err != nil {
-			return nil, errors.Wrapf(err, "creating manifest for Clair v4 scan of %s", imgName)
+			return nil, errors.Wrapf(err, "Clair v4: creating manifest for %s", imgName)
 		}
 
 		if err := c.index(manifest); err != nil {
-			return nil, errors.Wrapf(err, "indexing manifest for Clair v4 scan of %s", imgName)
+			return nil, errors.Wrapf(err, "Clair v4: indexing manifest for %s", imgName)
 		}
 	}
 
 	// Clair v4 should have the image's manifest indexed by now, so get the vulnerability report.
 	report, err := c.getVulnerabilityReport(digest)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting vulnerability report for Clair v4 scan of %s", imgName)
+		return nil, errors.Wrapf(err, "Clair v4: getting vulnerability report for %s", imgName)
 	}
 
 	return imageScanFromReport(report), nil
