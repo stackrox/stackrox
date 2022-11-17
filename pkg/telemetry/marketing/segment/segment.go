@@ -46,7 +46,7 @@ func (t *segmentTelemeter) Identify(props map[string]any) {
 	}
 	log.Info("Identifying with ", identity)
 	if err := t.client.Enqueue(identity); err != nil {
-		log.Error("Cannot enqueue Segment identity event: %v", err)
+		log.Error("Cannot enqueue Segment identity event: ", err)
 	}
 }
 
@@ -86,7 +86,7 @@ func initSegment(config *marketing.Config, key, server string) *segmentTelemeter
 
 	client, err := segment.NewWithConfig(key, segmentConfig)
 	if err != nil {
-		log.Error("Cannot initialize Segment client: %v", err)
+		log.Error("Cannot initialize Segment client: ", err)
 		return nil
 	}
 
@@ -102,7 +102,7 @@ func (t *segmentTelemeter) Start() {
 func (t *segmentTelemeter) Stop() {
 	if t != nil {
 		if err := t.client.Close(); err != nil {
-			log.Error("Cannot close Segment client: %v", err)
+			log.Error("Cannot close Segment client: ", err)
 		}
 	}
 }
@@ -117,6 +117,6 @@ func (t *segmentTelemeter) TrackProps(event, userID string, props map[string]any
 		Event:      event,
 		Properties: props,
 	}); err != nil {
-		log.Error("Cannot enqueue Segment track event: %v", err)
+		log.Error("Cannot enqueue Segment track event: ", err)
 	}
 }
