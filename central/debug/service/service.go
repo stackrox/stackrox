@@ -64,6 +64,8 @@ const (
 	defaultDebugDumpTimeout = 60 * time.Second
 	layout                  = "2006-01-02T15:04:05.000Z"
 	logWindow               = 20 * time.Minute
+
+	warningFilename = "WARNING.txt"
 )
 
 var (
@@ -554,7 +556,7 @@ func (s *serviceImpl) writeZippedDebugDumpWithTimeout(ctx context.Context, w htt
 	}
 
 	if time.Since(executionStartTime) > opts.timeout-1*time.Second {
-		log.Info("Too much time elapsed in diagnostic bundle. Quitting early as to not to hit timeout.")
+		writeTimeoutWarning(zipWriter)
 		return
 	}
 
@@ -569,7 +571,7 @@ func (s *serviceImpl) writeZippedDebugDumpWithTimeout(ctx context.Context, w htt
 	}
 
 	if time.Since(executionStartTime) > opts.timeout-1*time.Second {
-		log.Info("Too much time elapsed in diagnostic bundle. Quitting early as to not to hit timeout.")
+		writeTimeoutWarning(zipWriter)
 		return
 	}
 
@@ -603,6 +605,22 @@ func (s *serviceImpl) writeZippedDebugDumpWithTimeout(ctx context.Context, w htt
 		if err := s.getLogImbue(ctx, zipWriter); err != nil {
 			log.Error(err)
 		}
+	}
+}
+
+func writeTimeoutWarning(zipWriter *zip.Writer) {
+	log.Info("Too much time elapsed in diagnostic bundle. Quitting early as to not to hit timeout.")
+
+	w, err := zipWriter.Create(warningFilename)
+	if err != nil {
+		log.Error(errors.Wrapf(err, "unable to create zip file %q", warningFilename))
+	}
+	warningMessage := "Timeout is reached while creating diagnostic bundle. To increase timeout:\n" +
+		"1) If you use `roxctl`, use `--timeout` flag\n" +
+		"2) If you use API, use `timeout` query parameter: `/api/extensions/diagnostics?timeout=60`"
+	_, err = w.Write([]byte(warningMessage))
+	if err != nil {
+		log.Error(errors.Wrapf(err, "unable to write warning message"))
 	}
 }
 
