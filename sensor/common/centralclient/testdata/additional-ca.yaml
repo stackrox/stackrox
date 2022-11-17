@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: additional-ca
+  namespace: stackrox
+type: Opaque
+stringData:
+  "lb_ca.crt": |
+    -----BEGIN CERTIFICATE-----
+    MIIC/DCCAeQCCQCn4GgelGfC3zANBgkqhkiG9w0BAQsFADA/MQswCQYDVQQGEwJV
+    UzEwMC4GA1UEAwwnUm9vdCBMb2FkQmFsYW5jZXIgQ2VydGlmaWNhdGUgQXV0aG9y
+    aXR5MCAXDTIyMTExNzEzMzE0NVoYDzIyOTYwOTAxMTMzMTQ1WjA/MQswCQYDVQQG
+    EwJVUzEwMC4GA1UEAwwnUm9vdCBMb2FkQmFsYW5jZXIgQ2VydGlmaWNhdGUgQXV0
+    aG9yaXR5MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtixKHp3NfGm6
+    IvGe0MEEdto08VGD+opaWqaLLq5Qy6qHTgBXDoZIxAK3GX7ac5AHqmyhwLBQ8Ko2
+    65sNF9b1sj5+5w4XeSS6KOcVigRBbsuNrukAHN5o6tcuPuNlf+xFT0/9VSmfJ+yb
+    z3Zhqssn3AIVxi8EB2R7OfdbJ+qaX19T/llG62P4rYrrr9soElgaQt0N/bRlNh/3
+    cllSxcZI2gS+UvP+spbH2pHtsxkCGyM/hGiLAIBunaCSbULFEqZCRPxZWVMymgmG
+    9xt/trzKekNWevI09PvR/CSqwSCO7WZrN0pqthrg7Fv9cCLJXBRzRzTK10yjmakm
+    +fe77LNZowIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQCT0DE0eCeI1/4mA3BVkzQb
+    /v0tdWPlyAAkLfFfUW7K8DDHGdRLf68VBMlOcwMB5nRbOTrgWeIBGaSbKCP2fmLr
+    r2TS3yPn0UZoPek9Z7ztbGNiMHNtUxWEyEMLxUl5GFgAoagdAY5UJv+CXeHDzay4
+    UKcbpDPHsiunVXUQFqWoaKS6CI3m9jyKXFHjhjYNLAocSEbb3OiA4WSruaZhvb6k
+    BhpKmLLRj+wzrnw5j5smZsa8HlQUV64Iwvw15lh4VDVThpOGcDDL+89s7qUGCH65
+    IdfTZQrSf5loy6nZLpulowoLQ8qRAs22RXe8GP9MAK1naUkzbn7qXA043+dY9w+B
+    -----END CERTIFICATE-----
