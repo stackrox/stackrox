@@ -30,7 +30,7 @@ message GetProcessesListeningOnPortsWithDeploymentResponse {
     repeated ProcessListeningOnPortWithDeploymentId processes_listening_on_ports_with_deployment = 1;
 }
 
-service ProcessListeningOnPortsService {
+service ProcessListeningOnPortService {
 
     rpc GetProcessesListeningOnPortsByNamespace (GetProcessesListeningOnPortsByNamespaceRequest) returns (GetProcessesListeningOnPortsWithDeploymentResponse) {
         option (google.api.http) = {
