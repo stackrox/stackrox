@@ -19,7 +19,7 @@ const (
 )
 
 type enricher struct {
-	lru                  *lru.Cache
+	lru                  *lru.Cache[string, *containerWrap]
 	clusterEntities      *clusterentities.Store
 	indicators           chan *storage.ProcessIndicator
 	metadataCallbackChan <-chan clusterentities.ContainerMetadata
@@ -51,10 +51,10 @@ func (cw *containerWrap) fetchAndClearProcesses() []*storage.ProcessIndicator {
 }
 
 func newEnricher(clusterEntities *clusterentities.Store, indicators chan *storage.ProcessIndicator) *enricher {
-	evictfunc := func(key interface{}, value interface{}) {
+	evictfunc := func(key string, value *containerWrap) {
 		metrics.IncrementProcessEnrichmentDrops()
 	}
-	lru, err := lru.NewWithEvict(maxLRUCache, evictfunc)
+	lru, err := lru.NewWithEvict[string, *containerWrap](maxLRUCache, evictfunc)
 	if err != nil {
 		panic(err)
 	}
@@ -84,7 +84,7 @@ func (e *enricher) Add(indicator *storage.ProcessIndicator) {
 			expiration: time.Now().Add(containerExpiration),
 		}
 	} else {
-		wrap = wrapObj.(*containerWrap)
+		wrap = wrapObj
 	}
 
 	wrap.addProcess(indicator)
@@ -100,17 +100,16 @@ func (e *enricher) processLoop() {
 		// unresolved indicators
 		case <-ticker.C:
 			for _, containerID := range e.lru.Keys() {
-				if metadata, ok := e.clusterEntities.LookupByContainerID(containerID.(string)); ok {
+				if metadata, ok := e.clusterEntities.LookupByContainerID(containerID); ok {
 					e.scanAndEnrich(metadata)
 				}
 			}
 		case <-expirationTicker.C:
 			for _, containerID := range e.lru.Keys() {
-				wrapObj, exists := e.lru.Peek(containerID)
+				wrap, exists := e.lru.Peek(containerID)
 				if !exists {
 					continue
 				}
-				wrap := wrapObj.(*containerWrap)
 				// If the current value has not expired, then break because all the next values are newer
 				if wrap.expiration.After(time.Now()) {
 					break
@@ -133,7 +132,7 @@ func (e *enricher) scanAndEnrich(metadata clusterentities.ContainerMetadata) {
 		// However, that process will not be dropped because either (a) it was added prior to fetchAndClearProcesses()
 		// or (b) it is added after fetchAndClearProcesses(). In case (b), Add will add the *containerWrap back into
 		// the cache.
-		processes := wrapObj.(*containerWrap).fetchAndClearProcesses()
+		processes := wrapObj.fetchAndClearProcesses()
 		for _, indicator := range processes {
 			e.enrich(indicator, metadata)
 		}

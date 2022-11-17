@@ -37,12 +37,12 @@ type sizeBoundedCache struct {
 	sizeFunc    func(key, value interface{}) int64
 
 	cacheLock sync.RWMutex
-	cache     *lru.Cache
+	cache     *lru.Cache[interface{}, *valueEntry]
 }
 
 // New creates a new cost cache with the passed parameters
 func New(maxSize, maxItemSize int64, costFunc func(key, value interface{}) int64) (Cache, error) {
-	cache, err := lru.New(math.MaxInt32)
+	cache, err := lru.New[interface{}, *valueEntry](math.MaxInt32)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (c *sizeBoundedCache) get(key interface{}) (*valueEntry, bool) {
 	if !ok {
 		return nil, false
 	}
-	return valueE.(*valueEntry), true
+	return valueE, true
 }
 
 func (c *sizeBoundedCache) Get(key interface{}) (interface{}, bool) {
@@ -114,7 +114,7 @@ func (c *sizeBoundedCache) addNoLock(itemSize int64, key, value interface{}) {
 	if !ok {
 		sizeDelta = itemSize
 	} else {
-		sizeDelta = itemSize - currValue.(*valueEntry).totalSize
+		sizeDelta = itemSize - currValue.totalSize
 	}
 	for atomic.LoadInt64(&c.currSize)+sizeDelta > c.maxSize {
 		if !c.removeOldestNoLock() {
@@ -143,7 +143,7 @@ func (c *sizeBoundedCache) removeOldestNoLock() bool {
 		return false
 	}
 
-	atomic.AddInt64(&c.currSize, -value.(*valueEntry).totalSize)
+	atomic.AddInt64(&c.currSize, -value.totalSize)
 
 	return true
 }
