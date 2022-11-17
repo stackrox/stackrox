@@ -493,7 +493,11 @@ type debugDumpOptions struct {
 	withCentral       bool
 	clusters          []string
 	since             time.Time
-	timeout           time.Duration
+	// timeout value is sent by client. We operate under assumption that after timeout,
+	// client will drop connection, potentially resulting in incorrect diagnostic bundle.
+	// To avoid that, long-running operations(getting k8s diangostics, pulling sensor metrics) can be dropped
+	// if time is running out.
+	timeout time.Duration
 }
 
 func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string, opts debugDumpOptions) {
@@ -501,6 +505,16 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
 	zipWriter := zip.NewWriter(w)
+
+	s.writeZippedDebugDumpWithTimeout(ctx, w, opts, zipWriter)
+
+	if err := zipWriter.Close(); err != nil {
+		log.Error(err)
+	}
+}
+
+func (s *serviceImpl) writeZippedDebugDumpWithTimeout(ctx context.Context, w http.ResponseWriter, opts debugDumpOptions, zipWriter *zip.Writer) {
+	executionStartTime := time.Now()
 
 	if err := getVersion(zipWriter); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -539,14 +553,24 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		}
 	}
 
+	if time.Since(executionStartTime) > opts.timeout-1*time.Second {
+		log.Info("Too much time elapsed in diagnostic bundle. Quitting early as to not to hit timeout.")
+		return
+	}
+
 	if opts.logs == fullK8sIntrospectionData {
-		if err := s.getK8sDiagnostics(ctx, zipWriter, opts); err != nil {
+		if err := s.getK8sDiagnostics(ctx, zipWriter, opts, executionStartTime); err != nil {
 			log.Errorf("could not get K8s diagnostics: %+q", err)
 			opts.logs = localLogs // fallback to local logs
 		}
-		if err := s.pullSensorMetrics(ctx, zipWriter, opts); err != nil {
+		if err := s.pullSensorMetrics(ctx, zipWriter, opts, executionStartTime); err != nil {
 			log.Errorf("could not get sensor metrics: %+q", err)
 		}
+	}
+
+	if time.Since(executionStartTime) > opts.timeout-1*time.Second {
+		log.Info("Too much time elapsed in diagnostic bundle. Quitting early as to not to hit timeout.")
+		return
 	}
 
 	if s.telemetryGatherer != nil && opts.telemetryMode > 0 {
@@ -579,10 +603,6 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		if err := s.getLogImbue(ctx, zipWriter); err != nil {
 			log.Error(err)
 		}
-	}
-
-	if err := zipWriter.Close(); err != nil {
-		log.Error(err)
 	}
 }
 
@@ -695,7 +715,9 @@ func getTimeoutQueryParam(r *http.Request, opts debugDumpOptions) error {
 		if err != nil {
 			return errors.Wrapf(err, "invalid timeout value: %q\n", timeoutStr)
 		}
-		opts.timeout = time.Duration(timeout) * time.Second
+		// One second is subtracted to cover time needed to establish HTTP connection between the client
+		// and the server.
+		opts.timeout = time.Duration(timeout-1) * time.Second
 	} else {
 		opts.timeout = defaultDebugDumpTimeout
 	}
