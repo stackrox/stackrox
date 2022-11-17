@@ -111,7 +111,6 @@ func (t *segmentTelemeter) TrackProps(event, userID string, props map[string]any
 	if t == nil {
 		return
 	}
-	log.Info("Tracking event ", event, " with ", props)
 
 	if err := t.client.Enqueue(segment.Track{
 		UserId:     userID,

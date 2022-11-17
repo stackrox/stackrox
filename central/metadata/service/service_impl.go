@@ -52,8 +52,7 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		LicenseStatus: v1.Metadata_VALID,
 	}
 	if marketing.Enabled() {
-		config, err := mpkg.GetDeviceConfig()
-		if err == nil {
+		if config, _ := mpkg.GetDeviceConfig(); config != nil {
 			metadata.CentralId = config.ID
 			metadata.OrganizationId = config.OrgID
 			metadata.SegmentKey = env.SegmentAPIKey.Setting()
