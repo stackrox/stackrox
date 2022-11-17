@@ -31,7 +31,7 @@ const (
 	// 1. Deploy a new StackRox instance
 	// 2. Create and generate a new CA and replace it in the additional-ca.yaml:
 	// $ openssl genrsa -des3 -out myCA.key 2048
-	// $ openssl req -x509 -new -nodes -key myCA.key -sha256 -days 1825 -out myCA.pem -days 100000 -subj '/CN=Root LoadBalancer Certificate Authority'
+	// $ openssl req -x509 -new -nodes -key myCA.key -sha256 -out myCA.pem -days 100000 -subj '/CN=Root LoadBalancer Certificate Authority'
 	// $ kubectl -n stackrox apply -f additional-ca.yaml
 	//
 	// 3. Receiving trust info examples from a running cluster:
