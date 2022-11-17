@@ -65,11 +65,11 @@ type logWrapper struct {
 }
 
 func (l *logWrapper) Logf(format string, args ...any) {
-	l.internal.Logf(zapcore.InfoLevel, format, args)
+	l.internal.Logf(zapcore.InfoLevel, format, args...)
 }
 
 func (l *logWrapper) Errorf(format string, args ...any) {
-	l.internal.Errorf(format, args)
+	l.internal.Errorf(format, args...)
 }
 
 func initSegment(config *marketing.Config, key, server string) *segmentTelemeter {
