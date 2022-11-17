@@ -76,7 +76,8 @@ func manifestForImage(rc *registryTypes.Config, image *storage.Image) (*claircor
 func getLayerURIAndHeader(client *http.Client, url string, image *storage.Image) (string, http.Header, error) {
 	imgName := image.GetName().GetFullName()
 
-	path := fmt.Sprintf("/v2/%s/blobs/%s", image.GetName().GetRegistry(), imageUtils.Reference(image))
+	// TODO: authorization is required.
+	path := fmt.Sprintf("/v2/%s/blobs/%s", image.GetName().GetRemote(), imageUtils.Reference(image))
 	req, err := http.NewRequest(http.MethodGet, url+path, nil)
 	if err != nil {
 		return "", nil, errors.Wrapf(err, "creating image pull request for imge %s", imgName)
