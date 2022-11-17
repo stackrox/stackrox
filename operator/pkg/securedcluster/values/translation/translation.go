@@ -300,13 +300,14 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 	return &cv
 }
 
-func (t Translator) getComplianceContainerValues(compliance *platform.ContainerSpec) *translation.ValuesBuilder {
-	if compliance == nil {
+func (t Translator) getComplianceContainerValues(complianceContainerSpec *platform.ComplianceContainerSpec) *translation.ValuesBuilder {
+	if complianceContainerSpec == nil {
 		return nil
 	}
 
 	cv := translation.NewValuesBuilder()
-	cv.AddChild("complianceResources", translation.GetResources(compliance.Resources))
+	cv.SetBoolValue("complianceMinimalHostMount", *complianceContainerSpec.MinimalHostMount)
+	cv.AddChild("complianceResources", translation.GetResources(complianceContainerSpec.Resources))
 
 	return &cv
 }

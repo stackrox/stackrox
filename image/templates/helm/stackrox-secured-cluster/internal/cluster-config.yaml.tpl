@@ -20,6 +20,7 @@ clusterConfig:
     tolerationsConfig:
       disabled: {{ ._rox.collector.disableTaintTolerations }}
     slimCollector: {{ ._rox.collector.slimMode }}
+    complianceMinimalHostMount: {{ ._rox.collector.complianceMinimalHostMount }}
   dynamicConfig:
     disableAuditLogs: {{ ._rox.auditLogs.disableCollection | not | not }}
     admissionControllerConfig:

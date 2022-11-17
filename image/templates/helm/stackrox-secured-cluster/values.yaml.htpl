@@ -32,6 +32,7 @@ config:
   createSecrets: true
   offlineMode: [< default false .OfflineMode >]
   slimCollector: [< default false .SlimCollector >]
+  complianceMinimialHostMount: [< default false .ComplianceMinimalHostMount >]
 
 envVars: [< if empty .EnvVars >] []
   [< else >]

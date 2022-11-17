@@ -116,6 +116,11 @@ spec:
           name: etc-ssl
         - mountPath: /etc/pki/ca-trust/
           name: etc-pki-volume
+        {{- if not ._rox.collector.complianceMinimalHostMount }}
+        - mountPath: /host
+          name: host-root-ro
+          readOnly: true
+        {{- else }}
         - mountPath: /host/etc
           name: etc-ro
           readOnly: true
@@ -127,9 +132,6 @@ spec:
           readOnly: true
         - mountPath: /host/run
           name: run-ro
-          readOnly: true
-        - mountPath: /host/srv
-          name: srv-ro
           readOnly: true
         - mountPath: /host/sys
           name: sys-ro
@@ -155,16 +157,22 @@ spec:
         - mountPath: /host/var/run
           name: var-run
           readOnly: true
+        {{- end }}
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
       volumes:
-      - hostPath:
-          path: /proc
-        name: proc-ro
       - emptyDir:
           medium: Memory
         name: tmpfs-module
+      {{- if not ._rox.collector.complianceMinimalHostMount }}
+      - hostPath:
+          path: /
+        name: host-root-ro
+      {{- else }}
+      - hostPath:
+          path: /proc
+        name: proc-ro
       - hostPath:
           path: /etc
         name: etc-ro
@@ -180,9 +188,6 @@ spec:
       - hostPath:
           path: /run
         name: run-ro
-      - hostPath:
-          path: /srv
-        name: srv-ro
       - hostPath:
           path: /usr
         name: usr-ro
@@ -210,6 +215,7 @@ spec:
       - hostPath:
           path: /var/run/docker.sock
         name: var-run-docker-sock-ro
+      {{- end }}
       - name: certs
         secret:
           secretName: collector-tls

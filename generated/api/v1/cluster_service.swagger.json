@@ -432,6 +432,9 @@
         "collectionMethod": {
           "$ref": "#/definitions/storageCollectionMethod"
         },
+        "complianceMinimalHostMount": {
+          "type": "boolean"
+        },
         "admissionController": {
           "type": "boolean"
         },
@@ -812,6 +815,9 @@
           "type": "boolean"
         },
         "admissionControllerEvents": {
+          "type": "boolean"
+        },
+        "complianceMinimalHostMount": {
           "type": "boolean"
         }
       }

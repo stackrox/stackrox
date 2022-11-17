@@ -423,6 +423,11 @@ spec:
                     description: Settings for the Compliance container, which is responsible
                       for checking host-level configurations.
                     properties:
+                      minimalHostMount:
+                        default: false
+                        description: Set this to 'true' to prevent the compliance
+                          container from mounting the root directory of the host node.
+                        type: boolean
                       resources:
                         description: Allows overriding the default resource settings
                           for this component. Please consult the documentation for

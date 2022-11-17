@@ -1042,6 +1042,7 @@ func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.Compl
 	cluster.AdmissionControllerEvents = staticConfig.GetAdmissionControllerEvents()
 	cluster.TolerationsConfig = staticConfig.GetTolerationsConfig().Clone()
 	cluster.SlimCollector = staticConfig.GetSlimCollector()
+	cluster.ComplianceMinimalHostMount = staticConfig.GetComplianceMinimalHostMount()
 }
 
 func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluster, error) {

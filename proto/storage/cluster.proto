@@ -83,6 +83,7 @@ message StaticClusterConfig {
     TolerationsConfig         tolerations_config           = 8;
     bool                      slim_collector               = 9;
     bool                      admission_controller_events  = 10;
+    bool                      compliance_minimal_host_mount = 11;
 }
 
 message DynamicClusterConfig {
@@ -124,6 +125,7 @@ message Cluster {
     bool                      runtime_support                  = 7 [deprecated=true];
     reserved                                                     8;
     CollectionMethod          collection_method                = 17;
+    bool                      compliance_minimal_host_mount    = 31;
 
     reserved                                                     9,10,11,12,14;
 

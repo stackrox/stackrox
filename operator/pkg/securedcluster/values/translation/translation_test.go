@@ -270,15 +270,18 @@ func (s *TranslationTestSuite) TestTranslate() {
 								Collection:  platform.CollectionEBPF.Pointer(),
 							},
 							TaintToleration: platform.TaintTolerate.Pointer(),
-							Compliance: &platform.ContainerSpec{
-								Resources: &v1.ResourceRequirements{
-									Limits: v1.ResourceList{
-										v1.ResourceCPU:    resource.MustParse("1504m"),
-										v1.ResourceMemory: resource.MustParse("1004Mi"),
-									},
-									Requests: v1.ResourceList{
-										v1.ResourceCPU:    resource.MustParse("1503m"),
-										v1.ResourceMemory: resource.MustParse("1003Mi"),
+							Compliance: &platform.ComplianceContainerSpec{
+								MinimalHostMount: pointer.BoolPtr(false),
+								ContainerSpec: platform.ContainerSpec{
+									Resources: &v1.ResourceRequirements{
+										Limits: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("1504m"),
+											v1.ResourceMemory: resource.MustParse("1004Mi"),
+										},
+										Requests: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("1503m"),
+											v1.ResourceMemory: resource.MustParse("1003Mi"),
+										},
 									},
 								},
 							},
@@ -508,9 +511,10 @@ func (s *TranslationTestSuite) TestTranslate() {
 					},
 				},
 				"collector": map[string]interface{}{
-					"collectionMethod":        "EBPF",
-					"disableTaintTolerations": false,
-					"slimMode":                false,
+					"collectionMethod":           "EBPF",
+					"disableTaintTolerations":    false,
+					"slimMode":                   false,
+					"complianceMinimalHostMount": false,
 					"complianceResources": map[string]interface{}{
 						"limits": map[string]interface{}{
 							"cpu":    "1504m",

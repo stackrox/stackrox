@@ -103,6 +103,7 @@ collector:
   resources: null # string | dict
   complianceImagePullPolicy: null # string
   complianceResources: null # string | dict
+  complianceMinimalHostMount: null # bool
   serviceTLS:
     cert: null # string
     key: null # string

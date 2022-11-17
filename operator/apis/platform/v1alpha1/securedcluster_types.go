@@ -179,7 +179,7 @@ type PerNodeSpec struct {
 
 	// Settings for the Compliance container, which is responsible for checking host-level configurations.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Compliance Settings"
-	Compliance *ContainerSpec `json:"compliance,omitempty"`
+	Compliance *ComplianceContainerSpec `json:"compliance,omitempty"`
 
 	// To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
 	// will run services on every node in the cluster, including tainted nodes by default. If you do
@@ -252,6 +252,18 @@ const (
 // Pointer returns the given TaintTolerationPolicy as a pointer, needed in k8s resource structs.
 func (t TaintTolerationPolicy) Pointer() *TaintTolerationPolicy {
 	return &t
+}
+
+// ComplianceContainerSpec defines settings for the compliance container.
+type ComplianceContainerSpec struct {
+	// Set this to 'true' to prevent the compliance container from mounting the root directory of the host node.
+	//+kubebuilder:validation:Default=false
+	//+kubebuilder:default=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	MinimalHostMount *bool `json:"minimalHostMount,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	ContainerSpec `json:",inline"`
 }
 
 // CollectorContainerSpec defines settings for the collector container.
