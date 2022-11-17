@@ -174,8 +174,8 @@ func getClusterCandidate(conn connection.SensorConnection, clusterNameMap map[st
 }
 
 func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writer, opts debugDumpOptions, startTime time.Time) error {
-	// In worst case scenario, getK8sDiagnostics will time out one second before request timeout is hit.
-	subCtx, cancel := context.WithTimeout(ctx, opts.timeout-1*time.Second-time.Since(startTime))
+	// In worst case scenario, getK8sDiagnostics will time out two seconds before request timeout is hit.
+	subCtx, cancel := context.WithTimeout(ctx, opts.timeout-time.Since(startTime))
 	defer cancel()
 
 	filesC := make(chan k8sintrospect.File)
@@ -236,8 +236,8 @@ func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writ
 }
 
 func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writer, opts debugDumpOptions, startTime time.Time) error {
-	// In worst case scenario, getK8sDiagnostics will time out one second before request timeout is hit.
-	subCtx, cancel := context.WithTimeout(ctx, opts.timeout-1*time.Second-time.Since(startTime))
+	// In worst case scenario, getK8sDiagnostics will time out two seconds before request timeout is hit.
+	subCtx, cancel := context.WithTimeout(ctx, opts.timeout-time.Since(startTime))
 	defer cancel()
 
 	filesC := make(chan k8sintrospect.File)

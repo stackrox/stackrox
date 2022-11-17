@@ -555,7 +555,7 @@ func (s *serviceImpl) writeZippedDebugDumpWithTimeout(ctx context.Context, w htt
 		}
 	}
 
-	if time.Since(executionStartTime) > opts.timeout-1*time.Second {
+	if time.Since(executionStartTime) > opts.timeout {
 		writeTimeoutWarning(zipWriter)
 		return
 	}
@@ -570,7 +570,7 @@ func (s *serviceImpl) writeZippedDebugDumpWithTimeout(ctx context.Context, w htt
 		}
 	}
 
-	if time.Since(executionStartTime) > opts.timeout-1*time.Second {
+	if time.Since(executionStartTime) > opts.timeout {
 		writeTimeoutWarning(zipWriter)
 		return
 	}
@@ -733,9 +733,9 @@ func getTimeoutQueryParam(r *http.Request, opts debugDumpOptions) error {
 		if err != nil {
 			return errors.Wrapf(err, "invalid timeout value: %q\n", timeoutStr)
 		}
-		// One second is subtracted to cover time needed to establish HTTP connection between the client
-		// and the server.
-		opts.timeout = time.Duration(timeout-1) * time.Second
+		// Two seconds second is subtracted to cover time needed to establish HTTP connection between the client
+		// and the server, as well as time needed to correctly finish writing ZIP file.
+		opts.timeout = time.Duration(timeout-2) * time.Second
 	} else {
 		opts.timeout = defaultDebugDumpTimeout
 	}
