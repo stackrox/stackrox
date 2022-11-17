@@ -1,6 +1,7 @@
 package marketing
 
 // Telemeter defines a common interface for telemetry gatherers.
+//go:generate mockgen-wrapper
 type Telemeter interface {
 	Start()
 	Stop()

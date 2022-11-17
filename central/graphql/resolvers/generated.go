@@ -790,8 +790,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ManagerType(0)))
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
+		"centralId: String!",
 		"licenseStatus: Metadata_LicenseStatus!",
+		"organizationId: String!",
 		"releaseBuild: Boolean!",
+		"segmentKey: String!",
 		"version: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.Metadata_LicenseStatus(0)))
@@ -9313,13 +9316,28 @@ func (resolver *metadataResolver) BuildFlavor(ctx context.Context) string {
 	return value
 }
 
+func (resolver *metadataResolver) CentralId(ctx context.Context) string {
+	value := resolver.data.GetCentralId()
+	return value
+}
+
 func (resolver *metadataResolver) LicenseStatus(ctx context.Context) string {
 	value := resolver.data.GetLicenseStatus()
 	return value.String()
 }
 
+func (resolver *metadataResolver) OrganizationId(ctx context.Context) string {
+	value := resolver.data.GetOrganizationId()
+	return value
+}
+
 func (resolver *metadataResolver) ReleaseBuild(ctx context.Context) bool {
 	value := resolver.data.GetReleaseBuild()
+	return value
+}
+
+func (resolver *metadataResolver) SegmentKey(ctx context.Context) string {
+	value := resolver.data.GetSegmentKey()
 	return value
 }
 
