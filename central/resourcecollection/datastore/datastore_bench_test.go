@@ -103,7 +103,7 @@ func BenchmarkCollections(b *testing.B) {
 			}
 			collection := getTestCollection(uuid.NewV4().String(), ids[start:end])
 			collection.Id = collections[i].GetId()
-			err = datastore.DryRunUpdateCollection(ctx, collection)
+			err = datastore.UpdateCollection(ctx, collection)
 			require.NoError(b, err)
 		}
 	})
