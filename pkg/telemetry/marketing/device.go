@@ -13,8 +13,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const annotation = "stackrox.com/telemetry-apipaths"
-const orgID = "stackrox.com/organization-id"
+const annotation = "rhacs.redhat.com/telemetry-apipaths"
+const orgID = "rhacs.redhat.com/organization-id"
 
 var config *Config
 
