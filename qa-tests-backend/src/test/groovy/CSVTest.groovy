@@ -310,7 +310,7 @@ class CSVTest extends BaseSpecification {
     }
 
     @EqualsAndHashCode(includeFields = true)
-    @ToString(includeFields = true)
+    @ToString(includes="id,cvss")
     class CVE {
         String id
         float cvss
