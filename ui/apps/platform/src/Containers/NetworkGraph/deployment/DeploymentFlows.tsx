@@ -4,6 +4,7 @@ import {
     DropdownItem,
     Flex,
     FlexItem,
+    SearchInput,
     Stack,
     StackItem,
     Text,
@@ -124,6 +125,7 @@ const flows: Flow[] = [
 
 function DeploymentFlow() {
     // component state
+    const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
@@ -186,7 +188,14 @@ function DeploymentFlow() {
             <Stack hasGutter>
                 <StackItem>
                     <Flex>
-                        <FlexItem flex={{ default: 'flex_1' }} />
+                        <FlexItem flex={{ default: 'flex_1' }}>
+                            <SearchInput
+                                placeholder="Filter by entity name"
+                                value={entityNameFilter}
+                                onChange={setEntityNameFilter}
+                                onClear={() => setEntityNameFilter('')}
+                            />
+                        </FlexItem>
                         <FlexItem>
                             <AdvancedFlowsFilter
                                 filters={advancedFilters}
