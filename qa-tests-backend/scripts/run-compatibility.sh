@@ -13,7 +13,7 @@ source "$ROOT/qa-tests-backend/scripts/lib.sh"
 set -euo pipefail
 
 compatibility_test() {
-    info "Starting test (sensor compatibility test $SENSOR_IMAGE_TAG)"
+    info "Starting test (sensor compatibility test $SENSOR_CHART_VERSION)"
 
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
@@ -31,8 +31,10 @@ compatibility_test() {
         remove_existing_stackrox_resources
         setup_default_TLS_certs
 
-        deploy_stackrox
+        # deploy_stackrox
+        deploy_stackrox_with_custom_sensor "$SENSOR_CHART_VERSION"
         echo "Stackrox deployed"
+        kubectl -n stackrox get deploy,ds -o wide
 
         deploy_default_psp
         deploy_webhook_server
@@ -49,8 +51,8 @@ compatibility_test() {
 
     make -C qa-tests-backend compatibility-test || touch FAIL
 
-    store_qa_test_results "compatibility-test-sensor-$SENSOR_IMAGE_TAG"
-    [[ ! -f FAIL ]] || die "compatibility-test-sensor-$SENSOR_IMAGE_TAG"
+    store_qa_test_results "compatibility-test-sensor-$SENSOR_CHART_VERSION"
+    [[ ! -f FAIL ]] || die "compatibility-test-sensor-$SENSOR_CHART_VERSION"
 }
 
 
