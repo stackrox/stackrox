@@ -80,6 +80,7 @@ func initSegment(config *marketing.Config, key, server string) *segmentTelemeter
 		DefaultContext: &segment.Context{
 			Extra: map[string]any{
 				"Central ID": config.ID,
+				"SKU":        config.SKU,
 			},
 		},
 	}

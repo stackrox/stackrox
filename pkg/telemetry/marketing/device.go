@@ -15,6 +15,7 @@ import (
 
 const annotation = "rhacs.redhat.com/telemetry-apipaths"
 const orgID = "rhacs.redhat.com/organization-id"
+const sku = "rhacs.redhat.com/sku"
 
 var config *Config
 
@@ -51,6 +52,7 @@ func GetDeviceConfig() (*Config, error) {
 	config = &Config{
 		ID:       string(d.GetUID()),
 		OrgID:    d.GetAnnotations()[orgID],
+		SKU:      d.GetAnnotations()[sku],
 		APIPaths: strings.Split(paths, ","),
 		Identity: map[string]any{
 			"Central version":    version.GetMainVersion(),
