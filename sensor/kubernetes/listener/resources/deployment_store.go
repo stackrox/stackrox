@@ -143,7 +143,7 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	return wrap.GetDeployment()
 }
 
-// BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies
+// BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.
 func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, error) {
 	wrap := ds.getWrap(id)
 	clonedWrap := wrap.Clone()
