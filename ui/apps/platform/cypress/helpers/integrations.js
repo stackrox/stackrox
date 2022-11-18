@@ -1,21 +1,398 @@
-import * as api from '../constants/apiEndpoints';
+import { labels, selectors } from '../constants/IntegrationsPage';
+import { visitFromLeftNavExpandable } from './nav';
+import { interactAndWaitForResponses } from './request';
+import { getTableRowActionButtonByName } from './tableHelpers';
+import { visit } from './visit';
 
-export function visitIntegrationsUrl(url) {
-    cy.intercept('GET', api.integrations.apiTokens).as('getAPITokens');
-    cy.intercept('GET', api.integrations.clusterInitBundles).as('getClusterInitBundles');
-    cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
-    cy.intercept('GET', api.integrations.imageIntegrations).as('getImageIntegrations');
-    cy.intercept('GET', api.integrations.signatureIntegrations).as('getSignatureIntegrations');
-    cy.intercept('GET', api.integrations.notifiers).as('getNotifierIntegrations');
+// page path
 
-    cy.visit(url);
+const basePath = '/main/integrations';
 
-    cy.wait([
-        '@getAPITokens',
-        '@getClusterInitBundles',
-        '@getBackupIntegrations',
-        '@getImageIntegrations',
-        '@getSignatureIntegrations',
-        '@getNotifierIntegrations',
+// Page address segments are the source of truth for integrationSource and integrationType.
+
+export function getIntegrationsPath(
+    integrationSource,
+    integrationType,
+    integrationId,
+    integrationAction
+) {
+    let path = basePath;
+
+    if (integrationSource) {
+        path += `/${integrationSource}`;
+    }
+
+    if (integrationType) {
+        path += `/${integrationType}`;
+    }
+
+    if (integrationAction) {
+        path += `/${integrationAction}`;
+    }
+
+    if (integrationId) {
+        path += `/${integrationId}`;
+    }
+
+    // Possible future change:
+    /*
+    if (integrationAction) {
+        path += `?action=${integrationAction}`;
+    }
+    */
+
+    return path;
+}
+
+// endpoint path
+
+function getIntegrationsEndpointAddress(integrationSource, integrationType) {
+    switch (integrationSource) {
+        case 'authProviders':
+            switch (integrationType) {
+                case 'apitoken': // singular in page address
+                    return '/v1/apitokens'; // plural in endpoint address (and see next function)
+                case 'clusterInitBundle': // singular in page address
+                    return '/v1/cluster-init/init-bundles'; // plural in endpoint address
+                default:
+                    return '';
+            }
+        case 'imageIntegrations': // camelCase in page address
+            return '/v1/imageintegrations'; // lowercase in endpoint address
+        case 'signatureIntegrations': // camelCase in page address
+            return '/v1/signatureintegrations'; // lowercase in endpoint address
+        case 'notifiers':
+            return '/v1/notifiers';
+        case 'backups': // noun in page address
+            return '/v1/externalbackups'; //  adjective and noun are lowercase in endpoint address
+        default:
+            return '';
+    }
+}
+
+export function getIntegrationsEndpointAlias(integrationSource, integrationType) {
+    switch (integrationSource) {
+        case 'authProviders':
+            switch (integrationType) {
+                case 'apitoken': // singular in page address
+                    return 'apitokens'; // plural in endpoint alias
+                case 'clusterInitBundle': // singular in page address
+                    return 'cluster-init/init-bundles'; // plural in endpoint alias
+                default:
+                    return '';
+            }
+        case 'imageIntegrations': // camelCase in page address
+            return 'imageintegrations'; // lowercase in endpoint alias
+        case 'signatureIntegrations': // camelCase in page address
+            return 'signatureintegrations'; // lowercase in endpoint alias
+        case 'notifiers':
+            return 'notifiers';
+        case 'backups': // noun in page address
+            return 'externalbackups'; //  adjective and noun are lowercase in endpoint address
+        default:
+            return '';
+    }
+}
+
+function getIntegrationsEndpointAddressForGET(integrationSource, integrationType) {
+    const integrationsEndpointAddress = getIntegrationsEndpointAddress(
+        integrationSource,
+        integrationType
+    );
+
+    return integrationSource === 'authProviders' && integrationType === 'apitoken'
+        ? `${integrationsEndpointAddress}?revoked=false`
+        : integrationsEndpointAddress;
+}
+
+function getIntegrationsEndpointAddressForPOST(integrationSource, integrationType) {
+    const integrationsEndpointAddress = getIntegrationsEndpointAddress(
+        integrationSource,
+        integrationType
+    );
+
+    return integrationSource === 'authProviders' && integrationType === 'apitoken'
+        ? `${integrationsEndpointAddress}/generate`
+        : integrationsEndpointAddress;
+}
+
+function getIntegrationEndpointAddress(integrationSource, integrationType, integrationId) {
+    const integrationEndpointAddress = getIntegrationsEndpointAddress(
+        integrationSource,
+        integrationType
+    );
+
+    return `${integrationEndpointAddress}/${integrationId}`;
+}
+
+// Please forgive such an abstract definition.
+const routeMatcherMapForIntegrationsDashboard = Object.fromEntries(
+    [
+        ['authProviders', 'apitoken'],
+        ['authProviders', 'clusterInitBundle'],
+        ['imageIntegrations'],
+        ['signatureIntegrations'],
+        ['notifiers'],
+        ['backups'],
+    ].map((args) => [
+        getIntegrationsEndpointAlias(...args),
+        {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET(...args),
+        },
+    ])
+);
+
+// page title
+
+const integrationsTitle = 'Integrations';
+
+const integrationTitleMap = labels; // maybe move here
+
+// visit
+
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitIntegrationsDashboard(staticResponseMap) {
+    visit(basePath, routeMatcherMapForIntegrationsDashboard, staticResponseMap);
+
+    cy.get(`h1:contains("${integrationsTitle}")`);
+    cy.get(`.pf-c-nav__link.pf-m-current:contains("${integrationsTitle}")`);
+}
+
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitIntegrationsDashboardFromLeftNav(staticResponseMap) {
+    visitFromLeftNavExpandable(
+        'Platform Configuration',
+        integrationsTitle,
+        routeMatcherMapForIntegrationsDashboard,
+        staticResponseMap
+    );
+
+    cy.location('pathname').should('eq', basePath);
+    cy.get(`h1:contains("${integrationsTitle}")`);
+}
+
+/**
+ * @param {string} integrationSource
+ * @param {string} integrationType
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitIntegrationsTable(integrationSource, integrationType, staticResponseMap) {
+    visit(
+        getIntegrationsPath(integrationSource, integrationType),
+        routeMatcherMapForIntegrationsDashboard,
+        staticResponseMap
+    );
+
+    assertIntegrationsTable(integrationSource, integrationType);
+}
+
+// interact in table
+
+export function clickCreateNewIntegrationInTable(
+    integrationSource,
+    integrationType,
+    createLinkText = 'New integration'
+) {
+    cy.get(`a:contains("${createLinkText}")`).click();
+
+    const path = getIntegrationsPath(integrationSource, integrationType, '', 'create');
+    cy.location('pathname').should('eq', path);
+    // Assert search separately if action moves from pathname.
+
+    const integrationTitle = integrationTitleMap[integrationSource][integrationType];
+    cy.get(`${selectors.breadcrumbItem}:contains("${integrationsTitle}")`);
+    cy.get(`${selectors.breadcrumbItem}:contains("${integrationTitle}")`);
+    cy.get(`${selectors.breadcrumbItem}:contains("Create Integration")`); // TODO Title Case
+}
+
+export function deleteIntegrationInTable(integrationSource, integrationType, integrationName) {
+    const integrationsAlias = getIntegrationsEndpointAlias(integrationSource, integrationType);
+    const integrationAliasForDELETE = `DELETE_${integrationsAlias}`;
+
+    const routeMatcherMap = {
+        [integrationAliasForDELETE]: {
+            method: 'DELETE',
+            url: getIntegrationEndpointAddress(integrationSource, integrationType, '*'),
+        },
+    };
+
+    interactAndWaitForResponses(() => {
+        cy.get(`tr:contains("${integrationName}") button[aria-label="Actions"]`).click();
+        cy.get(
+            `tr:contains("${integrationName}") button[role="menuitem"]:contain("Delete Integration")`
+        ).click(); // TODO Title Case
+        cy.get('button:contains("Delete")').click(); // confirmation modal
+    }, routeMatcherMap);
+}
+
+export function revokeAuthProvidersIntegrationInTable(integrationType, integrationName) {
+    const integrationSource = 'authProviders';
+
+    const urlRevokeMap = {
+        apiToken: '/v1/apitokens/revoke/*',
+        clusterInitBundle: '/v1/cluster-init/init-bundles/revoke', // id is in payload
+    };
+
+    const routeMatcherMap = Object.fromEntries([
+        [
+            'revoke', // short generic alias, in this case
+            {
+                method: 'PATCH',
+                url: urlRevokeMap[integrationType],
+            },
+        ],
+        [
+            getIntegrationsEndpointAlias(integrationSource, integrationType),
+            {
+                method: 'GET',
+                url: getIntegrationsEndpointAddressForGET(integrationSource, integrationType),
+            },
+        ],
     ]);
+
+    getTableRowActionButtonByName(integrationName).click();
+    interactAndWaitForResponses(() => {
+        cy.get('button:contains("Delete Integration")').click(); // row actions
+        cy.get('button:contains("Delete")').click(); // confirmation modal
+    }, routeMatcherMap);
+}
+
+// interact in form
+
+/**
+ * @param {string} integrationSource
+ * @param {string} integrationType
+ * @param {{ body: unknown } | { fixture: string }} [staticResponseForPOST]
+ */
+export function saveCreatedIntegrationInForm(
+    integrationSource,
+    integrationType,
+    staticResponseForPOST
+) {
+    const urlForPOST = getIntegrationsEndpointAddressForPOST(integrationSource, integrationType);
+    const aliasForPOST = `POST_${urlForPOST.replace('/v1/', '')}`;
+
+    const aliasForGET = getIntegrationsEndpointAlias(integrationSource, integrationType);
+
+    const routeMatcherMap = {
+        [aliasForPOST]: {
+            method: 'POST',
+            url: urlForPOST,
+        },
+        [aliasForGET]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET(integrationSource, integrationType),
+        },
+    };
+
+    const staticResponseMap = staticResponseForPOST && {
+        [aliasForPOST]: staticResponseForPOST,
+    };
+
+    interactAndWaitForResponses(
+        () => {
+            cy.get(
+                integrationSource === 'authProviders'
+                    ? selectors.buttons.generate
+                    : selectors.buttons.save
+            ).click();
+        },
+        routeMatcherMap,
+        staticResponseMap
+    );
+
+    assertIntegrationsTable(integrationSource, integrationType);
+}
+
+/**
+ * @param {'backups' | 'imageIntegrations' | 'notifiers'} integrationSource
+ * @param {string} integrationType
+ * @param {{ body: unknown } | { fixture: string }} [staticResponseForTest]
+ */
+function testIntegrationInForm(
+    integrationSource,
+    integrationType,
+    hasStoredCredentials,
+    staticResponseForTest
+) {
+    const integrationsEndpointAlias = getIntegrationsEndpointAlias(
+        integrationSource,
+        integrationType
+    );
+    const integrationsEndpointAddress = getIntegrationsEndpointAddress(
+        integrationSource,
+        integrationType
+    );
+
+    const aliasForTest = `POST_${integrationsEndpointAlias}/test/updated`;
+    const addressForTest = `${integrationsEndpointAddress}/${
+        hasStoredCredentials ? 'test' : 'test/updated'
+    }`;
+
+    const routeMatcherMap = {
+        [aliasForTest]: {
+            method: 'POST',
+            url: addressForTest,
+        },
+    };
+
+    const staticResponseMap = staticResponseForTest && {
+        [aliasForTest]: staticResponseForTest,
+    };
+
+    interactAndWaitForResponses(
+        () => {
+            cy.get(selectors.buttons.test).click();
+        },
+        routeMatcherMap,
+        staticResponseMap
+    );
+}
+
+export function testIntegrationInFormWithStoredCredentials(
+    integrationSource,
+    integrationType,
+    staticResponseForTest
+) {
+    const hasStoredCredentials = true;
+    testIntegrationInForm(
+        integrationSource,
+        integrationType,
+        hasStoredCredentials,
+        staticResponseForTest
+    );
+}
+
+export function testIntegrationInFormWithoutStoredCredentials(
+    integrationSource,
+    integrationType,
+    staticResponseForTest
+) {
+    const hasStoredCredentials = false;
+    testIntegrationInForm(
+        integrationSource,
+        integrationType,
+        hasStoredCredentials,
+        staticResponseForTest
+    );
+}
+
+// assert
+
+/*
+ * Assertion independent of interaction:
+ * After click integration type tile on dashboard.
+ * After create and save new integration in form.
+ */
+export function assertIntegrationsTable(integrationSource, integrationType) {
+    const integrationTitle = integrationTitleMap[integrationSource][integrationType];
+
+    cy.get(`${selectors.breadcrumbItem}:contains("${integrationTitle}")`);
+    cy.get(`h1:contains("${integrationsTitle}")`);
+    cy.get(`h2:contains("${integrationTitle}")`);
 }

@@ -1,51 +1,30 @@
-import * as api from '../../constants/apiEndpoints';
-import { labels, selectors, url } from '../../constants/IntegrationsPage';
+import { selectors } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     generateNameWithDate,
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
-import { visitIntegrationsUrl } from '../../helpers/integrations';
+import {
+    clickCreateNewIntegrationInTable,
+    saveCreatedIntegrationInForm,
+    testIntegrationInFormWithoutStoredCredentials,
+    visitIntegrationsTable,
+} from '../../helpers/integrations';
 
-function assertBackupIntegrationTable(integrationType) {
-    const label = labels.backups[integrationType];
-    cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
-    cy.get(`${selectors.title2}:contains("${label}")`);
-}
+// Page address segments are the source of truth for integrationSource and integrationType.
+const integrationSource = 'backups';
 
-function getBackupIntegrationTypeUrl(integrationType) {
-    return `${url}/backups/${integrationType}`;
-}
-
-function visitBackupIntegrationType(integrationType) {
-    visitIntegrationsUrl(getBackupIntegrationTypeUrl(integrationType));
-    cy.intercept('GET', api.integrations.apiTokens).as('getAPITokens');
-    cy.intercept('GET', api.integrations.clusterInitBundles).as('getClusterInitBundles');
-    cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
-    cy.visit(getBackupIntegrationTypeUrl(integrationType));
-    cy.wait('@getBackupIntegrations');
-    assertBackupIntegrationTable(integrationType);
-}
-
-function saveBackupIntegrationType(integrationType) {
-    cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
-    cy.intercept('POST', api.integrations.externalBackups).as('postBackupIntegration');
-    cy.get(selectors.buttons.save).should('be.enabled').click();
-    cy.wait(['@postBackupIntegration', '@getBackupIntegrations']);
-    assertBackupIntegrationTable(integrationType);
-    cy.location('pathname').should('eq', getBackupIntegrationTypeUrl(integrationType));
-}
-
-describe('External Backups Test', () => {
+describe('Backup Integrations', () => {
     withAuth();
 
-    describe('External Backup forms', () => {
+    describe('forms', () => {
         it('should create a new S3 integration', () => {
             const integrationName = generateNameWithDate('Nova S3 Backup');
             const integrationType = 's3';
-            visitBackupIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -90,15 +69,22 @@ describe('External Backups Test', () => {
             getInputByLabel('Endpoint').clear().type('s3.us-west-2.amazonaws.com');
             getInputByLabel('Backups to retain').clear().type(1).blur();
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveBackupIntegrationType(integrationType);
+            const staticResponseForTest = { body: {} };
+            testIntegrationInFormWithoutStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            saveCreatedIntegrationInForm(integrationSource, integrationType);
         });
 
         it('should create a new Google Cloud Storage integration', () => {
             const integrationName = generateNameWithDate('Nova Google Cloud Backup');
             const integrationType = 'gcs';
-            visitBackupIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -146,8 +132,14 @@ describe('External Backups Test', () => {
                 })
                 .blur(); // enter invalid JSON
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveBackupIntegrationType(integrationType);
+            const staticResponseForTest = { body: {} };
+            testIntegrationInFormWithoutStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            saveCreatedIntegrationInForm(integrationSource, integrationType);
         });
     });
 });

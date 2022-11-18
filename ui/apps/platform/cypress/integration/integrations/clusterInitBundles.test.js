@@ -1,40 +1,31 @@
-import * as api from '../../constants/apiEndpoints';
-import { labels, selectors, url } from '../../constants/IntegrationsPage';
+import { selectors } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     getHelperElementByLabel,
     getInputByLabel,
     generateNameWithRandomString,
 } from '../../helpers/formHelpers';
-import { visitIntegrationsUrl } from '../../helpers/integrations';
-import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
+import {
+    assertIntegrationsTable,
+    clickCreateNewIntegrationInTable,
+    revokeAuthProvidersIntegrationInTable,
+    saveCreatedIntegrationInForm,
+    visitIntegrationsTable,
+} from '../../helpers/integrations';
 
-function assertClusterInitBundleTable() {
-    const label = labels.authProviders.clusterInitBundle;
-    cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
-    cy.get(`${selectors.title2}:contains("${label}")`);
-}
+// Page address segments are the source of truth for integrationSource and integrationType.
+const integrationSource = 'authproviders';
+const integrationType = 'clusterInitBundle';
 
-const visitClusterInitBundlesUrl = `${url}/authProviders/clusterInitBundle`;
-const createClusterInitBundleUrl = `${url}/authProviders/clusterInitBundle/create`;
-const viewClusterInitBundleUrl = `${url}/authProviders/clusterInitBundle/view/`; // followed by id
-
-function visitClusterInitBundles() {
-    visitIntegrationsUrl(visitClusterInitBundlesUrl);
-    assertClusterInitBundleTable();
-}
-
-describe('Cluster Init Bundle tests', () => {
+describe('Cluster Init Bundles', () => {
     withAuth();
 
-    // we have to use a randomstring here because using a name with a date is not a valid clusterInitBundle name
-    const clusterInitBundleName = generateNameWithRandomString('ClusterInitBundleTest');
+    it('should create a new Cluster Init Bundle and then view and delete', () => {
+        // we have to use a randomstring here because using a name with a date is not a valid clusterInitBundle name
+        const clusterInitBundleName = generateNameWithRandomString('ClusterInitBundleTest');
 
-    it('should create a new Cluster Init Bundle integration', () => {
-        visitClusterInitBundles();
-
-        cy.get(selectors.buttons.newClusterInitBundle).click();
-        cy.location('pathname').should('eq', createClusterInitBundleUrl);
+        visitIntegrationsTable(integrationSource, integrationType);
+        clickCreateNewIntegrationInTable(integrationSource, integrationType, 'Generate bundle');
 
         // Step 0, should start out with disabled Generate button
         cy.get(selectors.buttons.generate).should('be.disabled');
@@ -58,44 +49,26 @@ describe('Cluster Init Bundle tests', () => {
         // Step 3, check valid from and generate
         getInputByLabel('Cluster init bundle name').clear().type(clusterInitBundleName);
 
-        cy.intercept('GET', api.integrations.clusterInitBundles).as('getClusterInitBundles');
-        cy.intercept('POST', api.integration.clusterInitBundle.generate).as(
-            'generateClusterInitBundle'
-        );
-        cy.get(selectors.buttons.generate).should('be.enabled').click();
-        cy.wait(['@generateClusterInitBundle', '@getClusterInitBundles']);
+        saveCreatedIntegrationInForm(integrationSource, integrationType);
+
         cy.get('[aria-label="Success Alert"]').should('contain', 'Download Helm values file');
         cy.get('[aria-label="Success Alert"]').should(
             'contain',
             'Download Kubernetes secrets file'
         );
 
-        cy.get(selectors.buttons.back).click();
-        assertClusterInitBundleTable();
-    });
+        // View it.
 
-    it('should show the generated Cluster Init Bundle in the table, and be clickable', () => {
-        visitClusterInitBundles();
+        assertIntegrationsTable(integrationSource, integrationType);
 
         cy.get(`${selectors.tableRowNameLink}:contains("${clusterInitBundleName}")`).click();
 
-        cy.location('pathname').should('contain', viewClusterInitBundleUrl);
         cy.get(`${selectors.breadcrumbItem}:contains("${clusterInitBundleName}")`);
-    });
 
-    it('should be able to revoke the Cluster Init Bundle', () => {
-        visitClusterInitBundles();
+        // Revoke it.
 
-        cy.intercept('GET', api.integrations.clusterInitBundles).as('getClusterInitBundles');
-        cy.intercept('PATCH', api.integration.clusterInitBundle.revoke).as(
-            'revokeClusterInitBundle'
-        );
-        getTableRowActionButtonByName(clusterInitBundleName).click();
-        cy.get('button:contains("Delete Integration")').click();
-        cy.get(selectors.buttons.delete).click();
-        cy.wait(['@revokeClusterInitBundle', '@getClusterInitBundles']);
+        revokeAuthProvidersIntegrationInTable(integrationType, clusterInitBundleName);
 
-        assertClusterInitBundleTable();
         cy.get(`${selectors.tableRowNameLink}:contains("${clusterInitBundleName}")`).should(
             'not.exist'
         );
