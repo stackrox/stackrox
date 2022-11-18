@@ -267,6 +267,8 @@ jobs:
           git commit -m "Release $RELEASE files" >> "$GITHUB_STEP_SUMMARY"
       - name: Push and create PR
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
+        env:
+          GH_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
         run: |
           git push --set-upstream origin "$BRANCH"
 
