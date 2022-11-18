@@ -264,6 +264,17 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 }
 
 func TestCloneRestore(t *testing.T) {
+	// This will test restore for Rocks -> Rocks or Postgres -> Postgres depending on
+	// the test is executed with the Postgres env variable set or not.
+	testCloneRestore(t, false)
+
+	// Test restore again for the case of restoring Rocks -> Postgres
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		testCloneRestore(t, true)
+	}
+}
+
+func testCloneRestore(t *testing.T, rocksToPostgres bool) {
 	if buildinfo.ReleaseBuild {
 		return
 	}
@@ -318,13 +329,8 @@ func TestCloneRestore(t *testing.T) {
 			c.description = c.description + " with reboot"
 		}
 
-		rocksToPostgres := rand.Intn(2) == 1
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			if rocksToPostgres {
-				c.description = c.description + " rocksDB to Postgres"
-			}
-		} else {
-			rocksToPostgres = false
+		if rocksToPostgres {
+			c.description = c.description + " rocksDB to Postgres"
 		}
 
 		t.Run(c.description, func(t *testing.T) {

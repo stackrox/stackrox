@@ -70,7 +70,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 	var err error
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		// We have to support restore of Rocks data for a couple of release.  This allows us to determine
+		// We have to support the restoration of legacy backups for a couple of releases.  This allows us to determine
 		// if we are dealing with that case.
 		restoreFromRocks := d.dbmRocks.CheckForRestore()
 

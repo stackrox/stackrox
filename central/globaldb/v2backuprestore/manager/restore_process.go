@@ -164,7 +164,7 @@ func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir stri
 	}
 
 	if err := os.Symlink(filepath.Base(tempOutputDir), finalDir); err != nil {
-		return errors.Wrapf(err, "restore process succeeded, but failed to atomically create symbolic link to output directory %s", tempOutputDir)
+		return errors.Wrapf(err, "failed to atomically create a symbolic link to restore directory %s", tempOutputDir)
 	}
 
 	return nil
