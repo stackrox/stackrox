@@ -16,7 +16,7 @@ var (
 type Service interface {
 	grpc.APIService
 
-	v1.ProcessesListeningOnPortsServiceServer
+	v1.ProcessListeningOnPortServiceServer
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 }
 

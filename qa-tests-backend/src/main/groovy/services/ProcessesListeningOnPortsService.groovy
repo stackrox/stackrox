@@ -1,16 +1,16 @@
 package services
 
 import groovy.util.logging.Slf4j
-import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceGrpc
-import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceOuterClass.GetProcessesListeningOnPortsResponse
-import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceOuterClass.GetProcessesListeningOnPortsWithDeploymentResponse
-import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceOuterClass.GetProcessesListeningOnPortsByNamespaceRequest
-import io.stackrox.proto.api.v1.ProcessesListeningOnPortsServiceOuterClass.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest
+import io.stackrox.proto.api.v1.ProcessListeningOnPortServiceGrpc
+import io.stackrox.proto.api.v1.ProcessListeningOnPortServiceOuterClass.GetProcessesListeningOnPortsResponse
+import io.stackrox.proto.api.v1.ProcessListeningOnPortServiceOuterClass.GetProcessesListeningOnPortsWithDeploymentResponse
+import io.stackrox.proto.api.v1.ProcessListeningOnPortServiceOuterClass.GetProcessesListeningOnPortsByNamespaceRequest
+import io.stackrox.proto.api.v1.ProcessListeningOnPortServiceOuterClass.GetProcessesListeningOnPortsByNamespaceAndDeploymentRequest
 
 @Slf4j
 class ProcessesListeningOnPortsService extends BaseService {
     static getProcessesListeningOnPortsService() {
-        return ProcessesListeningOnPortsServiceGrpc.newBlockingStub(getChannel())
+        return ProcessListeningOnPortServiceGrpc.newBlockingStub(getChannel())
     }
 
     static GetProcessesListeningOnPortsWithDeploymentResponse getProcessesListeningOnPortsWithDeploymentResponse(
