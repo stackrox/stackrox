@@ -55,7 +55,7 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		if config, _ := mpkg.GetDeviceConfig(); config != nil {
 			metadata.CentralId = config.ID
 			metadata.OrganizationId = config.OrgID
-			metadata.SegmentKey = env.SegmentAPIKey.Setting()
+			metadata.SegmentKey = env.SegmentWriteKey.Setting()
 		}
 	}
 	// Only return the version to logged in users, not anonymous users.
