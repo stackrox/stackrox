@@ -429,7 +429,7 @@ func TestEnsureValidAccessScopeID(t *testing.T) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// Test that an invalid ID triggers the generation of a valid UUID.
 		invalidID := "abcdefgh-ijkl-mnop-qrst-uvwxyz012345"
-		checkedInvalidID := EnsureValidPermissionSetID(invalidID)
+		checkedInvalidID := EnsureValidAccessScopeID(invalidID)
 		assert.NotEqual(t, invalidID, checkedInvalidID)
 		_, err := uuid.FromString(checkedInvalidID)
 		assert.NoError(t, err)

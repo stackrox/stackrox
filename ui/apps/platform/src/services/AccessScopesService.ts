@@ -19,7 +19,10 @@ export function getIsDefaultAccessScopeId(id: string): boolean {
 }
 
 export function getIsUnrestrictedAccessScopeId(id: string): boolean {
-    return id === defaultAccessScopeIds.Unrestricted || id === defaultAccessScopeIds.UnrestrictedPostgres
+    return (
+        id === defaultAccessScopeIds.Unrestricted ||
+        id === defaultAccessScopeIds.UnrestrictedPostgres
+    );
 }
 
 export type SimpleAccessScopeNamespace = {

@@ -13,10 +13,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import {
-    AccessScope,
-    getIsUnrestrictedAccessScopeId,
-} from 'services/AccessScopesService';
+import { AccessScope, getIsUnrestrictedAccessScopeId } from 'services/AccessScopesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 
