@@ -18,6 +18,8 @@ import sampleCert from '../../helpers/sampleCert';
 // Page address segments are the source of truth for integrationSource and integrationType.
 const integrationSource = 'notifiers';
 
+const staticResponseForTest = { body: {} };
+
 describe('Notifiers', () => {
     withAuth();
 
@@ -70,7 +72,6 @@ describe('Notifiers', () => {
             // Step 3, check valid form and save
             getInputByLabel('AWS account number').clear().type('939357552771').blur();
 
-            const staticResponseForTest = { body: {} };
             testIntegrationInFormWithStoredCredentials(
                 integrationSource,
                 integrationType,
@@ -148,7 +149,6 @@ describe('Notifiers', () => {
             getInputByLabel('Annotation key for recipient').clear().type('email');
             getInputByLabel('Disable TLS certificate validation (insecure)').click();
 
-            const staticResponseForTest = { body: {} };
             testIntegrationInFormWithStoredCredentials(
                 integrationSource,
                 integrationType,
@@ -206,7 +206,6 @@ describe('Notifiers', () => {
             getInputByLabel('Key').type('x-org');
             getInputByLabel('Value').type('mysteryinc').blur();
 
-            const staticResponseForTest = { body: {} };
             testIntegrationInFormWithStoredCredentials(
                 integrationSource,
                 integrationType,
@@ -269,7 +268,6 @@ describe('Notifiers', () => {
                 })
                 .blur();
 
-            const staticResponseForTest = { body: {} };
             testIntegrationInFormWithStoredCredentials(
                 integrationSource,
                 integrationType,
@@ -322,7 +320,6 @@ describe('Notifiers', () => {
             getInputByLabel('Jira URL').clear().type('https://example.atlassian.net');
             getInputByLabel('Default project').clear().type('Unicorn').blur();
 
-            const staticResponseForTest = { body: {} };
             testIntegrationInFormWithStoredCredentials(
                 integrationSource,
                 integrationType,
@@ -369,7 +366,6 @@ describe('Notifiers', () => {
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('PagerDuty integration key').type('key');
 
-            const staticResponseForTest = { body: {} };
             testIntegrationInFormWithStoredCredentials(
                 integrationSource,
                 integrationType,
@@ -415,7 +411,6 @@ describe('Notifiers', () => {
                 .clear()
                 .type('https://endpoint.sumologic.com/receiver/v1/http/');
 
-            const staticResponseForTest = { body: {} };
             testIntegrationInFormWithoutStoredCredentials(
                 integrationSource,
                 integrationType,
@@ -488,7 +483,6 @@ describe('Notifiers', () => {
             getInputByLabel('Source type for alert').clear().type('stackrox-alert');
             getInputByLabel('Source type for audit').clear().type('stackrox-audit-message');
 
-            const staticResponseForTest = { body: {} };
             testIntegrationInFormWithStoredCredentials(
                 integrationSource,
                 integrationType,
@@ -541,7 +535,6 @@ describe('Notifiers', () => {
                 .type('https://hooks.slack.com/services/scooby/doo')
                 .blur();
 
-            const staticResponseForTest = { body: {} };
             testIntegrationInFormWithoutStoredCredentials(
                 integrationSource,
                 integrationType,
@@ -592,7 +585,6 @@ describe('Notifiers', () => {
             // Step 3, check valid form and save
             getInputByLabel('Receiver port').clear().type('1').blur();
 
-            const staticResponseForTest = { body: {} };
             testIntegrationInFormWithoutStoredCredentials(
                 integrationSource,
                 integrationType,
@@ -635,7 +627,6 @@ describe('Notifiers', () => {
                 .blur();
             getInputByLabel('Annotation key for Teams webhook').clear().type('teams');
 
-            const staticResponseForTest = { body: {} };
             testIntegrationInFormWithoutStoredCredentials(
                 integrationSource,
                 integrationType,
