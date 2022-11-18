@@ -107,18 +107,15 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 		return nil, errors.Wrap(errox.NotFound, "Not found")
 	}
 
-	resp := &v1.GetCollectionResponse{
-		Collection: collection,
+	deployments, err := s.tryDeploymentMatching(ctx, collection, request.GetOptions())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed resolving deployments")
 	}
 
-	if request.GetOptions() != nil && request.GetOptions().GetWithMatches() {
-		resp.Deployments, err = s.datastore.ResolveListDeployments(ctx, resp.Collection, request.GetOptions().GetPagination())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed resolving deployments")
-		}
-	}
-
-	return resp, err
+	return &v1.GetCollectionResponse{
+		Collection:  collection,
+		Deployments: deployments,
+	}, nil
 }
 
 // GetCollectionCount returns count of collections matching the query in the request
@@ -296,14 +293,20 @@ func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCo
 		return nil, err
 	}
 
-	resp := &v1.DryRunCollectionResponse{}
-
-	if request.GetOptions() != nil && request.GetOptions().GetWithMatches() {
-		resp.Deployments, err = s.datastore.ResolveListDeployments(ctx, collection, request.GetOptions().GetPagination())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed resolving deployments")
-		}
+	deployments, err := s.tryDeploymentMatching(ctx, collection, request.GetOptions())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed resolving deployments")
 	}
 
-	return resp, nil
+	return &v1.DryRunCollectionResponse{
+		Deployments: deployments,
+	}, nil
+}
+
+func (s *serviceImpl) tryDeploymentMatching(ctx context.Context, collection *storage.ResourceCollection, matchOptions *v1.CollectionDeploymentMatchOptions) ([]*storage.ListDeployment, error) {
+	if matchOptions == nil || !matchOptions.GetWithMatches() {
+		return nil, nil
+	}
+
+	return s.datastore.ResolveListDeployments(ctx, collection, matchOptions.GetMatchesPagination())
 }

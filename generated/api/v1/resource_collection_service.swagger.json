@@ -182,27 +182,27 @@
             "type": "boolean"
           },
           {
-            "name": "options.pagination.limit",
+            "name": "options.matchesPagination.limit",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "options.pagination.offset",
+            "name": "options.matchesPagination.offset",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "options.pagination.sortOption.field",
+            "name": "options.matchesPagination.sortOption.field",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "options.pagination.sortOption.reversed",
+            "name": "options.matchesPagination.sortOption.reversed",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -513,6 +513,17 @@
         }
       }
     },
+    "v1CollectionDeploymentMatchOptions": {
+      "type": "object",
+      "properties": {
+        "withMatches": {
+          "type": "boolean"
+        },
+        "matchesPagination": {
+          "$ref": "#/definitions/v1Pagination"
+        }
+      }
+    },
     "v1CreateCollectionRequest": {
       "type": "object",
       "properties": {
@@ -569,18 +580,7 @@
           }
         },
         "options": {
-          "$ref": "#/definitions/v1DryRunCollectionRequestOptions"
-        }
-      }
-    },
-    "v1DryRunCollectionRequestOptions": {
-      "type": "object",
-      "properties": {
-        "withMatches": {
-          "type": "boolean"
-        },
-        "pagination": {
-          "$ref": "#/definitions/v1Pagination"
+          "$ref": "#/definitions/v1CollectionDeploymentMatchOptions"
         }
       }
     },
@@ -604,17 +604,6 @@
         "count": {
           "type": "integer",
           "format": "int32"
-        }
-      }
-    },
-    "v1GetCollectionRequestOptions": {
-      "type": "object",
-      "properties": {
-        "withMatches": {
-          "type": "boolean"
-        },
-        "pagination": {
-          "$ref": "#/definitions/v1Pagination"
         }
       }
     },
