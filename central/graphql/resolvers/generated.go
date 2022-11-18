@@ -788,13 +788,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"defined: Boolean!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ManagerType(0)))
+	utils.Must(builder.AddType("Marketing", []string{
+		"centralId: String!",
+		"organizationId: String!",
+		"segmentKey: String!",
+		"userId: String!",
+	}))
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
-		"centralId: String!",
 		"licenseStatus: Metadata_LicenseStatus!",
-		"organizationId: String!",
+		"marketing: Marketing",
 		"releaseBuild: Boolean!",
-		"segmentKey: String!",
 		"version: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.Metadata_LicenseStatus(0)))
@@ -9269,6 +9273,68 @@ func toManagerTypes(values *[]string) []storage.ManagerType {
 	return output
 }
 
+type marketingResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *v1.Marketing
+}
+
+func (resolver *Resolver) wrapMarketing(value *v1.Marketing, ok bool, err error) (*marketingResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &marketingResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMarketings(values []*v1.Marketing, err error) ([]*marketingResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*marketingResolver, len(values))
+	for i, v := range values {
+		output[i] = &marketingResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapMarketingWithContext(ctx context.Context, value *v1.Marketing, ok bool, err error) (*marketingResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &marketingResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMarketingsWithContext(ctx context.Context, values []*v1.Marketing, err error) ([]*marketingResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*marketingResolver, len(values))
+	for i, v := range values {
+		output[i] = &marketingResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *marketingResolver) CentralId(ctx context.Context) string {
+	value := resolver.data.GetCentralId()
+	return value
+}
+
+func (resolver *marketingResolver) OrganizationId(ctx context.Context) string {
+	value := resolver.data.GetOrganizationId()
+	return value
+}
+
+func (resolver *marketingResolver) SegmentKey(ctx context.Context) string {
+	value := resolver.data.GetSegmentKey()
+	return value
+}
+
+func (resolver *marketingResolver) UserId(ctx context.Context) string {
+	value := resolver.data.GetUserId()
+	return value
+}
+
 type metadataResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -9316,28 +9382,18 @@ func (resolver *metadataResolver) BuildFlavor(ctx context.Context) string {
 	return value
 }
 
-func (resolver *metadataResolver) CentralId(ctx context.Context) string {
-	value := resolver.data.GetCentralId()
-	return value
-}
-
 func (resolver *metadataResolver) LicenseStatus(ctx context.Context) string {
 	value := resolver.data.GetLicenseStatus()
 	return value.String()
 }
 
-func (resolver *metadataResolver) OrganizationId(ctx context.Context) string {
-	value := resolver.data.GetOrganizationId()
-	return value
+func (resolver *metadataResolver) Marketing(ctx context.Context) (*marketingResolver, error) {
+	value := resolver.data.GetMarketing()
+	return resolver.root.wrapMarketing(value, true, nil)
 }
 
 func (resolver *metadataResolver) ReleaseBuild(ctx context.Context) bool {
 	value := resolver.data.GetReleaseBuild()
-	return value
-}
-
-func (resolver *metadataResolver) SegmentKey(ctx context.Context) string {
-	value := resolver.data.GetSegmentKey()
 	return value
 }
 

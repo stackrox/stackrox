@@ -113,6 +113,23 @@
         }
       }
     },
+    "v1Marketing": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "centralId": {
+          "type": "string"
+        },
+        "organizationId": {
+          "type": "string"
+        },
+        "segmentKey": {
+          "type": "string"
+        }
+      }
+    },
     "v1Metadata": {
       "type": "object",
       "properties": {
@@ -129,14 +146,8 @@
           "$ref": "#/definitions/MetadataLicenseStatus",
           "title": "Do not use this field. It will always contain \"VALID\""
         },
-        "centralId": {
-          "type": "string"
-        },
-        "organizationId": {
-          "type": "string"
-        },
-        "segmentKey": {
-          "type": "string"
+        "marketing": {
+          "$ref": "#/definitions/v1Marketing"
         }
       }
     },

@@ -51,15 +51,22 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		ReleaseBuild:  buildinfo.ReleaseBuild,
 		LicenseStatus: v1.Metadata_VALID,
 	}
+	id, _ := authn.IdentityFromContext(ctx)
 	if marketing.Enabled() {
 		if config, _ := mpkg.GetDeviceConfig(); config != nil {
-			metadata.CentralId = config.ID
-			metadata.OrganizationId = config.OrgID
-			metadata.SegmentKey = env.SegmentWriteKey.Setting()
+			metadata.Marketing = &v1.Marketing{
+				UserId:         "unauthenticated",
+				CentralId:      config.ID,
+				OrganizationId: config.OrgID,
+				SegmentKey:     env.SegmentWriteKey.Setting(),
+			}
+			if id != nil {
+				metadata.Marketing.UserId = id.UID()
+			}
 		}
 	}
 	// Only return the version to logged in users, not anonymous users.
-	if authn.IdentityFromContextOrNil(ctx) != nil {
+	if id != nil {
 		metadata.Version = version.GetMainVersion()
 	}
 	return metadata, nil

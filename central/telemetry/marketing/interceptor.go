@@ -37,7 +37,7 @@ func getRequestDetails(ctx context.Context, err error, info *grpc.UnaryServerInf
 
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {
-		userID = "unknown"
+		userID = "unauthenticated"
 		log.Debug("Cannot identify user from context: ", iderr)
 	} else {
 		userID = id.UID()
