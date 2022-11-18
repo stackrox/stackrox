@@ -61,7 +61,6 @@ deploy_stackrox_with_custom_sensor() {
     sensor_wait
 
     touch "${STATE_DEPLOYED}"
-
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
@@ -113,20 +112,23 @@ deploy_sensor_from_helm_charts() {
     if [ -z $1 ]; then
         die "deploy_sensor_from_helm_charts should receive a helm chart version\nusage: deploy_sensor_from_helm_charts <Chart version> <path to init bundle>"
     fi
+	chart_version="$1"
     if [ -z $2 ]; then
         die "deploy_sensor_from_helm_charts should receive a path to an init bundle yaml\nusage: deploy_sensor_from_helm_charts <Chart version> <path to init bundle>"
     fi
+	init_bundle="$2"
 
-    info "Deploying secured cluster (v$1) from Helm Charts (init bundle $2)"
+
+    info "Deploying secured cluster (v$chart_version) from Helm Charts (init bundle $init_bundle)"
 
 	helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
     helm repo update
 
     helm install -n stackrox stackrox-secured-cluster-services \
         stackrox-oss/stackrox-secured-cluster-services \
-        -f "$2" \
+        -f "$init_bundle" \
         --set clusterName="remote" \
-        --version "$1"
+        --version "$chart_version"
 }
 
 deploy_sensor() {

@@ -31,7 +31,6 @@ compatibility_test() {
         remove_existing_stackrox_resources
         setup_default_TLS_certs
 
-        # deploy_stackrox
         deploy_stackrox_with_custom_sensor "${SENSOR_CHART_VERSION}"
         echo "Stackrox deployed"
         kubectl -n stackrox get deploy,ds -o wide
