@@ -7,6 +7,7 @@ import {
 } from '../../helpers/formHelpers';
 import {
     clickCreateNewIntegrationInTable,
+    deleteIntegrationInTable,
     saveCreatedIntegrationInForm,
     testIntegrationInFormWithoutStoredCredentials,
     visitIntegrationsTable,
@@ -77,6 +78,8 @@ describe('Backup Integrations', () => {
             );
 
             saveCreatedIntegrationInForm(integrationSource, integrationType);
+
+            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
         });
 
         it('should create a new Google Cloud Storage integration', () => {
@@ -140,6 +143,8 @@ describe('Backup Integrations', () => {
             );
 
             saveCreatedIntegrationInForm(integrationSource, integrationType);
+
+            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
         });
     });
 });
