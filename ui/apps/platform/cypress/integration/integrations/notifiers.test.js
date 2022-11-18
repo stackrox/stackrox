@@ -20,7 +20,7 @@ const integrationSource = 'notifiers';
 
 const staticResponseForTest = { body: {} };
 
-describe('Notifiers', () => {
+describe('Notifier Integrations', () => {
     withAuth();
 
     describe('forms', () => {
