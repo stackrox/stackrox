@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Compatibility test installation of ACS using MAIN_IMAGE_TAG for central SENSOR_IMAGE_TAG for secured cluster
+# Compatibility test installation of ACS using MAIN_IMAGE_TAG for central SENSOR_CHART_VERSION for secured cluster
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$ROOT/scripts/ci/gcp.sh"
@@ -13,7 +13,7 @@ source "$ROOT/qa-tests-backend/scripts/lib.sh"
 set -euo pipefail
 
 compatibility_test() {
-    info "Starting test (sensor compatibility test $SENSOR_CHART_VERSION)"
+    info "Starting test (sensor compatibility test ${SENSOR_CHART_VERSION})"
 
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
@@ -32,7 +32,7 @@ compatibility_test() {
         setup_default_TLS_certs
 
         # deploy_stackrox
-        deploy_stackrox_with_custom_sensor "$SENSOR_CHART_VERSION"
+        deploy_stackrox_with_custom_sensor "${SENSOR_CHART_VERSION}"
         echo "Stackrox deployed"
         kubectl -n stackrox get deploy,ds -o wide
 
@@ -51,8 +51,8 @@ compatibility_test() {
 
     make -C qa-tests-backend compatibility-test || touch FAIL
 
-    store_qa_test_results "compatibility-test-sensor-$SENSOR_CHART_VERSION"
-    [[ ! -f FAIL ]] || die "compatibility-test-sensor-$SENSOR_CHART_VERSION"
+    store_qa_test_results "compatibility-test-sensor-${SENSOR_CHART_VERSION}"
+    [[ ! -f FAIL ]] || die "compatibility-test-sensor-${SENSOR_CHART_VERSION}"
 }
 
 
