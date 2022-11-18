@@ -11,7 +11,7 @@ export const defaultAccessScopeIds = {
     Unrestricted: 'io.stackrox.authz.accessscope.unrestricted',
     UnrestrictedPostgres: 'ffffffff-ffff-fff4-f5ff-ffffffffffff',
     DenyAll: 'io.stackrox.authz.accessscope.denyall',
-    DenyAllPostgres: 'ffffffff-ffff-fff4-f5ff-fffffffffffe'
+    DenyAllPostgres: 'ffffffff-ffff-fff4-f5ff-fffffffffffe',
 };
 
 export function getIsDefaultAccessScopeId(id: string): boolean {

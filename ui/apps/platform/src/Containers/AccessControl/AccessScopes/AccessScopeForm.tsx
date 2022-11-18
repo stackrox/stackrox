@@ -18,8 +18,7 @@ import {
     LabelSelector,
     LabelSelectorsKey,
     computeEffectiveAccessScopeClusters,
-    defaultAccessScopeIds,
-    getIsUnrestrictedAccessScopeId
+    getIsUnrestrictedAccessScopeId,
 } from 'services/AccessScopesService';
 
 import {
@@ -196,7 +195,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                 />
             </FormGroup>
             {alertCompute}
-            { !getIsUnrestrictedAccessScopeId(values.id) && (
+            {!getIsUnrestrictedAccessScopeId(values.id) && (
                 <Flex
                     direction={{ default: 'row' }}
                     spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}

@@ -15,8 +15,7 @@ import {
 
 import {
     AccessScope,
-    defaultAccessScopeIds,
-    getIsUnrestrictedAccessScopeId
+    getIsUnrestrictedAccessScopeId,
 } from 'services/AccessScopesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
