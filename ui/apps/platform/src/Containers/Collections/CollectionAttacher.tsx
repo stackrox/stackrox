@@ -60,7 +60,7 @@ function CollectionAttacher({
                 rowKey={({ id }) => id}
                 cells={collectionTableCells}
                 selectedLabel="Attached collections"
-                deselectedLabel="Detached collections"
+                deselectedLabel="Available collections"
                 selectButtonText="Attach"
                 deselectButtonText="Detach"
             />
