@@ -74,7 +74,7 @@ func (suite *CollectionServiceTestSuite) TestGetCollection() {
 
 	request := &v1.GetCollectionRequest{
 		Id: "a",
-		Options: &v1.GetCollectionRequest_Options{
+		Options: &v1.CollectionDeploymentMatchOptions{
 			WithMatches: false,
 		},
 	}
