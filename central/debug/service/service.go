@@ -61,9 +61,10 @@ const (
 
 	centralClusterPrefix = "_central-cluster"
 
-	defaultDebugDumpTimeout = 60 * time.Second
-	layout                  = "2006-01-02T15:04:05.000Z"
-	logWindow               = 20 * time.Minute
+	metricsPullTimeout     = 20 * time.Second
+	diagnosticsPullTimeout = 20 * time.Second
+	layout                 = "2006-01-02T15:04:05.000Z"
+	logWindow              = 20 * time.Minute
 )
 
 var (
@@ -493,7 +494,6 @@ type debugDumpOptions struct {
 	withCentral       bool
 	clusters          []string
 	since             time.Time
-	timeout           time.Duration
 }
 
 func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string, opts debugDumpOptions) {
@@ -646,14 +646,8 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	err := getTimeoutQueryParam(r, opts)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, err.Error())
-		return
-	}
-
 	filename := time.Now().Format("stackrox_debug_2006_01_02_15_04_05.zip")
+
 	s.writeZippedDebugDump(r.Context(), w, filename, opts)
 }
 
@@ -678,28 +672,8 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		fmt.Fprint(w, err.Error())
 		return
 	}
-	err = getTimeoutQueryParam(r, opts)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, err.Error())
-		return
-	}
 
 	s.writeZippedDebugDump(r.Context(), w, filename, opts)
-}
-
-func getTimeoutQueryParam(r *http.Request, opts debugDumpOptions) error {
-	timeoutStr := r.URL.Query().Get("timeout")
-	if timeoutStr != "" {
-		timeout, err := strconv.Atoi(timeoutStr)
-		if err != nil {
-			return errors.Wrapf(err, "invalid timeout value: %q\n", timeoutStr)
-		}
-		opts.timeout = time.Duration(timeout) * time.Second
-	} else {
-		opts.timeout = defaultDebugDumpTimeout
-	}
-	return nil
 }
 
 func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
