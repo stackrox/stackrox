@@ -17,6 +17,12 @@ import {
 // Page address segments are the source of truth for integrationSource and integrationType.
 const integrationSource = 'imageIntegrations';
 
+const staticResponseForTest = { body: {} };
+
+const staticResponseForPOST = {
+    body: { id: 'abcdefgh' },
+};
+
 describe('Image Integrations', () => {
     withAuth();
 
@@ -56,16 +62,12 @@ describe('Image Integrations', () => {
 
         getInputByLabel('Endpoint').clear().type('https://scanner.stackrox:8080');
 
-        const staticResponseForTest = { body: {} };
         testIntegrationInFormWithoutStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
         );
 
-        const staticResponseForPOST = {
-            body: { id: 'abcdefgh' },
-        };
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
@@ -95,16 +97,12 @@ describe('Image Integrations', () => {
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('registry-1.docker.io');
 
-        const staticResponseForTest = { body: {} };
         testIntegrationInFormWithoutStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
         );
 
-        const staticResponseForPOST = {
-            body: { id: 'abcdefgh' },
-        };
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
@@ -137,16 +135,12 @@ describe('Image Integrations', () => {
         getInputByLabel('Registry ID').clear().type('12345');
         getInputByLabel('Region').clear().type('us-west-1');
 
-        const staticResponseForTest = { body: {} };
         testIntegrationInFormWithoutStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
         );
 
-        const staticResponseForPOST = {
-            body: { id: 'abcdefgh' },
-        };
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
@@ -193,16 +187,12 @@ describe('Image Integrations', () => {
             parseSpecialCharSequences: false,
         });
 
-        const staticResponseForTest = { body: {} };
         testIntegrationInFormWithStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
         );
 
-        const staticResponseForPOST = {
-            body: { id: 'abcdefgh' },
-        };
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
@@ -236,16 +226,12 @@ describe('Image Integrations', () => {
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').type('password');
 
-        const staticResponseForTest = { body: {} };
         testIntegrationInFormWithStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
         );
 
-        const staticResponseForPOST = {
-            body: { id: 'abcdefgh' },
-        };
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
@@ -277,16 +263,12 @@ describe('Image Integrations', () => {
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').type('password');
 
-        const staticResponseForTest = { body: {} };
         testIntegrationInFormWithStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
         );
 
-        const staticResponseForPOST = {
-            body: { id: 'abcdefgh' },
-        };
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
@@ -325,16 +307,12 @@ describe('Image Integrations', () => {
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('OAuth token').clear().type('12345');
 
-        const staticResponseForTest = { body: {} };
         testIntegrationInFormWithStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
         );
 
-        const staticResponseForPOST = {
-            body: { id: 'abcdefgh' },
-        };
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
@@ -364,16 +342,12 @@ describe('Image Integrations', () => {
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('test.endpoint');
 
-        const staticResponseForTest = { body: {} };
         testIntegrationInFormWithoutStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
         );
 
-        const staticResponseForPOST = {
-            body: { id: 'abcdefgh' },
-        };
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
@@ -407,16 +381,12 @@ describe('Image Integrations', () => {
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').clear().type('password');
 
-        const staticResponseForTest = { body: {} };
         testIntegrationInFormWithStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
         );
 
-        const staticResponseForPOST = {
-            body: { id: 'abcdefgh' },
-        };
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
@@ -449,16 +419,12 @@ describe('Image Integrations', () => {
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('API key').clear().type('12345');
 
-        const staticResponseForTest = { body: {} };
         testIntegrationInFormWithStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
         );
 
-        const staticResponseForPOST = {
-            body: { id: 'abcdefgh' },
-        };
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
@@ -490,16 +456,12 @@ describe('Image Integrations', () => {
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').clear().type('password');
 
-        const staticResponseForTest = { body: {} };
         testIntegrationInFormWithStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
         );
 
-        const staticResponseForPOST = {
-            body: { id: 'abcdefgh' },
-        };
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
