@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -131,9 +132,6 @@ func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
 	defer ds.lock.RUnlock()
 
 	wrap := ds.deployments[id]
-	if wrap == nil {
-		return nil
-	}
 	return wrap
 }
 
@@ -146,6 +144,9 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.
 func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, error) {
 	wrap := ds.getWrap(id)
+	if wrap != nil {
+		return nil, errors.Errorf("deployment with ID %s doesn't exist in the internal deployment store", id)
+	}
 	clonedWrap := wrap.Clone()
 
 	clonedWrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
