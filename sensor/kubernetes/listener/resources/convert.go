@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
-	"github.com/stackrox/rox/sensor/kubernetes/selector"
 	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -452,41 +451,14 @@ func (w *deploymentWrap) resetPortExposureNoLock() {
 	}
 }
 
-//func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) {
-//	w.mutex.Lock()
-//	defer w.mutex.Unlock()
-//
-//	w.resetPortExposureNoLock()
-//
-//	svcs := store.getMatchingServicesWithRoutes(w.Namespace, w.PodLabels)
-//	for _, svc := range svcs {
-//		w.updatePortExposureUncheckedNoLock(svc)
-//	}
-//}
-
-func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoutes) {
+func (w *deploymentWrap) updatePortExposure(portExposure map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
-	w.resetPortExposureNoLock()
-
-	for _, svc := range svcs {
-		w.updatePortExposureUncheckedNoLock(svc.exposure())
-	}
+	w.updatePortExposureUncheckedNoLock(portExposure)
 }
 
-func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
-	if svc.selector.Matches(selector.CreateLabelsWithLen(w.PodLabels)) {
-		return
-	}
-
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-
-	w.updatePortExposureUncheckedNoLock(svc.exposure())
-}
-
-func (w *deploymentWrap) updatePortExposureFromStorage(portExposures []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
+func (w *deploymentWrap) updatePortExposureSlice(portExposures []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 

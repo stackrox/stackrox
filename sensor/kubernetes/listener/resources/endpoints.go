@@ -217,7 +217,7 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 	}
 
 	updates := make(map[string]*clusterentities.EntityData)
-	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
+	for _, svc := range m.serviceStore.nodePortServicesSnapshot() {
 		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 			update, ok := updates[deployment.GetId()]
 			if !ok {
@@ -238,7 +238,7 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 	affectedDeployments := make(map[*deploymentWrap]struct{})
 
-	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
+	for _, svc := range m.serviceStore.nodePortServicesSnapshot() {
 		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 			affectedDeployments[deployment] = struct{}{}
 		}

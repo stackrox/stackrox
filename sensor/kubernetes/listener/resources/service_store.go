@@ -102,8 +102,8 @@ func (ss *serviceStore) addOrUpdateService(svc *serviceWrap) {
 	}
 }
 
-// NodePortServicesSnapshot returns a snapshot of the service wraps
-func (ss *serviceStore) NodePortServicesSnapshot() []*serviceWrap {
+// nodePortServicesSnapshot returns a snapshot of the service wraps
+func (ss *serviceStore) nodePortServicesSnapshot() []*serviceWrap {
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
 

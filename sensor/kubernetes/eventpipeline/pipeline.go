@@ -13,13 +13,14 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 )
 
 // New instantiates the eventPipeline component
-func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer) common.SensorComponent {
+func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, storeProvider *resources.InMemoryStoreProvider) common.SensorComponent {
 	// TODO(ROX-13413): Move this env.EventPipelineOutputQueueSize to CreateOptions
 	outputQueue := output.New(detector, env.EventPipelineOutputQueueSize.IntegerSetting())
-	resourceListener := listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue)
+	resourceListener := listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue, storeProvider)
 
 	pipelineResponses := make(chan *central.MsgFromSensor)
 	return &eventPipeline{

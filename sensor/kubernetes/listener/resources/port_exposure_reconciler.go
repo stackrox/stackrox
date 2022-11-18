@@ -27,12 +27,11 @@ func newPortExposureReconciler(deploymentStore *DeploymentStore, serviceStore *s
 func (p *portExposureReconcilerImpl) UpdateExposuresForMatchingDeployments(namespace string, sel selector.Selector) []*central.SensorEvent {
 	var events []*central.SensorEvent
 	for _, deploymentWrap := range p.deploymentStore.getMatchingDeployments(namespace, sel) {
-		if svcs := p.serviceStore.getMatchingServicesWithRoutes(deploymentWrap.Namespace, deploymentWrap.PodLabels); len(svcs) > 0 || deploymentWrap.anyNonHostPort() {
+		if exposureInfo := p.serviceStore.GetExposureInfos(deploymentWrap.Namespace, deploymentWrap.PodLabels); len(exposureInfo) > 0 || deploymentWrap.anyNonHostPort() {
 			cloned := deploymentWrap.Clone()
-			cloned.updatePortExposureFromServices(svcs...)
+			cloned.updatePortExposureSlice(exposureInfo)
 			p.deploymentStore.addOrUpdateDeployment(cloned)
 		}
-
 		events = append(events, deploymentWrap.toEvent(central.ResourceAction_UPDATE_RESOURCE))
 	}
 	return events
@@ -41,8 +40,11 @@ func (p *portExposureReconcilerImpl) UpdateExposuresForMatchingDeployments(names
 func (p *portExposureReconcilerImpl) UpdateExposureOnServiceCreate(svc serviceWithRoutes) []*central.SensorEvent {
 	var events []*central.SensorEvent
 	for _, deploymentWrap := range p.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
+		if svc.selector.Matches(selector.CreateLabelsWithLen(deploymentWrap.PodLabels)) {
+			continue
+		}
 		cloned := deploymentWrap.Clone()
-		cloned.updatePortExposure(svc)
+		cloned.updatePortExposure(svc.exposure())
 		p.deploymentStore.addOrUpdateDeployment(cloned)
 		events = append(events, cloned.toEvent(central.ResourceAction_UPDATE_RESOURCE))
 	}

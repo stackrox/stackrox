@@ -65,8 +65,10 @@ func NewDispatcherRegistry(
 	namespaces *orchestratornamespaces.OrchestratorNamespaces,
 	credentialsManager awscredentials.RegistryCredentialsManager,
 	traceWriter io.Writer,
+	storeProvider *InMemoryStoreProvider,
 ) DispatcherRegistry {
-	serviceStore := newServiceStore()
+	serviceStore := storeProvider.serviceStore
+	rbacUpdater := storeProvider.rbacStore
 	serviceAccountStore := ServiceAccountStoreSingleton()
 	deploymentStore := DeploymentStoreSingleton()
 	podStore := PodStoreSingleton()
@@ -74,7 +76,6 @@ func NewDispatcherRegistry(
 	nsStore := newNamespaceStore()
 	netPolicyStore := NetworkPolicySingleton()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
-	rbacUpdater := rbac.NewStore()
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, serviceStore)
 	registryStore := registry.Singleton()
 

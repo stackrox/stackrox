@@ -149,7 +149,7 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	clonedWrap := wrap.Clone()
 
 	clonedWrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
-	clonedWrap.updatePortExposureFromStorage(dependencies.Exposures)
+	clonedWrap.updatePortExposureSlice(dependencies.Exposures)
 	if err := clonedWrap.updateHash(); err != nil {
 		return nil, err
 	}

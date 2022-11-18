@@ -165,8 +165,8 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		return events
 	}
 
-	services := d.serviceStore.getMatchingServicesWithRoutes(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
-	deploymentWrap.updatePortExposureFromServices(services...)
+	exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
+	deploymentWrap.updatePortExposureSlice(exposureInfos)
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		// Make sure to clone and add deploymentWrap to the store if this function is being used at places other than
 		// right after deploymentWrap object creation.

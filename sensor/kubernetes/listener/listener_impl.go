@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 )
 
 const (
@@ -28,6 +29,7 @@ type listenerImpl struct {
 	resyncPeriod       time.Duration
 	traceWriter        io.Writer
 	outputQueue        component.OutputQueue
+	storeProvider      *resources.InMemoryStoreProvider
 }
 
 func (k *listenerImpl) Start() error {
