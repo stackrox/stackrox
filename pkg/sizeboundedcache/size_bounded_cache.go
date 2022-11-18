@@ -65,17 +65,8 @@ func New[K comparable, V any](maxSize, maxItemSize int64, costFunc func(key K, v
 	}, nil
 }
 
-func (c *sizeBoundedCache[K, V]) get(key K) (*valueEntry[V], bool) {
-	valueE, ok := c.cache.Get(key)
-	if !ok {
-		return nil, false
-	}
-	return valueE, true
-}
-
 func (c *sizeBoundedCache[K, V]) Get(key K) (value V, exists bool) {
-	valueE, ok := c.get(key)
-	if ok {
+	if valueE, ok := c.cache.Get(key); ok {
 		return valueE.value, true
 	}
 	return
@@ -137,7 +128,7 @@ func (c *sizeBoundedCache[K, V]) RemoveIf(key K, valPred func(V) bool) {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 
-	value, ok := c.get(key)
+	value, ok := c.cache.Get(key)
 	if !ok || (valPred != nil && !valPred(value.value)) {
 		return
 	}
