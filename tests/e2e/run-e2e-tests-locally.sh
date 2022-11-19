@@ -11,26 +11,32 @@ source "$ROOT/scripts/lib.sh"
 
 usage() { 
     cat <<_EOH_
-Usage: $0 [-y] [-o k8s|openshift]
-  -y - run without prompts.
+Usage: $0  [-d] [-m <tag>] [-o k8s|openshift] [-y]
+  -d - allow docker to run roxctl.
+  -m - override 'make tag' for the version to install.
   -o - choose the cluster variety. defaults to k8s.
+  -y - run without prompts.
 _EOH_
     exit 1
 }
 
-prompt="true"
+allow_docker="false"
 orchestrator="k8s"
+prompt="true"
 
-while getopts ":yo:m:" option; do
+while getopts ":dyo:m:" option; do
     case "$option" in
-        y)
-            prompt="false"
+        d)
+            allow_docker="true"
             ;;
         o)
             orchestrator="${OPTARG}"
             ;;
         m)
             export MAIN_IMAGE_TAG="${OPTARG}"
+            ;;
+        y)
+            prompt="false"
             ;;
         *)
             usage
@@ -107,6 +113,20 @@ _EODIRTY_
     exit 1
 fi
 
+if [[ "$allow_docker" == "false" ]]; then
+    main_version="${MAIN_IMAGE_TAG:-$tag}"
+    roxctl_version="$(roxctl version)"
+    if [[ "${main_version}" != "${roxctl_version}" ]]; then
+        cat <<_EOVERSION_
+ERROR: main and roxctl versions do not match. main: ${main_version} != roxctl: ${roxctl_version}.
+They must match for the ./deploy scripts to run without docker.
+Use '-d' to run roxctl via docker. This works under MacOS at least.
+Or 'make cli' to get matching versions.
+_EOVERSION_
+        exit 1
+    fi
+fi
+
 context="$(kubectl config current-context)"
 echo "This script will tear down resources, install ACS and run tests against '$context'."
 
@@ -134,7 +154,11 @@ info "Running the test."
 
 export ORCHESTRATOR_FLAVOR="$orchestrator"
 
+# Using helm in this manner saves the ./deploy scripts trying to run roxctl via
+# docker which can be very system dependent.
+export OUTPUT_FORMAT="helm"
+
 # --flavor qa
-bash -x "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+"$ROOT/qa-tests-backend/scripts/run-part-1.sh" 2>&1 | sed -e 's/^/test output: /'
 # --flavor e2e
 #"$ROOT/tests/e2e/run.sh"

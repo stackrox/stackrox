@@ -74,7 +74,7 @@ deploy_central() {
     fi
 
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-    "$ROOT/${DEPLOY_DIR}/central.sh"
+    bash -x "$ROOT/${DEPLOY_DIR}/central.sh"
 }
 
 deploy_sensor() {
