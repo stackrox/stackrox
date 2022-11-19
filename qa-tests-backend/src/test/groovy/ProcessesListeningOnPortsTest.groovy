@@ -229,6 +229,67 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 	assert endpoint2.process.processName == "socat"
 	assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
 	assert endpoint2.process.processArgs == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+
+
+
+
+
+
+        destroyDeployments()
+
+
+
+
+        log.info "Destroyed deployment"
+
+
+        list = processesListeningOnPorts.processesListeningOnPortsWithDeploymentList
+
+        assert list.size() == 2
+
+	deploymentId1 = targetDeployments[0].getDeploymentUid()
+	deploymentId2 = targetDeployments[1].getDeploymentUid()
+
+	processesForDeployment1 = list.find { it.deploymentId == deploymentId1 }
+	processesForDeployment2 = list.find { it.deploymentId == deploymentId2 }
+
+        log.info "${processesForDeployment1}"
+        log.info "${processesForDeployment2}"
+
+        list1 = processesForDeployment1.processesListeningOnPortsList
+
+        assert list1.size() == 2
+
+        endpoint1_1 = list1.find { it.port == 80 }
+
+        assert endpoint1_1
+	assert endpoint1_1.closeTimestamp
+	assert endpoint1_1.process.containerName == TCPCONNECTIONTARGET1 
+	assert endpoint1_1.process.processName == "socat"
+	assert endpoint1_1.process.processExecFilePath == "/usr/bin/socat"
+	// assert endpoint1_1.process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
+
+	endpoint1_2 = list1.find { it.port == 8080 }
+
+        assert endpoint1_2
+	assert endpoint1_2.closeTimestamp
+	assert endpoint1_2.process.containerName == TCPCONNECTIONTARGET1 
+	assert endpoint1_2.process.processName == "socat"
+	assert endpoint1_2.process.processExecFilePath == "/usr/bin/socat"
+	assert endpoint1_2.process.processArgs == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
+
+        list2 = processesForDeployment2.processesListeningOnPortsList
+
+	assert list2.size() == 1
+
+	endpoint2 = list2.get(0)
+
+        assert endpoint2.port == 8081
+	assert endpoint2.closeTimestamp
+	assert endpoint2.process.containerName == TCPCONNECTIONTARGET2
+	assert endpoint2.process.processName == "socat"
+	assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
+	assert endpoint2.process.processArgs == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
     }
 
     @Category([BAT, Integration])
