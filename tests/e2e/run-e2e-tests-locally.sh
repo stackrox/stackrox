@@ -11,7 +11,7 @@ source "$ROOT/scripts/lib.sh"
 
 usage() { 
     cat <<_EOH_
-Usage: $0  [-d] [-m <tag>] [-o k8s|openshift] [-y]
+Usage: $0 [-d] [-m <tag>] [-o k8s|openshift] [-y] [<flavor one of qa|e2e|ui|upgrade, defaults to qa>]
   -d - allow docker to run roxctl.
   -m - override 'make tag' for the version to install.
   -o - choose the cluster variety. defaults to k8s.
@@ -43,6 +43,16 @@ while getopts ":dyo:m:" option; do
             ;;
     esac
 done
+shift $((OPTIND-1))
+
+flavor="${1:-qa}"
+case "$flavor" in
+    qa)
+        ;;
+    *)
+        die "flavor $flavor not supported"
+        ;;
+esac
 
 case "$orchestrator" in
     k8s|openshift)
@@ -78,14 +88,14 @@ export VAULT_ADDR=https://vault.ci.openshift.org/
 
 if ! vault kv list kv/selfservice/stackrox-stackrox-e2e-tests 2>&1 | sed -e 's/^/vault output: /'; then
     cat <<_EOL_
-ERROR: Cannot list the vault secrets.
+ERROR: Cannot list vault secrets.
 There are a number of required steps:
 1. Log in to the secrets collection manager at https://selfservice.vault.ci.openshift.org/secretcollection?ui=true
    (This is a RedHat-ism and will require SSO)
-2. Ask a team member to add you to the collections required for this test.
-   stackrox-stackrox-initial and stackrox-stackrox-e2e-tests
-3. Login to the vault at: https://vault.ci.openshift.org/ui/vault/secrets
-   You should see the secrets under kv/
+2. Ask a team member to add you to the collections required for this test:
+   stackrox-stackrox-initial and stackrox-stackrox-e2e-tests.
+3. Login to the vault at: https://vault.ci.openshift.org/ui/vault/secrets (Use OIDC)
+   You should see these secrets under kv/
 4. Copy a 'token' from that UI and use it to log in to vault with:
    export VAULT_ADDR=https://vault.ci.openshift.org/
    vault login
@@ -127,6 +137,11 @@ _EOVERSION_
     fi
 fi
 
+if [[ "$flavor" == "qa" ]] && ! command -v aws > /dev/null 2>&1; then
+    echo "WARN: There is no 'aws' command installed. This is required for ECR tests which will now be skipped."
+    export SKIP_ECR_TESTS="true"
+fi
+
 context="$(kubectl config current-context)"
 echo "This script will tear down resources, install ACS and run tests against '$context'."
 
@@ -154,9 +169,8 @@ info "Running the test."
 
 export ORCHESTRATOR_FLAVOR="$orchestrator"
 
-# Using helm in this manner saves the ./deploy scripts trying to run roxctl via
-# docker which can be very system dependent.
-export OUTPUT_FORMAT="helm"
+# required to get a running central
+export ROX_POSTGRES_DATASTORE="${ROX_POSTGRES_DATASTORE:-false}"
 
 # --flavor qa
 "$ROOT/qa-tests-backend/scripts/run-part-1.sh" 2>&1 | sed -e 's/^/test output: /'

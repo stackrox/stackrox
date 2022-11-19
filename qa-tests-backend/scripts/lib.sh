@@ -21,9 +21,13 @@ deploy_webhook_server() {
 get_ECR_docker_pull_password() {
     info "Get AWS ECR Docker Pull Password"
 
-    aws --version
-    local pass
-    pass="$(aws --region="${AWS_ECR_REGISTRY_REGION}" ecr get-login-password)"
-    ci_export AWS_ECR_DOCKER_PULL_PASSWORD "${pass}"
+    if [[ "${SKIP_ECR_TESTS:-}" != "true" ]]; then
+        aws --version
+        local pass
+        pass="$(aws --region="${AWS_ECR_REGISTRY_REGION}" ecr get-login-password)"
+        ci_export AWS_ECR_DOCKER_PULL_PASSWORD "${pass}"
+    else
+        info "ECR tests are skipped with ${SKIP_ECR_TESTS:-}"
+        ci_export AWS_ECR_DOCKER_PULL_PASSWORD "skipped"
+    fi
 }
-
