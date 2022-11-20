@@ -8,8 +8,8 @@ import {
 import {
     assertIntegrationsTable,
     clickCreateNewIntegrationInTable,
+    generateCreatedAuthProvidersIntegrationInForm,
     revokeAuthProvidersIntegrationInTable,
-    saveCreatedIntegrationInForm,
     visitIntegrationsTable,
 } from '../../helpers/integrations';
 
@@ -49,7 +49,7 @@ describe('Cluster Init Bundles', () => {
         // Step 3, check valid from and generate
         getInputByLabel('Cluster init bundle name').clear().type(clusterInitBundleName);
 
-        saveCreatedIntegrationInForm(integrationSource, integrationType);
+        generateCreatedAuthProvidersIntegrationInForm(integrationSource, integrationType);
 
         cy.get('[aria-label="Success Alert"]').should('contain', 'Download Helm values file');
         cy.get('[aria-label="Success Alert"]').should(

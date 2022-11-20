@@ -105,17 +105,6 @@ function getIntegrationsEndpointAddressForGET(integrationSource, integrationType
         : integrationsEndpointAddress;
 }
 
-function getIntegrationsEndpointAddressForPOST(integrationSource, integrationType) {
-    const integrationsEndpointAddress = getIntegrationsEndpointAddress(
-        integrationSource,
-        integrationType
-    );
-
-    return integrationSource === 'authProviders' && integrationType === 'apitoken'
-        ? `${integrationsEndpointAddress}/generate`
-        : integrationsEndpointAddress;
-}
-
 function getIntegrationEndpointAddress(integrationSource, integrationType, integrationId) {
     const integrationEndpointAddress = getIntegrationsEndpointAddress(
         integrationSource,
@@ -324,12 +313,21 @@ export function revokeAuthProvidersIntegrationInTable(integrationType, integrati
  * @param {string} integrationType
  * @param {{ body: unknown } | { fixture: string }} [staticResponseForPOST]
  */
-export function saveCreatedIntegrationInForm(
-    integrationSource,
+export function generateCreatedAuthProvidersIntegrationInForm(
     integrationType,
     staticResponseForPOST
 ) {
-    const urlForPOST = getIntegrationsEndpointAddressForPOST(integrationSource, integrationType);
+    const integrationSource = 'authProviders';
+
+    const integrationsEndpointAddress = getIntegrationsEndpointAddress(
+        integrationSource,
+        integrationType
+    );
+
+    const urlForPOST =
+        integrationType === 'apitoken'
+            ? `${integrationsEndpointAddress}/generate`
+            : integrationsEndpointAddress;
     const aliasForPOST = `POST_${urlForPOST.replace('/v1/', '')}`;
 
     const aliasForGET = getIntegrationsEndpointAlias(integrationSource, integrationType);
@@ -351,11 +349,49 @@ export function saveCreatedIntegrationInForm(
 
     interactAndWaitForResponses(
         () => {
-            cy.get(
-                integrationSource === 'authProviders'
-                    ? selectors.buttons.generate
-                    : selectors.buttons.save
-            ).click();
+            cy.get(selectors.buttons.generate).click();
+            cy.get(selectors.buttons.back).click();
+        },
+        routeMatcherMap,
+        staticResponseMap
+    );
+
+    assertIntegrationsTable(integrationSource, integrationType);
+}
+
+/**
+ * @param {string} integrationSource
+ * @param {string} integrationType
+ * @param {{ body: unknown } | { fixture: string }} [staticResponseForPOST]
+ */
+export function saveCreatedIntegrationInForm(
+    integrationSource,
+    integrationType,
+    staticResponseForPOST
+) {
+    const urlForPOST = getIntegrationsEndpointAddress(integrationSource, integrationType);
+    const aliasForPOST = `POST_${getIntegrationsEndpointAlias(integrationSource, integrationType)}`;
+
+    const aliasForGET = getIntegrationsEndpointAlias(integrationSource, integrationType);
+
+    const routeMatcherMap = {
+        [aliasForPOST]: {
+            method: 'POST',
+            url: urlForPOST,
+        },
+        [aliasForGET]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET(integrationSource, integrationType),
+        },
+    };
+
+    const staticResponseMap = staticResponseForPOST && {
+        [aliasForPOST]: staticResponseForPOST,
+    };
+
+    interactAndWaitForResponses(
+        () => {
+            cy.get(selectors.buttons.save).click();
         },
         routeMatcherMap,
         staticResponseMap

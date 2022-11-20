@@ -10,8 +10,8 @@ import {
 import {
     assertIntegrationsTable,
     clickCreateNewIntegrationInTable,
+    generateCreatedAuthProvidersIntegrationInForm,
     revokeAuthProvidersIntegrationInTable,
-    saveCreatedIntegrationInForm,
     visitIntegrationsTable,
 } from '../../helpers/integrations';
 
@@ -42,7 +42,7 @@ describe('API Tokens', () => {
         getSelectButtonByLabel('Role').click();
         getSelectOption('Admin').click();
 
-        saveCreatedIntegrationInForm(integrationSource, integrationType);
+        generateCreatedAuthProvidersIntegrationInForm(integrationSource, integrationType);
 
         cy.get('[aria-label="Success Alert"]');
 
