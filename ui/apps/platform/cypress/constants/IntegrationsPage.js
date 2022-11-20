@@ -7,15 +7,11 @@ export const selectors = {
     configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
     navLink: `${navigationSelectors.nestedNavLinks}:contains("Integrations")`,
     breadcrumbItem: '.pf-c-breadcrumb__item',
-    title1: 'h1', // for example, append :contains("Integrations")
-    title2: 'h2', // for example, append :contains("${integrationLabel}")
     tableRowNameLink: 'tbody td a', // TODO td[data-label="Name"] would be even better, but no dataLabel prop yet
     clusters: {
         k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',
     },
     buttons: {
-        newApiToken: 'a:contains("Generate token")',
-        newClusterInitBundle: 'a:contains("Generate bundle")',
         next: 'button:contains("Next")',
         downloadYAML: 'button:contains("Download YAML")',
         delete: 'button:contains("Delete")',

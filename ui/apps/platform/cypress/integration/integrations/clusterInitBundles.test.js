@@ -57,6 +57,8 @@ describe('Cluster Init Bundles', () => {
             'Download Kubernetes secrets file'
         );
 
+        cy.get(selectors.buttons.back).click();
+
         // View it.
 
         assertIntegrationsTable(integrationSource, integrationType);

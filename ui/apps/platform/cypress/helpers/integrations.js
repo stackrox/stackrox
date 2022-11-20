@@ -397,7 +397,6 @@ export function generateCreatedAuthProvidersIntegrationInForm(
     interactAndWaitForResponses(
         () => {
             cy.get(selectors.buttons.generate).click();
-            cy.get(selectors.buttons.back).click();
         },
         routeMatcherMap,
         staticResponseMap
