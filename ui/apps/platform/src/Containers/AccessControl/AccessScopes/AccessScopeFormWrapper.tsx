@@ -13,7 +13,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { AccessScope, defaultAccessScopeIds } from 'services/AccessScopesService';
+import { AccessScope, getIsUnrestrictedAccessScopeId } from 'services/AccessScopesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 
@@ -82,7 +82,7 @@ function AccessScopeFormWrapper({
      * before its first requirement or value has been added.
      */
     const isValidRules =
-        values.id !== defaultAccessScopeIds.Unrestricted && getIsValidRules(values.rules);
+        !getIsUnrestrictedAccessScopeId(values.id) && getIsValidRules(values.rules);
 
     function onClickSubmit() {
         // TODO submit through Formik, especially to update its initialValue.
