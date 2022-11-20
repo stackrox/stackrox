@@ -202,7 +202,7 @@ export function assertIntegrationsTable(integrationSource, integrationType) {
     const integrationTitle = integrationTitleMap[integrationSource][integrationType];
 
     cy.get(`${selectors.breadcrumbItem} a:contains("${integrationsTitle}")`);
-    cy.get(`${selectors.breadcrumbItem} span:contains("${integrationTitle}")`);
+    cy.get(`${selectors.breadcrumbItem}:contains("${integrationTitle}")`);
     cy.get(`h1:contains("${integrationsTitle}")`);
     cy.get(`h2:contains("${integrationTitle}")`);
 }
@@ -296,8 +296,8 @@ export function clickCreateNewIntegrationInTable(
     // Assert search separately if action moves from pathname.
 
     const integrationTitle = integrationTitleMap[integrationSource][integrationType];
-    cy.get(`${selectors.breadcrumbItem}:contains("${integrationsTitle}")`);
-    cy.get(`${selectors.breadcrumbItem}:contains("${integrationTitle}")`);
+    cy.get(`${selectors.breadcrumbItem} a:contains("${integrationsTitle}")`);
+    cy.get(`${selectors.breadcrumbItem} a:contains("${integrationTitle}")`);
     cy.get(`${selectors.breadcrumbItem}:contains("Create Integration")`); // TODO Title Case
 }
 
