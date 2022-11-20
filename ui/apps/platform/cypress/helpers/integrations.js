@@ -268,7 +268,7 @@ export function deleteIntegrationInTable(integrationSource, integrationType, int
     interactAndWaitForResponses(() => {
         cy.get(`tr:contains("${integrationName}") button[aria-label="Actions"]`).click();
         cy.get(
-            `tr:contains("${integrationName}") button[role="menuitem"]:contain("Delete Integration")`
+            `tr:contains("${integrationName}") button[role="menuitem"]:contains("Delete Integration")`
         ).click(); // TODO Title Case
         cy.get('button:contains("Delete")').click(); // confirmation modal
     }, routeMatcherMap);
