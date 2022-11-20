@@ -1,68 +1,10 @@
-import table from '../selectors/table';
-import toast from '../selectors/toast';
-import tooltip from '../selectors/tooltip';
-import navigationSelectors from '../selectors/navigation';
-
 export const selectors = {
-    configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
-    navLink: `${navigationSelectors.nestedNavLinks}:contains("Integrations")`,
     breadcrumbItem: '.pf-c-breadcrumb__item',
     tableRowNameLink: 'tbody td a', // TODO td[data-label="Name"] would be even better, but no dataLabel prop yet
-    clusters: {
-        k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',
-    },
     buttons: {
         test: 'button:contains("Test")',
         save: 'button:contains("Save")',
         generate: 'button:contains("Generate")',
         back: 'button:contains("Back")',
     },
-    apiTokenForm: {
-        nameInput: 'form[data-testid="api-token-form"] input[name="name"]',
-        roleSelect: 'form[data-testid="api-token-form"] .react-select__control',
-    },
-    apiTokenBox: 'span:contains("eyJ")', // all API tokens start with eyJ
-    apiTokenDetailsDiv: 'div[data-testid="api-token-details"]',
-    clusterForm: {
-        nameInput: 'form[data-testid="cluster-form"] input[name="name"]',
-        imageInput: 'form[data-testid="cluster-form"] input[name="mainImage"]',
-        endpointInput: 'form[data-testid="cluster-form"] input[name="centralApiEndpoint"]',
-    },
-    dockerRegistryForm: {
-        nameInput: "form input[name='name']",
-        typesSelect: 'form .react-select__control',
-        endpointInput: "form input[name='docker.endpoint']",
-    },
-    slackForm: {
-        nameInput: "form input[name='name']",
-        defaultWebhook: "form input[name='labelDefault']",
-        labelAnnotationKey: "form input[name='labelKey']",
-    },
-    awsSecurityHubForm: {
-        nameInput: "form input[name='name']",
-        awsAccountNumber: "form input[name='awsSecurityHub.accountId']",
-        awsRegion: 'form .react-select__control',
-        awsRegionListItems: '.react-select__menu-list > div',
-        awsAccessKeyId: "form input[name='awsSecurityHub.credentials.accessKeyId']",
-        awsSecretAccessKey: "form input[name='awsSecurityHub.credentials.secretAccessKey']",
-    },
-    syslogForm: {
-        nameInput: "form input[name='name']",
-        localFacility: 'form .react-select__control',
-        localFacilityListItems: '.react-select__menu-list > div',
-        receiverHost: "form input[name='syslog.tcpConfig.hostname']",
-        receiverPort: 'form .react-numeric-input input',
-        useTls: "form input[name='syslog.tcpConfig.useTls']",
-        disableTlsValidation: "form input[name='syslog.tcpConfig.skipTlsVerify']",
-    },
-    modalHeader: '.ReactModal__Content header',
-    formSaveButton: 'button[data-testid="save-integration"]',
-    resultsSection: '[data-testid="results-message"]',
-    labeledValue: '[data-testid="labeled-value"]',
-    plugins: '#image-integrations a[data-testid="integration-tile"]',
-    dialog: '.dialog',
-    checkboxes: 'input',
-    table,
-    toast,
-    tooltip,
 };

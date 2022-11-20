@@ -1,4 +1,3 @@
-import { selectors } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     assertIntegrationsTable,
@@ -25,7 +24,7 @@ describe('Integrations Dashboard', () => {
         visitIntegrationsDashboard();
 
         let value = null;
-        cy.get(selectors.plugins).each(($el) => {
+        cy.get('#image-integrations a[data-testid="integration-tile"]').each(($el) => {
             if (value) {
                 expect($el[0].clientHeight).to.equal(value);
             } else {
