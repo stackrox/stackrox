@@ -12,18 +12,10 @@ export const selectors = {
         k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',
     },
     buttons: {
-        next: 'button:contains("Next")',
-        downloadYAML: 'button:contains("Download YAML")',
-        delete: 'button:contains("Delete")',
         test: 'button:contains("Test")',
-        create: 'button:contains("Create")',
         save: 'button:contains("Save")',
-        confirm: 'button:contains("Confirm")',
         generate: 'button:contains("Generate")',
         back: 'button:contains("Back")',
-        revoke: 'button:contains("Revoke")',
-        closePanel: 'button[data-testid="cancel"]',
-        newIntegration: 'a:contains("New integration")',
     },
     apiTokenForm: {
         nameInput: 'form[data-testid="api-token-form"] input[name="name"]',
