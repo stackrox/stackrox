@@ -1,4 +1,4 @@
-import { labels, selectors } from '../constants/IntegrationsPage';
+import { selectors } from '../constants/IntegrationsPage';
 import { visitFromLeftNavExpandable } from './nav';
 import { interactAndWaitForResponses } from './request';
 import { getTableRowActionButtonByName } from './tableHelpers';
@@ -147,7 +147,61 @@ const routeMatcherMapForIntegrationsDashboard = Object.fromEntries(
 
 const integrationsTitle = 'Integrations';
 
-const integrationTitleMap = labels; // maybe move here
+const integrationTitleMap = {
+    authProviders: {
+        apitoken: 'API Token',
+        clusterInitBundle: 'Cluster Init Bundle',
+    },
+    backups: {
+        gcs: 'Google Cloud Storage',
+        s3: 'Amazon S3',
+    },
+    imageIntegrations: {
+        artifactory: 'JFrog Artifactory',
+        artifactregistry: 'Google Artifact Registry',
+        azure: 'Microsoft ACR',
+        clair: 'CoreOS Clair',
+        clairify: 'StackRox Scanner',
+        docker: 'Generic Docker Registry',
+        ecr: 'Amazon ECR',
+        google: 'Google Container Registry',
+        ibm: 'IBM Cloud',
+        nexus: 'Sonatype Nexus',
+        quay: 'Quay.io',
+        rhel: 'Red Hat',
+    },
+    notifiers: {
+        awsSecurityHub: 'AWS Security Hub',
+        cscc: 'Google Cloud SCC',
+        email: 'Email',
+        generic: 'Generic Webhook',
+        jira: 'Jira',
+        pagerduty: 'PagerDuty',
+        slack: 'Slack',
+        splunk: 'Splunk',
+        sumologic: 'Sumo Logic',
+        syslog: 'Syslog',
+        teams: 'Microsoft Teams',
+    },
+    signatureIntegrations: {
+        signature: 'Signature',
+    },
+};
+
+// assert
+
+/*
+ * Assertion independent of interaction:
+ * After click integration type tile on dashboard.
+ * After create and save new integration in form.
+ */
+export function assertIntegrationsTable(integrationSource, integrationType) {
+    const integrationTitle = integrationTitleMap[integrationSource][integrationType];
+
+    cy.get(`${selectors.breadcrumbItem}:contains("${integrationTitle}")`);
+    cy.get(`h1:contains("${integrationsTitle}")`);
+    cy.get(`h2:contains("${integrationTitle}")`);
+}
 
 // visit
 
@@ -380,19 +434,4 @@ export function testIntegrationInFormWithoutStoredCredentials(
         hasStoredCredentials,
         staticResponseForTest
     );
-}
-
-// assert
-
-/*
- * Assertion independent of interaction:
- * After click integration type tile on dashboard.
- * After create and save new integration in form.
- */
-export function assertIntegrationsTable(integrationSource, integrationType) {
-    const integrationTitle = integrationTitleMap[integrationSource][integrationType];
-
-    cy.get(`${selectors.breadcrumbItem}:contains("${integrationTitle}")`);
-    cy.get(`h1:contains("${integrationsTitle}")`);
-    cy.get(`h2:contains("${integrationTitle}")`);
 }
