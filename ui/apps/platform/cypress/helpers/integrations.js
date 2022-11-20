@@ -198,7 +198,8 @@ const integrationTitleMap = {
 export function assertIntegrationsTable(integrationSource, integrationType) {
     const integrationTitle = integrationTitleMap[integrationSource][integrationType];
 
-    cy.get(`${selectors.breadcrumbItem}:contains("${integrationTitle}")`);
+    cy.get(`${selectors.breadcrumbItem} a:contains("${integrationsTitle}")`);
+    cy.get(`${selectors.breadcrumbItem} span:contains("${integrationTitle}")`);
     cy.get(`h1:contains("${integrationsTitle}")`);
     cy.get(`h2:contains("${integrationTitle}")`);
 }
