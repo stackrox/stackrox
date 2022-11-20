@@ -136,6 +136,14 @@ const routeMatcherMapForIntegrationsDashboard = Object.fromEntries(
 
 const integrationsTitle = 'Integrations';
 
+const integrationSourceTitleMap = {
+    authProviders: 'Authentication Tokens',
+    backups: 'Backup Integrations',
+    imageIntegrations: 'Image Integrations',
+    notifiers: 'Notifier Integrations',
+    signatureIntegrations: '',
+};
+
 const integrationTitleMap = {
     authProviders: {
         apitoken: 'API Token',
@@ -233,6 +241,16 @@ export function visitIntegrationsTable(integrationSource, integrationType, stati
     );
 
     assertIntegrationsTable(integrationSource, integrationType);
+}
+
+// interact on dashboard
+
+export function clickIntegrationTileOnDashboard(integrationSource, integrationType) {
+    const integrationSourceTitle = integrationSourceTitleMap[integrationSource];
+    const integrationTitle = integrationTitleMap[integrationSource][integrationType];
+
+    cy.get(`h2:contains("${integrationSourceTitle}")`);
+    cy.get(`a .pf-c-card__title:contains("${integrationTitle}")`).click();
 }
 
 // interact in table

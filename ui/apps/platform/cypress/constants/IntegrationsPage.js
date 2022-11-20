@@ -11,7 +11,6 @@ export const selectors = {
     breadcrumbItem: '.pf-c-breadcrumb__item',
     title1: 'h1', // for example, append :contains("Integrations")
     title2: 'h2', // for example, append :contains("${integrationLabel}")
-    tile: 'a[data-testid="integration-tile"]',
     tableRowNameLink: 'tbody td a', // TODO td[data-label="Name"] would be even better, but no dataLabel prop yet
     clusters: {
         k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',

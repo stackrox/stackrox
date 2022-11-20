@@ -1,7 +1,8 @@
-import { labels, selectors } from '../../constants/IntegrationsPage';
+import { selectors } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     assertIntegrationsTable,
+    clickIntegrationTileOnDashboard,
     visitIntegrationsDashboard,
     visitIntegrationsDashboardFromLeftNav,
 } from '../../helpers/integrations';
@@ -37,75 +38,55 @@ describe('Integrations Dashboard', () => {
 
     it('should go to the table for a type of imageIntegrations', () => {
         const integrationSource = 'imageIntegrations';
-        const integrationSourceLabel = 'Image Integrations'; // TODO might change from Title Case to Sentence case
-
         const integrationType = 'docker';
-        const integrationTypeLabel = labels[integrationSource][integrationType];
 
         visitIntegrationsDashboard();
 
-        cy.get(`${selectors.title2}:contains("${integrationSourceLabel}")`);
-        cy.get(`${selectors.tile}:contains("${integrationTypeLabel}")`).click();
+        clickIntegrationTileOnDashboard(integrationSource, integrationType);
 
         assertIntegrationsTable(integrationSource, integrationType);
     });
 
     it('should go to the table for a type of notifiers', () => {
         const integrationSource = 'notifiers';
-        const integrationSourceLabel = 'Notifier Integrations'; // TODO might change from Title Case to Sentence case
-
         const integrationType = 'slack';
-        const integrationTypeLabel = labels[integrationSource][integrationType];
 
         visitIntegrationsDashboard();
 
-        cy.get(`${selectors.title2}:contains("${integrationSourceLabel}")`);
-        cy.get(`${selectors.tile}:contains("${integrationTypeLabel}")`).click();
+        clickIntegrationTileOnDashboard(integrationSource, integrationType);
 
         assertIntegrationsTable(integrationSource, integrationType);
     });
 
     it('should go to the table for a type of backups', () => {
         const integrationSource = 'backups';
-        const integrationSourceLabel = 'Backup Integrations'; // TODO might change from Title Case to Sentence case
-
         const integrationType = 's3';
-        const integrationTypeLabel = labels[integrationSource][integrationType];
 
         visitIntegrationsDashboard();
 
-        cy.get(`${selectors.title2}:contains("${integrationSourceLabel}")`);
-        cy.get(`${selectors.tile}:contains("${integrationTypeLabel}")`).click();
+        clickIntegrationTileOnDashboard(integrationSource, integrationType);
 
         assertIntegrationsTable(integrationSource, integrationType);
     });
 
     it('should go to the table for apitoken type of authProviders', () => {
         const integrationSource = 'authProviders';
-        const integrationSourceLabel = 'Authentication Tokens'; // TODO might change from Title Case to Sentence case
-
         const integrationType = 'apitoken';
-        const integrationTypeLabel = labels[integrationSource][integrationType];
 
         visitIntegrationsDashboard();
 
-        cy.get(`${selectors.title2}:contains("${integrationSourceLabel}")`);
-        cy.get(`${selectors.tile}:contains("${integrationTypeLabel}")`).click();
+        clickIntegrationTileOnDashboard(integrationSource, integrationType);
 
         assertIntegrationsTable(integrationSource, integrationType);
     });
 
     it('should go to the table for clusterInitBundle type of authProviders', () => {
         const integrationSource = 'authProviders';
-        const integrationSourceLabel = 'Authentication Tokens'; // TODO might change from Title Case to Sentence case
-
         const integrationType = 'clusterInitBundle';
-        const integrationTypeLabel = labels[integrationSource][integrationType];
 
         visitIntegrationsDashboard();
 
-        cy.get(`${selectors.title2}:contains("${integrationSourceLabel}")`);
-        cy.get(`${selectors.tile}:contains("${integrationTypeLabel}")`).click();
+        clickIntegrationTileOnDashboard(integrationSource, integrationType);
 
         assertIntegrationsTable(integrationSource, integrationType);
     });
