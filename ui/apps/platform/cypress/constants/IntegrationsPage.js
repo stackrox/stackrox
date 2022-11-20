@@ -3,8 +3,6 @@ import toast from '../selectors/toast';
 import tooltip from '../selectors/tooltip';
 import navigationSelectors from '../selectors/navigation';
 
-export const url = '/main/integrations';
-
 export const selectors = {
     configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
     navLink: `${navigationSelectors.nestedNavLinks}:contains("Integrations")`,

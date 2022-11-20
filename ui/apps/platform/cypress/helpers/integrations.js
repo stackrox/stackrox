@@ -57,14 +57,14 @@ function getIntegrationsEndpointAddress(integrationSource, integrationType) {
                 default:
                     return '';
             }
-        case 'imageIntegrations': // camelCase in page address
-            return '/v1/imageintegrations'; // lowercase in endpoint address
-        case 'signatureIntegrations': // camelCase in page address
-            return '/v1/signatureintegrations'; // lowercase in endpoint address
-        case 'notifiers':
-            return '/v1/notifiers';
         case 'backups': // noun in page address
             return '/v1/externalbackups'; //  adjective and noun are lowercase in endpoint address
+        case 'imageIntegrations': // camelCase in page address
+            return '/v1/imageintegrations'; // lowercase in endpoint address
+        case 'notifiers':
+            return '/v1/notifiers';
+        case 'signatureIntegrations': // camelCase in page address
+            return '/v1/signatureintegrations'; // lowercase in endpoint address
         default:
             return '';
     }
@@ -81,18 +81,24 @@ export function getIntegrationsEndpointAlias(integrationSource, integrationType)
                 default:
                     return '';
             }
-        case 'imageIntegrations': // camelCase in page address
-            return 'imageintegrations'; // lowercase in endpoint alias
-        case 'signatureIntegrations': // camelCase in page address
-            return 'signatureintegrations'; // lowercase in endpoint alias
-        case 'notifiers':
-            return 'notifiers';
         case 'backups': // noun in page address
             return 'externalbackups'; //  adjective and noun are lowercase in endpoint address
+        case 'imageIntegrations': // camelCase in page address
+            return 'imageintegrations'; // lowercase in endpoint alias
+        case 'notifiers':
+            return 'notifiers';
+        case 'signatureIntegrations': // camelCase in page address
+            return 'signatureintegrations'; // lowercase in endpoint alias
         default:
             return '';
     }
 }
+
+const integrationSourceHashMap = {
+    backups: 'backup-integrations',
+    imageIntegrations: 'image-integrations',
+    notifiers: 'notifier-integrations',
+};
 
 function getIntegrationsEndpointAddressForGET(integrationSource, integrationType) {
     const integrationsEndpointAddress = getIntegrationsEndpointAddress(
@@ -202,6 +208,29 @@ export function assertIntegrationsTable(integrationSource, integrationType) {
 }
 
 // visit
+
+/**
+ * @param {function} interactionCallback
+ * @param {'backups' | 'imageIntegrations' | 'notifiers'} integrationSource
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function reachIntegrationsDashboardForSource(
+    interactionCallback,
+    integrationSource,
+    staticResponseMap
+) {
+    interactAndWaitForResponses(
+        interactionCallback,
+        routeMatcherMapForIntegrationsDashboard,
+        staticResponseMap
+    );
+
+    cy.location('pathname').should('eq', basePath);
+    cy.location('hash').should('eq', `#${integrationSourceHashMap[integrationSource]}`);
+
+    cy.get(`h1:contains("${integrationsTitle}")`);
+    cy.get(`h2:contains("${integrationSourceTitleMap[integrationSource]}")`).should('be.visible'); // should scroll to anchor
+}
 
 /**
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
