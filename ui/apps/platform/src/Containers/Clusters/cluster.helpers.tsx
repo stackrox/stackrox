@@ -541,11 +541,6 @@ export function getUpgradeableClusters(clusters = []) {
     });
 }
 
-export const wizardSteps = Object.freeze({
-    FORM: 'FORM',
-    DEPLOYMENT: 'DEPLOYMENT',
-});
-
 export default {
     runtimeOptions,
     clusterTypeOptions,
@@ -554,5 +549,4 @@ export default {
     newClusterDefault,
     findUpgradeState,
     isUpToDateStateObject,
-    wizardSteps,
 };
