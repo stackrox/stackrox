@@ -30,7 +30,7 @@ const (
 
 // SimpleAccessScopes holds the Gorm model for Postgres table `simple_access_scopes`.
 type SimpleAccessScopes struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Id         string `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }
