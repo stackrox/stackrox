@@ -533,7 +533,7 @@ class ImageScanningTest extends BaseSpecification {
     @Category([BAT, Integration])
     def "Image metadata from registry test - #testName"() {
         Assume.assumeTrue(testName != "ecr-iam" || ClusterService.isEKS())
-        Assume.assumeTrue(integration != "ecr" || Env.get("SKIP_ECR_TESTS", "false") == "true")
+        Assume.assumeFalse(integration == "ecr" && Env.get("SKIP_ECR_TESTS", "false") == "true")
         cleanupSetupForRetry()
 
         if (coreImageIntegrationId != null && integration == "quay") {

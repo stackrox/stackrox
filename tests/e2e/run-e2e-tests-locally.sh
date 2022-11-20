@@ -8,6 +8,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$ROOT/scripts/lib.sh"
+source "$ROOT/scripts/ci/lib.sh"
 
 usage() { 
     cat <<_EOH_

@@ -2,6 +2,8 @@
 
 # Common functions for deploying a cluster for QA tests
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+
 set -euo pipefail
 
 deploy_default_psp() {
