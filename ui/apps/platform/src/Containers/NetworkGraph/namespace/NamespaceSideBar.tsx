@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-    Badge,
     Flex,
     FlexItem,
     Tab,
@@ -11,21 +10,43 @@ import {
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
+import { EdgeModel, NodeModel } from '@patternfly/react-topology';
 
 import useTabs from 'hooks/patternfly/useTabs';
+import { getDeploymentNodesInNamespace, getNumDeploymentFlows } from '../utils/networkGraphUtils';
+
+import { NamespaceIcon } from '../common/NetworkGraphIcons';
 import NamespaceDeployments from './NamespaceDeployments';
 import NamespaceNetworkPolicies from './NamespaceNetworkPolicies';
 
-function NamespaceSideBar() {
+type NamespaceSideBarProps = {
+    namespaceId: string;
+    nodes: NodeModel[];
+    edges: EdgeModel[];
+};
+
+function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) {
+    // component state
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: 'Deployments',
+    });
+
+    // derived state
+    const deploymentNodes = getDeploymentNodesInNamespace(nodes, namespaceId);
+
+    const deployments = deploymentNodes.map((deploymentNode) => {
+        const numFlows = getNumDeploymentFlows(edges, deploymentNode.id);
+        return {
+            name: deploymentNode.label as string,
+            numFlows,
+        };
     });
 
     return (
         <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }} className="pf-u-h-100">
             <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
                 <FlexItem>
-                    <Badge style={{ backgroundColor: 'rgb(32,79,23)' }}>NS</Badge>
+                    <NamespaceIcon />
                 </FlexItem>
                 <FlexItem>
                     <TextContent>
@@ -61,7 +82,7 @@ function NamespaceSideBar() {
                     id="Deployments"
                     hidden={activeKeyTab !== 'Deployments'}
                 >
-                    <NamespaceDeployments />
+                    <NamespaceDeployments deployments={deployments} />
                 </TabContent>
                 <TabContent
                     eventKey="Network policies"

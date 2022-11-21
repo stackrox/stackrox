@@ -12,18 +12,18 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import usePagination from 'hooks/patternfly/usePagination';
+import { DeploymentIcon } from '../common/NetworkGraphIcons';
 
 const columnNames = {
     DEPLOYMENT: 'Deployment',
     ACTIVE_TRAFFIC: 'Active traffic',
 };
 
-const deployments = [
-    { name: 'Sensor', numFlows: '1' },
-    { name: 'Central', numFlows: '1' },
-];
+type NamespaceDeploymentsProps = {
+    deployments: { name: string; numFlows: number }[];
+};
 
-function NamespaceDeployments() {
+function NamespaceDeployments({ deployments }: NamespaceDeploymentsProps) {
     const [searchValue, setSearchValue] = React.useState('');
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
 
@@ -82,9 +82,16 @@ function NamespaceDeployments() {
                             {filteredDeployments.map((deployment) => (
                                 <Tr key={deployment.name}>
                                     <Td dataLabel={columnNames.DEPLOYMENT}>
-                                        <Button variant="link" isInline>
-                                            {deployment.name}
-                                        </Button>
+                                        <Flex spaceItems={{ default: 'spaceItemsMd' }}>
+                                            <FlexItem>
+                                                <DeploymentIcon />
+                                            </FlexItem>
+                                            <FlexItem>
+                                                <Button variant="link" isInline>
+                                                    {deployment.name}
+                                                </Button>
+                                            </FlexItem>
+                                        </Flex>
                                     </Td>
                                     <Td dataLabel={columnNames.ACTIVE_TRAFFIC}>
                                         {deployment.numFlows} flows
