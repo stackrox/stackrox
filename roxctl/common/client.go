@@ -11,11 +11,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/ternary"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"golang.org/x/net/http2"
 )
+
+const defaultClientTimeout = 30 * time.Second
 
 var (
 	http1NextProtos = []string{"http/1.1", "http/1.0"}
@@ -74,7 +77,8 @@ func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure boo
 	if err != nil {
 		return nil, err
 	}
-	return &roxctlClientImpl{http: client, a: auth, forceHTTP1: forceHTTP1, useInsecure: useInsecure, timeout: timeout}, nil
+	clientTimeout := ternary.Duration(timeout == 0, defaultClientTimeout, timeout)
+	return &roxctlClientImpl{http: client, a: auth, forceHTTP1: forceHTTP1, useInsecure: useInsecure, timeout: clientTimeout}, nil
 }
 
 // DoReqAndVerifyStatusCode executes a http.Request and verifies that the http.Response had the given status code
