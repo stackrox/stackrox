@@ -125,10 +125,10 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
         controller.addEventListener(SELECTION_EVENT, onSelect);
 
         setEdges(controller, detailId);
+
         return () => {
             controller.removeEventListener(SELECTION_EVENT, onSelect);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controller, model]);
 
     const selectedIds = selectedEntity ? [selectedEntity.id] : [];
