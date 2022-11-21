@@ -38,6 +38,7 @@ func GetAdditionalCAs() ([][]byte, error) {
 	var certDERs [][]byte
 	for _, certFile := range certFileInfos {
 		if filepath.Ext(certFile.Name()) != ".crt" {
+			log.Infof("Skipping additional-ca file %q, must end with '*.crt'.", certFile.Name())
 			continue
 		}
 		content, err := os.ReadFile(path.Join(additionalCADir, certFile.Name()))
