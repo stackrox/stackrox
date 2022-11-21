@@ -101,7 +101,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		return nil, errors.Wrap(err, "creating enforcer")
 	}
 
-	// TODO: Move other singleton stores into the store provider
+	// TODO(ROX-13603): Move other singleton stores into the store provider
 	storeProvider := resources.InitializeStore()
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
