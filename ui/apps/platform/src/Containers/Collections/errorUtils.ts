@@ -49,7 +49,7 @@ export function parseSaveError(err: Error): CollectionSaveError {
         // Error for collection update
         /name already in use/.test(rawMessage)
     ) {
-        return { type: 'DuplicateName', message: 'Collection name values must be unique' };
+        return { type: 'DuplicateName', message: 'Name must be unique' };
     }
 
     if (/failed to compile rule value regex/.test(rawMessage)) {
