@@ -33,7 +33,7 @@ deploy_stackrox_with_custom_sensor() {
     if [[ "$#" -ne 1 ]]; then
         die "expected sensor chart version as parameter in deploy_stackrox_with_custom_sensor"
     fi
-    sensor_chart_version=$1
+    target_version="$1"
 
     deploy_central
 
@@ -43,14 +43,14 @@ deploy_stackrox_with_custom_sensor() {
 
     # generate init bundle
     password_file="$ROOT/deploy/$ORCHESTRATOR_FLAVOR/central-deploy/password"
-    if [ ! -f $password_file ]; then 
+    if [ ! -f "$password_file" ]; then 
         die "password file $password_file not found after deploying central"
     fi
     kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
-        --password "$(cat $password_file)" \
+        --password "$(cat "$password_file")" \
       central init-bundles generate stackrox-init-bundle --output - 1> stackrox-init-bundle.yaml
 
-    deploy_sensor_from_helm_charts $sensor_chart_version ./stackrox-init-bundle.yaml
+    deploy_sensor_from_helm_charts "$target_version" ./stackrox-init-bundle.yaml
 
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait

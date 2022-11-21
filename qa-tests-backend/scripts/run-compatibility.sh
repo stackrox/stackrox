@@ -13,10 +13,11 @@ source "$ROOT/qa-tests-backend/scripts/lib.sh"
 set -euo pipefail
 
 compatibility_test() {
-    info "Starting test (sensor compatibility test ${SENSOR_CHART_VERSION})"
-
+    require_environment "SENSOR_CHART_VERSION"
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
+
+    info "Starting test (sensor compatibility test ${SENSOR_CHART_VERSION})"
 
     export_test_environment
 
