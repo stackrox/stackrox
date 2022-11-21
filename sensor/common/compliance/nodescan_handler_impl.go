@@ -16,13 +16,13 @@ type nodeScanHandlerImpl struct {
 	lock *sync.Mutex
 
 	stopC concurrency.ErrorSignal
-	// runFinishedC is signaled when the goroutine inside of run() finishes
-	runFinishedC concurrency.ErrorSignal
-	startedC     concurrency.Signal
+	// stoppedC is signaled when the goroutine inside of run() finishes
+	stoppedC concurrency.ErrorSignal
+	startedC concurrency.Signal
 }
 
 func (c *nodeScanHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
-	return &c.runFinishedC
+	return &c.stoppedC
 }
 
 func (c *nodeScanHandlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -64,7 +64,7 @@ func (c *nodeScanHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 func (c *nodeScanHandlerImpl) run() <-chan *central.MsgFromSensor {
 	toC := make(chan *central.MsgFromSensor)
 	go func() {
-		defer c.runFinishedC.Signal()
+		defer c.stoppedC.Signal()
 		defer close(toC)
 		for !c.stopC.IsDone() {
 			select {

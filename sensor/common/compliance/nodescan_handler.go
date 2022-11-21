@@ -17,11 +17,11 @@ type NodeScanHandler interface {
 // NewNodeScanHandler returns a new instance of a NodeScanHandler
 func NewNodeScanHandler(ch <-chan *storage.NodeScanV2) NodeScanHandler {
 	return &nodeScanHandlerImpl{
-		nodeScans:    ch,
-		toCentral:    make(chan *central.MsgFromSensor),
-		stopC:        concurrency.NewErrorSignal(),
-		startedC:     concurrency.NewSignal(),
-		lock:         &sync.Mutex{},
-		runFinishedC: concurrency.NewErrorSignal(),
+		nodeScans: ch,
+		toCentral: make(chan *central.MsgFromSensor),
+		stopC:     concurrency.NewErrorSignal(),
+		startedC:  concurrency.NewSignal(),
+		lock:      &sync.Mutex{},
+		stoppedC:  concurrency.NewErrorSignal(),
 	}
 }
