@@ -9,10 +9,14 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next Tag: 18
+// Next Tag: 19
 message Image {
     string                          id                          = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"pk"'];
     ImageName                       name                        = 1;
+    // This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with
+    // different locations.
+    // TODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise.
+    repeated ImageName              names                       = 18 [(gogoproto.moretags) = 'search:"-"'];
 
     ImageMetadata                   metadata                    = 2;
     ImageScan                       scan                        = 3 [(gogoproto.moretags) = 'policy:"Image Scan"'];
@@ -81,7 +85,7 @@ message ImageSignatureVerificationData {
     repeated ImageSignatureVerificationResult results = 1;
 }
 
-// Next Tag: 5
+// Next Tag: 6
 message ImageSignatureVerificationResult {
     google.protobuf.Timestamp verification_time = 1;
     // verifier_id correlates to the ID of the signature integration used to verify the signature.
@@ -103,7 +107,9 @@ message ImageSignatureVerificationResult {
     }
     Status status                               = 3;
     // description is set in the case of an error with the specific error's message. Otherwise, this will not be set.
-    string description                          = 4 ;
+    string description                          = 4;
+    // The full image names that are verified by this specific signature integration ID.
+    repeated string verified_image_references   = 5;
 }
 
 // Next Tag: 13
