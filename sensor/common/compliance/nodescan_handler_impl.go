@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"sync/atomic"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,13 +14,13 @@ import (
 type nodeScanHandlerImpl struct {
 	nodeScans <-chan *storage.NodeScanV2
 	toCentral <-chan *central.MsgFromSensor
-	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
-	lock *sync.Mutex
 
-	stopC concurrency.ErrorSignal
+	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
+	lock      *sync.Mutex
+	numStarts uint32
+	stopC     concurrency.ErrorSignal
 	// stoppedC is signaled when the goroutine inside of run() finishes
 	stoppedC concurrency.ErrorSignal
-	startedC concurrency.Signal
 }
 
 func (c *nodeScanHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
@@ -36,21 +38,17 @@ func (c *nodeScanHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 }
 
 func (c *nodeScanHandlerImpl) Start() error {
+	if !atomic.CompareAndSwapUint32(&c.numStarts, 0, 1) {
+		return errors.New("unable to start - component reached the maximum number of starts: 1")
+	}
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	if c.startedC.IsDone() {
-		return errors.New("running handler must be stopped before it can be started again")
-	}
-	c.startedC.Signal()
-	if !c.stopC.IsDone() {
-		c.toCentral = c.run()
-	}
+	c.toCentral = c.run()
 	return nil
 }
 
 func (c *nodeScanHandlerImpl) Stop(err error) {
 	c.stopC.SignalWithError(err)
-	c.startedC.Reset()
 }
 
 func (c *nodeScanHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
@@ -64,7 +62,7 @@ func (c *nodeScanHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 func (c *nodeScanHandlerImpl) run() <-chan *central.MsgFromSensor {
 	toC := make(chan *central.MsgFromSensor)
 	go func() {
-		defer c.stoppedC.Signal()
+		defer c.stoppedC.SignalWithError(c.stopC.Err())
 		defer close(toC)
 		for !c.stopC.IsDone() {
 			select {

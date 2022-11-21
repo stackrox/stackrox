@@ -11,12 +11,6 @@ import (
 	"go.uber.org/goleak"
 )
 
-func assertNoGoroutineLeaks(t *testing.T) {
-	goleak.VerifyNone(t,
-		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
-		goleak.IgnoreTopFunction("github.com/golang/glog.(*loggingT).flushDaemon"),
-	)
-}
 func TestNodeScanHandler(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	suite.Run(t, &NodeScanHandlerTestSuite{
@@ -61,6 +55,13 @@ func (s *NodeScanHandlerTestSuite) SetupTest() {
 
 }
 
+func assertNoGoroutineLeaks(t *testing.T) {
+	goleak.VerifyNone(t,
+		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
+		goleak.IgnoreTopFunction("github.com/golang/glog.(*loggingT).flushDaemon"),
+	)
+}
+
 func (s *NodeScanHandlerTestSuite) TearDownTest() {
 	defer assertNoGoroutineLeaks(s.T())
 	s.cancel()
@@ -73,19 +74,7 @@ func (s *NodeScanHandlerTestSuite) TearDownTest() {
 func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 	nodeScans := make(chan *storage.NodeScanV2)
 	h := NewNodeScanHandler(nodeScans)
-	// simulate Central: consume all messages from h.ResponsesC()
-	go func() {
-		for {
-			select {
-			case <-s.ctx.Done():
-				return
-			case _, ok := <-h.ResponsesC():
-				if !ok {
-					return
-				}
-			}
-		}
-	}()
+	s.consumeToCentral(h)
 	// this is a producer that stops the handler after producing the first message and then sends many (29) more messages
 	go func() {
 		defer close(nodeScans)
@@ -105,18 +94,9 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 
 func (s *NodeScanHandlerTestSuite) TestHandlerRegularRoutine() {
 	h := NewNodeScanHandler(s.generateTestInput())
-	s.handlerWorksNormally(h)
-}
-
-func (s *NodeScanHandlerTestSuite) TestHandlerWorksAfterRestart() {
-	s.NotPanics(func() {
-		h := NewNodeScanHandler(s.generateTestInput())
-
-		s.NoError(h.Start())
-		h.Stop(nil)
-
-		s.handlerWorksNormally(h)
-	})
+	s.NoError(h.Start())
+	s.consumeToCentral(h)
+	h.Stop(nil)
 }
 
 // generateTestInput generates 10 input messages to the NodeScanHandler
@@ -136,9 +116,8 @@ func (s *NodeScanHandlerTestSuite) generateTestInput() <-chan *storage.NodeScanV
 	return input
 }
 
-// handlerWorksNormally starts handler and blocks until it stops
-func (s *NodeScanHandlerTestSuite) handlerWorksNormally(han NodeScanHandler) {
-	s.NoError(han.Start())
+// consumeToCentral starts handler and blocks until it stops
+func (s *NodeScanHandlerTestSuite) consumeToCentral(han NodeScanHandler) {
 	// simulate Central: consume all messages from h.ResponsesC()
 	go func() {
 		for {
@@ -152,18 +131,18 @@ func (s *NodeScanHandlerTestSuite) handlerWorksNormally(han NodeScanHandler) {
 			}
 		}
 	}()
-	han.Stop(nil)
-	s.NoError(han.Stopped().Wait())
 }
 
 func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
 	s.NotPanics(func() {
 		h := NewNodeScanHandler(s.generateTestInput())
 		s.NoError(h.Start())
+		s.consumeToCentral(h)
 		h.Stop(nil)
 
-		// restart handler
-		s.handlerWorksNormally(h)
+		err := h.Start()
+		s.Error(err)
+		s.ErrorContains(err, "unable to start - component reached the maximum number of starts: 1")
 	})
 }
 
@@ -171,13 +150,12 @@ func (s *NodeScanHandlerTestSuite) TestDoubleStartHandler() {
 	s.NotPanics(func() {
 		h := NewNodeScanHandler(s.generateTestInput())
 		s.NoError(h.Start())
+		s.consumeToCentral(h)
 
 		err := h.Start()
 		s.Error(err)
-		s.ErrorContains(err, "running handler must be stopped before it can be started again")
+		s.ErrorContains(err, "unable to start - component reached the maximum number of starts: 1")
 		h.Stop(nil)
-
-		s.handlerWorksNormally(h)
 	})
 }
 
@@ -185,10 +163,8 @@ func (s *NodeScanHandlerTestSuite) TestDoubleStopHandler() {
 	s.NotPanics(func() {
 		h := NewNodeScanHandler(s.generateTestInput())
 		s.NoError(h.Start())
-
+		s.consumeToCentral(h)
 		h.Stop(nil)
 		h.Stop(nil)
-
-		s.handlerWorksNormally(h)
 	})
 }
