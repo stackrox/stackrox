@@ -2,10 +2,13 @@ import React, { ReactElement } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Alert,
+    Badge,
     Button,
     EmptyState,
     EmptyStateIcon,
     EmptyStateVariant,
+    ExpandableSection,
+    ExpandableSectionToggle,
     Flex,
     FlexItem,
     Form,
@@ -19,14 +22,25 @@ import { TableComposable, TableVariant, Tbody, Tr, Td } from '@patternfly/react-
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { collectionsBasePath } from 'routePaths';
 import { CollectionResponse } from 'services/CollectionsService';
 import { getIsValidLabelKey } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher, { CollectionAttacherProps } from './CollectionAttacher';
-import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
+import {
+    Collection,
+    ScopedResourceSelector,
+    SelectorEntityType,
+    selectorEntityTypes,
+} from './types';
 import { CollectionSaveError } from './errorUtils';
+
+import './CollectionForm.css';
+
+const ruleSectionContentId = 'expandable-rules-section';
+const attachmentSectionContentId = 'expandable-attachment-section';
 
 function AttachedCollectionTable({
     collections,
@@ -104,6 +118,21 @@ function yupResourceSelectorObject() {
     });
 }
 
+function getRuleCount(resourceSelector: Collection['resourceSelector']) {
+    let count = 0;
+
+    selectorEntityTypes.forEach((entityType) => {
+        const selector = resourceSelector[entityType];
+        if (selector.type === 'ByName') {
+            count += 1;
+        } else if (selector.type === 'ByLabel') {
+            count += selector.rules.length;
+        }
+    });
+
+    return count;
+}
+
 function CollectionForm({
     hasWriteAccessForCollections,
     action,
@@ -117,6 +146,10 @@ function CollectionForm({
     const history = useHistory();
 
     const isReadOnly = action.type === 'view' || !hasWriteAccessForCollections;
+
+    const { isOpen: isRuleSectionOpen, onToggle: ruleSectionOnToggle } = useSelectToggle(true);
+    const { isOpen: isAttachmentSectionOpen, onToggle: attachmentSectionOnToggle } =
+        useSelectToggle(true);
 
     const {
         values,
@@ -183,6 +216,8 @@ function CollectionForm({
         );
     };
 
+    const ruleCount = getRuleCount(values.resourceSelector);
+
     return (
         <Form className="pf-u-background-color-200">
             <Flex
@@ -235,84 +270,116 @@ function CollectionForm({
                         </FlexItem>
                     </Flex>
                 </Flex>
-
-                <Flex
-                    className="pf-u-background-color-100 pf-u-p-lg"
-                    direction={{ default: 'column' }}
-                    spaceItems={{ default: 'spaceItemsMd' }}
-                >
-                    <Title className={isReadOnly ? 'pf-u-mb-md' : 'pf-u-mb-xs'} headingLevel="h2">
-                        Collection rules
-                    </Title>
-                    {!isReadOnly && (
-                        <>
+                <div className="collection-form-expandable-section">
+                    <ExpandableSectionToggle
+                        contentId={ruleSectionContentId}
+                        isExpanded={isRuleSectionOpen}
+                        onToggle={ruleSectionOnToggle}
+                    >
+                        <Flex
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            spaceItems={{ default: 'spaceItemsSm' }}
+                        >
+                            <Title
+                                className={isReadOnly ? 'pf-u-mb-0' : 'pf-u-mb-xs'}
+                                headingLevel="h2"
+                            >
+                                Collection rules
+                            </Title>
+                            <Badge isRead>{ruleCount}</Badge>
+                        </Flex>
+                        {!isReadOnly && (
                             <p>
                                 Select deployments via rules. You can use regular expressions (RE2
                                 syntax).
                             </p>
-                        </>
-                    )}
-                    {saveError?.type === 'EmptyCollection' && (
-                        <Alert
-                            title="At least one rule must be configured or one collection must be attached from the section below"
-                            variant="danger"
-                            isInline
-                        />
-                    )}
-                    {saveError?.type === 'InvalidRule' && (
-                        <Alert title={saveError.message} variant="danger" isInline>
-                            {saveError.details}
-                        </Alert>
-                    )}
-                    <RuleSelector
-                        collection={values}
-                        entityType="Deployment"
-                        scopedResourceSelector={values.resourceSelector.Deployment}
-                        handleChange={onResourceSelectorChange}
-                        validationErrors={errors.resourceSelector?.Deployment}
-                        isDisabled={isReadOnly}
-                    />
-                    <Label variant="outline" isCompact className="pf-u-align-self-center">
-                        in
-                    </Label>
-                    <RuleSelector
-                        collection={values}
-                        entityType="Namespace"
-                        scopedResourceSelector={values.resourceSelector.Namespace}
-                        handleChange={onResourceSelectorChange}
-                        validationErrors={errors.resourceSelector?.Namespace}
-                        isDisabled={isReadOnly}
-                    />
-                    <Label variant="outline" isCompact className="pf-u-align-self-center">
-                        in
-                    </Label>
-                    <RuleSelector
-                        collection={values}
-                        entityType="Cluster"
-                        scopedResourceSelector={values.resourceSelector.Cluster}
-                        handleChange={onResourceSelectorChange}
-                        validationErrors={errors.resourceSelector?.Cluster}
-                        isDisabled={isReadOnly}
-                    />
-                </Flex>
+                        )}
+                    </ExpandableSectionToggle>
 
-                <Flex
-                    className="pf-u-background-color-100 pf-u-p-lg"
-                    direction={{ default: 'column' }}
-                    spaceItems={{ default: 'spaceItemsMd' }}
-                >
-                    <Title className="pf-u-mb-xs" headingLevel="h2">
-                        Attached collections
-                    </Title>
-                    {isReadOnly ? (
-                        <AttachedCollectionTable
-                            collections={initialEmbeddedCollections}
-                            collectionTableCells={collectionTableCells}
-                        />
-                    ) : (
-                        <>
-                            <p>Extend this collection by attaching other sets.</p>
+                    <ExpandableSection
+                        isDetached
+                        contentId={ruleSectionContentId}
+                        isExpanded={isRuleSectionOpen}
+                    >
+                        <Flex
+                            className="pf-u-p-md"
+                            direction={{ default: 'column' }}
+                            spaceItems={{ default: 'spaceItemsMd' }}
+                        >
+                            {saveError?.type === 'EmptyCollection' && (
+                                <Alert
+                                    title="At least one rule must be configured or one collection must be attached from the section below"
+                                    variant="danger"
+                                    isInline
+                                />
+                            )}
+                            {saveError?.type === 'InvalidRule' && (
+                                <Alert title={saveError.message} variant="danger" isInline>
+                                    {saveError.details}
+                                </Alert>
+                            )}
+                            <RuleSelector
+                                collection={values}
+                                entityType="Deployment"
+                                scopedResourceSelector={values.resourceSelector.Deployment}
+                                handleChange={onResourceSelectorChange}
+                                validationErrors={errors.resourceSelector?.Deployment}
+                                isDisabled={isReadOnly}
+                            />
+                            <Label variant="outline" isCompact className="pf-u-align-self-center">
+                                in
+                            </Label>
+                            <RuleSelector
+                                collection={values}
+                                entityType="Namespace"
+                                scopedResourceSelector={values.resourceSelector.Namespace}
+                                handleChange={onResourceSelectorChange}
+                                validationErrors={errors.resourceSelector?.Namespace}
+                                isDisabled={isReadOnly}
+                            />
+                            <Label variant="outline" isCompact className="pf-u-align-self-center">
+                                in
+                            </Label>
+                            <RuleSelector
+                                collection={values}
+                                entityType="Cluster"
+                                scopedResourceSelector={values.resourceSelector.Cluster}
+                                handleChange={onResourceSelectorChange}
+                                validationErrors={errors.resourceSelector?.Cluster}
+                                isDisabled={isReadOnly}
+                            />
+                        </Flex>
+                    </ExpandableSection>
+                </div>
 
+                <div className="collection-form-expandable-section">
+                    <ExpandableSectionToggle
+                        contentId={attachmentSectionContentId}
+                        isExpanded={isAttachmentSectionOpen}
+                        onToggle={attachmentSectionOnToggle}
+                    >
+                        <Flex
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            spaceItems={{ default: 'spaceItemsSm' }}
+                        >
+                            <Title className="pf-u-mb-xs" headingLevel="h2">
+                                Attached collections
+                            </Title>
+                            <Badge isRead>{values.embeddedCollectionIds.length}</Badge>
+                        </Flex>
+                        {!isReadOnly && <p>Extend this collection by attaching other sets.</p>}
+                    </ExpandableSectionToggle>
+
+                    <ExpandableSection
+                        isDetached
+                        contentId={attachmentSectionContentId}
+                        isExpanded={isAttachmentSectionOpen}
+                    >
+                        <Flex
+                            className="pf-u-p-md"
+                            direction={{ default: 'column' }}
+                            spaceItems={{ default: 'spaceItemsMd' }}
+                        >
                             {saveError?.type === 'EmptyCollection' && (
                                 <Alert
                                     title="At least one collection must be attached or one rule must be configured from the section above"
@@ -325,17 +392,26 @@ function CollectionForm({
                                     {saveError.details}
                                 </Alert>
                             )}
-                            <CollectionAttacher
-                                excludedCollectionId={
-                                    action.type === 'edit' ? action.collectionId : null
-                                }
-                                initialEmbeddedCollections={initialEmbeddedCollections}
-                                onSelectionChange={onEmbeddedCollectionsChange}
-                                collectionTableCells={collectionTableCells}
-                            />
-                        </>
-                    )}
-                </Flex>
+                            {isReadOnly ? (
+                                <AttachedCollectionTable
+                                    collections={initialEmbeddedCollections}
+                                    collectionTableCells={collectionTableCells}
+                                />
+                            ) : (
+                                <>
+                                    <CollectionAttacher
+                                        excludedCollectionId={
+                                            action.type === 'edit' ? action.collectionId : null
+                                        }
+                                        initialEmbeddedCollections={initialEmbeddedCollections}
+                                        onSelectionChange={onEmbeddedCollectionsChange}
+                                        collectionTableCells={collectionTableCells}
+                                    />
+                                </>
+                            )}
+                        </Flex>
+                    </ExpandableSection>
+                </div>
             </Flex>
             {action.type !== 'view' && (
                 <div className="pf-u-background-color-100 pf-u-p-lg pf-u-py-md">
