@@ -31,7 +31,7 @@ func initialize() {
 		storage, err := dackbox.New(globaldbDackbox.GetGlobalDackBox())
 		utils.CrashOnError(err)
 		indexer := index.New(globalindex.GetGlobalIndex())
-		searcher := search.New(globaldbDackbox.GetGlobalDackBox(), storage, index.New(globalindex.GetGlobalIndex()))
+		searcher := search.New(storage, index.New(globalindex.GetGlobalIndex()))
 
 		ad, err = New(globaldbDackbox.GetGlobalDackBox(), storage, indexer, searcher)
 		utils.CrashOnError(err)

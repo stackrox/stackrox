@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/imagecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -21,11 +20,10 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and index.
-func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexer) Searcher {
+func New(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImpl{
-		storage:       storage,
-		indexer:       indexer,
-		searcher:      formatSearcher(indexer),
-		graphProvider: graphProvider,
+		storage:  storage,
+		indexer:  indexer,
+		searcher: formatSearcher(indexer),
 	}
 }
