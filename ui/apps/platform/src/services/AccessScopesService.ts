@@ -3,13 +3,26 @@ import { Empty } from './types';
 
 const accessScopessUrl = '/v1/simpleaccessscopes';
 
+/*
+ * TODO: ROX-13585 - remove the pre-postgres constants once the migration to postgres
+ * is completed and the support for BoltDB, RocksDB and Bleve is dropped.
+ */
 export const defaultAccessScopeIds = {
     Unrestricted: 'io.stackrox.authz.accessscope.unrestricted',
+    UnrestrictedPostgres: 'ffffffff-ffff-fff4-f5ff-ffffffffffff',
     DenyAll: 'io.stackrox.authz.accessscope.denyall',
+    DenyAllPostgres: 'ffffffff-ffff-fff4-f5ff-fffffffffffe',
 };
 
 export function getIsDefaultAccessScopeId(id: string): boolean {
     return Object.values(defaultAccessScopeIds).includes(id);
+}
+
+export function getIsUnrestrictedAccessScopeId(id: string): boolean {
+    return (
+        id === defaultAccessScopeIds.Unrestricted ||
+        id === defaultAccessScopeIds.UnrestrictedPostgres
+    );
 }
 
 export type SimpleAccessScopeNamespace = {

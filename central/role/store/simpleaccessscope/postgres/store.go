@@ -84,7 +84,7 @@ func insertIntoSimpleAccessScopes(ctx context.Context, batch *pgx.Batch, obj *st
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		serialized,
 	}
@@ -125,7 +125,7 @@ func (s *storeImpl) copyFromSimpleAccessScopes(ctx context.Context, tx pgx.Tx, o
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 
