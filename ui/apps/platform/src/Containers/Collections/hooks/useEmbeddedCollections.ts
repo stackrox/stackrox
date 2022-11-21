@@ -64,7 +64,8 @@ function fetchDetachedCollections(
         );
         const detached = aggregateResult.concat(newDetached);
         const lastResponseSize = collections.length;
-        const shouldFetchMore = lastResponseSize > 0 && detached.length < minimumUpdateSize;
+        const shouldFetchMore =
+            lastResponseSize === pageSize && detached.length < minimumUpdateSize;
         const nextPage = pageNumber + 1;
 
         if (shouldFetchMore) {
