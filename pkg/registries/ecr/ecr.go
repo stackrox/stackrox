@@ -26,6 +26,8 @@ var (
 	log = logging.LoggerForModule()
 )
 
+var _ types.Registry = (*ecr)(nil)
+
 type ecr struct {
 	*docker.Registry
 

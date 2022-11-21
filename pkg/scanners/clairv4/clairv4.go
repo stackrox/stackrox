@@ -135,13 +135,13 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, errors.Wrapf(err, "Clair v4: checking if index report exists for %s", imgName)
 	}
 	if !exists {
-		rc := c.activeRegistries.GetRegistryMetadataByImage(image)
-		if rc == nil {
-			return nil, errors.Errorf("Clair v4: unable to find required registry metadata for %s", imgName)
+		registry := c.activeRegistries.GetRegistryByImage(image)
+		if registry == nil {
+			return nil, errors.Errorf("Clair v4: unable to find required registry for %s", imgName)
 		}
 
 		// The index report does not exist, so we need to index the image's manifest.
-		manifest, err := manifestForImage(rc, image)
+		manifest, err := manifestForImage(registry, image)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Clair v4: creating manifest for %s", imgName)
 		}
