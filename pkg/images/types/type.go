@@ -13,6 +13,7 @@ func ToImage(ci *storage.ContainerImage) *storage.Image {
 	return &storage.Image{
 		Id:             ci.GetId(),
 		Name:           ci.GetName(),
+		Names:          []*storage.ImageName{ci.GetName()},
 		NotPullable:    ci.GetNotPullable(),
 		IsClusterLocal: ci.GetIsClusterLocal(),
 	}

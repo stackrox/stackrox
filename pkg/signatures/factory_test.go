@@ -57,8 +57,9 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		integration *storage.SignatureIntegration
-		results     []storage.ImageSignatureVerificationResult
+		integration        *storage.SignatureIntegration
+		results            []storage.ImageSignatureVerificationResult
+		verifiedReferences []string
 	}{
 		"successful verification": {
 			integration: &storage.SignatureIntegration{
@@ -67,8 +68,9 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 			},
 			results: []storage.ImageSignatureVerificationResult{
 				{
-					VerifierId: "successful",
-					Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+					VerifierId:              "successful",
+					Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+					VerifiedImageReferences: []string{imgString},
 				},
 			},
 		},
@@ -95,6 +97,7 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 				assert.Equal(t, res.VerifierId, results[i].VerifierId)
 				assert.Equal(t, res.Status, results[i].Status)
 				assert.Contains(t, results[i].Description, res.Description)
+				assert.ElementsMatch(t, results[i].VerifiedImageReferences, res.VerifiedImageReferences)
 			}
 		})
 	}
