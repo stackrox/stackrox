@@ -17,7 +17,7 @@ import { getDeploymentNodesInNamespace, getNumDeploymentFlows } from '../utils/n
 
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
 import NamespaceDeployments from './NamespaceDeployments';
-import NamespaceNetworkPolicies from './NamespaceNetworkPolicies';
+import NetworkPolicies from '../common/NetworkPolicies';
 
 type NamespaceSideBarProps = {
     namespaceId: string;
@@ -41,6 +41,10 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
             numFlows,
         };
     });
+    const namespacePolicyIds = deploymentNodes.reduce((acc, curr) => {
+        const policyIds: string[] = curr?.data?.policyIds || [];
+        return [...acc, ...policyIds];
+    }, [] as string[]);
 
     return (
         <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }} className="pf-u-h-100">
@@ -90,7 +94,7 @@ function NamespaceSideBar({ namespaceId, nodes, edges }: NamespaceSideBarProps) 
                     hidden={activeKeyTab !== 'Network policies'}
                     className="pf-u-h-100"
                 >
-                    <NamespaceNetworkPolicies />
+                    <NetworkPolicies policyIds={namespacePolicyIds} />
                 </TabContent>
             </FlexItem>
         </Flex>

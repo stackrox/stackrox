@@ -1,4 +1,4 @@
-import { EdgeModel, Model, NodeModel } from '@patternfly/react-topology';
+import { EdgeModel, NodeModel } from '@patternfly/react-topology';
 
 import { ListenPort } from 'types/networkFlow.proto';
 
@@ -24,8 +24,11 @@ function getExternalNodeIds(nodes: NodeModel[]): string[] {
     return externalNodeIds;
 }
 
-export function getNodeById(model: Model, nodeId: string | undefined): NodeModel | undefined {
-    return model.nodes?.find((node) => node.id === nodeId);
+export function getNodeById(
+    nodes: NodeModel[] | undefined,
+    nodeId: string | undefined
+): NodeModel | undefined {
+    return nodes?.find((node) => node.id === nodeId);
 }
 
 /* edge helper functions */
