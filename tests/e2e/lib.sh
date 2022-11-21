@@ -30,7 +30,7 @@ deploy_stackrox() {
 }
 
 deploy_stackrox_with_custom_sensor() {
-    if [ -z $1 ]; then
+    if [[ "$#" -ne 1 ]]; then
         die "expected sensor chart version as parameter in deploy_stackrox_with_custom_sensor"
     fi
     sensor_chart_version=$1
@@ -109,19 +109,17 @@ deploy_central() {
 }
 
 deploy_sensor_from_helm_charts() {
-    if [ -z $1 ]; then
-        die "deploy_sensor_from_helm_charts should receive a helm chart version\nusage: deploy_sensor_from_helm_charts <Chart version> <path to init bundle>"
+    if [[ "$#" -ne 2 ]]; then
+        die "deploy_sensor_from_helm_charts should receive a helm chart version and an init bundle\nusage: deploy_sensor_from_helm_charts <Chart version> <path to init bundle>"
     fi
-	chart_version="$1"
-    if [ -z $2 ]; then
-        die "deploy_sensor_from_helm_charts should receive a path to an init bundle yaml\nusage: deploy_sensor_from_helm_charts <Chart version> <path to init bundle>"
-    fi
-	init_bundle="$2"
+
+    chart_version="$1"
+    init_bundle="$2"
 
 
     info "Deploying secured cluster (v$chart_version) from Helm Charts (init bundle $init_bundle)"
 
-	helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
+    helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
     helm repo update
 
     helm install -n stackrox stackrox-secured-cluster-services \
