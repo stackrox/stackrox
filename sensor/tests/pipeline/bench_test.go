@@ -137,7 +137,6 @@ func Benchmark_Pipeline(b *testing.B) {
 			deletion["service"] = append(deletion["service"], serviceName)
 		}
 
-		var objToDelete []*v1.Deployment
 		for i := 0; i < 1000; i++ {
 			deploymentName := randString(10)
 			createDeployment(fakeClient, testNamespace, deploymentName, appNames[i], serviceAccounts[i])
@@ -145,8 +144,8 @@ func Benchmark_Pipeline(b *testing.B) {
 		}
 
 		// Wait until last deployment is seen by central
-		obj := createDeployment(fakeClient, testNamespace, "FINAL", "", "")
-		objToDelete = append(objToDelete, obj)
+		createDeployment(fakeClient, testNamespace, "FINAL", "", "")
+		deletion["deployment"] = append(deletion["deployment"], "FINAL")
 		sig.Wait()
 
 		b.StopTimer()
