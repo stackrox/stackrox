@@ -35,7 +35,7 @@ describe('Signature Integrations', () => {
             'HS1I6y+PPPrVAgMBAAE=\n' +
             '-----END PUBLIC KEY-----\n';
 
-        visitIntegrationsTable(integrationSource, integrationName);
+        visitIntegrationsTable(integrationSource, integrationType);
         clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
         // Check inital state.
