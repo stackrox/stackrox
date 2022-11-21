@@ -366,7 +366,7 @@ describe('Notifier Integrations', () => {
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('PagerDuty integration key').type('key');
 
-            testIntegrationInFormWithStoredCredentials(
+            testIntegrationInFormWithoutStoredCredentials(
                 integrationSource,
                 integrationType,
                 staticResponseForTest
