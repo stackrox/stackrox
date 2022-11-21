@@ -12,8 +12,8 @@ import (
 type nodeScanHandlerImpl struct {
 	nodeScans <-chan *storage.NodeScanV2
 	toCentral <-chan *central.MsgFromSensor
-	// toCentralMux prevents the race condition between Start() [writer] and ResponsesC() [reader]
-	toCentralMux *sync.Mutex
+	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
+	lock *sync.Mutex
 
 	stopC concurrency.ErrorSignal
 	// runFinishedC is signaled when the goroutine inside of run() finishes
@@ -30,14 +30,14 @@ func (c *nodeScanHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (c *nodeScanHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
-	c.toCentralMux.Lock()
-	defer c.toCentralMux.Unlock()
+	c.lock.Lock()
+	defer c.lock.Unlock()
 	return c.toCentral
 }
 
 func (c *nodeScanHandlerImpl) Start() error {
-	c.toCentralMux.Lock()
-	defer c.toCentralMux.Unlock()
+	c.lock.Lock()
+	defer c.lock.Unlock()
 	if c.startedC.IsDone() {
 		return errors.New("running handler must be stopped before it can be started again")
 	}

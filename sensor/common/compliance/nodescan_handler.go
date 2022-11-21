@@ -21,7 +21,7 @@ func NewNodeScanHandler(ch <-chan *storage.NodeScanV2) NodeScanHandler {
 		toCentral:    make(chan *central.MsgFromSensor),
 		stopC:        concurrency.NewErrorSignal(),
 		startedC:     concurrency.NewSignal(),
-		toCentralMux: &sync.Mutex{},
+		lock:         &sync.Mutex{},
 		runFinishedC: concurrency.NewErrorSignal(),
 	}
 }
