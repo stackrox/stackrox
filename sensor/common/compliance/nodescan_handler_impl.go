@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+var errStartMoreThanOnce = errors.New("unable to start the component more than once")
+
 type nodeScanHandlerImpl struct {
 	nodeScans <-chan *storage.NodeScanV2
 	toCentral <-chan *central.MsgFromSensor
@@ -39,7 +41,7 @@ func (c *nodeScanHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 
 func (c *nodeScanHandlerImpl) Start() error {
 	if !atomic.CompareAndSwapUint32(&c.numStarts, 0, 1) {
-		return errors.New("unable to start - component reached the maximum number of starts: 1")
+		return errStartMoreThanOnce
 	}
 	c.lock.Lock()
 	defer c.lock.Unlock()

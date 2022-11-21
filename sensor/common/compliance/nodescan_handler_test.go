@@ -144,7 +144,7 @@ func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
 
 		err := h.Start()
 		s.Error(err)
-		s.ErrorContains(err, "unable to start - component reached the maximum number of starts: 1")
+		s.ErrorIs(err, errStartMoreThanOnce)
 	})
 }
 
@@ -156,7 +156,7 @@ func (s *NodeScanHandlerTestSuite) TestDoubleStartHandler() {
 
 		err := h.Start()
 		s.Error(err)
-		s.ErrorContains(err, "unable to start - component reached the maximum number of starts: 1")
+		s.ErrorIs(err, errStartMoreThanOnce)
 		h.Stop(nil)
 	})
 }
