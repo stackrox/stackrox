@@ -4,7 +4,6 @@ import {
     DropdownItem,
     Flex,
     FlexItem,
-    SearchInput,
     Stack,
     StackItem,
     Text,
@@ -26,28 +25,17 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import { uniq } from 'lodash';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
-import AdvancedFlowsFilter, { defaultAdvancedFlowsFilters } from '../flows/AdvancedFlowsFilter';
+import AdvancedFlowsFilter, {
+    defaultAdvancedFlowsFilters,
+} from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
 
 import './DeploymentFlows.css';
-import { AdvancedFlowsFilterType } from '../flows/types';
-
-interface FlowBase {
-    id: string;
-    type: 'Deployment' | 'External';
-    entity: string;
-    namespace: string;
-    direction: string;
-    port: string;
-    protocol: string;
-    isAnomalous: boolean;
-}
-
-interface Flow extends FlowBase {
-    children: FlowBase[];
-}
+import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import EntityNameSearchInput from '../common/EntityNameSearchInput';
+import { Flow, FlowBase } from '../types';
+import { getAllUniqPorts } from '../utils/flowUtils';
 
 const columnNames = {
     entity: 'Entity',
@@ -138,13 +126,7 @@ function DeploymentFlow() {
         // if there are no children then it counts as 1 flow
         return acc + (curr.children.length ? curr.children.length : 1);
     }, 0);
-    const allPorts = flows.reduce((acc, curr) => {
-        if (curr.children.length) {
-            return [...acc, ...curr.children.map((child) => child.port)];
-        }
-        return [...acc, curr.port];
-    }, [] as string[]);
-    const allUniqPorts = uniq(allPorts);
+    const allUniqPorts = getAllUniqPorts(flows);
 
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows.includes(row.id);
@@ -189,11 +171,9 @@ function DeploymentFlow() {
                 <StackItem>
                     <Flex>
                         <FlexItem flex={{ default: 'flex_1' }}>
-                            <SearchInput
-                                placeholder="Filter by entity name"
+                            <EntityNameSearchInput
                                 value={entityNameFilter}
-                                onChange={setEntityNameFilter}
-                                onClear={() => setEntityNameFilter('')}
+                                setValue={setEntityNameFilter}
                             />
                         </FlexItem>
                         <FlexItem>
