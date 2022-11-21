@@ -75,7 +75,9 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 	nodeScans := make(chan *storage.NodeScanV2)
 	h := NewNodeScanHandler(nodeScans)
 	s.consumeToCentral(h)
-	// this is a producer that stops the handler after producing the first message and then sends many (29) more messages
+	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages
+	// The intent here it to test whether the handler can shutdown with no leaks when the context is canceled despite of
+	// multiple messages waiting in the channel to be processed
 	go func() {
 		defer close(nodeScans)
 		for i := 0; i < 30; i++ {
