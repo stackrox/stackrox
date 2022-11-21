@@ -128,7 +128,6 @@
         "@testing-library/user-event": "^14.2.1",
         "@types/jest": "^27.4.0",
         "@types/lodash": "^4.14.182",
-        "@types/node": "^17.0.16",
         "@types/pluralize": "^0.0.29",
         "@types/qs": "^6.9.7",
         "@types/react": "^17.0.34",
