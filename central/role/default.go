@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -48,7 +49,7 @@ var (
 	// AccessScopeExcludeAll has empty rules and hence excludes all
 	// scoped resources. Global resources must be unaffected.
 	AccessScopeExcludeAll = &storage.SimpleAccessScope{
-		Id:          EnsureValidAccessScopeID("denyall"),
+		Id:          getAccessScopeExcludeAllID(),
 		Name:        "Deny All",
 		Description: "No access to scoped resources",
 		Rules:       &storage.SimpleAccessScope_Rules{},
@@ -57,11 +58,25 @@ var (
 	// AccessScopeIncludeAll gives access to all resources. It is checked by ID, as
 	// Rules cannot represent unrestricted scope.
 	AccessScopeIncludeAll = &storage.SimpleAccessScope{
-		Id:          EnsureValidAccessScopeID("unrestricted"),
+		Id:          getAccessScopeIncludeAllID(),
 		Name:        "Unrestricted",
 		Description: "Access to all clusters and namespaces",
 	}
 )
+
+func getAccessScopeExcludeAllID() string {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return denyAllAccessScopeID
+	}
+	return EnsureValidAccessScopeID("denyall")
+}
+
+func getAccessScopeIncludeAllID() string {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return unrestrictedAccessScopeID
+	}
+	return EnsureValidAccessScopeID("unrestricted")
+}
 
 // IsDefaultRoleName checks if a given role name corresponds to a default role.
 func IsDefaultRoleName(name string) bool {

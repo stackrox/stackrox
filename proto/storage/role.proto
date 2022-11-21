@@ -20,8 +20,8 @@ message Role {
     string description = 5;
 
     // The associated PermissionSet and AccessScope for this Role.
-    string permission_set_id = 6;
-    string access_scope_id   = 7;
+    string permission_set_id = 6 [(gogoproto.moretags) = 'sql:"type(uuid)"'];
+    string access_scope_id   = 7 [(gogoproto.moretags) = 'sql:"type(uuid)"'];
 
     // Minimum (not default!) access level for every resource. Can be extended
     // below by explicit permissions but not shrunk.
@@ -42,7 +42,7 @@ enum Access {
 // This encodes a set of permissions for StackRox resources.
 message PermissionSet {
     // id is generated and cannot be changed.
-    string id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string id          = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
 
     // `name` and `description` are provided by the user and can be changed.
     string name        = 2 [(gogoproto.moretags) = 'sql:"unique"'];
@@ -72,7 +72,7 @@ message SimpleAccessScope {
     }
 
     // `id` is generated and cannot be changed.
-    string id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string id          = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
 
     // `name` and `description` are provided by the user and can be changed.
     string name        = 2  [(gogoproto.moretags) = 'sql:"unique"'];

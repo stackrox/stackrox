@@ -42,16 +42,9 @@ import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlHeading from '../AccessControlHeading';
 import usePermissions from '../../../hooks/usePermissions';
 import AccessControlNoPermission from '../AccessControlNoPermission';
+import useFeatureFlags from '../../../hooks/useFeatureFlags';
 
 const entityType = 'ROLE';
-
-const roleNew: Role = {
-    name: '',
-    resourceToAccess: {},
-    description: '',
-    permissionSetId: '',
-    accessScopeId: defaultAccessScopeIds.Unrestricted,
-};
 
 function Roles(): ReactElement {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
@@ -76,6 +69,23 @@ function Roles(): ReactElement {
 
     const [accessScopes, setAccessScopes] = useState<AccessScope[]>([]);
     const [alertAccessScopes, setAlertAccessScopes] = useState<ReactElement | null>(null);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    function getDefaultAccessScopeID() {
+        if (isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE')) {
+            return defaultAccessScopeIds.UnrestrictedPostgres;
+        }
+        return defaultAccessScopeIds.Unrestricted;
+    }
+
+    const roleNew: Role = {
+        name: '',
+        resourceToAccess: {},
+        description: '',
+        permissionSetId: '',
+        accessScopeId: getDefaultAccessScopeID(),
+    };
 
     useEffect(() => {
         // The primary request has unclosable alert.
