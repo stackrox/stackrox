@@ -1,9 +1,6 @@
 package clone
 
 import (
-	"fmt"
-	"runtime"
-
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
@@ -116,12 +113,6 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 
 // Persist - replaces current clone with upgraded one.
 func (d *dbCloneManagerImpl) Persist(cloneName string, pgClone string, persistBoth bool) error {
-	log.Infof("SHREWS -- %q, %q", cloneName, pgClone)
-	pc, _, _, ok := runtime.Caller(1)
-	details := runtime.FuncForPC(pc)
-	if ok && details != nil {
-		fmt.Printf("called from %s\n", details.Name())
-	}
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// We need to persist the Rocks previous, so it is there in case of a rollback.  In the case of
 		// an upgrade that will generate a previous, the Temp Clone will be the one RocksDB persists.

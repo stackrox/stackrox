@@ -245,7 +245,7 @@ func (d *dbCloneManagerImpl) Persist(cloneName string) error {
 	log.Infof("Persisting upgraded clone: %s", cloneName)
 
 	switch cloneName {
-	case RestoreClone, RestoreFromRocksClone:
+	case RestoreClone:
 		// For a restore, we should analyze it to get the stats because pg_dump does not
 		// contain that information.
 		err := pgadmin.AnalyzeDatabase(d.adminConfig, cloneName)

@@ -306,17 +306,11 @@ func (m *mockCentral) restore(ver *versionPair, rocksToPostgres bool) {
 	}
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		var restoreDB string
-		if rocksToPostgres {
-			restoreDB = "central_rocks"
-		} else {
-			restoreDB = migrations.RestoreDatabase
-		}
-		pgtest.CreateDatabase(m.t, restoreDB)
+		pgtest.CreateDatabase(m.t, migrations.RestoreDatabase)
 
 		// backups from version lower than 3.0.57.0 do not have migration version.
 		if version.CompareVersions(ver.version, "3.0.57.0") >= 0 {
-			m.setMigrationVersionPostgres(restoreDB, ver)
+			m.setMigrationVersionPostgres(migrations.RestoreDatabase, ver)
 		}
 	}
 }

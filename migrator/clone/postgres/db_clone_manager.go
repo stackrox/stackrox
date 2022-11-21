@@ -21,9 +21,6 @@ const (
 
 	// TempClone - temp postgres clone
 	TempClone = "central_temp"
-
-	// RestoreFromRocksClone - special clone for restoring from RocksDB
-	RestoreFromRocksClone = "central_rocks"
 )
 
 var (
