@@ -457,19 +457,15 @@ function testIntegrationInForm(
     hasStoredCredentials,
     staticResponseForTest
 ) {
-    const integrationsEndpointAlias = getIntegrationsEndpointAlias(
-        integrationSource,
-        integrationType
-    );
     const integrationsEndpointAddress = getIntegrationsEndpointAddress(
         integrationSource,
         integrationType
     );
 
-    const aliasForTest = `POST_${integrationsEndpointAlias}/test/updated`;
     const urlForTest = `${integrationsEndpointAddress}/${
         hasStoredCredentials ? 'test/updated' : 'test'
     }`;
+    const aliasForTest = `POST_${urlForTest}`;
 
     const routeMatcherMap = {
         [aliasForTest]: {
