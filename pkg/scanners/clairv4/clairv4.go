@@ -128,7 +128,7 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, errors.Wrapf(err, "Clair v4: parsing image digest for image %s", imgName)
 	}
 
-	exists, err := c.indexReportExists(digest)
+	exists, err := c.indexReportExists(digest.String())
 	// Exit early if this is an unexpected status code error.
 	// If it's not an unexpected error, then continue as normal and ignore the error.
 	if isUnexpectedStatusCodeError(err) {
@@ -160,9 +160,9 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	return imageScanFromReport(report), nil
 }
 
-func (c *clairv4) indexReportExists(digest claircore.Digest) (bool, error) {
+func (c *clairv4) indexReportExists(digest string) (bool, error) {
 	// FIXME: go1.19 adds https://pkg.go.dev/net/url#JoinPath, which seems more idiomatic.
-	url := strings.Join([]string{c.indexReportEndpoint, digest.String()}, "/")
+	url := strings.Join([]string{c.indexReportEndpoint, digest}, "/")
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return false, err

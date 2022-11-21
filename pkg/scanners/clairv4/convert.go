@@ -38,7 +38,7 @@ func manifestForImage(registry registryTypes.Registry, image *storage.Image) (*c
 			return nil, errors.Wrap(err, "parsing image layer digest")
 		}
 
-		uri, header, err := getLayerURIAndHeader(registry.HTTPClient(), cfg.URL, image)
+		uri, header, err := getLayerURIAndHeader(registry.HTTPClient(), cfg.URL, image.GetName().GetRemote(), layerDigest.String())
 		if err != nil {
 			return nil, err
 		}
@@ -57,8 +57,8 @@ func manifestForImage(registry registryTypes.Registry, image *storage.Image) (*c
 // getLayerURIAndHeader is based on the clairctl v4.5.0 implementation for creating manifests:
 // https://github.com/quay/clair/blob/v4.5.0/cmd/clairctl/manifest.go#L76.
 // It is assumed the given client handles auth.
-func getLayerURIAndHeader(client *http.Client, url string, image *storage.Image) (string, http.Header, error) {
-	path := fmt.Sprintf("/v2/%s/blobs/%s", image.GetName().GetRemote(), imageUtils.Reference(image))
+func getLayerURIAndHeader(client *http.Client, url string, repository, digest string) (string, http.Header, error) {
+	path := fmt.Sprintf("/v2/%s/blobs/%s", repository, digest)
 	req, err := http.NewRequest(http.MethodGet, url+path, nil)
 	if err != nil {
 		return "", nil, errors.Wrap(err, "creating image pull request")
