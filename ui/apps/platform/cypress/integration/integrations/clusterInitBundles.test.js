@@ -14,7 +14,7 @@ import {
 } from '../../helpers/integrations';
 
 // Page address segments are the source of truth for integrationSource and integrationType.
-const integrationSource = 'authproviders';
+const integrationSource = 'authProviders';
 const integrationType = 'clusterInitBundle';
 
 describe('Cluster Init Bundles', () => {
