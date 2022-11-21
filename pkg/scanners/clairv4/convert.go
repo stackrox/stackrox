@@ -93,13 +93,15 @@ func imageScanFromReport(report *claircore.VulnerabilityReport) *storage.ImageSc
 
 func getComponents(report *claircore.VulnerabilityReport) []*storage.EmbeddedImageScanComponent {
 	components := make([]*storage.EmbeddedImageScanComponent, 0, len(report.PackageVulnerabilities))
-	for pkgID, vulnIDs := range report.PackageVulnerabilities {
-		pkg := report.Packages[pkgID]
-		components = append(components, &storage.EmbeddedImageScanComponent{
+	for id, pkg := range report.Packages {
+		vulnIDs := report.PackageVulnerabilities[id]
+		component := &storage.EmbeddedImageScanComponent{
 			Name:    pkg.Name,
 			Version: pkg.Version,
 			Vulns:   getVulns(report.Vulnerabilities, vulnIDs),
-		})
+		}
+
+		components = append(components, component)
 	}
 
 	return components
@@ -162,7 +164,7 @@ func normalizeSeverity(severity claircore.Severity) storage.VulnerabilitySeverit
 func getOS(report *claircore.VulnerabilityReport) string {
 	if len(report.Distributions) == 1 {
 		for _, dist := range report.Distributions {
-			return dist.VersionCodeName + ":" + dist.VersionID
+			return dist.DID + ":" + dist.VersionID
 		}
 	}
 
