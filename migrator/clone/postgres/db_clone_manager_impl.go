@@ -145,31 +145,15 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	log.Info("GetCloneToMigrate")
 
 	// If a restore clone exists, our focus is to try to restore that database.
-	if _, ok := d.cloneMap[RestoreClone]; ok {
+	if _, ok := d.cloneMap[RestoreClone]; ok || restoreFromRocks {
+		if restoreFromRocks {
+			d.cloneMap[RestoreClone] = metadata.NewPostgres(rocksVersion, RestoreClone)
+			return RestoreClone, true, nil
+		}
 		return RestoreClone, false, nil
 	}
 
 	currClone, currExists := d.cloneMap[CurrentClone]
-
-	// If a restore from Rocks DB is requested.
-	if restoreFromRocks {
-		if !currExists || currClone.GetMigVersion() == nil {
-			return CurrentClone, true, nil
-		}
-
-		// Create an empty clone for processing the restore data from Rocks
-		// If such a clone already exists then we were previously in the middle of processing and need to clear it
-		if d.databaseExists(RestoreFromRocksClone) {
-			err := pgadmin.DropDB(d.sourceMap, d.adminConfig, RestoreFromRocksClone)
-			if err != nil {
-				log.Errorf("Unable to drop temp clone: %v", err)
-				return "", true, err
-			}
-		}
-
-		d.cloneMap[RestoreFromRocksClone] = metadata.NewPostgres(rocksVersion, RestoreFromRocksClone)
-		return RestoreFromRocksClone, true, nil
-	}
 
 	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
 	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres

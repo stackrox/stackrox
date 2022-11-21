@@ -280,7 +280,7 @@ func main() {
 
 	// Now that we verified that the DB can be loaded, remove the .backup directory
 	if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupClone())); err != nil {
-		log.Errorf("Failed to remove backup DB: %v", err)
+		log.Fatalf("Failed to remove backup DB: %v", err)
 	}
 
 	// Start the prometheus metrics server
