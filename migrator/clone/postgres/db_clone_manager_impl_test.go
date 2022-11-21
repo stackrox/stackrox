@@ -343,7 +343,7 @@ func (s *PostgresCloneManagerSuite) TestGetRestoreFromRocksClone() {
 	s.Nil(dbm.Scan())
 
 	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, true)
-	s.Equal(clone, RestoreFromRocksClone)
+	s.Equal(clone, migrations.RestoreDatabase)
 	s.True(migrateRocks)
 	s.Nil(err)
 }
