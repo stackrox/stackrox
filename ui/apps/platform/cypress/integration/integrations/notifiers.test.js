@@ -20,6 +20,10 @@ const integrationSource = 'notifiers';
 
 const staticResponseForTest = { body: {} };
 
+const staticResponseForPOST = {
+    body: { id: 'abcdefgh' },
+};
+
 describe('Notifier Integrations', () => {
     withAuth();
 
@@ -212,9 +216,10 @@ describe('Notifier Integrations', () => {
                 staticResponseForTest
             );
 
-            saveCreatedIntegrationInForm(integrationSource, integrationType);
+            // Mock response to prevent error in central log file: Unable to send audit msg.
+            saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
-            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
+            // Test does not delete, because it did not create.
         });
 
         it('should create a new Google Cloud SCC integration', () => {
@@ -326,9 +331,7 @@ describe('Notifier Integrations', () => {
                 staticResponseForTest
             );
 
-            const staticResponseForPOST = {
-                body: { id: 'abcdefgh' },
-            };
+            // Mock request because backend pings your Jira on Save, not just on Test.
             saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
             // Test does not delete, because it did not create.
@@ -489,9 +492,10 @@ describe('Notifier Integrations', () => {
                 staticResponseForTest
             );
 
-            saveCreatedIntegrationInForm(integrationSource, integrationType);
+            // Mock response to prevent error in central log file: Unable to send audit msg.
+            saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
-            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
+            // Test does not delete, because it did not create.
         });
 
         it('should create a new Slack integration', () => {
@@ -591,9 +595,10 @@ describe('Notifier Integrations', () => {
                 staticResponseForTest
             );
 
-            saveCreatedIntegrationInForm(integrationSource, integrationType);
+            // Mock response to prevent error in central log file: Unable to send audit msg.
+            saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
-            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
+            // Test does not delete, because it did not create.
         });
 
         it('should create a new Teams integration', () => {
