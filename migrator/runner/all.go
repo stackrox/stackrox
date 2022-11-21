@@ -122,6 +122,7 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/n_54_to_n_55_postgres_watched_images"
 	_ "github.com/stackrox/rox/migrator/migrations/n_55_to_n_56_postgres_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/n_56_to_n_57_postgres_groups"
+
 	// Postgres dataset changes
 	_ "github.com/stackrox/rox/migrator/migrations/n_57_to_n_58_postgres_remove_clustercve_permission"
 )
