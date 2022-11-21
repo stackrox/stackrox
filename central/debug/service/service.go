@@ -61,10 +61,11 @@ const (
 
 	centralClusterPrefix = "_central-cluster"
 
-	metricsPullTimeout     = 20 * time.Second
-	diagnosticsPullTimeout = 20 * time.Second
-	layout                 = "2006-01-02T15:04:05.000Z"
-	logWindow              = 20 * time.Minute
+	layout    = "2006-01-02T15:04:05.000Z"
+	logWindow = 20 * time.Minute
+	// This timeout is safety net to prevent request from running forever.
+	// We don't expect it to ever actually be reached. Actual timeout should be set on the client side.
+	debugDumpHardTimeout = 1 * time.Hour
 )
 
 var (
@@ -497,6 +498,8 @@ type debugDumpOptions struct {
 }
 
 func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string, opts debugDumpOptions) {
+	subCtx, cancel := context.WithTimeout(ctx, debugDumpHardTimeout)
+	defer cancel()
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
@@ -529,7 +532,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		}
 
 		if opts.withCPUProfile {
-			if err := getCPU(ctx, zipWriter, cpuProfileDuration); err != nil {
+			if err := getCPU(subCtx, zipWriter, cpuProfileDuration); err != nil {
 				log.Error(err)
 			}
 
@@ -540,33 +543,33 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	}
 
 	if opts.logs == fullK8sIntrospectionData {
-		if err := s.getK8sDiagnostics(ctx, zipWriter, opts); err != nil {
+		if err := s.getK8sDiagnostics(subCtx, zipWriter, opts); err != nil {
 			log.Errorf("could not get K8s diagnostics: %+q", err)
 			opts.logs = localLogs // fallback to local logs
 		}
-		if err := s.pullSensorMetrics(ctx, zipWriter, opts); err != nil {
+		if err := s.pullSensorMetrics(subCtx, zipWriter, opts); err != nil {
 			log.Errorf("could not get sensor metrics: %+q", err)
 		}
 	}
 
 	if s.telemetryGatherer != nil && opts.telemetryMode > 0 {
-		telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= 2, opts.withCentral)
+		telemetryData := s.telemetryGatherer.Gather(subCtx, opts.telemetryMode >= 2, opts.withCentral)
 		if err := writeTelemetryData(zipWriter, telemetryData); err != nil {
 			log.Error(err)
 		}
 	}
 
 	if opts.withAccessControl {
-		fetchAndAddJSONToZip(ctx, zipWriter, "auth-providers.json", s.getAuthProviders)
-		fetchAndAddJSONToZip(ctx, zipWriter, "auth-provider-groups.json", s.getGroups)
-		fetchAndAddJSONToZip(ctx, zipWriter, "access-control-roles.json", s.getRoles)
+		fetchAndAddJSONToZip(subCtx, zipWriter, "auth-providers.json", s.getAuthProviders)
+		fetchAndAddJSONToZip(subCtx, zipWriter, "auth-provider-groups.json", s.getGroups)
+		fetchAndAddJSONToZip(subCtx, zipWriter, "access-control-roles.json", s.getRoles)
 	}
 
 	if opts.withNotifiers {
-		fetchAndAddJSONToZip(ctx, zipWriter, "notifiers.json", s.getNotifiers)
+		fetchAndAddJSONToZip(subCtx, zipWriter, "notifiers.json", s.getNotifiers)
 	}
 
-	fetchAndAddJSONToZip(ctx, zipWriter, "system-configuration.json", s.getConfig)
+	fetchAndAddJSONToZip(subCtx, zipWriter, "system-configuration.json", s.getConfig)
 
 	// Get logs last to also catch logs made during creation of diag bundle.
 	if opts.withCentral && opts.logs == localLogs {
@@ -576,7 +579,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	}
 
 	if opts.withCentral && opts.withLogImbue {
-		if err := s.getLogImbue(ctx, zipWriter); err != nil {
+		if err := s.getLogImbue(subCtx, zipWriter); err != nil {
 			log.Error(err)
 		}
 	}
