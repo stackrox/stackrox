@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Alert,
+    Badge,
     Button,
     EmptyState,
     EmptyStateIcon,
@@ -28,7 +29,12 @@ import { getIsValidLabelKey } from 'utils/labels';
 import { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher, { CollectionAttacherProps } from './CollectionAttacher';
-import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
+import {
+    Collection,
+    ScopedResourceSelector,
+    SelectorEntityType,
+    selectorEntityTypes,
+} from './types';
 import { CollectionSaveError } from './errorUtils';
 
 import './CollectionForm.css';
@@ -110,6 +116,21 @@ function yupResourceSelectorObject() {
                   }),
               });
     });
+}
+
+function getRuleCount(resourceSelector: Collection['resourceSelector']) {
+    let count = 0;
+
+    selectorEntityTypes.forEach((entityType) => {
+        const selector = resourceSelector[entityType];
+        if (selector.type === 'ByName') {
+            count += 1;
+        } else if (selector.type === 'ByLabel') {
+            count += selector.rules.length;
+        }
+    });
+
+    return count;
 }
 
 function CollectionForm({
@@ -195,6 +216,8 @@ function CollectionForm({
         );
     };
 
+    const ruleCount = getRuleCount(values.resourceSelector);
+
     return (
         <Form className="pf-u-background-color-200">
             <Flex
@@ -253,12 +276,18 @@ function CollectionForm({
                         isExpanded={isRuleSectionOpen}
                         onToggle={ruleSectionOnToggle}
                     >
-                        <Title
-                            className={isReadOnly ? 'pf-u-mb-0' : 'pf-u-mb-xs'}
-                            headingLevel="h2"
+                        <Flex
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            spaceItems={{ default: 'spaceItemsSm' }}
                         >
-                            Collection rules
-                        </Title>
+                            <Title
+                                className={isReadOnly ? 'pf-u-mb-0' : 'pf-u-mb-xs'}
+                                headingLevel="h2"
+                            >
+                                Collection rules
+                            </Title>
+                            <Badge isRead>{ruleCount}</Badge>
+                        </Flex>
                         {!isReadOnly && (
                             <p>
                                 Select deployments via rules. You can use regular expressions (RE2
@@ -329,9 +358,15 @@ function CollectionForm({
                         isExpanded={isAttachmentSectionOpen}
                         onToggle={attachmentSectionOnToggle}
                     >
-                        <Title className="pf-u-mb-xs" headingLevel="h2">
-                            Attached collections
-                        </Title>
+                        <Flex
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            spaceItems={{ default: 'spaceItemsSm' }}
+                        >
+                            <Title className="pf-u-mb-xs" headingLevel="h2">
+                                Attached collections
+                            </Title>
+                            <Badge isRead>{values.embeddedCollectionIds.length}</Badge>
+                        </Flex>
                         {!isReadOnly && <p>Extend this collection by attaching other sets.</p>}
                     </ExpandableSectionToggle>
 
