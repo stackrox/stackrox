@@ -2,6 +2,7 @@ package resources
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/selector"
 )
 
@@ -14,10 +15,10 @@ type portExposureReconciler interface {
 
 type portExposureReconcilerImpl struct {
 	deploymentStore *DeploymentStore
-	serviceStore    *serviceStore
+	serviceStore    store.ServiceStore
 }
 
-func newPortExposureReconciler(deploymentStore *DeploymentStore, serviceStore *serviceStore) portExposureReconciler {
+func newPortExposureReconciler(deploymentStore *DeploymentStore, serviceStore store.ServiceStore) portExposureReconciler {
 	return &portExposureReconcilerImpl{
 		deploymentStore: deploymentStore,
 		serviceStore:    serviceStore,
