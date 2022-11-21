@@ -108,6 +108,7 @@ export type BacklogListSelectorProps<Item> = {
     cells: {
         name: string;
         render: (item: Item) => ReactNode;
+        width?: BaseCellProps['width'];
     }[];
     selectedLabel?: string;
     deselectedLabel?: string;

@@ -1,7 +1,9 @@
-import React, { ReactNode, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert, Button, debounce, Flex, SearchInput } from '@patternfly/react-core';
 
-import BacklogListSelector from 'Components/PatternFly/BacklogListSelector';
+import BacklogListSelector, {
+    BacklogListSelectorProps,
+} from 'Components/PatternFly/BacklogListSelector';
 import { CollectionResponse } from 'services/CollectionsService';
 import useEmbeddedCollections from './hooks/useEmbeddedCollections';
 
@@ -11,7 +13,7 @@ export type CollectionAttacherProps = {
     excludedCollectionId: string | null;
     initialEmbeddedCollections: CollectionResponse[];
     onSelectionChange: (collections: CollectionResponse[]) => void;
-    collectionTableCells: { name: string; render: (collection: CollectionResponse) => ReactNode }[];
+    collectionTableCells: BacklogListSelectorProps<CollectionResponse>['cells'];
 };
 
 function compareNameLowercase(search: string): (item: { name: string }) => boolean {

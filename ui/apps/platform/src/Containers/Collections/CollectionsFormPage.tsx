@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Alert,
@@ -16,24 +16,25 @@ import {
     FlexItem,
     PageSection,
     Title,
+    Tooltip,
     Truncate,
 } from '@patternfly/react-core';
 import { useMediaQuery } from 'react-responsive';
 
 import { createCollection, deleteCollection, updateCollection } from 'services/CollectionsService';
-import { CaretDownIcon } from '@patternfly/react-icons';
+import { CaretDownIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { collectionsBasePath } from 'routePaths';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts from 'hooks/patternfly/useToasts';
-import { values } from 'lodash';
 import { CollectionPageAction } from './collections.utils';
-import CollectionFormDrawer from './CollectionFormDrawer';
+import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
 import { generateRequest } from './converter';
 import { Collection } from './types';
 import useCollection from './hooks/useCollection';
 import CollectionsFormModal from './CollectionFormModal';
+import { CollectionSaveError, parseSaveError } from './errorUtils';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
@@ -55,6 +56,9 @@ function CollectionsFormPage({
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [modalCollectionId, setModalCollectionId] = useState<string | null>(null);
+
+    const [saveError, setSaveError] = useState<CollectionSaveError | undefined>();
+    const saveErrorAlertElem = useRef<HTMLDivElement | null>(null);
 
     const {
         isOpen: menuIsOpen,
@@ -108,46 +112,83 @@ function CollectionsFormPage({
     }
 
     function onSubmit(collection: Collection): Promise<void> {
-        if (pageAction.type === 'view') {
-            // Logically should not happen, but just in case
-            return Promise.reject();
-        }
+        setSaveError(undefined);
 
-        const saveServiceCall =
-            pageAction.type === 'edit'
-                ? (payload) => updateCollection(pageAction.collectionId, payload)
-                : (payload) => createCollection(payload);
+        return new Promise((resolve, reject) => {
+            if (pageAction.type === 'view') {
+                // Logically should not happen, but just in case
+                return reject(new Error('A Collection form has been submitted in read-only view'));
+            }
+            const isEmptyCollection =
+                Object.values(collection.resourceSelector).every(({ type }) => type === 'All') &&
+                collection.embeddedCollectionIds.length === 0;
 
-        const requestPayload = generateRequest(collection);
-        const { request } = saveServiceCall(requestPayload);
+            if (isEmptyCollection) {
+                return reject(new Error('Cannot save an empty collection'));
+            }
 
-        return request
+            const saveServiceCall =
+                pageAction.type === 'edit'
+                    ? (payload) => updateCollection(pageAction.collectionId, payload)
+                    : (payload) => createCollection(payload);
+
+            const requestPayload = generateRequest(collection);
+            const { request } = saveServiceCall(requestPayload);
+
+            return resolve(request);
+        })
             .then(() => {
                 history.push({ pathname: `${collectionsBasePath}` });
             })
             .catch((err) => {
-                addToast(
-                    `There was an error saving collection '${values.name}'`,
-                    'danger',
-                    err.message
-                );
+                setSaveError(parseSaveError(err));
+                scrollToTop();
+                return Promise.reject(err);
             });
     }
 
-    const collectionTableCells = [
-        {
-            name: 'Name',
-            render: ({ id, name }) => (
-                <Button variant="link" isInline onClick={() => setModalCollectionId(id)}>
-                    {name}
-                </Button>
-            ),
-        },
-        {
-            name: 'Description',
-            render: ({ description }) => <Truncate content={description} />,
-        },
-    ];
+    function scrollToTop() {
+        const scrollTargetElem = saveErrorAlertElem.current;
+        if (scrollTargetElem) {
+            scrollTargetElem.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    function getCollectionTableCells(
+        collectionErrorId: string | undefined
+    ): ReturnType<CollectionFormDrawerProps['getCollectionTableCells']> {
+        return [
+            {
+                name: 'Name',
+                render: ({ id, name }) => (
+                    <Flex
+                        alignItems={{ default: 'alignItemsCenter' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
+                        flexWrap={{ default: 'nowrap' }}
+                    >
+                        <Button
+                            variant="link"
+                            isInline
+                            onClick={() => setModalCollectionId(id)}
+                            isDanger={collectionErrorId === id}
+                        >
+                            {name}
+                        </Button>
+                        {collectionErrorId === id ? (
+                            <Tooltip content="This collection forms a loop with its parent and cannot be attached">
+                                <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />
+                            </Tooltip>
+                        ) : null}
+                    </Flex>
+                ),
+                width: 25,
+            },
+            {
+                name: 'Description',
+                render: ({ description }) => <Truncate content={description} />,
+            },
+        ];
+    }
 
     let content: ReactElement | undefined;
 
@@ -171,7 +212,9 @@ function CollectionsFormPage({
                 isDrawerOpen={isDrawerOpen}
                 toggleDrawer={toggleDrawer}
                 onSubmit={onSubmit}
-                collectionTableCells={collectionTableCells}
+                saveError={saveError}
+                clearSaveError={() => setSaveError(undefined)}
+                getCollectionTableCells={getCollectionTableCells}
                 headerContent={
                     <>
                         <Breadcrumb className="pf-u-my-xs pf-u-px-lg pf-u-py-md">
@@ -255,6 +298,19 @@ function CollectionsFormPage({
                                 )}
                             </FlexItem>
                         </Flex>
+                        {/* This <div> gives us a reliable `ref` to use as a scroll target when an error occurs */}
+                        <div ref={saveErrorAlertElem}>
+                            {saveError && (
+                                <Alert
+                                    className="pf-u-m-md"
+                                    title={saveError.message}
+                                    variant="danger"
+                                    isInline
+                                >
+                                    {saveError?.type === 'UnknownError' ? saveError.details : ''}
+                                </Alert>
+                            )}
+                        </div>
                         <Divider component="div" />
                     </>
                 }
