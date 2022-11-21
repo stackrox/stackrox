@@ -163,10 +163,6 @@ func Benchmark_Pipeline(b *testing.B) {
 		go utils.CrashOnError(deleteAll(fakeClient, "service", testNamespace, deletion["service"], &wg))
 
 		wg.Wait()
-		//for _, o := range objToDelete {
-		//	err := fakeClient.Kubernetes().AppsV1().Deployments(testNamespace).Delete(context.Background(), o.GetName(), metav1.DeleteOptions{})
-		//	require.NoError(b, err)
-		//}
 		err = fakeClient.Kubernetes().CoreV1().Namespaces().Delete(context.Background(), testNamespace, metav1.DeleteOptions{})
 		require.NoError(b, err)
 		b.StartTimer()
