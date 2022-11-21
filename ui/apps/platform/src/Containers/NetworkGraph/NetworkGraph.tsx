@@ -138,7 +138,11 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
             sideBar={
                 <TopologySideBar resizable onClose={closeSidebar}>
                     {selectedEntity && selectedEntity?.data?.type === 'NAMESPACE' && (
-                        <NamespaceSideBar />
+                        <NamespaceSideBar
+                            namespaceId={selectedEntity.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
                     )}
                     {selectedEntity && selectedEntity?.data?.type === 'DEPLOYMENT' && (
                         <DeploymentSideBar
