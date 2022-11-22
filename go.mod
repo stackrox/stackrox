@@ -18,7 +18,7 @@ require (
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v1.6.3
-	github.com/containers/image/v5 v5.23.0
+	github.com/containers/image/v5 v5.23.1
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dave/jennifer v1.6.0
@@ -85,7 +85,7 @@ require (
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20220930104945-c4a3c15e834a
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
-	github.com/stackrox/scanner v0.0.0-20220929215850-334d4658d5e6
+	github.com/stackrox/scanner v0.0.0-20221122151333-4c8cbd61bfa7
 	github.com/stretchr/testify v1.8.1
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
@@ -107,7 +107,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.2.5
 	google.golang.org/api v0.103.0
 	google.golang.org/genproto v0.0.0-20221027153422-115e99e71e1c
-	google.golang.org/grpc v1.50.1
+	google.golang.org/grpc v1.51.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
@@ -400,7 +400,6 @@ replace (
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20221003092512-fbf71229411f
-	github.com/stackrox/scanner => github.com/stackrox/scanner v0.0.0-20221031200236-942ec05c53b4
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 	// Our fork has a change exposing a method to do generic POST requests

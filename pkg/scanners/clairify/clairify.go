@@ -503,7 +503,7 @@ func (c *clairify) KubernetesScan(version string) (map[string][]*storage.Embedde
 	return results, nil
 }
 
-// KubernetesScan retrieves the most recent orchestrator scan from scanner
+// IstioScan retrieves the most recent Istio scan from scanner
 func (c *clairify) IstioScan(version string) ([]*storage.EmbeddedVulnerability, error) {
 
 	req := &clairGRPCV1.GetIstioVulnerabilitiesRequest{

@@ -213,15 +213,12 @@ func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveT
 		case utils.OpenShift:
 			version = metadata.GetOpenshiftVersion()
 		case utils.Istio:
-			allAccessCtx = sac.WithAllAccess(context.Background())
 			versions, err := m.cveMatcher.GetValidIstioVersions(allAccessCtx, cluster)
-			log.Infof("reconcileCVEs: current number of Istio version is: %d", len(versions))
 			if err != nil || len(versions) < 1 {
 				continue
 			}
-			for _, v := range versions.AsSlice() {
+			for v := range versions {
 				if v != "" {
-					log.Infof("reconcileCVEs Istio: Affected cluster name: %s", cluster.Name)
 					versionToClusters[v] = append(versionToClusters[v], cluster)
 				}
 			}
@@ -271,9 +268,8 @@ func (m *orchestratorCVEManager) getAffectedClusters(ctx context.Context, cveID 
 }
 
 func istioScan(version string, scanners map[string]types.OrchestratorScanner) ([]*storage.EmbeddedVulnerability, error) {
-	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for Kubernetes:%s", version))
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for Istio:%s", version))
 
-	var allVulns []*storage.EmbeddedVulnerability
 	for _, scanner := range scanners {
 		result, err := scanner.IstioScan(version)
 		if err != nil {
@@ -281,7 +277,8 @@ func istioScan(version string, scanners map[string]types.OrchestratorScanner) ([
 			continue
 		}
 		vulnIDsSet := set.NewStringSet()
-		log.Infof("istioScan: total number of vulns %d", len(result))
+
+		var allVulns []*storage.EmbeddedVulnerability
 		for _, vuln := range result {
 			if vulnIDsSet.Add(vuln.GetCve()) {
 				allVulns = append(allVulns, vuln)

@@ -146,7 +146,7 @@ func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *s
 	return false, nil
 }
 
-// GetValidIstioVersions is to check the permission and get all Istio versions
+// GetValidIstioVersions returns all running Istio versions in the given cluster, if there are any, and nil otherwise
 func (m *CVEMatcher) GetValidIstioVersions(ctx context.Context, cluster *storage.Cluster) (set.StringSet, error) {
 	ok, err := m.isIstioControlPlaneRunning(ctx)
 	if err != nil {

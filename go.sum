@@ -433,8 +433,8 @@ github.com/containernetworking/cni v0.8.0/go.mod h1:LGwApLUm2FpoOfxTDEeq8T9ipbpZ
 github.com/containernetworking/cni v0.8.1/go.mod h1:LGwApLUm2FpoOfxTDEeq8T9ipbpZ61X79hmU3w8FmsY=
 github.com/containernetworking/plugins v0.8.6/go.mod h1:qnw5mN19D8fIwkqW7oHHYDHVlzhJpcY6TQxn/fUyDDM=
 github.com/containernetworking/plugins v0.9.1/go.mod h1:xP/idU2ldlzN6m4p5LmGiwRDjeJr6FLK6vuiUwoH7P8=
-github.com/containers/image/v5 v5.23.0 h1:Uv/n8zsHVUBBJK2rfBUHbN4CutHHmsQeyi4f80lAOf8=
-github.com/containers/image/v5 v5.23.0/go.mod h1:EXFFGEsL99S6aqLqK2mQJ3yrNh6Q05UCHt4mhF9JNoM=
+github.com/containers/image/v5 v5.23.1 h1:dUK9p5xfd38iTQXJEgMsUGqIHXbkDugrleZtd3zB+Wg=
+github.com/containers/image/v5 v5.23.1/go.mod h1:EXFFGEsL99S6aqLqK2mQJ3yrNh6Q05UCHt4mhF9JNoM=
 github.com/containers/ocicrypt v1.0.1/go.mod h1:MeJDzk1RJHv89LjsH0Sp5KTY3ZYkjXO/C+bKAeWFIrc=
 github.com/containers/ocicrypt v1.1.0/go.mod h1:b8AOe0YR67uU8OqfVNcznfFpAzu3rdgUV4GP9qXPfu4=
 github.com/containers/ocicrypt v1.1.1/go.mod h1:Dm55fwWm1YZAjYRaJ94z2mfZikIyIN4B0oB3dj3jFxY=
@@ -1792,8 +1792,8 @@ github.com/stackrox/oauth2 v0.0.0-20220531064142-8b312376cb4c h1:lpB76HIH2VEIOgr
 github.com/stackrox/oauth2 v0.0.0-20220531064142-8b312376cb4c/go.mod h1:DAh4E804XQdzx2j+YRIaUnCqCV2RuMz24cGBJ5QYIrc=
 github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179 h1:5wzvROh+LGgeIeOpMuEpIkRIALDFU/ltFB8cY3916c4=
 github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179/go.mod h1:zwEXo3PEZZb6QQZBrBORMX0Hvnnwst3PduSaTQZMFYc=
-github.com/stackrox/scanner v0.0.0-20221031200236-942ec05c53b4 h1:w9dxvhqdVnLEym4/y9f/sGXEyejUubW5DrRoUMAAUgs=
-github.com/stackrox/scanner v0.0.0-20221031200236-942ec05c53b4/go.mod h1:d4dXqjvWEDDMxHNJZSqEQtuPmYu/ks09S2NQLp9ahZw=
+github.com/stackrox/scanner v0.0.0-20221122151333-4c8cbd61bfa7 h1:j3rzF44/AEQHDNN+GDKJUn92hbRsOVgk3/k52ZLcxqQ=
+github.com/stackrox/scanner v0.0.0-20221122151333-4c8cbd61bfa7/go.mod h1:Swr/ZyNzXe9VPMY9pJrQwVJVITMWharJnVlSmHh5J2k=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/stackrox/yaml/v2 v2.4.1 h1:09ux+QFfvp+Lk73pwGlMTAHeZoS2pqs6CCngYaJ6EQo=
@@ -2681,8 +2681,8 @@ google.golang.org/grpc v1.37.0/go.mod h1:NREThFqKR1f3iQ6oBuvc5LadQuXVGo9rkm5ZGrQ
 google.golang.org/grpc v1.38.0/go.mod h1:NREThFqKR1f3iQ6oBuvc5LadQuXVGo9rkm5ZGrQdJfM=
 google.golang.org/grpc v1.40.0/go.mod h1:ogyxbiOoUXAkP+4+xa6PZSE9DZgIHtSpzjDTB9KAK34=
 google.golang.org/grpc v1.49.0/go.mod h1:ZgQEeidpAuNRZ8iRrlBKXZQP1ghovWIVhdJRyCDK+GI=
-google.golang.org/grpc v1.50.1 h1:DS/BukOZWp8s6p4Dt/tOaJaTQyPyOoCcrjroHuCeLzY=
-google.golang.org/grpc v1.50.1/go.mod h1:ZgQEeidpAuNRZ8iRrlBKXZQP1ghovWIVhdJRyCDK+GI=
+google.golang.org/grpc v1.51.0 h1:E1eGv1FTqoLIdnBCZufiSHgKjlqG6fKFf6pPWtMTh8U=
+google.golang.org/grpc v1.51.0/go.mod h1:wgNDFcnuBGmxLKI/qn4T+m5BtEBYXJPvibbUPsAIPww=
 google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0/go.mod h1:6Kw0yEErY5E/yWrBtf03jp27GLLJujG4z/JK95pnjjw=
 google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9 h1:nuV5/Eu1pLmXFqSuM5yYgg1z+m3f7+HC1HO1xsmCz9I=
 google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9/go.mod h1:gID3PKrg7pWKntu9Ss6zTLJ0ttC0X9IHgREOCZwbCVU=

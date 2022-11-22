@@ -100,7 +100,6 @@ func (m *orchestratorIstioCVEManagerImpl) GetAffectedClusters(ctx context.Contex
 		return nil, err
 	}
 	return clusters, nil
-
 }
 
 func (m *orchestratorIstioCVEManagerImpl) reconcile() {
