@@ -29,7 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
 	authv1alpha1 "github.com/stackrox/rox/operator/apis/auth/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
