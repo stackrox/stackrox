@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -18,8 +19,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore) Service {
+func New(datastore datastore.DataStore, queryResolver datastore.QueryResolver, deploymentDS deploymentDS.DataStore) Service {
 	return &serviceImpl{
-		datastore: datastore,
+		datastore:     datastore,
+		queryResolver: queryResolver,
+		deploymentDS:  deploymentDS,
 	}
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/heimdalr/dag"
 	"github.com/pkg/errors"
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
@@ -17,15 +16,13 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
-	graphInitBatchSize = 20
-	defaultPageSize    = 1000
+	graphInitBatchSize = 200
 )
 
 var (
@@ -37,8 +34,6 @@ type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
-
-	deploymentDS deploymentDS.DataStore
 
 	lock  sync.RWMutex
 	graph *dag.DAG
@@ -431,24 +426,14 @@ func verifyCollectionObjectNotEmpty(obj *storage.ResourceCollection) error {
 	return nil
 }
 
-func (ds *datastoreImpl) ResolveListDeployments(ctx context.Context, collection *storage.ResourceCollection, pagination *v1.Pagination) ([]*storage.ListDeployment, error) {
+func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
+	var collections []*storage.ResourceCollection
+	var collectionSet set.Set[string]
+	var disjunctions []*v1.Query
 
 	if err := verifyCollectionConstraints(collection); err != nil {
 		return nil, err
 	}
-
-	query, err := ds.resolveCollectionQuery(ctx, collection)
-	if err != nil {
-		return nil, err
-	}
-	paginated.FillPagination(query, pagination, defaultPageSize)
-	return ds.deploymentDS.SearchListDeployments(ctx, query)
-}
-
-func (ds *datastoreImpl) resolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
-	var collections []*storage.ResourceCollection
-	var collectionSet set.Set[string]
-	var disjunctions []*v1.Query
 
 	collections = append(collections, collection)
 
@@ -545,8 +530,9 @@ func embeddedCollectionsToIDList(embeddedList []*storage.ResourceCollection_Embe
 func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 
 	// object not nil
-	if collection == nil {
-		return errors.New("passed collection must be non nil")
+	err := verifyCollectionObjectNotEmpty(collection)
+	if err != nil {
+		return err
 	}
 
 	// currently we only support one resource selector per collection from UX

@@ -6,6 +6,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/utils"
@@ -57,7 +58,9 @@ type collectionRequest interface {
 type serviceImpl struct {
 	v1.UnimplementedCollectionServiceServer
 
-	datastore datastore.DataStore
+	datastore     datastore.DataStore
+	queryResolver datastore.QueryResolver
+	deploymentDS  deploymentDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -234,16 +237,6 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 }
 
 func resolveQuery(rawQuery *v1.RawQuery, withPagination bool) (*v1.Query, error) {
-	if rawQuery == nil {
-		query := search.EmptyQuery()
-		if withPagination {
-			paginated.FillPagination(query, &v1.Pagination{}, defaultPageSize)
-			return query, nil
-		}
-
-		return search.EmptyQuery(), nil
-	}
-
 	query, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, err
@@ -308,5 +301,10 @@ func (s *serviceImpl) tryDeploymentMatching(ctx context.Context, collection *sto
 		return nil, nil
 	}
 
-	return s.datastore.ResolveListDeployments(ctx, collection, matchOptions.GetMatchesPagination())
+	query, err := s.queryResolver.ResolveCollectionQuery(ctx, collection)
+	if err != nil {
+		return nil, err
+	}
+	paginated.FillPagination(query, matchOptions.GetMatchesPagination(), defaultPageSize)
+	return s.deploymentDS.SearchListDeployments(ctx, query)
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,14 +29,18 @@ type CollectionServiceTestSuite struct {
 	mockCtrl *gomock.Controller
 
 	dataStore         *datastoreMocks.MockDataStore
+	queryResolver     *datastoreMocks.MockQueryResolver
+	deploymentDS      *deploymentDSMocks.MockDataStore
 	collectionService Service
 }
 
 func (suite *CollectionServiceTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.queryResolver = datastoreMocks.NewMockQueryResolver(suite.mockCtrl)
+	suite.deploymentDS = deploymentDSMocks.NewMockDataStore(suite.mockCtrl)
 	suite.T().Setenv(features.ObjectCollections.EnvVar(), "true")
-	suite.collectionService = New(suite.dataStore)
+	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS)
 
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
@@ -210,6 +215,15 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	suite.NotNil(resp.GetCollection().GetUpdatedBy())
 	suite.NotNil(resp.GetCollection().GetCreatedAt())
 	suite.NotNil(resp.GetCollection().GetLastUpdated())
+
+	// test failure on datastore invocation
+	mockID.EXPECT().UID().Return("uid").Times(1)
+	mockID.EXPECT().FullName().Return("name").Times(1)
+	mockID.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
+	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return(errors.New("test error"))
+	_, err = suite.collectionService.CreateCollection(ctx, request)
+	suite.Error(err)
 }
 
 func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
@@ -298,6 +312,15 @@ func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
 	suite.Equal("uid", resp.GetCollection().GetUpdatedBy().GetId())
 	suite.Equal("name", resp.GetCollection().GetUpdatedBy().GetName())
 	suite.NotNil(resp.GetCollection().GetLastUpdated())
+
+	// test failure on datastore invocation
+	mockID.EXPECT().UID().Return("uid").Times(1)
+	mockID.EXPECT().FullName().Return("name").Times(1)
+	mockID.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
+	suite.dataStore.EXPECT().UpdateCollection(ctx, gomock.Any()).Times(1).Return(errors.New("test error"))
+	resp, err = suite.collectionService.UpdateCollection(ctx, request)
+	suite.Error(err)
 }
 
 func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
@@ -315,6 +338,152 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 	suite.dataStore.EXPECT().DeleteCollection(allAccessCtx, idRequest.GetId()).Times(1).Return(nil)
 	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
 	suite.NoError(err)
+
+	// test error when request fails
+	suite.dataStore.EXPECT().DeleteCollection(allAccessCtx, idRequest.GetId()).Times(1).Return(errors.New("test error"))
+	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
+	suite.Error(err)
+}
+
+func (suite *CollectionServiceTestSuite) TestListCollections() {
+	if !features.ObjectCollections.Enabled() {
+		suite.T().Skip("skipping because env var is not set")
+	}
+	allAccessCtx := sac.WithAllAccess(context.Background())
+
+	expectedResp := &v1.ListCollectionsResponse{
+		Collections: []*storage.ResourceCollection{
+			{
+				Id: "test1",
+			},
+			{
+				Id: "test2",
+			},
+		},
+	}
+
+	// test success
+	suite.dataStore.EXPECT().SearchCollections(allAccessCtx, gomock.Any()).Times(1).Return(expectedResp.Collections, nil)
+	resp, err := suite.collectionService.ListCollections(allAccessCtx, &v1.ListCollectionsRequest{})
+	suite.NoError(err)
+	suite.Equal(expectedResp, resp)
+
+	// test failure
+	suite.dataStore.EXPECT().SearchCollections(allAccessCtx, gomock.Any()).Times(1).Return(nil, errors.New("test error"))
+	resp, err = suite.collectionService.ListCollections(allAccessCtx, &v1.ListCollectionsRequest{})
+	suite.Error(err)
+	suite.Nil(resp)
+}
+
+func (suite *CollectionServiceTestSuite) TestDryRunCollection() {
+	if !features.ObjectCollections.Enabled() {
+		suite.T().Skip("skipping because env var is not set")
+	}
+	allAccessCtx := sac.WithAllAccess(context.Background())
+
+	expectedResp := &v1.DryRunCollectionResponse{
+		Deployments: nil,
+	}
+
+	request := &v1.DryRunCollectionRequest{
+		Name:        "d",
+		Description: "description",
+		ResourceSelectors: []*storage.ResourceSelector{
+			{
+				Rules: []*storage.SelectorRule{
+					{
+						FieldName: search.DeploymentName.String(),
+						Operator:  storage.BooleanOperator_OR,
+						Values: []*storage.RuleValue{
+							{
+								Value: "deployment",
+							},
+						},
+					},
+				},
+			},
+		},
+		EmbeddedCollectionIds: []string{"id1", "id2"},
+	}
+
+	// test successful add request
+	mockID := mockIdentity.NewMockIdentity(suite.mockCtrl)
+	mockID.EXPECT().UID().Return("uid").Times(1)
+	mockID.EXPECT().FullName().Return("name").Times(1)
+	mockID.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx := authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
+
+	suite.dataStore.EXPECT().DryRunAddCollection(ctx, gomock.Any()).Times(1).Return(nil)
+	resp, err := suite.collectionService.DryRunCollection(ctx, request)
+	suite.NoError(err)
+	suite.Equal(expectedResp, resp)
+
+	// test failure add request
+	mockID.EXPECT().UID().Return("uid").Times(1)
+	mockID.EXPECT().FullName().Return("name").Times(1)
+	mockID.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
+
+	suite.dataStore.EXPECT().DryRunAddCollection(ctx, gomock.Any()).Times(1).Return(errors.New("test error"))
+	resp, err = suite.collectionService.DryRunCollection(ctx, request)
+	suite.Error(err)
+	suite.Nil(resp)
+
+	// test successful update request
+	mockID.EXPECT().UID().Return("uid").Times(1)
+	mockID.EXPECT().FullName().Return("name").Times(1)
+	mockID.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
+
+	request.Id = "testId"
+
+	suite.dataStore.EXPECT().DryRunUpdateCollection(ctx, gomock.Any()).Times(1).Return(nil)
+	resp, err = suite.collectionService.DryRunCollection(ctx, request)
+	suite.NoError(err)
+	suite.Equal(expectedResp, resp)
+
+	// test failure update request
+	mockID.EXPECT().UID().Return("uid").Times(1)
+	mockID.EXPECT().FullName().Return("name").Times(1)
+	mockID.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
+	suite.dataStore.EXPECT().DryRunUpdateCollection(ctx, gomock.Any()).Times(1).Return(errors.New("test error"))
+	resp, err = suite.collectionService.DryRunCollection(ctx, request)
+	suite.Error(err)
+	suite.Nil(resp)
+
+	// test deployment matching
+	request.Options = &v1.CollectionDeploymentMatchOptions{
+		WithMatches:       true,
+		MatchesPagination: nil,
+	}
+	expectedResp = &v1.DryRunCollectionResponse{
+		Deployments: []*storage.ListDeployment{
+			{
+				Id: "dep1",
+			},
+			{
+				Id: "dep2",
+			},
+		},
+	}
+	mockID.EXPECT().UID().Return("uid").AnyTimes()
+	mockID.EXPECT().FullName().Return("name").AnyTimes()
+	mockID.EXPECT().FriendlyName().Return("name").AnyTimes()
+	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
+	suite.dataStore.EXPECT().DryRunUpdateCollection(ctx, gomock.Any()).Times(1).Return(nil)
+	suite.queryResolver.EXPECT().ResolveCollectionQuery(ctx, gomock.Any()).Times(1).Return(search.EmptyQuery(), nil)
+	suite.deploymentDS.EXPECT().SearchListDeployments(ctx, gomock.Any()).Times(1).Return(expectedResp.Deployments, nil)
+	resp, err = suite.collectionService.DryRunCollection(ctx, request)
+	suite.NoError(err)
+	suite.Equal(expectedResp, resp)
+
+	// test failure to resolve query
+	suite.dataStore.EXPECT().DryRunUpdateCollection(ctx, gomock.Any()).Times(1).Return(nil)
+	suite.queryResolver.EXPECT().ResolveCollectionQuery(ctx, gomock.Any()).Times(1).Return(nil, errors.New("test error"))
+	resp, err = suite.collectionService.DryRunCollection(ctx, request)
+	suite.Error(err)
+	suite.Nil(resp)
 }
 
 func (suite *CollectionServiceTestSuite) embeddedCollectionsToIds(embeddedCollections []*storage.ResourceCollection_EmbeddedResourceCollection) []string {
