@@ -242,7 +242,7 @@ func (c *clairv4) getVulnerabilityReport(digest claircore.Digest) (*claircore.Vu
 		return nil, err
 	}
 
-	var vulnReport claircore.VulnerabilityReport
+	vulnReport := new(claircore.VulnerabilityReport)
 	// Ignore any error returned. Just assume
 	err = retry.WithRetry(func() error {
 		resp, err := c.client.Do(req)
@@ -260,10 +260,10 @@ func (c *clairv4) getVulnerabilityReport(digest claircore.Digest) (*claircore.Vu
 			return newUnexpectedStatusCodeError(resp.StatusCode)
 		}
 
-		return json.NewDecoder(resp.Body).Decode(&vulnReport)
+		return json.NewDecoder(resp.Body).Decode(vulnReport)
 	}, retry.Tries(3), retry.WithExponentialBackoff(), retry.OnlyRetryableErrors())
 
-	return &vulnReport, err
+	return vulnReport, err
 }
 
 func (c *clairv4) Match(_ *storage.ImageName) bool {

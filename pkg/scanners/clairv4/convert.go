@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -108,9 +109,16 @@ func getComponents(report *claircore.VulnerabilityReport) []*storage.EmbeddedIma
 }
 
 func getVulns(vulnerabilities map[string]*claircore.Vulnerability, ids []string) []*storage.EmbeddedVulnerability {
+	// vulns will have at most len(ids) entries.
 	vulns := make([]*storage.EmbeddedVulnerability, 0, len(ids))
+	uniqueVulns := set.NewStringSet()
 	for _, id := range ids {
 		ccVuln := vulnerabilities[id]
+		if !uniqueVulns.Add(ccVuln.Name) {
+			// Already added this vulnerability, so ignore it.
+			continue
+		}
+
 		// Ignore the error, as publishedTime will just be `nil` if the given time is invalid.
 		publishedTime, _ := gogoTypes.TimestampProto(ccVuln.Issued)
 		vuln := &storage.EmbeddedVulnerability{
