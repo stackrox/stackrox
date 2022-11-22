@@ -73,7 +73,7 @@ function NetworkGraphPage() {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection className="network-graph" padding={{ default: 'noPadding' }}>
+            <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Toolbar data-testid="network-graph-toolbar">
                     <ToolbarContent>
                         <ToolbarGroup variant="filter-group">
@@ -96,6 +96,8 @@ function NetworkGraphPage() {
                     </ToolbarContent>
                 </Toolbar>
                 <Divider component="div" />
+            </PageSection>
+            <PageSection className="network-graph" padding={{ default: 'noPadding' }}>
                 {model.nodes && <NetworkGraph model={model} />}
                 {isLoading && (
                     <Bullseye>
