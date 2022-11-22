@@ -34,33 +34,43 @@ const emptyModel = {
 };
 
 // TODO: get real time window from user input
-const timeWindow = 'Past hours';
+const timeWindow = 'Past hour';
+// TODO: get real includePorts flag from user input
+const includePorts = true;
 
 // TODO: refactor to another file and import
 function getScopeHierarchyFromSearch(searchFilter: SearchFilter) {
-    const hierarchy: { cluster: string | undefined; namespaces: string[]; deployments: string[] } =
-        {
-            cluster: undefined,
-            namespaces: [],
-            deployments: [],
-        };
+    const workingQuery = { ...searchFilter };
+    const hierarchy: {
+        cluster: string | undefined;
+        namespaces: string[];
+        deployments: string[];
+        remainingQuery;
+    } = {
+        cluster: undefined,
+        namespaces: [],
+        deployments: [],
+        remainingQuery: workingQuery,
+    };
 
-    if (!searchFilter.Cluster || Array.isArray(searchFilter.Cluster)) {
-        return hierarchy;
+    if (searchFilter.Cluster && !Array.isArray(searchFilter.Cluster)) {
+        hierarchy.cluster = searchFilter.Cluster;
+        delete hierarchy.remainingQuery.Cluster;
     }
-    hierarchy.cluster = searchFilter.Cluster;
 
     if (searchFilter.Namespace) {
         hierarchy.namespaces = Array.isArray(searchFilter.Namespace)
             ? searchFilter.Namespace
             : [searchFilter.Namespace];
-
-        if (searchFilter.Deployment) {
-            hierarchy.deployments = Array.isArray(searchFilter.Deployment)
-                ? searchFilter.Deployment
-                : [searchFilter.Deployment];
-        }
+        delete hierarchy.remainingQuery.Namespace;
     }
+
+    if (searchFilter.Deployment) {
+        hierarchy.deployments = Array.isArray(searchFilter.Deployment)
+            ? searchFilter.Deployment
+            : [searchFilter.Deployment];
+    }
+
     return hierarchy;
 }
 
@@ -76,6 +86,7 @@ function NetworkGraphPage() {
         namespaces: namespacesFromUrl,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         deployments: deploymentsFromUrl,
+        remainingQuery,
     } = getScopeHierarchyFromSearch(searchFilter);
 
     const { clusters } = useFetchClusters();
@@ -86,17 +97,15 @@ function NetworkGraphPage() {
             if (selectedClusterId) {
                 setIsLoading(true);
 
-                const remainingQuery = { ...searchFilter };
-                delete remainingQuery.Cluster;
-                delete remainingQuery.Namespace;
-
-                const queryToUse = getQueryString(remainingQuery);
+                const queryToUse = getQueryString(remainingQuery).slice(1);
+                const timestampToUse = timeWindowToDate(timeWindow);
 
                 fetchNetworkFlowGraph(
                     selectedClusterId,
                     namespacesFromUrl,
                     queryToUse,
-                    timeWindowToDate(timeWindow) || undefined
+                    timestampToUse || undefined,
+                    includePorts
                 )
                     .then(({ response }) => {
                         const dataModel = transformData(response.nodes);
