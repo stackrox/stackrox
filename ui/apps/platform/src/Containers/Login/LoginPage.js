@@ -257,7 +257,7 @@ const Form = reduxForm({
 // initial values (in this case the list of auth providers)
 const LoadingOrForm = ({ authProviders }) => {
     if (!authProviders.length) {
-        return <LoadingSection message="Loading..." />;
+        return <LoadingSection message="test..." />;
     }
 
     const options = authProvidersToSelectOptions(authProviders);
