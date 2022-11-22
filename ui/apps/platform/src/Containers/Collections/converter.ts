@@ -1,5 +1,5 @@
 import { CollectionRequest, CollectionResponse, SelectorRule } from 'services/CollectionsService';
-import { ensureExhaustive } from 'utils/type.utils';
+import { ensureExhaustive, isNonEmptyArray } from 'utils/type.utils';
 import {
     Collection,
     SelectorField,
@@ -25,12 +25,29 @@ const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
 
 const LABEL_SEPARATOR = '=';
 
+export type CollectionParseError = {
+    errors: [string, ...string[]];
+};
+
+export function isCollectionParseError(
+    errorObject: Record<string, unknown>
+): errorObject is CollectionParseError {
+    return (
+        'errors' in errorObject &&
+        Array.isArray(errorObject.errors) &&
+        isNonEmptyArray(errorObject.errors) &&
+        errorObject.errors.every((e) => typeof e === 'string')
+    );
+}
+
 /**
  * This function takes a raw `CollectionResponse` from the server and parses it into a representation
  * of a `Collection` that can be supported by the current UI controls. If any incompatibilities are detected
  * it will return a list of validation errors to the caller.
  */
-export function parseCollection(data: Omit<CollectionResponse, 'id'>): Collection | AggregateError {
+export function parseCollection(
+    data: Omit<CollectionResponse, 'id'>
+): Collection | CollectionParseError {
     const collection: Collection = {
         name: data.name,
         description: data.description,
@@ -132,8 +149,8 @@ export function parseCollection(data: Omit<CollectionResponse, 'id'>): Collectio
         }
     });
 
-    if (errors.length > 0) {
-        return new AggregateError(errors);
+    if (isNonEmptyArray(errors)) {
+        return { errors };
     }
 
     return collection;

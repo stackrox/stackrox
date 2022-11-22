@@ -15,8 +15,9 @@ import {
 import { CollectionResponse } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import CollectionResults from './CollectionResults';
-import { parseCollection } from './converter';
+import { isCollectionParseError, parseCollection } from './converter';
 import CollectionForm, { CollectionFormProps } from './CollectionForm';
+import UnsupportedCollectionState from './UnsupportedCollectionState';
 
 export type CollectionFormDrawerProps = {
     hasWriteAccessForCollections: boolean;
@@ -85,11 +86,11 @@ function CollectionFormDrawer({
                 >
                     <DrawerContentBody className="pf-u-background-color-100 pf-u-display-flex pf-u-flex-direction-column">
                         {headerContent}
-                        {initialData instanceof AggregateError ? (
-                            <>
-                                {initialData.errors}
-                                {/* TODO - Handle inline UI for unsupported rule errors */}
-                            </>
+                        {isCollectionParseError(initialData) ? (
+                            <UnsupportedCollectionState
+                                className="pf-u-pt-xl"
+                                errors={initialData.errors}
+                            />
                         ) : (
                             <CollectionForm
                                 hasWriteAccessForCollections={hasWriteAccessForCollections}

@@ -1,5 +1,5 @@
 import { CollectionRequest, CollectionResponse } from 'services/CollectionsService';
-import { generateRequest, parseCollection } from './converter';
+import { generateRequest, isCollectionParseError, parseCollection } from './converter';
 import { ByLabelResourceSelector, Collection, LabelSelectorRule } from './types';
 
 describe('Collection parser', () => {
@@ -66,7 +66,7 @@ describe('Collection parser', () => {
             embeddedCollectionIds: ['12', '13', '14'],
         };
         const parsedResponse = parseCollection(collectionResponse) as Collection;
-        expect(parsedResponse).not.toBeInstanceOf(AggregateError);
+        expect(isCollectionParseError(parsedResponse)).toBeFalsy();
         expect(parsedResponse.id).toEqual(expectedCollection.id);
         expect(parsedResponse.name).toEqual(expectedCollection.name);
         expect(parsedResponse.description).toEqual(expectedCollection.description);
@@ -87,7 +87,7 @@ describe('Collection parser', () => {
             resourceSelectors: [{ rules: [] }, { rules: [] }],
             embeddedCollections: [],
         };
-        expect(parseCollection(collectionResponse)).toBeInstanceOf(AggregateError);
+        expect(isCollectionParseError(parseCollection(collectionResponse))).toBeTruthy();
     });
 
     it('should error on rules for multiple fields for a single entity', () => {
@@ -115,7 +115,7 @@ describe('Collection parser', () => {
             embeddedCollections: [],
         };
 
-        expect(parseCollection(collectionResponse)).toBeInstanceOf(AggregateError);
+        expect(isCollectionParseError(parseCollection(collectionResponse))).toBeTruthy();
     });
 
     it('should error on conjunction rules', () => {
@@ -138,7 +138,7 @@ describe('Collection parser', () => {
             embeddedCollections: [],
         };
 
-        expect(parseCollection(collectionResponse)).toBeInstanceOf(AggregateError);
+        expect(isCollectionParseError(parseCollection(collectionResponse))).toBeTruthy();
     });
 
     it('should error on rules against annotation field names', () => {
@@ -161,7 +161,7 @@ describe('Collection parser', () => {
             embeddedCollections: [],
         };
 
-        expect(parseCollection(collectionResponse)).toBeInstanceOf(AggregateError);
+        expect(isCollectionParseError(parseCollection(collectionResponse))).toBeTruthy();
     });
 
     it('should correctly handle label key/value splitting on `=` delimiter', () => {
