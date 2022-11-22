@@ -87,7 +87,7 @@ describe('Vulnerability Management Components', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display links for all image CVEs', () => {
+    it('should display links for all CVEs', () => {
         verifySecondaryEntities(
             entitiesKey,
             'cves',
@@ -97,7 +97,7 @@ describe('Vulnerability Management Components', () => {
         );
     });
 
-    it('should display links for fixable image CVEs', () => {
+    it('should display links for fixable CVEs', () => {
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'cves',
