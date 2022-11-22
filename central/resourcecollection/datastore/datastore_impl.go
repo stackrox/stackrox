@@ -427,26 +427,26 @@ func verifyCollectionObjectNotEmpty(obj *storage.ResourceCollection) error {
 }
 
 func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
-	var collections []*storage.ResourceCollection
-	var collectionSet set.Set[string]
+	var collectionQueue []*storage.ResourceCollection
+	var visitedCollection set.Set[string]
 	var disjunctions []*v1.Query
 
 	if err := verifyCollectionConstraints(collection); err != nil {
 		return nil, err
 	}
 
-	collections = append(collections, collection)
+	collectionQueue = append(collectionQueue, collection)
 
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
-	for len(collections) > 0 {
+	for len(collectionQueue) > 0 {
 
 		// get first index and remove from list
-		collection := collections[0]
-		collections = collections[1:]
+		collection := collectionQueue[0]
+		collectionQueue = collectionQueue[1:]
 
-		if !collectionSet.Add(collection.GetId()) {
+		if !visitedCollection.Add(collection.GetId()) {
 			continue
 		}
 
@@ -462,7 +462,7 @@ func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection 
 		if err != nil {
 			return nil, err
 		}
-		collections = append(collections, embeddedList...)
+		collectionQueue = append(collectionQueue, embeddedList...)
 	}
 
 	return pkgSearch.DisjunctionQuery(disjunctions...), nil
