@@ -6,7 +6,7 @@ import util.Cert
 
 @Category([BAT, COMPATIBILITY])
 class CertExpiryTest extends BaseSpecification {
-    def: "Failing test"() {
+    def "Failing test - Delete before merging"() {
         when:
         "This test is supposed to fail"
 
