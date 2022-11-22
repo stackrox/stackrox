@@ -21,7 +21,7 @@ export function getCountAndNounFromCVEsLinkResults([, count]) {
     };
 }
 
-describe('Components list Page and its entity detail page, (related entities) sub list validations ', () => {
+describe('Vulnerability Management Components', () => {
     withAuth();
 
     before(function beforeHook() {
