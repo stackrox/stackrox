@@ -18,6 +18,8 @@ const entitiesKey = 'deployments';
 export function getCountAndNounFromCVEsLinkResults([, count]) {
     return {
         panelHeaderText: `${count} ${count === '1' ? 'CVE' : 'CVES'}`,
+        relatedEntitiesCount: count,
+        relatedEntitiesNoun: count === '1' ? 'CVE' : 'CVES',
     };
 }
 
