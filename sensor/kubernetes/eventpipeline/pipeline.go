@@ -24,11 +24,13 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 	// TODO(ROX-13413): Move this env.EventPipelineOutputQueueSize to CreateOptions
 	outputQueue := output.New(detector, env.EventPipelineOutputQueueSize.IntegerSetting())
 	var depResolver component.Resolver
-	depResolver = outputQueue
+	var resourceListener component.PipelineComponent
 	if features.ResyncDisabled.Enabled() {
 		depResolver = resolver.New(outputQueue)
+		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
+	} else {
+		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue, storeProvider)
 	}
-	resourceListener := listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
 
 	pipelineResponses := make(chan *central.MsgFromSensor)
 	return &eventPipeline{
