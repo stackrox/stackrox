@@ -19,7 +19,8 @@ function UnsupportedCollectionState({ errors, className = '' }: UnsupportedColle
                 icon={InfoCircleIcon}
             >
                 <p className="pf-u-pb-lg">
-                    This collection is valid but cannot be displayed nor edited through the ACS UI
+                    This collection is valid but cannot be displayed nor edited through the user
+                    interface
                 </p>
                 <ExpandableSection toggleText="More info">
                     <List className="pf-u-text-align-left">
