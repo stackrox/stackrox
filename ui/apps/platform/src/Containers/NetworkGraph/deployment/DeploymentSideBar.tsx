@@ -133,6 +133,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
                     eventKey="Baselines"
                     id="Baselines"
                     hidden={activeKeyTab !== 'Baselines'}
+                    className="pf-u-h-100"
                 >
                     <DeploymentBaselines />
                 </TabContent>
