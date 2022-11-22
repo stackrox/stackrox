@@ -136,7 +136,7 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
                             <br />
                             If timeout is exceeded, repeat request with increased timeout in
                             `roxctl` tool: `roxctl central debug download-diagnostics
-                            --timeout=1000s`
+                            --timeout=400s`
                         </p>
                     </Alert>
                 );
