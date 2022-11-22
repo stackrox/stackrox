@@ -17,14 +17,6 @@ function DeploymentBaselines() {
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
 
-    const handleAlertingOnViolations = (checked: boolean) => {
-        setIsAlertingOnViolations(checked);
-    };
-
-    const handleExcludingPortsAndProtocols = (checked: boolean) => {
-        setIsExcludingPortsAndProtocols(checked);
-    };
-
     return (
         <div className="pf-u-h-100 pf-u-p-md">
             <Stack hasGutter>
@@ -35,7 +27,7 @@ function DeploymentBaselines() {
                                 id="simple-switch"
                                 label="Alert on baseline violation"
                                 isChecked={isAlertingOnViolations}
-                                onChange={handleAlertingOnViolations}
+                                onChange={setIsAlertingOnViolations}
                             />
                         </FlexItem>
                         <FlexItem>
@@ -66,7 +58,7 @@ function DeploymentBaselines() {
                                 id="exclude-ports-and-protocols-checkbox"
                                 label="Exclude ports & protocols"
                                 isChecked={isExcludingPortsAndProtocols}
-                                onChange={handleExcludingPortsAndProtocols}
+                                onChange={setIsExcludingPortsAndProtocols}
                             />
                         </FlexItem>
                         <FlexItem>
