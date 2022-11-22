@@ -27,6 +27,7 @@ COPY scripts/init-entrypoint.sh /usr/local/bin/
 COPY --from=extracted_bundle /bundle/postgres.rpm /bundle/postgres-libs.rpm /bundle/postgres-server.rpm /bundle/postgres-contrib.rpm /tmp/
 
 RUN microdnf upgrade -y --nobest && \
+    # groupadd is in shadow-utils package that is not installed by default.
     microdnf install -y shadow-utils && \
     groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
@@ -36,10 +37,7 @@ RUN microdnf upgrade -y --nobest && \
         glibc-locale-source glibc-langpack-en \
         perl-libs libxslt && \
     rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
-    # The removal of /usr/share/zoneinfo from UBI minimal images is intentional.
-    # After building the image, the image is reduced in size as much as possible,
-    # and the /usr/share/zoneinfo directory is purged as it saves space
-    # in the final distribution of the image.
+    # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
     # https://access.redhat.com/solutions/5616681
     microdnf reinstall tzdata && \
     microdnf clean all && \
