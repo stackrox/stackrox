@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	requestTimeout = 30 * time.Second
+	requestTimeout = 2 * time.Minute
 	typeString     = "clairV4"
 
 	indexStatePath          = "/indexer/api/v1/index_state"
