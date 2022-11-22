@@ -11,10 +11,10 @@ import Lollipop from 'Components/visuals/Lollipop';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
 const QUERY = gql`
-    query usersWithClusterAdminRoles {
+    query usersWithClusterAdminRoles($query: String) {
         clusters {
             id
-            subjects {
+            subjects(query: $query) {
                 id
                 name
                 clusterAdmin
@@ -75,7 +75,12 @@ const UsersWithMostClusterAdminRoles = ({ match, location }) => {
     }
 
     return (
-        <Query query={QUERY}>
+        <Query
+            query={QUERY}
+            variables={{
+                query: 'Cluster Role:true',
+            }}
+        >
             {({ loading, data, networkStatus }) => {
                 let contents = <Loader />;
                 let viewAllLink;
