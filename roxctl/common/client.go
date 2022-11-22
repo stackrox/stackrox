@@ -1,7 +1,6 @@
 package common
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,14 +10,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/ternary"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"golang.org/x/net/http2"
 )
-
-const defaultClientTimeout = 30 * time.Second
 
 var (
 	http1NextProtos = []string{"http/1.1", "http/1.0"}
@@ -36,7 +32,6 @@ type roxctlClientImpl struct {
 	a           Auth
 	forceHTTP1  bool
 	useInsecure bool
-	timeout     time.Duration
 }
 
 func getURL(path string) (string, error) {
@@ -70,6 +65,7 @@ func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure boo
 	}
 
 	client := &http.Client{
+		Timeout:   timeout,
 		Transport: transport,
 	}
 
@@ -77,8 +73,7 @@ func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure boo
 	if err != nil {
 		return nil, err
 	}
-	clientTimeout := ternary.Duration(timeout == 0, defaultClientTimeout, timeout)
-	return &roxctlClientImpl{http: client, a: auth, forceHTTP1: forceHTTP1, useInsecure: useInsecure, timeout: clientTimeout}, nil
+	return &roxctlClientImpl{http: client, a: auth, forceHTTP1: forceHTTP1, useInsecure: useInsecure}, nil
 }
 
 // DoReqAndVerifyStatusCode executes a http.Request and verifies that the http.Response had the given status code
@@ -128,11 +123,7 @@ func (client *roxctlClientImpl) NewReq(method string, path string, body io.Reade
 	if err != nil {
 		return nil, err
 	}
-	// We use context.WithTimeout instead of http.Client Timeout as the last one does not expose error types:
-	// https://github.com/golang/go/blob/2580d0e08d5e9f979b943758d3c49877fb2324cb/src/net/http/omithttp2.go#L21
-	ctx, cancel := context.WithTimeout(context.Background(), client.timeout)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, method, reqURL, body)
+	req, err := http.NewRequest(method, reqURL, body)
 	if err != nil {
 		return nil, errors.Wrap(err, "error when creating http request")
 	}

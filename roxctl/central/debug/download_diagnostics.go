@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -51,7 +52,7 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 				ExpandZip:  false,
 				OutputDir:  outputDir,
 			}, cliEnvironment.Logger())
-			if errors.Is(err, context.Canceled) {
+			if isTimeoutError(err) {
 				cliEnvironment.Logger().ErrfLn(`
 Timeout is reached while creating diagnostic bundle. Increase 'roxctl' timeout:
 'roxctl central debug download-diagnostics --timeout=400s <other parameters'`)
@@ -65,4 +66,11 @@ Timeout is reached while creating diagnostic bundle. Increase 'roxctl' timeout:
 	c.PersistentFlags().StringVar(&since, "since", "", "timestamp starting when logs should be collected from sensor clusters")
 
 	return c
+}
+
+func isTimeoutError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "net/http: request canceled") || errors.Is(err, context.DeadlineExceeded)
 }
