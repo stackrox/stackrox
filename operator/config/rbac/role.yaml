@@ -12,6 +12,32 @@ rules:
   verbs:
   - '*'
 - apiGroups:
+  - auth.stackrox.io
+  resources:
+  - authproviders
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - auth.stackrox.io
+  resources:
+  - authproviders/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - auth.stackrox.io
+  resources:
+  - authproviders/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - platform.stackrox.io
   resources:
   - centrals

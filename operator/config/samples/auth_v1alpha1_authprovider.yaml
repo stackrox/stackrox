@@ -1,0 +1,6 @@
+apiVersion: auth.stackrox.io/v1alpha1
+kind: AuthProvider
+metadata:
+  name: authprovider-sample
+spec:
+  # TODO(user): Add fields here

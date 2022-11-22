@@ -22,10 +22,6 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
-	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
-	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
@@ -34,6 +30,12 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	authcontrollers "github.com/stackrox/rox/operator/controllers/auth"
+	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
+	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
+	"github.com/stackrox/rox/operator/pkg/utils"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -106,6 +108,13 @@ func run() error {
 		}
 	}
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
+	if err = (&authcontrollers.AuthProviderReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AuthProvider")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err = centralReconciler.RegisterNewReconciler(mgr); err != nil {

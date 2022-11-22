@@ -29,4 +29,13 @@ resources:
   kind: SecuredCluster
   path: github.com/stackrox/rox/operator/apis/platform/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: stackrox.io
+  group: auth
+  kind: AuthProvider
+  path: github.com/stackrox/rox/operator/apis/auth/v1alpha1
+  version: v1alpha1
 version: "3"

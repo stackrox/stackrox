@@ -2,4 +2,5 @@
 resources:
 - platform_v1alpha1_central.yaml
 - platform_v1alpha1_securedcluster.yaml
+- auth_v1alpha1_authprovider.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
