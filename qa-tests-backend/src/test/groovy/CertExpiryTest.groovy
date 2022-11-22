@@ -6,6 +6,14 @@ import util.Cert
 
 @Category([BAT, COMPATIBILITY])
 class CertExpiryTest extends BaseSpecification {
+    def: "Failing test"() {
+        when:
+        "This test is supposed to fail"
+
+        then:
+        "Check the behavior of the fail-fast flag in Prow"
+        assert False
+    }
 
     def "Test Central cert expiry"() {
         when:
