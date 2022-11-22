@@ -122,6 +122,8 @@ deploy_sensor_from_helm_charts() {
     helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
     helm repo update
 
+    helm search repo stackrox-oss -l
+
     helm install -n stackrox stackrox-secured-cluster-services \
         stackrox-oss/stackrox-secured-cluster-services \
         -f "$init_bundle" \
