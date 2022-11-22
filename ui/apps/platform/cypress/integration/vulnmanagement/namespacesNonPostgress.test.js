@@ -87,20 +87,20 @@ describe('Vulnerability Management Namespaces', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display links for all image CVEs', () => {
+    it('should display links for all CVEs', () => {
         verifySecondaryEntities(
             entitiesKey,
-            'image-cves',
+            'cves',
             2,
             /^\d+ CVEs?$/,
             getCountAndNounFromCVEsLinkResults
         );
     });
 
-    it('should display links for fixable image CVEs', () => {
+    it('should display links for fixable CVEs', () => {
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
-            'image-cves',
+            'cves',
             2,
             /^\d+ Fixable$/,
             getCountAndNounFromCVEsLinkResults
