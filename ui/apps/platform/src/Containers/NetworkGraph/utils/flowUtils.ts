@@ -11,3 +11,11 @@ export function getAllUniquePorts(flows: Flow[]) {
     const allUniquePorts = uniq(allPorts);
     return allUniquePorts;
 }
+
+export function getNumFlows(flows: Flow[]) {
+    const numFlows = flows.reduce((acc, curr) => {
+        // if there are no children then it counts as 1 flow
+        return acc + (curr.children.length ? curr.children.length : 1);
+    }, 0);
+    return numFlows;
+}
