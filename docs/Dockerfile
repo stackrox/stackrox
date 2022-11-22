@@ -8,7 +8,7 @@ RUN wget -O busybox https://busybox.net/downloads/binaries/1.31.0-defconfig-mult
 
 RUN make
 
-FROM registry.access.redhat.com/ubi8-micro:latest
+FROM registry.access.redhat.com/ubi8-micro:8.7
 
 WORKDIR /public
 COPY --from=builder /workspace/build/ ./
