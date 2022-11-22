@@ -4,7 +4,7 @@ import (
 	"math"
 	"sync/atomic"
 
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -15,34 +15,33 @@ var (
 )
 
 // Cache is the interface for a simple size-bounded cache
-type Cache interface {
-	Add(key, value interface{})
-	TestAndSet(key interface{}, value interface{}, pred func(oldValue interface{}, exists bool) bool)
-	Get(key interface{}) (interface{}, bool)
-	Remove(key interface{})
-	RemoveIf(key interface{}, valPred func(interface{}) bool)
+type Cache[K comparable, V any] interface {
+	Add(key K, value V)
+	Get(key K) (V, bool)
+	Remove(key K)
+	RemoveIf(key K, valPred func(V) bool)
 	Stats() (objects, size int64)
 	Purge()
 }
 
-type valueEntry struct {
+type valueEntry[V any] struct {
 	totalSize int64
-	value     interface{}
+	value     V
 }
 
-type sizeBoundedCache struct {
+type sizeBoundedCache[K comparable, V any] struct {
 	currSize    int64
 	maxSize     int64
 	maxItemSize int64
-	sizeFunc    func(key, value interface{}) int64
+	sizeFunc    func(key K, value V) int64
 
 	cacheLock sync.RWMutex
-	cache     *lru.Cache
+	cache     *lru.Cache[K, *valueEntry[V]]
 }
 
 // New creates a new cost cache with the passed parameters
-func New(maxSize, maxItemSize int64, costFunc func(key, value interface{}) int64) (Cache, error) {
-	cache, err := lru.New(math.MaxInt32)
+func New[K comparable, V any](maxSize, maxItemSize int64, costFunc func(key K, value V) int64) (Cache[K, V], error) {
+	cache, err := lru.New[K, *valueEntry[V]](math.MaxInt32)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +57,7 @@ func New(maxSize, maxItemSize int64, costFunc func(key, value interface{}) int64
 	if costFunc == nil {
 		return nil, errors.New("passed cost func must be non nil")
 	}
-	return &sizeBoundedCache{
+	return &sizeBoundedCache[K, V]{
 		maxSize:     maxSize,
 		maxItemSize: maxItemSize,
 		sizeFunc:    costFunc,
@@ -66,23 +65,14 @@ func New(maxSize, maxItemSize int64, costFunc func(key, value interface{}) int64
 	}, nil
 }
 
-func (c *sizeBoundedCache) get(key interface{}) (*valueEntry, bool) {
-	valueE, ok := c.cache.Get(key)
-	if !ok {
-		return nil, false
+func (c *sizeBoundedCache[K, V]) Get(key K) (value V, exists bool) {
+	if valueE, ok := c.cache.Get(key); ok {
+		return valueE.value, true
 	}
-	return valueE.(*valueEntry), true
+	return
 }
 
-func (c *sizeBoundedCache) Get(key interface{}) (interface{}, bool) {
-	valueE, ok := c.get(key)
-	if !ok {
-		return nil, false
-	}
-	return valueE.value, true
-}
-
-func (c *sizeBoundedCache) Purge() {
+func (c *sizeBoundedCache[K, V]) Purge() {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 
@@ -90,31 +80,13 @@ func (c *sizeBoundedCache) Purge() {
 	atomic.StoreInt64(&c.currSize, 0)
 }
 
-// TestAndSet takes in a key, value and a predicate that must return true for the value to be inserted into the cache
-func (c *sizeBoundedCache) TestAndSet(key interface{}, value interface{}, pred func(oldValue interface{}, exists bool) bool) {
-	itemSize := c.sizeFunc(key, value)
-	if itemSize > c.maxItemSize {
-		return
-	}
-	// This function needs to be atomic so must grab the write lock
-	c.cacheLock.Lock()
-	defer c.cacheLock.Unlock()
-
-	oldObj, ok := c.cache.Get(key)
-	if !pred(oldObj, ok) {
-		return
-	}
-
-	c.addNoLock(itemSize, key, value)
-}
-
-func (c *sizeBoundedCache) addNoLock(itemSize int64, key, value interface{}) {
+func (c *sizeBoundedCache[K, V]) addNoLock(itemSize int64, key K, value V) {
 	var sizeDelta int64
 	currValue, ok := c.cache.Get(key)
 	if !ok {
 		sizeDelta = itemSize
 	} else {
-		sizeDelta = itemSize - currValue.(*valueEntry).totalSize
+		sizeDelta = itemSize - currValue.totalSize
 	}
 	for atomic.LoadInt64(&c.currSize)+sizeDelta > c.maxSize {
 		if !c.removeOldestNoLock() {
@@ -122,11 +94,11 @@ func (c *sizeBoundedCache) addNoLock(itemSize int64, key, value interface{}) {
 			return
 		}
 	}
-	c.cache.Add(key, &valueEntry{value: value, totalSize: itemSize})
+	c.cache.Add(key, &valueEntry[V]{value: value, totalSize: itemSize})
 	atomic.AddInt64(&c.currSize, sizeDelta)
 }
 
-func (c *sizeBoundedCache) Add(key, value interface{}) {
+func (c *sizeBoundedCache[K, V]) Add(key K, value V) {
 	itemSize := c.sizeFunc(key, value)
 	if itemSize > c.maxItemSize {
 		return
@@ -137,27 +109,27 @@ func (c *sizeBoundedCache) Add(key, value interface{}) {
 	c.addNoLock(itemSize, key, value)
 }
 
-func (c *sizeBoundedCache) removeOldestNoLock() bool {
+func (c *sizeBoundedCache[K, V]) removeOldestNoLock() bool {
 	_, value, ok := c.cache.RemoveOldest()
 	if !ok {
 		return false
 	}
 
-	atomic.AddInt64(&c.currSize, -value.(*valueEntry).totalSize)
+	atomic.AddInt64(&c.currSize, -value.totalSize)
 
 	return true
 }
 
-func (c *sizeBoundedCache) Remove(key interface{}) {
+func (c *sizeBoundedCache[K, V]) Remove(key K) {
 	c.RemoveIf(key, nil)
 }
 
-func (c *sizeBoundedCache) RemoveIf(key interface{}, valPred func(interface{}) bool) {
+func (c *sizeBoundedCache[K, V]) RemoveIf(key K, valPred func(V) bool) {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 
-	value, ok := c.get(key)
-	if !ok || (valPred != nil && !valPred(value)) {
+	value, ok := c.cache.Get(key)
+	if !ok || (valPred != nil && !valPred(value.value)) {
 		return
 	}
 	c.cache.Remove(key)
@@ -165,6 +137,6 @@ func (c *sizeBoundedCache) RemoveIf(key interface{}, valPred func(interface{}) b
 	atomic.AddInt64(&c.currSize, -value.totalSize)
 }
 
-func (c *sizeBoundedCache) Stats() (objects, size int64) {
+func (c *sizeBoundedCache[K, V]) Stats() (objects, size int64) {
 	return int64(c.cache.Len()), atomic.LoadInt64(&c.currSize)
 }
