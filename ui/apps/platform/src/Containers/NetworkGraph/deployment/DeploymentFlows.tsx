@@ -35,7 +35,7 @@ import './DeploymentFlows.css';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import EntityNameSearchInput from '../common/EntityNameSearchInput';
 import { Flow, FlowBase } from '../types';
-import { getAllUniqPorts } from '../utils/flowUtils';
+import { getAllUniquePorts } from '../utils/flowUtils';
 
 const columnNames = {
     entity: 'Entity',
@@ -126,7 +126,7 @@ function DeploymentFlow() {
         // if there are no children then it counts as 1 flow
         return acc + (curr.children.length ? curr.children.length : 1);
     }, 0);
-    const allUniqPorts = getAllUniqPorts(flows);
+    const allUniquePorts = getAllUniquePorts(flows);
 
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows.includes(row.id);
@@ -180,7 +180,7 @@ function DeploymentFlow() {
                             <AdvancedFlowsFilter
                                 filters={advancedFilters}
                                 setFilters={setAdvancedFilters}
-                                allUniqPorts={allUniqPorts}
+                                allUniquePorts={allUniquePorts}
                             />
                         </FlexItem>
                     </Flex>

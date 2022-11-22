@@ -25,7 +25,7 @@ import AdvancedFlowsFilter, {
 } from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { Flow } from '../types';
-import { getAllUniqPorts } from '../utils/flowUtils';
+import { getAllUniquePorts } from '../utils/flowUtils';
 
 const baselines: Flow[] = [
     {
@@ -104,7 +104,7 @@ function DeploymentBaselines() {
         defaultAdvancedFlowsFilters
     );
 
-    const allUniqPorts = getAllUniqPorts(baselines);
+    const allUniquePorts = getAllUniquePorts(baselines);
 
     return (
         <div className="pf-u-h-100 pf-u-p-md">
@@ -145,7 +145,7 @@ function DeploymentBaselines() {
                             <AdvancedFlowsFilter
                                 filters={advancedFilters}
                                 setFilters={setAdvancedFilters}
-                                allUniqPorts={allUniqPorts}
+                                allUniquePorts={allUniquePorts}
                             />
                         </FlexItem>
                     </Flex>
