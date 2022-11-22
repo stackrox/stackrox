@@ -47,7 +47,7 @@ compatibility_test() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
-    make -C qa-tests-backend compatibility-test || touch FAIL
+    make -C qa-tests-backend compatibility-test FAIL_FAST=FALSE || touch FAIL
 
     store_qa_test_results "compatibility-test-sensor-$SENSOR_IMAGE_TAG"
     [[ ! -f FAIL ]] || die "compatibility-test-sensor-$SENSOR_IMAGE_TAG"
