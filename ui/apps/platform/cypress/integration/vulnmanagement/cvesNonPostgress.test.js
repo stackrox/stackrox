@@ -90,14 +90,14 @@ describe('Vulnerability Management CVEs', () => {
     // Some tests might fail in local deployment.
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 9, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 8, /^\d+ deployments?$/);
     });
 
     it('should display links for images', () => {
-        verifySecondaryEntities(entitiesKey, 'images', 9, /^\d+ images?$/);
+        verifySecondaryEntities(entitiesKey, 'images', 8, /^\d+ images?$/);
     });
 
-    it('should display links for image-components', () => {
-        verifySecondaryEntities(entitiesKey, 'components', 9, /^\d+ components?$/);
+    it('should display links for components', () => {
+        verifySecondaryEntities(entitiesKey, 'components', 8, /^\d+ components?$/);
     });
 });
