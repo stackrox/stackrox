@@ -15,7 +15,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["ROX_POSTGRES_DATASTORE"] = "false"
 
 update_helm_repo()
-versions=get_latest_release_versions(4)
+chart_versions=get_latest_release_versions(4)
 
 gkecluster=GKECluster("compat-test")
 
