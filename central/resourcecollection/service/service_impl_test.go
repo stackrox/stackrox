@@ -321,6 +321,7 @@ func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
 	suite.dataStore.EXPECT().UpdateCollection(ctx, gomock.Any()).Times(1).Return(errors.New("test error"))
 	resp, err = suite.collectionService.UpdateCollection(ctx, request)
 	suite.Error(err)
+	suite.Nil(resp)
 }
 
 func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
