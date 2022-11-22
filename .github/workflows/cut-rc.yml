@@ -267,7 +267,7 @@ jobs:
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             create-release \
-            "${{ needs.variables.outputs.named-release-patch }}" \
+            "${{ needs.variables.outputs.milestone }}" \
             "true"
 
       - run: |

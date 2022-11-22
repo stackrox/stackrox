@@ -2,7 +2,6 @@ import React from 'react';
 import {
     Alert,
     AlertVariant,
-    Badge,
     Bullseye,
     Flex,
     FlexItem,
@@ -23,14 +22,16 @@ import useTabs from 'hooks/patternfly/useTabs';
 import useFetchDeployment from 'hooks/useFetchDeployment';
 import {
     getListenPorts,
+    getNodeById,
     getNumExternalFlows,
     getNumInternalFlows,
 } from '../utils/networkGraphUtils';
 
+import { DeploymentIcon } from '../common/NetworkGraphIcons';
 import DeploymentDetails from './DeploymentDetails';
-import DeploymentNetworkPolicies from './DeploymentNetworkPolicies';
 import DeploymentFlows from './DeploymentFlows';
 import DeploymentBaselines from './DeploymentBaselines';
+import NetworkPolicies from '../common/NetworkPolicies';
 
 type DeploymentSideBarProps = {
     deploymentId: string;
@@ -46,9 +47,11 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
     });
 
     // derived values
+    const deploymentNode = getNodeById(nodes, deploymentId);
     const numExternalFlows = getNumExternalFlows(nodes, edges, deploymentId);
     const numInternalFlows = getNumInternalFlows(nodes, edges, deploymentId);
     const listenPorts = getListenPorts(nodes, deploymentId);
+    const deploymentPolicyIds = deploymentNode?.data?.policyIds || [];
 
     if (isLoading) {
         return (
@@ -69,7 +72,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
             <StackItem>
                 <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
                     <FlexItem>
-                        <Badge style={{ backgroundColor: 'rgb(0,102,205)' }}>D</Badge>
+                        <DeploymentIcon />
                     </FlexItem>
                     <FlexItem>
                         <TextContent>
@@ -138,7 +141,7 @@ function DeploymentSideBar({ deploymentId, nodes, edges }: DeploymentSideBarProp
                     id="Network policies"
                     hidden={activeKeyTab !== 'Network policies'}
                 >
-                    <DeploymentNetworkPolicies />
+                    <NetworkPolicies policyIds={deploymentPolicyIds} />
                 </TabContent>
             </StackItem>
         </Stack>

@@ -91,7 +91,7 @@ function setEdges(controller, detailId) {
 const TopologyComponent = ({ model }: TopologyComponentProps) => {
     const history = useHistory();
     const { detailId } = useParams();
-    const selectedEntity = detailId && getNodeById(model, detailId);
+    const selectedEntity = detailId && getNodeById(model?.nodes, detailId);
     const controller = useVisualizationController();
 
     // to prevent error where graph hasn't initialized yet
@@ -105,7 +105,7 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
 
     function onSelect(ids: string[]) {
         const newSelectedId = ids?.[0] || '';
-        const newSelectedEntity = getNodeById(model, newSelectedId);
+        const newSelectedEntity = getNodeById(model?.nodes, newSelectedId);
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         if (newSelectedEntity) {
@@ -125,10 +125,10 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
         controller.addEventListener(SELECTION_EVENT, onSelect);
 
         setEdges(controller, detailId);
+
         return () => {
             controller.removeEventListener(SELECTION_EVENT, onSelect);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controller, model]);
 
     const selectedIds = selectedEntity ? [selectedEntity.id] : [];
@@ -138,7 +138,11 @@ const TopologyComponent = ({ model }: TopologyComponentProps) => {
             sideBar={
                 <TopologySideBar resizable onClose={closeSidebar}>
                     {selectedEntity && selectedEntity?.data?.type === 'NAMESPACE' && (
-                        <NamespaceSideBar />
+                        <NamespaceSideBar
+                            namespaceId={selectedEntity.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                        />
                     )}
                     {selectedEntity && selectedEntity?.data?.type === 'DEPLOYMENT' && (
                         <DeploymentSideBar

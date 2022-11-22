@@ -4,6 +4,7 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	selector2 "github.com/stackrox/rox/sensor/kubernetes/selector"
 	v1 "k8s.io/api/core/v1"
@@ -47,7 +48,7 @@ func exposureInfoFromPort(template *storage.PortConfig_ExposureInfo, port v1.Ser
 	return out
 }
 
-func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_ExposureInfo {
+func (s *serviceWithRoutes) exposure() map[service.PortRef][]*storage.PortConfig_ExposureInfo {
 	if s.Spec.Type == v1.ServiceTypeExternalName {
 		return nil
 	}
@@ -73,9 +74,9 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 		}
 	}
 
-	result := make(map[portRef][]*storage.PortConfig_ExposureInfo, len(s.Spec.Ports))
+	result := make(map[service.PortRef][]*storage.PortConfig_ExposureInfo, len(s.Spec.Ports))
 	for _, port := range s.Spec.Ports {
-		ref := portRefOf(port)
+		ref := service.PortRefOf(port)
 		exposureInfo := exposureInfoFromPort(exposureTemplate, port)
 		result[ref] = append(result[ref], exposureInfo)
 	}
@@ -99,7 +100,7 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 				if !matchFunc(&s.Spec.Ports[i]) {
 					continue
 				}
-				ref := portRefOf(port)
+				ref := service.PortRefOf(port)
 				exposureInfo := exposureInfoFromPort(routeExposureTemplate, port)
 				result[ref] = append(result[ref], exposureInfo)
 				break // Only one port will ever match
@@ -108,7 +109,7 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 			// This is the case where route.Spec.Port is not specified, in which case
 			// the route targets all ports on the service.
 			for _, port := range s.Spec.Ports {
-				ref := portRefOf(port)
+				ref := service.PortRefOf(port)
 				exposureInfo := exposureInfoFromPort(routeExposureTemplate, port)
 				result[ref] = append(result[ref], exposureInfo)
 			}

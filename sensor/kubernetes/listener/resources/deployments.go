@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
@@ -66,7 +67,7 @@ func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action 
 // deploymentHandler handles deployment resource events and does the actual processing.
 type deploymentHandler struct {
 	podLister              v1listers.PodLister
-	serviceStore           *serviceStore
+	serviceStore           store.ServiceStore
 	deploymentStore        *DeploymentStore
 	podStore               *PodStore
 	endpointManager        endpointManager
@@ -85,7 +86,7 @@ type deploymentHandler struct {
 // newDeploymentHandler creates and returns a new deployment handler.
 func newDeploymentHandler(
 	clusterID string,
-	serviceStore *serviceStore,
+	serviceStore store.ServiceStore,
 	deploymentStore *DeploymentStore,
 	podStore *PodStore,
 	endpointManager endpointManager,
@@ -165,7 +166,8 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		return events
 	}
 
-	deploymentWrap.updatePortExposureFromStore(d.serviceStore)
+	exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
+	deploymentWrap.updatePortExposureSlice(exposureInfos)
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		// Make sure to clone and add deploymentWrap to the store if this function is being used at places other than
 		// right after deploymentWrap object creation.

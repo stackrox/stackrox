@@ -80,6 +80,7 @@ export function AutoCompleteSelect({
                 className={className}
                 variant="typeahead"
                 isCreatable
+                createText="Add"
                 isOpen={isOpen}
                 onFilter={() => getOptions(OptionComponent, isTyping ? [] : data)}
                 onToggle={onToggle}
