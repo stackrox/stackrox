@@ -9,13 +9,6 @@ import {
     StackItem,
     Switch,
     Tooltip,
-    Divider,
-    Flex,
-    FlexItem,
-    Stack,
-    StackItem,
-    Switch,
-    Tooltip,
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 
