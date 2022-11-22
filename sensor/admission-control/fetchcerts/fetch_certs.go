@@ -37,10 +37,10 @@ var (
 )
 
 func changeCertAndKeyFileEnvVars() error {
-	if err := utils.Should(os.Setenv(mtls.CertFilePathEnvName, certFile)); err != nil {
+	if err := utils.ShouldErr(os.Setenv(mtls.CertFilePathEnvName, certFile)); err != nil {
 		return errors.Wrap(err, "updating certificate path environment variable")
 	}
-	if err := utils.Should(os.Setenv(mtls.KeyFileEnvName, keyFile)); err != nil {
+	if err := utils.ShouldErr(os.Setenv(mtls.KeyFileEnvName, keyFile)); err != nil {
 		return errors.Wrap(err, "updating key path environment variable")
 	}
 	return nil

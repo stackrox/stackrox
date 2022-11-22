@@ -5,16 +5,15 @@ import (
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 )
 
 // ConvertTestSingleUUIDKeyStructFromProto converts a `*storage.TestSingleUUIDKeyStruct` to Gorm model
-func ConvertTestSingleUUIDKeyStructFromProto(obj *storage.TestSingleUUIDKeyStruct) (*schema.TestSingleUuidKeyStructs, error) {
+func ConvertTestSingleUUIDKeyStructFromProto(obj *storage.TestSingleUUIDKeyStruct) (*TestSingleUuidKeyStructs, error) {
 	serialized, err := obj.Marshal()
 	if err != nil {
 		return nil, err
 	}
-	model := &schema.TestSingleUuidKeyStructs{
+	model := &TestSingleUuidKeyStructs{
 		Key:         obj.GetKey(),
 		Name:        obj.GetName(),
 		StringSlice: pq.Array(obj.GetStringSlice()).(*pq.StringArray),
@@ -32,7 +31,7 @@ func ConvertTestSingleUUIDKeyStructFromProto(obj *storage.TestSingleUUIDKeyStruc
 }
 
 // ConvertTestSingleUUIDKeyStructToProto converts Gorm model `TestSingleUuidKeyStructs` to its protobuf type object
-func ConvertTestSingleUUIDKeyStructToProto(m *schema.TestSingleUuidKeyStructs) (*storage.TestSingleUUIDKeyStruct, error) {
+func ConvertTestSingleUUIDKeyStructToProto(m *TestSingleUuidKeyStructs) (*storage.TestSingleUUIDKeyStruct, error) {
 	var msg storage.TestSingleUUIDKeyStruct
 	if err := msg.Unmarshal(m.Serialized); err != nil {
 		return nil, err

@@ -57,7 +57,7 @@ func dialWithSocks5Proxy(ctx context.Context, proxyURL *url.URL, address string)
 	}
 	socksCtxDialer, _ := socksDialer.(proxy.ContextDialer)
 	if socksCtxDialer == nil {
-		return nil, utils.Should(errors.New("expected SOCKS5 dialer to implement DialContext"))
+		return nil, utils.ShouldErr(errors.New("expected SOCKS5 dialer to implement DialContext"))
 	}
 	return socksCtxDialer.DialContext(ctx, "tcp", address)
 }

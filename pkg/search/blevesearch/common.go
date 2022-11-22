@@ -366,7 +366,7 @@ func getSortOrderAndSearchAfter(pagination *v1.QueryPagination, optionsMap searc
 		// This checks that SearchAfter will have effect when used or returns an error.
 		// It appears that Bleve does not have validations for bleve.SearchRequest.SearchAfter. This closes the gap.
 		// See https://github.com/blevesearch/bleve/pull/1182#issuecomment-499216058
-		return nil, nil, utils.Should(errors.New("total ordering not guaranteed: SortOrder must contain DocID and SearchAfter value for it to ensure there are no ties, otherwise SearchAfter will not produce correct results"))
+		return nil, nil, utils.ShouldErr(errors.New("total ordering not guaranteed: SortOrder must contain DocID and SearchAfter value for it to ensure there are no ties, otherwise SearchAfter will not produce correct results"))
 	}
 
 	return sortOrder, searchAfter, nil

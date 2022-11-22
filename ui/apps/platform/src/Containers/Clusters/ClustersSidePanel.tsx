@@ -28,7 +28,6 @@ import DownloadHelmValues from './DownloadHelmValues';
 import {
     clusterDetailPollingInterval,
     newClusterDefault,
-    wizardSteps,
     centralEnvDefault,
 } from './cluster.helpers';
 import { CentralEnv, ClusterManagerType } from './clusterTypes';
@@ -47,6 +46,8 @@ const validate = (values) => {
     return errors;
 };
 
+type WizardStep = 'FORM' | 'DEPLOYMENT';
+
 type MessageState = {
     type: 'warn' | 'error';
     message: JSX.Element | string;
@@ -62,7 +63,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const [clusterRetentionInfo, setClusterRetentionInfo] =
         useState<DecommissionedClusterRetentionInfo>(null);
     const [centralEnv, setCentralEnv] = useState<CentralEnv>(centralEnvDefault);
-    const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
+    const [wizardStep, setWizardStep] = useState<WizardStep>('FORM');
     const [loadingCounter, setLoadingCounter] = useState(0);
     const [messageState, setMessageState] = useState<MessageState | null>(null);
     const [isBlocked, setIsBlocked] = useState(false);
@@ -78,7 +79,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         setSelectedCluster(defaultCluster);
         setMessageState(null);
         setIsBlocked(false);
-        setWizardStep(wizardSteps.FORM);
+        setWizardStep('FORM');
         setPollingDelay(null);
     }
 
@@ -139,7 +140,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             setPollingDelay(null);
                         }
 
-                        if (wizardStep === wizardSteps.FORM) {
+                        if (wizardStep === 'FORM') {
                             switch (managerType(cluster)) {
                                 case 'MANAGER_TYPE_HELM_CHART':
                                     setMessageState({
@@ -244,7 +245,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     }
 
     function onNext() {
-        if (wizardStep === wizardSteps.FORM) {
+        if (wizardStep === 'FORM') {
             setMessageState(null);
             setSubmissionError('');
             saveCluster(selectedCluster)
@@ -259,7 +260,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                     const clusterWithId = { ...selectedCluster, id: newId };
                     setSelectedCluster(clusterWithId);
 
-                    setWizardStep(wizardSteps.DEPLOYMENT);
+                    setWizardStep('DEPLOYMENT');
 
                     if (!selectedCluster?.healthStatus?.lastContact) {
                         setPollingDelay(clusterDetailPollingInterval);
@@ -306,7 +307,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const selectedClusterName = (selectedCluster && selectedCluster.name) || '';
 
     // @TODO: improve error handling when adding support for new clusters
-    const isForm = wizardStep === wizardSteps.FORM;
+    const isForm = wizardStep === 'FORM';
     const iconClassName = 'h-4 w-4';
 
     const panelButtons = isBlocked ? (
@@ -359,7 +360,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             </div>
                         </div>
                     )}
-                    {!isBlocked && wizardStep === wizardSteps.FORM && (
+                    {!isBlocked && wizardStep === 'FORM' && (
                         <ClusterEditForm
                             centralEnv={centralEnv}
                             centralVersion={metadata.version}
@@ -371,7 +372,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             isLoading={loadingCounter > 0}
                         />
                     )}
-                    {!isBlocked && wizardStep === wizardSteps.DEPLOYMENT && (
+                    {!isBlocked && wizardStep === 'DEPLOYMENT' && (
                         <div className="flex flex-col md:flex-row p-4">
                             <ClusterDeployment
                                 editing={!!selectedCluster}

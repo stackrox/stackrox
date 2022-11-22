@@ -1,8 +1,10 @@
 import React from 'react';
 import {
+    Divider,
     DropdownItem,
     Flex,
     FlexItem,
+    SearchInput,
     Stack,
     StackItem,
     Text,
@@ -24,9 +26,13 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import { uniq } from 'lodash';
+
+import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import AdvancedFlowsFilter, { defaultAdvancedFlowsFilters } from '../flows/AdvancedFlowsFilter';
 
 import './DeploymentFlows.css';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import { AdvancedFlowsFilterType } from '../flows/types';
 
 interface FlowBase {
     id: string;
@@ -88,7 +94,7 @@ const flows: Flow[] = [
         entity: 'Deployment 1',
         namespace: 'naples',
         direction: 'Ingress',
-        port: 'Many',
+        port: '9000',
         protocol: 'TCP',
         isAnomalous: true,
         children: [],
@@ -99,7 +105,7 @@ const flows: Flow[] = [
         entity: 'Deployment 2',
         namespace: 'naples',
         direction: 'Ingress',
-        port: 'Many',
+        port: '8080',
         protocol: 'UDP',
         isAnomalous: false,
         children: [],
@@ -118,16 +124,27 @@ const flows: Flow[] = [
 ];
 
 function DeploymentFlow() {
-    // derived values
+    // component state
+    const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
+        defaultAdvancedFlowsFilters
+    );
+    const initialExpandedRows = flows.filter((row) => !!row.children.length).map((row) => row.id); // Default to all expanded
+    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
+    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
+
+    // derived data
     const totalFlows = flows.reduce((acc, curr) => {
         // if there are no children then it counts as 1 flow
         return acc + (curr.children.length ? curr.children.length : 1);
     }, 0);
-
-    // component state
-    const initialExpandedRows = flows.filter((row) => !!row.children.length).map((row) => row.id); // Default to all expanded
-    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
-    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
+    const allPorts = flows.reduce((acc, curr) => {
+        if (curr.children.length) {
+            return [...acc, ...curr.children.map((child) => child.port)];
+        }
+        return [...acc, curr.port];
+    }, [] as string[]);
+    const allUniqPorts = uniq(allPorts);
 
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows.includes(row.id);
@@ -169,6 +186,26 @@ function DeploymentFlow() {
     return (
         <div className="pf-u-h-100 pf-u-p-md">
             <Stack hasGutter>
+                <StackItem>
+                    <Flex>
+                        <FlexItem flex={{ default: 'flex_1' }}>
+                            <SearchInput
+                                placeholder="Filter by entity name"
+                                value={entityNameFilter}
+                                onChange={setEntityNameFilter}
+                                onClear={() => setEntityNameFilter('')}
+                            />
+                        </FlexItem>
+                        <FlexItem>
+                            <AdvancedFlowsFilter
+                                filters={advancedFilters}
+                                setFilters={setAdvancedFilters}
+                                allUniqPorts={allUniqPorts}
+                            />
+                        </FlexItem>
+                    </Flex>
+                </StackItem>
+                <Divider component="hr" />
                 <StackItem>
                     <Toolbar>
                         <ToolbarContent>

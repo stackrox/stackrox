@@ -6,6 +6,16 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+
+### Added Features
+
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [3.73.0]
 ### Removed Features
 - ROX-12839: we will stop shipping the docs embedded in the product, starting with the release following this one (docs will still be available online)
 - ROX-6194: `ROX_WHITELIST_GENERATION_DURATION` env var is removed in favor of `ROX_BASELINE_GENERATION_DURATION`;
@@ -53,7 +63,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-13500: Previously, deployment YAML check on V1 CronJob workload would cause Central to panic. This is now fixed.
 - `cves.ids` field of `storage.VulnerabilityRequest` object, which is in the response of `VulnerabilityRequestService` (`/v1/cve/requests/`) endpoints, has been renamed to `cves.cves`.
 - ROX-13347: Vulnerability reporting scopes specifying cluster and/or namespace names now perform exact matches on those entities, as opposed to the erroneous prefix match.
-- ROX-9350: The compliance container no longer mounts the entire host root to prevent a recursive mount of other pods' persistent volumes.
 
 ## [3.72.0]
 

@@ -84,7 +84,7 @@ func insertIntoPermissionSets(ctx context.Context, batch *pgx.Batch, obj *storag
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		serialized,
 	}
@@ -125,7 +125,7 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx pgx.Tx, objs 
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetName(),
 

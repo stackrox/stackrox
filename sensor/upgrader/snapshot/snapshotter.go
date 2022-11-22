@@ -126,13 +126,13 @@ func (s *snapshotter) createStateSnapshot() ([]*unstructured.Unstructured, *v1.S
 	var compressedData bytes.Buffer
 	gzipWriter, err := gzip.NewWriterLevel(&compressedData, gzip.BestCompression)
 	if err != nil {
-		return nil, nil, utils.Should(err) // level is valid, so expect no error
+		return nil, nil, utils.ShouldErr(err) // level is valid, so expect no error
 	}
 	if _, err := gzipWriter.Write(bytes.Join(byteSlices, jsonSeparator)); err != nil {
-		return nil, nil, utils.Should(err)
+		return nil, nil, utils.ShouldErr(err)
 	}
 	if err := gzipWriter.Close(); err != nil {
-		return nil, nil, utils.Should(err)
+		return nil, nil, utils.ShouldErr(err)
 	}
 
 	secret := &v1.Secret{

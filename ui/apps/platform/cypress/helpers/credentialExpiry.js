@@ -13,12 +13,10 @@ function visitSystemConfigurationWithCredentialExpiryBanner(
 ) {
     const credentialExpiryAlias = 'credentialexpiry';
 
-    const requestConfig = {
-        routeMatcherMap: {
-            [credentialExpiryAlias]: {
-                method: 'GET',
-                url: `/v1/credentialexpiry?component=${componentUpperCase}`,
-            },
+    const routeMatcherMap = {
+        [credentialExpiryAlias]: {
+            method: 'GET',
+            url: `/v1/credentialexpiry?component=${componentUpperCase}`,
         },
     };
 
@@ -28,7 +26,7 @@ function visitSystemConfigurationWithCredentialExpiryBanner(
         },
     };
 
-    interceptRequests(requestConfig, staticResponseMap);
+    interceptRequests(routeMatcherMap, staticResponseMap);
 
     if (staticResponseForPermissions) {
         visitSystemConfigurationWithStaticResponseForPermissions(staticResponseForPermissions);
@@ -36,7 +34,7 @@ function visitSystemConfigurationWithCredentialExpiryBanner(
         visitSystemConfiguration();
     }
 
-    waitForResponses(requestConfig);
+    waitForResponses(routeMatcherMap);
 }
 
 export function visitSystemConfigurationWithCentralCredentialExpiryBanner(
@@ -64,14 +62,16 @@ export function visitSystemConfigurationWithScannerCredentialExpiryBanner(
 // certgen
 
 function interactAndWaitForCertificateDownload(componentLowerCase, interactionCallback) {
-    const requestConfig = {
-        reouteMatcherMap: {
+    const certgenAlias = 'certgen';
+
+    const routeMatcherMap = {
+        [certgenAlias]: {
             method: 'POST',
             url: `api/extensions/certgen/${componentLowerCase}`,
         },
     };
 
-    interactAndWaitForResponses(interactionCallback, requestConfig);
+    interactAndWaitForResponses(interactionCallback, routeMatcherMap);
 }
 
 export function interactAndWaitForCentralCertificateDownload(interactionCallback) {

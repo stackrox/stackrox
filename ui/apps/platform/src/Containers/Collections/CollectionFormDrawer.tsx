@@ -15,7 +15,6 @@ import {
 import { CollectionResponse } from 'services/CollectionsService';
 import { CollectionPageAction } from './collections.utils';
 import CollectionResults from './CollectionResults';
-import { Collection } from './types';
 import { parseCollection } from './converter';
 import CollectionForm, { CollectionFormProps } from './CollectionForm';
 
@@ -33,8 +32,10 @@ export type CollectionFormDrawerProps = {
     isDrawerOpen: boolean;
     toggleDrawer: (isOpen: boolean) => void;
     headerContent?: ReactElement;
-    onSubmit: (collection: Collection) => Promise<void>;
-    collectionTableCells: CollectionFormProps['collectionTableCells'];
+    onSubmit: CollectionFormProps['onSubmit'];
+    saveError?: CollectionFormProps['saveError'];
+    clearSaveError?: CollectionFormProps['clearSaveError'];
+    getCollectionTableCells: CollectionFormProps['getCollectionTableCells'];
 };
 
 function CollectionFormDrawer({
@@ -46,7 +47,9 @@ function CollectionFormDrawer({
     isDrawerOpen,
     toggleDrawer,
     onSubmit,
-    collectionTableCells,
+    saveError,
+    clearSaveError,
+    getCollectionTableCells,
 }: CollectionFormDrawerProps) {
     const initialData = parseCollection(collectionData.collection);
     const initialEmbeddedCollections = collectionData.embeddedCollections;
@@ -94,7 +97,9 @@ function CollectionFormDrawer({
                                 initialData={initialData}
                                 initialEmbeddedCollections={initialEmbeddedCollections}
                                 onSubmit={onSubmit}
-                                collectionTableCells={collectionTableCells}
+                                saveError={saveError}
+                                clearSaveError={clearSaveError}
+                                getCollectionTableCells={getCollectionTableCells}
                             />
                         )}
                     </DrawerContentBody>

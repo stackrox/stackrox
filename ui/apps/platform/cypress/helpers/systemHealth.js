@@ -51,13 +51,14 @@ const routeMatcherMap = {
 };
 
 export function visitSystemHealthFromLeftNav() {
-    visitFromLeftNavExpandable('Platform Configuration', 'System Health', { routeMatcherMap });
+    visitFromLeftNavExpandable('Platform Configuration', 'System Health', routeMatcherMap);
 
+    cy.location('pathname').should('eq', systemHealthUrl);
     cy.get('h1:contains("System Health")');
 }
 
 export function visitSystemHealth(staticResponseMap) {
-    visit(systemHealthUrl, { routeMatcherMap }, staticResponseMap);
+    visit(systemHealthUrl, routeMatcherMap, staticResponseMap);
 
     cy.get('h1:contains("System Health")');
 }

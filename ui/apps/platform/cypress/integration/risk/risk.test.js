@@ -1,6 +1,5 @@
 import { selectors as RiskPageSelectors } from '../../constants/RiskPage';
 import withAuth from '../../helpers/basicAuth';
-import { reachNetworkGraph } from '../../helpers/networkGraph';
 import {
     deploymentswithprocessinfoAlias,
     deploymentscountAlias,
@@ -38,7 +37,12 @@ describe('Risk page', () => {
             cy.get('.rt-th:contains("Priority")');
         });
 
-        it('should sort the Priority column', () => {
+        /*
+         * ROX-13468: assertSortedItems sometimes fails for sort descending (step 2) or resort ascending (step 3).
+         * This is the only sort test that fails and Risk is the only occurrence of TableV2 element.
+         * Skip test given the comment below (step 0) initial table state and other possible rendering problems.
+         */
+        it.skip('should sort the Priority column', () => {
             visitRiskDeployments();
 
             const thSelector = '.rt-th:contains("Priority")';
@@ -144,9 +148,7 @@ describe('Risk page', () => {
         it('should navigate to network page with selected deployment', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
-            reachNetworkGraph(() => {
-                viewRiskDeploymentInNetworkGraph();
-            });
+            viewRiskDeploymentInNetworkGraph();
         });
 
         const searchPlaceholderText = 'Add one or more resource filters';

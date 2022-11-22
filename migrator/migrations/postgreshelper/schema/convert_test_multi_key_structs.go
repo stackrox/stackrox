@@ -5,16 +5,15 @@ import (
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 )
 
 // ConvertTestMultiKeyStructFromProto converts a `*storage.TestMultiKeyStruct` to Gorm model
-func ConvertTestMultiKeyStructFromProto(obj *storage.TestMultiKeyStruct) (*schema.TestMultiKeyStructs, error) {
+func ConvertTestMultiKeyStructFromProto(obj *storage.TestMultiKeyStruct) (*TestMultiKeyStructs, error) {
 	serialized, err := obj.Marshal()
 	if err != nil {
 		return nil, err
 	}
-	model := &schema.TestMultiKeyStructs{
+	model := &TestMultiKeyStructs{
 		Key1:              obj.GetKey1(),
 		Key2:              obj.GetKey2(),
 		StringSlice:       pq.Array(obj.GetStringSlice()).(*pq.StringArray),
@@ -35,8 +34,8 @@ func ConvertTestMultiKeyStructFromProto(obj *storage.TestMultiKeyStruct) (*schem
 }
 
 // ConvertTestMultiKeyStruct_NestedFromProto converts a `*storage.TestMultiKeyStruct_Nested` to Gorm model
-func ConvertTestMultiKeyStruct_NestedFromProto(obj *storage.TestMultiKeyStruct_Nested, idx int, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string) (*schema.TestMultiKeyStructsNesteds, error) {
-	model := &schema.TestMultiKeyStructsNesteds{
+func ConvertTestMultiKeyStruct_NestedFromProto(obj *storage.TestMultiKeyStruct_Nested, idx int, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string) (*TestMultiKeyStructsNesteds, error) {
+	model := &TestMultiKeyStructsNesteds{
 		TestMultiKeyStructsKey1: test_multi_key_structs_Key1,
 		TestMultiKeyStructsKey2: test_multi_key_structs_Key2,
 		Idx:                     idx,
@@ -51,7 +50,7 @@ func ConvertTestMultiKeyStruct_NestedFromProto(obj *storage.TestMultiKeyStruct_N
 }
 
 // ConvertTestMultiKeyStructToProto converts Gorm model `TestMultiKeyStructs` to its protobuf type object
-func ConvertTestMultiKeyStructToProto(m *schema.TestMultiKeyStructs) (*storage.TestMultiKeyStruct, error) {
+func ConvertTestMultiKeyStructToProto(m *TestMultiKeyStructs) (*storage.TestMultiKeyStruct, error) {
 	var msg storage.TestMultiKeyStruct
 	if err := msg.Unmarshal(m.Serialized); err != nil {
 		return nil, err

@@ -19,9 +19,9 @@ var (
 // SignatureVerifier is responsible for verifying signatures using a specific signature verification method.
 type SignatureVerifier interface {
 	// VerifySignature will take an image and verify its signature using a specific verification method.
-	// It will return a storage.ImageSignatureVerificationResult_Status and
-	// an error if the verification was unsuccessful.
-	VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error)
+	// It will return a storage.ImageSignatureVerificationResult_Status, the verified image references if verification
+	// was successful, and an error if the verification was unsuccessful.
+	VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, []string, error)
 }
 
 // SignatureFetcher is responsible for fetching raw signatures supporting multiple specific signature formats.
@@ -50,27 +50,24 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 	verifiers := createVerifiersFromIntegration(integration)
 	var results []*storage.ImageSignatureVerificationResult
 	for _, verifier := range verifiers {
-		res, err := verifier.VerifySignature(ctx, image)
+		res, verifiedImageReferences, err := verifier.VerifySignature(ctx, image)
+
+		verificationResult := &storage.ImageSignatureVerificationResult{
+			VerificationTime:        protoconv.ConvertTimeToTimestamp(time.Now()),
+			VerifierId:              integration.GetId(),
+			Status:                  res,
+			VerifiedImageReferences: verifiedImageReferences,
+		}
 		// We do not currently support specifying which specific method within an image signature integration should
 		// be successful. Hence, short-circuit on the first successfully verified signature within an image signature
 		// integration.
 		if res == storage.ImageSignatureVerificationResult_VERIFIED {
 			return []*storage.ImageSignatureVerificationResult{
-				{
-					VerificationTime: protoconv.ConvertTimeToTimestamp(time.Now()),
-					VerifierId:       integration.GetId(),
-					Status:           res,
-				},
+				verificationResult,
 			}
 		}
 		// Right now, we will duplicate the verification result for each SignatureVerifier contained within an image
 		// signature, ensuring all errors are properly returned to the caller.
-		verificationResult := &storage.ImageSignatureVerificationResult{
-			VerificationTime: protoconv.ConvertTimeToTimestamp(time.Now()),
-			VerifierId:       integration.GetId(),
-			Status:           res,
-		}
-
 		if err != nil {
 			verificationResult.Description = err.Error()
 		}

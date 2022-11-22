@@ -1,31 +1,41 @@
 import React from 'react';
-import { Button, SelectOption, Stack, StackItem } from '@patternfly/react-core';
+import {
+    Alert,
+    AlertVariant,
+    Bullseye,
+    Button,
+    EmptyState,
+    EmptyStateVariant,
+    SelectOption,
+    Spinner,
+    Stack,
+    StackItem,
+    Title,
+} from '@patternfly/react-core';
 import { CodeEditor, CodeEditorControl, Language } from '@patternfly/react-code-editor';
+import { MoonIcon, SunIcon } from '@patternfly/react-icons';
 
 import download from 'utils/download';
 import SelectSingle from 'Components/SelectSingle';
 import { useTheme } from 'Containers/ThemeProvider';
-import { MoonIcon, SunIcon } from '@patternfly/react-icons';
-
-type NetworkPolicy = {
-    name: string;
-    yaml: string;
-};
+import { NetworkPolicy } from 'types/networkPolicy.proto';
+import useFetchNetworkPolicies from 'hooks/useFetchNetworkPolicies';
 
 type NetworkPoliciesProps = {
-    networkPolicies: NetworkPolicy[];
+    policyIds: string[];
 };
 
-const downloadYAMLHandler = (fileContent: string) => () => {
-    download('network-policy.yml', fileContent, 'yml');
+const downloadYAMLHandler = (fileName: string, fileContent: string) => () => {
+    download(`${fileName}.yml`, fileContent, 'yml');
 };
 
-function NetworkPolicies({ networkPolicies }: NetworkPoliciesProps): React.ReactElement {
+function NetworkPolicies({ policyIds }: NetworkPoliciesProps): React.ReactElement {
+    const { networkPolicies, isLoading, error } = useFetchNetworkPolicies(policyIds);
     const { isDarkMode } = useTheme();
     const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
     const [selectedNetworkPolicy, setSelectedNetworkPolicy] = React.useState<
         NetworkPolicy | undefined
-    >(networkPolicies[0]);
+    >(networkPolicies?.[0]);
 
     function onToggleDarkMode() {
         setCustomDarkMode((prevValue) => !prevValue);
@@ -48,48 +58,81 @@ function NetworkPolicies({ networkPolicies }: NetworkPoliciesProps): React.React
         />
     );
 
+    if (isLoading) {
+        return (
+            <Bullseye>
+                <Spinner isSVG size="lg" />
+            </Bullseye>
+        );
+    }
+
+    if (error) {
+        return (
+            <Alert isInline variant={AlertVariant.danger} title={error} className="pf-u-mb-lg" />
+        );
+    }
+
+    if (networkPolicies.length === 0) {
+        return (
+            <Bullseye>
+                <EmptyState variant={EmptyStateVariant.xs}>
+                    <Title headingLevel="h4" size="md">
+                        No network policies
+                    </Title>
+                </EmptyState>
+            </Bullseye>
+        );
+    }
+
     return (
-        <Stack hasGutter>
-            <StackItem>
-                <SelectSingle
-                    id="search-filter-attributes-select"
-                    value={selectedNetworkPolicy?.name || ''}
-                    handleSelect={handleSelectedNetworkPolicy}
-                    placeholderText="Select a network policy"
-                >
-                    {networkPolicies.map((networkPolicy) => {
-                        return (
-                            <SelectOption key={networkPolicy.name} value={networkPolicy.name}>
-                                {networkPolicy.name}
-                            </SelectOption>
-                        );
-                    })}
-                </SelectSingle>
-            </StackItem>
-            {selectedNetworkPolicy && (
+        <div className="pf-u-h-100 pf-u-p-md">
+            <Stack hasGutter>
                 <StackItem>
-                    <div className="pf-u-h-100">
-                        <CodeEditor
-                            isDarkTheme={customDarkMode}
-                            customControls={customControl}
-                            isCopyEnabled
-                            isLineNumbersVisible
-                            isReadOnly
-                            code={selectedNetworkPolicy.yaml}
-                            language={Language.yaml}
-                            height="300px"
-                        />
-                    </div>
+                    <SelectSingle
+                        id="search-filter-attributes-select"
+                        value={selectedNetworkPolicy?.name || ''}
+                        handleSelect={handleSelectedNetworkPolicy}
+                        placeholderText="Select a network policy"
+                    >
+                        {networkPolicies.map((networkPolicy) => {
+                            return (
+                                <SelectOption key={networkPolicy.name} value={networkPolicy.name}>
+                                    {networkPolicy.name}
+                                </SelectOption>
+                            );
+                        })}
+                    </SelectSingle>
                 </StackItem>
-            )}
-            {selectedNetworkPolicy && (
-                <StackItem>
-                    <Button onClick={downloadYAMLHandler(selectedNetworkPolicy.yaml)}>
-                        Export YAML
-                    </Button>
-                </StackItem>
-            )}
-        </Stack>
+                {selectedNetworkPolicy && (
+                    <StackItem>
+                        <div className="pf-u-h-100">
+                            <CodeEditor
+                                isDarkTheme={customDarkMode}
+                                customControls={customControl}
+                                isCopyEnabled
+                                isLineNumbersVisible
+                                isReadOnly
+                                code={selectedNetworkPolicy.yaml}
+                                language={Language.yaml}
+                                height="300px"
+                            />
+                        </div>
+                    </StackItem>
+                )}
+                {selectedNetworkPolicy && (
+                    <StackItem>
+                        <Button
+                            onClick={downloadYAMLHandler(
+                                selectedNetworkPolicy.name,
+                                selectedNetworkPolicy.yaml
+                            )}
+                        >
+                            Export YAML
+                        </Button>
+                    </StackItem>
+                )}
+            </Stack>
+        </div>
     );
 }
 

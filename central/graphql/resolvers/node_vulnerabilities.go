@@ -249,7 +249,7 @@ func withNodeCveTypeFiltering(q string) string {
 
 func (resolver *nodeCVEResolver) nodeVulnerabilityScopeContext(ctx context.Context) context.Context {
 	if ctx == nil {
-		err := utils.Should(errors.New("argument 'ctx' is nil"))
+		err := utils.ShouldErr(errors.New("argument 'ctx' is nil"))
 		if err != nil {
 			log.Error(err)
 		}

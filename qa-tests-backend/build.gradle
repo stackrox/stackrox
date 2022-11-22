@@ -99,7 +99,7 @@ dependencies {
 
     implementation 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
-    implementation group: 'com.opencsv', name: 'opencsv', version: '5.7.0'
+    implementation group: 'com.opencsv', name: 'opencsv', version: '5.7.1'
 
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
 
@@ -113,7 +113,7 @@ dependencies {
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
-    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.0"
+    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.1"
 
     // Required to make codenarc work with JDK 14.
     // See https://github.com/gradle/gradle/issues/12646.
