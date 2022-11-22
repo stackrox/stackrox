@@ -2,7 +2,9 @@ package resources
 
 import (
 	routeV1 "github.com/openshift/api/route/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/selector"
 	v1 "k8s.io/api/core/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
@@ -100,8 +102,8 @@ func (ss *serviceStore) addOrUpdateService(svc *serviceWrap) {
 	}
 }
 
-// NodePortServicesSnapshot returns a snapshot of the service wraps
-func (ss *serviceStore) NodePortServicesSnapshot() []*serviceWrap {
+// nodePortServicesSnapshot returns a snapshot of the service wraps
+func (ss *serviceStore) nodePortServicesSnapshot() []*serviceWrap {
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
 
@@ -147,6 +149,14 @@ func (ss *serviceStore) getMatchingServicesWithRoutes(namespace string, labels m
 		}
 	}
 	return matching
+}
+
+// GetExposureInfos returns all port exposure definition for services matching a namespace and a set of labels.
+func (ss *serviceStore) GetExposureInfos(namespace string, labels map[string]string) (result []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
+	for _, svc := range ss.getMatchingServicesWithRoutes(namespace, labels) {
+		result = append(result, svc.exposure())
+	}
+	return
 }
 
 func (ss *serviceStore) getService(namespace string, name string) *serviceWrap {

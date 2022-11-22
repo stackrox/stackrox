@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/net"
 	podUtils "github.com/stackrox/rox/pkg/pods/utils"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/selector"
 	v1 "k8s.io/api/core/v1"
 )
@@ -157,7 +158,7 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 	targetInfo := clusterentities.EndpointTargetInfo{
 		PortName: port.Name,
 	}
-	if portCfg := deployment.portConfigs[portRefOf(port)]; portCfg != nil {
+	if portCfg := deployment.portConfigs[service.PortRefOf(port)]; portCfg != nil {
 		targetInfo.ContainerPort = uint16(portCfg.ContainerPort)
 	} else {
 		targetInfo.ContainerPort = uint16(port.TargetPort.IntValue())
@@ -216,7 +217,7 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 	}
 
 	updates := make(map[string]*clusterentities.EntityData)
-	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
+	for _, svc := range m.serviceStore.nodePortServicesSnapshot() {
 		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 			update, ok := updates[deployment.GetId()]
 			if !ok {
@@ -237,7 +238,7 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 	affectedDeployments := make(map[*deploymentWrap]struct{})
 
-	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
+	for _, svc := range m.serviceStore.nodePortServicesSnapshot() {
 		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 			affectedDeployments[deployment] = struct{}{}
 		}
