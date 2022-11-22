@@ -77,6 +77,7 @@ func (k *listenerImpl) handleAllEvents() {
 		orchestratornamespaces.Singleton(),
 		k.credentialsManager,
 		k.traceWriter,
+		k.storeProvider,
 	)
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
