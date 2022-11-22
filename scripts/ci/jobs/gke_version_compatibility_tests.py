@@ -20,4 +20,7 @@ gkecluster=GKECluster("qa-e2e-test")
 
 for version in versions:
     os.environ["SENSOR_IMAGE_TAG"] = version
-    make_compatibility_test_runner(cluster=gkecluster).run()
+    try:
+        make_compatibility_test_runner(cluster=gkecluster).run()
+    except Exception:
+        pass
