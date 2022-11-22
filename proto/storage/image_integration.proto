@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 package storage;
 
-// Next Tag: 22
+// Next Tag: 23
 message ImageIntegration {
     string id                                    = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     string name                                  = 2 [(gogoproto.moretags) = 'sql:"unique"'];
@@ -26,6 +26,7 @@ message ImageIntegration {
         ECRConfig         ecr       = 11;
         GoogleConfig      google    = 13;
         ClairConfig       clair     = 14;
+        ClairV4Config     clair_v4  = 22;
         IBMRegistryConfig ibm       = 20;
     }
     reserved 7, 12, 17; // Previously Docker Trusted Registry, Tenable, and Anchore respectively
@@ -68,6 +69,11 @@ message QuayConfig {
 }
 
 message ClairConfig {
+    string endpoint = 1 [(gogoproto.moretags) = 'validate:"nolocalendpoint"'];
+    bool   insecure = 2;
+}
+
+message ClairV4Config {
     string endpoint = 1 [(gogoproto.moretags) = 'validate:"nolocalendpoint"'];
     bool   insecure = 2;
 }

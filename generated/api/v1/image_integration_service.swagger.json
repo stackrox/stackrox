@@ -359,6 +359,17 @@
         }
       }
     },
+    "storageClairV4Config": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "insecure": {
+          "type": "boolean"
+        }
+      }
+    },
     "storageClairifyConfig": {
       "type": "object",
       "properties": {
@@ -492,6 +503,9 @@
         "clair": {
           "$ref": "#/definitions/storageClairConfig"
         },
+        "clairV4": {
+          "$ref": "#/definitions/storageClairV4Config"
+        },
         "ibm": {
           "$ref": "#/definitions/storageIBMRegistryConfig"
         },
@@ -508,7 +522,7 @@
           "$ref": "#/definitions/storageImageIntegrationSource"
         }
       },
-      "title": "Next Tag: 22"
+      "title": "Next Tag: 23"
     },
     "storageImageIntegrationCategory": {
       "type": "string",
