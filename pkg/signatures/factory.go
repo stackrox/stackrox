@@ -112,11 +112,11 @@ func createVerifiersFromIntegration(integration *storage.SignatureIntegration) [
 // FetchImageSignaturesWithRetries will try and fetch signatures for the given image from the given registry and return them.
 // It will retry on transient errors and return the fetched signatures.
 func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
-	imageReference string, registry registryTypes.Registry) ([]*storage.Signature, error) {
+	fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error) {
 	var fetchedSignatures []*storage.Signature
 	var err error
 	err = retry.WithRetry(func() error {
-		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, imageReference, registry, fetchedSignatures)
+		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, fullImageName, registry, fetchedSignatures)
 		return err
 	},
 		retry.Tries(2),
@@ -129,11 +129,11 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 }
 
 func fetchAndAppendSignatures(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
-	imageReference string, registry registryTypes.Registry, fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
+	fullImageName string, registry registryTypes.Registry, fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
 	sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	sigs, err := fetcher.FetchSignatures(sigFetchCtx, image, imageReference, registry)
+	sigs, err := fetcher.FetchSignatures(sigFetchCtx, image, fullImageName, registry)
 	if err != nil {
 		return nil, err
 	}

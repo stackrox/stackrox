@@ -37,7 +37,7 @@ func (i *fakeImageServiceClient) EnrichLocalImageInternal(ctx context.Context,
 type scanTestSuite struct {
 	suite.Suite
 	fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
-		imageRef string, registry registryTypes.Registry) ([]*storage.Signature, error)
+		fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
 	getMatchingRegistry    func(image *storage.ImageName) (registryTypes.Registry, error)
 	scannerClientSingleton func() *scannerclient.Client
 	scanImg                func(ctx context.Context, image *storage.Image, registry registryTypes.Registry,
@@ -101,7 +101,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 		scanImg func(ctx context.Context, image *storage.Image,
 			registry registryTypes.Registry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
 		fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
-			imgRef string, registry registryTypes.Registry) ([]*storage.Signature, error)
+			fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
 		getMatchingRegistry    func(image *storage.ImageName) (registryTypes.Registry, error)
 		fakeImageServiceClient *fakeImageServiceClient
 		enrichmentTriggered    bool
@@ -239,7 +239,7 @@ type fakeRegistry struct {
 	fail bool
 }
 
-func (f *fakeRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
+func (f *fakeRegistry) Metadata(_ *storage.Image) (*storage.ImageMetadata, error) {
 	if f.fail {
 		return nil, errors.New("failed fetching metadata")
 	}
