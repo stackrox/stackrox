@@ -14,6 +14,8 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+const scannerDefsPath = "/api/extensions/scannerdefinitions"
+
 var (
 	headersToProxy = set.NewFrozenStringSet("If-Modified-Since", "Accept-Encoding")
 )
@@ -22,18 +24,16 @@ var (
 // from Central.
 type scannerDefinitionsHandler struct {
 	centralClient *http.Client
-	centralHost   string
 }
 
 // NewDefinitionsHandler creates a new scanner definitions handler.
-func NewDefinitionsHandler(centralHost string) (http.Handler, error) {
-	client, err := clientconn.NewHTTPClient(mtls.CentralSubject, centralHost, 0)
+func NewDefinitionsHandler(centralEndpoint string) (http.Handler, error) {
+	client, err := clientconn.NewHTTPClient(mtls.CentralSubject, centralEndpoint, 0)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating central HTTP transport")
 	}
 	return &scannerDefinitionsHandler{
 		centralClient: client,
-		centralHost:   centralHost,
 	}, nil
 }
 
@@ -44,11 +44,10 @@ func (h *scannerDefinitionsHandler) ServeHTTP(writer http.ResponseWriter, reques
 		return
 	}
 	// Prepare the Central's request, proxy relevant headers and all parameters.
+	// No need to set Scheme nor Host, as the client will already do that for us.
 	centralURL := url.URL{
-		Scheme:   "https",
-		Host:     h.centralHost,
-		Path:     "api/extensions/scannerdefinitions",
-		RawQuery: request.URL.Query().Encode(),
+		Path:     scannerDefsPath,
+		RawQuery: request.URL.RawQuery,
 	}
 	centralRequest, err := http.NewRequestWithContext(
 		request.Context(), http.MethodGet, centralURL.String(), nil)

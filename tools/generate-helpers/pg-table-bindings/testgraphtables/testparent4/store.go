@@ -86,7 +86,7 @@ func insertIntoTestParent4(ctx context.Context, batch *pgx.Batch, obj *storage.T
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetParentId(),
 		obj.GetVal(),
 		serialized,
@@ -130,7 +130,7 @@ func (s *storeImpl) copyFromTestParent4(ctx context.Context, tx pgx.Tx, objs ...
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			obj.GetParentId(),
 

@@ -15,7 +15,6 @@ import IntegrationsSection from './IntegrationsSection';
 const IntegrationTilesPage = ({
     apiTokens,
     clusterInitBundles,
-    authProviders,
     backups,
     imageIntegrations,
     notifiers,
@@ -29,13 +28,14 @@ const IntegrationTilesPage = ({
 
         switch (source) {
             case 'authProviders': {
+                // Integrations Authentication Tokens differ from Access Control Auth providers.
                 if (type === 'apitoken') {
                     return apiTokens;
                 }
                 if (type === 'clusterInitBundle') {
                     return clusterInitBundles;
                 }
-                return authProviders.filter(typeLowerMatches);
+                return [];
             }
             case 'notifiers': {
                 return notifiers.filter(typeLowerMatches);
@@ -126,11 +126,6 @@ const IntegrationTilesPage = ({
 };
 
 IntegrationTilesPage.propTypes = {
-    authProviders: PropTypes.arrayOf(
-        PropTypes.shape({
-            name: PropTypes.string.isRequired,
-        })
-    ).isRequired,
     apiTokens: PropTypes.arrayOf(
         PropTypes.shape({
             name: PropTypes.string.isRequired,
@@ -153,7 +148,6 @@ IntegrationTilesPage.propTypes = {
 };
 
 const mapStateToProps = createStructuredSelector({
-    authProviders: selectors.getAuthProviders,
     apiTokens: selectors.getAPITokens,
     clusterInitBundles: selectors.getClusterInitBundles,
     notifiers: selectors.getNotifiers,

@@ -19,6 +19,11 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	// digestPrefixes lists the prefixes for valid, OCI-compliant image digests.
+	// Please see https://github.com/opencontainers/image-spec/blob/main/descriptor.md#registered-algorithms
+	// for more information.
+	digestPrefixes = []string{"sha256:", "sha512:"}
 )
 
 // GenerateImageFromStringWithDefaultTag generates an image type from a common string format and returns an error if
@@ -121,21 +126,11 @@ func GenerateImageFromStringWithOverride(imageStr, registryOverride string) (*st
 
 // GetSHA returns the SHA of the image, if it exists.
 func GetSHA(img *storage.Image) string {
-	return GetSHAFromIDAndMetadata(img.GetId(), img.GetMetadata())
-}
-
-// GetSHAFromIDAndMetadata returns the SHA of the image based on the given ID and metadata, if it exists.
-func GetSHAFromIDAndMetadata(id string, metadata *storage.ImageMetadata) string {
-	if id != "" {
-		return id
-	}
-	if d := metadata.GetV2().GetDigest(); d != "" {
-		return d
-	}
-	if d := metadata.GetV1().GetDigest(); d != "" {
-		return d
-	}
-	return ""
+	return stringutils.FirstNonEmpty(
+		img.GetId(),
+		img.GetMetadata().GetV2().GetDigest(),
+		img.GetMetadata().GetV1().GetDigest(),
+	)
 }
 
 // Reference returns what to use as the reference when talking to registries
@@ -171,10 +166,13 @@ func IsValidImageString(imageStr string) error {
 	return err
 }
 
-// ExtractImageDigest returns the image sha if it exists within the string.
+// ExtractImageDigest returns the image sha, if it exists, within the string.
+// Otherwise, the empty string is returned.
 func ExtractImageDigest(imageStr string) string {
-	if idx := strings.Index(imageStr, "sha256:"); idx != -1 {
-		return imageStr[idx:]
+	for _, prefix := range digestPrefixes {
+		if idx := strings.Index(imageStr, prefix); idx != -1 {
+			return imageStr[idx:]
+		}
 	}
 
 	return ""
@@ -201,11 +199,6 @@ func GetFullyQualifiedFullName(holder nameHolder) string {
 		return holder.GetName().GetFullName()
 	}
 	return fmt.Sprintf("%s@%s", holder.GetName().GetFullName(), holder.GetId())
-}
-
-// GetImageID returns the id of the image based on the currently set values
-func GetImageID(img *storage.Image) string {
-	return stringutils.FirstNonEmpty(img.GetId(), img.GetMetadata().GetV2().GetDigest(), img.GetMetadata().GetV1().GetDigest())
 }
 
 // StripCVEDescriptions takes in an image and returns a stripped down version without the descriptions of CVEs

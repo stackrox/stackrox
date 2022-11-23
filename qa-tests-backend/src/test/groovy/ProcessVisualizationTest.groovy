@@ -51,7 +51,17 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (REDISDEPLOYMENT)
+<<<<<<< variant A
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
+>>>>>>> variant B
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-"+
+                           "96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
+                .addLabel ("app", "test" ),
+            new Deployment()
+                .setName (MONGODEPLOYMENT)
+                .setImage ("quay.io/rhacs-eng/qa:mongo-"+
+                           "dec7f10108a87ff660a0d56cb71b0c5ae1f33cba796a33c88b50280fc0707116")
+======= end
                 .addLabel ("app", "test" ),
             //new Deployment()
             //    .setName (MONGODEPLOYMENT)

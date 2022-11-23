@@ -2,6 +2,7 @@ import * as api from '../../constants/apiEndpoints';
 import { url as dashboardUrl } from '../../constants/DashboardPage';
 import { labels, selectors, url } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 function getIntegrationTypeUrl(integrationSource, integrationType) {
     return `${url}/${integrationSource}/${integrationType}`;
@@ -32,6 +33,12 @@ function visitIntegrations() {
 
 describe('Integrations page', () => {
     withAuth();
+
+    it('should have title', () => {
+        visitIntegrations();
+
+        cy.title().should('match', getRegExpForTitleWithBranding('Integrations'));
+    });
 
     it('Plugin tiles should all be the same height', () => {
         visitIntegrations();

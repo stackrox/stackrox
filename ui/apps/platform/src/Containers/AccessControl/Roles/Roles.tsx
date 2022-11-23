@@ -40,6 +40,8 @@ import RolesList from './RolesList';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlHeading from '../AccessControlHeading';
+import usePermissions from '../../../hooks/usePermissions';
+import AccessControlNoPermission from '../AccessControlNoPermission';
 
 const entityType = 'ROLE';
 
@@ -52,6 +54,9 @@ const roleNew: Role = {
 };
 
 function Roles(): ReactElement {
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasReadAccessForPage = hasReadAccess('Role') && hasReadAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -178,6 +183,15 @@ function Roles(): ReactElement {
             });
     }, []);
 
+    // Return "no access" page immediately if user doesn't have enough permissions.
+    if (!hasReadAccessForPage) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="roles" entityType={entityType} />
+            </>
+        );
+    }
+
     function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
@@ -238,7 +252,11 @@ function Roles(): ReactElement {
                             </AccessControlDescription>
                         }
                         actionComponent={
-                            <Button variant="primary" onClick={handleCreate}>
+                            <Button
+                                isDisabled={!hasWriteAccessForPage}
+                                variant="primary"
+                                onClick={handleCreate}
+                            >
                                 Create role
                             </Button>
                         }

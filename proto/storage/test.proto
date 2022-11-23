@@ -73,6 +73,70 @@ message TestSingleKeyStruct {
     bytes bytess = 16;
 }
 
+message TestSingleUUIDKeyStruct {
+    enum Enum {
+        ENUM0 = 0;
+        ENUM1 = 1;
+        ENUM2 = 2;
+    }
+
+    string key                 = 1 [(gogoproto.moretags) = 'sql:"pk,index=hash,type(uuid)" search:"Test Key"'];
+    string name                = 2 [(gogoproto.moretags) = 'sql:"unique" search:"Test Name"'];
+    repeated string string_slice = 3 [(gogoproto.moretags) = 'search:"Test String Slice"'];
+
+    bool bool                    = 4 [(gogoproto.moretags) = 'search:"Test Bool"'];
+    // repeated bool bool_slice: currently unsupported
+
+    // When using this ensure your precision needs are met and accounted for.  This will use a
+    // BigInt which may require you to convert from uint64 to int64 OR update
+    // the handling to use numerics.
+    uint64 uint64                = 5 [(gogoproto.moretags) = 'search:"Test Uint64"'];
+    // repeated uint64 uint64_slice: currently unsupported
+
+    int64 int64                  = 6 [(gogoproto.moretags) = 'search:"Test Int64"'];
+    // repeated int64 int64_slice: currently unsupported
+
+    float float                   = 7 [(gogoproto.moretags) = 'search:"Test Float"'];
+    // repeated float float_slice: currently unsupported
+
+    map<string, string> labels          = 8  [(gogoproto.moretags) = 'search:"Test Labels"'];
+    google.protobuf.Timestamp timestamp = 9  [(gogoproto.moretags) = 'search:"Test Timestamp"'];
+
+    Enum enum                           = 10 [(gogoproto.moretags) = 'search:"Test Enum"'];
+    repeated Enum enums                 = 11 [(gogoproto.moretags) = 'search:"Test Enum Slice"'];
+
+    message Embedded {
+        string embedded = 1;
+        message Embedded2 {
+            string embedded = 2;
+        }
+    }
+    Embedded embedded = 12;
+
+    message Nested {
+        string nested = 1;
+        message Nested2 {
+            string nested2 = 2;
+        }
+        Nested2 nested2 = 2;
+    }
+    repeated Nested nested = 13;
+
+    message OneOfNested {
+        string nested = 1;
+        message Nested2 {
+            string nested2 = 2;
+        }
+        Nested2 nested2 = 2;
+    }
+    oneof oneof {
+        string oneofstring      = 14;
+        OneOfNested oneofnested = 15;
+    }
+
+    bytes bytess = 16;
+}
+
 message TestMultiKeyStruct {
   enum Enum {
     ENUM0 = 0;
@@ -228,14 +292,14 @@ message TestG3GrandChild1 {
 
 
 message TestParent2 {
-  string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent2 ID" sql:"pk"'];
+  string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent2 ID" sql:"pk,type(uuid)"'];
   string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
 
   string val = 3 [(gogoproto.moretags) = 'search:"Test Parent2 Val"'];
 }
 
 message TestChild2 {
-  string id        = 1 [(gogoproto.moretags) = 'search:"Test Child2 ID" sql:"pk"'];
+  string id        = 1 [(gogoproto.moretags) = 'search:"Test Child2 ID" sql:"pk,type(uuid)"'];
   string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestParent2:id)"'];
 
   // For a potential optimization, insert a direct link from child to grandparent.
@@ -252,7 +316,7 @@ message TestParent3 {
 }
 
 message TestParent4 {
-  string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent4 ID" sql:"pk"'];
+  string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent4 ID" sql:"pk,type(uuid)"'];
   string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
 
   string val = 3 [(gogoproto.moretags) = 'search:"Test Parent4 Val"'];
@@ -260,7 +324,7 @@ message TestParent4 {
 
 message TestChild1P4 {
   string id        = 1 [(gogoproto.moretags) = 'search:"Test Child1P4 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestParent4:id)"'];
+  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestParent4:id),type(uuid)"'];
 
   string val = 3 [(gogoproto.moretags) = 'search:"Test Child1P4 Val"'];
 }

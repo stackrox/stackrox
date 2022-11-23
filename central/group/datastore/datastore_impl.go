@@ -3,6 +3,8 @@ package datastore
 import (
 	"context"
 
+	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -218,6 +220,36 @@ func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authPr
 	return ds.Mutate(ctx, groups, nil, nil, force)
 }
 
+func (ds *dataStoreImpl) RemoveAllWithEmptyProperties(ctx context.Context) error {
+	// Search through all groups and verify whether any group exists with empty properties and attempt to delete them.
+	isEmptyGroupPropertiesF := func(props *storage.GroupProperties) bool {
+		if props.GetAuthProviderId() == "" && props.GetKey() == "" && props.GetValue() == "" {
+			return true
+		}
+		return false
+	}
+	groups, err := ds.GetFiltered(ctx, isEmptyGroupPropertiesF)
+	if err != nil {
+		return err
+	}
+
+	var removeGroupErrs *multierror.Error
+	for _, group := range groups {
+		// Since we are dealing with empty properties, we only require the ID to be set.
+		// In case the ID is not set, add the error to the error list.
+		id := group.GetProps().GetId()
+		if id == "" {
+			removeGroupErrs = multierror.Append(removeGroupErrs, errox.InvalidArgs.Newf("group %s has no ID"+
+				" set and cannot be deleted", proto.MarshalTextString(group)))
+			continue
+		}
+		if err := ds.storage.Delete(ctx, id); err != nil {
+			removeGroupErrs = multierror.Append(removeGroupErrs, err)
+		}
+	}
+	return removeGroupErrs.ErrorOrNil()
+}
+
 // Helpers
 //////////
 
@@ -370,12 +402,9 @@ func (ds *dataStoreImpl) getDefaultGroupForProps(ctx context.Context, props *sto
 // validateMutableGroupIDNoLock validates whether a group allows changes or not based on the mutability mode set.
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id string, force bool) error {
-	group, exists, err := ds.storage.Get(ctx, id)
+	group, err := ds.validateGroupExists(ctx, id)
 	if err != nil {
 		return err
-	}
-	if !exists {
-		return errox.NotFound.Newf("group with id %q was not found", id)
 	}
 
 	switch group.GetProps().GetTraits().GetMutabilityMode() {
@@ -392,4 +421,15 @@ func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id st
 			group.GetProps().GetTraits().GetMutabilityMode().String()))
 	}
 	return errox.InvalidArgs.Newf("group %q is immutable", id)
+}
+
+func (ds *dataStoreImpl) validateGroupExists(ctx context.Context, id string) (*storage.Group, error) {
+	group, exists, err := ds.storage.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errox.NotFound.Newf("group with id %q was not found", id)
+	}
+	return group, nil
 }

@@ -4,28 +4,21 @@ import {
     Bullseye,
     Button,
     ButtonVariant,
-    Dropdown,
-    DropdownItem,
-    DropdownToggle,
     Pagination,
     SearchInput,
     Text,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    ToolbarItemVariant,
     Truncate,
 } from '@patternfly/react-core';
-import { CaretDownIcon, SearchIcon } from '@patternfly/react-icons';
+import { SearchIcon } from '@patternfly/react-icons';
 import { TableComposable, TableVariant, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import debounce from 'lodash/debounce';
-import pluralize from 'pluralize';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import useTableSelection from 'hooks/useTableSelection';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { GetSortParams } from 'hooks/useURLSort';
 import { CollectionResponse } from 'services/CollectionsService';
@@ -39,7 +32,7 @@ export type CollectionsTableProps = {
     searchFilter: SearchFilter;
     setSearchFilter: (searchFilter: SearchFilter) => void;
     getSortParams: GetSortParams;
-    onCollectionDelete: (ids: string[]) => Promise<void>;
+    onCollectionDelete: (collection: CollectionResponse) => Promise<void>;
     hasWriteAccess: boolean;
 };
 
@@ -57,11 +50,8 @@ function CollectionsTable({
 }: CollectionsTableProps) {
     const history = useHistory();
     const { page, perPage, setPage, setPerPage } = pagination;
-    const { isOpen, onToggle, closeSelect } = useSelectToggle();
-    const { selected, allRowsSelected, hasSelections, onSelect, onSelectAll, getSelectedIds } =
-        useTableSelection(collections);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [deletingIds, setDeletingIds] = useState<string[]>([]);
+    const [collectionToDelete, setCollectionToDelete] = useState<CollectionResponse | null>(null);
     const hasCollections = collections.length > 0;
 
     function getEnabledSortParams(field: string) {
@@ -91,28 +81,17 @@ function CollectionsTable({
         [setSearchFilter]
     );
 
-    function onConfirmDeleteCollection() {
+    function onConfirmDeleteCollection(collection: CollectionResponse) {
         setIsDeleting(true);
-        onCollectionDelete(deletingIds).finally(() => {
-            setDeletingIds([]);
+        onCollectionDelete(collection).finally(() => {
+            setCollectionToDelete(null);
             setIsDeleting(false);
         });
     }
 
     function onCancelDeleteCollection() {
-        setDeletingIds([]);
+        setCollectionToDelete(null);
     }
-
-    const unusedSelectedCollectionIds = collections
-        .filter((c) => getSelectedIds().includes(c.id) && !c.inUse)
-        .map((c) => c.id);
-
-    // A map to keep track of row index within the table to the collection id
-    // for checkbox selection after the table has been sorted.
-    const rowIdToIndex = {};
-    collections.forEach(({ id }, idx) => {
-        rowIdToIndex[id] = idx;
-    });
 
     // Currently, it is not expected that the value of `searchFilter.Collection` will
     // be an array even though it would valid. This is a safeguard for future code
@@ -133,41 +112,6 @@ function CollectionsTable({
                             onChange={onSearchInputChange}
                         />
                     </ToolbarItem>
-                    {hasWriteAccess && (
-                        <>
-                            <ToolbarItem variant={ToolbarItemVariant.separator} />
-                            <ToolbarItem className="pf-u-flex-grow-1">
-                                <Dropdown
-                                    onSelect={closeSelect}
-                                    toggle={
-                                        <DropdownToggle
-                                            isDisabled={!hasSelections}
-                                            isPrimary
-                                            onToggle={onToggle}
-                                            toggleIndicator={CaretDownIcon}
-                                        >
-                                            Bulk actions
-                                        </DropdownToggle>
-                                    }
-                                    isOpen={isOpen}
-                                    dropdownItems={[
-                                        <DropdownItem
-                                            key="Delete collection"
-                                            component="button"
-                                            isDisabled={unusedSelectedCollectionIds.length === 0}
-                                            onClick={() => {
-                                                setDeletingIds(unusedSelectedCollectionIds);
-                                            }}
-                                        >
-                                            {unusedSelectedCollectionIds.length > 0
-                                                ? `Delete collections (${unusedSelectedCollectionIds.length})`
-                                                : 'Cannot delete (in use)'}
-                                        </DropdownItem>,
-                                    ]}
-                                />
-                            </ToolbarItem>
-                        </>
-                    )}
                     <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                         <Pagination
                             isCompact
@@ -188,21 +132,15 @@ function CollectionsTable({
             <TableComposable variant={TableVariant.compact}>
                 <Thead>
                     <Tr>
-                        {hasWriteAccess && (
-                            <Th
-                                select={{
-                                    onSelect: onSelectAll,
-                                    isSelected: allRowsSelected,
-                                }}
-                            />
-                        )}
-                        <Th modifier="wrap" width={25} sort={getEnabledSortParams('name')}>
+                        <Th
+                            modifier="wrap"
+                            width={25}
+                            sort={getEnabledSortParams('Collection Name')}
+                        >
                             Collection
                         </Th>
-                        <Th modifier="wrap" sort={getEnabledSortParams('description')}>
-                            Description
-                        </Th>
-                        <Th modifier="wrap" width={10} sort={getEnabledSortParams('inUse')}>
+                        <Th modifier="wrap">Description</Th>
+                        <Th modifier="wrap" width={10}>
                             In use
                         </Th>
                         <Th aria-label="Row actions" />
@@ -227,8 +165,8 @@ function CollectionsTable({
                             </Td>
                         </Tr>
                     )}
-                    {collections.map(({ id, name, description, inUse }) => {
-                        const rowIndex = rowIdToIndex[id];
+                    {collections.map((collection) => {
+                        const { id, name, description, inUse } = collection;
                         const actionItems = [
                             {
                                 title: 'Edit collection',
@@ -243,24 +181,13 @@ function CollectionsTable({
                             },
                             {
                                 title: inUse ? 'Cannot delete (in use)' : 'Delete collection',
-                                onClick: () => setDeletingIds([id]),
+                                onClick: () => setCollectionToDelete(collection),
                                 isDisabled: inUse,
                             },
                         ];
 
                         return (
                             <Tr key={id}>
-                                {hasWriteAccess && (
-                                    <Td
-                                        title={inUse ? 'Collection is in use' : ''}
-                                        select={{
-                                            disable: inUse,
-                                            rowIndex,
-                                            onSelect,
-                                            isSelected: selected[rowIndex],
-                                        }}
-                                    />
-                                )}
                                 <Td dataLabel="Collection">
                                     <Button
                                         variant={ButtonVariant.link}
@@ -281,17 +208,18 @@ function CollectionsTable({
                     })}
                 </Tbody>
             </TableComposable>
-            <ConfirmationModal
-                ariaLabel="Confirm delete"
-                confirmText="Delete"
-                isLoading={isDeleting}
-                isOpen={deletingIds.length !== 0}
-                onConfirm={onConfirmDeleteCollection}
-                onCancel={onCancelDeleteCollection}
-            >
-                Are you sure you want to delete {deletingIds.length}&nbsp;
-                {pluralize('collection', deletingIds.length)}?
-            </ConfirmationModal>
+            {collectionToDelete && (
+                <ConfirmationModal
+                    ariaLabel="Confirm delete"
+                    confirmText="Delete"
+                    isLoading={isDeleting}
+                    isOpen
+                    onConfirm={() => onConfirmDeleteCollection(collectionToDelete)}
+                    onCancel={onCancelDeleteCollection}
+                >
+                    Are you sure you want to delete &lsquo;{collectionToDelete.name}&rsquo;?
+                </ConfirmationModal>
+            )}
         </>
     );
 }

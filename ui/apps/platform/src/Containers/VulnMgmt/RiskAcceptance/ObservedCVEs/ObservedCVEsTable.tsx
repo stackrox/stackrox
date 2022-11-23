@@ -87,13 +87,13 @@ function ObservedCVEsTable({
     } = useTableSelection<Vulnerability>(rows);
     const [cvesToBeAssessed, setCVEsToBeAssessed] = useState<CVEsToBeAssessed>(null);
     const requestDeferral = useDeferVulnerability({
-        cveIDs: cvesToBeAssessed?.cves || [],
+        cves: cvesToBeAssessed?.cves || [],
         registry,
         remote,
         tag,
     });
     const requestFalsePositive = useMarkFalsePositive({
-        cveIDs: cvesToBeAssessed?.cves || [],
+        cves: cvesToBeAssessed?.cves || [],
         registry,
         remote,
         tag,

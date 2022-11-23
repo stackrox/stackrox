@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkflowupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodes"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/nodescansv2"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/podevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/processindicators"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reprocessing"
@@ -37,7 +38,7 @@ func NewFactory() pipeline.Factory {
 
 type factoryImpl struct{}
 
-// sendMessages grabs items from the queue, processes them, and sends them back to sensor.
+// PipelineForCluster grabs items from the queue, processes them, and potentially sends them back to sensor.
 func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) (pipeline.ClusterPipeline, error) {
 	flowUpdateFragment, err := networkflowupdate.Singleton().GetFragment(ctx, clusterID)
 	if err != nil {
@@ -63,6 +64,9 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		reprocessing.GetPipeline(),
 		alerts.GetPipeline(),
 		auditlogstateupdate.GetPipeline(),
+	}
+	if features.RHCOSNodeScanning.Enabled() {
+		pipelines = append(pipelines, nodescansv2.GetPipeline())
 	}
 	if features.ComplianceOperatorCheckResults.Enabled() {
 		pipelines = append(pipelines,

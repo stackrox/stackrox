@@ -11,6 +11,7 @@ const resourceDescriptions: Record<ResourceName, string> = {
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
     CVE: 'Internal use only',
     Cluster: 'Read: View secured clusters. Write: Add, modify, or delete secured clusters.',
+    ClusterCVE: 'Internal use only',
     Compliance:
         'Read: View compliance standards, results, and runs. Write: Add, modify, or delete scheduled compliance runs.',
     Deployment: 'Read: View deployments (workloads) in secured clusters. Write: N/A',
@@ -32,8 +33,8 @@ const resourceDescriptions: Record<ResourceName, string> = {
     NetworkPolicy:
         'Read: View network policies in secured clusters and simulate changes. Write: Apply network policy changes in secured clusters.',
     Node: 'Read: View Kubernetes nodes in secured clusters. Write: N/A',
-    Policy: 'Read: View system policies. Write: Add, modify, or delete system policies.',
     Role: 'Read: View roles, permision sets and access scopes. Write: Add, modify or delete roles, permission sets and access scopes.',
+    Policy: 'Read: View system policies. Write: Add, modify, or delete system policies.',
     Secret: 'Read: View metadata about secrets in secured clusters. Write: N/A',
     ServiceAccount: 'Read: List Kubernetes service accounts in secured clusters. Write: N/A',
     VulnerabilityManagementApprovals:
@@ -72,7 +73,7 @@ export type ResourceDescriptionProps = {
     resource: string;
 };
 
-function ResourceDescription({ resource }: ResourceDescriptionProps): ReactElement {
+export function ResourceDescription({ resource }: ResourceDescriptionProps): ReactElement {
     // The description becomes the prop for possible future request from backend.
     const description = resourceDescriptions[resource] ?? '';
     const readIndex = description.indexOf('Read: ');

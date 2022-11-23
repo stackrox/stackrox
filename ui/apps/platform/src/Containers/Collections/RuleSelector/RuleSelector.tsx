@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { ForwardedRef, forwardRef, ReactNode } from 'react';
 import { Select, SelectOption } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import { FormikErrors } from 'formik';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import {
+    Collection,
     RuleSelectorOption,
     ScopedResourceSelector,
     SelectorEntityType,
@@ -18,6 +20,7 @@ function isRuleSelectorOption(value: string): value is RuleSelectorOption {
 }
 
 export type RuleSelectorProps = {
+    collection: Collection;
     entityType: SelectorEntityType;
     scopedResourceSelector: ScopedResourceSelector;
     handleChange: (
@@ -29,6 +32,7 @@ export type RuleSelectorProps = {
 };
 
 function RuleSelector({
+    collection,
     entityType,
     scopedResourceSelector,
     handleChange,
@@ -37,6 +41,20 @@ function RuleSelector({
 }: RuleSelectorProps) {
     const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const pluralEntity = pluralize(entityType);
+
+    // We need to wrap this custom SelectOption component in a forward ref
+    // because PatternFly will pass a `ref` to it
+    const OptionComponent = forwardRef(
+        (
+            props: { className: string; children: ReactNode },
+            ref: ForwardedRef<HTMLButtonElement | null>
+        ) => (
+            <button className={props.className} type="button" ref={ref}>
+                <ResourceIcon kind={entityType} />
+                {props.children}
+            </button>
+        )
+    );
 
     function onRuleOptionSelect(_, value) {
         if (!isRuleSelectorOption(value)) {
@@ -84,11 +102,13 @@ function RuleSelector({
 
             {scopedResourceSelector.type === 'ByName' && (
                 <ByNameSelector
+                    collection={collection}
                     entityType={entityType}
                     scopedResourceSelector={scopedResourceSelector}
                     handleChange={handleChange}
                     validationErrors={validationErrors}
                     isDisabled={isDisabled}
+                    OptionComponent={OptionComponent}
                 />
             )}
 

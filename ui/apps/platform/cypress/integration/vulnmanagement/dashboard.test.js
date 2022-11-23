@@ -1,5 +1,6 @@
 import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
     interactAndWaitForVulnerabilityManagementEntities,
     visitVulnerabilityManagementDashboard,
@@ -58,6 +59,15 @@ describe('Vulnerability Management Dashboard', () => {
 
     it('should visit using the left nav', () => {
         visitVulnerabilityManagementDashboardFromLeftNav();
+    });
+
+    it('should have title', () => {
+        visitVulnerabilityManagementDashboard();
+
+        cy.title().should(
+            'match',
+            getRegExpForTitleWithBranding('Vulnerability Management - Dashboard')
+        );
     });
 
     it('should show same number of policies between the tile and the policies list', () => {

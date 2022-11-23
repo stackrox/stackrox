@@ -45,6 +45,28 @@ func (suite *CollectionServiceTestSuite) TearDownSuite() {
 	suite.mockCtrl.Finish()
 }
 
+func (suite *CollectionServiceTestSuite) TestListCollectionSelectors() {
+	if !features.ObjectCollections.Enabled() {
+		suite.T().Skip("skipping because env var is not set")
+	}
+
+	selectorsResponse, err := suite.collectionService.ListCollectionSelectors(context.Background(), &v1.Empty{})
+	suite.NoError(err)
+
+	supportedLabelStrings := []string{
+		search.Cluster.String(),
+		search.ClusterLabel.String(),
+		search.Namespace.String(),
+		search.NamespaceLabel.String(),
+		search.NamespaceAnnotation.String(),
+		search.DeploymentName.String(),
+		search.DeploymentLabel.String(),
+		search.DeploymentAnnotation.String(),
+	}
+
+	suite.ElementsMatch(supportedLabelStrings, selectorsResponse.GetSelectors())
+}
+
 func (suite *CollectionServiceTestSuite) TestGetCollection() {
 	if !features.ObjectCollections.Enabled() {
 		suite.T().Skip("skipping because env var is not set")
@@ -85,6 +107,32 @@ func (suite *CollectionServiceTestSuite) TestGetCollection() {
 	result, err = suite.collectionService.GetCollection(context.Background(), request)
 	suite.NotNil(err)
 	suite.Nil(result)
+}
+
+func (suite *CollectionServiceTestSuite) TestGetCollectionCount() {
+	if !features.ObjectCollections.Enabled() {
+		suite.T().Skip("skipping because env var is not set")
+	}
+
+	allAccessCtx := sac.WithAllAccess(context.Background())
+	request := &v1.GetCollectionCountRequest{
+		Query: &v1.RawQuery{},
+	}
+
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	suite.NoError(err)
+
+	suite.dataStore.EXPECT().Count(allAccessCtx, parsedQuery).Times(1).Return(10, nil)
+	resp, err := suite.collectionService.GetCollectionCount(allAccessCtx, request)
+	suite.NoError(err)
+	suite.NotNil(resp)
+	suite.Equal(int32(10), resp.GetCount())
+
+	// test error
+	suite.dataStore.EXPECT().Count(allAccessCtx, parsedQuery).Times(1).Return(0, errors.New("test error"))
+	resp, err = suite.collectionService.GetCollectionCount(allAccessCtx, request)
+	suite.Error(err)
+	suite.Nil(resp)
 }
 
 func (suite *CollectionServiceTestSuite) TestCreateCollection() {
@@ -161,6 +209,94 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	suite.NotNil(resp.GetCollection().GetCreatedBy())
 	suite.NotNil(resp.GetCollection().GetUpdatedBy())
 	suite.NotNil(resp.GetCollection().GetCreatedAt())
+	suite.NotNil(resp.GetCollection().GetLastUpdated())
+}
+
+func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
+	if !features.ObjectCollections.Enabled() {
+		suite.T().Skip("skipping because env var is not set")
+	}
+	allAccessCtx := sac.WithAllAccess(context.Background())
+
+	// test error when collection Id is empty
+	request := &v1.UpdateCollectionRequest{
+		Id: "",
+	}
+	resp, err := suite.collectionService.UpdateCollection(allAccessCtx, request)
+	suite.NotNil(err)
+	suite.Nil(resp)
+
+	// test error when collection name is empty
+	request = &v1.UpdateCollectionRequest{
+		Id:   "id1",
+		Name: "",
+	}
+	resp, err = suite.collectionService.UpdateCollection(allAccessCtx, request)
+	suite.NotNil(err)
+	suite.Nil(resp)
+
+	// test error on context without identity
+	request = &v1.UpdateCollectionRequest{
+		Id:   "id2",
+		Name: "b",
+	}
+	resp, err = suite.collectionService.UpdateCollection(allAccessCtx, request)
+	suite.NotNil(err)
+	suite.Nil(resp)
+
+	// test error on empty/nil resource selectors
+	request = &v1.UpdateCollectionRequest{
+		Id:   "id3",
+		Name: "c",
+	}
+	mockID := mockIdentity.NewMockIdentity(suite.mockCtrl)
+	mockID.EXPECT().UID().Return("uid").Times(1)
+	mockID.EXPECT().FullName().Return("name").Times(1)
+	mockID.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx := authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
+	resp, err = suite.collectionService.UpdateCollection(ctx, request)
+	suite.NotNil(err)
+	suite.Nil(resp)
+
+	// test successful update
+	request = &v1.UpdateCollectionRequest{
+		Id:          "id4",
+		Name:        "d",
+		Description: "description",
+		ResourceSelectors: []*storage.ResourceSelector{
+			{
+				Rules: []*storage.SelectorRule{
+					{
+						FieldName: search.DeploymentName.String(),
+						Operator:  storage.BooleanOperator_OR,
+						Values: []*storage.RuleValue{
+							{
+								Value: "deployment",
+							},
+						},
+					},
+				},
+			},
+		},
+		EmbeddedCollectionIds: []string{"id1", "id2"},
+	}
+
+	mockID.EXPECT().UID().Return("uid").Times(1)
+	mockID.EXPECT().FullName().Return("name").Times(1)
+	mockID.EXPECT().FriendlyName().Return("name").Times(1)
+	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
+
+	suite.dataStore.EXPECT().UpdateCollection(ctx, gomock.Any()).Times(1).Return(nil)
+	resp, err = suite.collectionService.UpdateCollection(ctx, request)
+	suite.NoError(err)
+	suite.NotNil(resp.GetCollection())
+	suite.Equal(request.GetId(), resp.GetCollection().GetId())
+	suite.Equal(request.Name, resp.GetCollection().GetName())
+	suite.Equal(request.GetDescription(), resp.GetCollection().GetDescription())
+	suite.Equal(request.GetResourceSelectors(), resp.GetCollection().GetResourceSelectors())
+	suite.Equal(request.GetEmbeddedCollectionIds(), suite.embeddedCollectionsToIds(resp.GetCollection().GetEmbeddedCollections()))
+	suite.Equal("uid", resp.GetCollection().GetUpdatedBy().GetId())
+	suite.Equal("name", resp.GetCollection().GetUpdatedBy().GetName())
 	suite.NotNil(resp.GetCollection().GetLastUpdated())
 }
 

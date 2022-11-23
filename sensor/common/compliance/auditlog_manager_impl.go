@@ -112,6 +112,8 @@ func (a *auditLogCollectionManagerImpl) runUpdater() {
 
 	for !a.stopSig.IsDone() {
 		select {
+		case <-a.stopSig.Done():
+			return
 		case <-a.forceUpdateSig.Done():
 			a.sendUpdate()
 			a.forceUpdateSig.Reset()

@@ -27,6 +27,70 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+type ListCollectionSelectorsResponse struct {
+	Selectors            []string `protobuf:"bytes,1,rep,name=selectors,proto3" json:"selectors,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListCollectionSelectorsResponse) Reset()         { *m = ListCollectionSelectorsResponse{} }
+func (m *ListCollectionSelectorsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListCollectionSelectorsResponse) ProtoMessage()    {}
+func (*ListCollectionSelectorsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21a4b2c7d805c182, []int{0}
+}
+func (m *ListCollectionSelectorsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListCollectionSelectorsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListCollectionSelectorsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListCollectionSelectorsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListCollectionSelectorsResponse.Merge(m, src)
+}
+func (m *ListCollectionSelectorsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListCollectionSelectorsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListCollectionSelectorsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListCollectionSelectorsResponse proto.InternalMessageInfo
+
+func (m *ListCollectionSelectorsResponse) GetSelectors() []string {
+	if m != nil {
+		return m.Selectors
+	}
+	return nil
+}
+
+func (m *ListCollectionSelectorsResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ListCollectionSelectorsResponse) Clone() *ListCollectionSelectorsResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ListCollectionSelectorsResponse)
+	*cloned = *m
+
+	if m.Selectors != nil {
+		cloned.Selectors = make([]string, len(m.Selectors))
+		copy(cloned.Selectors, m.Selectors)
+	}
+	return cloned
+}
+
 type GetCollectionRequest struct {
 	Id                   string                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Options              *GetCollectionRequest_Options `protobuf:"bytes,2,opt,name=options,proto3" json:"options,omitempty"`
@@ -39,7 +103,7 @@ func (m *GetCollectionRequest) Reset()         { *m = GetCollectionRequest{} }
 func (m *GetCollectionRequest) String() string { return proto.CompactTextString(m) }
 func (*GetCollectionRequest) ProtoMessage()    {}
 func (*GetCollectionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_21a4b2c7d805c182, []int{0}
+	return fileDescriptor_21a4b2c7d805c182, []int{1}
 }
 func (m *GetCollectionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -107,7 +171,7 @@ func (m *GetCollectionRequest_Options) Reset()         { *m = GetCollectionReque
 func (m *GetCollectionRequest_Options) String() string { return proto.CompactTextString(m) }
 func (*GetCollectionRequest_Options) ProtoMessage()    {}
 func (*GetCollectionRequest_Options) Descriptor() ([]byte, []int) {
-	return fileDescriptor_21a4b2c7d805c182, []int{0, 0}
+	return fileDescriptor_21a4b2c7d805c182, []int{1, 0}
 }
 func (m *GetCollectionRequest_Options) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -168,7 +232,7 @@ func (m *GetCollectionResponse) Reset()         { *m = GetCollectionResponse{} }
 func (m *GetCollectionResponse) String() string { return proto.CompactTextString(m) }
 func (*GetCollectionResponse) ProtoMessage()    {}
 func (*GetCollectionResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_21a4b2c7d805c182, []int{1}
+	return fileDescriptor_21a4b2c7d805c182, []int{2}
 }
 func (m *GetCollectionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -231,6 +295,127 @@ func (m *GetCollectionResponse) Clone() *GetCollectionResponse {
 	return cloned
 }
 
+type GetCollectionCountRequest struct {
+	Query                *RawQuery `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *GetCollectionCountRequest) Reset()         { *m = GetCollectionCountRequest{} }
+func (m *GetCollectionCountRequest) String() string { return proto.CompactTextString(m) }
+func (*GetCollectionCountRequest) ProtoMessage()    {}
+func (*GetCollectionCountRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21a4b2c7d805c182, []int{3}
+}
+func (m *GetCollectionCountRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetCollectionCountRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetCollectionCountRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetCollectionCountRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetCollectionCountRequest.Merge(m, src)
+}
+func (m *GetCollectionCountRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetCollectionCountRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetCollectionCountRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetCollectionCountRequest proto.InternalMessageInfo
+
+func (m *GetCollectionCountRequest) GetQuery() *RawQuery {
+	if m != nil {
+		return m.Query
+	}
+	return nil
+}
+
+func (m *GetCollectionCountRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *GetCollectionCountRequest) Clone() *GetCollectionCountRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetCollectionCountRequest)
+	*cloned = *m
+
+	cloned.Query = m.Query.Clone()
+	return cloned
+}
+
+type GetCollectionCountResponse struct {
+	Count                int32    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetCollectionCountResponse) Reset()         { *m = GetCollectionCountResponse{} }
+func (m *GetCollectionCountResponse) String() string { return proto.CompactTextString(m) }
+func (*GetCollectionCountResponse) ProtoMessage()    {}
+func (*GetCollectionCountResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21a4b2c7d805c182, []int{4}
+}
+func (m *GetCollectionCountResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetCollectionCountResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetCollectionCountResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetCollectionCountResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetCollectionCountResponse.Merge(m, src)
+}
+func (m *GetCollectionCountResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetCollectionCountResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetCollectionCountResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetCollectionCountResponse proto.InternalMessageInfo
+
+func (m *GetCollectionCountResponse) GetCount() int32 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
+func (m *GetCollectionCountResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *GetCollectionCountResponse) Clone() *GetCollectionCountResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetCollectionCountResponse)
+	*cloned = *m
+
+	return cloned
+}
+
 type CreateCollectionRequest struct {
 	Name                  string                      `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Description           string                      `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
@@ -245,7 +430,7 @@ func (m *CreateCollectionRequest) Reset()         { *m = CreateCollectionRequest
 func (m *CreateCollectionRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateCollectionRequest) ProtoMessage()    {}
 func (*CreateCollectionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_21a4b2c7d805c182, []int{2}
+	return fileDescriptor_21a4b2c7d805c182, []int{5}
 }
 func (m *CreateCollectionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -336,7 +521,7 @@ func (m *CreateCollectionResponse) Reset()         { *m = CreateCollectionRespon
 func (m *CreateCollectionResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateCollectionResponse) ProtoMessage()    {}
 func (*CreateCollectionResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_21a4b2c7d805c182, []int{3}
+	return fileDescriptor_21a4b2c7d805c182, []int{6}
 }
 func (m *CreateCollectionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -386,6 +571,415 @@ func (m *CreateCollectionResponse) Clone() *CreateCollectionResponse {
 	return cloned
 }
 
+type UpdateCollectionRequest struct {
+	Id                    string                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                  string                      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description           string                      `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	ResourceSelectors     []*storage.ResourceSelector `protobuf:"bytes,4,rep,name=resource_selectors,json=resourceSelectors,proto3" json:"resource_selectors,omitempty"`
+	EmbeddedCollectionIds []string                    `protobuf:"bytes,5,rep,name=embedded_collection_ids,json=embeddedCollectionIds,proto3" json:"embedded_collection_ids,omitempty"`
+	XXX_NoUnkeyedLiteral  struct{}                    `json:"-"`
+	XXX_unrecognized      []byte                      `json:"-"`
+	XXX_sizecache         int32                       `json:"-"`
+}
+
+func (m *UpdateCollectionRequest) Reset()         { *m = UpdateCollectionRequest{} }
+func (m *UpdateCollectionRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateCollectionRequest) ProtoMessage()    {}
+func (*UpdateCollectionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21a4b2c7d805c182, []int{7}
+}
+func (m *UpdateCollectionRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateCollectionRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateCollectionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateCollectionRequest.Merge(m, src)
+}
+func (m *UpdateCollectionRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateCollectionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateCollectionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateCollectionRequest proto.InternalMessageInfo
+
+func (m *UpdateCollectionRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *UpdateCollectionRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *UpdateCollectionRequest) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *UpdateCollectionRequest) GetResourceSelectors() []*storage.ResourceSelector {
+	if m != nil {
+		return m.ResourceSelectors
+	}
+	return nil
+}
+
+func (m *UpdateCollectionRequest) GetEmbeddedCollectionIds() []string {
+	if m != nil {
+		return m.EmbeddedCollectionIds
+	}
+	return nil
+}
+
+func (m *UpdateCollectionRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *UpdateCollectionRequest) Clone() *UpdateCollectionRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(UpdateCollectionRequest)
+	*cloned = *m
+
+	if m.ResourceSelectors != nil {
+		cloned.ResourceSelectors = make([]*storage.ResourceSelector, len(m.ResourceSelectors))
+		for idx, v := range m.ResourceSelectors {
+			cloned.ResourceSelectors[idx] = v.Clone()
+		}
+	}
+	if m.EmbeddedCollectionIds != nil {
+		cloned.EmbeddedCollectionIds = make([]string, len(m.EmbeddedCollectionIds))
+		copy(cloned.EmbeddedCollectionIds, m.EmbeddedCollectionIds)
+	}
+	return cloned
+}
+
+type UpdateCollectionResponse struct {
+	Collection           *storage.ResourceCollection `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *UpdateCollectionResponse) Reset()         { *m = UpdateCollectionResponse{} }
+func (m *UpdateCollectionResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateCollectionResponse) ProtoMessage()    {}
+func (*UpdateCollectionResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21a4b2c7d805c182, []int{8}
+}
+func (m *UpdateCollectionResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateCollectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateCollectionResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateCollectionResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateCollectionResponse.Merge(m, src)
+}
+func (m *UpdateCollectionResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateCollectionResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateCollectionResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateCollectionResponse proto.InternalMessageInfo
+
+func (m *UpdateCollectionResponse) GetCollection() *storage.ResourceCollection {
+	if m != nil {
+		return m.Collection
+	}
+	return nil
+}
+
+func (m *UpdateCollectionResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *UpdateCollectionResponse) Clone() *UpdateCollectionResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(UpdateCollectionResponse)
+	*cloned = *m
+
+	cloned.Collection = m.Collection.Clone()
+	return cloned
+}
+
+type DryRunCollectionRequest struct {
+	Name                  string                           `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Id                    string                           `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Description           string                           `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	ResourceSelectors     []*storage.ResourceSelector      `protobuf:"bytes,4,rep,name=resource_selectors,json=resourceSelectors,proto3" json:"resource_selectors,omitempty"`
+	EmbeddedCollectionIds []string                         `protobuf:"bytes,5,rep,name=embedded_collection_ids,json=embeddedCollectionIds,proto3" json:"embedded_collection_ids,omitempty"`
+	Options               *DryRunCollectionRequest_Options `protobuf:"bytes,6,opt,name=options,proto3" json:"options,omitempty"`
+	XXX_NoUnkeyedLiteral  struct{}                         `json:"-"`
+	XXX_unrecognized      []byte                           `json:"-"`
+	XXX_sizecache         int32                            `json:"-"`
+}
+
+func (m *DryRunCollectionRequest) Reset()         { *m = DryRunCollectionRequest{} }
+func (m *DryRunCollectionRequest) String() string { return proto.CompactTextString(m) }
+func (*DryRunCollectionRequest) ProtoMessage()    {}
+func (*DryRunCollectionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21a4b2c7d805c182, []int{9}
+}
+func (m *DryRunCollectionRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DryRunCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DryRunCollectionRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DryRunCollectionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DryRunCollectionRequest.Merge(m, src)
+}
+func (m *DryRunCollectionRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DryRunCollectionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DryRunCollectionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DryRunCollectionRequest proto.InternalMessageInfo
+
+func (m *DryRunCollectionRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *DryRunCollectionRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *DryRunCollectionRequest) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *DryRunCollectionRequest) GetResourceSelectors() []*storage.ResourceSelector {
+	if m != nil {
+		return m.ResourceSelectors
+	}
+	return nil
+}
+
+func (m *DryRunCollectionRequest) GetEmbeddedCollectionIds() []string {
+	if m != nil {
+		return m.EmbeddedCollectionIds
+	}
+	return nil
+}
+
+func (m *DryRunCollectionRequest) GetOptions() *DryRunCollectionRequest_Options {
+	if m != nil {
+		return m.Options
+	}
+	return nil
+}
+
+func (m *DryRunCollectionRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DryRunCollectionRequest) Clone() *DryRunCollectionRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DryRunCollectionRequest)
+	*cloned = *m
+
+	if m.ResourceSelectors != nil {
+		cloned.ResourceSelectors = make([]*storage.ResourceSelector, len(m.ResourceSelectors))
+		for idx, v := range m.ResourceSelectors {
+			cloned.ResourceSelectors[idx] = v.Clone()
+		}
+	}
+	if m.EmbeddedCollectionIds != nil {
+		cloned.EmbeddedCollectionIds = make([]string, len(m.EmbeddedCollectionIds))
+		copy(cloned.EmbeddedCollectionIds, m.EmbeddedCollectionIds)
+	}
+	cloned.Options = m.Options.Clone()
+	return cloned
+}
+
+type DryRunCollectionRequest_Options struct {
+	Pagination             *Pagination `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	SkipDeploymentMatching bool        `protobuf:"varint,2,opt,name=skip_deployment_matching,json=skipDeploymentMatching,proto3" json:"skip_deployment_matching,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{}    `json:"-"`
+	XXX_unrecognized       []byte      `json:"-"`
+	XXX_sizecache          int32       `json:"-"`
+}
+
+func (m *DryRunCollectionRequest_Options) Reset()         { *m = DryRunCollectionRequest_Options{} }
+func (m *DryRunCollectionRequest_Options) String() string { return proto.CompactTextString(m) }
+func (*DryRunCollectionRequest_Options) ProtoMessage()    {}
+func (*DryRunCollectionRequest_Options) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21a4b2c7d805c182, []int{9, 0}
+}
+func (m *DryRunCollectionRequest_Options) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DryRunCollectionRequest_Options) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DryRunCollectionRequest_Options.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DryRunCollectionRequest_Options) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DryRunCollectionRequest_Options.Merge(m, src)
+}
+func (m *DryRunCollectionRequest_Options) XXX_Size() int {
+	return m.Size()
+}
+func (m *DryRunCollectionRequest_Options) XXX_DiscardUnknown() {
+	xxx_messageInfo_DryRunCollectionRequest_Options.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DryRunCollectionRequest_Options proto.InternalMessageInfo
+
+func (m *DryRunCollectionRequest_Options) GetPagination() *Pagination {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+func (m *DryRunCollectionRequest_Options) GetSkipDeploymentMatching() bool {
+	if m != nil {
+		return m.SkipDeploymentMatching
+	}
+	return false
+}
+
+func (m *DryRunCollectionRequest_Options) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DryRunCollectionRequest_Options) Clone() *DryRunCollectionRequest_Options {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DryRunCollectionRequest_Options)
+	*cloned = *m
+
+	cloned.Pagination = m.Pagination.Clone()
+	return cloned
+}
+
+type DryRunCollectionResponse struct {
+	Deployments          []*storage.ListDeployment `protobuf:"bytes,1,rep,name=deployments,proto3" json:"deployments,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
+}
+
+func (m *DryRunCollectionResponse) Reset()         { *m = DryRunCollectionResponse{} }
+func (m *DryRunCollectionResponse) String() string { return proto.CompactTextString(m) }
+func (*DryRunCollectionResponse) ProtoMessage()    {}
+func (*DryRunCollectionResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21a4b2c7d805c182, []int{10}
+}
+func (m *DryRunCollectionResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DryRunCollectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DryRunCollectionResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DryRunCollectionResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DryRunCollectionResponse.Merge(m, src)
+}
+func (m *DryRunCollectionResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *DryRunCollectionResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DryRunCollectionResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DryRunCollectionResponse proto.InternalMessageInfo
+
+func (m *DryRunCollectionResponse) GetDeployments() []*storage.ListDeployment {
+	if m != nil {
+		return m.Deployments
+	}
+	return nil
+}
+
+func (m *DryRunCollectionResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DryRunCollectionResponse) Clone() *DryRunCollectionResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DryRunCollectionResponse)
+	*cloned = *m
+
+	if m.Deployments != nil {
+		cloned.Deployments = make([]*storage.ListDeployment, len(m.Deployments))
+		for idx, v := range m.Deployments {
+			cloned.Deployments[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
 type ListCollectionsRequest struct {
 	Query                *RawQuery `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
@@ -397,7 +991,7 @@ func (m *ListCollectionsRequest) Reset()         { *m = ListCollectionsRequest{}
 func (m *ListCollectionsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListCollectionsRequest) ProtoMessage()    {}
 func (*ListCollectionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_21a4b2c7d805c182, []int{4}
+	return fileDescriptor_21a4b2c7d805c182, []int{11}
 }
 func (m *ListCollectionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -458,7 +1052,7 @@ func (m *ListCollectionsResponse) Reset()         { *m = ListCollectionsResponse
 func (m *ListCollectionsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListCollectionsResponse) ProtoMessage()    {}
 func (*ListCollectionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_21a4b2c7d805c182, []int{5}
+	return fileDescriptor_21a4b2c7d805c182, []int{12}
 }
 func (m *ListCollectionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -514,11 +1108,19 @@ func (m *ListCollectionsResponse) Clone() *ListCollectionsResponse {
 }
 
 func init() {
+	proto.RegisterType((*ListCollectionSelectorsResponse)(nil), "v1.ListCollectionSelectorsResponse")
 	proto.RegisterType((*GetCollectionRequest)(nil), "v1.GetCollectionRequest")
 	proto.RegisterType((*GetCollectionRequest_Options)(nil), "v1.GetCollectionRequest.Options")
 	proto.RegisterType((*GetCollectionResponse)(nil), "v1.GetCollectionResponse")
+	proto.RegisterType((*GetCollectionCountRequest)(nil), "v1.GetCollectionCountRequest")
+	proto.RegisterType((*GetCollectionCountResponse)(nil), "v1.GetCollectionCountResponse")
 	proto.RegisterType((*CreateCollectionRequest)(nil), "v1.CreateCollectionRequest")
 	proto.RegisterType((*CreateCollectionResponse)(nil), "v1.CreateCollectionResponse")
+	proto.RegisterType((*UpdateCollectionRequest)(nil), "v1.UpdateCollectionRequest")
+	proto.RegisterType((*UpdateCollectionResponse)(nil), "v1.UpdateCollectionResponse")
+	proto.RegisterType((*DryRunCollectionRequest)(nil), "v1.DryRunCollectionRequest")
+	proto.RegisterType((*DryRunCollectionRequest_Options)(nil), "v1.DryRunCollectionRequest.Options")
+	proto.RegisterType((*DryRunCollectionResponse)(nil), "v1.DryRunCollectionResponse")
 	proto.RegisterType((*ListCollectionsRequest)(nil), "v1.ListCollectionsRequest")
 	proto.RegisterType((*ListCollectionsResponse)(nil), "v1.ListCollectionsResponse")
 }
@@ -528,47 +1130,65 @@ func init() {
 }
 
 var fileDescriptor_21a4b2c7d805c182 = []byte{
-	// 631 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0x41, 0x6f, 0xd3, 0x4c,
-	0x10, 0xad, 0x93, 0x7e, 0x5f, 0xc9, 0xa4, 0xd0, 0x76, 0x69, 0x1b, 0xd7, 0xa9, 0xa2, 0xd4, 0xa7,
-	0xa8, 0x42, 0x8e, 0x12, 0x24, 0x24, 0x0a, 0x5c, 0xda, 0x22, 0xa8, 0x44, 0x85, 0x70, 0x0f, 0x54,
-	0x5c, 0x2a, 0xd7, 0x1e, 0xb5, 0x2b, 0x62, 0xaf, 0xbb, 0xbb, 0x4d, 0x89, 0x10, 0x17, 0xfe, 0x00,
-	0x48, 0x48, 0x88, 0x9f, 0xc4, 0x11, 0xc4, 0x1f, 0x40, 0x85, 0x1f, 0x82, 0xd6, 0xde, 0xc4, 0xae,
-	0xe3, 0x8a, 0x0b, 0xb7, 0xe8, 0xbd, 0x37, 0xf3, 0x66, 0xde, 0x4e, 0x0c, 0x1d, 0x2f, 0xa6, 0xdd,
-	0x61, 0xaf, 0xcb, 0x51, 0xb0, 0x73, 0xee, 0xe3, 0x91, 0xcf, 0x06, 0x03, 0xf4, 0x25, 0x65, 0xd1,
-	0x91, 0x40, 0x3e, 0xa4, 0x3e, 0x3a, 0x31, 0x67, 0x92, 0x91, 0xca, 0xb0, 0x67, 0xad, 0x9f, 0x30,
-	0x76, 0x32, 0xc0, 0xae, 0x2a, 0xf2, 0xa2, 0x88, 0x49, 0x4f, 0x09, 0x45, 0xaa, 0xb0, 0x6e, 0xeb,
-	0x5e, 0x3e, 0x0b, 0x43, 0x16, 0x69, 0x90, 0x68, 0x10, 0xc3, 0x58, 0x8e, 0x34, 0xb6, 0x21, 0x24,
-	0xe3, 0xde, 0x09, 0x96, 0xb9, 0x6a, 0x89, 0x39, 0x96, 0x04, 0x18, 0x0f, 0xd8, 0x28, 0xc4, 0x48,
-	0x6a, 0xa6, 0xa9, 0x1b, 0x0a, 0xf4, 0xb8, 0x7f, 0x7a, 0x75, 0x48, 0xfb, 0xa3, 0x01, 0xcb, 0x4f,
-	0x50, 0xee, 0x4c, 0xda, 0xb9, 0x78, 0x76, 0x8e, 0x42, 0x92, 0x5b, 0x50, 0xa1, 0x81, 0x69, 0xb4,
-	0x8d, 0x4e, 0xcd, 0xad, 0xd0, 0x80, 0x6c, 0xc1, 0x1c, 0x8b, 0x93, 0xe1, 0xcd, 0x4a, 0xdb, 0xe8,
-	0xd4, 0xfb, 0x6d, 0x67, 0xd8, 0x73, 0xca, 0x4a, 0x9d, 0xe7, 0xa9, 0xce, 0x1d, 0x17, 0x58, 0x77,
-	0x60, 0x4e, 0x63, 0x64, 0x03, 0xe6, 0x2f, 0xa8, 0x3c, 0x3d, 0x0a, 0x3d, 0xe9, 0x9f, 0xa2, 0x48,
-	0x0c, 0x6e, 0xb8, 0x75, 0x85, 0xed, 0xa7, 0x90, 0xfd, 0xc1, 0x80, 0x95, 0x42, 0x5f, 0x11, 0xb3,
-	0x48, 0x20, 0x79, 0x00, 0x90, 0xed, 0x9d, 0x94, 0xd6, 0xfb, 0x4d, 0x47, 0x2f, 0xee, 0xb8, 0x3a,
-	0x9b, 0x5c, 0x61, 0x4e, 0x4e, 0xee, 0x43, 0x3d, 0x8b, 0x46, 0x2d, 0x51, 0xed, 0xd4, 0xfb, 0x8d,
-	0x49, 0xf5, 0x33, 0x2a, 0xe4, 0xee, 0x84, 0x77, 0xf3, 0x5a, 0xfb, 0xbb, 0x01, 0x8d, 0x1d, 0x8e,
-	0x9e, 0xc4, 0xe9, 0x9c, 0x08, 0xcc, 0x46, 0x5e, 0x88, 0x3a, 0xa9, 0xe4, 0x37, 0x69, 0x2b, 0x2b,
-	0xe1, 0x73, 0x9a, 0x2c, 0x9d, 0xe4, 0x55, 0x73, 0xf3, 0x10, 0x79, 0x0a, 0x64, 0xf2, 0x94, 0x02,
-	0x55, 0x4b, 0xc6, 0x85, 0x59, 0x4d, 0x66, 0x5a, 0x9b, 0xda, 0xe8, 0x40, 0x2b, 0xdc, 0x25, 0x5e,
-	0x40, 0x04, 0xb9, 0x07, 0x0d, 0x0c, 0x8f, 0x31, 0x08, 0x30, 0xc8, 0x9f, 0x22, 0x0d, 0x84, 0x39,
-	0xdb, 0xae, 0x76, 0x6a, 0xee, 0xca, 0x98, 0xce, 0x66, 0xdf, 0x0b, 0x84, 0xfd, 0x12, 0xcc, 0xe9,
-	0x95, 0xfe, 0x41, 0xce, 0xf6, 0x43, 0x58, 0x55, 0x59, 0x66, 0xac, 0x18, 0x47, 0x65, 0xc3, 0x7f,
-	0x67, 0xe7, 0xc8, 0x47, 0xba, 0xe3, 0xbc, 0x3a, 0x20, 0xd7, 0xbb, 0x78, 0xa1, 0x30, 0x37, 0xa5,
-	0xec, 0x43, 0x68, 0x4c, 0x55, 0xeb, 0xa9, 0x1e, 0x41, 0x3d, 0xb3, 0x51, 0x97, 0x53, 0xfd, 0xdb,
-	0x58, 0x79, 0x7d, 0xff, 0x73, 0x15, 0x96, 0x32, 0xee, 0x20, 0xfd, 0x17, 0x90, 0x63, 0xb8, 0x79,
-	0xe5, 0xd6, 0x88, 0x79, 0xdd, 0x59, 0x5b, 0x6b, 0x25, 0x4c, 0x3a, 0x9a, 0xbd, 0xfe, 0xfe, 0xc7,
-	0xef, 0x4f, 0x95, 0x55, 0xb2, 0x9c, 0xfe, 0x9b, 0x27, 0xa6, 0xdd, 0xb7, 0x34, 0x78, 0x47, 0x28,
-	0x2c, 0x16, 0xa3, 0x26, 0x4d, 0xd5, 0xec, 0x9a, 0x9b, 0xb2, 0xd6, 0xcb, 0x49, 0x6d, 0x66, 0x25,
-	0x66, 0xcb, 0xf6, 0x42, 0xc1, 0x6c, 0xcb, 0xd8, 0x24, 0x3e, 0x2c, 0x14, 0xe2, 0x23, 0x96, 0x6a,
-	0x56, 0xfe, 0x22, 0x56, 0xb3, 0x94, 0xd3, 0x3e, 0x8d, 0xc4, 0x67, 0x89, 0x14, 0x7d, 0xc8, 0x3e,
-	0x2c, 0xee, 0xe2, 0x00, 0xaf, 0xec, 0xb3, 0x98, 0x3c, 0xa6, 0x7e, 0x82, 0xed, 0xd1, 0xde, 0xae,
-	0x55, 0x53, 0xc8, 0x63, 0xf5, 0x11, 0x1b, 0xc7, 0xb3, 0x59, 0x1a, 0xcf, 0xb6, 0xf3, 0xf5, 0xb2,
-	0x65, 0x7c, 0xbb, 0x6c, 0x19, 0x3f, 0x2f, 0x5b, 0xc6, 0x97, 0x5f, 0xad, 0x19, 0x30, 0x29, 0x73,
-	0x84, 0xf4, 0xfc, 0xd7, 0x9c, 0xbd, 0x49, 0xbf, 0x53, 0x8e, 0x17, 0x53, 0x67, 0xd8, 0x7b, 0x55,
-	0x19, 0xf6, 0x0e, 0x67, 0x8e, 0xff, 0x4f, 0xb0, 0xbb, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x09,
-	0x5b, 0xa6, 0x1c, 0x8c, 0x05, 0x00, 0x00,
+	// 920 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x56, 0x5f, 0x6f, 0x1b, 0x45,
+	0x10, 0xef, 0xd9, 0x49, 0x5a, 0x8f, 0x4b, 0xeb, 0x2c, 0x69, 0xee, 0x7c, 0x0e, 0xae, 0x73, 0xbc,
+	0x58, 0x11, 0xba, 0xc8, 0x46, 0x42, 0x10, 0xa8, 0x2a, 0x35, 0x41, 0x50, 0x89, 0x08, 0x58, 0x54,
+	0x51, 0xf1, 0x62, 0x5d, 0xee, 0x56, 0xce, 0xaa, 0xf6, 0xed, 0xe5, 0xf6, 0xec, 0x62, 0x21, 0x5e,
+	0xf8, 0x02, 0x20, 0x21, 0x24, 0x3e, 0x12, 0x8f, 0x20, 0x9e, 0x78, 0x83, 0xc0, 0x07, 0x41, 0xbb,
+	0xb7, 0xf7, 0xc7, 0xf7, 0x87, 0x34, 0x52, 0x5e, 0x78, 0x73, 0x66, 0x66, 0xe7, 0x37, 0xf3, 0x9b,
+	0xb9, 0xdf, 0x04, 0x86, 0x4e, 0x40, 0x0f, 0x97, 0xa3, 0xc3, 0x90, 0x70, 0xb6, 0x08, 0x5d, 0x32,
+	0x71, 0xd9, 0x6c, 0x46, 0xdc, 0x88, 0x32, 0x7f, 0xc2, 0x49, 0xb8, 0xa4, 0x2e, 0xb1, 0x83, 0x90,
+	0x45, 0x0c, 0x35, 0x96, 0x23, 0x73, 0x6f, 0xca, 0xd8, 0x74, 0x46, 0x0e, 0xc5, 0x23, 0xc7, 0xf7,
+	0x59, 0xe4, 0x88, 0x40, 0x1e, 0x47, 0x98, 0xba, 0xca, 0x15, 0x38, 0x53, 0xea, 0x4b, 0x8f, 0x72,
+	0xbc, 0xae, 0x1c, 0x2e, 0x9b, 0xcf, 0x53, 0x23, 0x52, 0x46, 0x32, 0x0f, 0xa2, 0x95, 0xb2, 0xed,
+	0xf3, 0x88, 0x85, 0xce, 0x94, 0x54, 0x95, 0xa3, 0x42, 0x8c, 0x24, 0xc4, 0x23, 0xc1, 0x8c, 0xad,
+	0xe6, 0xc4, 0x8f, 0x94, 0xa7, 0xa7, 0x12, 0x72, 0xe2, 0x84, 0xee, 0xf9, 0x7a, 0xf5, 0xd6, 0x63,
+	0x78, 0xf8, 0x09, 0xe5, 0xd1, 0x71, 0x9a, 0xee, 0x0b, 0x22, 0x7e, 0xb0, 0x90, 0x63, 0xc2, 0x03,
+	0xe6, 0x73, 0x82, 0xf6, 0xa0, 0xc5, 0x13, 0xa3, 0xa1, 0x0d, 0x9a, 0xc3, 0x16, 0xce, 0x0c, 0xd6,
+	0x0f, 0x1a, 0xec, 0x7c, 0x44, 0x72, 0x09, 0x30, 0xb9, 0x58, 0x10, 0x1e, 0xa1, 0x7b, 0xd0, 0xa0,
+	0x9e, 0xa1, 0x0d, 0xb4, 0x61, 0x0b, 0x37, 0xa8, 0x87, 0x8e, 0xe0, 0x36, 0x0b, 0x24, 0x2d, 0x46,
+	0x63, 0xa0, 0x0d, 0xdb, 0xe3, 0x81, 0xbd, 0x1c, 0xd9, 0x55, 0x4f, 0xed, 0x4f, 0xe3, 0x38, 0x9c,
+	0x3c, 0x30, 0xdf, 0x82, 0xdb, 0xca, 0x86, 0xf6, 0xe1, 0xee, 0x4b, 0x1a, 0x9d, 0x4f, 0xe6, 0x4e,
+	0xe4, 0x9e, 0x13, 0x2e, 0x01, 0xee, 0xe0, 0xb6, 0xb0, 0x9d, 0xc6, 0x26, 0xeb, 0x7b, 0x0d, 0x1e,
+	0x14, 0xf2, 0xaa, 0x56, 0xde, 0x07, 0xc8, 0x88, 0x93, 0x4f, 0xdb, 0xe3, 0x9e, 0xad, 0x98, 0xb3,
+	0xb1, 0x22, 0x37, 0xf7, 0x30, 0x17, 0x8e, 0xde, 0x83, 0x76, 0xc6, 0xad, 0x68, 0xa2, 0x39, 0x6c,
+	0x8f, 0xf5, 0xf4, 0xb5, 0xa0, 0xf1, 0x24, 0xf5, 0xe3, 0x7c, 0xac, 0xf5, 0x18, 0xba, 0x6b, 0x05,
+	0x1d, 0xb3, 0x85, 0x1f, 0x25, 0x44, 0x59, 0xb0, 0x79, 0xb1, 0x20, 0xe1, 0x4a, 0xd5, 0x73, 0x57,
+	0xd0, 0x82, 0x9d, 0x97, 0x9f, 0x0b, 0x1b, 0x8e, 0x5d, 0xd6, 0x18, 0xcc, 0xaa, 0x04, 0xaa, 0xad,
+	0x1d, 0xd8, 0x74, 0x85, 0x41, 0x66, 0xd8, 0xc4, 0xf1, 0x1f, 0xd6, 0x6f, 0x1a, 0xe8, 0xc7, 0x21,
+	0x71, 0x22, 0x52, 0x1e, 0x0e, 0x82, 0x0d, 0xdf, 0x99, 0x13, 0x35, 0x1e, 0xf9, 0x1b, 0x0d, 0x44,
+	0x7f, 0xdc, 0x0d, 0xa9, 0x64, 0x5a, 0x0e, 0xa9, 0x85, 0xf3, 0x26, 0xf4, 0x31, 0xa0, 0x74, 0x01,
+	0xb3, 0x95, 0x68, 0x4a, 0x22, 0xba, 0x25, 0x1a, 0x93, 0x4d, 0xc2, 0xdb, 0x61, 0xc1, 0xc2, 0xd1,
+	0x3b, 0xa0, 0x93, 0xf9, 0x19, 0xf1, 0x3c, 0xe2, 0xe5, 0xbf, 0x2c, 0xea, 0x71, 0x63, 0x43, 0x6e,
+	0xd8, 0x83, 0xc4, 0x9d, 0xd5, 0xfe, 0xd4, 0xe3, 0xd6, 0x97, 0x60, 0x94, 0x5b, 0xba, 0x81, 0xe1,
+	0x5a, 0x7f, 0x69, 0xa0, 0x3f, 0x0b, 0xbc, 0x4a, 0xb2, 0x8a, 0x9b, 0x9c, 0x90, 0xd7, 0xa8, 0x27,
+	0xaf, 0xf9, 0xaa, 0xe4, 0x6d, 0xdc, 0x2c, 0x79, 0x9b, 0x57, 0x90, 0x57, 0x6e, 0xf1, 0x26, 0xc8,
+	0xfb, 0xa9, 0x09, 0xfa, 0x49, 0xb8, 0xc2, 0x0b, 0xff, 0xd5, 0x36, 0x2d, 0x26, 0xb4, 0x91, 0x12,
+	0xfa, 0x3f, 0x20, 0x0f, 0x3d, 0xca, 0xe4, 0x6b, 0x4b, 0xb2, 0xf3, 0xa6, 0xf8, 0x4e, 0x6b, 0xba,
+	0x2e, 0x2b, 0x18, 0xcf, 0x14, 0xcc, 0x06, 0xc8, 0x2e, 0x81, 0xa2, 0xfa, 0x9e, 0x48, 0xf6, 0x59,
+	0x6a, 0xc5, 0xb9, 0x08, 0xf4, 0x2e, 0x18, 0xfc, 0x05, 0x0d, 0x26, 0x99, 0xa0, 0xc4, 0xe2, 0x47,
+	0xfd, 0xa9, 0xe4, 0xf0, 0x0e, 0xde, 0x15, 0xfe, 0x4c, 0x7b, 0x4e, 0x95, 0xd7, 0x7a, 0x06, 0x46,
+	0xb9, 0x40, 0x35, 0xf0, 0x82, 0x9a, 0x69, 0xd7, 0x50, 0xb3, 0x0f, 0x60, 0x77, 0xfd, 0x66, 0xf0,
+	0xeb, 0x48, 0xd9, 0x73, 0xd0, 0x4b, 0xaf, 0x55, 0x4d, 0x8f, 0xa0, 0x9d, 0x8d, 0x24, 0xa9, 0xe9,
+	0x3f, 0xb7, 0x30, 0x1f, 0x3f, 0xfe, 0x63, 0x0b, 0xb6, 0xf3, 0x87, 0x4c, 0xde, 0x39, 0x34, 0x2b,
+	0xe2, 0x65, 0xbb, 0xd0, 0x12, 0xf5, 0x7d, 0x28, 0xee, 0xac, 0x29, 0xa7, 0x79, 0xc5, 0x25, 0xb4,
+	0xf6, 0xbf, 0xfb, 0xfd, 0x9f, 0x1f, 0x1b, 0x3d, 0xd4, 0x8d, 0x8f, 0x76, 0x8a, 0x7c, 0x98, 0xae,
+	0x24, 0x3a, 0x83, 0xd7, 0xd6, 0x84, 0x1a, 0x19, 0x75, 0x57, 0xce, 0xec, 0x56, 0x78, 0x14, 0xd0,
+	0x9e, 0x04, 0xda, 0x45, 0x3b, 0x45, 0xa0, 0x6f, 0xa8, 0xf7, 0x2d, 0xba, 0x00, 0x54, 0x3e, 0x06,
+	0xe8, 0x8d, 0x52, 0xba, 0xfc, 0x95, 0x31, 0xfb, 0x75, 0xee, 0x2b, 0x20, 0xe5, 0x2d, 0x41, 0x14,
+	0x3a, 0x45, 0xdd, 0x45, 0x3d, 0x91, 0xb1, 0xe6, 0xc0, 0x98, 0x7b, 0xd5, 0x4e, 0x05, 0x66, 0x4a,
+	0xb0, 0x1d, 0xeb, 0x7e, 0x01, 0xec, 0x48, 0x3b, 0x40, 0x3e, 0x74, 0x8a, 0x2a, 0x15, 0x43, 0xd5,
+	0xc8, 0x73, 0x0c, 0x55, 0x27, 0x6c, 0xd6, 0x43, 0x09, 0xd5, 0x1d, 0x57, 0x52, 0x29, 0xf0, 0x5c,
+	0xb8, 0x5f, 0xd8, 0x47, 0x64, 0x96, 0x97, 0x21, 0x59, 0x71, 0xb3, 0x57, 0xe9, 0x53, 0x60, 0xba,
+	0x04, 0xdb, 0x46, 0xc5, 0xbe, 0xd0, 0x29, 0x74, 0x4e, 0xc8, 0x8c, 0xac, 0x35, 0xd5, 0x91, 0x5f,
+	0x87, 0xda, 0xe9, 0x27, 0xab, 0xa7, 0x27, 0x66, 0xb6, 0x8f, 0xc9, 0x38, 0x0e, 0xaa, 0x37, 0x20,
+	0x80, 0x4e, 0xf1, 0xc3, 0x8e, 0x39, 0xaa, 0xd1, 0xa3, 0x98, 0xa3, 0x3a, 0x2d, 0x48, 0xf6, 0xda,
+	0xda, 0x2d, 0x82, 0x79, 0xe1, 0x2a, 0x5c, 0xf8, 0x47, 0xda, 0xc1, 0x13, 0xfb, 0x97, 0xcb, 0xbe,
+	0xf6, 0xeb, 0x65, 0x5f, 0xfb, 0xf3, 0xb2, 0xaf, 0xfd, 0xfc, 0x77, 0xff, 0x16, 0x18, 0x94, 0xd9,
+	0x3c, 0x72, 0xdc, 0x17, 0x21, 0xfb, 0x3a, 0xfe, 0x67, 0xd2, 0x76, 0x02, 0x6a, 0x2f, 0x47, 0x5f,
+	0x35, 0x96, 0xa3, 0xe7, 0xb7, 0xce, 0xb6, 0xa4, 0xed, 0xed, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff,
+	0x76, 0x65, 0x09, 0xd5, 0x4a, 0x0b, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -583,10 +1203,14 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type CollectionServiceClient interface {
+	ListCollectionSelectors(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListCollectionSelectorsResponse, error)
 	GetCollection(ctx context.Context, in *GetCollectionRequest, opts ...grpc.CallOption) (*GetCollectionResponse, error)
+	GetCollectionCount(ctx context.Context, in *GetCollectionCountRequest, opts ...grpc.CallOption) (*GetCollectionCountResponse, error)
 	CreateCollection(ctx context.Context, in *CreateCollectionRequest, opts ...grpc.CallOption) (*CreateCollectionResponse, error)
+	UpdateCollection(ctx context.Context, in *UpdateCollectionRequest, opts ...grpc.CallOption) (*UpdateCollectionResponse, error)
 	ListCollections(ctx context.Context, in *ListCollectionsRequest, opts ...grpc.CallOption) (*ListCollectionsResponse, error)
 	DeleteCollection(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
+	DryRunCollection(ctx context.Context, in *DryRunCollectionRequest, opts ...grpc.CallOption) (*DryRunCollectionResponse, error)
 }
 
 type collectionServiceClient struct {
@@ -595,6 +1219,15 @@ type collectionServiceClient struct {
 
 func NewCollectionServiceClient(cc grpc.ClientConnInterface) CollectionServiceClient {
 	return &collectionServiceClient{cc}
+}
+
+func (c *collectionServiceClient) ListCollectionSelectors(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListCollectionSelectorsResponse, error) {
+	out := new(ListCollectionSelectorsResponse)
+	err := c.cc.Invoke(ctx, "/v1.CollectionService/ListCollectionSelectors", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *collectionServiceClient) GetCollection(ctx context.Context, in *GetCollectionRequest, opts ...grpc.CallOption) (*GetCollectionResponse, error) {
@@ -606,9 +1239,27 @@ func (c *collectionServiceClient) GetCollection(ctx context.Context, in *GetColl
 	return out, nil
 }
 
+func (c *collectionServiceClient) GetCollectionCount(ctx context.Context, in *GetCollectionCountRequest, opts ...grpc.CallOption) (*GetCollectionCountResponse, error) {
+	out := new(GetCollectionCountResponse)
+	err := c.cc.Invoke(ctx, "/v1.CollectionService/GetCollectionCount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *collectionServiceClient) CreateCollection(ctx context.Context, in *CreateCollectionRequest, opts ...grpc.CallOption) (*CreateCollectionResponse, error) {
 	out := new(CreateCollectionResponse)
 	err := c.cc.Invoke(ctx, "/v1.CollectionService/CreateCollection", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *collectionServiceClient) UpdateCollection(ctx context.Context, in *UpdateCollectionRequest, opts ...grpc.CallOption) (*UpdateCollectionResponse, error) {
+	out := new(UpdateCollectionResponse)
+	err := c.cc.Invoke(ctx, "/v1.CollectionService/UpdateCollection", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -633,23 +1284,45 @@ func (c *collectionServiceClient) DeleteCollection(ctx context.Context, in *Reso
 	return out, nil
 }
 
+func (c *collectionServiceClient) DryRunCollection(ctx context.Context, in *DryRunCollectionRequest, opts ...grpc.CallOption) (*DryRunCollectionResponse, error) {
+	out := new(DryRunCollectionResponse)
+	err := c.cc.Invoke(ctx, "/v1.CollectionService/DryRunCollection", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CollectionServiceServer is the server API for CollectionService service.
 type CollectionServiceServer interface {
+	ListCollectionSelectors(context.Context, *Empty) (*ListCollectionSelectorsResponse, error)
 	GetCollection(context.Context, *GetCollectionRequest) (*GetCollectionResponse, error)
+	GetCollectionCount(context.Context, *GetCollectionCountRequest) (*GetCollectionCountResponse, error)
 	CreateCollection(context.Context, *CreateCollectionRequest) (*CreateCollectionResponse, error)
+	UpdateCollection(context.Context, *UpdateCollectionRequest) (*UpdateCollectionResponse, error)
 	ListCollections(context.Context, *ListCollectionsRequest) (*ListCollectionsResponse, error)
 	DeleteCollection(context.Context, *ResourceByID) (*Empty, error)
+	DryRunCollection(context.Context, *DryRunCollectionRequest) (*DryRunCollectionResponse, error)
 }
 
 // UnimplementedCollectionServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedCollectionServiceServer struct {
 }
 
+func (*UnimplementedCollectionServiceServer) ListCollectionSelectors(ctx context.Context, req *Empty) (*ListCollectionSelectorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListCollectionSelectors not implemented")
+}
 func (*UnimplementedCollectionServiceServer) GetCollection(ctx context.Context, req *GetCollectionRequest) (*GetCollectionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCollection not implemented")
 }
+func (*UnimplementedCollectionServiceServer) GetCollectionCount(ctx context.Context, req *GetCollectionCountRequest) (*GetCollectionCountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCollectionCount not implemented")
+}
 func (*UnimplementedCollectionServiceServer) CreateCollection(ctx context.Context, req *CreateCollectionRequest) (*CreateCollectionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCollection not implemented")
+}
+func (*UnimplementedCollectionServiceServer) UpdateCollection(ctx context.Context, req *UpdateCollectionRequest) (*UpdateCollectionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateCollection not implemented")
 }
 func (*UnimplementedCollectionServiceServer) ListCollections(ctx context.Context, req *ListCollectionsRequest) (*ListCollectionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCollections not implemented")
@@ -657,9 +1330,30 @@ func (*UnimplementedCollectionServiceServer) ListCollections(ctx context.Context
 func (*UnimplementedCollectionServiceServer) DeleteCollection(ctx context.Context, req *ResourceByID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCollection not implemented")
 }
+func (*UnimplementedCollectionServiceServer) DryRunCollection(ctx context.Context, req *DryRunCollectionRequest) (*DryRunCollectionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DryRunCollection not implemented")
+}
 
 func RegisterCollectionServiceServer(s *grpc.Server, srv CollectionServiceServer) {
 	s.RegisterService(&_CollectionService_serviceDesc, srv)
+}
+
+func _CollectionService_ListCollectionSelectors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CollectionServiceServer).ListCollectionSelectors(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.CollectionService/ListCollectionSelectors",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CollectionServiceServer).ListCollectionSelectors(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _CollectionService_GetCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -680,6 +1374,24 @@ func _CollectionService_GetCollection_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CollectionService_GetCollectionCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCollectionCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CollectionServiceServer).GetCollectionCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.CollectionService/GetCollectionCount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CollectionServiceServer).GetCollectionCount(ctx, req.(*GetCollectionCountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CollectionService_CreateCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateCollectionRequest)
 	if err := dec(in); err != nil {
@@ -694,6 +1406,24 @@ func _CollectionService_CreateCollection_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CollectionServiceServer).CreateCollection(ctx, req.(*CreateCollectionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CollectionService_UpdateCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateCollectionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CollectionServiceServer).UpdateCollection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.CollectionService/UpdateCollection",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CollectionServiceServer).UpdateCollection(ctx, req.(*UpdateCollectionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -734,17 +1464,47 @@ func _CollectionService_DeleteCollection_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CollectionService_DryRunCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DryRunCollectionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CollectionServiceServer).DryRunCollection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.CollectionService/DryRunCollection",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CollectionServiceServer).DryRunCollection(ctx, req.(*DryRunCollectionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _CollectionService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "v1.CollectionService",
 	HandlerType: (*CollectionServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "ListCollectionSelectors",
+			Handler:    _CollectionService_ListCollectionSelectors_Handler,
+		},
+		{
 			MethodName: "GetCollection",
 			Handler:    _CollectionService_GetCollection_Handler,
 		},
 		{
+			MethodName: "GetCollectionCount",
+			Handler:    _CollectionService_GetCollectionCount_Handler,
+		},
+		{
 			MethodName: "CreateCollection",
 			Handler:    _CollectionService_CreateCollection_Handler,
+		},
+		{
+			MethodName: "UpdateCollection",
+			Handler:    _CollectionService_UpdateCollection_Handler,
 		},
 		{
 			MethodName: "ListCollections",
@@ -754,9 +1514,49 @@ var _CollectionService_serviceDesc = grpc.ServiceDesc{
 			MethodName: "DeleteCollection",
 			Handler:    _CollectionService_DeleteCollection_Handler,
 		},
+		{
+			MethodName: "DryRunCollection",
+			Handler:    _CollectionService_DryRunCollection_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v1/resource_collection_service.proto",
+}
+
+func (m *ListCollectionSelectorsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListCollectionSelectorsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListCollectionSelectorsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Selectors) > 0 {
+		for iNdEx := len(m.Selectors) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Selectors[iNdEx])
+			copy(dAtA[i:], m.Selectors[iNdEx])
+			i = encodeVarintResourceCollectionService(dAtA, i, uint64(len(m.Selectors[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *GetCollectionRequest) Marshal() (dAtA []byte, err error) {
@@ -895,6 +1695,77 @@ func (m *GetCollectionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *GetCollectionCountRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetCollectionCountRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetCollectionCountRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Query != nil {
+		{
+			size, err := m.Query.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintResourceCollectionService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetCollectionCountResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetCollectionCountResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetCollectionCountResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Count != 0 {
+		i = encodeVarintResourceCollectionService(dAtA, i, uint64(m.Count))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *CreateCollectionRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -998,6 +1869,289 @@ func (m *CreateCollectionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
+func (m *UpdateCollectionRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateCollectionRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateCollectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.EmbeddedCollectionIds) > 0 {
+		for iNdEx := len(m.EmbeddedCollectionIds) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.EmbeddedCollectionIds[iNdEx])
+			copy(dAtA[i:], m.EmbeddedCollectionIds[iNdEx])
+			i = encodeVarintResourceCollectionService(dAtA, i, uint64(len(m.EmbeddedCollectionIds[iNdEx])))
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
+	if len(m.ResourceSelectors) > 0 {
+		for iNdEx := len(m.ResourceSelectors) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ResourceSelectors[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintResourceCollectionService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Description) > 0 {
+		i -= len(m.Description)
+		copy(dAtA[i:], m.Description)
+		i = encodeVarintResourceCollectionService(dAtA, i, uint64(len(m.Description)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintResourceCollectionService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintResourceCollectionService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateCollectionResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateCollectionResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateCollectionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Collection != nil {
+		{
+			size, err := m.Collection.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintResourceCollectionService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DryRunCollectionRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DryRunCollectionRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DryRunCollectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Options != nil {
+		{
+			size, err := m.Options.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintResourceCollectionService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.EmbeddedCollectionIds) > 0 {
+		for iNdEx := len(m.EmbeddedCollectionIds) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.EmbeddedCollectionIds[iNdEx])
+			copy(dAtA[i:], m.EmbeddedCollectionIds[iNdEx])
+			i = encodeVarintResourceCollectionService(dAtA, i, uint64(len(m.EmbeddedCollectionIds[iNdEx])))
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
+	if len(m.ResourceSelectors) > 0 {
+		for iNdEx := len(m.ResourceSelectors) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ResourceSelectors[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintResourceCollectionService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Description) > 0 {
+		i -= len(m.Description)
+		copy(dAtA[i:], m.Description)
+		i = encodeVarintResourceCollectionService(dAtA, i, uint64(len(m.Description)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintResourceCollectionService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintResourceCollectionService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DryRunCollectionRequest_Options) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DryRunCollectionRequest_Options) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DryRunCollectionRequest_Options) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.SkipDeploymentMatching {
+		i--
+		if m.SkipDeploymentMatching {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintResourceCollectionService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DryRunCollectionResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DryRunCollectionResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DryRunCollectionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Deployments) > 0 {
+		for iNdEx := len(m.Deployments) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Deployments[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintResourceCollectionService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *ListCollectionsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1089,6 +2243,24 @@ func encodeVarintResourceCollectionService(dAtA []byte, offset int, v uint64) in
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *ListCollectionSelectorsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Selectors) > 0 {
+		for _, s := range m.Selectors {
+			l = len(s)
+			n += 1 + l + sovResourceCollectionService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *GetCollectionRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1146,6 +2318,37 @@ func (m *GetCollectionResponse) Size() (n int) {
 	return n
 }
 
+func (m *GetCollectionCountRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Query != nil {
+		l = m.Query.Size()
+		n += 1 + l + sovResourceCollectionService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetCollectionCountResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Count != 0 {
+		n += 1 + sovResourceCollectionService(uint64(m.Count))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *CreateCollectionRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1194,6 +2397,135 @@ func (m *CreateCollectionResponse) Size() (n int) {
 	return n
 }
 
+func (m *UpdateCollectionRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovResourceCollectionService(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovResourceCollectionService(uint64(l))
+	}
+	l = len(m.Description)
+	if l > 0 {
+		n += 1 + l + sovResourceCollectionService(uint64(l))
+	}
+	if len(m.ResourceSelectors) > 0 {
+		for _, e := range m.ResourceSelectors {
+			l = e.Size()
+			n += 1 + l + sovResourceCollectionService(uint64(l))
+		}
+	}
+	if len(m.EmbeddedCollectionIds) > 0 {
+		for _, s := range m.EmbeddedCollectionIds {
+			l = len(s)
+			n += 1 + l + sovResourceCollectionService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateCollectionResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Collection != nil {
+		l = m.Collection.Size()
+		n += 1 + l + sovResourceCollectionService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DryRunCollectionRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovResourceCollectionService(uint64(l))
+	}
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovResourceCollectionService(uint64(l))
+	}
+	l = len(m.Description)
+	if l > 0 {
+		n += 1 + l + sovResourceCollectionService(uint64(l))
+	}
+	if len(m.ResourceSelectors) > 0 {
+		for _, e := range m.ResourceSelectors {
+			l = e.Size()
+			n += 1 + l + sovResourceCollectionService(uint64(l))
+		}
+	}
+	if len(m.EmbeddedCollectionIds) > 0 {
+		for _, s := range m.EmbeddedCollectionIds {
+			l = len(s)
+			n += 1 + l + sovResourceCollectionService(uint64(l))
+		}
+	}
+	if m.Options != nil {
+		l = m.Options.Size()
+		n += 1 + l + sovResourceCollectionService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DryRunCollectionRequest_Options) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovResourceCollectionService(uint64(l))
+	}
+	if m.SkipDeploymentMatching {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DryRunCollectionResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Deployments) > 0 {
+		for _, e := range m.Deployments {
+			l = e.Size()
+			n += 1 + l + sovResourceCollectionService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *ListCollectionsRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1233,6 +2565,89 @@ func sovResourceCollectionService(x uint64) (n int) {
 }
 func sozResourceCollectionService(x uint64) (n int) {
 	return sovResourceCollectionService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *ListCollectionSelectorsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowResourceCollectionService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListCollectionSelectorsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListCollectionSelectorsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Selectors", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Selectors = append(m.Selectors, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipResourceCollectionService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *GetCollectionRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -1545,6 +2960,163 @@ func (m *GetCollectionResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *GetCollectionCountRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowResourceCollectionService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetCollectionCountRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetCollectionCountRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Query == nil {
+				m.Query = &RawQuery{}
+			}
+			if err := m.Query.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipResourceCollectionService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetCollectionCountResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowResourceCollectionService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetCollectionCountResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetCollectionCountResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Count", wireType)
+			}
+			m.Count = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Count |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipResourceCollectionService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *CreateCollectionRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1788,6 +3360,747 @@ func (m *CreateCollectionResponse) Unmarshal(dAtA []byte) error {
 				m.Collection = &storage.ResourceCollection{}
 			}
 			if err := m.Collection.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipResourceCollectionService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateCollectionRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowResourceCollectionService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateCollectionRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateCollectionRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Description = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResourceSelectors", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ResourceSelectors = append(m.ResourceSelectors, &storage.ResourceSelector{})
+			if err := m.ResourceSelectors[len(m.ResourceSelectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EmbeddedCollectionIds", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EmbeddedCollectionIds = append(m.EmbeddedCollectionIds, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipResourceCollectionService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateCollectionResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowResourceCollectionService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateCollectionResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateCollectionResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Collection", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Collection == nil {
+				m.Collection = &storage.ResourceCollection{}
+			}
+			if err := m.Collection.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipResourceCollectionService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DryRunCollectionRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowResourceCollectionService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DryRunCollectionRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DryRunCollectionRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Description = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResourceSelectors", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ResourceSelectors = append(m.ResourceSelectors, &storage.ResourceSelector{})
+			if err := m.ResourceSelectors[len(m.ResourceSelectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EmbeddedCollectionIds", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EmbeddedCollectionIds = append(m.EmbeddedCollectionIds, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Options", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Options == nil {
+				m.Options = &DryRunCollectionRequest_Options{}
+			}
+			if err := m.Options.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipResourceCollectionService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DryRunCollectionRequest_Options) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowResourceCollectionService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Options: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Options: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &Pagination{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SkipDeploymentMatching", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.SkipDeploymentMatching = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipResourceCollectionService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DryRunCollectionResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowResourceCollectionService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DryRunCollectionResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DryRunCollectionResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Deployments", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResourceCollectionService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthResourceCollectionService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Deployments = append(m.Deployments, &storage.ListDeployment{})
+			if err := m.Deployments[len(m.Deployments)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

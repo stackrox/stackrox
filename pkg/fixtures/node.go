@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 )
 
 // GetNode returns a mock *storage.Node
@@ -37,7 +38,7 @@ func GetNodeWithUniqueComponents() *storage.Node {
 
 func getNodeWithComponents(components []*storage.EmbeddedNodeScanComponent) *storage.Node {
 	return &storage.Node{
-		Id:   "id",
+		Id:   fixtureconsts.Node1,
 		Name: "name",
 		Scan: &storage.NodeScan{
 			ScanTime:   types.TimestampNow(),

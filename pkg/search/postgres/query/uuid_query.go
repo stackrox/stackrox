@@ -77,12 +77,8 @@ func newUUIDQueryWhereClause(columnName string, value string, queryModifiers ...
 		if err != nil {
 			return WhereClause{}, fmt.Errorf("invalid regexp %s: %w", value, err)
 		}
-
-		if value != "*" {
-			return WhereClause{}, fmt.Errorf("invalid regexp %s for UUID field", value)
-		}
 		return WhereClause{
-			Query:  fmt.Sprintf("%s is not null", columnName),
+			Query:  fmt.Sprintf("%s::text %s~* $$", columnName, negationString),
 			Values: []interface{}{value},
 			equivalentGoFunc: func(foundValue interface{}) bool {
 				foundVal := strings.ToLower(foundValue.(string))

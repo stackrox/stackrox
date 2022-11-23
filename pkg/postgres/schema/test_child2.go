@@ -47,7 +47,7 @@ const (
 
 // TestChild2 holds the Gorm model for Postgres table `test_child2`.
 type TestChild2 struct {
-	Id             string      `gorm:"column:id;type:varchar;primaryKey"`
+	Id             string      `gorm:"column:id;type:uuid;primaryKey"`
 	ParentId       string      `gorm:"column:parentid;type:varchar"`
 	GrandparentId  string      `gorm:"column:grandparentid;type:varchar"`
 	Val            string      `gorm:"column:val;type:varchar"`

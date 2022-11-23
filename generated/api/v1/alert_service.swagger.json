@@ -1350,7 +1350,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "A unique uuid for the Indicator message"
+          "title": "A unique UUID for the Indicator message"
         },
         "deploymentId": {
           "type": "string"

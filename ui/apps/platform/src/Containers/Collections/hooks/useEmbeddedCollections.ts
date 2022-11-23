@@ -26,7 +26,6 @@ const minimumUpdateSize = pageSize / 2;
  *
  * If the response from the server contains less collections then the page size, display all
  * aggregated results and set `hasMore` to `false`.
- *
  * @param clientMap
  *      A mapping of {id -> collection} for all attached and detached collections that
  *      are currently displayed in the UI.
@@ -41,6 +40,7 @@ const minimumUpdateSize = pageSize / 2;
  *      number, and the number of items returned in the last call to the server.
  */
 function fetchDetachedCollections(
+    excludedCollectionId: string | null,
     clientMap: CollectionMap,
     searchValue: string,
     pageNumber: number,
@@ -53,20 +53,28 @@ function fetchDetachedCollections(
     const searchOption = { 'Collection Name': searchValue };
     const { request } = listCollections(
         searchOption,
-        { field: 'name', reversed: false },
+        { field: 'Collection Name', reversed: false },
         pageNumber - 1,
         pageSize
     );
 
     return request.then((collections) => {
-        const newDetached = collections.filter(({ id }) => !clientMap[id]);
+        const newDetached = collections.filter(
+            ({ id }) => !clientMap[id] && id !== excludedCollectionId
+        );
         const detached = aggregateResult.concat(newDetached);
         const lastResponseSize = collections.length;
         const shouldFetchMore = lastResponseSize > 0 && detached.length < minimumUpdateSize;
         const nextPage = pageNumber + 1;
 
         if (shouldFetchMore) {
-            return fetchDetachedCollections(clientMap, searchValue, nextPage, detached);
+            return fetchDetachedCollections(
+                excludedCollectionId,
+                clientMap,
+                searchValue,
+                nextPage,
+                detached
+            );
         }
         return Promise.resolve({ detached, nextPage, lastResponseSize });
     });
@@ -77,6 +85,7 @@ function fetchDetachedCollections(
  * more detached collections from the server.
  */
 function fetchMore(
+    excludedCollectionId: string | null,
     attached: CollectionMap,
     detached: CollectionMap,
     searchValue: string,
@@ -85,7 +94,13 @@ function fetchMore(
 ) {
     dispatch({ type: 'fetchMoreRequest' });
 
-    fetchDetachedCollections({ ...attached, ...detached }, searchValue, currentPage, [])
+    fetchDetachedCollections(
+        excludedCollectionId,
+        { ...attached, ...detached },
+        searchValue,
+        currentPage,
+        []
+    )
         .then(({ detached: newDetached, nextPage, lastResponseSize }) => {
             const nextDetached = { ...detached };
             newDetached.forEach((collection) => {
@@ -239,10 +254,14 @@ export type UseEmbeddedCollectionsReturn = {
  *  - [Bonus] In the future, we should track when the user has loaded all collections _without_ search filtering
  *    as we can then disable the cache clearing/fetching behavior and filter the client side cache directly.
  *
+ * @param excludedCollectionId
+ *      The ids of the main collection that the other collections are being attached to, or `null` if
+ *      a new collection is being created.
  * @param initialAttachedCollectionIds
  *      A list of attached collection ids used to populate the initial attached collection list.
  */
 export default function useEmbeddedCollections(
+    excludedCollectionId: string | null,
     initialAttachedCollections: CollectionResponse[]
 ): UseEmbeddedCollectionsReturn {
     const [state, dispatch] = useReducer(embeddedCollectionsReducer, initialState, (init) => ({
@@ -253,12 +272,19 @@ export default function useEmbeddedCollections(
     const { attached, detached, page, hasMore, isFetchingMore, fetchMoreError } = state;
 
     useEffect(() => {
-        return fetchMore(arrayToMap(initialAttachedCollections), {}, '', 1, dispatch);
-    }, [initialAttachedCollections]);
+        return fetchMore(
+            excludedCollectionId,
+            arrayToMap(initialAttachedCollections),
+            {},
+            '',
+            1,
+            dispatch
+        );
+    }, [excludedCollectionId, initialAttachedCollections]);
 
     const onSearch = (search: string) => {
         dispatch({ type: 'resetDetachedList' });
-        fetchMore(attached, {}, search, 1, dispatch);
+        fetchMore(excludedCollectionId, attached, {}, search, 1, dispatch);
     };
 
     return {
@@ -267,7 +293,8 @@ export default function useEmbeddedCollections(
         attach: (id: string) => dispatch({ type: 'attachCollection', id }),
         detach: (id: string) => dispatch({ type: 'detachCollection', id }),
         hasMore,
-        fetchMore: (search: string) => fetchMore(attached, detached, search, page, dispatch),
+        fetchMore: (search: string) =>
+            fetchMore(excludedCollectionId, attached, detached, search, page, dispatch),
         onSearch,
         isFetchingMore,
         fetchMoreError,

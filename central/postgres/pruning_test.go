@@ -10,6 +10,7 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -48,7 +49,7 @@ func (s *PostgresPruningSuite) TestPruneActiveComponents() {
 
 	// Create and save a deployment
 	deployment := &storage.Deployment{
-		Id:   "TEST123",
+		Id:   fixtureconsts.Deployment1,
 		Name: "TestDeployment",
 	}
 	err = depStore.UpsertDeployment(s.ctx, deployment)
@@ -57,15 +58,15 @@ func (s *PostgresPruningSuite) TestPruneActiveComponents() {
 	activeComponents := []*storage.ActiveComponent{
 		{
 			Id:           "test1",
-			DeploymentId: "TEST123",
+			DeploymentId: fixtureconsts.Deployment1,
 		},
 		{
 			Id:           "test2",
-			DeploymentId: "NO DEPLOYMENT",
+			DeploymentId: fixtureconsts.Deployment2,
 		},
 		{
 			Id:           "test3",
-			DeploymentId: "NO DEPLOYMENT",
+			DeploymentId: fixtureconsts.Deployment2,
 		},
 	}
 	err = acDS.UpsertBatch(s.ctx, activeComponents)
@@ -102,12 +103,12 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
-			Id:                    "fakeCluster",
+			Id:                    fixtureconsts.Cluster1,
 			SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 			CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
-			Id:                 "randomCluster",
+			Id:                 fixtureconsts.Cluster2,
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 	}
@@ -118,7 +119,7 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 	count, err := clusterHealthStore.Count(s.ctx)
 	s.Nil(err)
 	s.Equal(count, 3)
-	exists, err := clusterHealthStore.Exists(s.ctx, "randomCluster")
+	exists, err := clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
 	s.Nil(err)
 	s.True(exists)
 
@@ -127,7 +128,7 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 	count, err = clusterHealthStore.Count(s.ctx)
 	s.Nil(err)
 	s.Equal(count, 1)
-	exists, err = clusterHealthStore.Exists(s.ctx, "randomCluster")
+	exists, err = clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
 	s.Nil(err)
 	s.False(exists)
 }

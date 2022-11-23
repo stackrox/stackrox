@@ -2,7 +2,7 @@ import { Model, NodeModel, EdgeModel } from '@patternfly/react-topology';
 
 import { NetworkEntityInfo, Node } from 'types/networkFlow.proto';
 
-function getLabel(entity: NetworkEntityInfo): string {
+function getNameByEntity(entity: NetworkEntityInfo): string {
     const { type } = entity;
     switch (type) {
         case 'DEPLOYMENT':
@@ -29,15 +29,19 @@ export function transformData(nodes: Node[]): Model {
         edges: [] as EdgeModel[],
     };
     const groupNodes = {} as NodeModel;
-    nodes.forEach(({ entity, outEdges }) => {
+    nodes.forEach(({ entity, policyIds, outEdges }) => {
         // creating each node and adding to data model
         const node = {
             id: entity.id,
             type: 'node',
             width: 75,
             height: 75,
-            label: getLabel(entity),
-            data: entity,
+            label: getNameByEntity(entity),
+            // @TODO: create a consistent data structure for "data" between all nodes
+            data: {
+                ...entity,
+                policyIds,
+            },
         };
         dataModel.nodes.push(node);
 
@@ -54,6 +58,7 @@ export function transformData(nodes: Node[]): Model {
                     group: true,
                     label: namespace,
                     style: { padding: 15 },
+                    // @TODO: create a consistent data structure for "data" between all nodes
                     data: {
                         collapsible: true,
                         showContextMenu: false,

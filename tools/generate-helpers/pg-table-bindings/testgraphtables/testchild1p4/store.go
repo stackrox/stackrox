@@ -87,7 +87,7 @@ func insertIntoTestChild1P4(ctx context.Context, batch *pgx.Batch, obj *storage.
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetParentId(),
+		pgutils.NilOrUUID(obj.GetParentId()),
 		obj.GetVal(),
 		serialized,
 	}
@@ -132,7 +132,7 @@ func (s *storeImpl) copyFromTestChild1P4(ctx context.Context, tx pgx.Tx, objs ..
 
 			obj.GetId(),
 
-			obj.GetParentId(),
+			pgutils.NilOrUUID(obj.GetParentId()),
 
 			obj.GetVal(),
 

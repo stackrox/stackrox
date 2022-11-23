@@ -68,8 +68,8 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         } else {
             assert req.getExpired()
         }
-        assert req.getCves().getIdsCount() == 1
-        assert req.getCves().getIds(0) == (requestType == "defer" ? CVE_TO_DEFER: CVE_TO_MARK_FP)
+        assert req.getCves().getCvesCount() == 1
+        assert req.getCves().getCves(0) == (requestType == "defer" ? CVE_TO_DEFER: CVE_TO_MARK_FP)
         assert req.getCommentsCount() == 2
         assert req.getComments(0).getMessage() == "${requestType} me" &&
                 req.getComments(1).getMessage() == "actioned"
