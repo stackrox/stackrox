@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 
-# Run a full suite of e2e tests using the code and against the cluster defined
-# in the calling environment via the rox-ci-image / stackrox-test container.
+# Run a full suite of e2e tests using the code via the rox-ci-image / stackrox-test container,
+# against the cluster defined in the calling environment.
 
 set -euo pipefail
 
