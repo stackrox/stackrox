@@ -23,6 +23,7 @@ class Env {
     static final IN_CI = (System.getenv("CI") != null)
     static final CI_JOBNAME = System.getenv("CI_JOB_NAME") ?: System.getenv("CIRCLE_JOB") ?: ""
     static final CI_TAG = System.getenv("CIRCLE_TAG")
+    static final GATHER_DEBUG_LOGS = (System.getenv("GATHER_DEBUG_LOGS") == "true")
 
     private static final Env INSTANCE = new Env()
 

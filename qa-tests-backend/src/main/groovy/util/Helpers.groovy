@@ -88,8 +88,8 @@ class Helpers {
     }
 
     static void collectDebugForFailure(Throwable exception) {
-        if (!Env.IN_CI) {
-            log.info "Won't collect logs when not in CI"
+        if (!Env.IN_CI && !Env.GATHER_DEBUG_LOGS) {
+            log.info "Won't collect logs without CI=true or GATHER_DEBUG_LOGS=true"
             return
         }
 

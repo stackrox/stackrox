@@ -340,7 +340,7 @@ remove_existing_stackrox_resources() {
 # identify the source of pull/scheduling latency, request throttling, etc.
 # I tried increasing the timeout from 5m to 20m for OSD but it did not help.
 wait_for_api() {
-    info "Waiting for Central to start"
+    info "Waiting for Central to be ready"
 
     start_time="$(date '+%s')"
     max_seconds=300

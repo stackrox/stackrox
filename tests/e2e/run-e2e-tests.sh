@@ -10,24 +10,35 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$ROOT/scripts/lib.sh"
 source "$ROOT/scripts/ci/lib.sh"
 source "$ROOT/scripts/ci/gcp.sh"
+source "$ROOT/tests/e2e/lib.sh"
+
+qa_logs="/tmp/qa-tests-backend-logs"
 
 usage() { 
     cat <<_EOH_
-Usage: $0 [-m <tag>] [-o k8s|openshift] [-y] [<e2e flavor: one of qa|e2e|ui|upgrade, defaults to qa>]
+Usage: $0 [Options...] [E2e flavor] [Suite] [Case]
+Options:
+  -c - configure the cluster for test but do not run any tests.
+  -d - enable debug log gathering to '${qa_logs}'.
   -m - override 'make tag' for the version to install.
   -o - choose the cluster variety. defaults to k8s.
   -y - run without prompts.
+E2e flavor:
+  one of qa|e2e|ui|upgrade, defaults to qa
 _EOH_
     exit 1
 }
 
 if [[ ! -f "/i-am-rox-ci-image" ]]; then
     kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
+    mkdir -p "$qa_logs"
     docker run \
       -v "$ROOT:$ROOT:z" \
       -w "$ROOT" \
       -e "KUBECONFIG=${kubeconfig}" \
       -v "${kubeconfig}:${kubeconfig}:z" \
+      -v "${HOME}/.gradle/caches:/root/.gradle/caches:z" \
+      -v "${qa_logs}:${qa_logs}:z" \
       -e VAULT_TOKEN \
       --platform linux/amd64 \
       --rm -it \
@@ -36,11 +47,18 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
     exit 0
 fi
 
+config_only="false"
 orchestrator="k8s"
 prompt="true"
 
-while getopts ":yo:m:" option; do
+while getopts ":cdyo:m:" option; do
     case "$option" in
+        c)
+            config_only="true"
+            ;;
+        d)
+            export GATHER_DEBUG_LOGS="true"
+            ;;
         o)
             orchestrator="${OPTARG}"
             ;;
@@ -73,6 +91,9 @@ case "$orchestrator" in
         usage
         ;;
 esac
+
+suite="${2:-}"
+case="${3:-}"
 
 cd "$ROOT"
 
@@ -156,4 +177,26 @@ export ORCHESTRATOR_FLAVOR="$orchestrator"
 # required to get a running central
 export ROX_POSTGRES_DATASTORE="${ROX_POSTGRES_DATASTORE:-false}"
 
-"$ROOT/qa-tests-backend/scripts/run-part-1.sh" 2>&1 | sed -e 's/^/test output: /'
+if [[ -z "$suite" && -z "$case" ]]; then
+    if [[ "${config_only}" == "false" ]]; then
+        "$ROOT/qa-tests-backend/scripts/run-part-1.sh" 2>&1 | sed -e 's/^/test output: /'
+    else
+        source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+        config_part_1 2>&1 | sed -e 's/^/config output: /'
+    fi
+else
+    export_test_environment
+    setup_deployment_env false false
+    export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
+    wait_for_api
+    export DEPLOY_DIR="$ROOT/deploy/${ORCHESTRATOR_FLAVOR}"
+    get_central_basic_auth_creds
+
+    pushd qa-tests-backend
+    if [[ -z "$case" ]]; then
+        ./gradlew test --console=plain --tests="$suite"
+    else
+        ./gradlew test --console=plain --tests="$suite.$case"
+    fi
+    popd
+fi
