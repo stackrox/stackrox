@@ -109,7 +109,9 @@ func (s *NodeScanHandlerTestSuite) TestHandlerStoppedError() {
 	errTest := errors.New("example-stop-error")
 	h.Stop(errTest)
 	err := h.Stopped().Wait()
-	s.ErrorIs(err, errTest)
+	// if generateTestInput finishes before call to Stop(), err is errInputChanClosed
+	// otherwise it is errTest. Both are fine as a reason for stopping the handler
+	s.True(errors.Is(err, errTest) || errors.Is(err, errInputChanClosed))
 }
 
 // generateTestInput generates 10 input messages to the NodeScanHandler

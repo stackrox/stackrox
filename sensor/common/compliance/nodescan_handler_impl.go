@@ -11,7 +11,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var errStartMoreThanOnce = errors.New("unable to start the component more than once")
+var (
+	errInputChanClosed   = errors.New("channel receiving node scans v2 is closed")
+	errStartMoreThanOnce = errors.New("unable to start the component more than once")
+)
 
 type nodeScanHandlerImpl struct {
 	nodeScans <-chan *storage.NodeScanV2
@@ -75,7 +78,7 @@ func (c *nodeScanHandlerImpl) run() <-chan *central.MsgFromSensor {
 				return
 			case scan, ok := <-c.nodeScans:
 				if !ok {
-					c.stopC.SignalWithError(errors.New("channel receiving node scans v2 is closed"))
+					c.stopC.SignalWithError(errInputChanClosed)
 					return
 				}
 				// TODO(ROX-12943): Do something with the scan, e.g., attach NodeID
