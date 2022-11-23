@@ -4,14 +4,21 @@ WORKDIR /workspace
 COPY content content
 COPY tools tools
 COPY Makefile ./
-RUN wget -O busybox https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-`arch` && chmod +x busybox
 
 RUN make
 
-FROM registry.access.redhat.com/ubi8-micro:8.7
+FROM registry.access.redhat.com/ubi8-minimal:latest
+
+# Update RPMs to hopefully aid with vulns that aren't yet patched in the base image. Also remove package management
+# utils because our own policies don't recommend having them in the image. For that we need to be root.
+RUN microdnf upgrade && \
+    microdnf install --setopt=tsflags=nodocs --setopt=install_weak_deps=0 \
+    python39 && \
+    microdnf clean all && \
+    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf /var/cache/yum
 
 WORKDIR /public
 COPY --from=builder /workspace/build/ ./
-COPY --from=builder /workspace/busybox /bin/busybox
 EXPOSE 8080
-CMD busybox httpd -f -p 8080
+CMD python -m http.server 8080
