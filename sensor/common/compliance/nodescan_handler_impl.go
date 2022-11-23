@@ -33,6 +33,7 @@ func (c *nodeScanHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.NodeScanningCap}
 }
 
+// ResponsesC returns a channel with messages to Central. It must be called after Start() for the channel to be not nil
 func (c *nodeScanHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	c.lock.Lock()
 	defer c.lock.Unlock()
