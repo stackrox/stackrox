@@ -48,7 +48,6 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 		referenceIds := msg.DeploymentReference(r.deploymentStore)
 
 		for _, id := range referenceIds {
-			// Build the dependency
 			preBuiltDeployment := r.deploymentStore.Get(id)
 			permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
 
@@ -61,7 +60,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				panic(err)
 			}
 
-			event := component.NewResourceEvent([]*central.SensorEvent{toEvent(central.ResourceAction_UPDATE_RESOURCE, d)}, nil, nil)
+			event := component.NewResourceEvent([]*central.SensorEvent{toEvent(msg.ParentResourceAction, d)}, nil, nil)
 
 			component.MergeResourceEvents(msg, event)
 		}

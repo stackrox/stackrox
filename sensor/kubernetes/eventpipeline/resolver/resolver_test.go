@@ -153,6 +153,32 @@ func (s *resolverSuite) Test_Send_MultipleDeploymentRefs() {
 	messageReceived.Wait()
 }
 
+func (s *resolverSuite) Test_Send_ResourceAction() {
+	err := s.resolver.Start()
+	s.NoError(err)
+
+	for _, action := range []central.ResourceAction{central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE} {
+		s.Run(fmt.Sprintf("ResourceAction: %s", action), func() {
+			messageReceived := sync.WaitGroup{}
+			messageReceived.Add(1)
+
+			s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
+			s.mockOutput.EXPECT()
+
+			s.mockOutput.EXPECT().Send(&resourceActionMatcher{resourceAction: action}).Times(1).Do(func(arg0 interface{}) {
+				defer messageReceived.Done()
+			})
+
+			s.resolver.Send(&component.ResourceEvent{
+				DeploymentReference:  resolver.ResolveDeploymentIds("1234"),
+				ParentResourceAction: action,
+			})
+
+			messageReceived.Wait()
+		})
+	}
+}
+
 func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, permissionLevel storage.PermissionLevel) {
 	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
 		return &storage.Deployment{}
@@ -235,6 +261,35 @@ func (m *messageCounterMatcher) Matches(target interface{}) bool {
 
 func (m *messageCounterMatcher) String() string {
 	return fmt.Sprintf("expected %d: error %s", m.numEvents, m.error)
+}
+
+type resourceActionMatcher struct {
+	resourceAction central.ResourceAction
+	error          string
+}
+
+func (m *resourceActionMatcher) Matches(target interface{}) bool {
+	event, ok := target.(*component.ResourceEvent)
+	if !ok {
+		m.error = "received message isn't a resource event"
+		return false
+	}
+
+	if len(event.ForwardMessages) < 1 {
+		m.error = fmt.Sprintf("not enough ForwardMessages: %d", len(event.ForwardMessages))
+		return false
+	}
+
+	if event.ForwardMessages[0].GetAction() != m.resourceAction {
+		m.error = fmt.Sprintf("expected %s action but received %s", m.resourceAction, event.ForwardMessages[0].GetAction())
+		return false
+	}
+
+	return true
+}
+
+func (m *resourceActionMatcher) String() string {
+	return fmt.Sprintf("expected %d: error %s", m.resourceAction, m.error)
 }
 
 type fakeProvider struct {
