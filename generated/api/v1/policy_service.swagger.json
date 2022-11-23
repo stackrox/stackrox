@@ -585,6 +585,15 @@
     }
   },
   "definitions": {
+    "GetPolicyMitreVectorsRequestOptions": {
+      "type": "object",
+      "properties": {
+        "excludePolicy": {
+          "type": "boolean",
+          "description": "If set to true, policy is excluded from the response."
+        }
+      }
+    },
     "PolicyMitreAttackVectors": {
       "type": "object",
       "properties": {
@@ -1060,15 +1069,6 @@
           "items": {
             "type": "string"
           }
-        }
-      }
-    },
-    "v1GetPolicyMitreVectorsRequestOptions": {
-      "type": "object",
-      "properties": {
-        "excludePolicy": {
-          "type": "boolean",
-          "description": "If set to true, policy is excluded from the response."
         }
       }
     },
