@@ -359,9 +359,14 @@ export function revokeAuthProvidersIntegrationInTable(integrationType, integrati
 
 // interact in form
 
+export function clickIntegrationSourceLinkInForm(integrationSource, integrationType) {
+    const integrationTitle = integrationTitleMap[integrationSource][integrationType];
+
+    cy.get(`${selectors.breadcrumbItem} a:contains("${integrationTitle}")`).click();
+}
+
 /**
  * @param {string} integrationSource
- * @param {string} integrationType
  * @param {{ body: unknown } | { fixture: string }} [staticResponseForPOST]
  */
 export function generateCreatedAuthProvidersIntegrationInForm(

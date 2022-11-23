@@ -8,6 +8,7 @@ import {
 import {
     assertIntegrationsTable,
     clickCreateNewIntegrationInTable,
+    clickIntegrationSourceLinkInForm,
     generateCreatedAuthProvidersIntegrationInForm,
     revokeAuthProvidersIntegrationInTable,
     visitIntegrationsTable,
@@ -66,6 +67,8 @@ describe('Cluster Init Bundles', () => {
         cy.get(`${selectors.tableRowNameLink}:contains("${clusterInitBundleName}")`).click();
 
         cy.get(`${selectors.breadcrumbItem}:contains("${clusterInitBundleName}")`);
+
+        clickIntegrationSourceLinkInForm(integrationSource, integrationType);
 
         // Revoke it.
 

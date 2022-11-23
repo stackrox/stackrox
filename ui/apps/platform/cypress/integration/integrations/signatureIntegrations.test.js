@@ -7,6 +7,7 @@ import {
 } from '../../helpers/formHelpers';
 import {
     clickCreateNewIntegrationInTable,
+    clickIntegrationSourceLinkInForm,
     deleteIntegrationInTable,
     saveCreatedIntegrationInForm,
     visitIntegrationsTable,
@@ -64,6 +65,8 @@ describe('Signature Integrations', () => {
         cy.get(`${selectors.tableRowNameLink}:contains("${integrationName}")`).click();
 
         cy.get(`${selectors.breadcrumbItem}:contains("${integrationName}")`);
+
+        clickIntegrationSourceLinkInForm(integrationSource, integrationType);
 
         // Delete it.
 

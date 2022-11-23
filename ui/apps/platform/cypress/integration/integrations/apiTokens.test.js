@@ -10,6 +10,7 @@ import {
 import {
     assertIntegrationsTable,
     clickCreateNewIntegrationInTable,
+    clickIntegrationSourceLinkInForm,
     generateCreatedAuthProvidersIntegrationInForm,
     revokeAuthProvidersIntegrationInTable,
     visitIntegrationsTable,
@@ -55,6 +56,8 @@ describe('API Tokens', () => {
         cy.get(`${selectors.tableRowNameLink}:contains("${apiTokenName}")`).click();
 
         cy.get(`${selectors.breadcrumbItem}:contains("${apiTokenName}")`);
+
+        clickIntegrationSourceLinkInForm(integrationSource, integrationType);
 
         // Revoke it.
 
