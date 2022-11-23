@@ -14,3 +14,9 @@ export function ensureExhaustive(_: never): never {
 export function isNonEmptyArray<T>(arr: T[]): arr is [T, ...T[]] {
     return arr.length > 0;
 }
+
+/**
+ * The flip side of TypeScript's `keyof` operator, returns a union of
+ * all property value types of a given object.
+ */
+export type ValueOf<T extends Record<string | number | symbol, unknown>> = T[keyof T];
