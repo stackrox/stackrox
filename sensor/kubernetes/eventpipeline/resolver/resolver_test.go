@@ -7,6 +7,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/store"
+	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
 	"github.com/stretchr/testify/suite"
@@ -15,7 +17,12 @@ import (
 type resolverSuite struct {
 	suite.Suite
 
-	mockOutput *mocks.MockOutputQueue
+	mockOutput          *mocks.MockOutputQueue
+	mockDeploymentStore *mocksStore.MockDeploymentStore
+	mockServiceStore    *mocksStore.MockServiceStore
+	mockRBACStore       *mocksStore.MockRBACStore
+
+	resolver component.Resolver
 }
 
 var _ suite.SetupTestSuite = &resolverSuite{}
@@ -26,18 +33,25 @@ func TestResolverSuite(t *testing.T) {
 
 func (s *resolverSuite) SetupTest() {
 	mockCtrl := gomock.NewController(s.T())
+
 	s.mockOutput = mocks.NewMockOutputQueue(mockCtrl)
+	s.mockDeploymentStore = mocksStore.NewMockDeploymentStore(mockCtrl)
+	s.mockServiceStore = mocksStore.NewMockServiceStore(mockCtrl)
+	s.mockRBACStore = mocksStore.NewMockRBACStore(mockCtrl)
+
+	s.resolver = New(s.mockOutput, s.mockDeploymentStore, &fakeProvider{
+		serviceStore: s.mockServiceStore,
+		rbacStore:    s.mockRBACStore,
+	})
 }
 
 func (s *resolverSuite) Test_InitializeResolver() {
-	resolver := New(s.mockOutput)
-	err := resolver.Start()
+	err := s.resolver.Start()
 	s.NoError(err)
 }
 
 func (s *resolverSuite) Test_MessageSentToOutput() {
-	resolver := New(s.mockOutput)
-	err := resolver.Start()
+	err := s.resolver.Start()
 	s.NoError(err)
 
 	messageReceived := sync.WaitGroup{}
@@ -47,7 +61,7 @@ func (s *resolverSuite) Test_MessageSentToOutput() {
 		defer messageReceived.Done()
 	})
 
-	resolver.Send(&component.ResourceEvent{
+	s.resolver.Send(&component.ResourceEvent{
 		ForwardMessages: []*central.SensorEvent{
 			{
 				Action: central.ResourceAction_UPDATE_RESOURCE,
@@ -59,4 +73,17 @@ func (s *resolverSuite) Test_MessageSentToOutput() {
 	})
 
 	messageReceived.Wait()
+}
+
+type fakeProvider struct {
+	serviceStore *mocksStore.MockServiceStore
+	rbacStore    *mocksStore.MockRBACStore
+}
+
+func (p *fakeProvider) Services() store.ServiceStore {
+	return p.serviceStore
+}
+
+func (p *fakeProvider) RBAC() store.RBACStore {
+	return p.rbacStore
 }

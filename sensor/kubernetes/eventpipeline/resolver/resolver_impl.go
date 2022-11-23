@@ -1,12 +1,16 @@
 package resolver
 
 import (
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
 type resolverImpl struct {
 	outputQueue component.OutputQueue
 	innerQueue  chan *component.ResourceEvent
+
+	deploymentStore store.DeploymentStore
+	storeProvider   store.Provider
 }
 
 // Start the resolverImpl component
