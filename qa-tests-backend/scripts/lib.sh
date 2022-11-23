@@ -21,8 +21,9 @@ deploy_webhook_server() {
 get_ECR_docker_pull_password() {
     info "Get AWS ECR Docker Pull Password"
 
-        aws --version
-        local pass
-        pass="$(aws --region="${AWS_ECR_REGISTRY_REGION}" ecr get-login-password)"
-        ci_export AWS_ECR_DOCKER_PULL_PASSWORD "${pass}"
+    aws --version
+    local pass
+    pass="$(aws --region="${AWS_ECR_REGISTRY_REGION}" ecr get-login-password)"
+    ci_export AWS_ECR_DOCKER_PULL_PASSWORD "${pass}"
 }
+
