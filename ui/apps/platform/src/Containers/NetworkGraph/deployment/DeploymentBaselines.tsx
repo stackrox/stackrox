@@ -18,7 +18,8 @@ import AdvancedFlowsFilter, {
 } from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { Flow } from '../types';
-import { getAllUniquePorts } from '../utils/flowUtils';
+import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
+import FlowsTable from '../common/FlowsTable';
 
 const baselines: Flow[] = [
     {
@@ -96,7 +97,14 @@ function DeploymentBaselines() {
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
+    const initialExpandedRows = baselines
+        .filter((row) => row.children && !!row.children.length)
+        .map((row) => row.id); // Default to all expanded
+    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
+    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
 
+    // derived data
+    const numBaselines = getNumFlows(baselines);
     const allUniquePorts = getAllUniquePorts(baselines);
 
     return (
@@ -144,10 +152,21 @@ function DeploymentBaselines() {
                     </Flex>
                 </StackItem>
                 <Divider component="hr" />
-                <StackItem isFilled>@TODO: Table</StackItem>
+                <StackItem>
+                    <FlowsTable
+                        label="Deployment baselines"
+                        flows={baselines}
+                        numFlows={numBaselines}
+                        expandedRows={expandedRows}
+                        setExpandedRows={setExpandedRows}
+                        selectedRows={selectedRows}
+                        setSelectedRows={setSelectedRows}
+                    />
+                </StackItem>
                 <Divider component="hr" />
                 <StackItem>
                     <Flex
+                        className="pf-u-pb-md"
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsMd' }}
                         alignItems={{ default: 'alignItemsCenter' }}
