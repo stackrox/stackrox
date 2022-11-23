@@ -6,3 +6,11 @@
 export function ensureExhaustive(_: never): never {
     return _;
 }
+
+/**
+ * Type guard to check if an array is empty, and if so, narrows the array
+ * to a tuple that guarantees at least one element.
+ */
+export function isNonEmptyArray<T>(arr: T[]): arr is [T, ...T[]] {
+    return arr.length > 0;
+}
