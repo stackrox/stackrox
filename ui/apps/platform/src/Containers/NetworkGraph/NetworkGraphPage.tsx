@@ -95,8 +95,8 @@ function NetworkGraphPage() {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <Divider component="div" />
             </PageSection>
+            <Divider component="div" />
             <PageSection className="network-graph" padding={{ default: 'noPadding' }}>
                 {model.nodes && <NetworkGraph model={model} />}
                 {isLoading && (
