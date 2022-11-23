@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     PageSection,
     Title,
@@ -14,18 +14,20 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 import { Model } from '@patternfly/react-topology';
+import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import useFetchClusters from 'hooks/useFetchClusters';
 import useURLSearch from 'hooks/useURLSearch';
-import { SearchFilter } from 'types/search';
 import { fetchNetworkFlowGraph } from 'services/NetworkService';
 import { getQueryString } from 'utils/queryStringUtils';
 import timeWindowToDate from 'utils/timeWindows';
 
 import PageTitle from 'Components/PageTitle';
+import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import EdgeStateSelect, { EdgeState } from './EdgeStateSelect';
 import NetworkGraph from './NetworkGraph';
 import { transformData, graphModel } from './utils/modelUtils';
+import getScopeHierarchy from './utils/getScopeHierarchy';
 
 import './NetworkGraphPage.css';
 
@@ -38,48 +40,12 @@ const timeWindow = 'Past hour';
 // TODO: get real includePorts flag from user input
 const includePorts = true;
 
-// TODO: refactor to another file and import
-function getScopeHierarchyFromSearch(searchFilter: SearchFilter) {
-    const workingQuery = { ...searchFilter };
-    const hierarchy: {
-        cluster: string | undefined;
-        namespaces: string[];
-        deployments: string[];
-        remainingQuery;
-    } = {
-        cluster: undefined,
-        namespaces: [],
-        deployments: [],
-        remainingQuery: workingQuery,
-    };
-
-    if (searchFilter.Cluster && !Array.isArray(searchFilter.Cluster)) {
-        hierarchy.cluster = searchFilter.Cluster;
-        delete hierarchy.remainingQuery.Cluster;
-    }
-
-    if (searchFilter.Namespace) {
-        hierarchy.namespaces = Array.isArray(searchFilter.Namespace)
-            ? searchFilter.Namespace
-            : [searchFilter.Namespace];
-        delete hierarchy.remainingQuery.Namespace;
-    }
-
-    if (searchFilter.Deployment) {
-        hierarchy.deployments = Array.isArray(searchFilter.Deployment)
-            ? searchFilter.Deployment
-            : [searchFilter.Deployment];
-    }
-
-    return hierarchy;
-}
-
 function NetworkGraphPage() {
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
     const [model, setModel] = useState<Model>(emptyModel);
     const [isLoading, setIsLoading] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { searchFilter, setSearchFilter } = useURLSearch();
+    const { searchFilter } = useURLSearch();
 
     const {
         cluster: clusterFromUrl,
@@ -87,11 +53,11 @@ function NetworkGraphPage() {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         deployments: deploymentsFromUrl,
         remainingQuery,
-    } = getScopeHierarchyFromSearch(searchFilter);
+    } = getScopeHierarchy(searchFilter);
 
     const { clusters } = useFetchClusters();
 
-    useEffect(() => {
+    useDeepCompareEffect(() => {
         if (clusters.length > 0 && clusterFromUrl) {
             const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
             if (selectedClusterId) {
@@ -117,15 +83,20 @@ function NetworkGraphPage() {
                     .finally(() => setIsLoading(false));
             }
         }
-    }, [clusters, clusterFromUrl]);
+    }, [clusters, clusterFromUrl, namespacesFromUrl]);
 
     return (
         <>
             <PageTitle title="Network Graph" />
             <PageSection variant="light">
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                    <FlexItem>
+                        <Title headingLevel="h1" className="pf-u-screen-reader">
+                            Network Graph
+                        </Title>
+                    </FlexItem>
                     <FlexItem flex={{ default: 'flex_1' }}>
-                        <Title headingLevel="h1">Network Graph</Title>
+                        <NetworkBreadcrumbs clusters={clusters} />
                     </FlexItem>
                     <Button variant="secondary">Manage CIDR blocks</Button>
                     <Button variant="secondary">Simulate network policy</Button>
