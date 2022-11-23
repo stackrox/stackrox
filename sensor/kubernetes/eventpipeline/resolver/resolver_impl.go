@@ -3,8 +3,13 @@ package resolver
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type resolverImpl struct {
@@ -57,7 +62,8 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 			})
 
 			if err != nil {
-				panic(err)
+				log.Warnf("Failed to build deployment dependency: %s", err)
+				continue
 			}
 
 			event := component.NewResourceEvent([]*central.SensorEvent{toEvent(msg.ParentResourceAction, d)}, nil, nil)

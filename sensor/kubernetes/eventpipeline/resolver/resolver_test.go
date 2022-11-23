@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
@@ -177,6 +178,44 @@ func (s *resolverSuite) Test_Send_ResourceAction() {
 			messageReceived.Wait()
 		})
 	}
+}
+
+func (s *resolverSuite) Test_Send_BuildDeploymentWithDependenciesError() {
+	err := s.resolver.Start()
+	s.NoError(err)
+
+	messageReceived := sync.WaitGroup{}
+	messageReceived.Add(1)
+
+	s.givenBuildDependenciesError("1234")
+
+	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 0}).Times(1).Do(func(arg0 interface{}) {
+		defer messageReceived.Done()
+	})
+
+	s.resolver.Send(&component.ResourceEvent{
+		DeploymentReference: resolver.ResolveDeploymentIds("1234"),
+	})
+
+	messageReceived.Wait()
+}
+
+func (s *resolverSuite) givenBuildDependenciesError(deployment string) {
+	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
+		return &storage.Deployment{}
+	})
+	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(1).
+		DoAndReturn(func(arg0 interface{}) storage.PermissionLevel { return storage.PermissionLevel_NONE })
+
+	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(
+		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
+			PermissionLevel: storage.PermissionLevel_NONE,
+			Exposures:       nil,
+		})).
+		Times(1).
+		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
+			return nil, errors.New("dependency error")
+		})
 }
 
 func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, permissionLevel storage.PermissionLevel) {
