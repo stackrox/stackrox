@@ -8,6 +8,7 @@ import {
 } from '../../helpers/formHelpers';
 import {
     clickCreateNewIntegrationInTable,
+    deleteIntegrationInTable,
     saveCreatedIntegrationInForm,
     testIntegrationInFormWithStoredCredentials,
     testIntegrationInFormWithoutStoredCredentials,
@@ -96,6 +97,7 @@ describe('Image Integrations', () => {
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('registry-1.docker.io');
+        getInputByLabel('Create integration without testing').click();
 
         testIntegrationInFormWithStoredCredentials(
             integrationSource,
@@ -103,9 +105,9 @@ describe('Image Integrations', () => {
             staticResponseForTest
         );
 
-        saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
+        saveCreatedIntegrationInForm(integrationSource, integrationType);
 
-        // Test does not delete, because it did not create.
+        deleteIntegrationInTable(integrationSource, integrationType, integrationName);
     });
 
     it('should create a new Amazon ECR integration', () => {
