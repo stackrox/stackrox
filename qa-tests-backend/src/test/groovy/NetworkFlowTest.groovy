@@ -14,7 +14,6 @@ import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModificati
 
 import common.Constants
 import groups.BAT
-import groups.COMPATIBILITY
 import groups.NetworkFlowVisualization
 import groups.RUNTIME
 import objects.DaemonSet
@@ -279,7 +278,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert waitForEdgeToBeClosed(edges.get(0), 65)
     }
 
-    @Category([BAT, COMPATIBILITY, RUNTIME, NetworkFlowVisualization])
+    @Category([BAT, RUNTIME, NetworkFlowVisualization])
     def "Verify connections between StackRox Services"() {
         when:
         "Fetch uIDs for the central, sensor, and collector services, if present"
@@ -306,7 +305,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, COMPATIBILITY, RUNTIME, NetworkFlowVisualization])
+    @Category([BAT, RUNTIME, NetworkFlowVisualization])
     def "Verify connections can be detected: #protocol"() {
         given:
         "Two deployments, A and B, where B communicates to A via #protocol"
@@ -335,7 +334,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, COMPATIBILITY, RUNTIME, NetworkFlowVisualization])
+    @Category([BAT, RUNTIME, NetworkFlowVisualization])
     def "Verify listen port availability matches feature flag: #targetDeployment"() {
         given:
         "Deployment with listening port"
