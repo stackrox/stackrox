@@ -23,4 +23,4 @@ for version in versions:
     try:
         make_compatibility_test_runner(cluster=gkecluster).run()
     except Exception:
-        pass
+        print(f"Exception \"{Exception}\" raised in compatibility test for sensor version {version}")
