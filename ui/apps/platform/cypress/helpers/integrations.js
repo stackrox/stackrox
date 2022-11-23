@@ -204,7 +204,11 @@ export function assertIntegrationsTable(integrationSource, integrationType) {
     cy.get(`${selectors.breadcrumbItem} a:contains("${integrationsTitle}")`);
     cy.get(`${selectors.breadcrumbItem}:contains("${integrationTitle}")`);
     cy.get(`h1:contains("${integrationsTitle}")`);
-    cy.get(`h2:contains("${integrationTitle}")`);
+
+    // Signature in h2 seems redundant with Signature Integrations in h1.
+    if (integrationSource !== 'signatureIntegrations') {
+        cy.get(`h2:contains("${integrationTitle}")`);
+    }
 }
 
 // visit
