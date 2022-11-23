@@ -42,7 +42,7 @@ describe('API Tokens', () => {
         getSelectButtonByLabel('Role').click();
         getSelectOption('Admin').click();
 
-        generateCreatedAuthProvidersIntegrationInForm(integrationSource, integrationType);
+        generateCreatedAuthProvidersIntegrationInForm(integrationType);
 
         cy.get('[aria-label="Success Alert"]');
 
