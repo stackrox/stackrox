@@ -32,11 +32,9 @@ setup_gcp() {
     gcloud config unset compute/zone
     gcloud config set core/disable_prompts True
 
-    if is_CI; then
-        # Some tools require a credential file for API calls e.g. prometheus-metric-parser
-        touch /tmp/gcp.json
-        chmod 0600 /tmp/gcp.json
-        echo "$service_account" >/tmp/gcp.json
-        ci_export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
-    fi
+    # Some tools require a credential file for API calls e.g. prometheus-metric-parser
+    touch /tmp/gcp.json
+    chmod 0600 /tmp/gcp.json
+    echo "$service_account" >/tmp/gcp.json
+    ci_export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
 }
