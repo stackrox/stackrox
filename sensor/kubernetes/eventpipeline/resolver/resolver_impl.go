@@ -60,10 +60,12 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 			}
 
 			permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
+			exposureInfo := r.storeProvider.Services().
+				GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetLabels())
 
 			d, err := r.deploymentStore.BuildDeploymentWithDependencies(id, store.Dependencies{
 				PermissionLevel: permissionLevel,
-				Exposures:       nil,
+				Exposures:       exposureInfo,
 			})
 
 			if err != nil {

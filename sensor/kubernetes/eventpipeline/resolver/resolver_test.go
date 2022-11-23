@@ -9,12 +9,14 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
 	"github.com/stretchr/testify/suite"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type resolverSuite struct {
@@ -133,6 +135,28 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 	}
 }
 
+func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
+	err := s.resolver.Start()
+	s.NoError(err)
+
+	messageReceived := sync.WaitGroup{}
+	messageReceived.Add(1)
+
+	s.givenServiceExposureForDeployment("1234", []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
+		s.givenStubPortExposure(),
+	})
+
+	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 1}).Times(1).Do(func(arg0 interface{}) {
+		defer messageReceived.Done()
+	})
+
+	s.resolver.Send(&component.ResourceEvent{
+		DeploymentReference: resolver.ResolveDeploymentIds("1234"),
+	})
+
+	messageReceived.Wait()
+}
+
 func (s *resolverSuite) Test_Send_MultipleDeploymentRefs() {
 	err := s.resolver.Start()
 	s.NoError(err)
@@ -227,6 +251,14 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 	err := s.resolver.Start()
 	s.NoError(err)
 
+	// There are two types of resource events that will be written to the output queue.
+	// 1) Resource events that were processed at the handlers level. E.g.: Pod events,
+	// these will be passed to the resolver component through the `ForwardMessages` property
+	// in `component.ResourceEvent`.
+	// 2) Deployments that need to be processed against their dependencies. These come
+	// as deployment references, then the resource event is generated in this component.
+	// All events are merged in the same `ForwardedMessages` in the end, and passed to the
+	// output component to be sent to central.
 	testCases := map[string]struct {
 		resolver                    resolver.DeploymentReference
 		forwardedMessages           []*central.SensorEvent
@@ -290,12 +322,29 @@ func (s *resolverSuite) givenStubSensorEvent() *central.SensorEvent {
 	return new(central.SensorEvent)
 }
 
+func (s *resolverSuite) givenStubPortExposure() map[service.PortRef][]*storage.PortConfig_ExposureInfo {
+	return map[service.PortRef][]*storage.PortConfig_ExposureInfo{
+		service.PortRef{
+			Port:     intstr.IntOrString{IntVal: 8080},
+			Protocol: "TCP",
+		}: {
+			{
+				Level:       storage.PortConfig_EXTERNAL,
+				ServiceName: "my.service",
+				ServicePort: 80,
+			},
+		},
+	}
+}
+
 func (s *resolverSuite) givenBuildDependenciesError(deployment string) {
 	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
 		return &storage.Deployment{}
 	})
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(1).
 		DoAndReturn(func(arg0 interface{}) storage.PermissionLevel { return storage.PermissionLevel_NONE })
+	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Times(1).
+		DoAndReturn(func(arg0, arg1 interface{}) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return nil })
 
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(
 		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
@@ -316,8 +365,15 @@ func (s *resolverSuite) givenNilDeploymentForId() {
 
 func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, permissionLevel storage.PermissionLevel) {
 	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
-		return &storage.Deployment{}
+		return &storage.Deployment{
+			Labels: map[string]string{},
+		}
 	})
+
+	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(arg0, arg1 interface{}) []map[service.PortRef][]*storage.PortConfig_ExposureInfo {
+		return nil
+	})
+
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(1).
 		DoAndReturn(func(arg0 interface{}) storage.PermissionLevel { return permissionLevel })
 
@@ -332,6 +388,34 @@ func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, per
 		})
 }
 
+func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exposure []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
+	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
+		return &storage.Deployment{
+			Namespace: "example",
+			Labels:    map[string]string{"app": "a"},
+		}
+	})
+
+	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).AnyTimes().
+		DoAndReturn(func(arg0 interface{}) storage.PermissionLevel { return storage.PermissionLevel_NONE })
+
+	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Times(1).
+		DoAndReturn(func(arg0, arg1 interface{}) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return exposure })
+
+	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(
+		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
+			PermissionLevel: storage.PermissionLevel_NONE,
+			Exposures:       exposure,
+		})).
+		Times(1).
+		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
+			return &storage.Deployment{
+				Id:                            deployment,
+				ServiceAccountPermissionLevel: storage.PermissionLevel_NONE,
+			}, nil
+		})
+}
+
 func (s *resolverSuite) givenAnyDeploymentProcessedNTimes(times int) {
 	s.mockDeploymentStore.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
 		return &storage.Deployment{}
@@ -339,6 +423,9 @@ func (s *resolverSuite) givenAnyDeploymentProcessedNTimes(times int) {
 
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(times).
 		DoAndReturn(func(arg0 interface{}) storage.PermissionLevel { return storage.PermissionLevel_DEFAULT })
+
+	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Times(times).
+		DoAndReturn(func(arg0, arg1 interface{}) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return nil })
 
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).
 		Times(times).
