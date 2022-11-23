@@ -92,19 +92,19 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 	s.NoError(err)
 
 	testCases := map[string]struct {
-		deploymentId    string
+		deploymentID    string
 		permissionLevel storage.PermissionLevel
 	}{
 		"[1234]: None": {
-			deploymentId:    "1234",
+			deploymentID:    "1234",
 			permissionLevel: storage.PermissionLevel_NONE,
 		},
 		"[1234]: Elevated in namespace": {
-			deploymentId:    "1234",
+			deploymentID:    "1234",
 			permissionLevel: storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
 		},
 		"[4321]: Elevated in cluster": {
-			deploymentId:    "4321",
+			deploymentID:    "4321",
 			permissionLevel: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE,
 		},
 	}
@@ -114,10 +114,10 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 			messageReceived := sync.WaitGroup{}
 			messageReceived.Add(1)
 
-			s.givenPermissionLevelForDeployment(testCase.deploymentId, testCase.permissionLevel)
+			s.givenPermissionLevelForDeployment(testCase.deploymentID, testCase.permissionLevel)
 
 			expectedDeployment := deploymentMatcher{
-				id:              testCase.deploymentId,
+				id:              testCase.deploymentID,
 				permissionLevel: testCase.permissionLevel,
 				exposure:        nil,
 			}
@@ -127,7 +127,7 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 			})
 
 			s.resolver.Send(&component.ResourceEvent{
-				DeploymentReference: resolver.ResolveDeploymentIds(testCase.deploymentId),
+				DeploymentReference: resolver.ResolveDeploymentIds(testCase.deploymentID),
 			})
 
 			messageReceived.Wait()
@@ -231,7 +231,7 @@ func (s *resolverSuite) Test_Send_DeploymentNotFound() {
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(1)
 
-	s.givenNilDeploymentForId()
+	s.givenNilDeployment()
 
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(0)
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).Times(0)
@@ -324,7 +324,7 @@ func (s *resolverSuite) givenStubSensorEvent() *central.SensorEvent {
 
 func (s *resolverSuite) givenStubPortExposure() map[service.PortRef][]*storage.PortConfig_ExposureInfo {
 	return map[service.PortRef][]*storage.PortConfig_ExposureInfo{
-		service.PortRef{
+		{
 			Port:     intstr.IntOrString{IntVal: 8080},
 			Protocol: "TCP",
 		}: {
@@ -357,7 +357,7 @@ func (s *resolverSuite) givenBuildDependenciesError(deployment string) {
 		})
 }
 
-func (s *resolverSuite) givenNilDeploymentForId() {
+func (s *resolverSuite) givenNilDeployment() {
 	s.mockDeploymentStore.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
 		return nil
 	})
