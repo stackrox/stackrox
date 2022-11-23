@@ -1,6 +1,8 @@
 package resolver
 
 import (
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
@@ -42,8 +44,41 @@ func (r *resolverImpl) runResolver() {
 
 // processMessage resolves the dependencies and forwards the message to the outputQueue
 func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
-	// TODO: resolve dependencies
+	if msg.DeploymentReference != nil {
+		referenceIds := msg.DeploymentReference(r.deploymentStore)
+
+		for _, id := range referenceIds {
+			// Build the dependency
+			preBuiltDeployment := r.deploymentStore.Get(id)
+			permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
+
+			d, err := r.deploymentStore.BuildDeploymentWithDependencies(id, store.Dependencies{
+				PermissionLevel: permissionLevel,
+				Exposures:       nil,
+			})
+
+			if err != nil {
+				panic(err)
+			}
+
+			event := component.NewResourceEvent([]*central.SensorEvent{toEvent(central.ResourceAction_UPDATE_RESOURCE, d)}, nil, nil)
+
+			component.MergeResourceEvents(msg, event)
+		}
+
+	}
+
 	r.outputQueue.Send(msg)
+}
+
+func toEvent(action central.ResourceAction, deployment *storage.Deployment) *central.SensorEvent {
+	return &central.SensorEvent{
+		Id:     deployment.GetId(),
+		Action: action,
+		Resource: &central.SensorEvent_Deployment{
+			Deployment: deployment.Clone(),
+		},
+	}
 }
 
 var _ component.Resolver = (*resolverImpl)(nil)
