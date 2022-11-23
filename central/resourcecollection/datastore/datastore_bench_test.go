@@ -44,7 +44,7 @@ func BenchmarkCollections(b *testing.B) {
 	postgres.Destroy(ctx, db)
 	store := postgres.CreateTableAndNewStore(ctx, db, gormDB)
 	index := postgres.NewIndexer(db)
-	datastore, err := New(store, index, search.New(store, index))
+	datastore, _, err := New(store, index, search.New(store, index))
 	require.NoError(b, err)
 
 	numSeedObjects := 5000
