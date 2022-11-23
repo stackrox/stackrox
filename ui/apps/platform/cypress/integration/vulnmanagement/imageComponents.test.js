@@ -119,7 +119,7 @@ describe('Vulnerability Management Image Components', () => {
         });
     });
 
-    // Argument 3 in verify functions is index of column which has the links,
+    // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
     // Some tests might fail in local deployment.
