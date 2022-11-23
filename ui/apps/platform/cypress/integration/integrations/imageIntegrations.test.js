@@ -97,7 +97,7 @@ describe('Image Integrations', () => {
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('registry-1.docker.io');
 
-        testIntegrationInFormWithoutStoredCredentials(
+        testIntegrationInFormWithStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
@@ -135,7 +135,7 @@ describe('Image Integrations', () => {
         getInputByLabel('Registry ID').clear().type('12345');
         getInputByLabel('Region').clear().type('us-west-1');
 
-        testIntegrationInFormWithoutStoredCredentials(
+        testIntegrationInFormWithStoredCredentials(
             integrationSource,
             integrationType,
             staticResponseForTest
