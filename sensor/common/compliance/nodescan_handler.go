@@ -18,7 +18,7 @@ type NodeScanHandler interface {
 func NewNodeScanHandler(ch <-chan *storage.NodeScanV2) NodeScanHandler {
 	return &nodeScanHandlerImpl{
 		nodeScans: ch,
-		toCentral: make(chan *central.MsgFromSensor),
+		toCentral: nil,
 		stopC:     concurrency.NewErrorSignal(),
 		lock:      &sync.Mutex{},
 		stoppedC:  concurrency.NewErrorSignal(),
