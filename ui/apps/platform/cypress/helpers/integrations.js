@@ -411,7 +411,9 @@ export function generateCreatedAuthProvidersIntegrationInForm(
         staticResponseMap
     );
 
-    assertIntegrationsTable(integrationSource, integrationType);
+    // Unlike other integrations which go back to the corresponding integrations table,
+    // user needs to copy the generated credential.
+    // The test takes responsibility to assert success alert and click Back button.
 }
 
 /**
