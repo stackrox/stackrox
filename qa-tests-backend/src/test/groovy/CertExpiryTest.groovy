@@ -6,6 +6,7 @@ import util.Cert
 
 @Category([BAT, COMPATIBILITY])
 class CertExpiryTest extends BaseSpecification {
+//TODO(ROX-13449): Delete the following test case before merging
     def "Failing test - Delete before merging"() {
         when:
         "This test is supposed to fail"
