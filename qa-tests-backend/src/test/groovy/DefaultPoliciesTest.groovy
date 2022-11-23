@@ -77,7 +77,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
-            .setImage("quay.io/rhacs-eng/qa:struts-app")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
             .addLabel("app", "test")
             .addPort(80)
 
@@ -91,16 +91,16 @@ class DefaultPoliciesTest extends BaseSpecification {
         STRUTS_DEPLOYMENT,
         new Deployment()
             .setName(SSL_TERMINATOR)
-            .setImage("quay.io/rhacs-eng/qa:ssl-terminator")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
             .addLabel("app", "test")
             .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(NGINX_1_10)
-            .setImage("quay.io/rhacs-eng/qa:docker-io-nginx-1-10")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
             .addLabel("app", "test"),
         new Deployment()
             .setName(GCR_NGINX)
-            .setImage("us.gcr.io/stackrox-ci/nginx:1.11.1")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
             .addLabel ( "app", "test" )
             .setCommand(["sleep", "600"]),
     ]

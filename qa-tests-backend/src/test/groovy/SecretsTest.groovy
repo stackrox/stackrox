@@ -13,7 +13,7 @@ class SecretsTest extends BaseSpecification {
         Deployment deploy = new Deployment()
                 .setName (deploymentName)
                 .setNamespace("qa")
-                .setImage ("quay.io/rhacs-eng/qa:busybox")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                 .addLabel ( "app", "test" )
                 .setCommand(["sleep", "600"])
         if (fromEnv) {

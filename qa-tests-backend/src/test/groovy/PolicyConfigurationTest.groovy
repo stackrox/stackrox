@@ -81,11 +81,11 @@ class PolicyConfigurationTest extends BaseSpecification {
                             mountPath: "/tmp/test")),
             new Deployment()
                     .setName(STRUTS)
-                    .setImage("quay.io/rhacs-eng/qa:struts-app")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DNS)
-                    .setImage("quay.io/rhacs-eng/qa:apache-dns")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:apache-dns")
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_LB)
@@ -94,7 +94,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])
                     .addLabel("app", "test")
-                    .setCreateLoadBalancer(true).setExposeAsService(true),
+                    .setCreateLoadBalancer(false).setExposeAsService(true),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_NP)
                     .setImage(TEST_IMAGE)
@@ -106,19 +106,19 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setName(DEPLOYMENT_RBAC)
                     .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
                     .setServiceAccountName(SERVICE_ACCOUNT_NAME)
-                    .setImage("quay.io/rhacs-eng/qa:nginx-1-15-4-alpine")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .setSkipReplicaWait(true),
     ]
 
     static final private Deployment NGINX_WITH_DIGEST = new Deployment()
             .setName(NGINX_LATEST_WITH_DIGEST_NAME)
-            .setImage("nginx:1.17@sha256:86ae264c3f4acb99b2dee4d0098c40cb8c46dcf9e1148f05d3a51c4df6758c12")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1")
             .setCommand(["sleep", "60000"])
             .setSkipReplicaWait(Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-crio"))
 
     static final private Deployment NGINX_LATEST = new Deployment()
             .setName(NGINX_LATEST_NAME)
-            .setImage("nginx:latest@sha256:86ae264c3f4acb99b2dee4d0098c40cb8c46dcf9e1148f05d3a51c4df6758c12")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1")
             .setCommand(["sleep", "60000"])
             .setSkipReplicaWait(Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-crio"))
 
@@ -272,7 +272,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                         PolicyOuterClass.PolicyGroup.newBuilder()
                                                 .setFieldName("Image Tag")
                                                 .addValues(PolicyOuterClass.PolicyValue.newBuilder()
-                                                        .setValue("nginx-1-7-9").build())
+                                                        .setValue("nginx-1-12").build())
                                                 .build()
                                 ).build()
                         ).build()       | DEPLOYMENTNGINX | null | false
@@ -291,7 +291,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                         PolicyOuterClass.PolicyGroup.newBuilder()
                                                 .setFieldName("Image Remote")
                                                 .addValues(PolicyOuterClass.PolicyValue.newBuilder()
-                                                        .setValue("rhacs-eng/qa")
+                                                        .setValue("rhacs-eng/qa-multi-arch")
                                                         .build()).build()
                                 ).build()
                         ).build()  | DEPLOYMENTNGINX | null | false

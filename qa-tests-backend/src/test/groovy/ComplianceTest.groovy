@@ -744,7 +744,7 @@ class ComplianceTest extends BaseSpecification {
                                  "allowed",
                          "Deployment uses host network, which allows it to subvert network policies"],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
-        ]
+	]
 
         given:
         "Skip test for now, until we can stabilize the test"
@@ -754,7 +754,7 @@ class ComplianceTest extends BaseSpecification {
         "create Deployment that forces checks to fail"
         Deployment deployment = new Deployment()
                 .setName("compliance-deployment")
-                .setImage("quay.io/rhacs-eng/qa:nginx-1-15-4-alpine")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                 .addPort(80, "UDP")
                 .setCommand(["/bin/sh", "-c",])
                 .setArgs(["dd if=/dev/zero of=/dev/null & yes"])
