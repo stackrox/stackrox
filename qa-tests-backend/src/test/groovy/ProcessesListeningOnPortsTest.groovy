@@ -239,6 +239,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
 
 
+        sleep(100000)
 
         log.info "Destroyed deployment"
 
@@ -262,17 +263,22 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         endpoint1_1 = list1.find { it.port == 80 }
 
+	log.info "${endpoint1_1.closeTimestamp}"
+
         assert endpoint1_1
 	assert endpoint1_1.closeTimestamp
+	assert endpoint1_1.closeTimestamp != ""
 	assert endpoint1_1.process.containerName == TCPCONNECTIONTARGET1 
 	assert endpoint1_1.process.processName == "socat"
 	assert endpoint1_1.process.processExecFilePath == "/usr/bin/socat"
 	// assert endpoint1_1.process.processArgs == "-d -d -v TCP-LISTEN:80,fork STDOUT"
 
 	endpoint1_2 = list1.find { it.port == 8080 }
+	log.info "closeTimestamp 1 ${endpoint1_2.closeTimestamp}"
 
         assert endpoint1_2
 	assert endpoint1_2.closeTimestamp
+	assert endpoint1_2.closeTimestamp != ""
 	assert endpoint1_2.process.containerName == TCPCONNECTIONTARGET1 
 	assert endpoint1_2.process.processName == "socat"
 	assert endpoint1_2.process.processExecFilePath == "/usr/bin/socat"
@@ -283,9 +289,11 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 	assert list2.size() == 1
 
 	endpoint2 = list2.get(0)
+	log.info "closeTimestamp 2 ${endpoint2.closeTimestamp}"
 
         assert endpoint2.port == 8081
 	assert endpoint2.closeTimestamp
+	assert endpoint2.closeTimestamp != ""
 	assert endpoint2.process.containerName == TCPCONNECTIONTARGET2
 	assert endpoint2.process.processName == "socat"
 	assert endpoint2.process.processExecFilePath == "/usr/bin/socat"
