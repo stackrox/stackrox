@@ -53,7 +53,7 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 				OutputDir:  outputDir,
 			}, cliEnvironment.Logger())
 			if isTimeoutError(err) {
-				cliEnvironment.Logger().ErrfLn(`Timeout is reached while creating diagnostic bundle. Increase 'roxctl' timeout:
+				cliEnvironment.Logger().ErrfLn(`Timeout has been reached while creating diagnostic bundle. Increase 'roxctl' timeout by running the following:
 'roxctl central debug download-diagnostics --timeout=400s <other parameters'`)
 			}
 			return err
