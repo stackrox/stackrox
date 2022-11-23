@@ -38,7 +38,7 @@ describe('Vulnerability Management Namespaces', () => {
         hasTableColumnHeadings([
             '', // hidden
             'Namespace',
-            'Image CVEs',
+            'CVEs',
             'Cluster',
             'Deployments',
             'Images',
