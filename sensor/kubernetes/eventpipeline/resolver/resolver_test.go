@@ -223,6 +223,73 @@ func (s *resolverSuite) Test_Send_DeploymentNotFound() {
 	messageReceived.Wait()
 }
 
+func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
+	err := s.resolver.Start()
+	s.NoError(err)
+
+	testCases := map[string]struct {
+		resolver                    resolver.DeploymentReference
+		forwardedMessages           []*central.SensorEvent
+		expectedDeploymentProcessed int
+		expectedEvents              int
+	}{
+		"Single id, no forwarded messages": {
+			resolver:                    resolver.ResolveDeploymentIds("1234"),
+			forwardedMessages:           nil,
+			expectedDeploymentProcessed: 1,
+			expectedEvents:              1,
+		},
+		"Multiple ids, no forwarded messages": {
+			resolver:                    resolver.ResolveDeploymentIds("1234", "4321"),
+			forwardedMessages:           nil,
+			expectedDeploymentProcessed: 2,
+			expectedEvents:              2,
+		},
+		"Single id, one forwarded message": {
+			resolver:                    resolver.ResolveDeploymentIds("1234"),
+			forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent()},
+			expectedDeploymentProcessed: 1,
+			expectedEvents:              2,
+		},
+		"Single id, multiple forwarded messages": {
+			resolver:                    resolver.ResolveDeploymentIds("1234"),
+			forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent(), s.givenStubSensorEvent()},
+			expectedDeploymentProcessed: 1,
+			expectedEvents:              3,
+		},
+		"No deployment resolver, multiple forwarded messages": {
+			resolver:                    nil,
+			forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent(), s.givenStubSensorEvent()},
+			expectedDeploymentProcessed: 0,
+			expectedEvents:              2,
+		},
+	}
+
+	for name, testCase := range testCases {
+		s.Run(name, func() {
+			messageReceived := sync.WaitGroup{}
+			messageReceived.Add(1)
+
+			s.givenAnyDeploymentProcessedNTimes(testCase.expectedDeploymentProcessed)
+
+			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: testCase.expectedEvents}).Times(1).Do(func(arg0 interface{}) {
+				defer messageReceived.Done()
+			})
+
+			s.resolver.Send(&component.ResourceEvent{
+				DeploymentReference: testCase.resolver,
+				ForwardMessages:     testCase.forwardedMessages,
+			})
+
+			messageReceived.Wait()
+		})
+	}
+}
+
+func (s *resolverSuite) givenStubSensorEvent() *central.SensorEvent {
+	return new(central.SensorEvent)
+}
+
 func (s *resolverSuite) givenBuildDependenciesError(deployment string) {
 	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
 		return &storage.Deployment{}
@@ -262,6 +329,21 @@ func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, per
 		Times(1).
 		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
 			return &storage.Deployment{Id: deployment, ServiceAccountPermissionLevel: permissionLevel}, nil
+		})
+}
+
+func (s *resolverSuite) givenAnyDeploymentProcessedNTimes(times int) {
+	s.mockDeploymentStore.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
+		return &storage.Deployment{}
+	})
+
+	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(times).
+		DoAndReturn(func(arg0 interface{}) storage.PermissionLevel { return storage.PermissionLevel_DEFAULT })
+
+	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).
+		Times(times).
+		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
+			return &storage.Deployment{}, nil
 		})
 }
 
