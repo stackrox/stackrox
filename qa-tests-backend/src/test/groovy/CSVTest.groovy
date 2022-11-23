@@ -2,6 +2,8 @@ import static com.jayway.restassured.RestAssured.given
 import com.jayway.restassured.response.Response
 import com.opencsv.CSVReader
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.ToString
+
 import groups.BAT
 import objects.Deployment
 import objects.Pagination
@@ -83,6 +85,8 @@ class CSVTest extends BaseSpecification {
         ImageService.scanImage("quay.io/rhacs-eng/qa:nginx-1-9")
         orchestrator.createDeployment(CVE_DEPLOYMENT)
         assert Services.waitForDeployment(CVE_DEPLOYMENT)
+        // wait for all image CVEs to be discovered and added to db
+        sleep(5000)
     }
 
     def cleanupSpec() {
@@ -199,6 +203,7 @@ class CSVTest extends BaseSpecification {
     }
 
     @EqualsAndHashCode(includeFields = true)
+    @ToString(includes="id,cvss")
     class CVE {
         String id
         float cvss
