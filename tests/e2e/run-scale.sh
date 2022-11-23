@@ -64,9 +64,7 @@ run_scale_test() {
 
     compare_with_stored_metrics "${debug_dump_dir}"
 
-    if is_nightly_run && [[ -n "${STORE_METRICS:-}" ]]; then
-        store_metrics "${debug_dump_dir}"
-    fi
+    store_metrics "${debug_dump_dir}"
 }
 
 get_prometheus_metrics_parser() {
