@@ -28,7 +28,7 @@ def reduce_tags_to_latest_patch(tags):
         k = '.'.join([major, minor])
         top_patch_version[k] = max(top_patch_version[k], int(patch))
     top_major_versions = sorted(list(top_patch_version.keys()), reverse=True)
-    return [t + '.' + str(top_patch_version[t]) for t in top_major_versions]
+    return [t + "." + str(top_patch_version[t]) for t in top_major_versions]
 
 def make_image_tag():
     return subprocess.check_output(["make", "--quiet", "--no-print-directory", "tag"]).decode(encoding="utf-8")
@@ -47,7 +47,11 @@ def get_latest_release_versions(num_versions):
     rawtags = subprocess.check_output(cmd, shell=True).decode(encoding="utf-8").splitlines()
     tags = filter_tags(rawtags)
     latest_patch_tags = reduce_tags_to_latest_patch(tags)
-    return get_latest_n_tags(latest_patch_tags, num_versions)
+    lastN = get_latest_n_tags(latest_patch_tags, num_versions)
+    return map_to_helm_versions(lastN)
+
+def map_to_helm_versions(versions):
+    return [".".join(v.split(".")[1:]) + ".0" for v in versions]
 
 def update_helm_repo():
     subprocess.run(add_repo_cmd, shell=True)
