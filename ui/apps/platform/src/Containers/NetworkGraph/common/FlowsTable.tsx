@@ -13,7 +13,7 @@ import {
 import { Flex, FlexItem, Text, TextContent, TextVariants } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
-import { Flow, FlowBase } from '../types';
+import { Flow } from '../types';
 
 type FlowsTableProps = {
     label: string;
@@ -28,6 +28,7 @@ type FlowsTableProps = {
 const columnNames = {
     entity: 'Entity',
     direction: 'Direction',
+    // @TODO: This would be a good point to update with i18n translation ability
     portAndProtocol: 'Port / protocol',
 };
 
@@ -43,7 +44,7 @@ function FlowsTable({
     // getter functions
     const isRowExpanded = (row: Flow) => expandedRows.includes(row.id);
     const areAllRowsSelected = selectedRows.length === numFlows;
-    const isRowSelected = (row: Flow | FlowBase) => selectedRows.includes(row.id);
+    const isRowSelected = (row: Flow) => selectedRows.includes(row.id);
 
     // setter functions
     const setRowExpanded = (row: Flow, isExpanding = true) =>
@@ -51,7 +52,7 @@ function FlowsTable({
             const otherExpandedRows = prevExpanded.filter((r) => r !== row.id);
             return isExpanding ? [...otherExpandedRows, row.id] : otherExpandedRows;
         });
-    const setRowSelected = (row: Flow | FlowBase, isSelecting = true) =>
+    const setRowSelected = (row: Flow, isSelecting = true) =>
         setSelectedRows((prevSelected) => {
             const otherSelectedRows = prevSelected.filter((r) => r !== row.id);
             return isSelecting ? [...otherSelectedRows, row.id] : otherSelectedRows;
@@ -59,7 +60,7 @@ function FlowsTable({
     const selectAllRows = (isSelecting = true) => {
         if (isSelecting) {
             const newSelectedRows = flows.reduce((acc, curr) => {
-                if (curr.children.length !== 0) {
+                if (curr.children && curr.children.length !== 0) {
                     return [...acc, ...curr.children.map((child) => child.id)];
                 }
                 return [...acc, curr.id];
@@ -88,28 +89,29 @@ function FlowsTable({
             </Thead>
             {flows.map((row, rowIndex) => {
                 const isExpanded = isRowExpanded(row);
-                const rowActions: IAction[] = !row.children.length
-                    ? [
-                          row.isAnomalous
-                              ? {
-                                    itemKey: 'add-flow-to-baseline',
-                                    title: 'Add to baseline',
-                                    onClick: () => {},
-                                }
-                              : {
-                                    itemKey: 'mark-flow-as-anomalous',
-                                    title: 'Mark as anomalous',
-                                    onClick: () => {},
-                                },
-                      ]
-                    : [];
+                const rowActions: IAction[] =
+                    row.children && !row.children.length
+                        ? [
+                              row.isAnomalous
+                                  ? {
+                                        itemKey: 'add-flow-to-baseline',
+                                        title: 'Add to baseline',
+                                        onClick: () => {},
+                                    }
+                                  : {
+                                        itemKey: 'mark-flow-as-anomalous',
+                                        title: 'Mark as anomalous',
+                                        onClick: () => {},
+                                    },
+                          ]
+                        : [];
 
                 return (
                     <Tbody key={row.id} isExpanded={isExpanded}>
                         <Tr>
                             <Td
                                 expand={
-                                    row.children.length
+                                    row.children && row.children.length
                                         ? {
                                               rowIndex,
                                               isExpanded,
@@ -121,7 +123,7 @@ function FlowsTable({
                             />
                             <Td
                                 select={
-                                    row.children.length === 0
+                                    row.children && row.children.length === 0
                                         ? {
                                               rowIndex,
                                               onSelect: (_event, isSelecting) =>
@@ -141,7 +143,9 @@ function FlowsTable({
                                                 <Text component={TextVariants.small}>
                                                     {row.type === 'Deployment'
                                                         ? `in "${row.namespace}"`
-                                                        : `${row.children.length} active flows`}
+                                                        : `${
+                                                              row.children ? row.children.length : 1
+                                                          } active flows`}
                                                 </Text>
                                             </TextContent>
                                         </div>
@@ -158,10 +162,13 @@ function FlowsTable({
                                 {row.port} / {row.protocol}
                             </Td>
                             <Td isActionCell>
-                                {!row.children.length && <ActionsColumn items={rowActions} />}
+                                {row.children && !row.children.length && (
+                                    <ActionsColumn items={rowActions} />
+                                )}
                             </Td>
                         </Tr>
                         {isExpanded &&
+                            row.children &&
                             row.children.map((child) => {
                                 const childActions: IAction[] = [
                                     child.isAnomalous

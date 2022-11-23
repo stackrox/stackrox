@@ -100,7 +100,9 @@ function DeploymentFlow() {
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
-    const initialExpandedRows = flows.filter((row) => !!row.children.length).map((row) => row.id); // Default to all expanded
+    const initialExpandedRows = flows
+        .filter((row) => row.children && !!row.children.length)
+        .map((row) => row.id); // Default to all expanded
     const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
     const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
 

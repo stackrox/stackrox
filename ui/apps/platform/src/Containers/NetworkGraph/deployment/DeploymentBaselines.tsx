@@ -98,7 +98,7 @@ function DeploymentBaselines() {
         defaultAdvancedFlowsFilters
     );
     const initialExpandedRows = baselines
-        .filter((row) => !!row.children.length)
+        .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
     const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
     const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
