@@ -2,6 +2,7 @@ package compliance
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	timestamp "github.com/gogo/protobuf/types"
@@ -99,6 +100,16 @@ func (s *NodeScanHandlerTestSuite) TestHandlerRegularRoutine() {
 	s.NoError(h.Start())
 	s.consumeToCentral(h)
 	h.Stop(nil)
+}
+
+func (s *NodeScanHandlerTestSuite) TestHandlerStoppedError() {
+	h := NewNodeScanHandler(s.generateTestInput())
+	s.NoError(h.Start())
+	s.consumeToCentral(h)
+	errTest := errors.New("example-stop-error")
+	h.Stop(errTest)
+	err := h.Stopped().Wait()
+	s.ErrorIs(err, errTest)
 }
 
 // generateTestInput generates 10 input messages to the NodeScanHandler
