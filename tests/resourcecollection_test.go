@@ -1,0 +1,472 @@
+package tests
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8scorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/utils/pointer"
+)
+
+type label struct {
+	key   string
+	value string
+}
+
+var (
+	collectionNamespaces = []string{
+		"collections-test-1",
+		"collections-test-2",
+	}
+	testDeployments = []*appsv1.Deployment{
+		getTestDeployment("deployment1", []label{
+			{"key1", "value1"},
+		}...),
+		getTestDeployment("deployment2", []label{
+			{"key1", "value1"},
+			{"key2", "value2"},
+		}...),
+		getTestDeployment("deployment3", []label{
+			{"key2", "value2"},
+		}...),
+	}
+)
+
+func TestCollectionE2E(t *testing.T) {
+	suite.Run(t, new(CollectionE2ETestSuite))
+}
+
+type CollectionE2ETestSuite struct {
+	suite.Suite
+
+	ctx        context.Context
+	nsClient   k8scorev1.NamespaceInterface
+	service    v1.CollectionServiceClient
+	depService v1.DeploymentServiceClient
+}
+
+func (s *CollectionE2ETestSuite) SetupSuite() {
+	// if !env.PostgresDatastoreEnabled.BooleanSetting() || !features.ObjectCollections.Enabled() {
+	// 	fmt.Println(env.PostgresDatastoreEnabled.EnvVar(), env.PostgresDatastoreEnabled.BooleanSetting(), features.ObjectCollections.EnvVar(), features.ObjectCollections.Enabled())
+	// 	s.T().Skip("Skip collection tests")
+	// 	s.T().SkipNow()
+	// }
+
+	var err error
+
+	s.ctx = context.Background()
+	conn := centralgrpc.GRPCConnectionToCentral(s.T())
+	s.service = v1.NewCollectionServiceClient(conn)
+	s.depService = v1.NewDeploymentServiceClient(conn)
+	k8sInterface := createK8sClient(s.T())
+
+	// create testing namespaces
+	s.nsClient = k8sInterface.CoreV1().Namespaces()
+	for _, ns := range collectionNamespaces {
+		_, err = s.nsClient.Create(s.ctx, &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: ns,
+			},
+		}, metav1.CreateOptions{})
+		s.NoError(err)
+
+		// load deployments into created namespace
+		depClient := k8sInterface.AppsV1().Deployments(ns)
+		for _, dep := range testDeployments {
+			_, err = depClient.Create(s.ctx, dep, metav1.CreateOptions{})
+			s.NoError(err)
+		}
+	}
+
+	// wait for deployments to propagate
+	qb := search.NewQueryBuilder().AddRegexes(search.Namespace, "collections-test-.")
+	waitForDeploymentCount(s.T(), qb.Query(), len(collectionNamespaces)*len(testDeployments))
+}
+
+func (s *CollectionE2ETestSuite) TearDownSuite() {
+	for _, ns := range collectionNamespaces {
+		err := s.nsClient.Delete(s.ctx, ns, metav1.DeleteOptions{})
+		if err != nil {
+			log.Errorf("failed deleting %s testing namespace %q", ns, err)
+		}
+	}
+}
+
+func (s *CollectionE2ETestSuite) TestDeploymentMatching() {
+	ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
+	defer cancel()
+
+	// get deployments to test against
+	deploymentQuery := search.NewQueryBuilder().AddExactMatches(search.Namespace, collectionNamespaces...).Query()
+	deploymentQueryResponse, err := s.depService.ListDeployments(ctx, &v1.RawQuery{Query: deploymentQuery})
+	s.NoError(err)
+	deploymentList := deploymentQueryResponse.GetDeployments()
+
+	// upsert some collections to use as embedded
+	var collectionIDs []string
+	createCollectionRequests := []*v1.CreateCollectionRequest{
+		{
+			Name: "dep1",
+			ResourceSelectors: []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: search.DeploymentName.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "deployment1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "dep2",
+			ResourceSelectors: []*storage.ResourceSelector{
+				{
+					Rules: []*storage.SelectorRule{
+						{
+							FieldName: search.DeploymentName.String(),
+							Operator:  storage.BooleanOperator_OR,
+							Values: []*storage.RuleValue{
+								{
+									Value: "deployment2",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, req := range createCollectionRequests {
+		resp, err := s.service.CreateCollection(ctx, req)
+		assert.NoError(s.T(), err)
+		collectionIDs = append(collectionIDs, resp.GetCollection().GetId())
+	}
+
+	// test cases
+	for _, tc := range []struct {
+		name                    string
+		request                 *v1.DryRunCollectionRequest
+		expectedListDeployments []*storage.ListDeployment
+	}{
+		{
+			"deployment name",
+			&v1.DryRunCollectionRequest{
+				Name: "test collection",
+				ResourceSelectors: []*storage.ResourceSelector{
+					{
+						Rules: []*storage.SelectorRule{
+							{
+								FieldName: search.DeploymentName.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: "deployment1",
+									},
+								},
+							},
+						},
+					},
+				},
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+				},
+			},
+			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
+				return deployment.GetName() == "deployment1"
+			}),
+		},
+		{
+			"deployment names or",
+			&v1.DryRunCollectionRequest{
+				Name: "test collection",
+				ResourceSelectors: []*storage.ResourceSelector{
+					{
+						Rules: []*storage.SelectorRule{
+							{
+								FieldName: search.DeploymentName.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: "deployment1",
+									},
+									{
+										Value: "deployment2",
+									},
+								},
+							},
+						},
+					},
+				},
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+				},
+			},
+			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
+				return deployment.GetName() == "deployment1" || deployment.GetName() == "deployment2"
+			}),
+		},
+		{
+			"deployment names and",
+			&v1.DryRunCollectionRequest{
+				Name: "test collection",
+				ResourceSelectors: []*storage.ResourceSelector{
+					{
+						Rules: []*storage.SelectorRule{
+							{
+								FieldName: search.DeploymentName.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: "deployment1",
+									},
+								},
+							},
+							{
+								FieldName: search.DeploymentName.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: "deployment2",
+									},
+								},
+							},
+						},
+					},
+				},
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+				},
+			},
+			[]*storage.ListDeployment{},
+		},
+		{
+			"deployment label",
+			&v1.DryRunCollectionRequest{
+				Name: "test collection",
+				ResourceSelectors: []*storage.ResourceSelector{
+					{
+						Rules: []*storage.SelectorRule{
+							{
+								FieldName: search.DeploymentLabel.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: "key1=value1",
+									},
+								},
+							},
+						},
+					},
+				},
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+				},
+			},
+			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
+				return deployment.GetName() == "deployment1" || deployment.GetName() == "deployment2"
+			}),
+		},
+		{
+			"deployment labels or",
+			&v1.DryRunCollectionRequest{
+				Name: "test collection",
+				ResourceSelectors: []*storage.ResourceSelector{
+					{
+						Rules: []*storage.SelectorRule{
+							{
+								FieldName: search.DeploymentLabel.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: "key1=value1",
+									},
+									{
+										Value: "key2=value2",
+									},
+								},
+							},
+						},
+					},
+				},
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+				},
+			},
+			deploymentList,
+		},
+		{
+			"deployment labels and",
+			&v1.DryRunCollectionRequest{
+				Name: "test collection",
+				ResourceSelectors: []*storage.ResourceSelector{
+					{
+						Rules: []*storage.SelectorRule{
+							{
+								FieldName: search.DeploymentLabel.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: "key1=value1",
+									},
+								},
+							},
+							{
+								FieldName: search.DeploymentLabel.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: "key2=value2",
+									},
+								},
+							},
+						},
+					},
+				},
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+				},
+			},
+			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
+				return deployment.GetName() == "deployment2"
+			}),
+		},
+		{
+			"namespace with embedded",
+			&v1.DryRunCollectionRequest{
+				Name: "test collection",
+				ResourceSelectors: []*storage.ResourceSelector{
+					{
+						Rules: []*storage.SelectorRule{
+							{
+								FieldName: search.Namespace.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: collectionNamespaces[0],
+									},
+								},
+							},
+						},
+					},
+				},
+				EmbeddedCollectionIds: []string{collectionIDs[0]},
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+				},
+			},
+			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
+				return deployment.GetName() == "deployment1" || deployment.GetNamespace() == collectionNamespaces[0]
+			}),
+		},
+		{
+			"namespace with deployment name",
+			&v1.DryRunCollectionRequest{
+				Name: "test collection",
+				ResourceSelectors: []*storage.ResourceSelector{
+					{
+						Rules: []*storage.SelectorRule{
+							{
+								FieldName: search.Namespace.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: collectionNamespaces[0],
+									},
+								},
+							},
+							{
+								FieldName: search.DeploymentName.String(),
+								Operator:  storage.BooleanOperator_OR,
+								Values: []*storage.RuleValue{
+									{
+										Value: "deployment2",
+									},
+								},
+							},
+						},
+					},
+				},
+				EmbeddedCollectionIds: []string{collectionIDs[0]},
+				Options: &v1.CollectionDeploymentMatchOptions{
+					WithMatches: true,
+				},
+			},
+			filter(deploymentList, func(deployment *storage.ListDeployment) bool {
+				return deployment.GetName() == "deployment1" || (deployment.GetNamespace() == collectionNamespaces[0] && deployment.GetName() == "deployment2")
+			}),
+		},
+	} {
+		s.T().Run(tc.name, func(t *testing.T) {
+			resp, err := s.service.DryRunCollection(ctx, tc.request)
+			assert.NoError(t, err)
+			assert.ElementsMatch(t, tc.expectedListDeployments, resp.GetDeployments())
+		})
+	}
+
+	// clean up test
+	for _, id := range collectionIDs {
+		_, err = s.service.DeleteCollection(ctx, &v1.ResourceByID{Id: id})
+		assert.NoError(s.T(), err)
+	}
+}
+
+func getTestDeployment(name string, labels ...label) *appsv1.Deployment {
+	ret := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: pointer.Int32Ptr(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "nginx",
+							Image: "nginx:Latest",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// set labels
+	for _, l := range labels {
+		ret.Spec.Selector.MatchLabels[l.key] = l.value
+		ret.Spec.Template.ObjectMeta.Labels[l.key] = l.value
+		ret.ObjectMeta.Labels[l.key] = l.value
+	}
+	return ret
+}
+
+func filter[T any](list []T, test func(T) bool) (ret []T) {
+	for _, obj := range list {
+		if test(obj) {
+			ret = append(ret, obj)
+		}
+	}
+	return
+}
