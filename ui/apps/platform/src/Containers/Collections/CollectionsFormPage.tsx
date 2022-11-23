@@ -6,6 +6,7 @@ import {
     AlertGroup,
     Breadcrumb,
     BreadcrumbItem,
+    Bullseye,
     Button,
     Divider,
     Dropdown,
@@ -15,6 +16,7 @@ import {
     Flex,
     FlexItem,
     PageSection,
+    Spinner,
     Title,
     Tooltip,
     Truncate,
@@ -35,6 +37,7 @@ import { Collection } from './types';
 import useCollection from './hooks/useCollection';
 import CollectionsFormModal from './CollectionFormModal';
 import { CollectionSaveError, parseSaveError } from './errorUtils';
+import CollectionLoadError from './CollectionLoadError';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
@@ -195,12 +198,19 @@ function CollectionsFormPage({
     if (error) {
         content = (
             <>
-                {error.message}
-                {/* TODO - Handle UI for network errors */}
+                <Breadcrumb className="pf-u-my-xs pf-u-px-lg pf-u-py-md">
+                    <BreadcrumbItemLink to={collectionsBasePath}>Collections</BreadcrumbItemLink>
+                </Breadcrumb>
+                <Divider component="div" />
+                <CollectionLoadError error={error} />
             </>
         );
     } else if (loading) {
-        content = <>{/* TODO - Handle UI for loading state */}</>;
+        content = (
+            <Bullseye>
+                <Spinner isSVG />
+            </Bullseye>
+        );
     } else if (data) {
         const pageTitle = pageAction.type === 'create' ? 'Create collection' : data.collection.name;
         content = (
