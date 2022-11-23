@@ -54,6 +54,11 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 
 		for _, id := range referenceIds {
 			preBuiltDeployment := r.deploymentStore.Get(id)
+			if preBuiltDeployment == nil {
+				log.Warnf("Deployment with id %s not found", id)
+				continue
+			}
+
 			permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
 
 			d, err := r.deploymentStore.BuildDeploymentWithDependencies(id, store.Dependencies{
@@ -70,7 +75,6 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 
 			component.MergeResourceEvents(msg, event)
 		}
-
 	}
 
 	r.outputQueue.Send(msg)

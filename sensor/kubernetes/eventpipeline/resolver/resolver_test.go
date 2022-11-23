@@ -200,6 +200,29 @@ func (s *resolverSuite) Test_Send_BuildDeploymentWithDependenciesError() {
 	messageReceived.Wait()
 }
 
+func (s *resolverSuite) Test_Send_DeploymentNotFound() {
+	err := s.resolver.Start()
+	s.NoError(err)
+
+	messageReceived := sync.WaitGroup{}
+	messageReceived.Add(1)
+
+	s.givenNilDeploymentForId()
+
+	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(0)
+	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).Times(0)
+
+	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 0}).Times(1).Do(func(arg0 interface{}) {
+		defer messageReceived.Done()
+	})
+
+	s.resolver.Send(&component.ResourceEvent{
+		DeploymentReference: resolver.ResolveDeploymentIds("1234"),
+	})
+
+	messageReceived.Wait()
+}
+
 func (s *resolverSuite) givenBuildDependenciesError(deployment string) {
 	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
 		return &storage.Deployment{}
@@ -216,6 +239,12 @@ func (s *resolverSuite) givenBuildDependenciesError(deployment string) {
 		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
 			return nil, errors.New("dependency error")
 		})
+}
+
+func (s *resolverSuite) givenNilDeploymentForId() {
+	s.mockDeploymentStore.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
+		return nil
+	})
 }
 
 func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, permissionLevel storage.PermissionLevel) {
