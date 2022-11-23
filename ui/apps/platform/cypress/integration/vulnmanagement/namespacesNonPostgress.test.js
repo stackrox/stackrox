@@ -27,7 +27,7 @@ describe('Vulnerability Management Namespaces', () => {
     withAuth();
 
     before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
+        if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }
     });
