@@ -218,7 +218,7 @@ export function assertIntegrationsTable(integrationSource, integrationType) {
  * @param {'backups' | 'imageIntegrations' | 'notifiers'} integrationSource
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
-export function reachIntegrationsDashboardForSource(
+export function interactAndVisitIntegrationsDashboardForSource(
     interactionCallback,
     integrationSource,
     staticResponseMap

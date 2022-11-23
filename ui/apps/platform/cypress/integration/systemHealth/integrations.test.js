@@ -1,6 +1,6 @@
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
-import { reachIntegrationsDashboardForSource } from '../../helpers/integrations';
+import { interactAndVisitIntegrationsDashboardForSource } from '../../helpers/integrations';
 import { visitSystemHealth } from '../../helpers/systemHealth';
 
 describe('System Health Integrations local deployment', () => {
@@ -9,7 +9,7 @@ describe('System Health Integrations local deployment', () => {
     it('should go to Image Integrations anchor on Integrations page via click View All', () => {
         visitSystemHealth();
 
-        reachIntegrationsDashboardForSource(() => {
+        interactAndVisitIntegrationsDashboardForSource(() => {
             cy.get(
                 `${selectors.integrations.widgets.imageIntegrations} ${selectors.integrations.viewAllButton}`
             ).click();
@@ -19,7 +19,7 @@ describe('System Health Integrations local deployment', () => {
     it('should go to Notifier Integrations anchor on Integrations page via click View All', () => {
         visitSystemHealth();
 
-        reachIntegrationsDashboardForSource(() => {
+        interactAndVisitIntegrationsDashboardForSource(() => {
             cy.get(
                 `${selectors.integrations.widgets.notifierIntegrations} ${selectors.integrations.viewAllButton}`
             ).click();
@@ -29,7 +29,7 @@ describe('System Health Integrations local deployment', () => {
     it('should go to Backup Integrations anchor on Integrations page via click View All', () => {
         visitSystemHealth();
 
-        reachIntegrationsDashboardForSource(() => {
+        interactAndVisitIntegrationsDashboardForSource(() => {
             cy.get(
                 `${selectors.integrations.widgets.backupIntegrations} ${selectors.integrations.viewAllButton}`
             ).click();
