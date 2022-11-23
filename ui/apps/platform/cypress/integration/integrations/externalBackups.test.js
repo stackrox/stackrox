@@ -9,7 +9,7 @@ import {
     clickCreateNewIntegrationInTable,
     deleteIntegrationInTable,
     saveCreatedIntegrationInForm,
-    testIntegrationInFormWithoutStoredCredentials,
+    testIntegrationInFormWithStoredCredentials,
     visitIntegrationsTable,
 } from '../../helpers/integrations';
 
@@ -71,7 +71,7 @@ describe('Backup Integrations', () => {
             getInputByLabel('Backups to retain').clear().type(1).blur();
 
             const staticResponseForTest = { body: {} };
-            testIntegrationInFormWithoutStoredCredentials(
+            testIntegrationInFormWithStoredCredentials(
                 integrationSource,
                 integrationType,
                 staticResponseForTest
@@ -136,7 +136,7 @@ describe('Backup Integrations', () => {
                 .blur(); // enter invalid JSON
 
             const staticResponseForTest = { body: {} };
-            testIntegrationInFormWithoutStoredCredentials(
+            testIntegrationInFormWithStoredCredentials(
                 integrationSource,
                 integrationType,
                 staticResponseForTest
