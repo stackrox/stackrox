@@ -1,6 +1,6 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8/ubi
-ARG BASE_TAG=8.6
+ARG BASE_IMAGE=ubi8-minimal
+ARG BASE_TAG=8.7
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
@@ -26,15 +26,21 @@ COPY scripts/docker-entrypoint.sh /usr/local/bin/
 COPY scripts/init-entrypoint.sh /usr/local/bin/
 COPY --from=extracted_bundle /bundle/postgres.rpm /bundle/postgres-libs.rpm /bundle/postgres-server.rpm /bundle/postgres-contrib.rpm /tmp/
 
-RUN groupadd -g 70 postgres && \
+RUN microdnf upgrade -y --nobest && \
+    # groupadd is in shadow-utils package that is not installed by default.
+    microdnf install -y shadow-utils && \
+    groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
     rpm --import RPM-GPG-KEY-PGDG-13 && \
-    dnf upgrade -y --nobest && \
-    dnf install -y \
+    microdnf install -y \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
-        /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
-    dnf clean all && \
+        perl-libs libxslt && \
+    rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
+    # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
+    # https://access.redhat.com/solutions/5616681
+    microdnf reinstall tzdata && \
+    microdnf clean all && \
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum && \
     localedef -f UTF-8 -i en_US en_US.UTF-8 && \
