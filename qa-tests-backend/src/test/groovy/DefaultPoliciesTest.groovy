@@ -50,7 +50,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     // Deployment names
     static final private String NGINX_LATEST = "qadefpolnginxlatest"
     static final private String STRUTS = "qadefpolstruts"
-    static final private String SSL_TERMINATOR = "qadefpolsslterm"
+    //static final private String SSL_TERMINATOR = "qadefpolsslterm"
     static final private String NGINX_1_10 = "qadefpolnginx110"
     static final private String K8S_DASHBOARD = "kubernetes-dashboard"
     static final private String GCR_NGINX = "qadefpolnginx"
@@ -89,11 +89,11 @@ class DefaultPoliciesTest extends BaseSpecification {
             .addLabel ("app", "test")
             .setEnv([SECRET: 'true']),
         STRUTS_DEPLOYMENT,
-        new Deployment()
-            .setName(SSL_TERMINATOR)
-            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
-            .addLabel("app", "test")
-            .setCommand(["sleep", "600"]),
+        // new Deployment()
+        //     .setName(SSL_TERMINATOR)
+        //     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
+        //     .addLabel("app", "test")
+        //     .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(NGINX_1_10)
             .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
