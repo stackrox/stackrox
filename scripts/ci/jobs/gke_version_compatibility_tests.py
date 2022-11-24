@@ -28,7 +28,7 @@ for version in versions:
         failing_sensor_versions += version
 
 if len(failing_sensor_versions) > 0:
-    raise SensorVersionsFailure(f"Compatibility tests failed for Sensor versions {failing_sensor_versions}.")
+    raise SensorVersionsFailure(f"Compatibility tests failed for Sensor versions " + ', '.join(failing_sensor_versions))
 
 class SensorVersionsFailure(Exception):
     pass
