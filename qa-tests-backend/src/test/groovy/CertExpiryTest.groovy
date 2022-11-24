@@ -6,6 +6,17 @@ import util.Cert
 
 @Category([BAT, COMPATIBILITY])
 class CertExpiryTest extends BaseSpecification {
+
+//TODO(ROX-13449): Delete the following test case before merging
+    def "Failing test - Delete before merging"() {
+        when:
+        "This test is supposed to fail"
+
+        then:
+        "Check the behavior of the fail-fast flag in Prow"
+        assert False
+    }
+
     def "Test Central cert expiry"() {
         when:
         "Fetch the current central-tls secret, and the central cert expiry as returned by Central"
