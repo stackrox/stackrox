@@ -329,7 +329,7 @@ export function revokeAuthProvidersIntegrationInTable(integrationType, integrati
     const integrationSource = 'authProviders';
 
     const urlRevokeMap = {
-        apiToken: '/v1/apitokens/revoke/*',
+        apitoken: '/v1/apitokens/revoke/*',
         clusterInitBundle: '/v1/cluster-init/init-bundles/revoke', // id is in payload
     };
 
