@@ -42,6 +42,7 @@ func NewResourceEvent(sensorMessages []*central.SensorEvent, detectionDeployment
 	}
 }
 
+// NewDeploymentRefEvent generates a resource event given a deployment reference.
 func NewDeploymentRefEvent(ref resolver.DeploymentReference) *ResourceEvent {
 	return &ResourceEvent{
 		DeploymentReference: ref,
