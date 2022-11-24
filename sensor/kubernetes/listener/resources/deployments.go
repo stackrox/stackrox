@@ -195,7 +195,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			// if resource is being removed, we can create the remove message here without related resources
 			events = component.MergeResourceEvents(events, component.NewResourceEvent([]*central.SensorEvent{deploymentWrap.toEvent(action)}, nil, nil))
 		} else {
-			// If re-sync is disabled, we need don't process deployment relationships here. We pass a deployment
+			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 			// references up the chain, which will be used to trigger the actual deployment event and detection.
 			events = component.MergeResourceEvents(events,
 				component.NewDeploymentRefEvent(resolver.ResolveDeploymentIds(deploymentWrap.GetId())))
