@@ -15,9 +15,11 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const annotation = "rhacs.redhat.com/telemetry-apipaths"
-const orgID = "rhacs.redhat.com/organization-id"
-const tenantID = "rhacs.redhat.com/cs-tenant-id"
+const (
+        annotation = "rhacs.redhat.com/telemetry-apipaths"
+        orgID = "rhacs.redhat.com/organization-id"
+        tenantID = "rhacs.redhat.com/cs-tenant-id"
+)
 
 var config *Config
 

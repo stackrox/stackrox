@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Enabled returns true if marketing telemetery data collection is enabled.
+// Enabled returns true if marketing telemetry data collection is enabled.
 func Enabled() bool {
 	return segment.Enabled()
 }
