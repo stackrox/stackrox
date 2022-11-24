@@ -84,7 +84,7 @@ func executeDiagnosticsCommand(t *testing.T, serverURL string, timeout time.Dura
 
 	// We are using common.DoHTTPRequestAndCheck200 inside GetZip(). This
 	// function uses  global variables that are set by command execution.
-	// TODO: ROX-13638 Change GetZip function to use HTTPClient from Environment.
+	// TODO(ROX-13638): Change GetZip function to use HTTPClient from Environment.
 	cmdArgs := []string{"--insecure-skip-tls-verify", "--insecure",
 		"--endpoint", serverURL,
 		"--password", "test",
