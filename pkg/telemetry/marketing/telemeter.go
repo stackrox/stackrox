@@ -13,7 +13,7 @@ type Telemeter interface {
 type Config struct {
 	ID       string
 	OrgID    string
-	SKU      string
+	TenantID string
 	APIPaths []string
 	Identity map[string]any
 }

@@ -19,7 +19,7 @@ var (
 
 // Enabled tells whether telemetry data collection is enabled.
 func Enabled() bool {
-	return env.SegmentWriteKey.Setting() != ""
+	return env.TelemetryStorageKey.Setting() != ""
 }
 
 type segmentTelemeter struct {
@@ -53,7 +53,7 @@ func (t *segmentTelemeter) Identify(props map[string]any) {
 // Init creates and initializes a Segment telemeter instance.
 func Init(config *marketing.Config) marketing.Telemeter {
 	once.Do(func() {
-		key := env.SegmentWriteKey.Setting()
+		key := env.TelemetryStorageKey.Setting()
 		server := ""
 		instance = initSegment(config, key, server)
 	})
@@ -80,7 +80,7 @@ func initSegment(config *marketing.Config, key, server string) *segmentTelemeter
 		DefaultContext: &segment.Context{
 			Extra: map[string]any{
 				"Central ID": config.ID,
-				"SKU":        config.SKU,
+				"Tenant ID":  config.TenantID,
 			},
 		},
 	}

@@ -8,13 +8,6 @@ import "api/v1/empty.proto";
 
 package v1;
 
-message Marketing {
-    string user_id = 1;
-    string central_id = 2;
-    string organization_id = 3;
-    string segment_key = 4;
-}
-
 message Metadata {
     enum LicenseStatus {
         NONE = 0 [deprecated = true];
@@ -31,7 +24,8 @@ message Metadata {
     // Do not use this field. It will always contain "VALID"
     LicenseStatus license_status = 4 [deprecated = true];
 
-    Marketing marketing = 5;
+    // holds various instance identification data, such as central ID
+    map<string, string> marketing = 5;
 }
 
 message TrustInfo {

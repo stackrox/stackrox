@@ -14,6 +14,6 @@ var (
 	// TelemetryFrequency is the frequency at which we will report telemetry
 	TelemetryFrequency = registerDurationSetting("ROX_TELEMETRY_FREQUENCY", 24*time.Hour)
 
-	// SegmentWriteKey can be empty to disable marketing telemetry collection
-	SegmentWriteKey = RegisterSetting("ROX_SEGMENT_WRITE_KEY", AllowEmpty())
+	// TelemetryStorageKey can be empty to disable marketing telemetry collection
+	TelemetryStorageKey = RegisterSetting("ROX_TELEMETRY_STORAGE_KEY_V1", AllowEmpty())
 )

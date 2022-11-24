@@ -113,23 +113,6 @@
         }
       }
     },
-    "v1Marketing": {
-      "type": "object",
-      "properties": {
-        "userId": {
-          "type": "string"
-        },
-        "centralId": {
-          "type": "string"
-        },
-        "organizationId": {
-          "type": "string"
-        },
-        "segmentKey": {
-          "type": "string"
-        }
-      }
-    },
     "v1Metadata": {
       "type": "object",
       "properties": {
@@ -147,7 +130,11 @@
           "title": "Do not use this field. It will always contain \"VALID\""
         },
         "marketing": {
-          "$ref": "#/definitions/v1Marketing"
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "holds various instance identification data, such as central ID"
         }
       }
     },

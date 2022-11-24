@@ -2,11 +2,13 @@ package marketing
 
 import (
 	"context"
+	"crypto/sha256"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/version"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -15,12 +17,14 @@ import (
 
 const annotation = "rhacs.redhat.com/telemetry-apipaths"
 const orgID = "rhacs.redhat.com/organization-id"
-const sku = "rhacs.redhat.com/sku"
+const tenantID = "rhacs.redhat.com/cs-tenant-id"
 
 var config *Config
 
-// GetDeviceConfig collects the central instance telemetry configuration.
-func GetDeviceConfig() (*Config, error) {
+// GetInstanceConfig collects the central instance telemetry configuration from
+// central Deployment annotations and orchestrator properties. The collected
+// data is used for instance identification.
+func GetInstanceConfig() (*Config, error) {
 	if config != nil {
 		return config, nil
 	}
@@ -47,12 +51,15 @@ func GetDeviceConfig() (*Config, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get central deployment")
 	}
-	paths := d.GetAnnotations()[annotation]
+	paths, ok := d.GetAnnotations()[annotation]
+	if !ok {
+		paths = "*"
+	}
 
 	config = &Config{
 		ID:       string(d.GetUID()),
 		OrgID:    d.GetAnnotations()[orgID],
-		SKU:      d.GetAnnotations()[sku],
+		TenantID: d.GetAnnotations()[tenantID],
 		APIPaths: strings.Split(paths, ","),
 		Identity: map[string]any{
 			"Central version":    version.GetMainVersion(),
@@ -62,4 +69,28 @@ func GetDeviceConfig() (*Config, error) {
 		},
 	}
 	return config, nil
+}
+
+// hashUserID anonymizes user ID so that it can be sent to the external
+// telemetry storage for marketing data analysis.
+func hashUserID(id string) string {
+	isha := sha256.New()
+	isha.Write([]byte(id))
+	return string(isha.Sum(nil))
+}
+
+// GetUserMetadata returns user identification information map, including
+// central instance identificaion, for being used by the frontend when reporting
+// marketing telemetry data.
+func (config *Config) GetUserMetadata(id authn.Identity) map[string]string {
+	metadata := map[string]string{
+		"UserId":         "unauthenticated",
+		"CentralId":      config.ID,
+		"OrganizationId": config.OrgID,
+		"StorageKeyV1":   env.TelemetryStorageKey.Setting(),
+	}
+	if id != nil {
+		metadata["UserId"] = hashUserID(id.UID())
+	}
+	return metadata
 }
