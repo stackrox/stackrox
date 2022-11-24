@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	io2 "github.com/stackrox/rox/roxctl/common/io"
@@ -19,6 +18,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const timeoutWarningPrefix = "Timeout has been reached while creating diagnostic bundle"
 
 func TestDownloadDiagnosticsTimeoutReached(t *testing.T) {
 	shutdownServer := make(chan struct{}, 1)
@@ -28,11 +29,11 @@ func TestDownloadDiagnosticsTimeoutReached(t *testing.T) {
 	defer server.Close()
 	defer close(shutdownServer)
 
-	_, stdErr, err := executeDiagnosticsCommand(t, server.URL, 10*time.Millisecond, "")
+	_, stdErr, err := executeDiagnosticsCommand(t, server.URL, time.Millisecond, "")
 
 	require.Error(t, err)
 	assert.True(t, isTimeoutError(err))
-	assert.Contains(t, stdErr.String(), "Timeout has been reached while creating diagnostic bundle")
+	assert.Contains(t, stdErr.String(), timeoutWarningPrefix)
 }
 
 func TestDownloadDiagnosticsServerError(t *testing.T) {
@@ -48,16 +49,12 @@ func TestDownloadDiagnosticsServerError(t *testing.T) {
 	require.Error(t, err)
 	assert.False(t, isTimeoutError(err))
 	assert.Contains(t, err.Error(), expectedErrorStr)
-	assert.NotContains(t, stdErr.String(), "Timeout has been reached while creating diagnostic bundle")
+	assert.NotContains(t, stdErr.String(), timeoutWarningPrefix)
 }
 
 func TestDownloadDiagnosticsSuccess(t *testing.T) {
 	zipFilename := "test-file.zip"
-	tempDir, errTempDir := os.MkdirTemp("", "prefix")
-	require.NoError(t, errTempDir)
-	defer utils.IgnoreError(func() error {
-		return os.Remove(tempDir)
-	})
+	tempDir := t.TempDir()
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Content-Type", "application/zip")
 		rw.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", zipFilename))
@@ -87,7 +84,7 @@ func executeDiagnosticsCommand(t *testing.T, serverURL string, timeout time.Dura
 
 	// We are using common.DoHTTPRequestAndCheck200 inside GetZip(). This
 	// function uses  global variables that are set by command execution.
-	// TODO: Change GetZip function to use HTTPClient from Environment.
+	// TODO: ROX-13638 Change GetZip function to use HTTPClient from Environment.
 	cmdArgs := []string{"--insecure-skip-tls-verify", "--insecure",
 		"--endpoint", serverURL,
 		"--password", "test",
