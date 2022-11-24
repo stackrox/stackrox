@@ -18,17 +18,17 @@ versions=get_latest_release_versions(4)
 
 gkecluster=GKECluster("qa-e2e-test")
 
-sensor_failures_count = 0
+failing_sensor_versions = []
 for version in versions:
     os.environ["SENSOR_IMAGE_TAG"] = version
     try:
         make_compatibility_test_runner(cluster=gkecluster).run()
     except Exception:
         print(f"Exception \"{Exception}\" raised in compatibility test for sensor version {version}")
-        sensor_failures_count += 1
+        failing_sensor_versions += version
 
-if sensor_failures_count > 0:
-    raise SensorVersionsFailure(f"Compatibility tests failed for {sensor_failures_count} Sensor versions.")
+if len(failing_sensor_versions) > 0:
+    raise SensorVersionsFailure(f"Compatibility tests failed for Sensor versions {failing_sensor_versions}.")
 
 class SensorVersionsFailure(Exception):
     pass
