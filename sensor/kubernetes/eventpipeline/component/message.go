@@ -3,6 +3,7 @@ package component
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
 )
 
 // CompatibilityDetectionMessage should be used by old handlers
@@ -26,6 +27,10 @@ type ResourceEvent struct {
 	// CompatibilityReprocessDeployments is also used for compatibility reasons with Network Policy handlers
 	// in the future this will not be needed as the dependencies are taken care by the resolvers
 	CompatibilityReprocessDeployments []string
+
+	// DeploymentReference returns an implementation of a struct that can return a list of deployment ids
+	// that require processing
+	DeploymentReference resolver.DeploymentReference
 }
 
 // NewResourceEvent wraps the SensorEvents, CompatibilityDetectionMessages, and the CompatibilityReprocessDeployments into a ResourceEvent message
@@ -34,6 +39,13 @@ func NewResourceEvent(sensorMessages []*central.SensorEvent, detectionDeployment
 		ForwardMessages:                   sensorMessages,
 		CompatibilityDetectionDeployment:  detectionDeployment,
 		CompatibilityReprocessDeployments: reprocessDeploymentsIds,
+	}
+}
+
+// NewDeploymentRefEvent generates a resource event given a deployment reference.
+func NewDeploymentRefEvent(ref resolver.DeploymentReference) *ResourceEvent {
+	return &ResourceEvent{
+		DeploymentReference: ref,
 	}
 }
 
