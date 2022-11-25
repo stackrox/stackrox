@@ -85,7 +85,7 @@ func (g *gatherer) Start() {
 }
 
 func (g *gatherer) Stop() {
-	if g != nil {
+	if g == nil {
 		return
 	}
 	g.mu.Lock()
