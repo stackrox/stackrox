@@ -95,8 +95,7 @@ func (g *gatherer) Stop() {
 }
 
 func addTotal[T any](props map[string]any, key string, f func(context.Context) ([]*T, error)) {
-	ps, err := f(g.ctx)
-	if err != nil {
+	if ps, err := f(g.ctx); err != nil {
 		log.Errorf("Failed to get %s: %v", key, err)
 	} else {
 		props["Total "+key] = len(ps)
