@@ -528,8 +528,8 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	if enabledInterceptor := marketing.Init(); enabledInterceptor != nil {
-		config.UnaryInterceptors = append(config.UnaryInterceptors, enabledInterceptor)
+	if marketing.Enabled() {
+		config.UnaryInterceptors = append(config.UnaryInterceptors, marketing.InterceptorSingleton())
 	}
 
 	// Before authorization is checked, we want to inject the sac client into the context.

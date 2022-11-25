@@ -44,7 +44,7 @@ func (s *interceptorTestSuite) TearDownTest() {
 }
 
 func (s *interceptorTestSuite) expect(path string) {
-	s.mockTelemeter.EXPECT().TrackProps("API Call", "unknown", map[string]any{
+	s.mockTelemeter.EXPECT().Track("API Call", "unauthenticated", map[string]any{
 		"Path":       path,
 		"Code":       200,
 		"User-Agent": "test",
@@ -81,7 +81,7 @@ func (s *interceptorTestSuite) TestInterceptorHttp() {
 }
 
 func (s *interceptorTestSuite) TestInterceptorGrpc() {
-	s.mockTelemeter.EXPECT().TrackProps("API Call", "unknown", map[string]any{
+	s.mockTelemeter.EXPECT().Track("API Call", "unauthenticated", map[string]any{
 		"Path":       "/v1.Abc",
 		"Code":       0,
 		"User-Agent": "test",

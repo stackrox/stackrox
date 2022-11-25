@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/sha256"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/version"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -21,12 +23,16 @@ const (
         tenantID = "rhacs.redhat.com/cs-tenant-id"
 )
 
-var config *Config
+var (
+	config *Config
+	once   sync.Once
+	log    = logging.LoggerForModule()
+)
 
-// GetInstanceConfig collects the central instance telemetry configuration from
+// getInstanceConfig collects the central instance telemetry configuration from
 // central Deployment annotations and orchestrator properties. The collected
 // data is used for instance identification.
-func GetInstanceConfig() (*Config, error) {
+func getInstanceConfig() (*Config, error) {
 	if config != nil {
 		return config, nil
 	}
@@ -71,6 +77,17 @@ func GetInstanceConfig() (*Config, error) {
 		},
 	}
 	return config, nil
+}
+
+// Singleton returns the instance telemetry configuration.
+func Singleton() *Config {
+	once.Do(func() {
+		var err error
+		if config, err = getInstanceConfig(); err != nil {
+			log.Error("Failed to get telemetry configuration: ", err)
+		}
+	})
+	return config
 }
 
 // hashUserID anonymizes user ID so that it can be sent to the external

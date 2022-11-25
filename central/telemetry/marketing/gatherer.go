@@ -11,17 +11,19 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
-	mpkg "github.com/stackrox/rox/pkg/telemetry/marketing"
+	mPkg "github.com/stackrox/rox/pkg/telemetry/marketing"
 	"github.com/stackrox/rox/pkg/version"
 )
 
 var (
 	log = logging.LoggerForModule()
+	m   *marketing
 )
 
+const period = 5 * time.Minute
+
 type marketing struct {
-	telemeter mpkg.Telemeter
+	telemeter mPkg.Telemeter
 	period    time.Duration
 	ticker    *time.Ticker
 	stopSig   concurrency.Signal
@@ -30,28 +32,23 @@ type marketing struct {
 	userAgent string
 }
 
-var (
-	m    *marketing
-	once sync.Once
-)
+type Gatherer interface {
+	Start()
+	Stop()
+}
 
-// InitGatherer initializes the periodic telemetry data gatherer.
-func InitGatherer(t mpkg.Telemeter, p time.Duration) {
+func Singleton() Gatherer {
 	once.Do(func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		m = &marketing{
-			telemeter: t,
-			period:    p,
+			telemeter: TelemeterSingleton(),
+			period:    period,
 			userAgent: "central/" + version.GetMainVersion(),
 			ctx:       sac.WithAllAccess(ctx),
 			cancel:    cancel,
 			stopSig:   concurrency.NewSignal(),
 		}
 	})
-}
-
-// Singleton returns the previously initialized telemeter instance.
-func Singleton() *marketing {
 	return m
 }
 
@@ -78,14 +75,13 @@ func (m *marketing) Start() {
 
 func (m *marketing) Stop() {
 	if m != nil {
-		m.telemeter.Stop()
 		m.cancel()
 		m.stopSig.Signal()
 	}
 }
 
 func addTotal[T any](props map[string]any, key string, f func(context.Context) ([]*T, error)) {
-	ps, err := f(Singleton().ctx)
+	ps, err := f(m.ctx)
 	if err != nil {
 		log.Errorf("Failed to get %s: %v", key, err)
 	} else {

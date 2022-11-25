@@ -6,7 +6,7 @@ type Telemeter interface {
 	Start()
 	Stop()
 	Identify(props map[string]any)
-	TrackProps(event, userID string, props map[string]any)
+	Track(event, userID string, props map[string]any)
 }
 
 // Config represents the central instance telemetry configuration.

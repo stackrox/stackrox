@@ -69,14 +69,14 @@ func (mr *MockTelemeterMockRecorder) Stop() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockTelemeter)(nil).Stop))
 }
 
-// TrackProps mocks base method.
-func (m *MockTelemeter) TrackProps(event, userID string, props map[string]any) {
+// Track mocks base method.
+func (m *MockTelemeter) Track(event, userID string, props map[string]any) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "TrackProps", event, userID, props)
+	m.ctrl.Call(m, "Track", event, userID, props)
 }
 
-// TrackProps indicates an expected call of TrackProps.
-func (mr *MockTelemeterMockRecorder) TrackProps(event, userID, props interface{}) *gomock.Call {
+// Track indicates an expected call of Track.
+func (mr *MockTelemeterMockRecorder) Track(event, userID, props interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrackProps", reflect.TypeOf((*MockTelemeter)(nil).TrackProps), event, userID, props)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Track", reflect.TypeOf((*MockTelemeter)(nil).Track), event, userID, props)
 }

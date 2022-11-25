@@ -108,7 +108,7 @@ func (t *segmentTelemeter) Stop() {
 	}
 }
 
-func (t *segmentTelemeter) TrackProps(event, userID string, props map[string]any) {
+func (t *segmentTelemeter) Track(event, userID string, props map[string]any) {
 	if t == nil {
 		return
 	}

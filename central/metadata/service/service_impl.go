@@ -18,7 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/mtls"
-	mpkg "github.com/stackrox/rox/pkg/telemetry/marketing"
+	mPkg "github.com/stackrox/rox/pkg/telemetry/marketing"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
 )
@@ -52,7 +52,7 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 	}
 	id, _ := authn.IdentityFromContext(ctx)
 	if marketing.Enabled() {
-		if config, _ := mpkg.GetInstanceConfig(); config != nil {
+		if config := mPkg.Singleton(); config != nil {
 			metadata.Marketing = config.GetUserMetadata(id)
 		}
 	}
