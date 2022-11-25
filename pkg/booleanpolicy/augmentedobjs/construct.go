@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -150,7 +151,10 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 	}
 
 	for i, image := range images {
-		augmentedImg, err := ConstructImage(image)
+		// Since we ensure that both images and containers have the same length, this will not lead to index out of
+		// bounds panics.
+		containerImageFullName := deployment.GetContainers()[i].GetImage().GetName().GetFullName()
+		augmentedImg, err := ConstructImage(image, containerImageFullName)
 		if err != nil {
 			return nil, err
 		}
@@ -182,7 +186,7 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 }
 
 // ConstructImage constructs the augmented image object.
-func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
+func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.AugmentedObj, error) {
 	if image == nil {
 		return pathutil.NewAugmentedObj(image), nil
 	}
@@ -236,7 +240,12 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 
 	ids := []string{}
 	for _, result := range image.GetSignatureVerificationData().GetResults() {
-		if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+		// We only want signature verification results to be added that:
+		// - have a verified result.
+		// - the verified image references contains the image full name that is currently specified. This can either
+		// be equal to `img.GetName().GetFullName()`, or when used within a deployment, the container image's full name.
+		if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED &&
+			sliceutils.Find(result.GetVerifiedImageReferences(), imageFullName) != -1 {
 			ids = append(ids, result.GetVerifierId())
 		}
 	}
