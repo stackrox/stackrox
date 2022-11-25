@@ -3,14 +3,41 @@ package compliance
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/goleak"
 )
+
+// stoppable represents a gracefully stoppable thing, e.g., async process
+type stoppable struct {
+	stopC    concurrency.ErrorSignal
+	stoppedC concurrency.ErrorSignal
+}
+
+func newStoppable() stoppable {
+	return stoppable{
+		stoppedC: concurrency.NewErrorSignal(),
+		stopC:    concurrency.NewErrorSignal(),
+	}
+}
+
+// signalStopped marks the stoppaple thing as stopped
+func (st *stoppable) signalStopped() {
+	st.stoppedC.SignalWithError(st.stopC.Err())
+}
+
+// signalAndWait sends a command to stop the stoppaple thing with an error and waits until it stops
+func (st *stoppable) signalAndWait(err error) error {
+	st.stopC.SignalWithError(err)
+	return st.stoppedC.Wait()
+}
 
 func TestNodeScanHandler(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -34,9 +61,9 @@ func fakeNodeScanV2(nodeName string) *storage.NodeScanV2 {
 					Namespace: "rhel:8",
 					Version:   "2:7.4.629-6.el8",
 					Arch:      "x86_64",
-					Module:    "FakeMod",
+					Module:    "",
 					Cpes:      []string{"cpe:/a:redhat:enterprise_linux:8::baseos"},
-					AddedBy:   "FakeLayer",
+					AddedBy:   "hardcoded",
 				},
 			},
 			LanguageComponents: nil,
@@ -66,23 +93,42 @@ func (s *NodeScanHandlerTestSuite) TearDownTest() {
 	s.cancel()
 }
 
+// stopAll gracefully stops stoppables
+func stopAll(t *testing.T, stoppables ...stoppable) {
+	for _, s := range stoppables {
+		assert.NoError(t, s.signalAndWait(nil))
+	}
+}
+
+func (s *NodeScanHandlerTestSuite) TestResponsesCShouldPanicWhenNotStarted() {
+	nodeScans := make(chan *storage.NodeScanV2)
+	defer close(nodeScans)
+	h := NewNodeScanHandler(nodeScans)
+	s.Panics(func() {
+		h.ResponsesC()
+	})
+}
+
 // TestStopHandler goal is to stop handler while there are still some messages to process
 // in the channel passed into NewNodeScanHandler.
 // We expect that premature stop of the handler produces no race condition or goroutine leak.
 // Exec with: go test -race -count=1 -v -run ^TestNodeScanHandler$ ./sensor/common/compliance
 func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 	nodeScans := make(chan *storage.NodeScanV2)
+	defer close(nodeScans)
+	producer := newStoppable()
 	errTest := errors.New("example-stop-error")
 	h := NewNodeScanHandler(nodeScans)
-	s.consumeToCentral(h)
+	s.NoError(h.Start())
+	consumer := consumeAndCount(h.ResponsesC(), 1)
 	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages
 	// The intent here it to test whether the handler can shutdown with no leaks when the context is canceled despite of
 	// multiple messages waiting to be written to the channel
 	go func() {
-		defer close(nodeScans)
+		defer producer.signalStopped()
 		for i := 0; i < 30; i++ {
 			select {
-			case <-s.ctx.Done():
+			case <-producer.stopC.Done():
 				return
 			case nodeScans <- fakeNodeScanV2("Node"):
 				if i == 0 {
@@ -91,110 +137,141 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 			}
 		}
 	}()
-	s.NoError(h.Start())
-	err := h.Stopped().Wait()
-	// if the goroutine finishes before h.Stopped() is cone, then err is errInputChanClosed
-	// otherwise it is errTest. Both are fine as a reason for stopping the handler
-	s.True(errors.Is(err, errTest) || errors.Is(err, errInputChanClosed))
+	s.NoError(consumer.stoppedC.Wait())
+	s.ErrorIs(h.Stopped().Wait(), errTest)
+
+	stopAll(s.T(), producer, consumer)
 }
 
 func (s *NodeScanHandlerTestSuite) TestHandlerRegularRoutine() {
-	h := NewNodeScanHandler(s.generateTestInput())
+	ch, producer := s.generateTestInputNoClose(10)
+	defer close(ch)
+	h := NewNodeScanHandler(ch)
 	s.NoError(h.Start())
-	s.consumeToCentral(h)
+	consumer := consumeAndCount(h.ResponsesC(), 10)
+	s.NoError(producer.stoppedC.Wait())
+	s.NoError(consumer.stoppedC.Wait())
+
 	errTest := errors.New("example-stop-error")
 	h.Stop(errTest)
-	err := h.Stopped().Wait()
-	s.True(errors.Is(err, errTest) || errors.Is(err, errInputChanClosed))
+	s.ErrorIs(h.Stopped().Wait(), errTest)
+
+	stopAll(s.T(), producer, consumer)
 }
 
 func (s *NodeScanHandlerTestSuite) TestHandlerStoppedError() {
-	h := NewNodeScanHandler(s.generateTestInput())
+	ch, producer := s.generateTestInputNoClose(10)
+	defer close(ch)
+	h := NewNodeScanHandler(ch)
 	s.NoError(h.Start())
-	s.consumeToCentral(h)
+	consumer := consumeAndCount(h.ResponsesC(), 10)
+	s.NoError(producer.stoppedC.Wait())
+	s.NoError(consumer.stoppedC.Wait())
+
 	errTest := errors.New("example-stop-error")
 	h.Stop(errTest)
-	err := h.Stopped().Wait()
-	// if generateTestInput finishes before call to Stop(), err is errInputChanClosed
-	// otherwise it is errTest. Both are fine as a reason for stopping the handler
-	s.True(errors.Is(err, errTest) || errors.Is(err, errInputChanClosed))
+	s.ErrorIs(h.Stopped().Wait(), errTest)
+
+	stopAll(s.T(), producer, consumer)
 }
 
-// generateTestInput generates 10 input messages to the NodeScanHandler
-func (s *NodeScanHandlerTestSuite) generateTestInput() <-chan *storage.NodeScanV2 {
+// generateTestInputNoClose generates numToProduce messages of type NodeScanV2
+// It returns channel that must be closed
+func (s *NodeScanHandlerTestSuite) generateTestInputNoClose(numToProduce int) (chan *storage.NodeScanV2, stoppable) {
 	input := make(chan *storage.NodeScanV2)
+	st := newStoppable()
 	// this is a producer that sends 10 nodescan messages
 	go func() {
-		defer close(input)
-		for i := 0; i < 10; i++ {
+		defer st.signalStopped()
+		for i := 0; i < numToProduce; i++ {
 			select {
-			case <-s.ctx.Done():
+			case <-st.stopC.Done():
 				return
 			case input <- fakeNodeScanV2("Node"):
 			}
 		}
 	}()
-	return input
+	return input, st
 }
 
-// consumeToCentral starts handler and blocks until it stops
-func (s *NodeScanHandlerTestSuite) consumeToCentral(han NodeScanHandler) {
+// consumeAndCount consumes maximally numToConsume messages from the channel and counts the consumed messages
+// It sets error of stoppable.stopC if the number of messages consumed were less than numToConsume
+func consumeAndCount[T any](ch <-chan *T, numToConsume int) stoppable {
 	// simulate Central: consume all messages from h.ResponsesC()
+	st := newStoppable()
 	go func() {
-		for {
+		defer st.signalStopped()
+		for i := 0; i < numToConsume; i++ {
 			select {
-			case <-s.ctx.Done():
+			case <-st.stopC.Done():
+				st.stopC.Reset()
+				st.stopC.SignalWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
 				return
-			case _, ok := <-han.ResponsesC():
+			case _, ok := <-ch:
 				if !ok {
+					st.stopC.SignalWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
 					return
 				}
 			}
 		}
 	}()
+	return st
 }
 
 func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
 	s.NotPanics(func() {
-		h := NewNodeScanHandler(s.generateTestInput())
+		ch, producer := s.generateTestInputNoClose(10)
+		defer close(ch)
+		h := NewNodeScanHandler(ch)
 		s.NoError(h.Start())
-		s.consumeToCentral(h)
+		consumer := consumeAndCount(h.ResponsesC(), 10)
+		s.NoError(producer.stoppedC.Wait())
+		s.NoError(consumer.stoppedC.Wait())
 		h.Stop(nil)
 
 		err := h.Start()
 		s.Error(err)
 		s.ErrorIs(err, errStartMoreThanOnce)
+		s.NoError(h.Stopped().Wait())
 
-		err = h.Stopped().Wait()
-		s.True(errors.Is(err, nil) || errors.Is(err, errInputChanClosed))
+		stopAll(s.T(), producer, consumer)
 	})
 }
 
 func (s *NodeScanHandlerTestSuite) TestDoubleStartHandler() {
 	s.NotPanics(func() {
-		h := NewNodeScanHandler(s.generateTestInput())
+		ch, producer := s.generateTestInputNoClose(10)
+		defer close(ch)
+		h := NewNodeScanHandler(ch)
 		s.NoError(h.Start())
-		s.consumeToCentral(h)
+
+		consumer := consumeAndCount(h.ResponsesC(), 10)
+		s.NoError(producer.stoppedC.Wait())
+		s.NoError(consumer.stoppedC.Wait())
 
 		err := h.Start()
 		s.Error(err)
 		s.ErrorIs(err, errStartMoreThanOnce)
 		h.Stop(nil)
+		s.NoError(h.Stopped().Wait())
 
-		err = h.Stopped().Wait()
-		s.True(errors.Is(err, nil) || errors.Is(err, errInputChanClosed))
+		stopAll(s.T(), producer, consumer)
 	})
 }
 
 func (s *NodeScanHandlerTestSuite) TestDoubleStopHandler() {
 	s.NotPanics(func() {
-		h := NewNodeScanHandler(s.generateTestInput())
+		ch, producer := s.generateTestInputNoClose(10)
+		defer close(ch)
+		h := NewNodeScanHandler(ch)
 		s.NoError(h.Start())
-		s.consumeToCentral(h)
+		consumer := consumeAndCount(h.ResponsesC(), 10)
+		s.NoError(producer.stoppedC.Wait())
+		s.NoError(consumer.stoppedC.Wait())
 		h.Stop(nil)
 		h.Stop(nil)
+		s.NoError(h.Stopped().Wait())
 
-		err := h.Stopped().Wait()
-		s.True(errors.Is(err, nil) || errors.Is(err, errInputChanClosed))
+		stopAll(s.T(), producer, consumer)
 	})
 }

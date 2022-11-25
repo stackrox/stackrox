@@ -1,8 +1,6 @@
 package compliance
 
 import (
-	"sync/atomic"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,9 +19,9 @@ type nodeScanHandlerImpl struct {
 	toCentral <-chan *central.MsgFromSensor
 
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
-	lock      *sync.Mutex
-	numStarts uint32
-	stopC     concurrency.ErrorSignal
+	lock *sync.Mutex
+	// stopC is a command that tells this component to stop
+	stopC concurrency.ErrorSignal
 	// stoppedC is signaled when the goroutine inside of run() finishes
 	stoppedC concurrency.ErrorSignal
 }
@@ -40,15 +38,18 @@ func (c *nodeScanHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 func (c *nodeScanHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	c.lock.Lock()
 	defer c.lock.Unlock()
+	if c.toCentral == nil {
+		log.Panic("Start must be called before ResponsesC")
+	}
 	return c.toCentral
 }
 
 func (c *nodeScanHandlerImpl) Start() error {
-	if !atomic.CompareAndSwapUint32(&c.numStarts, 0, 1) {
-		return errStartMoreThanOnce
-	}
 	c.lock.Lock()
 	defer c.lock.Unlock()
+	if c.toCentral != nil {
+		return errStartMoreThanOnce
+	}
 	c.toCentral = c.run()
 	return nil
 }

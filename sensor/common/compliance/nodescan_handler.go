@@ -21,6 +21,5 @@ func NewNodeScanHandler(ch <-chan *storage.NodeScanV2) NodeScanHandler {
 		stopC:     concurrency.NewErrorSignal(),
 		lock:      &sync.Mutex{},
 		stoppedC:  concurrency.NewErrorSignal(),
-		numStarts: 0,
 	}
 }
