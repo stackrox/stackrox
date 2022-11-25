@@ -2,12 +2,15 @@ package phonehome
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
+	"github.com/pkg/errors"
 	erroxGRPC "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	pkgPH "github.com/stackrox/rox/pkg/telemetry/phonehome"
@@ -50,23 +53,43 @@ func getRequestDetails(ctx context.Context, err error, info *grpc.UnaryServerInf
 	if ri.HTTPRequest != nil && ri.HTTPRequest.URL != nil {
 		method = ri.HTTPRequest.URL.Path
 		code = grpcError.ErrToHTTPStatus(err)
-	} else {
+	} else if info != nil {
 		method = info.FullMethod
 		code = int(erroxGRPC.RoxErrorToGRPCCode(err))
+	} else {
+		method = "unknown"
+		code = -1
 	}
 	return
 }
 
-// GetInterceptor returns an API interceptor function.
-func GetInterceptor(t pkgPH.Telemeter) grpc.UnaryServerInterceptor {
-	config := pkgPH.InstanceConfig()
-	trackedPaths := set.NewFrozenSet(config.APIPaths...)
-	log.Info("Telemetry device ID:", config.ID)
-	log.Info("API path telemetry enabled for: ", config.APIPaths)
+// GetGRPCInterceptor returns an API interceptor function for GRPC requests.
+func GetGRPCInterceptor(t pkgPH.Telemeter) grpc.UnaryServerInterceptor {
+	trackedPaths := pkgPH.InstanceConfig().APIPaths
 
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
 		go track(ctx, t, err, info, trackedPaths)
 		return resp, err
+	}
+}
+
+func statusCodeToError(code *int) error {
+	if code == nil || *code == http.StatusOK {
+		return nil
+	}
+	return errors.Errorf("%d %s", *code, http.StatusText(*code))
+}
+
+// GetHTTPInterceptor returns an API interceptor function for HTTP requests.
+func GetHTTPInterceptor(t pkgPH.Telemeter) httputil.HTTPInterceptor {
+	trackedPaths := pkgPH.InstanceConfig().APIPaths
+
+	return func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
+			handler.ServeHTTP(statusTrackingWriter, r)
+			go track(r.Context(), t, statusCodeToError(statusTrackingWriter.GetStatusCode()), nil, trackedPaths)
+		})
 	}
 }

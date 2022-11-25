@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,7 +64,7 @@ func getInstanceConfig() (*Config, error) {
 		ID:       string(central.GetUID()),
 		OrgID:    central.GetAnnotations()[orgID],
 		TenantID: central.GetAnnotations()[tenantID],
-		APIPaths: strings.Split(paths, ","),
+		APIPaths: set.NewFrozenSet(strings.Split(paths, ",")...),
 		Identity: map[string]any{
 			"Central version":    version.GetMainVersion(),
 			"Chart version":      version.GetChartVersion(),
@@ -82,6 +83,9 @@ func InstanceConfig() *Config {
 		var err error
 		if config, err = getInstanceConfig(); err != nil {
 			log.Error("Failed to get telemetry configuration: ", err)
+		} else {
+			log.Info("Telemetry device ID:", config.ID)
+			log.Info("API path telemetry enabled for: ", config.APIPaths)
 		}
 	})
 	return config

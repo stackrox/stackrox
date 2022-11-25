@@ -1,5 +1,7 @@
 package phonehome
 
+import "github.com/stackrox/rox/pkg/set"
+
 // Telemeter defines a common interface for telemetry gatherers.
 //go:generate mockgen-wrapper
 type Telemeter interface {
@@ -14,6 +16,6 @@ type Config struct {
 	ID       string
 	OrgID    string
 	TenantID string
-	APIPaths []string
+	APIPaths set.FrozenSet[string]
 	Identity map[string]any
 }
