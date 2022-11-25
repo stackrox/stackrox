@@ -277,7 +277,8 @@ func main() {
 		go manageSendingToSensor(ctx, cli, sensorC)
 
 		// TODO(ROX-12971): Replace with real scanner
-		scanner := nodescanv2.FakeNodeScanner{}
+		// scanner := nodescanv2.FakeNodeScanner{}
+		scanner := nodescanv2.NodeScan{}
 		nodeScansC := manageNodeScanLoop(ctx, env.NodeRescanInterval.DurationSetting(), &scanner)
 		// multiplex producers (nodeScansC) into the output channel (sensorC)
 		go func() {
