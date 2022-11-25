@@ -46,14 +46,12 @@ func fakeNodeScanV2(nodeName string) *storage.NodeScanV2 {
 	return msg
 }
 
+var _ suite.TearDownTestSuite = (*NodeScanHandlerTestSuite)(nil)
+
 type NodeScanHandlerTestSuite struct {
 	suite.Suite
 	cancel context.CancelFunc
 	ctx    context.Context
-}
-
-func (s *NodeScanHandlerTestSuite) SetupTest() {
-
 }
 
 func assertNoGoroutineLeaks(t *testing.T) {
