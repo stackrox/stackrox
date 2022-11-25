@@ -164,6 +164,9 @@ func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
 		err := h.Start()
 		s.Error(err)
 		s.ErrorIs(err, errStartMoreThanOnce)
+
+		err = h.Stopped().Wait()
+		s.True(errors.Is(err, nil) || errors.Is(err, errInputChanClosed))
 	})
 }
 
@@ -177,6 +180,9 @@ func (s *NodeScanHandlerTestSuite) TestDoubleStartHandler() {
 		s.Error(err)
 		s.ErrorIs(err, errStartMoreThanOnce)
 		h.Stop(nil)
+
+		err = h.Stopped().Wait()
+		s.True(errors.Is(err, nil) || errors.Is(err, errInputChanClosed))
 	})
 }
 
@@ -187,5 +193,8 @@ func (s *NodeScanHandlerTestSuite) TestDoubleStopHandler() {
 		s.consumeToCentral(h)
 		h.Stop(nil)
 		h.Stop(nil)
+
+		err := h.Stopped().Wait()
+		s.True(errors.Is(err, nil) || errors.Is(err, errInputChanClosed))
 	})
 }
