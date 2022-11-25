@@ -54,7 +54,7 @@ var (
 
 	imagesWithSignatureVerificationResultsQuery = search.NewQueryBuilder().
 							AddStringsHighlighted(search.ClusterID, search.WildcardString).
-							AddStrings(search.ImageSignatureFetchedTime, search.WildcardString).ProtoQuery()
+							AddDays(search.ImageSignatureFetchedTime, 0).ProtoQuery()
 )
 
 // Singleton returns the singleton reprocessor loop
