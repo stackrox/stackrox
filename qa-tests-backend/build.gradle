@@ -78,7 +78,7 @@ dependencies {
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
-    testImplementation( 'com.athaydes:spock-reports:1.4.0' ) {
+    testImplementation( 'com.athaydes:spock-reports:2.4.0-groovy-4.0' ) {
         transitive = false
     }
     implementation group: 'com.google.protobuf', name: 'protobuf-java', version: "${protobufVersion}"
