@@ -72,6 +72,7 @@ func (s *NodeScanHandlerTestSuite) TearDownTest() {
 // Exec with: go test -race -count=1 -v -run ^TestNodeScanHandler$ ./sensor/common/compliance
 func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 	nodeScans := make(chan *storage.NodeScanV2)
+	errTest := errors.New("example-stop-error")
 	h := NewNodeScanHandler(nodeScans)
 	s.consumeToCentral(h)
 	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages
@@ -85,12 +86,16 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 				return
 			case nodeScans <- fakeNodeScanV2("Node"):
 				if i == 0 {
-					h.Stop(nil)
+					h.Stop(errTest)
 				}
 			}
 		}
 	}()
 	s.NoError(h.Start())
+	err := h.Stopped().Wait()
+	// if the goroutine finishes before h.Stopped() is cone, then err is errInputChanClosed
+	// otherwise it is errTest. Both are fine as a reason for stopping the handler
+	s.True(errors.Is(err, errTest) || errors.Is(err, errInputChanClosed))
 }
 
 func (s *NodeScanHandlerTestSuite) TestHandlerRegularRoutine() {
