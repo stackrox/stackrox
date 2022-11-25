@@ -47,7 +47,7 @@ func getRequestDetails(ctx context.Context, err error, info *grpc.UnaryServerInf
 		userID = "unauthenticated"
 		log.Debug("Cannot identify user from context: ", iderr)
 	} else {
-		userID = id.UID()
+		userID = pkgPH.HashUserID(id.UID())
 	}
 
 	if ri.HTTPRequest != nil && ri.HTTPRequest.URL != nil {

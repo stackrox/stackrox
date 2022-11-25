@@ -91,9 +91,9 @@ func InstanceConfig() *Config {
 	return config
 }
 
-// hashUserID anonymizes user ID so that it can be sent to the external
+// HashUserID anonymizes user ID so that it can be sent to the external
 // telemetry storage for product data analysis.
-func hashUserID(id string) string {
+func HashUserID(id string) string {
 	sha := sha256.New()
 	_, _ = sha.Write([]byte(id))
 	return string(sha.Sum(nil))
@@ -110,7 +110,7 @@ func (config *Config) GetUserMetadata(id authn.Identity) map[string]string {
 		"TenantId":       config.TenantID,
 	}
 	if id != nil {
-		metadata["UserId"] = hashUserID(id.UID())
+		metadata["UserId"] = HashUserID(id.UID())
 	}
 	return metadata
 }
