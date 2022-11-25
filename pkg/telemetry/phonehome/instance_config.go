@@ -3,6 +3,7 @@ package phonehome
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -96,7 +97,7 @@ func InstanceConfig() *Config {
 func HashUserID(id string) string {
 	sha := sha256.New()
 	_, _ = sha.Write([]byte(id))
-	return string(sha.Sum(nil))
+	return base64.StdEncoding.EncodeToString(sha.Sum(nil))
 }
 
 // GetUserMetadata returns user identification information map, including
