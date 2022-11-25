@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
@@ -153,6 +154,9 @@ func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
 }
 
 func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
+	// Cache key is either going to be image full name or image ID.
+	// In cae of image full name, we can skip. In case of image ID, we should make sure to check if the image's name
+	// is equal / contained in the images `Names` field.
 	key := imagecacheutils.GetImageCacheKey(req.containerImage)
 
 	// If the container image says that the image is not pullable, don't even bother trying to scan
@@ -163,20 +167,32 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 		}
 	}
 
-	// Fast path
+	// forceImageScan will be set to true in case we have an image where a cached value exists for the
+	// digest, but the name has not been added to the "Names" field. In this case, we will force a
+	// re-scan of the image, which should only fetch & verify signatures (since we already have a scan
+	// result associated, this should not matter.
+	var forceImageScan bool
+
 	img, ok := e.getImageFromCache(key)
 	if ok {
-		return imageChanResult{
-			image:        img,
-			containerIdx: req.containerIdx,
+		// If the container image name is already within the cached images names, we can short-circuit.
+		if protoutils.SliceContains(req.containerImage.GetName(), img.GetNames()) {
+			return imageChanResult{
+				image:        img,
+				containerIdx: req.containerIdx,
+			}
 		}
+		// We found an image that is already in cache (i.e. with the same digest), but the image name is different.
+		// Ensuring we have a fully enriched image (especially regarding image signatures), we need to make sure to
+		// scan this image once more. This should result in the signatures + signature verification being re-done.
+		forceImageScan = true
 	}
 
 	newValue := &cacheValue{
 		signal: concurrency.NewSignal(),
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
-	if newValue == value {
+	if forceImageScan || newValue == value {
 		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
 	}
 	return imageChanResult{
