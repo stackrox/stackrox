@@ -3,13 +3,13 @@ package phonehome
 import (
 	"context"
 	"strings"
-	"sync"
 
 	erroxGRPC "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	pkgPH "github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"google.golang.org/grpc"
 )

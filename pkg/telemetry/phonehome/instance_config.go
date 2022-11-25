@@ -4,13 +4,13 @@ import (
 	"context"
 	"crypto/sha256"
 	"strings"
-	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -90,9 +90,9 @@ func InstanceConfig() *Config {
 // hashUserID anonymizes user ID so that it can be sent to the external
 // telemetry storage for product data analysis.
 func hashUserID(id string) string {
-	isha := sha256.New()
-	isha.Write([]byte(id))
-	return string(isha.Sum(nil))
+	sha := sha256.New()
+	_, _ = sha.Write([]byte(id))
+	return string(sha.Sum(nil))
 }
 
 // GetUserMetadata returns user identification information map, including
