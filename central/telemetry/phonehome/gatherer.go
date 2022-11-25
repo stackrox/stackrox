@@ -37,6 +37,7 @@ type Gatherer interface {
 	Stop()
 }
 
+// GathererSingleton returns the telemetry gatherer instance.
 func GathererSingleton() Gatherer {
 	once.Do(func() {
 		ctx, cancel := context.WithCancel(context.Background())
