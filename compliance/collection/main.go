@@ -308,3 +308,37 @@ func main() {
 	stoppedSig.Wait()
 	log.Info("Successfully closed Sensor communication")
 }
+
+/*
+No certificates found in /usr/local/share/ca-certificates
+No certificates found in /etc/pki/injected-ca-trust
+main: 2022/11/25 12:24:19.063168 main.go:249: Info: Running StackRox Version: 3.73.x-50-gea9729f302
+main: 2022/11/25 12:24:19.064314 main.go:257: Info: Initialized Sensor gRPC stream connection
+main: 2022/11/25 12:24:19.064428 main.go:274: Info: Node Rescan interval: 10m0s
+main: 2022/11/25 12:24:19.064451 main.go:285: Info: Using real NodeScan
+time="2022-11-25T12:24:19Z" level=info msg="add files from directory" directory=usr/lib/ root=/host
+time="2022-11-25T12:24:19Z" level=info msg="add files from directory" directory=var/lib/ root=/host
+main: 2022/11/25 12:24:19.132677 main.go:243: Info: Successfully connected to Sensor at sensor.stackrox.svc:443
+time="2022-11-25T12:24:23Z" level=info msg="add files from directory" directory=root/buildinfo/ root=/host
+time="2022-11-25T12:24:23Z" level=info msg="add files from directory" directory=etc/ root=/host
+collection/nodescanv2: 2022/11/25 12:24:23.250073 nodescan.go:23: Info: Finished node inventory /host scan
+collection/nodescanv2: 2022/11/25 12:24:23.250250 nodescan.go:27: Info: Components found under /host: &{<nil> [] <nil> []}
+panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x10 pc=0x18c2287]
+
+goroutine 60 [running]:
+github.com/stackrox/rox/compliance/collection/nodescanv2.convertRHELComponents(0x0)
+    github.com/stackrox/rox/compliance/collection/nodescanv2/nodescan.go:54 +0x47
+github.com/stackrox/rox/compliance/collection/nodescanv2.protoComponentsFromScanComponents(...)
+    github.com/stackrox/rox/compliance/collection/nodescanv2/nodescan.go:46
+github.com/stackrox/rox/compliance/collection/nodescanv2.(*NodeScan).Scan(0x8bb2c97000?, {0xc00005a03e, 0x6})
+    github.com/stackrox/rox/compliance/collection/nodescanv2/nodescan.go:32 +0x1bb
+main.scanNode({0xc00005a03e, 0x6}, {0x23bdee0?, 0x379dac8?})
+    github.com/stackrox/rox/compliance/collection/main.go:184 +0x3b
+main.manageNodeScanLoop.func1()
+    github.com/stackrox/rox/compliance/collection/main.go:159 +0xf6
+created by main.manageNodeScanLoop
+    github.com/stackrox/rox/compliance/collection/main.go:154 +0x125
+Stream closed EOF for stackrox/collector-46n76 (compliance)
+
+*/
