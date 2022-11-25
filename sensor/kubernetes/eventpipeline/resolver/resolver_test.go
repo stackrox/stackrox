@@ -57,11 +57,6 @@ func (s *resolverSuite) SetupTest() {
 	})
 }
 
-func (s *resolverSuite) Test_InitializeResolver() {
-	err := s.resolver.Start()
-	s.NoError(err)
-}
-
 func (s *resolverSuite) Test_MessageSentToOutput() {
 	err := s.resolver.Start()
 	s.NoError(err)

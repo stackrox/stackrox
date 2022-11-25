@@ -73,7 +73,8 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				continue
 			}
 
-			event := component.NewResourceEvent([]*central.SensorEvent{toEvent(msg.ParentResourceAction, d)}, nil, nil)
+			event := component.NewResourceEvent([]*central.SensorEvent{toEvent(msg.ParentResourceAction, d)},
+				[]component.CompatibilityDetectionMessage{{Object: d, Action: msg.ParentResourceAction}}, nil)
 
 			component.MergeResourceEvents(msg, event)
 		}
