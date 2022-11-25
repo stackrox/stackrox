@@ -102,7 +102,10 @@ func (s *NodeScanHandlerTestSuite) TestHandlerRegularRoutine() {
 	h := NewNodeScanHandler(s.generateTestInput())
 	s.NoError(h.Start())
 	s.consumeToCentral(h)
-	h.Stop(nil)
+	errTest := errors.New("example-stop-error")
+	h.Stop(errTest)
+	err := h.Stopped().Wait()
+	s.True(errors.Is(err, errTest) || errors.Is(err, errInputChanClosed))
 }
 
 func (s *NodeScanHandlerTestSuite) TestHandlerStoppedError() {
