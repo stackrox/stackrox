@@ -1,4 +1,4 @@
-package marketing
+package phonehome
 
 // Telemeter defines a common interface for telemetry gatherers.
 //go:generate mockgen-wrapper

@@ -6,15 +6,12 @@ import (
 	segment "github.com/segmentio/analytics-go"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/telemetry/marketing"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"go.uber.org/zap/zapcore"
 )
 
 var (
-	log      = logging.LoggerForModule()
-	once     sync.Once
-	instance *segmentTelemeter
+	log = logging.LoggerForModule()
 )
 
 // Enabled tells whether telemetry data collection is enabled.
@@ -24,11 +21,11 @@ func Enabled() bool {
 
 type segmentTelemeter struct {
 	client segment.Client
-	config *marketing.Config
+	config *phonehome.Config
 }
 
 // Ensure Telemeter interface implementation.
-var _ = marketing.Telemeter((*segmentTelemeter)(nil))
+var _ = phonehome.Telemeter((*segmentTelemeter)(nil))
 
 func (t *segmentTelemeter) Identify(props map[string]any) {
 	traits := segment.NewTraits()
@@ -50,14 +47,11 @@ func (t *segmentTelemeter) Identify(props map[string]any) {
 	}
 }
 
-// Init creates and initializes a Segment telemeter instance.
-func Init(config *marketing.Config) marketing.Telemeter {
-	once.Do(func() {
-		key := env.TelemetryStorageKey.Setting()
-		server := ""
-		instance = initSegment(config, key, server)
-	})
-	return instance
+// NewTelemeter creates and initializes a Segment telemeter instance.
+func NewTelemeter(config *phonehome.Config) phonehome.Telemeter {
+	key := env.TelemetryStorageKey.Setting()
+	server := ""
+	return initSegment(config, key, server)
 }
 
 type logWrapper struct {
@@ -72,7 +66,7 @@ func (l *logWrapper) Errorf(format string, args ...any) {
 	l.internal.Errorf(format, args...)
 }
 
-func initSegment(config *marketing.Config, key, server string) *segmentTelemeter {
+func initSegment(config *phonehome.Config, key, server string) *segmentTelemeter {
 	segmentConfig := segment.Config{
 		Endpoint: server,
 		Interval: 5 * time.Minute,

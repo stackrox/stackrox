@@ -128,7 +128,7 @@ import (
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
-	"github.com/stackrox/rox/central/telemetry/marketing"
+	"github.com/stackrox/rox/central/telemetry/phonehome"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/central/ui"
@@ -313,7 +313,7 @@ func startServices() {
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
-	marketing.Singleton().Start()
+	phonehome.GathererSingleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -528,8 +528,8 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	if marketing.Enabled() {
-		config.UnaryInterceptors = append(config.UnaryInterceptors, marketing.InterceptorSingleton())
+	if phonehome.Enabled() {
+		config.UnaryInterceptors = append(config.UnaryInterceptors, phonehome.GetInterceptor(phonehome.TelemeterSingleton()))
 	}
 
 	// Before authorization is checked, we want to inject the sac client into the context.
@@ -820,7 +820,8 @@ func waitForTerminationSignal() {
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
-		{marketing.Singleton(), "marketing telemetry collector"},
+		{phonehome.GathererSingleton(), "telemetry gatherer"},
+		{phonehome.TelemeterSingleton(), "telemetry client"},
 	}
 
 	var wg sync.WaitGroup

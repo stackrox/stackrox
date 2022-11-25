@@ -24,8 +24,10 @@ message Metadata {
     // Do not use this field. It will always contain "VALID"
     LicenseStatus license_status = 4 [deprecated = true];
 
-    // holds various instance identification data, such as central ID
-    map<string, string> marketing = 5;
+    // telemetry storage service write key
+    string storage_key_v1        = 5;
+    // holds various user and central instance identification data
+    map<string, string> identity = 6;
 }
 
 message TrustInfo {

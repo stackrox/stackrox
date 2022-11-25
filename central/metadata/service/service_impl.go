@@ -8,17 +8,18 @@ import (
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/telemetry/marketing"
+	"github.com/stackrox/rox/central/telemetry/phonehome"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/mtls"
-	mPkg "github.com/stackrox/rox/pkg/telemetry/marketing"
+	pkgPH "github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
 )
@@ -51,9 +52,11 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		LicenseStatus: v1.Metadata_VALID,
 	}
 	id, _ := authn.IdentityFromContext(ctx)
-	if marketing.Enabled() {
-		if config := mPkg.Singleton(); config != nil {
-			metadata.Marketing = config.GetUserMetadata(id)
+	if phonehome.Enabled() {
+		// config could be nil if there was an error during initialization.
+		if config := pkgPH.InstanceConfig(); config != nil {
+			metadata.StorageKeyV1 = env.TelemetryStorageKey.Setting()
+			metadata.Identity = config.GetUserMetadata(id)
 		}
 	}
 	// Only return the version to logged in users, not anonymous users.

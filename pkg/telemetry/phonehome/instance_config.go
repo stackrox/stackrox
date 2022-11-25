@@ -1,4 +1,4 @@
-package marketing
+package phonehome
 
 import (
 	"context"
@@ -29,13 +29,7 @@ var (
 	log    = logging.LoggerForModule()
 )
 
-// getInstanceConfig collects the central instance telemetry configuration from
-// central Deployment annotations and orchestrator properties. The collected
-// data is used for instance identification.
 func getInstanceConfig() (*Config, error) {
-	if config != nil {
-		return config, nil
-	}
 	rc, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create k8s config")
@@ -48,26 +42,27 @@ func getInstanceConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	deployments := clientset.AppsV1().Deployments(env.Namespace.Setting())
+	central, err := deployments.Get(context.Background(), "central", v1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get central deployment")
+	}
+
+	paths, ok := central.GetAnnotations()[annotation]
+	if !ok {
+		paths = "*"
+	}
+
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
 	if env.OpenshiftAPI.BooleanSetting() {
 		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
 	}
 
-	di := clientset.AppsV1().Deployments(env.Namespace.Setting())
-	opts := v1.GetOptions{}
-	d, err := di.Get(context.Background(), "central", opts)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot get central deployment")
-	}
-	paths, ok := d.GetAnnotations()[annotation]
-	if !ok {
-		paths = "*"
-	}
-
 	config = &Config{
-		ID:       string(d.GetUID()),
-		OrgID:    d.GetAnnotations()[orgID],
-		TenantID: d.GetAnnotations()[tenantID],
+		ID:       string(central.GetUID()),
+		OrgID:    central.GetAnnotations()[orgID],
+		TenantID: central.GetAnnotations()[tenantID],
 		APIPaths: strings.Split(paths, ","),
 		Identity: map[string]any{
 			"Central version":    version.GetMainVersion(),
@@ -79,8 +74,10 @@ func getInstanceConfig() (*Config, error) {
 	return config, nil
 }
 
-// Singleton returns the instance telemetry configuration.
-func Singleton() *Config {
+// InstanceConfig collects the central instance telemetry configuration from
+// central Deployment annotations and orchestrator properties. The collected
+// data is used for instance identification.
+func InstanceConfig() *Config {
 	once.Do(func() {
 		var err error
 		if config, err = getInstanceConfig(); err != nil {
@@ -91,7 +88,7 @@ func Singleton() *Config {
 }
 
 // hashUserID anonymizes user ID so that it can be sent to the external
-// telemetry storage for marketing data analysis.
+// telemetry storage for product data analysis.
 func hashUserID(id string) string {
 	isha := sha256.New()
 	isha.Write([]byte(id))
@@ -99,14 +96,14 @@ func hashUserID(id string) string {
 }
 
 // GetUserMetadata returns user identification information map, including
-// central instance identificaion, for being used by the frontend when reporting
-// marketing telemetry data.
+// central instance ID, for being used by the frontend when reporting
+// product telemetry data.
 func (config *Config) GetUserMetadata(id authn.Identity) map[string]string {
 	metadata := map[string]string{
 		"UserId":         "unauthenticated",
 		"CentralId":      config.ID,
 		"OrganizationId": config.OrgID,
-		"StorageKeyV1":   env.TelemetryStorageKey.Setting(),
+		"TenantId":       config.TenantID,
 	}
 	if id != nil {
 		metadata["UserId"] = hashUserID(id.UID())

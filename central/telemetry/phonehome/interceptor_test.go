@@ -1,4 +1,4 @@
-package marketing
+package phonehome
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/telemetry/marketing/mocks"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/mocks"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"

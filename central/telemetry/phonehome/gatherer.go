@@ -1,4 +1,4 @@
-package marketing
+package phonehome
 
 import (
 	"context"
@@ -11,19 +11,19 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	mPkg "github.com/stackrox/rox/pkg/telemetry/marketing"
+	pkgPH "github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
 )
 
 var (
 	log = logging.LoggerForModule()
-	m   *marketing
+	m   *gatherer
 )
 
 const period = 5 * time.Minute
 
-type marketing struct {
-	telemeter mPkg.Telemeter
+type gatherer struct {
+	telemeter pkgPH.Telemeter
 	period    time.Duration
 	ticker    *time.Ticker
 	stopSig   concurrency.Signal
@@ -37,10 +37,10 @@ type Gatherer interface {
 	Stop()
 }
 
-func Singleton() Gatherer {
+func GathererSingleton() Gatherer {
 	once.Do(func() {
 		ctx, cancel := context.WithCancel(context.Background())
-		m = &marketing{
+		m = &gatherer{
 			telemeter: TelemeterSingleton(),
 			period:    period,
 			userAgent: "central/" + version.GetMainVersion(),
@@ -52,31 +52,30 @@ func Singleton() Gatherer {
 	return m
 }
 
-func (m *marketing) loop() {
-	for !m.stopSig.IsDone() {
+func (g *gatherer) loop() {
+	for !g.stopSig.IsDone() {
 		select {
-		case <-m.ticker.C:
-			go m.gather()
-		case <-m.stopSig.Done():
+		case <-g.ticker.C:
+			go g.gather()
+		case <-g.stopSig.Done():
 			return
 		}
 	}
 	log.Debug("Loop stopped.")
 }
 
-func (m *marketing) Start() {
+func (g *gatherer) Start() {
 	if Enabled() {
-		m.telemeter.Start()
-		m.ticker = time.NewTicker(m.period)
-		go m.loop()
-		log.Debug("Marketing telemetry data collection ticker enabled.")
+		g.ticker = time.NewTicker(g.period)
+		go g.loop()
+		log.Debug("Telemetry data collection ticker enabled.")
 	}
 }
 
-func (m *marketing) Stop() {
-	if m != nil {
-		m.cancel()
-		m.stopSig.Signal()
+func (g *gatherer) Stop() {
+	if g != nil {
+		g.cancel()
+		g.stopSig.Signal()
 	}
 }
 
@@ -89,9 +88,9 @@ func addTotal[T any](props map[string]any, key string, f func(context.Context) (
 	}
 }
 
-func (m *marketing) gather() {
-	log.Debug("Starting marketing telemetry data collection.")
-	defer log.Debug("Done with marketing telemetry data collection.")
+func (g *gatherer) gather() {
+	log.Debug("Starting telemetry data collection.")
+	defer log.Debug("Done with telemetry data collection.")
 
 	totals := make(map[string]any)
 	rs := roles.Singleton()
@@ -101,12 +100,12 @@ func (m *marketing) gather() {
 	addTotal(totals, "Access Scopes", rs.GetAllAccessScopes)
 	addTotal(totals, "Signature Integrations", si.Singleton().GetAllSignatureIntegrations)
 
-	groups, err := groupDataStore.Singleton().GetAll(m.ctx)
+	groups, err := groupDataStore.Singleton().GetAll(g.ctx)
 	if err != nil {
 		log.Error("Failed to get Groups: ", err)
 		return
 	}
-	providers, err := apDataStore.Singleton().GetAllAuthProviders(m.ctx)
+	providers, err := apDataStore.Singleton().GetAllAuthProviders(g.ctx)
 	if err != nil {
 		log.Error("Failed to get AuthProviders: ", err)
 		return
@@ -129,5 +128,5 @@ func (m *marketing) gather() {
 	for id, n := range providerGroups {
 		totals["Total Groups of "+providerIDNames[id]] = n
 	}
-	m.telemeter.Identify(totals)
+	g.telemeter.Identify(totals)
 }
