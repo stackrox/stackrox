@@ -2,6 +2,7 @@ package phonehome
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	apDataStore "github.com/stackrox/rox/central/authprovider/datastore"
@@ -17,7 +18,7 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-	m   *gatherer
+	g   *gatherer
 )
 
 const period = 5 * time.Minute
@@ -30,8 +31,10 @@ type gatherer struct {
 	ctx       context.Context
 	cancel    context.CancelFunc
 	userAgent string
+	mu        sync.Mutex
 }
 
+// Gatherer interface for interacting with telemetry gatherer.
 type Gatherer interface {
 	Start()
 	Stop()
@@ -39,18 +42,20 @@ type Gatherer interface {
 
 // GathererSingleton returns the telemetry gatherer instance.
 func GathererSingleton() Gatherer {
-	once.Do(func() {
-		ctx, cancel := context.WithCancel(context.Background())
-		m = &gatherer{
-			telemeter: TelemeterSingleton(),
-			period:    period,
-			userAgent: "central/" + version.GetMainVersion(),
-			ctx:       sac.WithAllAccess(ctx),
-			cancel:    cancel,
-			stopSig:   concurrency.NewSignal(),
-		}
-	})
-	return m
+	if Enabled() {
+		once.Do(func() {
+			ctx, cancel := context.WithCancel(context.Background())
+			g = &gatherer{
+				telemeter: TelemeterSingleton(),
+				period:    period,
+				userAgent: "central/" + version.GetMainVersion(),
+				ctx:       sac.WithAllAccess(ctx),
+				cancel:    cancel,
+				stopSig:   concurrency.NewSignal(),
+			}
+		})
+	}
+	return g
 }
 
 func (g *gatherer) loop() {
@@ -59,6 +64,7 @@ func (g *gatherer) loop() {
 		case <-g.ticker.C:
 			go g.gather()
 		case <-g.stopSig.Done():
+			g.cancel()
 			return
 		}
 	}
@@ -66,7 +72,12 @@ func (g *gatherer) loop() {
 }
 
 func (g *gatherer) Start() {
-	if Enabled() {
+	if g == nil {
+		return
+	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.ticker == nil {
 		g.ticker = time.NewTicker(g.period)
 		go g.loop()
 		log.Debug("Telemetry data collection ticker enabled.")
@@ -75,13 +86,16 @@ func (g *gatherer) Start() {
 
 func (g *gatherer) Stop() {
 	if g != nil {
-		g.cancel()
-		g.stopSig.Signal()
+		return
 	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.stopSig.Signal()
+	g.ticker = nil
 }
 
 func addTotal[T any](props map[string]any, key string, f func(context.Context) ([]*T, error)) {
-	ps, err := f(m.ctx)
+	ps, err := f(g.ctx)
 	if err != nil {
 		log.Errorf("Failed to get %s: %v", key, err)
 	} else {
