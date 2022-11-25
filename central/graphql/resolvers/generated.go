@@ -645,6 +645,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"lastUpdated: Time",
 		"metadata: ImageMetadata",
 		"name: ImageName",
+		"names: [ImageName]!",
 		"notPullable: Boolean!",
 		"notes: [Image_Note!]!",
 		"priority: Int!",
@@ -719,6 +720,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"status: ImageSignatureVerificationResult_Status!",
 		"verificationTime: Time",
+		"verifiedImageReferences: [String!]!",
 		"verifierId: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageSignatureVerificationResult_Status(0)))
@@ -7801,6 +7803,12 @@ func (resolver *imageResolver) Name(ctx context.Context) (*imageNameResolver, er
 	return resolver.root.wrapImageName(value, true, nil)
 }
 
+func (resolver *imageResolver) Names(ctx context.Context) ([]*imageNameResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNames()
+	return resolver.root.wrapImageNames(value, nil)
+}
+
 func (resolver *imageResolver) NotPullable(ctx context.Context) bool {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetNotPullable()
@@ -8542,6 +8550,11 @@ func (resolver *imageSignatureVerificationResultResolver) Status(ctx context.Con
 func (resolver *imageSignatureVerificationResultResolver) VerificationTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetVerificationTime()
 	return timestamp(value)
+}
+
+func (resolver *imageSignatureVerificationResultResolver) VerifiedImageReferences(ctx context.Context) []string {
+	value := resolver.data.GetVerifiedImageReferences()
+	return value
 }
 
 func (resolver *imageSignatureVerificationResultResolver) VerifierId(ctx context.Context) string {

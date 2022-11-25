@@ -10,6 +10,7 @@ import MultiSelect from 'Components/MultiSelect';
 import { fetchClustersAsArray } from 'services/ClustersService';
 import downloadDiagnostics from 'services/DebugService';
 
+import { Alert, AlertVariant } from '@patternfly/react-core';
 import FilterByStartingTimeValidationMessage from './FilterByStartingTimeValidationMessage';
 
 // Recommended format:
@@ -69,6 +70,8 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
     const [isStartingTimeValid, setIsStartingTimeValid] = useState<boolean>(true);
     const [currentTimeObject, setCurrentTimeObject] = useState<Date | null>(null); // for pure message
 
+    const [alertDownload, setAlertDownload] = useState<ReactElement | null>(null);
+
     useEffect(() => {
         fetchClustersAsArray()
             .then((clusters) => {
@@ -117,9 +120,30 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
             startingTimeObject,
             isStartingTimeValid,
         });
-        downloadDiagnostics(queryString).finally(() => {
-            setIsDownloading(false);
-        });
+        downloadDiagnostics(queryString)
+            .then(() => {
+                setAlertDownload(null);
+            })
+            .catch((error) => {
+                setAlertDownload(
+                    <Alert
+                        title="Downloading diagnostic bundle failed."
+                        variant={AlertVariant.danger}
+                        isInline
+                    >
+                        <p>
+                            <b>{error.message}</b>
+                            <br />
+                            If timeout is exceeded, use `roxctl` command line tool with increased
+                            timeout instead: `roxctl central debug download-diagnostics
+                            --timeout=400s`
+                        </p>
+                    </Alert>
+                );
+            })
+            .finally(() => {
+                setIsDownloading(false);
+            });
     }
 
     const icon = (
@@ -143,6 +167,7 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
             <div className="border-b border-base-400 flex font-700 items-center h-10 leading-normal px-2 text-base-600 text-sm tracking-wide uppercase">
                 Diagnostic Bundle
             </div>
+            {alertDownload}
             <form className="border-base-300 flex flex-col leading-normal p-2 text-base-600 w-full">
                 <div className="pb-4">
                     You can filter which platform data to include in the Zip file (max size 50MB)

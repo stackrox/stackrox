@@ -9,6 +9,9 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	rbac "github.com/stackrox/rox/sensor/common/rbac"
+	service "github.com/stackrox/rox/sensor/common/service"
+	store "github.com/stackrox/rox/sensor/common/store"
 )
 
 // MockDeploymentStore is a mock of DeploymentStore interface.
@@ -32,6 +35,21 @@ func NewMockDeploymentStore(ctrl *gomock.Controller) *MockDeploymentStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDeploymentStore) EXPECT() *MockDeploymentStoreMockRecorder {
 	return m.recorder
+}
+
+// BuildDeploymentWithDependencies mocks base method.
+func (m *MockDeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BuildDeploymentWithDependencies", id, dependencies)
+	ret0, _ := ret[0].(*storage.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BuildDeploymentWithDependencies indicates an expected call of BuildDeploymentWithDependencies.
+func (mr *MockDeploymentStoreMockRecorder) BuildDeploymentWithDependencies(id, dependencies interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDeploymentWithDependencies", reflect.TypeOf((*MockDeploymentStore)(nil).BuildDeploymentWithDependencies), id, dependencies)
 }
 
 // Get mocks base method.
@@ -275,4 +293,78 @@ func (m *MockServiceAccountStore) Remove(sa *storage.ServiceAccount) {
 func (mr *MockServiceAccountStoreMockRecorder) Remove(sa interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockServiceAccountStore)(nil).Remove), sa)
+}
+
+// MockServiceStore is a mock of ServiceStore interface.
+type MockServiceStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockServiceStoreMockRecorder
+}
+
+// MockServiceStoreMockRecorder is the mock recorder for MockServiceStore.
+type MockServiceStoreMockRecorder struct {
+	mock *MockServiceStore
+}
+
+// NewMockServiceStore creates a new mock instance.
+func NewMockServiceStore(ctrl *gomock.Controller) *MockServiceStore {
+	mock := &MockServiceStore{ctrl: ctrl}
+	mock.recorder = &MockServiceStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockServiceStore) EXPECT() *MockServiceStoreMockRecorder {
+	return m.recorder
+}
+
+// GetExposureInfos mocks base method.
+func (m *MockServiceStore) GetExposureInfos(namespace string, labels map[string]string) []map[service.PortRef][]*storage.PortConfig_ExposureInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetExposureInfos", namespace, labels)
+	ret0, _ := ret[0].([]map[service.PortRef][]*storage.PortConfig_ExposureInfo)
+	return ret0
+}
+
+// GetExposureInfos indicates an expected call of GetExposureInfos.
+func (mr *MockServiceStoreMockRecorder) GetExposureInfos(namespace, labels interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExposureInfos", reflect.TypeOf((*MockServiceStore)(nil).GetExposureInfos), namespace, labels)
+}
+
+// MockRBACStore is a mock of RBACStore interface.
+type MockRBACStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockRBACStoreMockRecorder
+}
+
+// MockRBACStoreMockRecorder is the mock recorder for MockRBACStore.
+type MockRBACStoreMockRecorder struct {
+	mock *MockRBACStore
+}
+
+// NewMockRBACStore creates a new mock instance.
+func NewMockRBACStore(ctrl *gomock.Controller) *MockRBACStore {
+	mock := &MockRBACStore{ctrl: ctrl}
+	mock.recorder = &MockRBACStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRBACStore) EXPECT() *MockRBACStoreMockRecorder {
+	return m.recorder
+}
+
+// GetPermissionLevelForDeployment mocks base method.
+func (m *MockRBACStore) GetPermissionLevelForDeployment(deployment rbac.NamespacedServiceAccount) storage.PermissionLevel {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPermissionLevelForDeployment", deployment)
+	ret0, _ := ret[0].(storage.PermissionLevel)
+	return ret0
+}
+
+// GetPermissionLevelForDeployment indicates an expected call of GetPermissionLevelForDeployment.
+func (mr *MockRBACStoreMockRecorder) GetPermissionLevelForDeployment(deployment interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPermissionLevelForDeployment", reflect.TypeOf((*MockRBACStore)(nil).GetPermissionLevelForDeployment), deployment)
 }

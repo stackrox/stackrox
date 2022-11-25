@@ -18,7 +18,7 @@ import {
     LabelSelector,
     LabelSelectorsKey,
     computeEffectiveAccessScopeClusters,
-    defaultAccessScopeIds,
+    getIsUnrestrictedAccessScopeId,
 } from 'services/AccessScopesService';
 
 import {
@@ -85,9 +85,9 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
      * before its first requirement or value has been added.
      */
     const isValidRules =
-        values.id !== defaultAccessScopeIds.Unrestricted && getIsValidRules(values.rules);
+        !getIsUnrestrictedAccessScopeId(values.id) && getIsValidRules(values.rules);
     useEffect(() => {
-        if (values.id === defaultAccessScopeIds.Unrestricted) {
+        if (getIsUnrestrictedAccessScopeId(values.id)) {
             return;
         }
         setCounterComputing((counterPrev) => counterPrev + 1);
@@ -195,7 +195,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                 />
             </FormGroup>
             {alertCompute}
-            {values.id !== defaultAccessScopeIds.Unrestricted && (
+            {!getIsUnrestrictedAccessScopeId(values.id) && (
                 <Flex
                     direction={{ default: 'row' }}
                     spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}

@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/rbac"
 	v1 "k8s.io/api/rbac/v1"
 )
 
@@ -21,7 +22,7 @@ type storeImpl struct {
 	dirty           bool
 }
 
-func (rs *storeImpl) GetPermissionLevelForDeployment(d NamespacedServiceAccount) storage.PermissionLevel {
+func (rs *storeImpl) GetPermissionLevelForDeployment(d rbac.NamespacedServiceAccount) storage.PermissionLevel {
 	subject := &storage.Subject{
 		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
 		Name:      d.GetServiceAccount(),

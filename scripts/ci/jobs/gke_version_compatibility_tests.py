@@ -19,6 +19,17 @@ chart_versions=get_latest_release_versions(4)
 
 gkecluster=GKECluster("compat-test")
 
+failing_sensor_versions = []
 for version in chart_versions:
     os.environ["SENSOR_CHART_VERSION"] = version
-    make_compatibility_test_runner(cluster=gkecluster).run()
+    try:
+        make_compatibility_test_runner(cluster=gkecluster).run()
+    except Exception:
+        print(f"Exception \"{Exception}\" raised in compatibility test for sensor version {version}")
+        failing_sensor_versions += version
+
+if len(failing_sensor_versions) > 0:
+    raise SensorVersionsFailure(f"Compatibility tests failed for Sensor versions " + ', '.join(failing_sensor_versions))
+
+class SensorVersionsFailure(Exception):
+    pass

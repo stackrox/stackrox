@@ -21,8 +21,8 @@ func TestResourceEventHandlerImpl(t *testing.T) {
 type ResourceEventHandlerImplTestSuite struct {
 	suite.Suite
 
-	dispatcher  *mocks.MockDispatcher
-	outputQueue *mocks2.MockOutputQueue
+	dispatcher *mocks.MockDispatcher
+	resolver   *mocks2.MockResolver
 
 	mockCtrl *gomock.Controller
 }
@@ -38,7 +38,7 @@ func (h *hasAnID) GetUID() types.UID {
 func (suite *ResourceEventHandlerImplTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dispatcher = mocks.NewMockDispatcher(suite.mockCtrl)
-	suite.outputQueue = mocks2.NewMockOutputQueue(suite.mockCtrl)
+	suite.resolver = mocks2.NewMockResolver(suite.mockCtrl)
 }
 
 func (suite *ResourceEventHandlerImplTestSuite) TearDownTest() {
@@ -59,7 +59,7 @@ func makeExpectedMap(expectedIDs ...*hasAnID) *map[types.UID]struct{} {
 
 func (suite *ResourceEventHandlerImplTestSuite) addObj(handler *resourceEventHandlerImpl, obj *hasAnID, expectedMap *map[types.UID]struct{}) {
 	suite.dispatcher.EXPECT().ProcessEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE)
-	suite.outputQueue.EXPECT().Send(gomock.Any())
+	suite.resolver.EXPECT().Send(gomock.Any())
 	handler.OnAdd(obj)
 	suite.Equal(*expectedMap, handler.seenIDs)
 }
@@ -77,7 +77,7 @@ func (suite *ResourceEventHandlerImplTestSuite) newHandlerImpl() *resourceEventH
 	return &resourceEventHandlerImpl{
 		eventLock:        &eventLock,
 		dispatcher:       suite.dispatcher,
-		outputQueue:      suite.outputQueue,
+		resolver:         suite.resolver,
 		syncingResources: &treatCreatesAsUpdates,
 
 		hasSeenAllInitialIDsSignal: concurrency.NewSignal(),
@@ -170,7 +170,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestCompleteSync() {
 	suite.Equal(*expectedMap, handler.missingInitialIDs)
 
 	suite.dispatcher.EXPECT().ProcessEvent(testMsgTwo, nil, central.ResourceAction_SYNC_RESOURCE)
-	suite.outputQueue.EXPECT().Send(gomock.Any())
+	suite.resolver.EXPECT().Send(gomock.Any())
 	handler.OnAdd(testMsgTwo)
 	suite.assertFinished(handler)
 }

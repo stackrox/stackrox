@@ -85,6 +85,14 @@ button.pf-c-toggle-group__button:disabled {
     border-width: inherit !important;
 }
 
+/* Un-override the above override when the <Select> component is in an invalid state */
+.pf-m-invalid .pf-c-select__toggle::before {
+    /* Why are these pseudo elements not able to access the vars? */
+    /* border-bottom-color: var(--pf-c-select__toggle--before--BorderBottomColor); */
+    border-bottom-color: rgb(201, 25, 11) !important;
+    border-bottom-width: 2px !important;
+}
+
 /* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
 .pf-c-button__icon.pf-m-start svg,
 .pf-c-button__icon.pf-m-end svg,

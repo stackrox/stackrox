@@ -19,14 +19,14 @@ var (
 // SignatureVerifier is responsible for verifying signatures using a specific signature verification method.
 type SignatureVerifier interface {
 	// VerifySignature will take an image and verify its signature using a specific verification method.
-	// It will return a storage.ImageSignatureVerificationResult_Status and
-	// an error if the verification was unsuccessful.
-	VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error)
+	// It will return a storage.ImageSignatureVerificationResult_Status, the verified image references if verification
+	// was successful, and an error if the verification was unsuccessful.
+	VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, []string, error)
 }
 
 // SignatureFetcher is responsible for fetching raw signatures supporting multiple specific signature formats.
 type SignatureFetcher interface {
-	FetchSignatures(ctx context.Context, image *storage.Image, registry registryTypes.Registry) ([]*storage.Signature, error)
+	FetchSignatures(ctx context.Context, image *storage.Image, fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
 }
 
 // NewSignatureVerifier creates a new signature verifier capable of verifying signatures against the provided config.
@@ -50,27 +50,24 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 	verifiers := createVerifiersFromIntegration(integration)
 	var results []*storage.ImageSignatureVerificationResult
 	for _, verifier := range verifiers {
-		res, err := verifier.VerifySignature(ctx, image)
+		res, verifiedImageReferences, err := verifier.VerifySignature(ctx, image)
+
+		verificationResult := &storage.ImageSignatureVerificationResult{
+			VerificationTime:        protoconv.ConvertTimeToTimestamp(time.Now()),
+			VerifierId:              integration.GetId(),
+			Status:                  res,
+			VerifiedImageReferences: verifiedImageReferences,
+		}
 		// We do not currently support specifying which specific method within an image signature integration should
 		// be successful. Hence, short-circuit on the first successfully verified signature within an image signature
 		// integration.
 		if res == storage.ImageSignatureVerificationResult_VERIFIED {
 			return []*storage.ImageSignatureVerificationResult{
-				{
-					VerificationTime: protoconv.ConvertTimeToTimestamp(time.Now()),
-					VerifierId:       integration.GetId(),
-					Status:           res,
-				},
+				verificationResult,
 			}
 		}
 		// Right now, we will duplicate the verification result for each SignatureVerifier contained within an image
 		// signature, ensuring all errors are properly returned to the caller.
-		verificationResult := &storage.ImageSignatureVerificationResult{
-			VerificationTime: protoconv.ConvertTimeToTimestamp(time.Now()),
-			VerifierId:       integration.GetId(),
-			Status:           res,
-		}
-
 		if err != nil {
 			verificationResult.Description = err.Error()
 		}
@@ -115,11 +112,11 @@ func createVerifiersFromIntegration(integration *storage.SignatureIntegration) [
 // FetchImageSignaturesWithRetries will try and fetch signatures for the given image from the given registry and return them.
 // It will retry on transient errors and return the fetched signatures.
 func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
-	registry registryTypes.Registry) ([]*storage.Signature, error) {
+	fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error) {
 	var fetchedSignatures []*storage.Signature
 	var err error
 	err = retry.WithRetry(func() error {
-		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, registry, fetchedSignatures)
+		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, fullImageName, registry, fetchedSignatures)
 		return err
 	},
 		retry.Tries(2),
@@ -132,11 +129,11 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 }
 
 func fetchAndAppendSignatures(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
-	registry registryTypes.Registry, fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
+	fullImageName string, registry registryTypes.Registry, fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
 	sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	sigs, err := fetcher.FetchSignatures(sigFetchCtx, image, registry)
+	sigs, err := fetcher.FetchSignatures(sigFetchCtx, image, fullImageName, registry)
 	if err != nil {
 		return nil, err
 	}

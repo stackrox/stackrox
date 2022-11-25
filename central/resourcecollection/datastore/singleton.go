@@ -14,21 +14,22 @@ var (
 	once sync.Once
 
 	ds DataStore
+	qr QueryResolver
 )
 
 func initialize() {
 	var err error
 	storage := postgres.New(globaldb.GetPostgres())
 	indexer := postgres.NewIndexer(globaldb.GetPostgres())
-	ds, err = New(storage, indexer, search.New(storage, indexer))
+	ds, qr, err = New(storage, indexer, search.New(storage, indexer))
 	utils.CrashOnError(err)
 }
 
 // Singleton returns a singleton instance of cve datastore
-func Singleton() DataStore {
+func Singleton() (DataStore, QueryResolver) {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() || !features.ObjectCollections.Enabled() {
-		return nil
+		return nil, nil
 	}
 	once.Do(initialize)
-	return ds
+	return ds, qr
 }

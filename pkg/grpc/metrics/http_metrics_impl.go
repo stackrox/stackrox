@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"sync/atomic"
 
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sync"
@@ -19,14 +19,14 @@ type perPathHTTPMetrics struct {
 	normalInvocationStats      map[int]int64
 	normalInvocationStatsMutex sync.RWMutex
 
-	panics *lru.Cache
+	panics *lru.Cache[string, *int64]
 }
 
 func (h *httpMetricsImpl) WrapHandler(handler http.Handler, path string) http.Handler {
 	// Prevent access to the apiCalls map while we wrap a new handler
 	h.allMetricsMutex.Lock()
 	defer h.allMetricsMutex.Unlock()
-	panicLRU, err := lru.New(cacheSize)
+	panicLRU, err := lru.New[string, *int64](cacheSize)
 	if err != nil {
 		// This should only happen if cacheSize < 0 and that should be impossible.
 		log.Infof("unable to create LRU in WrapHandler for endpoint %s with size %d", path, cacheSize)
@@ -48,7 +48,7 @@ func (h *httpMetricsImpl) WrapHandler(handler http.Handler, path string) http.Ha
 			panicLocation := getPanicLocation(1)
 			panicCount, ok := panicLRU.Get(panicLocation)
 			if ok {
-				atomic.AddInt64(panicCount.(*int64), 1)
+				atomic.AddInt64(panicCount, 1)
 				panic(r)
 			}
 			initialCount := int64(0)
@@ -56,7 +56,7 @@ func (h *httpMetricsImpl) WrapHandler(handler http.Handler, path string) http.Ha
 			panicCount, ok = panicLRU.Get(panicLocation)
 			// This panic might have been evicted from panicLRU if we're getting a lot of them
 			if ok {
-				atomic.AddInt64(panicCount.(*int64), 1)
+				atomic.AddInt64(panicCount, 1)
 			}
 			panic(r)
 		}()
@@ -100,7 +100,7 @@ func (h *httpMetricsImpl) GetMetrics() (map[string]map[int]int64, map[string]map
 		panicMap := make(map[string]int64, len(panicLocations))
 		for _, panicLocation := range panicLocations {
 			if panicCount, ok := ppm.panics.Get(panicLocation); ok {
-				panicMap[panicLocation.(string)] = atomic.LoadInt64(panicCount.(*int64))
+				panicMap[panicLocation] = atomic.LoadInt64(panicCount)
 			}
 		}
 		if len(panicMap) > 0 {

@@ -6,12 +6,19 @@ import "github.com/stackrox/rox/generated/internalapi/central"
 type PipelineComponent interface {
 	Start() error
 	Stop(error)
-	ResponsesC() <-chan *central.MsgFromSensor
+}
+
+// Resolver component that performs the dependency resolution
+//go:generate mockgen-wrapper
+type Resolver interface {
+	PipelineComponent
+	Send(event *ResourceEvent)
 }
 
 // OutputQueue component that redirects Resource Events and Alerts to the output channel
 //go:generate mockgen-wrapper
 type OutputQueue interface {
 	PipelineComponent
-	Send(detectionObject *ResourceEvent)
+	Send(event *ResourceEvent)
+	ResponsesC() <-chan *central.MsgFromSensor
 }

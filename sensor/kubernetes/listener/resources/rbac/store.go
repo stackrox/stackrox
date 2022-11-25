@@ -2,14 +2,9 @@ package rbac
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/rbac"
 	v1 "k8s.io/api/rbac/v1"
 )
-
-// NamespacedServiceAccount keeps a pair of service account and used namespace.
-type NamespacedServiceAccount interface {
-	GetServiceAccount() string
-	GetNamespace() string
-}
 
 // Store handles correlating updates to K8s rbac types and generates events from them.
 type Store interface {
@@ -26,7 +21,7 @@ type Store interface {
 
 	UpsertClusterBinding(binding *v1.ClusterRoleBinding)
 	RemoveClusterBinding(binding *v1.ClusterRoleBinding)
-	GetPermissionLevelForDeployment(deployment NamespacedServiceAccount) storage.PermissionLevel
+	GetPermissionLevelForDeployment(deployment rbac.NamespacedServiceAccount) storage.PermissionLevel
 }
 
 // NewStore creates a new instance of Store

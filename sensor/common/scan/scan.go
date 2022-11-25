@@ -77,7 +77,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	}
 
 	// Fetch signatures from cluster-local registry.
-	sigs, err := fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image,
+	sigs, err := fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image, image.GetName().GetFullName(),
 		matchingRegistry)
 	if err != nil {
 		log.Debugf("Failed fetching signatures for image %q: %v", imgName, err)

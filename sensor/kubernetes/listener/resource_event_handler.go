@@ -77,6 +77,7 @@ func (k *listenerImpl) handleAllEvents() {
 		orchestratornamespaces.Singleton(),
 		k.credentialsManager,
 		k.traceWriter,
+		k.storeProvider,
 	)
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
@@ -253,7 +254,7 @@ func (k *listenerImpl) handleAllEvents() {
 func handle(
 	informer cache.SharedIndexInformer,
 	dispatcher resources.Dispatcher,
-	outputQueue component.OutputQueue,
+	resolver component.Resolver,
 	syncingResources *concurrency.Flag,
 	wg *concurrency.WaitGroup,
 	stopSignal *concurrency.Signal,
@@ -262,7 +263,7 @@ func handle(
 	handlerImpl := &resourceEventHandlerImpl{
 		eventLock:        eventLock,
 		dispatcher:       dispatcher,
-		outputQueue:      outputQueue,
+		resolver:         resolver,
 		syncingResources: syncingResources,
 
 		hasSeenAllInitialIDsSignal: concurrency.NewSignal(),
