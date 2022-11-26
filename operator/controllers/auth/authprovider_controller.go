@@ -114,9 +114,11 @@ func (r *Reconciler) configMapForAuthProvider(ctx context.Context, authProvider 
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: authProvider.GetName(),
-			// TODO(dhaus): While central could read it from _all_ namespaces, probably we want to constrain this to the namespace where central is deployed.
-			Namespace: authProvider.GetNamespace(),
+			// TODO(dhaus): Somehow need to make this one be dynamic and shard the auth providers across multiple config maps.
+			// One could re-use this extraMounts helm setting to achieve this, but we have to check whether this is somethign we actually want to do or not.
+			Name: "auth-providers",
+			// TODO(dhaus): I suppose we can imagine that the CR will be in the same namespace as central, but for now hardcode it.
+			Namespace: "stackrox",
 		},
 		BinaryData: map[string][]byte{
 			authProvider.GetName(): msgBytes,
