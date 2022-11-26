@@ -2,8 +2,10 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: "[\n  {\n    \"apiVersion\": \"platform.stackrox.io/v1alpha1\",\n\
-      \    \"kind\": \"Central\",\n    \"metadata\": {\n      \"name\": \"stackrox-central-services\"\
+    alm-examples: "[\n  {\n    \"apiVersion\": \"auth.stackrox.io/v1alpha1\",\n  \
+      \  \"kind\": \"AuthProvider\",\n    \"metadata\": {\n      \"name\": \"authprovider-sample\"\
+      \n    },\n    \"spec\": null\n  },\n  {\n    \"apiVersion\": \"platform.stackrox.io/v1alpha1\"\
+      ,\n    \"kind\": \"Central\",\n    \"metadata\": {\n      \"name\": \"stackrox-central-services\"\
       ,\n      \"namespace\": \"stackrox\"\n    },\n    \"spec\": {\n      \"central\"\
       : {\n        \"exposure\": {\n          \"route\": {\n            \"enabled\"\
       : true\n          }\n        }\n      }\n    }\n  },\n  {\n    \"apiVersion\"\
@@ -28,6 +30,31 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - description: AuthProvider is the Schema for the authproviders API
+      displayName: Auth Provider
+      kind: AuthProvider
+      name: authproviders.auth.stackrox.io
+      specDescriptors:
+      - description: Type allows you to specify the specific auth provider you want
+          to create.
+        displayName: Type
+        path: type
+      - description: ClientID allows you to specify the client ID for the OIDC client.
+        displayName: Client ID
+        path: clientId
+      - description: ClientSecretReference allows you to specify an optional secret
+          that holds the client secret for the OIDC client.
+        displayName: Client Reference
+        path: clientSecretReference
+      - description: Issuer allows you to specify the issuer of the OIDc client.
+        displayName: Issuer
+        path: issuer
+      - description: Name of the referenced secret.
+        displayName: Name
+        path: clientSecretReference.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+      version: v1alpha1
     - description: Central is the configuration template for the central services.
         This includes the API server, persistent storage, and the web UI, as well
         as the image scanner.
@@ -772,6 +799,32 @@ spec:
           - '*'
           verbs:
           - '*'
+        - apiGroups:
+          - auth.stackrox.io
+          resources:
+          - authproviders
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - auth.stackrox.io
+          resources:
+          - authproviders/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - auth.stackrox.io
+          resources:
+          - authproviders/status
+          verbs:
+          - get
+          - patch
+          - update
         - apiGroups:
           - platform.stackrox.io
           resources:

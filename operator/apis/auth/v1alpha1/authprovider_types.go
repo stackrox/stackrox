@@ -28,8 +28,36 @@ type AuthProviderSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of AuthProvider. Edit authprovider_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Type allows you to specify the specific auth provider you want to create.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Type,order=1
+	Type *AuthProviderType `json:"type,omitempty"`
+
+	// ClientID allows you to specify the client ID for the OIDC client.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Client ID,order=2
+	ClientID *string `json:"clientId,omitempty"`
+
+	// ClientSecretReference allows you to specify an optional secret that holds the client secret for the OIDC client.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Client Reference,order=3
+	ClientSecretReference *SecretReference `json:"clientSecretReference,omitempty"`
+
+	// Issuer allows you to specify the issuer of the OIDc client.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Issuer,order=3
+	Issuer *string `json:"issuer,omitempty"`
+}
+
+// AuthProviderType specifies the type of the auth provider.
+type AuthProviderType string
+
+const (
+	// AuthProviderOIDC means that the created auth provider will be using OIDC.
+	AuthProviderOIDC AuthProviderType = "oidc"
+)
+
+// SecretReference is a reference to a secret within the same namespace.
+type SecretReference struct {
+	// Name of the referenced secret.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret"}
+	Name string `json:"name"`
 }
 
 // AuthProviderStatus defines the observed state of AuthProvider
@@ -62,8 +90,3 @@ type AuthProviderList struct {
 func init() {
 	SchemeBuilder.Register(&AuthProvider{}, &AuthProviderList{})
 }
-
-var (
-	// AuthProviderGVK is the GVK for the Central type.
-	AuthProviderGVK = GroupVersion.WithKind("AuthProvider")
-)
