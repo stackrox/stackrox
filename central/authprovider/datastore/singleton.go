@@ -3,6 +3,7 @@ package datastore
 import (
 	"github.com/stackrox/rox/central/authprovider/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/authprovider/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/authprovider/datastore/internal/store/shim"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/env"
@@ -18,9 +19,9 @@ var (
 func Singleton() authproviders.Store {
 	once.Do(func() {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			soleInstance = New(postgres.New(globaldb.GetPostgres()))
+			soleInstance = New(shim.New(postgres.New(globaldb.GetPostgres())))
 		} else {
-			soleInstance = New(bolt.New(globaldb.GetGlobalDB()))
+			soleInstance = New(shim.New(bolt.New(globaldb.GetGlobalDB())))
 		}
 	})
 	return soleInstance
