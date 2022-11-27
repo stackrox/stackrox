@@ -162,6 +162,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         log.info ""
         log.info ""
 
+        waitForResponseToHaveNumElements(2, namespace, 120)
 
         processesListeningOnPorts = evaluateWithRetry(10, 10) {
                 def temp = ProcessesListeningOnPortsService
@@ -230,8 +231,9 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
 
         destroyDeployments()
+        waitForResponseToHaveNumElements(2, namespace, 120)
 
-        sleep(200000)
+        //sleep(200000)Worked
         //sleep(100000)Failed
 
         log.info "Destroyed deployment"
@@ -307,5 +309,25 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def list2 = processesListeningOnPorts.processesListeningOnPortsList
         assert list2.size() == 0
+    }
+    private waitForResponseToHaveNumElements(int numElements, String namespace, int timeoutSeconds = 120) {
+        int intervalSeconds = 1
+        int waitTime
+        for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
+        	def processesListeningOnPorts = evaluateWithRetry(10, 10) {
+        	        def temp = ProcessesListeningOnPortsService
+        	                .getProcessesListeningOnPortsWithDeploymentResponse(namespace)
+        	        return temp
+        	}
+
+        	def list = processesListeningOnPorts.processesListeningOnPortsWithDeploymentList
+
+            if (list.size() == numElements) {
+                return true
+            }
+            sleep intervalSeconds * 1000
+        }
+        log.info "Timedout waiting for response to have {$numElements}"
+        return false
     }
 }
