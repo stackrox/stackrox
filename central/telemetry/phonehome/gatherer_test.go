@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/telemetry/phonehome/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,10 +43,9 @@ func (s *gathererTestSuite) TestNilGatherer() {
 
 func (s *gathererTestSuite) TestGatherer() {
 	s.T().Setenv(env.TelemetryStorageKey.EnvVar(), "testkey")
-	t := mocks.NewMockTelemeter(s.mockCtrl)
 
 	var i int64
-	gptr := newGatherer(t, 10*time.Millisecond, func(g *gatherer) {
+	gptr := newGatherer(nil, 10*time.Millisecond, func(g *gatherer) {
 		if i == 2 {
 			g.Stop()
 		} else {
