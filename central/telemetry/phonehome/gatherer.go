@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
-	g   *gatherer
+	log              = logging.LoggerForModule()
+	gathererInstance *gatherer
 )
 
 const period = 5 * time.Minute
@@ -32,6 +32,7 @@ type gatherer struct {
 	cancel    context.CancelFunc
 	userAgent string
 	mu        sync.Mutex
+	f         func(*gatherer)
 }
 
 // Gatherer interface for interacting with telemetry gatherer.
@@ -40,29 +41,39 @@ type Gatherer interface {
 	Stop()
 }
 
+func (g *gatherer) reset() {
+	ctx, cancel := context.WithCancel(context.Background())
+	g.ctx = sac.WithAllAccess(ctx)
+	g.cancel = cancel
+	g.stopSig = concurrency.NewSignal()
+}
+
+func newGatherer(t pkgPH.Telemeter, p time.Duration, f func(*gatherer)) *gatherer {
+	g := &gatherer{
+		telemeter: t,
+		period:    p,
+		userAgent: "central/" + version.GetMainVersion(),
+		f:         f,
+	}
+	g.reset()
+	return g
+}
+
 // GathererSingleton returns the telemetry gatherer instance.
 func GathererSingleton() Gatherer {
 	if Enabled() {
 		once.Do(func() {
-			ctx, cancel := context.WithCancel(context.Background())
-			g = &gatherer{
-				telemeter: TelemeterSingleton(),
-				period:    period,
-				userAgent: "central/" + version.GetMainVersion(),
-				ctx:       sac.WithAllAccess(ctx),
-				cancel:    cancel,
-				stopSig:   concurrency.NewSignal(),
-			}
+			gathererInstance = newGatherer(TelemeterSingleton(), period, func(g *gatherer) { g.gather() })
 		})
 	}
-	return g
+	return gathererInstance
 }
 
 func (g *gatherer) loop() {
 	for !g.stopSig.IsDone() {
 		select {
 		case <-g.ticker.C:
-			go g.gather()
+			go g.f(g)
 		case <-g.stopSig.Done():
 			g.cancel()
 			return
@@ -79,6 +90,7 @@ func (g *gatherer) Start() {
 	defer g.mu.Unlock()
 	if g.ticker == nil {
 		g.ticker = time.NewTicker(g.period)
+		g.reset()
 		go g.loop()
 		log.Debug("Telemetry data collection ticker enabled.")
 	}
@@ -94,8 +106,8 @@ func (g *gatherer) Stop() {
 	g.ticker = nil
 }
 
-func addTotal[T any](props map[string]any, key string, f func(context.Context) ([]*T, error)) {
-	if ps, err := f(g.ctx); err != nil {
+func addTotal[T any](ctx context.Context, props map[string]any, key string, f func(context.Context) ([]*T, error)) {
+	if ps, err := f(ctx); err != nil {
 		log.Errorf("Failed to get %s: %v", key, err)
 	} else {
 		props["Total "+key] = len(ps)
@@ -109,10 +121,10 @@ func (g *gatherer) gather() {
 	totals := make(map[string]any)
 	rs := roles.Singleton()
 
-	addTotal(totals, "PermissionSets", rs.GetAllPermissionSets)
-	addTotal(totals, "Roles", rs.GetAllRoles)
-	addTotal(totals, "Access Scopes", rs.GetAllAccessScopes)
-	addTotal(totals, "Signature Integrations", si.Singleton().GetAllSignatureIntegrations)
+	addTotal(g.ctx, totals, "PermissionSets", rs.GetAllPermissionSets)
+	addTotal(g.ctx, totals, "Roles", rs.GetAllRoles)
+	addTotal(g.ctx, totals, "Access Scopes", rs.GetAllAccessScopes)
+	addTotal(g.ctx, totals, "Signature Integrations", si.Singleton().GetAllSignatureIntegrations)
 
 	groups, err := groupDataStore.Singleton().GetAll(g.ctx)
 	if err != nil {
