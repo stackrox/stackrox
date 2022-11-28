@@ -21,7 +21,14 @@ Cypress.on('scrolled', ($el) => {
 //  - PR to add in Cypress core: https://github.com/cypress-io/cypress/pull/20257 (closed)
 //  - PR to add in Cypress core: https://github.com/cypress-io/cypress/pull/20284 (closed)
 //  - Comment with the original fix recommendation: https://github.com/cypress-io/cypress/issues/8418#issuecomment-992564877
+//
+// Addendum (2022-11-28): ignore error about multiple versions of Mobx
+// The patternfly topology extension uses a 5.x version of Mobx, and the redoc library needs a 6.x version
+//
+// TODO: remove this catch for multiple MobX versions after the in-product documentation is removed
 Cypress.on(
     'uncaught:exception',
-    (err) => !err.message.includes('ResizeObserver loop limit exceeded')
+    (err) =>
+        !err.message.includes('ResizeObserver loop limit exceeded') &&
+        !err.message.includes('There are multiple, different versions of MobX active')
 );
