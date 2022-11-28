@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -309,7 +310,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesFixedByVersio
 func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesNodeScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	node := getNodeResolver(ctx, s.T(), s.resolver, "nodeID1")
+	node := getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node1)
 	expected := int32(3)
 
 	vulns, err := node.NodeVulnerabilities(ctx, PaginatedQuery{})
@@ -326,7 +327,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesNodeScoped() 
 	s.NoError(err)
 	checkVulnerabilityCounter(s.T(), counter, count, 1, 1, 0, 1, 1)
 
-	node = getNodeResolver(ctx, s.T(), s.resolver, "nodeID2")
+	node = getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node2)
 	expected = int32(5)
 
 	vulns, err = node.NodeVulnerabilities(ctx, PaginatedQuery{})
@@ -347,7 +348,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesNodeScoped() 
 func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesClusterScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	cluster := getClusterResolver(ctx, s.T(), s.resolver, "clusterID1")
+	cluster := getClusterResolver(ctx, s.T(), s.resolver, fixtureconsts.Cluster1)
 	expected := int32(3)
 
 	vulns, err := cluster.NodeVulnerabilities(ctx, PaginatedQuery{})
@@ -364,7 +365,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesClusterScoped
 	s.NoError(err)
 	checkVulnerabilityCounter(s.T(), counter, count, 1, 1, 0, 1, 1)
 
-	cluster = getClusterResolver(ctx, s.T(), s.resolver, "clusterID2")
+	cluster = getClusterResolver(ctx, s.T(), s.resolver, fixtureconsts.Cluster2)
 	expected = int32(5)
 
 	vulns, err = cluster.NodeVulnerabilities(ctx, PaginatedQuery{})
@@ -385,7 +386,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesClusterScoped
 func (s *GraphQLNodeVulnerabilityTestSuite) TestPlottedNodeVulnerabilitiesNodeScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	node := getNodeResolver(ctx, s.T(), s.resolver, "nodeID1")
+	node := getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node1)
 	plottedVulnRes, err := node.PlottedNodeVulnerabilities(ctx, RawQuery{})
 	s.NoError(err)
 
@@ -400,7 +401,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestPlottedNodeVulnerabilitiesNodeSc
 	s.Equal(int32(3), basicCounter.All(ctx).Total(ctx))
 	s.Equal(int32(1), basicCounter.All(ctx).Fixable(ctx))
 
-	node = getNodeResolver(ctx, s.T(), s.resolver, "nodeID2")
+	node = getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node2)
 	plottedVulnRes, err = node.PlottedNodeVulnerabilities(ctx, RawQuery{})
 	s.NoError(err)
 
@@ -445,7 +446,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestTopNodeVulnerabilityUnscoped() {
 func (s *GraphQLNodeVulnerabilityTestSuite) TestTopNodeVulnerability() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	node := getNodeResolver(ctx, s.T(), s.resolver, "nodeID1")
+	node := getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node1)
 
 	expected := graphql.ID("cve-2019-1#")
 	topVuln, err := node.TopNodeVulnerability(ctx, RawQuery{})
@@ -454,7 +455,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestTopNodeVulnerability() {
 
 	// test no error on node without any cves
 	testNode := &storage.Node{
-		Id:   "nodeWithoutCves",
+		Id:   fixtureconsts.Node3,
 		Name: "node-without-cves",
 		SetCves: &storage.Node_Cves{
 			Cves: 0,
@@ -498,7 +499,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilityLastScanned() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	vuln := getNodeVulnerabilityResolver(ctx, s.T(), s.resolver, "cve-2018-1#")
-	node := getNodeResolver(ctx, s.T(), s.resolver, "nodeID2")
+	node := getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node2)
 	lastScanned, err := vuln.LastScanned(ctx)
 	s.NoError(err)
 	expected, err := timestamp(node.data.GetScan().GetScanTime())
@@ -515,7 +516,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilityNodes() {
 	s.NoError(err)
 	s.Equal(2, len(nodes))
 	idList := getIDList(ctx, nodes)
-	s.ElementsMatch(idList, []string{"nodeID1", "nodeID2"})
+	s.ElementsMatch(idList, []string{fixtureconsts.Node1, fixtureconsts.Node2})
 
 	count, err := vuln.NodeCount(ctx, RawQuery{})
 	s.NoError(err)
@@ -527,7 +528,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilityNodes() {
 	s.NoError(err)
 	s.Equal(1, len(nodes))
 	idList = getIDList(ctx, nodes)
-	s.ElementsMatch(idList, []string{"nodeID2"})
+	s.ElementsMatch(idList, []string{fixtureconsts.Node2})
 
 	count, err = vuln.NodeCount(ctx, RawQuery{})
 	s.NoError(err)

@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -205,7 +206,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponents() {
 func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsNodeScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	node := getNodeResolver(ctx, s.T(), s.resolver, "nodeID1")
+	node := getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node1)
 	expected := int32(3)
 
 	comps, err := node.NodeComponents(ctx, PaginatedQuery{})
@@ -222,7 +223,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsNodeScoped() {
 	s.NoError(err)
 	s.Equal(int32(len(comps)), count)
 
-	node = getNodeResolver(ctx, s.T(), s.resolver, "nodeID2")
+	node = getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node2)
 	expected = int32(3)
 
 	comps, err = node.NodeComponents(ctx, PaginatedQuery{})
@@ -243,7 +244,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsNodeScoped() {
 func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsFromNodeScan() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	node := getNodeResolver(ctx, s.T(), s.resolver, "nodeID1")
+	node := getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node1)
 	nodeScan, err := node.Scan(ctx)
 	s.NoError(err)
 
@@ -262,7 +263,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsFromNodeScan() {
 	s.NoError(err)
 	s.Equal(int32(len(comps)), count)
 
-	node = getNodeResolver(ctx, s.T(), s.resolver, "nodeID2")
+	node = getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node2)
 	nodeScan, err = node.Scan(ctx)
 	s.NoError(err)
 
@@ -285,7 +286,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsFromNodeScan() {
 func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsClusterScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	cluster := getClusterResolver(ctx, s.T(), s.resolver, "clusterID1")
+	cluster := getClusterResolver(ctx, s.T(), s.resolver, fixtureconsts.Cluster1)
 	expected := int32(3)
 
 	comps, err := cluster.NodeComponents(ctx, PaginatedQuery{})
@@ -302,7 +303,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentsClusterScoped() {
 	s.NoError(err)
 	s.Equal(int32(len(comps)), count)
 
-	cluster = getClusterResolver(ctx, s.T(), s.resolver, "clusterID2")
+	cluster = getClusterResolver(ctx, s.T(), s.resolver, fixtureconsts.Cluster2)
 	expected = int32(3)
 
 	comps, err = cluster.NodeComponents(ctx, PaginatedQuery{})
@@ -346,7 +347,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 
 	// Component queried unscoped
 	comp := getNodeComponentResolver(ctx, s.T(), s.resolver, componentID)
-	node := getNodeResolver(ctx, s.T(), s.resolver, "nodeID2")
+	node := getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node2)
 	lastScanned, err := comp.LastScanned(ctx)
 	s.NoError(err)
 	expected, err := timestamp(node.data.GetScan().GetScanTime())
@@ -356,10 +357,10 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 	// Component queried with node scope
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODES,
-		ID:    "nodeID1",
+		ID:    fixtureconsts.Node1,
 	})
 	comp = getNodeComponentResolver(scopedCtx, s.T(), s.resolver, componentID)
-	node = getNodeResolver(ctx, s.T(), s.resolver, "nodeID1")
+	node = getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node1)
 	lastScanned, err = comp.LastScanned(ctx)
 	s.NoError(err)
 	expected, err = timestamp(node.data.GetScan().GetScanTime())
@@ -376,7 +377,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentNodes() {
 	s.NoError(err)
 	s.Equal(2, len(nodes))
 	idList := getIDList(ctx, nodes)
-	s.ElementsMatch(idList, []string{"nodeID1", "nodeID2"})
+	s.ElementsMatch(idList, []string{fixtureconsts.Node1, fixtureconsts.Node2})
 
 	count, err := comp.NodeCount(ctx, RawQuery{})
 	s.NoError(err)
@@ -388,7 +389,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentNodes() {
 	s.NoError(err)
 	s.Equal(1, len(nodes))
 	idList = getIDList(ctx, nodes)
-	s.ElementsMatch(idList, []string{"nodeID2"})
+	s.ElementsMatch(idList, []string{fixtureconsts.Node2})
 
 	count, err = comp.NodeCount(ctx, RawQuery{})
 	s.NoError(err)
