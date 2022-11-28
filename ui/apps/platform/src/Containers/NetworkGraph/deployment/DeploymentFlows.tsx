@@ -1,30 +1,28 @@
 import React from 'react';
 import {
     Divider,
-    DropdownItem,
     Flex,
     FlexItem,
     Stack,
     StackItem,
-    Text,
-    TextContent,
-    TextVariants,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import { Flow } from '../types';
+import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
+
 import AdvancedFlowsFilter, {
     defaultAdvancedFlowsFilters,
 } from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
+import EntityNameSearchInput from '../common/EntityNameSearchInput';
+import FlowsTable from '../common/FlowsTable';
+import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
+import FlowsBulkActions from '../common/FlowsBulkActions';
 
 import './DeploymentFlows.css';
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import EntityNameSearchInput from '../common/EntityNameSearchInput';
-import { Flow } from '../types';
-import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
-import FlowsTable from '../common/FlowsTable';
 
 const flows: Flow[] = [
     {
@@ -110,16 +108,6 @@ function DeploymentFlow() {
     const numFlows = getNumFlows(flows);
     const allUniquePorts = getAllUniquePorts(flows);
 
-    // setter functions
-    const markSelectedAsAnomalous = () => {
-        // @TODO: Mark as anomalous
-        setSelectedRows([]);
-    };
-    const addSelectedToBaseline = () => {
-        // @TODO: Add to baseline
-        setSelectedRows([]);
-    };
-
     return (
         <div className="pf-u-h-100 pf-u-p-md">
             <Stack hasGutter>
@@ -145,27 +133,14 @@ function DeploymentFlow() {
                     <Toolbar>
                         <ToolbarContent>
                             <ToolbarItem>
-                                <TextContent>
-                                    <Text component={TextVariants.h3}>{numFlows} active flows</Text>
-                                </TextContent>
+                                <FlowsTableHeaderText type="active" numFlows={numFlows} />
                             </ToolbarItem>
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
-                                <BulkActionsDropdown isDisabled={selectedRows.length === 0}>
-                                    <DropdownItem
-                                        key="mark_as_anomalous"
-                                        component="button"
-                                        onClick={markSelectedAsAnomalous}
-                                    >
-                                        Mark as anomalous
-                                    </DropdownItem>
-                                    <DropdownItem
-                                        key="add_to_baseline"
-                                        component="button"
-                                        onClick={addSelectedToBaseline}
-                                    >
-                                        Add to baseline
-                                    </DropdownItem>
-                                </BulkActionsDropdown>
+                                <FlowsBulkActions
+                                    type="active"
+                                    selectedRows={selectedRows}
+                                    onClearSelectedRows={() => setSelectedRows([])}
+                                />
                             </ToolbarItem>
                         </ToolbarContent>
                     </Toolbar>
