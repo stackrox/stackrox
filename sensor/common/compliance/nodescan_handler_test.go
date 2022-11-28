@@ -216,7 +216,6 @@ func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
 		s.NoError(h.Stopped().Wait())
 
 		s.ErrorIs(h.Start(), errStartMoreThanOnce)
-		s.NoError(h.Stopped().Wait())
 	})
 }
 
