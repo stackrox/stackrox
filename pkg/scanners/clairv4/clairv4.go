@@ -98,15 +98,15 @@ func validate(cfg *storage.ClairV4Config) error {
 }
 
 func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
-	return nil, nil
+	panic("Unimplemented")
 }
 
 func (c *clairv4) Match(_ *storage.ImageName) bool {
-	return true
+	panic("Unimplemented")
 }
 
 func (c *clairv4) Test() error {
-	return nil
+	panic("Unimplemented")
 }
 
 func (c *clairv4) Type() string {
@@ -118,5 +118,5 @@ func (c *clairv4) Name() string {
 }
 
 func (c *clairv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	return nil, nil
+	panic("Unimplemented")
 }
