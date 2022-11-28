@@ -3,12 +3,14 @@ package processlisteningonport
 import (
 	"context"
 
+	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processlisteningonport/datastore"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/metrics"
 )
 
 var (
@@ -47,6 +49,8 @@ func (s *pipelineImpl) Run(
 	msg *central.MsgFromSensor,
 	injector common.MessageInjector,
 ) error {
+	defer countMetrics.IncrementResourceProcessedCounter(
+		pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ProcessListeningOnPort)
 
 	portProcesses := msg.GetProcessListeningOnPortUpdate().GetProcessesListeningOnPorts()
 

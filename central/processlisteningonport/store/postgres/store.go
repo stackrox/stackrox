@@ -42,6 +42,8 @@ const (
 
 	cursorBatchSize = 50
 
+	deleteBatchSize = 5000
+
 	// SQL query to join process_listening_on_port together with
 	// process_indicators. Used to provide information for queries like 'give
 	// me all PLOP by this deployment'.
@@ -54,13 +56,25 @@ const (
 		"JOIN process_indicators proc " +
 		"ON plop.processindicatorid = proc.id " +
 		"WHERE proc.namespace = $1 AND proc.deploymentid = $2"
+
+	getByNamespace =
+		"SELECT plop.id, plop.serialized, proc.deploymentid, " +
+		"proc.podid, proc.containername, proc.signal_name, " +
+		"proc.signal_args, proc.signal_execfilepath " +
+		"FROM process_listening_on_ports plop " +
+		"JOIN process_indicators proc " +
+		"ON plop.processindicatorid = proc.id " +
+		"WHERE proc.namespace = $1"
 )
 
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ProcessListeningOnPortsSchema
-	targetResource = resources.ProcessWhitelist
+	targetResource = resources.ProcessListeningOnPort
 )
+
+
+type PLOPByDeployment map[string][]*storage.ProcessListeningOnPort
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -72,7 +86,15 @@ type Store interface {
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ProcessListeningOnPortStorage, []int, error)
-	GetPLOPForDeployment(ctx context.Context, deploymentID string) ([]*storage.ProcessListeningOnPort, error)
+	GetProcessListeningOnPort(
+		ctx context.Context,
+		namespace string,
+		deploymentID string,
+	) (PLOPByDeployment, error)
+	GetProcessListeningOnPortByNamespace(
+		ctx context.Context,
+		namespace string,
+	) (PLOPByDeployment, error)
 
 	DeleteMany(ctx context.Context, ids []string) error
 
@@ -278,7 +300,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 
 	if err != nil {
 		return 0, err
@@ -297,7 +319,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return false, err
 	}
@@ -324,7 +346,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ProcessListeni
 	if err != nil {
 		return nil, false, err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, false, err
 	}
@@ -334,16 +356,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ProcessListeni
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	data, err := postgres.RunGetQueryForSchema[storage.ProcessListeningOnPortStorage](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.ProcessListeningOnPortStorage
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return data, true, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
@@ -365,7 +383,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return err
 	}
@@ -388,7 +406,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	if err != nil {
 		return err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return err
 	}
@@ -411,7 +429,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, err
 	}
@@ -446,7 +464,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 	if err != nil {
 		return nil, nil, err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -455,7 +473,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	rows, err := postgres.RunGetManyQueryForSchema[storage.ProcessListeningOnPortStorage](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -466,12 +484,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.ProcessListeningOnPortStorage)
-	for _, data := range rows {
-		msg := &storage.ProcessListeningOnPortStorage{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
+	resultsByID := make(map[string]*storage.ProcessListeningOnPortStorage, len(rows))
+	for _, msg := range rows {
 		resultsByID[msg.GetId()] = msg
 	}
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -499,23 +513,45 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	if err != nil {
 		return err
 	}
-	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return err
 	}
 
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
-	)
+	// Batch the deletes
+	localBatchSize := deleteBatchSize
+	numRecordsToDelete := len(ids)
+	for {
+		if len(ids) == 0 {
+			break
+		}
+		if len(ids) < localBatchSize {
+			localBatchSize = len(ids)
+		}
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+		idBatch := ids[:localBatchSize]
+		q := search.ConjunctionQuery(
+			sacQueryFilter,
+			search.NewQueryBuilder().AddDocIDs(idBatch...).ProtoQuery(),
+		)
+
+		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
+			log.Error(err)
+			return err
+		}
+
+		// Move the slice forward to start the next batch
+		ids = ids[localBatchSize:]
+	}
+
+	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessListeningOnPortStorage) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.ProcessListeningOnPortStorage](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -526,11 +562,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessListen
 			return pgutils.ErrNilIfNoRows(err)
 		}
 		for _, data := range rows {
-			var msg storage.ProcessListeningOnPortStorage
-			if err := proto.Unmarshal(data, &msg); err != nil {
-				return err
-			}
-			if err := fn(&msg); err != nil {
+			if err := fn(data); err != nil {
 				return err
 			}
 		}
@@ -575,30 +607,73 @@ func (s *storeImpl) GetProcessListeningOnPort(
 	ctx context.Context,
 	namespace string,
 	deploymentID string,
-) ([]*storage.ProcessListeningOnPort, error) {
-	// XXX: Use SetPostgresOperationDurationTime with a proper generated Metric
+) (PLOPByDeployment, error) {
+	defer metrics.SetPostgresOperationDurationTime(
+		time.Now(),
+		ops.GetProcessListeningOnPortByNamespaceAndDeployment,
+		"ProcessListeningOnPortStorage",
+	)
 
-	return pgutils.Retry2(func() ([]*storage.ProcessListeningOnPort, error) {
-		return s.retryableGetPLOPForDeployment(ctx, namespace, deploymentID)
+	return pgutils.Retry2(func() (PLOPByDeployment, error) {
+		return s.retryableGetPLOP(ctx, namespace, deploymentID)
 	})
 }
 
-func (s *storeImpl) retryableGetPLOPForDeployment(
+// Manually written function to get PLOP joined with ProcessIndicators
+func (s *storeImpl) GetProcessListeningOnPortByNamespace(
+	ctx context.Context,
+	namespace string,
+) (PLOPByDeployment, error) {
+	defer metrics.SetPostgresOperationDurationTime(
+		time.Now(),
+		ops.GetProcessListeningOnPortByNamespace,
+		"ProcessListeningOnPortStorage",
+	)
+
+	return pgutils.Retry2(func() (PLOPByDeployment, error) {
+		return s.retryableGetPLOPByNamespace(ctx, namespace)
+	})
+}
+
+func (s *storeImpl) retryableGetPLOP(
 	ctx context.Context,
 	namespace string,
 	deploymentID string,
-) ([]*storage.ProcessListeningOnPort, error) {
+) (PLOPByDeployment, error) {
 	var rows pgx.Rows
 	var err error
 
 	rows, err = s.db.Query(ctx, getByNamespaceAndDeploymentStmt, namespace, deploymentID)
 
 	if err != nil {
+		log.Warnf("%s: %s", getByNamespaceAndDeploymentStmt, err)
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 
 	plops, err := s.readRows(rows)
+
+	return PLOPByDeployment{
+		deploymentID: plops,
+	}, err
+}
+
+func (s *storeImpl) retryableGetPLOPByNamespace(
+	ctx context.Context,
+	namespace string,
+) (PLOPByDeployment, error) {
+	var rows pgx.Rows
+	var err error
+
+	rows, err = s.db.Query(ctx, getByNamespace, namespace)
+
+	if err != nil {
+		log.Warnf("%s: %s", getByNamespace, err)
+		return nil, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+
+	plops, err := s.readRowsGroupBy(rows)
 
 	return plops, err
 }
@@ -651,4 +726,81 @@ func (s *storeImpl) readRows(
 
 	log.Debugf("Read returned %+v plops", len(plops))
 	return plops, nil
+}
+
+// Manual converting of raw data from GRPOUP BY SQL query to a map
+// {DeploymentId: [ProcessListeningOnPort]} enriched with ProcessIndicator.
+//
+// XXX: We're doing GROUP BY on the application side, which is unfortunate
+// because most likely it will be less efficient than on the database side for
+// bigger chunks of data (due to constant random memory access to build the map
+// and more data transfer).
+// If that would be a concern, grouping could be moved to the database using following query:
+//
+// 		SELECT proc.deploymentid, jsonb_agg(jsonb_build_object(
+// 			'id', plop.id, 'serialized', plop.serialized,
+// 			'podid', proc.podid, 'containername', proc.containername,
+// 			'signal_name', proc.signal_name, 'signal_args', proc.signal_args,
+// 			'signal_execfilepath', proc.signal_execfilepath))
+// 		FROM process_listening_on_ports plop
+// 		JOIN process_indicators proc
+// 		ON plop.processindicatorid = proc.id
+// 		WHERE proc.namespace = $1
+// 		GROUP BY proc.deploymentid
+//
+// The query will return PLOP grouped by deployment id in json format, which
+// pgx could scan into a map[string]string. Later on this map has to be
+// reassembled into a proper structure. One challenge here though is that the
+// serialized data will be escaped in the string format (i.e. \x1a2b3c will
+// become \\x1a2b3c), so the result has to be preprocessed before
+// unmarshalling.
+
+func (s *storeImpl) readRowsGroupBy(
+        rows pgx.Rows,
+) (map[string][]*storage.ProcessListeningOnPort, error) {
+        plopsMap := make(map[string][]*storage.ProcessListeningOnPort)
+
+        for rows.Next() {
+                var id string
+                var serialized []byte
+                var deploymentId string
+                var podId string
+                var containerName string
+                var signalName string
+                var signalArgs string
+                var signalExecFilePath string
+
+                // We're getting ProcessIndicator directly from the SQL query, PLOP
+                // parts have to be extra deserialized.
+                if err := rows.Scan(
+                        &id, &serialized, &deploymentId,
+                        &podId, &containerName,
+                        &signalName, &signalArgs, &signalExecFilePath); err != nil {
+                        return nil, pgutils.ErrNilIfNoRows(err)
+                }
+
+                var msg storage.ProcessListeningOnPortStorage
+                if err := proto.Unmarshal(serialized, &msg); err != nil {
+                        return nil, err
+                }
+
+                plop := &storage.ProcessListeningOnPort{
+                        Port: msg.Port,
+                        Protocol: msg.Protocol,
+                        CloseTimestamp: msg.CloseTimestamp,
+                        Process: &storage.ProcessIndicatorUniqueKey {
+                                PodId: podId,
+                                ContainerName: containerName,
+                                ProcessName: signalName,
+                                ProcessArgs: signalArgs,
+                                ProcessExecFilePath: signalExecFilePath,
+                        },
+                }
+
+                plopsMap[deploymentId] = append(plopsMap[deploymentId], plop)
+
+        }
+
+        log.Debugf("Read returned %+v plops", len(plopsMap))
+        return plopsMap, nil
 }
