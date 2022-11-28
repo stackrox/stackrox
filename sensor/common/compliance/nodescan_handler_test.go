@@ -195,40 +195,36 @@ func consumeAndCount[T any](ch <-chan *T, numToConsume int) stoppable {
 }
 
 func (s *NodeScanHandlerTestSuite) TestMultipleStartHandler() {
-	s.NotPanics(func() {
-		ch, producer := s.generateTestInputNoClose(10)
-		defer close(ch)
-		h := NewNodeScanHandler(ch)
+	ch, producer := s.generateTestInputNoClose(10)
+	defer close(ch)
+	h := NewNodeScanHandler(ch)
 
-		s.NoError(h.Start())
-		s.ErrorIs(h.Start(), errStartMoreThanOnce)
+	s.NoError(h.Start())
+	s.ErrorIs(h.Start(), errStartMoreThanOnce)
 
-		consumer := consumeAndCount(h.ResponsesC(), 10)
+	consumer := consumeAndCount(h.ResponsesC(), 10)
 
-		s.ErrorIs(h.Start(), errStartMoreThanOnce)
+	s.ErrorIs(h.Start(), errStartMoreThanOnce)
 
-		s.NoError(producer.stoppedC.Wait())
-		s.NoError(consumer.stoppedC.Wait())
+	s.NoError(producer.stoppedC.Wait())
+	s.NoError(consumer.stoppedC.Wait())
 
-		h.Stop(nil)
-		s.NoError(h.Stopped().Wait())
+	h.Stop(nil)
+	s.NoError(h.Stopped().Wait())
 
-		// No second start even after a stop
-		s.ErrorIs(h.Start(), errStartMoreThanOnce)
-	})
+	// No second start even after a stop
+	s.ErrorIs(h.Start(), errStartMoreThanOnce)
 }
 
 func (s *NodeScanHandlerTestSuite) TestDoubleStopHandler() {
-	s.NotPanics(func() {
-		ch, producer := s.generateTestInputNoClose(10)
-		defer close(ch)
-		h := NewNodeScanHandler(ch)
-		s.NoError(h.Start())
-		consumer := consumeAndCount(h.ResponsesC(), 10)
-		s.NoError(producer.stoppedC.Wait())
-		s.NoError(consumer.stoppedC.Wait())
-		h.Stop(nil)
-		h.Stop(nil)
-		s.NoError(h.Stopped().Wait())
-	})
+	ch, producer := s.generateTestInputNoClose(10)
+	defer close(ch)
+	h := NewNodeScanHandler(ch)
+	s.NoError(h.Start())
+	consumer := consumeAndCount(h.ResponsesC(), 10)
+	s.NoError(producer.stoppedC.Wait())
+	s.NoError(consumer.stoppedC.Wait())
+	h.Stop(nil)
+	h.Stop(nil)
+	s.NoError(h.Stopped().Wait())
 }
