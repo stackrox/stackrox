@@ -1,6 +1,6 @@
 import { selectors } from '../constants/IntegrationsPage';
 import { visitFromLeftNavExpandable } from './nav';
-import { interactAndWaitForResponses } from './request';
+import { interactAndWaitForResponses, interceptRequests, waitForResponses } from './request';
 import { getTableRowActionButtonByName } from './tableHelpers';
 import { visit } from './visit';
 
@@ -223,17 +223,17 @@ export function interactAndVisitIntegrationsDashboardForSource(
     integrationSource,
     staticResponseMap
 ) {
-    interactAndWaitForResponses(
-        interactionCallback,
-        routeMatcherMapForIntegrationsDashboard,
-        staticResponseMap
-    );
+    interceptRequests(routeMatcherMapForIntegrationsDashboard, staticResponseMap);
+
+    interactionCallback();
 
     cy.location('pathname').should('eq', basePath);
     cy.location('hash').should('eq', `#${integrationSourceHashMap[integrationSource]}`);
 
     cy.get(`h1:contains("${integrationsTitle}")`);
     cy.get(`h2:contains("${integrationSourceTitleMap[integrationSource]}")`).should('be.visible'); // should scroll to anchor
+
+    waitForResponses(routeMatcherMapForIntegrationsDashboard);
 }
 
 /**
