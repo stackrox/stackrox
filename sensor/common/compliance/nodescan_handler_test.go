@@ -1,7 +1,6 @@
 package compliance
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -40,11 +39,7 @@ func (st *stoppable) signalAndWait(err error) error {
 }
 
 func TestNodeScanHandler(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	suite.Run(t, &NodeScanHandlerTestSuite{
-		ctx:    ctx,
-		cancel: cancel,
-	})
+	suite.Run(t, &NodeScanHandlerTestSuite{})
 }
 
 func fakeNodeScanV2(nodeName string) *storage.NodeScanV2 {
@@ -77,8 +72,6 @@ var _ suite.TearDownTestSuite = (*NodeScanHandlerTestSuite)(nil)
 
 type NodeScanHandlerTestSuite struct {
 	suite.Suite
-	cancel context.CancelFunc
-	ctx    context.Context
 }
 
 func assertNoGoroutineLeaks(t *testing.T) {
@@ -90,7 +83,6 @@ func assertNoGoroutineLeaks(t *testing.T) {
 
 func (s *NodeScanHandlerTestSuite) TearDownTest() {
 	defer assertNoGoroutineLeaks(s.T())
-	s.cancel()
 }
 
 // stopAll gracefully stops stoppables
