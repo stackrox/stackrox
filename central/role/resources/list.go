@@ -113,6 +113,11 @@ var (
 	// To-be-deprecated in 3.76 with ROX-13888 (deprecation notice in 3.74).
 	VulnerabilityReports = newDeprecatedResourceMetadata("VulnerabilityReports", permissions.GlobalScope,
 		WorkflowAdministration)
+	SignatureIntegration = newDeprecatedResourceMetadata("SignatureIntegration",
+		permissions.GlobalScope, Integration)
+	User                   = newDeprecatedResourceMetadata("User", permissions.GlobalScope, Access)
+	ProcessListeningOnPort = newDeprecatedResourceMetadata("ProcessListeningOnPort",
+		permissions.NamespaceScope, DeploymentExtension)
 
 	// Internal Resources.
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
