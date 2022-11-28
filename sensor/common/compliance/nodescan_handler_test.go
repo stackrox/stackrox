@@ -131,7 +131,7 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 	s.NoError(consumer.stoppedC.Wait())
 	s.ErrorIs(h.Stopped().Wait(), errTest)
 
-	stopAll(s.T(), producer, consumer)
+	stopAll(s.T(), producer)
 }
 
 func (s *NodeScanHandlerTestSuite) TestHandlerRegularRoutine() {
