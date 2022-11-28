@@ -235,6 +235,11 @@ class Enforcement extends BaseSpecification {
     def setupSpec() {
         POLICIES.each {
             label, create ->
+            if (Services.getPolicyByName(label)!= null){
+                String policyId = Services.getPolicyByName(label).getId()
+                log.info "Deleting existing policy: '${label}'"
+                PolicyService.deletePolicy(policyId)
+            }
             CREATED_POLICIES[label] = create()
             assert CREATED_POLICIES[label], "${label} policy should have been created"
         }

@@ -126,6 +126,11 @@ class DefaultPoliciesTest extends BaseSpecification {
                                 .build()
                         ).build()
                 ).build()
+        if (Services.getPolicyByName(Constants.ANY_FIXED_VULN_POLICY)!= null){
+            anyFixedPolicyId = Services.getPolicyByName(Constants.ANY_FIXED_VULN_POLICY).getId()
+            log.info "Deleting existing policy: '${policyName}'"
+            PolicyService.deletePolicy(anyFixedPolicyId)
+        }
         anyFixedPolicyId = PolicyService.createNewPolicy(anyFixedPolicy)
         assert anyFixedPolicyId
 
