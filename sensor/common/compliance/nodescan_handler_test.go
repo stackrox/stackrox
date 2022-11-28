@@ -194,22 +194,6 @@ func consumeAndCount[T any](ch <-chan *T, numToConsume int) stoppable {
 	return st
 }
 
-func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
-	s.NotPanics(func() {
-		ch, producer := s.generateTestInputNoClose(10)
-		defer close(ch)
-		h := NewNodeScanHandler(ch)
-		s.NoError(h.Start())
-		consumer := consumeAndCount(h.ResponsesC(), 10)
-		s.NoError(producer.stoppedC.Wait())
-		s.NoError(consumer.stoppedC.Wait())
-		h.Stop(nil)
-		s.NoError(h.Stopped().Wait())
-
-		s.ErrorIs(h.Start(), errStartMoreThanOnce)
-	})
-}
-
 func (s *NodeScanHandlerTestSuite) TestMultipleStartHandler() {
 	s.NotPanics(func() {
 		ch, producer := s.generateTestInputNoClose(10)
