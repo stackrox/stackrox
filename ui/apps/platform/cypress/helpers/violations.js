@@ -1,5 +1,5 @@
 import * as api from '../constants/apiEndpoints';
-import { url, selectors } from '../constants/ViolationsPage';
+import { url as basePath, selectors } from '../constants/ViolationsPage';
 
 import { visitFromLeftNav } from './nav';
 import { visit, visitAndAssertBeforeResponses } from './visit';
@@ -22,7 +22,7 @@ const containerTitle = 'Violations';
 export function visitViolationsFromLeftNav() {
     visitFromLeftNav(containerTitle, routeMatcherMapForViolations);
 
-    cy.location('pathname').should('eq', url);
+    cy.location('pathname').should('eq', basePath);
     cy.get(`h1:contains("${containerTitle}")`);
 }
 
@@ -31,7 +31,7 @@ export function visitViolationsFromLeftNav() {
  */
 export function visitViolations(staticResponseMap) {
     visitAndAssertBeforeResponses(
-        url,
+        basePath,
         () => {
             cy.get(`h1:contains("${containerTitle}")`);
         },
@@ -49,7 +49,7 @@ export function visitViolationsWithFixture(fixturePath) {
         };
 
         visitAndAssertBeforeResponses(
-            url,
+            basePath,
             () => {
                 cy.get(`h1:contains("${containerTitle}")`);
             },
@@ -91,7 +91,7 @@ export function visitViolationWithFixture(fixturePath) {
             body: alert,
         }).as('alerts/id');
 
-        visit(`${url}/${id}`);
+        visit(`${basePath}/${id}`);
 
         cy.wait('@alerts/id');
         cy.get(`${selectors.details.title}:contains("${name}")`);
