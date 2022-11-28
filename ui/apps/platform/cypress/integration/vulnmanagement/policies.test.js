@@ -78,7 +78,8 @@ describe('Vulnerability Management Policies', () => {
         });
     });
 
-    // Argument 3 in verify functions is one-based index of column which has the links.
+    // Argument 3 in verify functions is index of column which has the links.
+    // The one-based index includes checkbox, hidden, invisible.
 
     // Some tests might fail in local deployment.
 
@@ -86,7 +87,7 @@ describe('Vulnerability Management Policies', () => {
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'deployments',
-            9,
+            10,
             /^\d+ failing deployments?$/,
             getPanelHeaderTextFromLinkResults
         );
