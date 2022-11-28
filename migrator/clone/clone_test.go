@@ -264,6 +264,17 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 }
 
 func TestCloneRestore(t *testing.T) {
+	// This will test restore for Rocks -> Rocks or Postgres -> Postgres depending on
+	// the test is executed with the Postgres env variable set or not.
+	testCloneRestore(t, false)
+
+	// Test restore again for the case of restoring Rocks -> Postgres
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		testCloneRestore(t, true)
+	}
+}
+
+func testCloneRestore(t *testing.T, rocksToPostgres bool) {
 	if buildinfo.ReleaseBuild {
 		return
 	}
@@ -318,13 +329,17 @@ func TestCloneRestore(t *testing.T) {
 			c.description = c.description + " with reboot"
 		}
 
+		if rocksToPostgres {
+			c.description = c.description + " rocksDB to Postgres"
+		}
+
 		t.Run(c.description, func(t *testing.T) {
 			log.Infof("Test = %q", c.description)
-			mock := createAndRunCentral(t, &preHistoryVer, false)
+			mock := createAndRunCentral(t, &preHistoryVer, rocksToPostgres)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
 			mock.upgradeCentral(&currVer, "")
-			mock.restoreCentral(c.toVersion, c.breakPoint)
+			mock.restoreCentral(c.toVersion, c.breakPoint, rocksToPostgres)
 			if reboot {
 				mock.rebootCentral()
 			}
@@ -737,7 +752,7 @@ func TestRacingConditionInPersist(t *testing.T) {
 		{
 			description: "Restore breaks in persist",
 			preRun: func(m *mockCentral) {
-				m.restore(&preVer)
+				m.restore(&preVer, false)
 			},
 		},
 		{
