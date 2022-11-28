@@ -218,7 +218,7 @@ describe('Policies table', () => {
 
         // Policy table
         cy.location('search').should('eq', '');
-        cy.get(`.pf-c-title:contains('Policy management')`);
+        cy.get(`.pf-c-title:contains('Policy Management')`);
         cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
     });
 
@@ -229,7 +229,7 @@ describe('Policies table', () => {
 
         // Policy table
         cy.location('search').should('eq', '');
-        cy.get(`.pf-c-title:contains('Policy management')`);
+        cy.get(`.pf-c-title:contains('Policy Management')`);
         cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
     });
 
@@ -288,7 +288,7 @@ describe('Policies table', () => {
 
         deletePolicyInTable({ policyName, actionText: 'Delete policy' });
 
-        cy.get(`.pf-c-title:contains('Policy management')`);
+        cy.get(`.pf-c-title:contains('Policy Management')`);
         cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
         cy.get(`${selectors.table.policyLink}:contains("${policyName}")`).should('not.exist');
     });
