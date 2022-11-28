@@ -242,15 +242,12 @@ func (s *NodeScanHandlerTestSuite) TestDoubleStartHandler() {
 
 		consumer := consumeAndCount(h.ResponsesC(), 10)
 		s.NoError(producer.stoppedC.Wait())
-		s.NoError(consumer.stoppedC.Wait())
 
-		err := h.Start()
-		s.Error(err)
-		s.ErrorIs(err, errStartMoreThanOnce)
+		s.ErrorIs(h.Start(), errStartMoreThanOnce)
 		h.Stop(nil)
 		s.NoError(h.Stopped().Wait())
 
-		stopAll(s.T(), producer, consumer)
+		s.NoError(consumer.stoppedC.Wait())
 	})
 }
 
@@ -266,7 +263,5 @@ func (s *NodeScanHandlerTestSuite) TestDoubleStopHandler() {
 		h.Stop(nil)
 		h.Stop(nil)
 		s.NoError(h.Stopped().Wait())
-
-		stopAll(s.T(), producer, consumer)
 	})
 }
