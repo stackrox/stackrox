@@ -210,21 +210,27 @@ func (s *NodeScanHandlerTestSuite) TestRestartHandler() {
 	})
 }
 
-func (s *NodeScanHandlerTestSuite) TestDoubleStartHandler() {
+func (s *NodeScanHandlerTestSuite) TestMultipleStartHandler() {
 	s.NotPanics(func() {
 		ch, producer := s.generateTestInputNoClose(10)
 		defer close(ch)
 		h := NewNodeScanHandler(ch)
+
 		s.NoError(h.Start())
+		s.ErrorIs(h.Start(), errStartMoreThanOnce)
 
 		consumer := consumeAndCount(h.ResponsesC(), 10)
-		s.NoError(producer.stoppedC.Wait())
 
 		s.ErrorIs(h.Start(), errStartMoreThanOnce)
+
+		s.NoError(producer.stoppedC.Wait())
+		s.NoError(consumer.stoppedC.Wait())
+
 		h.Stop(nil)
 		s.NoError(h.Stopped().Wait())
 
-		s.NoError(consumer.stoppedC.Wait())
+		// No second start even after a stop
+		s.ErrorIs(h.Start(), errStartMoreThanOnce)
 	})
 }
 
