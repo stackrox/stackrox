@@ -14,17 +14,31 @@ source "$ROOT/tests/e2e/lib.sh"
 
 require_environment "QA_TEST_DEBUG_LOGS"
 
-usage() { 
+usage() {
+    script=$(basename "$0")
     cat <<_EOH_
-Usage: $0 [Options...] [E2e flavor] [Suite] [Case]
+Usage: $script [Options...] [E2e flavor] [Suite] [Case]
+
 Options:
   -c - configure the cluster for test but do not run any tests.
   -d - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'.
   -m - override 'make tag' for the version to install.
   -o - choose the cluster variety. defaults to k8s.
   -y - run without prompts.
+
 E2e flavor:
   one of qa|e2e|ui|upgrade, defaults to qa
+
+Examples:
+# Configure a cluster to run qa-tests-backend/ tests.
+$script -c qa
+
+# Run a single qa-tests-backend/ test case (expects a previously configured
+# cluster).
+$script qa DeploymentTest 'Verify deployment of type Job is deleted once it completes'
+
+# Run the full set of qa-tests-backend/ tests, similar to CI for a PR.
+$script qa
 _EOH_
     exit 1
 }
