@@ -12,14 +12,14 @@ source "$ROOT/scripts/ci/lib.sh"
 source "$ROOT/scripts/ci/gcp.sh"
 source "$ROOT/tests/e2e/lib.sh"
 
-qa_logs="/tmp/qa-tests-backend-logs"
+require_environment "QA_TEST_DEBUG_LOGS"
 
 usage() { 
     cat <<_EOH_
 Usage: $0 [Options...] [E2e flavor] [Suite] [Case]
 Options:
   -c - configure the cluster for test but do not run any tests.
-  -d - enable debug log gathering to '${qa_logs}'.
+  -d - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'.
   -m - override 'make tag' for the version to install.
   -o - choose the cluster variety. defaults to k8s.
   -y - run without prompts.
@@ -31,14 +31,14 @@ _EOH_
 
 if [[ ! -f "/i-am-rox-ci-image" ]]; then
     kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
-    mkdir -p "$qa_logs"
+    mkdir -p "$QA_TEST_DEBUG_LOGS"
     docker run \
       -v "$ROOT:$ROOT:z" \
       -w "$ROOT" \
       -e "KUBECONFIG=${kubeconfig}" \
       -v "${kubeconfig}:${kubeconfig}:z" \
       -v "${HOME}/.gradle/caches:/root/.gradle/caches:z" \
-      -v "${qa_logs}:${qa_logs}:z" \
+      -v "${QA_TEST_DEBUG_LOGS}:${QA_TEST_DEBUG_LOGS}:z" \
       -e VAULT_TOKEN \
       --platform linux/amd64 \
       --rm -it \
@@ -178,11 +178,10 @@ export ORCHESTRATOR_FLAVOR="$orchestrator"
 export ROX_POSTGRES_DATASTORE="${ROX_POSTGRES_DATASTORE:-false}"
 
 if [[ -z "$suite" && -z "$case" ]]; then
+    source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+    config_part_1 2>&1 | sed -e 's/^/config output: /'
     if [[ "${config_only}" == "false" ]]; then
-        "$ROOT/qa-tests-backend/scripts/run-part-1.sh" 2>&1 | sed -e 's/^/test output: /'
-    else
-        source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
-        config_part_1 2>&1 | sed -e 's/^/config output: /'
+        test_part_1 2>&1 | sed -e 's/^/test output: /'
     fi
 else
     export_test_environment

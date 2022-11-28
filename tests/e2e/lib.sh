@@ -10,6 +10,8 @@ source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
+export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
+
 deploy_stackrox() {
     deploy_central
 

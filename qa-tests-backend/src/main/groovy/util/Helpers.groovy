@@ -93,6 +93,11 @@ class Helpers {
             return
         }
 
+        if (Env.QA_TEST_DEBUG_LOGS == "") {
+            log.info "Won't collect logs when QA_TEST_DEBUG_LOGS is not set"
+            return
+        }
+
         if (exception && (exception instanceof AssumptionViolatedException ||
                 exception.getMessage()?.contains("org.junit.AssumptionViolatedException"))) {
             log.info("Won't collect logs for", exception)
@@ -107,7 +112,7 @@ class Helpers {
             def date = new Date()
             def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
-            def debugDir = new File(Constants.FAILURE_DEBUG_DIR)
+            def debugDir = new File(Env.QA_TEST_DEBUG_LOGS)
             if (debugDir.exists() && debugDir.listFiles().size() >= Constants.FAILURE_DEBUG_LIMIT) {
                 log.info "${sdf.format(date)} Debug capture limit reached. Not collecting for this failure."
                 return
@@ -128,15 +133,20 @@ class Helpers {
 
     // collectImageScanForDebug(image) - a best effort debug tool to get a complete image scan.
     static void collectImageScanForDebug(String image, String saveName) {
-        if (!Env.IN_CI) {
-            log.info "Won't collect image scans when not in CI"
+        if (!Env.IN_CI && !Env.GATHER_DEBUG_LOGS) {
+            log.info "Won't collect image scans without CI=true or GATHER_DEBUG_LOGS=true"
+            return
+        }
+
+        if (Env.QA_TEST_DEBUG_LOGS == "") {
+            log.info "Won't collect image scans when QA_TEST_DEBUG_LOGS is not set"
             return
         }
 
         log.debug "Will scan ${image} to ${saveName}"
 
         try {
-            Path imageScans = Paths.get(Constants.FAILURE_DEBUG_DIR).resolve("image-scans")
+            Path imageScans = Paths.get(Env.QA_TEST_DEBUG_LOGS).resolve("image-scans")
             new File(imageScans.toAbsolutePath().toString()).mkdirs()
 
             Process proc = "./scripts/ci/roxctl.sh image scan -i ${image} -a".execute(null, new File(".."))
