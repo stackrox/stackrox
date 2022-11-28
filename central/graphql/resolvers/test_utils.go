@@ -29,6 +29,7 @@ import (
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	types2 "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
@@ -40,7 +41,7 @@ import (
 func testDeployments() []*storage.Deployment {
 	return []*storage.Deployment{
 		{
-			Id:          "dep1id",
+			Id:          fixtureconsts.Deployment1,
 			Name:        "dep1name",
 			Namespace:   "namespace1name",
 			NamespaceId: "namespace1id",
@@ -58,7 +59,7 @@ func testDeployments() []*storage.Deployment {
 			},
 		},
 		{
-			Id:          "dep2id",
+			Id:          fixtureconsts.Deployment2,
 			Name:        "dep2name",
 			Namespace:   "namespace1name",
 			NamespaceId: "namespace1id",
@@ -72,7 +73,7 @@ func testDeployments() []*storage.Deployment {
 			},
 		},
 		{
-			Id:          "dep3id",
+			Id:          fixtureconsts.Deployment3,
 			Name:        "dep3name",
 			Namespace:   "namespace2name",
 			NamespaceId: "namespace2id",
@@ -414,7 +415,7 @@ func testNodes() []*storage.Node {
 	utils.CrashOnError(err)
 	return []*storage.Node{
 		{
-			Id:   "nodeID1",
+			Id:   fixtureconsts.Node1,
 			Name: "node1",
 			SetCves: &storage.Node_Cves{
 				Cves: 3,
@@ -472,7 +473,7 @@ func testNodes() []*storage.Node {
 			},
 		},
 		{
-			Id:   "nodeID2",
+			Id:   fixtureconsts.Node2,
 			Name: "node2",
 			SetCves: &storage.Node_Cves{
 				Cves: 5,
@@ -543,12 +544,12 @@ func testNodes() []*storage.Node {
 func testClustersWithNodes() ([]*storage.Cluster, []*storage.Node) {
 	clusters := []*storage.Cluster{
 		{
-			Id:        "clusterID1",
+			Id:        fixtureconsts.Cluster1,
 			Name:      "cluster1",
 			MainImage: "quay.io/stackrox-io/main",
 		},
 		{
-			Id:        "clusterID2",
+			Id:        fixtureconsts.Cluster2,
 			Name:      "cluster2",
 			MainImage: "quay.io/stackrox-io/main",
 		},
