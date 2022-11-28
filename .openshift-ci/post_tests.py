@@ -17,8 +17,7 @@ class PostTestsConstants:
     STORE_TIMEOUT = 5 * 60
     FIXUP_TIMEOUT = 5 * 60
     ARTIFACTS_TIMEOUT = 3 * 60
-    # Where the QA tests store failure logs:
-    # qa-tests-backend/src/main/groovy/common/Constants.groovy
+    # QA_TEST_DEBUG_LOGS - where the QA tests store failure logs.
     QA_TEST_DEBUG_LOGS = os.getenv("QA_TEST_DEBUG_LOGS")
     QA_SPOCK_RESULTS = "qa-tests-backend/build/spock-reports"
     K8S_LOG_DIR = "/tmp/k8s-service-logs"

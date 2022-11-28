@@ -45,6 +45,7 @@ _EOH_
 
 if [[ ! -f "/i-am-rox-ci-image" ]]; then
     kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
+    mkdir -p "${HOME}/.gradle/caches"
     mkdir -p "$QA_TEST_DEBUG_LOGS"
     docker run \
       -v "$ROOT:$ROOT:z" \
@@ -71,7 +72,7 @@ while getopts ":cdyo:m:" option; do
             config_only="true"
             ;;
         d)
-            export GATHER_DEBUG_LOGS="true"
+            export GATHER_QA_TEST_DEBUG_LOGS="true"
             ;;
         o)
             orchestrator="${OPTARG}"

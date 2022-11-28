@@ -88,8 +88,8 @@ class Helpers {
     }
 
     static void collectDebugForFailure(Throwable exception) {
-        if (!Env.IN_CI && !Env.GATHER_DEBUG_LOGS) {
-            log.info "Won't collect logs without CI=true or GATHER_DEBUG_LOGS=true"
+        if (!Env.IN_CI && !Env.GATHER_QA_TEST_DEBUG_LOGS) {
+            log.info "Won't collect logs without CI=true or GATHER_QA_TEST_DEBUG_LOGS=true"
             return
         }
 
@@ -133,8 +133,8 @@ class Helpers {
 
     // collectImageScanForDebug(image) - a best effort debug tool to get a complete image scan.
     static void collectImageScanForDebug(String image, String saveName) {
-        if (!Env.IN_CI && !Env.GATHER_DEBUG_LOGS) {
-            log.info "Won't collect image scans without CI=true or GATHER_DEBUG_LOGS=true"
+        if (!Env.IN_CI && !Env.GATHER_QA_TEST_DEBUG_LOGS) {
+            log.info "Won't collect image scans without CI=true or GATHER_QA_TEST_DEBUG_LOGS=true"
             return
         }
 
