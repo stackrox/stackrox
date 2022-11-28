@@ -121,9 +121,8 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 	h := NewNodeScanHandler(nodeScans)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 1)
-	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages
-	// The intent here it to test whether the handler can shutdown with no leaks when the context is canceled despite of
-	// multiple messages waiting to be written to the channel
+	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages.
+	// This is to test whether the handler can shutdown with no leaks when the producer keeps producing messages.
 	go func() {
 		defer producer.signalStopped()
 		for i := 0; i < 30; i++ {
