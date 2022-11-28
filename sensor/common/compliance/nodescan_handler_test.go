@@ -95,7 +95,7 @@ func (s *NodeScanHandlerTestSuite) TestResponsesCShouldPanicWhenNotStarted() {
 
 // TestStopHandler goal is to stop handler while there are still some messages to process
 // in the channel passed into NewNodeScanHandler.
-// We expect that premature stop of the handler produces no race condition or goroutine leak.
+// We expect that premature stop of the handler results in a clean stop without any race conditions or goroutine leaks.
 // Exec with: go test -race -count=1 -v -run ^TestNodeScanHandler$ ./sensor/common/compliance
 func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 	nodeScans := make(chan *storage.NodeScanV2)
@@ -106,7 +106,6 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 1)
 	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages.
-	// This is to test whether the handler can shutdown with no leaks when the producer keeps producing messages.
 	go func() {
 		defer producer.signalStopped()
 		for i := 0; i < 30; i++ {
@@ -173,7 +172,6 @@ func (s *NodeScanHandlerTestSuite) generateTestInputNoClose(numToProduce int) (c
 // consumeAndCount consumes maximally numToConsume messages from the channel and counts the consumed messages
 // It sets error of stoppable.stopC if the number of messages consumed were less than numToConsume
 func consumeAndCount[T any](ch <-chan *T, numToConsume int) stoppable {
-	// simulate Central: consume all messages from h.ResponsesC()
 	st := newStoppable()
 	go func() {
 		defer st.signalStopped()
@@ -227,6 +225,8 @@ func (s *NodeScanHandlerTestSuite) TestDoubleStopHandler() {
 	h.Stop(nil)
 	h.Stop(nil)
 	s.NoError(h.Stopped().Wait())
+	// it should not block
+	s.NoError(h.Stopped().Wait())
 }
 
 func (s *NodeScanHandlerTestSuite) TestInputChannelClosed() {
@@ -235,9 +235,10 @@ func (s *NodeScanHandlerTestSuite) TestInputChannelClosed() {
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.stoppedC.Wait())
-
-	close(ch) // producer finishes writing all messages to ch
-	s.ErrorIs(h.Stopped().Wait(), errInputChanClosed)
-
 	s.NoError(consumer.stoppedC.Wait())
+
+	// By closing the channel ch, we mark that the producer finished writing all messages to ch
+	close(ch)
+	// The handler will stop as there are no more messages to handle
+	s.ErrorIs(h.Stopped().Wait(), errInputChanClosed)
 }
