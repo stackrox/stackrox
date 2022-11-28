@@ -23,6 +23,7 @@ extract_from_image() {
   [[ -n "$image" && -n "$src" && -n "$dst" ]] \
       || die "extract_from_image: <image> <src> <dst>"
 
+  mkdir -p "${dst}"
   docker create --name copier "${image}"
   docker cp "copier:${src}" "${dst}"
   docker rm copier
