@@ -231,7 +231,7 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string, unsup
 		// have deleted the current Postgres DB.  We need to re-create it here for the rest
 		// of the test.  This will naturally be recreated in migrator, but we are focused on the clones
 		// here and such that code is not executed as part of this test
-		pgtest.CreateDatabase(m.t, migrations.GetCurrentClone())
+		pgtest.CreateDatabase(m.t, pgClone)
 	}
 
 	require.NoError(m.t, dbm.Persist(clone, pgClone, m.updateBoth))
@@ -265,20 +265,21 @@ func (m *mockCentral) runCentral() {
 	}
 }
 
-func (m *mockCentral) restoreCentral(ver *versionPair, breakPoint string) {
+func (m *mockCentral) restoreCentral(ver *versionPair, breakPoint string, rocksToPostgres bool) {
 	curVer := &versionPair{version: version.GetMainVersion(), seqNum: migrations.CurrentDBVersionSeqNum()}
-	m.restore(ver)
+	m.restore(ver, rocksToPostgres)
 	if breakPoint == "" {
 		m.runMigrator(breakPoint, "", false)
 	}
 	m.runMigrator("", "", false)
+
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		m.verifyClonePostgres(postgres.BackupClone, curVer)
-		m.runCentral()
 	} else {
 		m.verifyClone(rocksdb.BackupClone, curVer)
-		m.runCentral()
 	}
+
+	m.runCentral()
 }
 
 func (m *mockCentral) rollbackCentral(ver *versionPair, breakpoint string, forceRollback string) {
@@ -290,25 +291,26 @@ func (m *mockCentral) rollbackCentral(ver *versionPair, breakpoint string, force
 	m.runCentral()
 }
 
-func (m *mockCentral) restore(ver *versionPair) {
+func (m *mockCentral) restore(ver *versionPair, rocksToPostgres bool) {
 	// Central should be in running state.
 	m.verifyCurrent()
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		restoreDB := migrations.RestoreDatabase
-		pgtest.CreateDatabase(m.t, restoreDB)
-
-		// backups from version lower than 3.0.57.0 do not have migration version.
-		if version.CompareVersions(ver.version, "3.0.57.0") >= 0 {
-			m.setMigrationVersionPostgres(restoreDB, ver)
-		}
-	} else {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() || rocksToPostgres {
 		restoreDir, err := os.MkdirTemp(migrations.DBMountPath(), ".restore-")
 		require.NoError(m.t, os.Symlink(filepath.Base(restoreDir), filepath.Join(migrations.DBMountPath(), ".restore")))
 		require.NoError(m.t, err)
 		// backups from version lower than 3.0.57.0 do not have migration version.
 		if version.CompareVersions(ver.version, "3.0.57.0") >= 0 {
 			m.setMigrationVersion(restoreDir, ver)
+		}
+	}
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		pgtest.CreateDatabase(m.t, migrations.RestoreDatabase)
+
+		// backups from version lower than 3.0.57.0 do not have migration version.
+		if version.CompareVersions(ver.version, "3.0.57.0") >= 0 {
+			m.setMigrationVersionPostgres(migrations.RestoreDatabase, ver)
 		}
 	}
 }
@@ -388,7 +390,7 @@ func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
 		dbm := postgres.New("", config, sourceMap)
 		err = dbm.Scan()
 		require.NoError(m.t, err)
-		clone, _, err := dbm.GetCloneToMigrate(nil)
+		clone, _, err := dbm.GetCloneToMigrate(nil, false)
 		require.NoError(m.t, err)
 		m.upgradeDB("", "", clone)
 

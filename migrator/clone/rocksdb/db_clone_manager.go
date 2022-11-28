@@ -60,4 +60,7 @@ type DBCloneManager interface {
 
 	// DecommissionRocksDB -- removes RocksDB from central
 	DecommissionRocksDB()
+
+	// CheckForRestore -- checks to see if a restore from a RocksDB is requested
+	CheckForRestore() bool
 }
