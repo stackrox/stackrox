@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	ignoredPaths = set.NewFrozenSet("/v1/ping", "/v1/metadata")
+	ignoredPaths = []string{"/v1/ping", "/v1/metadata", "/static/"}
 	once         sync.Once
 )
 
@@ -26,9 +26,13 @@ func track(ctx context.Context, t pkgPH.Telemeter, err error, info *grpc.UnarySe
 	userAgent, userID, path, code := getRequestDetails(ctx, err, info)
 
 	// Track the API path and error code of some requests:
-	if ignoredPaths.Contains(path) {
-		return
+
+	for _, ip := range ignoredPaths {
+		if strings.HasPrefix(path, ip) {
+			return
+		}
 	}
+
 	if trackedPaths.Contains("*") || trackedPaths.Contains(path) {
 		t.Track("API Call", userID, map[string]any{
 			"Path":       path,
