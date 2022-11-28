@@ -8,18 +8,24 @@ import {
     Stack,
     StackItem,
     Switch,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
     Tooltip,
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 
-import EntityNameSearchInput from '../common/EntityNameSearchInput';
-import AdvancedFlowsFilter, {
-    defaultAdvancedFlowsFilters,
-} from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { Flow } from '../types';
 import { getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
+
+import AdvancedFlowsFilter, {
+    defaultAdvancedFlowsFilters,
+} from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
+import EntityNameSearchInput from '../common/EntityNameSearchInput';
 import FlowsTable from '../common/FlowsTable';
+import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
+import FlowsBulkActions from '../common/FlowsBulkActions';
 
 const baselines: Flow[] = [
     {
@@ -150,6 +156,23 @@ function DeploymentBaselines() {
                             />
                         </FlexItem>
                     </Flex>
+                </StackItem>
+                <Divider component="hr" />
+                <StackItem>
+                    <Toolbar>
+                        <ToolbarContent>
+                            <ToolbarItem>
+                                <FlowsTableHeaderText type="baseline" numFlows={numBaselines} />
+                            </ToolbarItem>
+                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                <FlowsBulkActions
+                                    type="baseline"
+                                    selectedRows={selectedRows}
+                                    onClearSelectedRows={() => setSelectedRows([])}
+                                />
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
                 </StackItem>
                 <Divider component="hr" />
                 <StackItem>
