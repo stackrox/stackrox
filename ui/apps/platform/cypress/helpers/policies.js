@@ -70,9 +70,6 @@ export function visitPolicy(policyId, staticResponseMap) {
         `${policiesPath}/${policyId}`,
         () => {
             cy.get(`a.pf-c-breadcrumb__link:contains("Policies")`);
-            cy.get('h2:contains("Policy details")');
-            cy.get('h2:contains("Policy behavior")');
-            cy.get('h2:contains("Policy criteria")');
         },
         routeMatcherMapForPolicy,
         staticResponseMap
