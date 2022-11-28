@@ -1,7 +1,7 @@
 import * as api from '../constants/apiEndpoints';
-import { selectors, url as policiesUrl } from '../constants/PoliciesPage';
+import { selectors, url as policiesPath } from '../constants/PoliciesPage';
 import { visitFromLeftNavExpandable } from './nav';
-import { visit } from './visit';
+import { visitAndAssertBeforeResponses } from './visit';
 
 // Navigation
 
@@ -9,7 +9,7 @@ export const notifiersAlias = 'notifiers';
 export const searchMetadataOptionsAlias = 'search/metadata/options';
 export const policiesAlias = 'policies';
 
-const routeMatcherMap = {
+const routeMatcherMapForPolicies = {
     [notifiersAlias]: {
         method: 'GET',
         url: api.integrations.notifiers,
@@ -25,30 +25,58 @@ const routeMatcherMap = {
     },
 };
 
-export function visitPolicies(staticResponseMap) {
-    visit(policiesUrl, routeMatcherMap, staticResponseMap);
+const containerTitle = 'Policy management';
 
-    cy.get('h1:contains("Policy management")');
-    cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitPolicies(staticResponseMap) {
+    visitAndAssertBeforeResponses(
+        policiesPath,
+        () => {
+            cy.get(`h1:contains("${containerTitle}")`);
+            cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
+        },
+        routeMatcherMapForPolicies,
+        staticResponseMap
+    );
 }
 
 export function visitPoliciesFromLeftNav() {
-    visitFromLeftNavExpandable('Platform Configuration', 'Policy Management', routeMatcherMap);
+    visitFromLeftNavExpandable(
+        'Platform Configuration',
+        containerTitle,
+        routeMatcherMapForPolicies
+    );
 
-    cy.get('h1:contains("Policy management")');
+    cy.location('pathname').should('eq', policiesPath);
+    cy.get(`h1:contains("${containerTitle}")`);
     cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
 }
 
+/**
+ * @param {string} policyId
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
 export function visitPolicy(policyId, staticResponseMap) {
-    const routeMatcherMapPolicy = {
+    const routeMatcherMapForPolicy = {
         'policies/id': {
             method: 'GET',
             url: api.policies.policy,
         },
     };
 
-    visit(`${policiesUrl}/${policyId}`, routeMatcherMapPolicy, staticResponseMap);
-    cy.get('h2:contains("Policy details")');
+    visitAndAssertBeforeResponses(
+        `${policiesPath}/${policyId}`,
+        () => {
+            cy.get(`a.pf-c-breadcrumb__link:contains("Policies")`);
+            cy.get('h2:contains("Policy details")');
+            cy.get('h2:contains("Policy behavior")');
+            cy.get('h2:contains("Policy criteria")');
+        },
+        routeMatcherMapForPolicy,
+        staticResponseMap
+    );
 }
 
 // Actions on policy table

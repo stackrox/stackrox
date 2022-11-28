@@ -48,8 +48,6 @@ describe('Policies table', () => {
 
     it('should navigate using the left nav', () => {
         visitPoliciesFromLeftNav();
-
-        cy.location('pathname').should('eq', url);
     });
 
     it('should have selected item in nav bar', () => {

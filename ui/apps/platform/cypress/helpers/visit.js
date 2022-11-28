@@ -43,6 +43,34 @@ const routeMatcherMapForAuthenticatedRoutes = {
 };
 
 /**
+ * Wait for responses to requests for any authenticated route,
+ * call function to make assertions for page which do not depend on data,
+ * and then wait for responses to requests for page.
+ *
+ * @param {string} pagePath
+ * @param {function} assertionCallback
+ * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitAndAssertBeforeResponses(
+    pagePath,
+    assertionCallback,
+    routeMatcherMap,
+    staticResponseMap
+) {
+    interceptRequests(routeMatcherMapForAuthenticatedRoutes);
+    interceptRequests(routeMatcherMap, staticResponseMap);
+
+    cy.visit(pagePath);
+
+    waitForResponses(routeMatcherMapForAuthenticatedRoutes);
+
+    assertionCallback();
+
+    waitForResponses(routeMatcherMap);
+}
+
+/**
  * Wait for prerequisite requests to render container components.
  *
  * Always wait on generic requests for MainPage component.

@@ -3,7 +3,7 @@ import { hasFeatureFlag } from '../features';
 
 import { visitFromLeftNavExpandable } from '../nav';
 import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../request';
-import { visit } from '../visit';
+import { visitAndAssertBeforeResponses } from '../visit';
 
 let opnamesForDashboard = [
     'policiesCount',
@@ -80,6 +80,23 @@ const opnameForEntities = {
     policies: 'getPolicies',
 };
 
+// Headings on entities pages: Title Case style hides the inconsistencies.
+const headingSingular = {
+    clusters: 'cluster',
+    components: 'component',
+    'image-components': 'image component',
+    'node-components': 'node component',
+    cves: 'CVE',
+    'image-cves': 'Image CVE',
+    'node-cves': 'Node CVE',
+    'cluster-cves': 'Platform CVE',
+    deployments: 'deployment',
+    images: 'image',
+    namespaces: 'namespace',
+    nodes: 'node',
+    policies: 'policie',
+};
+
 // Headings on entities pages: uppercase style hides the inconsistencies.
 const headingPlural = {
     clusters: 'clusters',
@@ -122,6 +139,8 @@ function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
 
 const basePath = '/main/vulnerability-management'; // dashboard
 
+const dashboardTitle = 'Vulnerability Management';
+
 function getEntitiesPath(entitiesKey, search = '') {
     return `${basePath}/${entitiesKey}${search}`;
 }
@@ -141,13 +160,17 @@ export function visitVulnerabilityManagementDashboardFromLeftNav() {
 
     cy.location('pathname').should('eq', basePath);
     cy.location('search').should('eq', '');
-    cy.get('h1:contains("Vulnerability Management")');
+    cy.get(`h1:contains("${dashboardTitle}")`);
 }
 
 export function visitVulnerabilityManagementDashboard() {
-    visit(basePath, routeMatcherMapForVulnerabilityManagementDashboard);
-
-    cy.get('h1:contains("Vulnerability Management")');
+    visitAndAssertBeforeResponses(
+        basePath,
+        () => {
+            cy.get(`h1:contains("${dashboardTitle}")`);
+        },
+        routeMatcherMapForVulnerabilityManagementDashboard
+    );
 }
 
 /*
@@ -160,9 +183,13 @@ export function visitVulnerabilityManagementEntities(entitiesKey) {
         opnameForEntities[entitiesKey],
     ]);
 
-    visit(getEntitiesPath(entitiesKey), routeMatcherMap);
-
-    cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+    visitAndAssertBeforeResponses(
+        getEntitiesPath(entitiesKey),
+        () => {
+            cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+        },
+        routeMatcherMap
+    );
 }
 
 export function visitVulnerabilityManagementEntitiesWithSearch(entitiesKey, search) {
@@ -171,9 +198,13 @@ export function visitVulnerabilityManagementEntitiesWithSearch(entitiesKey, sear
         opnameForEntities[entitiesKey],
     ]);
 
-    visit(getEntitiesPath(entitiesKey, search), routeMatcherMap);
-
-    cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+    visitAndAssertBeforeResponses(
+        getEntitiesPath(entitiesKey, search),
+        () => {
+            cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+        },
+        routeMatcherMap
+    );
 }
 
 export function interactAndWaitForVulnerabilityManagementEntities(
@@ -206,7 +237,16 @@ export function visitVulnerabilityManagementEntityInSidePanel(
     const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
     const staticResponseMap = staticResponseForEntity && { [opname]: staticResponseForEntity };
 
-    visit(getEntityPath(entitiesKey, entityId), routeMatcherMap, staticResponseMap);
+    visitAndAssertBeforeResponses(
+        getEntityPath(entitiesKey, entityId),
+        () => {
+            cy.get(
+                `${selectors.childEntityInfoHeader}:contains("${headingSingular[entitiesKey]}")`
+            );
+        },
+        routeMatcherMap,
+        staticResponseMap
+    );
 }
 
 export function interactAndWaitForVulnerabilityManagementEntity(

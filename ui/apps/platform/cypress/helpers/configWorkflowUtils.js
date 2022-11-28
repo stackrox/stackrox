@@ -1,6 +1,6 @@
 import { selectors as configManagementSelectors } from '../constants/ConfigManagementPage';
 import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
-import { visit } from './visit';
+import { visitAndAssertBeforeResponses } from './visit';
 
 const basePath = '/main/configmanagement';
 
@@ -144,22 +144,36 @@ const routeMatcherMapForConfigurationManagementDashboard = getRouteMatcherMapFor
     'secrets',
 ]);
 
-export function visitConfigurationManagementDashboard() {
-    visit(basePath, routeMatcherMapForConfigurationManagementDashboard);
+const dashboardTitle = 'Configuration Management';
 
-    cy.get('h1:contains("Configuration Management")');
+export function visitConfigurationManagementDashboard() {
+    visitAndAssertBeforeResponses(
+        basePath,
+        () => {
+            cy.get(`h1:contains("h1:contains("${dashboardTitle}")")`);
+        },
+        routeMatcherMapForConfigurationManagementDashboard
+    );
 }
 
 export function visitConfigurationManagementEntities(entitiesKey) {
-    visit(getEntitiesPath(entitiesKey), getRouteMatcherMapForEntities(entitiesKey));
-
-    cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
+    visitAndAssertBeforeResponses(
+        getEntitiesPath(entitiesKey),
+        () => {
+            cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
+        },
+        getRouteMatcherMapForEntities(entitiesKey)
+    );
 }
 
 export function visitConfigurationManagementEntitiesWithSearch(entitiesKey, search) {
-    visit(`${getEntitiesPath(entitiesKey)}${search}`, getRouteMatcherMapForEntities(entitiesKey));
-
-    cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
+    visitAndAssertBeforeResponses(
+        `${getEntitiesPath(entitiesKey)}${search}`,
+        () => {
+            cy.get(`h1:contains("${headingForEntities[entitiesKey]}")`);
+        },
+        getRouteMatcherMapForEntities(entitiesKey)
+    );
 }
 
 export function interactAndWaitForConfigurationManagementEntities(

@@ -2,11 +2,11 @@ import * as api from '../constants/apiEndpoints';
 import { url, selectors } from '../constants/ViolationsPage';
 
 import { visitFromLeftNav } from './nav';
-import { visit } from './visit';
+import { visit, visitAndAssertBeforeResponses } from './visit';
 
 // visit
 
-const routeMatcherMap = {
+const routeMatcherMapForViolations = {
     alerts: {
         method: 'GET',
         url: api.alerts.alertsWithQuery,
@@ -17,17 +17,27 @@ const routeMatcherMap = {
     },
 };
 
+const containerTitle = 'Violations';
+
 export function visitViolationsFromLeftNav() {
-    visitFromLeftNav('Violations', routeMatcherMap);
+    visitFromLeftNav(containerTitle, routeMatcherMapForViolations);
 
     cy.location('pathname').should('eq', url);
-    cy.get('h1:contains("Violations")');
+    cy.get(`h1:contains("${containerTitle}")`);
 }
 
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
 export function visitViolations(staticResponseMap) {
-    visit(url, routeMatcherMap, staticResponseMap);
-
-    cy.get('h1:contains("Violations")');
+    visitAndAssertBeforeResponses(
+        url,
+        () => {
+            cy.get(`h1:contains("${containerTitle}")`);
+        },
+        routeMatcherMapForViolations,
+        staticResponseMap
+    );
 }
 
 export function visitViolationsWithFixture(fixturePath) {
@@ -38,9 +48,14 @@ export function visitViolationsWithFixture(fixturePath) {
             alertscount: { body: { count } },
         };
 
-        visit(url, routeMatcherMap, staticResponseMap);
-
-        cy.get('h1:contains("Violations")');
+        visitAndAssertBeforeResponses(
+            url,
+            () => {
+                cy.get(`h1:contains("${containerTitle}")`);
+            },
+            routeMatcherMapForViolations,
+            staticResponseMap
+        );
     });
 }
 

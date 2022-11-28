@@ -1,7 +1,7 @@
 import { headingPlural, selectors, url } from '../constants/CompliancePage';
 
 import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
-import { visit } from './visit';
+import { visitAndAssertBeforeResponses } from './visit';
 
 const routeMatcherMapForComplianceDashboard = getRouteMatcherMapForGraphQL([
     'clustersCount',
@@ -22,10 +22,16 @@ const routeMatcherMapForComplianceDashboard = getRouteMatcherMapForGraphQL([
     'complianceStandards_PCI_DSS_3_2',
 ]);
 
-export function visitComplianceDashboard() {
-    visit(url.dashboard, routeMatcherMapForComplianceDashboard);
+const dashboardTitle = 'Compliance';
 
-    cy.get('h1:contains("Compliance")');
+export function visitComplianceDashboard() {
+    visitAndAssertBeforeResponses(
+        url.dashboard,
+        () => {
+            cy.get(`h1:contains("${dashboardTitle}")`);
+        },
+        routeMatcherMapForComplianceDashboard
+    );
 }
 
 /*
@@ -75,9 +81,13 @@ export function visitComplianceEntities(entitiesKey) {
         opnameForEntities[entitiesKey],
     ]);
 
-    visit(url.entities[entitiesKey], routeMatcherMap);
-
-    cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+    visitAndAssertBeforeResponses(
+        url.entities[entitiesKey],
+        () => {
+            cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+        },
+        routeMatcherMap
+    );
 }
 
 /*
@@ -90,7 +100,11 @@ export function visitComplianceStandard(standardName) {
         'controls',
     ]);
 
-    visit(`${url.controls}?s[standard]=${standardName}`, routeMatcherMap);
-
-    cy.get(`h1:contains("${standardName}")`);
+    visitAndAssertBeforeResponses(
+        `${url.controls}?s[standard]=${standardName}`,
+        () => {
+            cy.get(`h1:contains("${standardName}")`);
+        },
+        routeMatcherMap
+    );
 }
