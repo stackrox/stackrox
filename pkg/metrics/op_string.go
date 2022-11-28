@@ -19,24 +19,26 @@ func _() {
 	_ = x[GetFlowsForDeployment-8]
 	_ = x[GetByQuery-9]
 	_ = x[GetGrouped-10]
-	_ = x[List-11]
-	_ = x[Prune-12]
-	_ = x[Reset-13]
-	_ = x[Rename-14]
-	_ = x[Remove-15]
-	_ = x[RemoveMany-16]
-	_ = x[RemoveFlowsByDeployment-17]
-	_ = x[Search-18]
-	_ = x[Sync-19]
-	_ = x[Update-20]
-	_ = x[UpdateMany-21]
-	_ = x[Upsert-22]
-	_ = x[UpsertAll-23]
+	_ = x[GetProcessListeningOnPortByNamespace-11]
+	_ = x[GetProcessListeningOnPortByNamespaceAndDeployment-12]
+	_ = x[List-13]
+	_ = x[Prune-14]
+	_ = x[Reset-15]
+	_ = x[Rename-16]
+	_ = x[Remove-17]
+	_ = x[RemoveMany-18]
+	_ = x[RemoveFlowsByDeployment-19]
+	_ = x[Search-20]
+	_ = x[Sync-21]
+	_ = x[Update-22]
+	_ = x[UpdateMany-23]
+	_ = x[Upsert-24]
+	_ = x[UpsertAll-25]
 }
 
-const _Op_name = "AddAddManyCountDedupeExistsGetGetAllGetManyGetFlowsForDeploymentGetByQueryGetGroupedListPruneResetRenameRemoveRemoveManyRemoveFlowsByDeploymentSearchSyncUpdateUpdateManyUpsertUpsertAll"
+const _Op_name = "AddAddManyCountDedupeExistsGetGetAllGetManyGetFlowsForDeploymentGetByQueryGetGroupedGetProcessListeningOnPortByNamespaceGetProcessListeningOnPortByNamespaceAndDeploymentListPruneResetRenameRemoveRemoveManyRemoveFlowsByDeploymentSearchSyncUpdateUpdateManyUpsertUpsertAll"
 
-var _Op_index = [...]uint8{0, 3, 10, 15, 21, 27, 30, 36, 43, 64, 74, 84, 88, 93, 98, 104, 110, 120, 143, 149, 153, 159, 169, 175, 184}
+var _Op_index = [...]uint16{0, 3, 10, 15, 21, 27, 30, 36, 43, 64, 74, 84, 120, 169, 173, 178, 183, 189, 195, 205, 228, 234, 238, 244, 254, 260, 269}
 
 func (i Op) String() string {
 	if i < 0 || i >= Op(len(_Op_index)-1) {
