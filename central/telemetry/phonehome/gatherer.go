@@ -70,11 +70,14 @@ func GathererSingleton() Gatherer {
 }
 
 func (g *gatherer) loop() {
+	g.ticker = time.NewTicker(g.period)
 	for !g.stopSig.IsDone() {
 		select {
 		case <-g.ticker.C:
 			go g.f(g)
 		case <-g.stopSig.Done():
+			g.ticker.Stop()
+			g.ticker = nil
 			g.cancel()
 			return
 		}
@@ -88,8 +91,8 @@ func (g *gatherer) Start() {
 	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
+	// Ignore Start if the ticker is active.
 	if g.ticker == nil {
-		g.ticker = time.NewTicker(g.period)
 		g.reset()
 		go g.loop()
 		log.Debug("Telemetry data collection ticker enabled.")
@@ -103,7 +106,6 @@ func (g *gatherer) Stop() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.stopSig.Signal()
-	g.ticker = nil
 }
 
 func addTotal[T any](ctx context.Context, props map[string]any, key string, f func(context.Context) ([]*T, error)) {

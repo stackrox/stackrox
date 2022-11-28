@@ -46,10 +46,8 @@ func (s *gathererTestSuite) TestGatherer() {
 
 	var i int64
 	gptr := newGatherer(nil, 10*time.Millisecond, func(g *gatherer) {
-		if i == 2 {
+		if atomic.AddInt64(&i, 1) > 1 {
 			g.Stop()
-		} else {
-			atomic.AddInt64(&i, 1)
 		}
 	})
 	s.NotNil(gptr)
@@ -65,7 +63,7 @@ func (s *gathererTestSuite) TestGatherer() {
 	// Should start again.
 	gptr.Start()
 	<-gptr.ctx.Done()
-	s.Equal(int64(2), i)
+	s.Equal(int64(3), i)
 }
 
 func (s *gathererTestSuite) TestAddTotal() {
