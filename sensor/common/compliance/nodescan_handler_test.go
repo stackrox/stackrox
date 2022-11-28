@@ -172,19 +172,18 @@ func (s *NodeScanHandlerTestSuite) TestHandlerStoppedError() {
 	s.ErrorIs(h.Stopped().Wait(), errTest)
 }
 
-// generateTestInputNoClose generates numToProduce messages of type NodeScanV2
-// It returns channel that must be closed
+// generateTestInputNoClose generates numToProduce messages of type NodeScanV2.
+// It returns a channel that must be closed by the caller.
 func (s *NodeScanHandlerTestSuite) generateTestInputNoClose(numToProduce int) (chan *storage.NodeScanV2, stoppable) {
 	input := make(chan *storage.NodeScanV2)
 	st := newStoppable()
-	// this is a producer that sends 10 nodescan messages
 	go func() {
 		defer st.signalStopped()
 		for i := 0; i < numToProduce; i++ {
 			select {
 			case <-st.stopC.Done():
 				return
-			case input <- fakeNodeScanV2("Node"):
+			case input <- fakeNodeScanV2(fmt.Sprintf("Node-%d", i)):
 			}
 		}
 	}()
