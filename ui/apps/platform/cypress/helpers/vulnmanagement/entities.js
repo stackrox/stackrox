@@ -139,7 +139,7 @@ function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
 
 const basePath = '/main/vulnerability-management'; // dashboard
 
-const dashboardTitle = 'Vulnerability Management';
+const containerTitle = 'Vulnerability Management';
 
 function getEntitiesPath(entitiesKey, search = '') {
     return `${basePath}/${entitiesKey}${search}`;
@@ -160,14 +160,14 @@ export function visitVulnerabilityManagementDashboardFromLeftNav() {
 
     cy.location('pathname').should('eq', basePath);
     cy.location('search').should('eq', '');
-    cy.get(`h1:contains("${dashboardTitle}")`);
+    cy.get(`h1:contains("${containerTitle}")`);
 }
 
 export function visitVulnerabilityManagementDashboard() {
     visitAndAssertBeforeResponses(
         basePath,
         () => {
-            cy.get(`h1:contains("${dashboardTitle}")`);
+            cy.get(`h1:contains("${containerTitle}")`);
         },
         routeMatcherMapForVulnerabilityManagementDashboard
     );

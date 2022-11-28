@@ -22,13 +22,13 @@ const routeMatcherMapForComplianceDashboard = getRouteMatcherMapForGraphQL([
     'complianceStandards_PCI_DSS_3_2',
 ]);
 
-const dashboardTitle = 'Compliance';
+const containerTitle = 'Compliance';
 
 export function visitComplianceDashboard() {
     visitAndAssertBeforeResponses(
         url.dashboard,
         () => {
-            cy.get(`h1:contains("${dashboardTitle}")`);
+            cy.get(`h1:contains("${containerTitle}")`);
         },
         routeMatcherMapForComplianceDashboard
     );

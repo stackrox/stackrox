@@ -144,13 +144,13 @@ const routeMatcherMapForConfigurationManagementDashboard = getRouteMatcherMapFor
     'secrets',
 ]);
 
-const dashboardTitle = 'Configuration Management';
+const containerTitle = 'Configuration Management';
 
 export function visitConfigurationManagementDashboard() {
     visitAndAssertBeforeResponses(
         basePath,
         () => {
-            cy.get(`h1:contains("h1:contains("${dashboardTitle}")")`);
+            cy.get(`h1:contains("h1:contains("${containerTitle}")")`);
         },
         routeMatcherMapForConfigurationManagementDashboard
     );
