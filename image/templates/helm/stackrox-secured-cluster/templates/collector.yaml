@@ -79,8 +79,8 @@ spec:
           name: usr-lib-ro
           readOnly: true
         - mountPath: /host/sys
-          name: sys-ro
-          readOnly: true
+          name: sys-rw
+          readOnly: false
         - mountPath: /host/dev
           name: dev-ro
           readOnly: true
@@ -140,7 +140,7 @@ spec:
         name: usr-lib-ro
       - hostPath:
           path: /sys/
-        name: sys-ro
+        name: sys-rw
       - hostPath:
           path: /dev
         name: dev-ro
