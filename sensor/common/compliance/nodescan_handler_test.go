@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/goleak"
 )
@@ -85,13 +84,6 @@ func (s *NodeScanHandlerTestSuite) TearDownTest() {
 	assertNoGoroutineLeaks(s.T())
 }
 
-// stopAll gracefully stops stoppables
-func stopAll(t *testing.T, stoppables ...stoppable) {
-	for _, s := range stoppables {
-		assert.NoError(t, s.signalAndWait(nil))
-	}
-}
-
 func (s *NodeScanHandlerTestSuite) TestResponsesCShouldPanicWhenNotStarted() {
 	nodeScans := make(chan *storage.NodeScanV2)
 	defer close(nodeScans)
@@ -123,15 +115,14 @@ func (s *NodeScanHandlerTestSuite) TestStopHandler() {
 				return
 			case nodeScans <- fakeNodeScanV2("Node"):
 				if i == 0 {
+					s.NoError(consumer.stoppedC.Wait()) // This blocks until consumer receives its 1 message
 					h.Stop(errTest)
 				}
 			}
 		}
 	}()
-	s.NoError(consumer.stoppedC.Wait())
 	s.ErrorIs(h.Stopped().Wait(), errTest)
-
-	stopAll(s.T(), producer)
+	s.NoError(producer.signalAndWait(nil))
 }
 
 func (s *NodeScanHandlerTestSuite) TestHandlerRegularRoutine() {
